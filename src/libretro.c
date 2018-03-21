@@ -229,18 +229,19 @@ bool retro_load_game_special(unsigned type, const struct retro_game_info *info, 
 
 size_t retro_serialize_size(void)
 {
-   //return game_data_size();
-   return 0;
+   return emulatorGetStateSize();
 }
 
-bool retro_serialize(void *data_, size_t size)
+bool retro_serialize(void *data, size_t size)
 {
-   return false;
+   emulatorSaveState(data);
+   return true;
 }
 
-bool retro_unserialize(const void *data_, size_t size)
+bool retro_unserialize(const void *data, size_t size)
 {
-   return false;
+   emulatorLoadState(data);
+   return true;
 }
 
 void *retro_get_memory_data(unsigned id)

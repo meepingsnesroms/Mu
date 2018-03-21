@@ -18,6 +18,7 @@
 uint16_t palmFramebuffer[160 * 240];//really 160*160, the extra pixels are the silkscreened digitizer area
 uint8_t  palmRam[RAM_SIZE];
 uint8_t  palmRom[ROM_SIZE];
+uint8_t  palmReg[REG_SIZE];
 uint16_t palmButtonState;
 uint16_t palmTouchscreenX;
 uint16_t palmTouchscreenY;
@@ -29,6 +30,7 @@ void emulatorInit(uint8_t* palmRomDump){
    m68k_set_cpu_type(M68K_CPU_TYPE_68020);
    
    memset(palmRam, 0x00, RAM_SIZE);
+   memset(palmReg, 0x00, REG_SIZE);
    memcpy(palmRom, palmRomDump, ROM_SIZE);
    memcpy(palmRam, palmRom, 256);//copy ROM header
    
@@ -39,6 +41,30 @@ void emulatorInit(uint8_t* palmRomDump){
 
 void emulatorReset(){
    m68k_pulse_reset();
+}
+
+uint32_t emulatorGetStateSize(){
+   return RAM_SIZE + REG_SIZE + m68k_context_size();
+}
+
+void emulatorSaveState(uint8_t* data){
+   uint32_t offset = 0;
+   m68k_get_context(data + offset);
+   offset += m68k_context_size();
+   memcpy(data + offset, palmRam, RAM_SIZE);
+   offset += RAM_SIZE;
+   memcpy(data + offset, palmReg, REG_SIZE);
+   offset += REG_SIZE;
+}
+
+void emulatorLoadState(uint8_t* data){
+   uint32_t offset = 0;
+   m68k_set_context(data + offset);
+   offset += m68k_context_size();
+   memcpy(palmRam, data + offset, RAM_SIZE);
+   offset += RAM_SIZE;
+   memcpy(palmReg, data + offset, REG_SIZE);
+   offset += REG_SIZE;
 }
 
 uint32_t emulatorInstallPrcPdb(uint8_t* data, uint32_t size){

@@ -79,7 +79,7 @@
  * To simulate real 68k behavior, m68k_write_32_pd() must first write the high
  * word to [address+2], and then write the low word to [address].
  */
-#define M68K_SIMULATE_PD_WRITES     OPT_OFF
+#define M68K_SIMULATE_PD_WRITES     OPT_ON
 
 /* If ON, CPU will call the interrupt acknowledge callback when it services an
  * interrupt.
