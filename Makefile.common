@@ -1,0 +1,21 @@
+EMU_PATH := $(CORE_DIR)
+
+INCFLAGS := -I(EMU_PATH)/libretro-common/include
+#-I$(NP2_PATH) \
+#-I$(NP2_PATH)/cbus
+
+#	-I$(NP2_PATH)/zlib \
+#	-I$(NP2_PATH)/i286c \
+
+SOURCES_C := $(EMU_PATH)/libretro.c \
+		$(EMU_PATH)/emulator.c \
+		$(EMU_PATH)/memoryaccess.c \
+      $(EMU_PATH)/hardwareregisters.c \
+		$(EMU_PATH)/m68k/m68kops.c \
+      $(EMU_PATH)/m68k/m68kopnz.c \
+      $(EMU_PATH)/m68k/m68kopdm.c \
+      $(EMU_PATH)/m68k/m68kopac.c \
+      $(EMU_PATH)/m68k/m68kdasm.c \
+      $(EMU_PATH)/m68k/m68kcpu.c
+
+SOURCES_CXX :=
