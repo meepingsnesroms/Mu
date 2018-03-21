@@ -1,6 +1,6 @@
 EMU_PATH := $(CORE_DIR)
 
-INCFLAGS := -I(EMU_PATH)/libretro-common/include
+INCFLAGS := -I$(EMU_PATH)/libretro-common/include
 #-I$(NP2_PATH) \
 #-I$(NP2_PATH)/cbus
 

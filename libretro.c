@@ -1,7 +1,22 @@
 #include "libretro.h"
 #include "libretro_params.h"
 
+#include <string.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdint.h>
+
+#include <retro_miscellaneous.h>
+
 #include "emulator.h"
+
+
+#ifdef _WIN32
+#define path_default_slash() "\\"
+#else
+#define path_default_slash() "/"
+#endif
+
 
 retro_log_printf_t log_cb;
 retro_video_refresh_t video_cb;
@@ -28,7 +43,12 @@ static void fallback_log(enum retro_log_level level, const char *fmt, ...)
 
 void retro_init(void)
 {
-   emulatorInit();
+   enum retro_pixel_format rgb565 = RETRO_PIXEL_FORMAT_RGB565;
+   
+   if(environ_cb(RETRO_ENVIRONMENT_SET_PIXEL_FORMAT, &rgb565))
+      log_cb(RETRO_LOG_INFO, "Frontend supports RGB565 - will use that instead of XRGB1555.\n");
+   
+   //emulatorInit();
 }
 
 void retro_deinit(void)
@@ -117,7 +137,7 @@ void retro_set_video_refresh(retro_video_refresh_t cb)
 
 void retro_reset(void)
 {
-   //game_reset();
+   emulatorReset();
 }
 
 void retro_run(void)
@@ -142,12 +162,17 @@ void retro_run(void)
 
 bool retro_load_game(const struct retro_game_info *info)
 {
+   const char* systemDirectory;
+   char palmRomPath[PATH_MAX_LENGTH];
+   uint8_t palmRom[ROM_SIZE];
+   FILE* romFile;
+   size_t bytesRead;
    struct retro_input_descriptor desc[] = {
       { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT,  "Left" },
       { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP,    "Up" },
       { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN,  "Down" },
       { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_RIGHT, "Right" },
-      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_START, "Start" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_START, "OS Menu" },
       { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_A, "Calender" },
       { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_B, "Phone" },
       { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_X, "ToDo" },
@@ -156,6 +181,24 @@ bool retro_load_game(const struct retro_game_info *info)
    };
 
    environ_cb(RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS, desc);
+   
+   environ_cb(RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY, &systemDirectory);
+   strncpy(palmRomPath, systemDirectory, PATH_MAX_LENGTH);
+   strncat(palmRomPath, path_default_slash(), PATH_MAX_LENGTH - strlen(palmRomPath));
+   strncat(palmRomPath, "palmos41-en-m515.rom", PATH_MAX_LENGTH - strlen(palmRomPath));
+   
+   romFile = fopen(palmRomPath, "rb");
+   
+   if(romFile == NULL)
+      return false;
+   
+   bytesRead = fread(palmRom, 1, ROM_SIZE, romFile);
+   fclose(romFile);
+
+   if(bytesRead == ROM_SIZE)
+      emulatorInit(palmRom);
+   else
+      return false;
 
    return true;
 }
@@ -201,6 +244,7 @@ void *retro_get_memory_data(unsigned id)
 
    return game_data();
    */
+   return NULL;
 }
 
 size_t retro_get_memory_size(unsigned id)

@@ -1,9 +1,11 @@
 #include <stdint.h>
+#include <string.h>
 
 #include <boolean.h>
 
 #include "m68k/m68k.h"
 #include "emulator.h"
+
 
 //Memory Map of Palm m515
 //0x00000000-0x01000000 RAM, the first 256(0x100) bytes is copyed from the first 256 bytes of ROM before boot, this applys to all palms with the 68k architecture
@@ -23,19 +25,21 @@ bool     palmTouchscreenTouched;
 
 void emulatorInit(uint8_t* palmRomDump){
    m68k_init();
-   m68k_set_cpu_type(M68K_CPU_TYPE_68EC000);
+   m68k_set_cpu_type(M68K_CPU_TYPE_68000);
    
    memset(palmRam, 0x00, RAM_SIZE);
    memcpy(palmRom, palmRomDump, ROM_SIZE);
    memcpy(palmRam, palmRom, 256);//copy ROM header
    
    m68k_pulse_reset();
+}
 
-   
+void emulatorReset(){
+   m68k_pulse_reset();
 }
 
 uint32_t emulatorInstallPrcPdb(uint8_t* data, uint32_t size){
-   
+   return 1;
 }
 
 void emulateFrame(){

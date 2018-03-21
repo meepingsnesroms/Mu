@@ -32,8 +32,6 @@
 #ifndef M68KCONF__HEADER
 #define M68KCONF__HEADER
 
-#include <retro_inline.h>
-
 /* Configuration switches.
  * Use OPT_SPECIFY_HANDLER for configuration options that allow callbacks.
  * OPT_SPECIFY_HANDLER causes the core to link directly to the function

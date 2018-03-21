@@ -24,5 +24,6 @@ extern uint16_t palmTouchscreenY;
 extern bool     palmTouchscreenTouched;
 
 void emulatorInit(uint8_t* palmRomDump);
+void emulatorReset();
 uint32_t emulatorInstallPrcPdb(uint8_t* data, uint32_t size);
 void emulateFrame();
