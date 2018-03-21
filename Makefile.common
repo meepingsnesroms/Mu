@@ -9,8 +9,8 @@ INCFLAGS := -I$(EMU_PATH)/libretro-common/include
 
 SOURCES_C := $(EMU_PATH)/libretro.c \
 		$(EMU_PATH)/emulator.c \
-		$(EMU_PATH)/memoryaccess.c \
-      $(EMU_PATH)/hardwareregisters.c \
+		$(EMU_PATH)/memoryAccess.c \
+      $(EMU_PATH)/hardwareRegisters.c \
 		$(EMU_PATH)/m68k/m68kops.c \
       $(EMU_PATH)/m68k/m68kopnz.c \
       $(EMU_PATH)/m68k/m68kopdm.c \

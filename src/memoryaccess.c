@@ -2,7 +2,7 @@
 #include <stdio.h>
 
 #include "emulator.h"
-#include "hardwareregisters.h"
+#include "hardwareRegisters.h"
 #include "m68k/m68k.h"
 
 
@@ -18,7 +18,7 @@ unsigned int  m68k_read_memory_8(unsigned int address){
       return getHwRegister8(address - REG_START_ADDRESS);
    }
    
-   printf("Invalid 8 bit read at 0x%08X.\n", address);
+   //printf("Invalid 8 bit read at 0x%08X.\n", address);
    
    return 0x00;
 }
@@ -34,7 +34,7 @@ unsigned int  m68k_read_memory_16(unsigned int address){
       return getHwRegister16(address - REG_START_ADDRESS);
    }
    
-   printf("Invalid 16 bit read at 0x%08X.\n", address);
+   //printf("Invalid 16 bit read at 0x%08X.\n", address);
    
    return 0x0000;
 }
@@ -50,7 +50,7 @@ unsigned int  m68k_read_memory_32(unsigned int address){
       return getHwRegister32(address - REG_START_ADDRESS);
    }
    
-   printf("Invalid 32 bit read at 0x%08X.\n", address);
+   //printf("Invalid 32 bit read at 0x%08X.\n", address);
    
    return 0x00000000;
 }
@@ -67,8 +67,9 @@ void m68k_write_memory_8(unsigned int address, unsigned int value){
    else if(address >= REG_START_ADDRESS && address < REG_START_ADDRESS + REG_SIZE){
       setHwRegister8(address - REG_START_ADDRESS, value);
    }
-   
-   printf("Invalid 8 bit write at 0x%08X with value of 0x%02X.\n", address, value);
+   else{
+      //printf("Invalid 8 bit write at 0x%08X with value of 0x%02X.\n", address, value);
+   }
 }
 
 void m68k_write_memory_16(unsigned int address, unsigned int value){
@@ -83,8 +84,9 @@ void m68k_write_memory_16(unsigned int address, unsigned int value){
    else if(address >= REG_START_ADDRESS && address < REG_START_ADDRESS + REG_SIZE){
       setHwRegister16(address - REG_START_ADDRESS, value);
    }
-   
-   printf("Invalid 16 bit write at 0x%08X with value of 0x%04X.\n", address, value);
+   else{
+      //printf("Invalid 16 bit write at 0x%08X with value of 0x%04X.\n", address, value);
+   }
 }
 
 void m68k_write_memory_32(unsigned int address, unsigned int value){
@@ -101,8 +103,9 @@ void m68k_write_memory_32(unsigned int address, unsigned int value){
    else if(address >= REG_START_ADDRESS && address < REG_START_ADDRESS + REG_SIZE){
       setHwRegister32(address - REG_START_ADDRESS, value);
    }
-   
-   printf("Invalid 32 bit write at 0x%08X with value of 0x%08X.\n", address, value);
+   else{
+      //printf("Invalid 32 bit write at 0x%08X with value of 0x%08X.\n", address, value);
+   }
 }
 
 void m68k_write_memory_32_pd(unsigned int address, unsigned int value){
@@ -123,8 +126,9 @@ void m68k_write_memory_32_pd(unsigned int address, unsigned int value){
       //I dont know the interaction between the hw registers and the malformed opcode
       printf("Possibly fatal error: Predecrement swaped 32bit write to hw register: 0x%08X, at PC: 0x%08X\n", address, m68k_get_reg(NULL, M68K_REG_PC));
    }
-   
-   printf("Invalid predecrement swapped 32 bit write at 0x%08X with value of 0x%08X.\n", address, value);
+   else{
+      //printf("Invalid predecrement swapped 32 bit write at 0x%08X with value of 0x%08X.\n", address, value);
+   }
 }
 
 

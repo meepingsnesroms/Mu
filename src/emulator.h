@@ -15,6 +15,9 @@ enum emu_error_t{
 #define buttonUp 0
 //etc...
 
+//config options
+#define EMU_FPS 60
+
 //chip addresses
 #define RAM_START_ADDRESS 0x00000000
 #define ROM_START_ADDRESS 0x10000000
@@ -28,6 +31,12 @@ extern uint16_t palmFramebuffer[];
 extern uint8_t  palmRam[];
 extern uint8_t  palmRom[];
 extern uint8_t  palmReg[];
+uint32_t        palmCpuFrequency;
+uint32_t        palmCrystalCycles;
+uint32_t        palmCycleCounter;
+bool            palmCrystal;
+
+//i/o
 extern uint16_t palmButtonState;
 extern uint16_t palmTouchscreenX;
 extern uint16_t palmTouchscreenY;
