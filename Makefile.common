@@ -1,4 +1,4 @@
-EMU_PATH := $(CORE_DIR)
+EMU_PATH := $(CORE_DIR)/src
 
 INCFLAGS := -I$(EMU_PATH)/libretro-common/include
 #-I$(NP2_PATH) \

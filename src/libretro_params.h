@@ -11,7 +11,7 @@
 #define LR_CORENAME        "PersianTree"
 #define LR_LIBVERSION      "0.86+"
 #define LR_VALIDFILEEXT    "prc|pdb"
-#define LR_NEEDFILEPATH    true
+#define LR_NEEDFILEPATH    false
 #define LR_BLOCKARCEXTRACT false
 #define LR_REQUIRESROM     false
 

@@ -47,8 +47,6 @@ void retro_init(void)
    
    if(environ_cb(RETRO_ENVIRONMENT_SET_PIXEL_FORMAT, &rgb565))
       log_cb(RETRO_LOG_INFO, "Frontend supports RGB565 - will use that instead of XRGB1555.\n");
-   
-   //emulatorInit();
 }
 
 void retro_deinit(void)
@@ -199,6 +197,15 @@ bool retro_load_game(const struct retro_game_info *info)
       emulatorInit(palmRom);
    else
       return false;
+   
+   if(info != NULL){
+      uint32_t prcSuccess = emulatorInstallPrcPdb(info->data, info->size);
+      //pretend to pass for now
+      /*
+      if(prcSuccess != EMU_ERROR_NONE)
+         return false;
+      */
+   }
 
    return true;
 }
