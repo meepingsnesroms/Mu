@@ -56,7 +56,7 @@ void setPllfsr16(unsigned int value){
       registerArrayWrite16(PLLFSR, value & 0x4FFF);
       uint32_t p = value & 0x00FF;
       uint32_t q = (value & 0x0F00) >> 8;
-      uint32_t newCrystalCycles = 2 * (14 * (p + 1) + q + 1);
+      uint32_t newCrystalCycles = 14 * (p + 1) + q + 1;
       uint32_t newFrequency = newCrystalCycles * 32768;
       printf("New CPU frequency of:%d cycles per second.\n", newFrequency);
       printf("New clk32 cycle count of :%d.\n", newCrystalCycles);

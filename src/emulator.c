@@ -39,7 +39,7 @@ void emulatorInit(uint8_t* palmRomDump){
    memcpy(palmRom, palmRomDump, ROM_SIZE);
    memcpy(palmRam, palmRom, 256);//copy ROM header
    initHwRegisters();
-   palmCrystalCycles = 2 * (14 * (71 + 1) + 3 + 1);
+   palmCrystalCycles = 14 * (71 + 1) + 3 + 1;
    palmCpuFrequency = palmCrystalCycles * 32768;
    palmCycleCounter = 0;
    
