@@ -8,15 +8,14 @@
 
 /* Read from anywhere */
 unsigned int  m68k_read_memory_8(unsigned int address){
-   if(address >= RAM_START_ADDRESS && address < RAM_START_ADDRESS + RAM_SIZE){
+   if(address >= RAM_START_ADDRESS && address < RAM_START_ADDRESS + RAM_SIZE)
       return palmRam[address - RAM_START_ADDRESS];
-   }
-   else if(address >= ROM_START_ADDRESS && address < ROM_START_ADDRESS + ROM_SIZE){
+   else if(address >= ROM_START_ADDRESS && address < ROM_START_ADDRESS + ROM_SIZE)
       return palmRom[address - ROM_START_ADDRESS];
-   }
-   else if(address >= REG_START_ADDRESS && address < REG_START_ADDRESS + REG_SIZE){
+   else if(address >= REG_START_ADDRESS && address < REG_START_ADDRESS + REG_SIZE)
       return getHwRegister8(address - REG_START_ADDRESS);
-   }
+   else if(address >= SED1376_REG_START_ADDRESS && address < SED1376_REG_START_ADDRESS + SED1376_REG_SIZE)
+      return sed1376GetRegister(address - SED1376_REG_START_ADDRESS);
    
    //printf("Invalid 8 bit read at 0x%08X.\n", address);
    
@@ -24,15 +23,14 @@ unsigned int  m68k_read_memory_8(unsigned int address){
 }
 
 unsigned int  m68k_read_memory_16(unsigned int address){
-   if(address >= RAM_START_ADDRESS && address < RAM_START_ADDRESS + RAM_SIZE){
+   if(address >= RAM_START_ADDRESS && address < RAM_START_ADDRESS + RAM_SIZE)
       return palmRam[address - RAM_START_ADDRESS] << 8 | palmRam[address - RAM_START_ADDRESS + 1];
-   }
-   else if(address >= ROM_START_ADDRESS && address < ROM_START_ADDRESS + ROM_SIZE){
+   else if(address >= ROM_START_ADDRESS && address < ROM_START_ADDRESS + ROM_SIZE)
       return palmRom[address - ROM_START_ADDRESS] << 8 | palmRom[address - ROM_START_ADDRESS + 1];
-   }
-   else if(address >= REG_START_ADDRESS && address < REG_START_ADDRESS + REG_SIZE){
+   else if(address >= REG_START_ADDRESS && address < REG_START_ADDRESS + REG_SIZE)
       return getHwRegister16(address - REG_START_ADDRESS);
-   }
+   else if(address >= SED1376_REG_START_ADDRESS && address < SED1376_REG_START_ADDRESS + SED1376_REG_SIZE)
+      return sed1376GetRegister(address - SED1376_REG_START_ADDRESS);
    
    //printf("Invalid 16 bit read at 0x%08X.\n", address);
    
@@ -40,15 +38,14 @@ unsigned int  m68k_read_memory_16(unsigned int address){
 }
 
 unsigned int  m68k_read_memory_32(unsigned int address){
-   if(address >= RAM_START_ADDRESS && address < RAM_START_ADDRESS + RAM_SIZE){
+   if(address >= RAM_START_ADDRESS && address < RAM_START_ADDRESS + RAM_SIZE)
       return palmRam[address - RAM_START_ADDRESS] << 24 | palmRam[address - RAM_START_ADDRESS + 1] << 16 | palmRam[address - RAM_START_ADDRESS + 2] << 8 | palmRam[address - RAM_START_ADDRESS + 3];
-   }
-   else if(address >= ROM_START_ADDRESS && address < ROM_START_ADDRESS + ROM_SIZE){
+   else if(address >= ROM_START_ADDRESS && address < ROM_START_ADDRESS + ROM_SIZE)
       return palmRom[address - ROM_START_ADDRESS] << 24 | palmRom[address - ROM_START_ADDRESS + 1] << 16 | palmRom[address - ROM_START_ADDRESS + 2] << 8 | palmRom[address - ROM_START_ADDRESS + 3];
-   }
-   else if(address >= REG_START_ADDRESS && address < REG_START_ADDRESS + REG_SIZE){
+   else if(address >= REG_START_ADDRESS && address < REG_START_ADDRESS + REG_SIZE)
       return getHwRegister32(address - REG_START_ADDRESS);
-   }
+   else if(address >= SED1376_REG_START_ADDRESS && address < SED1376_REG_START_ADDRESS + SED1376_REG_SIZE)
+      return sed1376GetRegister(address - SED1376_REG_START_ADDRESS);
    
    //printf("Invalid 32 bit read at 0x%08X.\n", address);
    

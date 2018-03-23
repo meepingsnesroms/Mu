@@ -18,13 +18,19 @@ enum emu_error_t{
 //config options
 #define EMU_FPS 60
 
-//chip addresses
+//memory chip addresses
 #define RAM_START_ADDRESS 0x00000000
 #define ROM_START_ADDRESS 0x10000000
 #define REG_START_ADDRESS 0xFFFFF000
 #define RAM_SIZE (16 * 0x100000)//16mb ram
 #define ROM_SIZE (4 * 0x100000)//4mb rom
 #define REG_SIZE 0xDFF
+
+//display chip addresses
+#define SED1376_REG_START_ADDRESS 0x1FF80000
+#define SED1376_FB_START_ADDRESS 0x1FFA0000
+#define SED1376_REG_SIZE 0x20000//it has 0x20000 used address space entrys but only 0xB3 registers
+#define SED1376_FB_SIZE  0x14000//likely also has 0x20000 used address space entrys
 
 //emulator data
 extern uint16_t palmFramebuffer[];

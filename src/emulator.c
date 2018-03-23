@@ -70,6 +70,9 @@ void emulatorSaveState(uint8_t* data){
    offset += sizeof(uint32_t);
    memcpy(data + offset, &palmCycleCounter, sizeof(uint32_t));
    offset += sizeof(uint32_t);
+   data[offset] = palmCrystal;
+   offset += 1;
+   
 }
 
 void emulatorLoadState(uint8_t* data){
@@ -86,6 +89,8 @@ void emulatorLoadState(uint8_t* data){
    offset += sizeof(uint32_t);
    memcpy(&palmCycleCounter, data + offset, sizeof(uint32_t));
    offset += sizeof(uint32_t);
+   palmCrystal = data[offset];
+   offset += 1;
 }
 
 uint32_t emulatorInstallPrcPdb(uint8_t* data, uint32_t size){
