@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 
 #include <boolean.h>
 
@@ -178,7 +179,9 @@ void setHwRegister32(unsigned int address, unsigned int value){
 }
 
 
-void initHwRegisters(){
+void resetHwRegisters(){
+   memset(palmReg, 0x00, REG_SIZE);
+   
    //system control
    registerArrayWrite8(SCR, 0x1C);
    

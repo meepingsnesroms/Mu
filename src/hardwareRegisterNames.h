@@ -41,21 +41,21 @@
 // PIO - Parallel IO
 #define PADIR     0x400 // Port A Direction Register
 #define PADATA    0x401 // Port A Data Register
-#define PAPUEN    0x402 // Port A Pull-Down Enable Register
+#define PAPUEN    0x402 // Port A Pull-Up Enable Register
 
 #define PBDIR     0x408 // Port B Direction Register
 #define PBDATA    0x409 // Port B Data Register
-#define PBPUEN    0x40A // Port B Pull-Down Enable Register
+#define PBPUEN    0x40A // Port B Pull-Up Enable Register
 #define PBSEL     0x40B // Port B Select Register
 
 #define PCDIR     0x410 // Port C Direction Register
 #define PCDATA    0x411 // Port C Data Register
-#define PCPUEN    0x412 // Port C Pull-Down Enable Register
+#define PCPDEN    0x412 // Port C Pull-Down Enable Register
 #define PCSEL     0x413 // Port C Select Register
 
 #define PDDIR     0x418 // Port D Direction Register
 #define PDDATA    0x419 // Port D Data Register
-#define PDPUEN    0x41A // Port D Pullup Enable Register
+#define PDPUEN    0x41A // Port D Pull-Up Enable Register
 #define PDSEL     0x41B // Port D Select Register
 #define PDPOL     0x41C // Port D Polarity Register
 #define PDIRQEN   0x41D // Port D IRQ Enable Register
@@ -64,32 +64,32 @@
 
 #define PEDIR     0x420 // Port E Direction Register
 #define PEDATA    0x421 // Port E Data Register
-#define PEPUEN    0x422 // Port E Pullup Enable Register
+#define PEPUEN    0x422 // Port E Pull-Up Enable Register
 #define PESEL     0x423 // Port E Select Register
 
 #define PFDIR     0x428 // Port F Direction Register
 #define PFDATA    0x429 // Port F Data Register
-#define PFPUEN    0x42A // Port F Pullup Enable Register
+#define PFPUEN    0x42A // Port F Pull-Up Enable Register
 #define PFSEL     0x42B // Port F Select Register
 
 #define PGDIR     0x430 // Port G Direction Register
 #define PGDATA    0x431 // Port G Data Register
-#define PGPUEN    0x432 // Port G Pullup Enable Register
+#define PGPUEN    0x432 // Port G Pull-Up Enable Register
 #define PGSEL     0x433 // Port G Select Register
 
 #define PJDIR     0x438 // Port J Direction Register
 #define PJDATA    0x439 // Port J Data Register
-#define PJPUEN    0x43A // Port J Pullup Enable Register
+#define PJPUEN    0x43A // Port J Pull-Up Enable Register
 #define PJSEL     0x43B // Port J Select Register
 
 #define PKDIR     0x440 // Port K Direction Register
 #define PKDATA    0x441 // Port K Data Register
-#define PKPUEN    0x442 // Port K Pullup Enable Register
+#define PKPUEN    0x442 // Port K Pull-Up Enable Register
 #define PKSEL     0x443 // Port K Select Register
 
 #define PMDIR     0x448 // Port M Direction Register
 #define PMDATA    0x449 // Port M Data Register
-#define PMPUEN    0x44A // Port M Pullup Enable Register
+#define PMPUEN    0x44A // Port M Pull-Up Enable Register
 #define PMSEL     0x44B // Port M Select Register
 //verified
 
@@ -128,6 +128,14 @@
 #define URX1       0x904 // UART Unit 1 RX Register
 #define UTX1       0x906 // UART Unit 1 TX Register
 #define UMISC1     0x908 // UART Unit 1 Misc Register
+
+#define USTCNT2    0x910 // UART Unit 2 Status/Control Register
+#define UBAUD2     0x912 // UART Unit 2 Baud Control Register
+#define URX2       0x914 // UART Unit 2 RX Register
+#define UTX2       0x916 // UART Unit 2 TX Register
+#define UMISC2     0x918 // UART Unit 2 Misc Register
+#define NIPR2      0x91A // UART Unit 2 Non-Integer Prescaler Register
+#define HMARK      0x91C // UART Unit 2 FIFO Half Mark Register
 //verified
 
 // LCDC - LCD Controller
@@ -146,6 +154,7 @@
 // Reserved       0xA2B // Octet Terminal Count Register On Original Dragonball
 #define LFRCM     0xA31 // Frame Rate Control Modulation Register
 #define LGPMR     0xA33 // Gray Palette Mapping Register
+#define DMACR     0xA39 // DMA Control Register
 //verified
 
 // RTC - Real Time Clock
@@ -154,5 +163,10 @@
 #define RTCCTL    0xB0C // RTC Control Register
 #define RTCISR    0xB0E // RTC Interrupt Status Register
 #define RTCIENR   0xB10 // RTC Interrupt Enable Register
+#define STPWCH    0xB12 // Stopwatch Minutes Register
 #define DAYR      0xB1A // RTC Day Count Register
+//verified
+
+// RAM - (S)DRAM Control
+#define SDCTRL    0xC04 // SDRAM Control Register
 //verified

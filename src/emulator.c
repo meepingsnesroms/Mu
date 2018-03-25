@@ -7,11 +7,15 @@
 #include "m68k/m68k.h"
 #include "emulator.h"
 #include "hardwareRegisters.h"
+#include "sed1376.h"
 
 
 //Memory Map of Palm m515
-//0x00000000-0x01000000 RAM, the first 256(0x100) bytes is copyed from the first 256 bytes of ROM before boot, this applys to all palms with the 68k architecture
-//0x10000000-0x10400000 ROM, palmos41-en-m515.rom, substitute "en" for your language code
+//0x00000000-0x00FFFFFF RAM, the first 256(0x100) bytes is copyed from the first 256 bytes of ROM before boot, this applys to all palms with the 68k architecture
+//0x10000000-0x103FFFFF ROM, palmos41-en-m515.rom, substitute "en" for your language code
+//0x1FF80000-0x1FF800B3 sed1376(Display Controller) Registers
+//0x1FFA0000-0x1FFB3FFF sed1376(Display Controller) Framebuffer, this is not the same as the palm framebuffer which is always 16 bit color,
+//this buffer must be processed depending on whats in the sed1376 registers, the result is the palm framebuffer
 //0xFFFFF000-0xFFFFFDFF Hardware Registers
 //0xFFFFFF00-0xFFFFFFFF Bootloader, pesumably does the 256 byte ROM to RAM copy, never been dumped
 
@@ -37,14 +41,13 @@ void emulatorInit(uint8_t* palmRomDump){
    m68k_set_cpu_type(M68K_CPU_TYPE_68020);
    
    memset(palmRam, 0x00, RAM_SIZE);
-   memset(palmReg, 0x00, REG_SIZE);
    memcpy(palmRom, palmRomDump, ROM_SIZE);
    memcpy(palmRam, palmRom, 256);//copy ROM header
-   initHwRegisters();
+   resetHwRegisters();
+   sed1376Reset();
    palmCrystalCycles = 14 * (71 + 1) + 3 + 1;
    palmCpuFrequency = palmCrystalCycles * 32768;
    palmCycleCounter = 0;
-   palmCrystal = false;
    palmRtcFrameCounter = 0;
    
    palmClockMultiplier = 1;//Overclock disabled
@@ -55,6 +58,9 @@ void emulatorInit(uint8_t* palmRomDump){
 }
 
 void emulatorReset(){
+   //reset doesnt clear ram, all programs are stored in ram
+   resetHwRegisters();
+   sed1376Reset();
    m68k_pulse_reset();
 }
 
