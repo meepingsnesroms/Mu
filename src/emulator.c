@@ -6,6 +6,7 @@
 
 #include "m68k/m68k.h"
 #include "emulator.h"
+#include "hardwareRegisters.h"
 
 
 //Memory Map of Palm m515
@@ -15,20 +16,20 @@
 //0xFFFFFF00-0xFFFFFFFF Bootloader, pesumably does the 256 byte ROM to RAM copy, never been dumped
 
 
-uint16_t palmFramebuffer[160 * 240];//really 160*160, the extra pixels are the silkscreened digitizer area
 uint8_t  palmRam[RAM_SIZE];
 uint8_t  palmRom[ROM_SIZE];
 uint8_t  palmReg[REG_SIZE];
 uint32_t palmCpuFrequency;//cycles per second
 uint32_t palmCrystalCycles;//how many cycles before toggling the 32.768 kHz crystal
 uint32_t palmCycleCounter;//can be greater then 0 if too many cycles where run
-bool     palmCrystal;//current crystal state
 uint32_t palmRtcFrameCounter;//when this reaches EMU_FPS increment the real time clock
 
+uint16_t palmFramebuffer[160 * 240];//really 160*160, the extra pixels are the silkscreened digitizer area
 uint16_t palmButtonState;
 uint16_t palmTouchscreenX;
 uint16_t palmTouchscreenY;
 bool     palmTouchscreenTouched;
+uint32_t palmClockMultiplier;//used by the emulator to overclock the emulated palm
 
 
 void emulatorInit(uint8_t* palmRomDump){
@@ -46,6 +47,8 @@ void emulatorInit(uint8_t* palmRomDump){
    palmCrystal = false;
    palmRtcFrameCounter = 0;
    
+   palmClockMultiplier = 1;//Overclock disabled
+   
    m68k_pulse_reset();
    
    //printf("Boot ProgramCounter is:0x%08X\n", m68k_get_reg(NULL, M68K_REG_PC));
@@ -53,6 +56,10 @@ void emulatorInit(uint8_t* palmRomDump){
 
 void emulatorReset(){
    m68k_pulse_reset();
+}
+
+void emulatorSetRtc(uint32_t days, uint32_t hours, uint32_t minutes, uint32_t seconds){
+   setRtc(days, hours, minutes, seconds);
 }
 
 uint32_t emulatorGetStateSize(){
@@ -73,8 +80,6 @@ void emulatorSaveState(uint8_t* data){
    offset += sizeof(uint32_t);
    memcpy(data + offset, &palmCycleCounter, sizeof(uint32_t));
    offset += sizeof(uint32_t);
-   data[offset] = palmCrystal;
-   offset += 1;
    memcpy(data + offset, &palmRtcFrameCounter, sizeof(uint32_t));
    offset += sizeof(uint32_t);
    
@@ -94,8 +99,6 @@ void emulatorLoadState(uint8_t* data){
    offset += sizeof(uint32_t);
    memcpy(&palmCycleCounter, data + offset, sizeof(uint32_t));
    offset += sizeof(uint32_t);
-   palmCrystal = data[offset];
-   offset += 1;
    memcpy(&palmRtcFrameCounter, data + offset, sizeof(uint32_t));
    offset += sizeof(uint32_t);
 }
@@ -106,8 +109,8 @@ uint32_t emulatorInstallPrcPdb(uint8_t* data, uint32_t size){
 
 void emulateFrame(){
    while(palmCycleCounter < palmCpuFrequency / EMU_FPS){
-      palmCycleCounter += m68k_execute(palmCrystalCycles);//normaly 33mhz / 60fps
-      palmCrystal = !palmCrystal;
+      palmCycleCounter += m68k_execute(palmCrystalCycles * palmClockMultiplier) / palmClockMultiplier;//normaly 33mhz / 60fps
+      toggleClk32();
    }
    palmCycleCounter -= palmCpuFrequency / EMU_FPS;
    

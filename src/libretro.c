@@ -5,6 +5,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <time.h>
 
 #include <retro_miscellaneous.h>
 
@@ -197,6 +198,12 @@ bool retro_load_game(const struct retro_game_info *info)
       emulatorInit(palmRom);
    else
       return false;
+   
+   time_t rawTime;
+   struct tm* timeInfo;
+   time(&rawTime);
+   timeInfo = localtime(&rawTime);
+   emulatorSetRtc(timeInfo->tm_yday, timeInfo->tm_hour, timeInfo->tm_min, timeInfo->tm_sec);
    
    if(info != NULL){
       uint32_t prcSuccess = emulatorInstallPrcPdb(info->data, info->size);

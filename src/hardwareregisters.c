@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <time.h>
 
 #include <boolean.h>
 
@@ -43,12 +42,6 @@ void printUnknownHwAccess(unsigned int address, unsigned int value, unsigned int
    else{
       printf("Cpu Read %d bits from register 0x%04X.\n", size, address);
    }
-}
-
-
-unsigned int getPllfsr16(){
-   unsigned int currentPllfsr = registerArrayRead16(PLLFSR);
-   return palmCrystal ? currentPllfsr | 0x8000 : currentPllfsr & 0x7FFF;
 }
 
 void setPllfsr16(unsigned int value){
@@ -98,6 +91,11 @@ void rtcAddSecond(){
    }
 }
 
+void toggleClk32(){
+   //more will be added here for timers
+   registerArrayWrite16(PLLFSR, registerArrayRead16(PLLFSR) ^ 0x8000);
+}
+
 
 unsigned int getHwRegister8(unsigned int address){
    switch(address){
@@ -112,7 +110,8 @@ unsigned int getHwRegister16(unsigned int address){
    switch(address){
          
       case PLLFSR:
-         return getPllfsr16();
+         //simple read, no actions needed
+         return registerArrayRead16(address);
          
       default:
          printUnknownHwAccess(address, 0, 16, false);
@@ -268,21 +267,21 @@ void initHwRegisters(){
    registerArrayWrite8(DMACR, 0x62);
    
    //realtime clock
-   uint32_t rtcTime;
-   time_t rawTime;
-   struct tm* timeInfo;
-   time(&rawTime);
-   timeInfo = localtime(&rawTime);
-   
-   rtcTime = timeInfo->tm_sec & 0x0000003F;
-   rtcTime |= (timeInfo->tm_min << 16) & 0x003F0000;
-   rtcTime |= (timeInfo->tm_hour << 24) & 0x1F000000;
-   registerArrayWrite32(RTCTIME, rtcTime);
+   //RTCTIME is not changed on reset
    registerArrayWrite16(WATCHDOG, 0x0001);
    registerArrayWrite16(RTCCTL, 0x0080);//conflicting size in datasheet, it says its 8 bit but provides 16 bit values
    registerArrayWrite16(STPWCH, 0x003F);//conflicting size in datasheet, it says its 8 bit but provides 16 bit values
-   registerArrayWrite16(DAYR, timeInfo->tm_yday & 0x01FF);
+   //DAYR is not changed on reset
    
    //sdram control, unused since ram refresh is unemulated
    registerArrayWrite16(SDCTRL, 0x003C);
+}
+
+void setRtc(uint32_t days, uint32_t hours, uint32_t minutes, uint32_t seconds){
+   uint32_t rtcTime;
+   rtcTime = seconds & 0x0000003F;
+   rtcTime |= (minutes << 16) & 0x003F0000;
+   rtcTime |= (hours << 24) & 0x1F000000;
+   registerArrayWrite32(RTCTIME, rtcTime);
+   registerArrayWrite16(DAYR, days & 0x01FF);
 }

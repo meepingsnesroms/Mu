@@ -33,25 +33,26 @@ enum emu_error_t{
 #define SED1376_FB_SIZE  0x14000//likely also has 0x20000 used address space entrys
 
 //emulator data
-extern uint16_t palmFramebuffer[];
 extern uint8_t  palmRam[];
 extern uint8_t  palmRom[];
 extern uint8_t  palmReg[];
 extern uint32_t palmCpuFrequency;
 extern uint32_t palmCrystalCycles;
 extern uint32_t palmCycleCounter;
-extern bool     palmCrystal;
 extern uint32_t palmRtcFrameCounter;
 
 //i/o
+extern uint16_t palmFramebuffer[];
 extern uint16_t palmButtonState;
 extern uint16_t palmTouchscreenX;
 extern uint16_t palmTouchscreenY;
 extern bool     palmTouchscreenTouched;
+extern uint32_t palmClockMultiplier;
 
 //functions
 void emulatorInit(uint8_t* palmRomDump);
 void emulatorReset();
+void emulatorSetRtc(uint32_t days, uint32_t hours, uint32_t minutes, uint32_t seconds);
 uint32_t emulatorGetStateSize();
 void emulatorSaveState(uint8_t* data);
 void emulatorLoadState(uint8_t* data);
