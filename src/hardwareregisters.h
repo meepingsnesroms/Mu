@@ -1,5 +1,7 @@
 #pragma once
 
+#include <boolean.h>
+
 //memory accessors
 unsigned int getHwRegister8(unsigned int address);
 unsigned int getHwRegister16(unsigned int address);
@@ -11,6 +13,7 @@ void setHwRegister32(unsigned int address, unsigned int value);
 //timing
 void rtcAddSecond();
 void toggleClk32();
+bool cpuIsOn();
 
 //config
 void resetHwRegisters();

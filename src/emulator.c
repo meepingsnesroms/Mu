@@ -45,8 +45,8 @@ void emulatorInit(uint8_t* palmRomDump){
    memcpy(palmRam, palmRom, 256);//copy ROM header
    resetHwRegisters();
    sed1376Reset();
-   palmCrystalCycles = 14 * (71 + 1) + 3 + 1;
-   palmCpuFrequency = palmCrystalCycles * 32768;
+   palmCrystalCycles = 2 * (14 * (71/*p*/ + 1) + 3/*q*/ + 1) / 2/*prescaler1*/;
+   palmCpuFrequency = palmCrystalCycles * CRYSTAL_FREQUENCY;
    palmCycleCounter = 0;
    palmRtcFrameCounter = 0;
    
@@ -115,7 +115,10 @@ uint32_t emulatorInstallPrcPdb(uint8_t* data, uint32_t size){
 
 void emulateFrame(){
    while(palmCycleCounter < palmCpuFrequency / EMU_FPS){
-      palmCycleCounter += m68k_execute(palmCrystalCycles * palmClockMultiplier) / palmClockMultiplier;//normaly 33mhz / 60fps
+      if(cpuIsOn())
+         palmCycleCounter += m68k_execute(palmCrystalCycles * palmClockMultiplier) / palmClockMultiplier;//normaly 33mhz / 60fps
+      else
+         palmCycleCounter += palmCpuFrequency / EMU_FPS;
       toggleClk32();
    }
    palmCycleCounter -= palmCpuFrequency / EMU_FPS;

@@ -17,6 +17,7 @@ enum emu_error_t{
 
 //config options
 #define EMU_FPS 60
+#define CRYSTAL_FREQUENCY 32768
 
 //memory chip addresses
 #define RAM_START_ADDRESS 0x00000000

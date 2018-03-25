@@ -5,6 +5,7 @@
 
 #include "emulator.h"
 #include "hardwareRegisterNames.h"
+#include "m68k/m68k.h"
 
 
 static inline unsigned int registerArrayRead8(unsigned int address){
@@ -49,14 +50,35 @@ void setPllfsr16(unsigned int value){
    if(!(registerArrayRead16(PLLFSR) & 0x4000)){
       //frequency protect bit not set
       registerArrayWrite16(PLLFSR, value & 0x4FFF);
+      uint32_t prescaler1 = (registerArrayRead16(PLLCR) & 0x0080) ? 2 : 1;
       uint32_t p = value & 0x00FF;
       uint32_t q = (value & 0x0F00) >> 8;
-      uint32_t newCrystalCycles = 14 * (p + 1) + q + 1;
-      uint32_t newFrequency = newCrystalCycles * 32768;
+      uint32_t newCrystalCycles = 2 * (14 * (p + 1) + q + 1) / prescaler1;
+      uint32_t newFrequency = newCrystalCycles * CRYSTAL_FREQUENCY;
       printf("New CPU frequency of:%d cycles per second.\n", newFrequency);
       printf("New clk32 cycle count of :%d.\n", newCrystalCycles);
       
       palmCpuFrequency = newFrequency;
+   }
+}
+
+void setPllcr(unsigned int value){
+   //values that matter are disable pll, prescaler 1 and possibly wakeselect
+   registerArrayWrite16(PLLCR, value & 0x3FBB);
+   uint16_t pllfsr = registerArrayRead16(PLLFSR);
+   uint32_t prescaler1 = (value & 0x0080) ? 2 : 1;
+   uint32_t p = pllfsr & 0x00FF;
+   uint32_t q = (pllfsr & 0x0F00) >> 8;
+   uint32_t newCrystalCycles = 2 * (14 * (p + 1) + q + 1) / prescaler1;
+   uint32_t newFrequency = newCrystalCycles * CRYSTAL_FREQUENCY;
+   printf("New CPU frequency of:%d cycles per second.\n", newFrequency);
+   printf("New clk32 cycle count of :%d.\n", newCrystalCycles);
+   
+   palmCpuFrequency = newFrequency;
+   
+   if(value & 0x0008){
+      //the pll is disabled, the cpu is off, end execution now
+      m68k_end_timeslice();
    }
 }
 
@@ -97,9 +119,39 @@ void toggleClk32(){
    registerArrayWrite16(PLLFSR, registerArrayRead16(PLLFSR) ^ 0x8000);
 }
 
+bool cpuIsOn(){
+   return registerArrayRead16(PLLCR) & 0x0008;
+}
+
 
 unsigned int getHwRegister8(unsigned int address){
    switch(address){
+      //select between gpio or special function
+      case PBSEL:
+      case PCSEL:
+      case PDSEL:
+      case PESEL:
+      case PFSEL:
+      case PGSEL:
+      case PJSEL:
+      case PKSEL:
+      case PMSEL:
+         
+      //pull up/down enable
+      case PAPUEN:
+      case PBPUEN:
+      case PCPDEN:
+      case PDPUEN:
+      case PEPUEN:
+      case PFPUEN:
+      case PGPUEN:
+      case PJPUEN:
+      case PKPUEN:
+      case PMPUEN:
+         //simple read, no actions needed
+         //PGPUEN, PGSEL PMSEL and PMPUEN lack the top 2 bits but that is handled on write
+         //PDSEL lacks the bottom 4 bits but that is handled on write
+         return registerArrayRead8(address);
          
       default:
          printUnknownHwAccess(address, 0, 8, false);
@@ -110,7 +162,9 @@ unsigned int getHwRegister8(unsigned int address){
 unsigned int getHwRegister16(unsigned int address){
    switch(address){
          
+      case PLLCR:
       case PLLFSR:
+      case SDCTRL:
          //simple read, no actions needed
          return registerArrayRead16(address);
          
@@ -124,6 +178,7 @@ unsigned int getHwRegister32(unsigned int address){
    switch(address){
          
       case RTCTIME:
+      case IDR:
          //simple read, no actions needed
          return registerArrayRead32(address);
          
@@ -136,6 +191,39 @@ unsigned int getHwRegister32(unsigned int address){
 
 void setHwRegister8(unsigned int address, unsigned int value){
    switch(address){
+      case PDSEL:
+         //write without the bottom 4 bits
+         registerArrayWrite8(address, value & 0xF0);
+         break;
+         
+      case PGSEL:
+      case PMSEL:
+      case PGPUEN:
+      case PMPUEN:
+         //write without the top 2 bits
+         registerArrayWrite8(address, value & 0x3F);
+         break;
+         
+      //select between gpio or special function
+      case PBSEL:
+      case PCSEL:
+      case PESEL:
+      case PFSEL:
+      case PJSEL:
+      case PKSEL:
+      
+      //pull up/down enable
+      case PAPUEN:
+      case PBPUEN:
+      case PCPDEN:
+      case PDPUEN:
+      case PEPUEN:
+      case PFPUEN:
+      case PJPUEN:
+      case PKPUEN:
+         //simple write, no actions needed
+         registerArrayWrite8(address, value);
+         break;
          
       default:
          printUnknownHwAccess(address, value, 8, true);
@@ -151,6 +239,11 @@ void setHwRegister16(unsigned int address, unsigned int value){
          setPllfsr16(value);
          break;
          
+      case SDCTRL:
+         //missing bits 13, 9, 8 and 7
+         registerArrayWrite16(address, value & 0xDC7F);
+         break;
+         
       default:
          printUnknownHwAccess(address, value, 16, true);
          registerArrayWrite16(address, value);
@@ -164,12 +257,14 @@ void setHwRegister32(unsigned int address, unsigned int value){
          registerArrayWrite32(address, value & 0x1F3F003F);
          break;
          
-         /*
-      case :
+      case IDR:
+         //invalid write, do nothing
+         break;
+         
+      case LSSA:
          //simple write, no actions needed
          registerArrayWrite32(address, value);
          break;
-         */
       
       default:
          printUnknownHwAccess(address, value, 32, true);
