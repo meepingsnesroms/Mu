@@ -37,6 +37,9 @@ static inline void registerArrayWrite32(unsigned int address, unsigned int value
 }
 
 
+uint32_t rtiInterruptCounter;
+
+
 void printUnknownHwAccess(unsigned int address, unsigned int value, unsigned int size, bool isWrite){
    if(isWrite){
       printf("Cpu Wrote %d bits of 0x%08X to register 0x%04X.\n", size, value, address);
@@ -82,9 +85,24 @@ void setPllcr(unsigned int value){
    }
 }
 
+void sendInterruptEvent(uint32_t interruptBit){
+   //allows for masking by IMR and logging it in IPR
+   uint32_t pendingInterrupts = registerArrayRead32(IPR);
+   uint32_t allowedInterrupts = ~registerArrayRead32(IMR);
+   uint32_t activeInterrupts = registerArrayRead32(ISR);
+   
+   pendingInterrupts |= interruptBit;
+   activeInterrupts |= interruptBit & allowedInterrupts;
+   
+   registerArrayWrite32(ISR, activeInterrupts);
+   registerArrayWrite32(IPR, pendingInterrupts);
+}
+
 void rtcAddSecond(){
    if(registerArrayRead16(RTCCTL) & 0x0080){
       //rtc enable bit set
+      uint16_t enabledRtcInterrupts = registerArrayRead16(RTCIENR);
+      uint16_t rtcInterruptEvents;
       uint32_t newRtcTime;
       uint32_t oldRtcTime = registerArrayRead32(RTCTIME);
       uint32_t hours = oldRtcTime >> 24;
@@ -92,19 +110,30 @@ void rtcAddSecond(){
       uint32_t seconds = oldRtcTime & 0x0000003F;
       
       seconds++;
+      rtcInterruptEvents = 0x0010;//1 second interrupt
       if(seconds >= 60){
          minutes++;
          seconds = 0;
+         rtcInterruptEvents |= 0x0002;//1 minute interrupt
          if(minutes >= 60){
             hours++;
             minutes = 0;
+            rtcInterruptEvents |= 0x0020;//1 hour interrupt
             if(hours >= 24){
                hours = 0;
                uint16_t days = registerArrayRead16(DAYR);
                days++;
                registerArrayWrite16(DAYR, days & 0x01FF);
+               rtcInterruptEvents |= 0x0008;//1 day interrupt
             }
          }
+      }
+      
+      if(rtcInterruptEvents & enabledRtcInterrupts){
+         //at least 1 event occured, trigger RTI interrupt
+         uint16_t rtcTriggeredInterrupts = registerArrayRead16(RTCISR);
+         rtcTriggeredInterrupts |= rtcInterruptEvents & enabledRtcInterrupts;
+         sendInterruptEvent(0x00000010);
       }
       
       newRtcTime = seconds & 0x0000003F;
@@ -117,10 +146,178 @@ void rtcAddSecond(){
 void toggleClk32(){
    //more will be added here for timers
    registerArrayWrite16(PLLFSR, registerArrayRead16(PLLFSR) ^ 0x8000);
+   
+   //rtcInterruptCounter++
 }
 
 bool cpuIsOn(){
-   return registerArrayRead16(PLLCR) & 0x0008;
+   return !(registerArrayRead16(PLLCR) & 0x0008);
+}
+
+void updateInterrupts(){
+   uint32_t activeInterrupts = registerArrayRead32(ISR) & registerArrayRead32(IMR);
+   uint16_t interruptLevelControlRegister = registerArrayRead16(ILCR);
+   uint32_t intLevel = 0;
+   
+   if(activeInterrupts & 0x00800000){
+      //EMIQ - Emulator Irq, has nothing to do with emulation, used for debugging on a dev board
+      intLevel = 7;
+   }
+   
+   /*
+   if(activeInterrupts & 0x00400000){
+      //RTI - Real Time Interrupt
+      if(intLevel < 4)
+         intLevel = 4;
+   }
+   */
+   
+   if(activeInterrupts & 0x00200000){
+      //SPI1
+      uint32_t spi1IrqLevel = interruptLevelControlRegister >> 12;
+      if(intLevel < spi1IrqLevel)
+         intLevel = spi1IrqLevel;
+   }
+   
+   if(activeInterrupts & 0x00100000){
+      //IRQ5
+      if(intLevel < 5)
+         intLevel = 5;
+   }
+   
+   /*
+   if(activeInterrupts & 0x00080000){
+      //IRQ6
+      if(intLevel < 6)
+         intLevel = 6;
+   }
+   */
+   
+   if(activeInterrupts & 0x00040000){
+      //IRQ3
+      if(intLevel < 3)
+         intLevel = 3;
+   }
+   
+   if(activeInterrupts & 0x00020000){
+      //IRQ2
+      if(intLevel < 2)
+         intLevel = 2;
+   }
+   
+   if(activeInterrupts & 0x00010000){
+      //IRQ1
+      if(intLevel < 1)
+         intLevel = 1;
+   }
+   
+   if(activeInterrupts & 0x00002000){
+      //PWM2
+      uint32_t pwm2IrqLevel = (interruptLevelControlRegister >> 4) & 0x0007;
+      if(intLevel < pwm2IrqLevel)
+         intLevel = pwm2IrqLevel;
+   }
+   
+   if(activeInterrupts & 0x00001000){
+      //UART2
+      uint32_t uart2IrqLevel = (interruptLevelControlRegister >> 8) & 0x0007;
+      if(intLevel < uart2IrqLevel)
+         intLevel = uart2IrqLevel;
+   }
+   
+   /*
+   if(activeInterrupts & 0x00000800){
+      //INT3
+      if(intLevel < 4)
+         intLevel = 4;
+   }
+   
+   if(activeInterrupts & 0x00000400){
+      //INT2
+      if(intLevel < 4)
+         intLevel = 4;
+   }
+   
+   if(activeInterrupts & 0x00000200){
+      //INT1
+      if(intLevel < 4)
+         intLevel = 4;
+   }
+   
+   if(activeInterrupts & 0x00000100){
+      //INT0
+      if(intLevel < 4)
+         intLevel = 4;
+   }
+
+   if(activeInterrupts & 0x00000080){
+      //PWM1
+      if(intLevel < 6)
+         intlevel = 6;
+   }
+
+   if(activeInterrupts & 0x00000040){
+      //KB - Keyboard
+      if(intLevel < 4)
+         intLevel = 4;
+   }
+   */
+    
+   if(activeInterrupts & 0x00000020){
+      //TMR2 - Timer 2
+      uint32_t timer2IrqLevel = interruptLevelControlRegister & 0x0007;
+      if(intLevel < timer2IrqLevel)
+         intLevel = timer2IrqLevel;
+   }
+   
+   /*
+   if(activeInterrupts & 0x00000010){
+      //RTC - Real Time Clock
+      if(intLevel < 4)
+         intLevel = 4;
+   }
+   */
+   
+   /*
+   if(activeInterrupts & 0x00000008){
+      //WDT - Watchdog Timer
+      if(intLevel < 4)
+         intLevel = 4;
+   }
+   
+   if(activeInterrupts & 0x00000004){
+      //UART1
+      if(intLevel < 4)
+         intLevel = 4;
+   }
+
+   if(activeInterrupts & 0x00000002){
+      //TMR1 - Timer 1
+      if(intLevel < 6)
+         intLevel = 6;
+   }
+   
+   if(activeInterrupts & 0x00000001){
+      //SPI2
+      if(intLevel < 4)
+         intLevel = 4;
+   }
+   */
+   
+   if(activeInterrupts & 0x00080082){
+      //All Level 6 Interrupts
+      if(intLevel < 6)
+         intLevel = 6;
+   }
+   
+   if(activeInterrupts & 0x00400F5D){
+      //All Level 4 Interrupts
+      if(intLevel < 4)
+         intLevel = 4;
+   }
+   
+   if(intLevel != 0)
+      m68k_set_irq(intLevel);
 }
 
 
@@ -246,6 +443,11 @@ void setHwRegister16(unsigned int address, unsigned int value){
          
       case PLLCR:
          setPllcr(value);
+         break;
+         
+      case ICR:
+         //missing bottom 7 bits
+         registerArrayWrite16(address, value & 0xFFF8);
          break;
          
       case SDCTRL:

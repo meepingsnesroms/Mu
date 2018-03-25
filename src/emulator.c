@@ -52,9 +52,8 @@ void emulatorInit(uint8_t* palmRomDump){
    
    palmClockMultiplier = 1;//Overclock disabled
    
+   m68k_set_reset_instr_callback(emulatorReset);
    m68k_pulse_reset();
-   
-   //printf("Boot ProgramCounter is:0x%08X\n", m68k_get_reg(NULL, M68K_REG_PC));
 }
 
 void emulatorReset(){
@@ -115,6 +114,7 @@ uint32_t emulatorInstallPrcPdb(uint8_t* data, uint32_t size){
 
 void emulateFrame(){
    while(palmCycleCounter < palmCpuFrequency / EMU_FPS){
+      updateInterrupts();
       if(cpuIsOn())
          palmCycleCounter += m68k_execute(palmCrystalCycles * palmClockMultiplier) / palmClockMultiplier;//normaly 33mhz / 60fps
       else

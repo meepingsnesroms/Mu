@@ -16,7 +16,8 @@ void setHwRegister32(unsigned int address, unsigned int value);
 void rtcAddSecond();
 void toggleClk32();
 bool cpuIsOn();
-//bool isIrqAllowed(uint8_t irqId);
+void updateInterrupts();
+
 
 //config
 void resetHwRegisters();

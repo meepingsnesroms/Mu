@@ -6,6 +6,7 @@
 #include "m68k/m68k.h"
 #include "sed1376.h"
 
+//invalid accesses are ok, from POSE: Hack to keep HwrGetRAMSize working: it runs off the end of RAM while testing it.
 
 /* Read from anywhere */
 unsigned int  m68k_read_memory_8(unsigned int address){
