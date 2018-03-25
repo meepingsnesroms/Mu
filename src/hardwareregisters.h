@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdint.h>
+
 #include <boolean.h>
 
 //memory accessors
@@ -14,6 +16,7 @@ void setHwRegister32(unsigned int address, unsigned int value);
 void rtcAddSecond();
 void toggleClk32();
 bool cpuIsOn();
+//bool isIrqAllowed(uint8_t irqId);
 
 //config
 void resetHwRegisters();

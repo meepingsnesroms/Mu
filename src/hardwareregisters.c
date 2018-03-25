@@ -196,6 +196,11 @@ void setHwRegister8(unsigned int address, unsigned int value){
          registerArrayWrite8(address, value & 0xF0);
          break;
          
+      case IVR:
+         //write without the bottom 3 bits
+         registerArrayWrite8(address, value & 0xF8);
+         break;
+         
       case PGSEL:
       case PMSEL:
       case PGPUEN:
@@ -237,6 +242,10 @@ void setHwRegister16(unsigned int address, unsigned int value){
          
       case PLLFSR:
          setPllfsr16(value);
+         break;
+         
+      case PLLCR:
+         setPllcr(value);
          break;
          
       case SDCTRL:

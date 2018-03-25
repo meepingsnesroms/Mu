@@ -168,5 +168,7 @@
 //verified
 
 // RAM - (S)DRAM Control
+#define DRAMMC    0xC00 // DRAM Memory Configuration Register
+#define DRAMC     0xC02 // DRAM Control Register
 #define SDCTRL    0xC04 // SDRAM Control Register
 //verified
