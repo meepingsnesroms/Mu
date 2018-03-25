@@ -64,6 +64,9 @@ void m68k_write_memory_8(unsigned int address, unsigned int value){
    else if(address >= REG_START_ADDRESS && address < REG_START_ADDRESS + REG_SIZE){
       setHwRegister8(address - REG_START_ADDRESS, value);
    }
+   else if(address >= SED1376_REG_START_ADDRESS && address < SED1376_REG_START_ADDRESS + SED1376_REG_SIZE){
+      sed1376SetRegister(address - SED1376_REG_START_ADDRESS, value);
+   }
    else{
       //printf("Invalid 8 bit write at 0x%08X with value of 0x%02X.\n", address, value);
    }
@@ -80,6 +83,9 @@ void m68k_write_memory_16(unsigned int address, unsigned int value){
    }
    else if(address >= REG_START_ADDRESS && address < REG_START_ADDRESS + REG_SIZE){
       setHwRegister16(address - REG_START_ADDRESS, value);
+   }
+   else if(address >= SED1376_REG_START_ADDRESS && address < SED1376_REG_START_ADDRESS + SED1376_REG_SIZE){
+      sed1376SetRegister(address - SED1376_REG_START_ADDRESS, value & 0xFF);
    }
    else{
       //printf("Invalid 16 bit write at 0x%08X with value of 0x%04X.\n", address, value);
@@ -99,6 +105,9 @@ void m68k_write_memory_32(unsigned int address, unsigned int value){
    }
    else if(address >= REG_START_ADDRESS && address < REG_START_ADDRESS + REG_SIZE){
       setHwRegister32(address - REG_START_ADDRESS, value);
+   }
+   else if(address >= SED1376_REG_START_ADDRESS && address < SED1376_REG_START_ADDRESS + SED1376_REG_SIZE){
+      sed1376SetRegister(address - SED1376_REG_START_ADDRESS, value & 0xFF);
    }
    else{
       //printf("Invalid 32 bit write at 0x%08X with value of 0x%08X.\n", address, value);
@@ -123,8 +132,12 @@ void m68k_write_memory_32_pd(unsigned int address, unsigned int value){
       //I dont know the interaction between the hw registers and the malformed opcode
       printf("Possibly fatal error: Predecrement swaped 32bit write to hw register: 0x%08X, at PC: 0x%08X\n", address, m68k_get_reg(NULL, M68K_REG_PC));
    }
+   else if(address >= SED1376_REG_START_ADDRESS && address < SED1376_REG_START_ADDRESS + SED1376_REG_SIZE){
+      //I dont know the interaction between sed1376 registers and the malformed opcode
+      printf("Predecrement swapped 32 bit write at sed1376 register 0x%08X with value of 0x%08X.\n", address - SED1376_REG_START_ADDRESS, value);
+   }
    else{
-      //printf("Invalid predecrement swapped 32 bit write at 0x%08X with value of 0x%08X.\n", address, value);
+      printf("Invalid predecrement swapped 32 bit write at 0x%08X with value of 0x%08X.\n", address, value);
    }
 }
 

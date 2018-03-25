@@ -1,4 +1,4 @@
-﻿# Palm m515/OS 4.1 emulator
+# Palm m515/OS 4.1 emulator
 
 This is a complete restart of my Palm OS emulator, with the last one the code got too messy and the goal too ambitious(to emulate every palm API in software and for compatibility with all Palm OS versions and devices).
 
@@ -27,4 +27,4 @@ These patches will not be worked on until the emulator is actually running.
 
 I have made a video of OS 5 doing that "more", it is extremely incompatible with OS 4 games which most games are, very few games used the ARM CPU and those that did are available on other platforms, some used the 320x320 display mode.
 
-Palm m515 vs Palm T|X
+Palm T|X vs OS 4 Games

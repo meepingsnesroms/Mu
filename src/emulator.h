@@ -37,10 +37,11 @@ extern uint16_t palmFramebuffer[];
 extern uint8_t  palmRam[];
 extern uint8_t  palmRom[];
 extern uint8_t  palmReg[];
-uint32_t        palmCpuFrequency;
-uint32_t        palmCrystalCycles;
-uint32_t        palmCycleCounter;
-bool            palmCrystal;
+extern uint32_t palmCpuFrequency;
+extern uint32_t palmCrystalCycles;
+extern uint32_t palmCycleCounter;
+extern bool     palmCrystal;
+extern uint32_t palmRtcFrameCounter;
 
 //i/o
 extern uint16_t palmButtonState;

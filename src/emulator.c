@@ -23,6 +23,7 @@ uint32_t palmCpuFrequency;//cycles per second
 uint32_t palmCrystalCycles;//how many cycles before toggling the 32.768 kHz crystal
 uint32_t palmCycleCounter;//can be greater then 0 if too many cycles where run
 bool     palmCrystal;//current crystal state
+uint32_t palmRtcFrameCounter;//when this reaches EMU_FPS increment the real time clock
 
 uint16_t palmButtonState;
 uint16_t palmTouchscreenX;
@@ -42,6 +43,8 @@ void emulatorInit(uint8_t* palmRomDump){
    palmCrystalCycles = 14 * (71 + 1) + 3 + 1;
    palmCpuFrequency = palmCrystalCycles * 32768;
    palmCycleCounter = 0;
+   palmCrystal = false;
+   palmRtcFrameCounter = 0;
    
    m68k_pulse_reset();
    
@@ -72,6 +75,8 @@ void emulatorSaveState(uint8_t* data){
    offset += sizeof(uint32_t);
    data[offset] = palmCrystal;
    offset += 1;
+   memcpy(data + offset, &palmRtcFrameCounter, sizeof(uint32_t));
+   offset += sizeof(uint32_t);
    
 }
 
@@ -91,6 +96,8 @@ void emulatorLoadState(uint8_t* data){
    offset += sizeof(uint32_t);
    palmCrystal = data[offset];
    offset += 1;
+   memcpy(&palmRtcFrameCounter, data + offset, sizeof(uint32_t));
+   offset += sizeof(uint32_t);
 }
 
 uint32_t emulatorInstallPrcPdb(uint8_t* data, uint32_t size){
@@ -103,5 +110,11 @@ void emulateFrame(){
       palmCrystal = !palmCrystal;
    }
    palmCycleCounter -= palmCpuFrequency / EMU_FPS;
+   
+   palmRtcFrameCounter++;
+   if(palmRtcFrameCounter >= EMU_FPS){
+      rtcAddSecond();
+      palmRtcFrameCounter = 0;
+   }
    printf("Ran frame, executed %d cycles.\n", palmCycleCounter + palmCpuFrequency / EMU_FPS);
 }
