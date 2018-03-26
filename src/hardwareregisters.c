@@ -5,6 +5,7 @@
 
 #include "emulator.h"
 #include "hardwareRegisterNames.h"
+#include "hardwareRegisters.h"
 #include "m68k/m68k.h"
 
 
@@ -38,6 +39,10 @@ static inline void registerArrayWrite32(unsigned int address, unsigned int value
 
 
 uint32_t rtiInterruptCounter;
+
+void checkInterrupts();
+void setIprIsrBit(uint32_t interruptBit);
+void clearIprIsrBit(uint32_t interruptBit);
 
 
 void printUnknownHwAccess(unsigned int address, unsigned int value, unsigned int size, bool isWrite){
@@ -85,23 +90,9 @@ void setPllcr(unsigned int value){
    }
 }
 
-void sendInterruptEvent(uint32_t interruptBit){
-   //allows for masking by IMR and logging it in IPR
-   uint32_t pendingInterrupts = registerArrayRead32(IPR);
-   uint32_t allowedInterrupts = ~registerArrayRead32(IMR);
-   uint32_t activeInterrupts = registerArrayRead32(ISR);
-   
-   pendingInterrupts |= interruptBit;
-   activeInterrupts |= interruptBit & allowedInterrupts;
-   
-   registerArrayWrite32(ISR, activeInterrupts);
-   registerArrayWrite32(IPR, pendingInterrupts);
-}
-
 void rtcAddSecond(){
    if(registerArrayRead16(RTCCTL) & 0x0080){
       //rtc enable bit set
-      uint16_t enabledRtcInterrupts = registerArrayRead16(RTCIENR);
       uint16_t rtcInterruptEvents;
       uint32_t newRtcTime;
       uint32_t oldRtcTime = registerArrayRead32(RTCTIME);
@@ -129,11 +120,10 @@ void rtcAddSecond(){
          }
       }
       
-      if(rtcInterruptEvents & enabledRtcInterrupts){
-         //at least 1 event occured, trigger RTI interrupt
-         uint16_t rtcTriggeredInterrupts = registerArrayRead16(RTCISR);
-         rtcTriggeredInterrupts |= rtcInterruptEvents & enabledRtcInterrupts;
-         sendInterruptEvent(0x00000010);
+      rtcInterruptEvents &= registerArrayRead16(RTCIENR);
+      if(rtcInterruptEvents){
+         registerArrayWrite16(RTCISR, registerArrayRead16(RTCISR) | rtcInterruptEvents);
+         setIprIsrBit(INT_RTC);
       }
       
       newRtcTime = seconds & 0x0000003F;
@@ -143,127 +133,177 @@ void rtcAddSecond(){
    }
 }
 
-void toggleClk32(){
-   //more will be added here for timers
-   registerArrayWrite16(PLLFSR, registerArrayRead16(PLLFSR) ^ 0x8000);
+static inline void rtiInterruptClk32(){
+   //this function is part of clk32();
+   uint16_t triggeredRtiInterrupts = 0;
    
-   //rtcInterruptCounter++
+   //rolls over every second
+   if(rtiInterruptCounter >= CRYSTAL_FREQUENCY - 1)
+      rtiInterruptCounter = 0;
+   else
+      rtiInterruptCounter++;
+   
+   if(rtiInterruptCounter % (CRYSTAL_FREQUENCY / 512) == 0){
+      //RIS7 - 512HZ
+      triggeredRtiInterrupts |= 0x8000;
+   }
+   if(rtiInterruptCounter % (CRYSTAL_FREQUENCY / 256) == 0){
+      //RIS6 - 256HZ
+      triggeredRtiInterrupts |= 0x4000;
+   }
+   if(rtiInterruptCounter % (CRYSTAL_FREQUENCY / 128) == 0){
+      //RIS5 - 128HZ
+      triggeredRtiInterrupts |= 0x2000;
+   }
+   if(rtiInterruptCounter % (CRYSTAL_FREQUENCY / 64) == 0){
+      //RIS4 - 64HZ
+      triggeredRtiInterrupts |= 0x1000;
+   }
+   if(rtiInterruptCounter % (CRYSTAL_FREQUENCY / 32) == 0){
+      //RIS3 - 32HZ
+      triggeredRtiInterrupts |= 0x0800;
+   }
+   if(rtiInterruptCounter % (CRYSTAL_FREQUENCY / 16) == 0){
+      //RIS2 - 16HZ
+      triggeredRtiInterrupts |= 0x0400;
+   }
+   if(rtiInterruptCounter % (CRYSTAL_FREQUENCY / 8) == 0){
+      //RIS1 - 8HZ
+      triggeredRtiInterrupts |= 0x0200;
+   }
+   if(rtiInterruptCounter % (CRYSTAL_FREQUENCY / 4) == 0){
+      //RIS0 - 4HZ
+      triggeredRtiInterrupts |= 0x0100;
+   }
+   
+   triggeredRtiInterrupts &= registerArrayRead16(RTCIENR);
+   if(triggeredRtiInterrupts){
+      registerArrayWrite16(RTCISR, registerArrayRead16(RTCISR) | triggeredRtiInterrupts);
+      setIprIsrBit(INT_RTI);
+   }
+}
+
+void clk32(){
+   registerArrayWrite16(PLLFSR, registerArrayRead16(PLLFSR) ^ 0x8000);
+   rtiInterruptClk32();
+   
+   //more will be added here for timers
+   
+   checkInterrupts();
 }
 
 bool cpuIsOn(){
    return !(registerArrayRead16(PLLCR) & 0x0008);
 }
 
-void updateInterrupts(){
-   uint32_t activeInterrupts = registerArrayRead32(ISR) & registerArrayRead32(IMR);
+void setIprIsrBit(uint32_t interruptBit){
+   //allows for setting an interrupt with masking by IMR and logging in IPR
+   registerArrayWrite32(IPR, registerArrayRead32(IPR) | interruptBit);
+   registerArrayWrite32(ISR, registerArrayRead32(ISR) | (interruptBit & ~registerArrayRead32(IMR)));
+}
+
+void clearIprIsrBit(uint32_t interruptBit){
+   registerArrayWrite32(IPR, registerArrayRead32(IPR) & ~interruptBit);
+   registerArrayWrite32(ISR, registerArrayRead32(ISR) & ~interruptBit);
+}
+
+void checkInterrupts(){
+   uint32_t activeInterrupts = registerArrayRead32(ISR);
    uint16_t interruptLevelControlRegister = registerArrayRead16(ILCR);
    uint32_t intLevel = 0;
    
-   if(activeInterrupts & 0x00800000){
+   if(activeInterrupts & INT_EMIQ){
       //EMIQ - Emulator Irq, has nothing to do with emulation, used for debugging on a dev board
       intLevel = 7;
    }
    
    /*
-   if(activeInterrupts & 0x00400000){
+   if(activeInterrupts & INT_RTI){
       //RTI - Real Time Interrupt
       if(intLevel < 4)
          intLevel = 4;
    }
    */
    
-   if(activeInterrupts & 0x00200000){
-      //SPI1
+   if(activeInterrupts & INT_SPI1){
       uint32_t spi1IrqLevel = interruptLevelControlRegister >> 12;
       if(intLevel < spi1IrqLevel)
          intLevel = spi1IrqLevel;
    }
    
-   if(activeInterrupts & 0x00100000){
-      //IRQ5
+   if(activeInterrupts & INT_IRQ5){
       if(intLevel < 5)
          intLevel = 5;
    }
    
    /*
-   if(activeInterrupts & 0x00080000){
-      //IRQ6
+   if(activeInterrupts & INT_IRQ6){
       if(intLevel < 6)
          intLevel = 6;
    }
    */
    
-   if(activeInterrupts & 0x00040000){
-      //IRQ3
+   if(activeInterrupts & INT_IRQ3){
       if(intLevel < 3)
          intLevel = 3;
    }
    
-   if(activeInterrupts & 0x00020000){
-      //IRQ2
+   if(activeInterrupts & INT_IRQ2){
       if(intLevel < 2)
          intLevel = 2;
    }
    
-   if(activeInterrupts & 0x00010000){
-      //IRQ1
+   if(activeInterrupts & INT_IRQ1){
       if(intLevel < 1)
          intLevel = 1;
    }
    
-   if(activeInterrupts & 0x00002000){
-      //PWM2
+   if(activeInterrupts & INT_PWM2){
       uint32_t pwm2IrqLevel = (interruptLevelControlRegister >> 4) & 0x0007;
       if(intLevel < pwm2IrqLevel)
          intLevel = pwm2IrqLevel;
    }
    
-   if(activeInterrupts & 0x00001000){
-      //UART2
+   if(activeInterrupts & INT_UART2){
       uint32_t uart2IrqLevel = (interruptLevelControlRegister >> 8) & 0x0007;
       if(intLevel < uart2IrqLevel)
          intLevel = uart2IrqLevel;
    }
    
    /*
-   if(activeInterrupts & 0x00000800){
-      //INT3
+   if(activeInterrupts & INT_INT3){
       if(intLevel < 4)
          intLevel = 4;
    }
    
-   if(activeInterrupts & 0x00000400){
-      //INT2
+   if(activeInterrupts & INT_INT2){
       if(intLevel < 4)
          intLevel = 4;
    }
    
-   if(activeInterrupts & 0x00000200){
-      //INT1
+   if(activeInterrupts & INT_INT1){
       if(intLevel < 4)
          intLevel = 4;
    }
    
-   if(activeInterrupts & 0x00000100){
-      //INT0
+   if(activeInterrupts & INT_INT0){
       if(intLevel < 4)
          intLevel = 4;
    }
 
-   if(activeInterrupts & 0x00000080){
-      //PWM1
+   if(activeInterrupts & INT_PWM1){
       if(intLevel < 6)
          intlevel = 6;
    }
 
-   if(activeInterrupts & 0x00000040){
+   if(activeInterrupts & INT_KB){
       //KB - Keyboard
       if(intLevel < 4)
          intLevel = 4;
    }
    */
     
-   if(activeInterrupts & 0x00000020){
+   if(activeInterrupts & INT_TMR2){
       //TMR2 - Timer 2
       uint32_t timer2IrqLevel = interruptLevelControlRegister & 0x0007;
       if(intLevel < timer2IrqLevel)
@@ -271,47 +311,43 @@ void updateInterrupts(){
    }
    
    /*
-   if(activeInterrupts & 0x00000010){
+   if(activeInterrupts & INT_RTC){
       //RTC - Real Time Clock
       if(intLevel < 4)
          intLevel = 4;
    }
-   */
-   
-   /*
-   if(activeInterrupts & 0x00000008){
+
+   if(activeInterrupts & INT_WDT){
       //WDT - Watchdog Timer
       if(intLevel < 4)
          intLevel = 4;
    }
    
-   if(activeInterrupts & 0x00000004){
-      //UART1
+   if(activeInterrupts & INT_UART1){
       if(intLevel < 4)
          intLevel = 4;
    }
 
-   if(activeInterrupts & 0x00000002){
+   if(activeInterrupts & INT_TMR1){
       //TMR1 - Timer 1
       if(intLevel < 6)
          intLevel = 6;
    }
    
-   if(activeInterrupts & 0x00000001){
-      //SPI2
+   if(activeInterrupts & INT_SPI2){
       if(intLevel < 4)
          intLevel = 4;
    }
    */
    
-   if(activeInterrupts & 0x00080082){
-      //All Level 6 Interrupts
+   if(activeInterrupts & (INT_TMR1 | INT_PWM1 | INT_IRQ6)){
+      //All Fixed Level 6 Interrupts
       if(intLevel < 6)
          intLevel = 6;
    }
    
-   if(activeInterrupts & 0x00400F5D){
-      //All Level 4 Interrupts
+   if(activeInterrupts & (INT_SPI2 | INT_UART1 | INT_WDT | INT_RTC | INT_KB | INT_INT0 | INT_INT1 | INT_INT2 | INT_INT3 | INT_RTI)){
+      //All Fixed Level 4 Interrupts
       if(intLevel < 4)
          intLevel = 4;
    }
@@ -323,6 +359,7 @@ void updateInterrupts(){
 
 unsigned int getHwRegister8(unsigned int address){
    switch(address){
+         
       //select between gpio or special function
       case PBSEL:
       case PCSEL:
@@ -362,6 +399,9 @@ unsigned int getHwRegister16(unsigned int address){
       case PLLCR:
       case PLLFSR:
       case SDCTRL:
+      case RTCISR:
+      case RTCCTL:
+      case RTCIENR:
          //simple read, no actions needed
          return registerArrayRead16(address);
          
@@ -374,6 +414,9 @@ unsigned int getHwRegister16(unsigned int address){
 unsigned int getHwRegister32(unsigned int address){
    switch(address){
          
+      case ISR:
+      case IPR:
+      case IMR:
       case RTCTIME:
       case IDR:
          //simple read, no actions needed
@@ -388,6 +431,7 @@ unsigned int getHwRegister32(unsigned int address){
 
 void setHwRegister8(unsigned int address, unsigned int value){
    switch(address){
+         
       case PDSEL:
          //write without the bottom 4 bits
          registerArrayWrite8(address, value & 0xF0);
@@ -437,6 +481,19 @@ void setHwRegister8(unsigned int address, unsigned int value){
 void setHwRegister16(unsigned int address, unsigned int value){
    switch(address){
          
+      case RTCIENR:
+         //missing bits 6 and 7
+         registerArrayWrite16(address, value & 0xFF3F);
+         break;
+         
+      case RTCISR:
+         registerArrayWrite16(RTCISR, registerArrayRead16(RTCISR) & ~value);
+         if(!(registerArrayRead16(RTCISR) & 0xFF00))
+            clearIprIsrBit(INT_RTI);
+         if(!(registerArrayRead16(RTCISR) & 0x003F))
+            clearIprIsrBit(INT_RTC);
+         break;
+         
       case PLLFSR:
          setPllfsr16(value);
          break;
@@ -464,12 +521,24 @@ void setHwRegister16(unsigned int address, unsigned int value){
 
 void setHwRegister32(unsigned int address, unsigned int value){
    switch(address){
+         
       case RTCTIME:
          registerArrayWrite32(address, value & 0x1F3F003F);
          break;
          
       case IDR:
-         //invalid write, do nothing
+      case IPR:
+         //write to read only register, do nothing
+         break;
+         
+      case ISR:
+         //clear ISR and IPR for external hardware whereever there is a 1 bit in value
+         registerArrayWrite32(IPR, registerArrayRead32(IPR) & ~(value & 0x000F0F00/*external hardware int mask*/));
+         registerArrayWrite32(ISR, registerArrayRead32(ISR) & ~(value & 0x000F0F00/*external hardware int mask*/));
+         break;
+         
+      case IMR:
+         registerArrayWrite32(address, value & 0x00FF3FFF);
          break;
          
       case LSSA:
@@ -487,6 +556,7 @@ void setHwRegister32(unsigned int address, unsigned int value){
 
 void resetHwRegisters(){
    memset(palmReg, 0x00, REG_SIZE);
+   rtiInterruptCounter = 0;
    
    //system control
    registerArrayWrite8(SCR, 0x1C);

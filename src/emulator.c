@@ -87,7 +87,8 @@ void emulatorSaveState(uint8_t* data){
    offset += sizeof(uint32_t);
    memcpy(data + offset, &palmRtcFrameCounter, sizeof(uint32_t));
    offset += sizeof(uint32_t);
-   
+   memcpy(data + offset, &rtiInterruptCounter, sizeof(uint32_t));
+   offset += sizeof(uint32_t);
 }
 
 void emulatorLoadState(uint8_t* data){
@@ -106,6 +107,8 @@ void emulatorLoadState(uint8_t* data){
    offset += sizeof(uint32_t);
    memcpy(&palmRtcFrameCounter, data + offset, sizeof(uint32_t));
    offset += sizeof(uint32_t);
+   memcpy(&rtiInterruptCounter, data + offset, sizeof(uint32_t));
+   offset += sizeof(uint32_t);
 }
 
 uint32_t emulatorInstallPrcPdb(uint8_t* data, uint32_t size){
@@ -114,12 +117,11 @@ uint32_t emulatorInstallPrcPdb(uint8_t* data, uint32_t size){
 
 void emulateFrame(){
    while(palmCycleCounter < palmCpuFrequency / EMU_FPS){
-      updateInterrupts();
       if(cpuIsOn())
          palmCycleCounter += m68k_execute(palmCrystalCycles * palmClockMultiplier) / palmClockMultiplier;//normaly 33mhz / 60fps
       else
-         palmCycleCounter += palmCpuFrequency / EMU_FPS;
-      toggleClk32();
+         palmCycleCounter += palmCrystalCycles;
+      clk32();
    }
    palmCycleCounter -= palmCpuFrequency / EMU_FPS;
    
