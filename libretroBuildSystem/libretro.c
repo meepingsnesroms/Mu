@@ -9,7 +9,7 @@
 
 #include <retro_miscellaneous.h>
 
-#include "emulator.h"
+#include "../src/emulator.h"
 
 
 #ifdef _WIN32
