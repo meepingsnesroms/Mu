@@ -44,6 +44,9 @@ void rtcAddSecond();
 void clk32();//also checks all interrupts
 bool cpuIsOn();
 
+//cpu
+int interruptAcknowledge(int intLevel);
+
 //config
 void resetHwRegisters();
 void setRtc(uint32_t days, uint32_t hours, uint32_t minutes, uint32_t seconds);

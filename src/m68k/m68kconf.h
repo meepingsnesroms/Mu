@@ -86,8 +86,8 @@
  * If off, all interrupts will be autovectored and all interrupt requests will
  * auto-clear when the interrupt is serviced.
  */
-#define M68K_EMULATE_INT_ACK        OPT_OFF
-#define M68K_INT_ACK_CALLBACK(A)    your_int_ack_handler_function(A)
+#define M68K_EMULATE_INT_ACK        OPT_ON
+#define M68K_INT_ACK_CALLBACK(A)    interruptAcknowledge(A)
 
 
 /* If ON, CPU will call the breakpoint acknowledge callback when it encounters

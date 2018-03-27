@@ -53,8 +53,10 @@ void emulatorInit(uint8_t* palmRomDump){
    palmRtcFrameCounter = 0;
    
    palmClockMultiplier = 1;//Overclock disabled
+   lowPowerStopActive = false;
    
    m68k_set_reset_instr_callback(emulatorReset);
+   m68k_set_int_ack_callback(interruptAcknowledge);
    m68k_pulse_reset();
 }
 
@@ -91,6 +93,8 @@ void emulatorSaveState(uint8_t* data){
    offset += sizeof(uint32_t);
    memcpy(data + offset, &rtiInterruptCounter, sizeof(uint32_t));
    offset += sizeof(uint32_t);
+   data[offset] = lowPowerStopActive;
+   offset += 1;
 }
 
 void emulatorLoadState(uint8_t* data){
@@ -111,6 +115,8 @@ void emulatorLoadState(uint8_t* data){
    offset += sizeof(uint32_t);
    memcpy(&rtiInterruptCounter, data + offset, sizeof(uint32_t));
    offset += sizeof(uint32_t);
+   lowPowerStopActive = data[offset];
+   offset += 1;
 }
 
 uint32_t emulatorInstallPrcPdb(uint8_t* data, uint32_t size){
