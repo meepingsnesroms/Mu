@@ -9,6 +9,7 @@
 #include "emulator.h"
 #include "hardwareRegisters.h"
 #include "sed1376.h"
+#include "silkscreen.h"
 
 
 //Memory Map of Palm m515
@@ -29,7 +30,7 @@ uint32_t palmCrystalCycles;//how many cycles before toggling the 32.768 kHz crys
 uint32_t palmCycleCounter;//can be greater then 0 if too many cycles where run
 uint32_t palmRtcFrameCounter;//when this reaches EMU_FPS increment the real time clock
 
-uint16_t palmFramebuffer[160 * 240];//really 160*160, the extra pixels are the silkscreened digitizer area
+uint16_t palmFramebuffer[160 * (160 + 60)];//really 160*160, the extra pixels are the silkscreened digitizer area
 uint16_t palmButtonState;
 uint16_t palmTouchscreenX;
 uint16_t palmTouchscreenY;
@@ -45,6 +46,7 @@ void emulatorInit(uint8_t* palmRomDump){
    memset(palmRam, 0x00, RAM_SIZE);
    memcpy(palmRom, palmRomDump, ROM_SIZE);
    memcpy(palmRam, palmRom, 256);//copy ROM header
+   memcpy(&palmFramebuffer[160 * 160], silkscreenData, SILKSCREEN_WIDTH * SILKSCREEN_HEIGHT * (SILKSCREEN_BPP / 8));
    resetHwRegisters();
    sed1376Reset();
    palmCrystalCycles = 2 * (14 * (71/*p*/ + 1) + 3/*q*/ + 1) / 2/*prescaler1*/;

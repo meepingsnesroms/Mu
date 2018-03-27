@@ -1,9 +1,10 @@
 EMU_SOURCES := $(EMU_PATH)/emulator.c \
-		$(EMU_PATH)/memoryAccess.c \
+      $(EMU_PATH)/memoryAccess.c \
       $(EMU_PATH)/hardwareRegisters.c \
       $(EMU_PATH)/sed1376.c \
+      $(EMU_PATH)/silkscreen.c \
       $(EMU_PATH)/cpu32Opcodes.c \
-		$(EMU_PATH)/m68k/m68kops.c \
+      $(EMU_PATH)/m68k/m68kops.c \
       $(EMU_PATH)/m68k/m68kopnz.c \
       $(EMU_PATH)/m68k/m68kopdm.c \
       $(EMU_PATH)/m68k/m68kopac.c \

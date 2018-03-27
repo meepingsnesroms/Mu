@@ -8,6 +8,7 @@
 #include "hardwareRegisters.h"
 #include "cpu32Opcodes.h"
 #include "m68k/m68k.h"
+#include "silkscreen.h"
 
 
 static inline unsigned int registerArrayRead8(unsigned int address){

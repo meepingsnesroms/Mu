@@ -16,14 +16,8 @@ bool lowPowerStopActive;
 
 
 static inline void patchOpcode(uint16_t opcode, void (*handler)(void), unsigned char cycles){
-   if(m68ki_instruction_jump_table[opcode] == m68k_op_illegal){
-      //opcode not taken, patch it
       m68ki_instruction_jump_table[opcode] = handler;
       m68ki_cycles[2][opcode] = cycles;//set how many cycles for 68020
-   }
-   else{
-      printf("Opcode 0x%04X is already taken!\n", opcode);
-   }
 }
 
 
@@ -90,7 +84,7 @@ void m68k_op_cpu32_dispatch(void){
          return;
    }
    
-   m68ki_exception_illegal();
+   m68ki_exception_1111();//illegal coprocessor instruction
 }
 
 

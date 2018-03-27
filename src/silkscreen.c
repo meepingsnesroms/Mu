@@ -1,12 +1,4 @@
-/* GIMP RGB C-Source image dump (silkscreen.c) */
-
-static const struct {
-  unsigned int 	 width;
-  unsigned int 	 height;
-  unsigned int 	 bytes_per_pixel; /* 2:RGB16, 3:RGB, 4:RGBA */ 
-  unsigned char	 pixel_data[160 * 60 * 2 + 1];
-} palmSilkscreen = {
-  160, 60, 2,
+unsigned char silkscreenData[160 * 60 * 2 + 1] = {
   "\377\377\377\377\377\377\377\377\377\377\377\377\377\377\377\377\377\377"
   "\377\377\377\377\377\377\377\377\377\377\377\377\377\377\377\377\377\377"
   "\377\377\377\377\377\377\377\377\377\377\377\377\377\377\377\377\377\377"
