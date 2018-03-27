@@ -5,6 +5,7 @@
 #include <boolean.h>
 
 #include "m68k/m68k.h"
+#include "cpu32Opcodes.h"
 #include "emulator.h"
 #include "hardwareRegisters.h"
 #include "sed1376.h"
@@ -39,6 +40,7 @@ uint32_t palmClockMultiplier;//used by the emulator to overclock the emulated pa
 void emulatorInit(uint8_t* palmRomDump){
    m68k_init();
    m68k_set_cpu_type(M68K_CPU_TYPE_68020);
+   patchMusashiOpcodeHandlerCpu32();
    
    memset(palmRam, 0x00, RAM_SIZE);
    memcpy(palmRom, palmRomDump, ROM_SIZE);

@@ -1,0 +1,6 @@
+Timer 1
+Timer 2
+sed1376 register access
+storage ram protect
+sysTrapPceNativeCall arm emulator
+cpu32 table lookup opcodes
