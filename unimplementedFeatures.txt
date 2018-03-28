@@ -1,0 +1,7 @@
+Timer 1
+Timer 2
+sed1376 register access
+storage ram protect
+sysTrapPceNativeCall, ARM Emulator
+cpu32 table lookup opcodes
+PLL Control Register, Wake Select

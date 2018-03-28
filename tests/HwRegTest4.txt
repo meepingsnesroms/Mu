@@ -1,0 +1,572 @@
+Cpu Read 16 bits from register 0x0200.
+Cpu Wrote 16 bits of 0x000024A3 to register 0x0200.
+Cpu Wrote 8 bits of 0x00000061 to register 0x042B.
+Cpu Wrote 16 bits of 0x00000000 to register 0x0302.
+Cpu Wrote 32 bits of 0xFFFFFFFF to register 0x030C.
+Cpu Wrote 16 bits of 0x0000FFFF to register 0x0304.
+Cpu Wrote 16 bits of 0x0000FFFF to register 0x0306.
+Cpu Wrote 16 bits of 0x00000000 to register 0x0B0A.
+Cpu Wrote 8 bits of 0x00000060 to register 0x040B.
+Cpu Wrote 8 bits of 0x00000020 to register 0x0409.
+Cpu Wrote 8 bits of 0x00000060 to register 0x0408.
+Cpu Wrote 8 bits of 0x000000FF to register 0x0413.
+Cpu Wrote 8 bits of 0x00000000 to register 0x0410.
+Cpu Wrote 8 bits of 0x00000000 to register 0x0411.
+Cpu Wrote 8 bits of 0x00000000 to register 0x041B.
+Cpu Wrote 8 bits of 0x0000000F to register 0x041C.
+Cpu Wrote 8 bits of 0x000000F0 to register 0x0419.
+Cpu Wrote 8 bits of 0x00000000 to register 0x0418.
+Cpu Wrote 8 bits of 0x0000000F to register 0x041D.
+Cpu Wrote 8 bits of 0x0000000F to register 0x041F.
+Cpu Wrote 8 bits of 0x0000000F to register 0x0419.
+Cpu Wrote 16 bits of 0x00000F00 to register 0x030E.
+Cpu Wrote 8 bits of 0x0000000F to register 0x041E.
+Cpu Wrote 8 bits of 0x00000008 to register 0x0421.
+Cpu Wrote 8 bits of 0x00000088 to register 0x0420.
+Cpu Wrote 8 bits of 0x000000C8 to register 0x0423.
+Cpu Wrote 8 bits of 0x000000E1 to register 0x042B.
+Cpu Wrote 8 bits of 0x00000002 to register 0x0429.
+Cpu Wrote 8 bits of 0x00000020 to register 0x0428.
+Cpu Wrote 8 bits of 0x0000002E to register 0x0433.
+Cpu Wrote 8 bits of 0x0000002C to register 0x0430.
+Cpu Wrote 8 bits of 0x00000004 to register 0x0431.
+Cpu Wrote 8 bits of 0x00000000 to register 0x0439.
+Cpu Wrote 8 bits of 0x0000000F to register 0x043B.
+Cpu Wrote 8 bits of 0x0000000F to register 0x0438.
+Cpu Wrote 8 bits of 0x00000008 to register 0x0441.
+Cpu Wrote 8 bits of 0x000000FF to register 0x0443.
+Cpu Wrote 8 bits of 0x000000F9 to register 0x0440.
+Cpu Wrote 8 bits of 0x00000020 to register 0x044B.
+Cpu Wrote 8 bits of 0x00000020 to register 0x0448.
+Cpu Wrote 8 bits of 0x00000020 to register 0x0449.
+Cpu Wrote 8 bits of 0x00000000 to register 0x0A27.
+Cpu Wrote 16 bits of 0x00000000 to register 0x0600.
+Cpu Wrote 8 bits of 0x000000F8 to register 0x0000.
+Cpu Wrote 16 bits of 0x00008000 to register 0x0100.
+Cpu Wrote 16 bits of 0x000001AB to register 0x0110.
+Cpu Wrote 16 bits of 0x0000FFC0 to register 0x0102.
+Cpu Wrote 16 bits of 0x000001F3 to register 0x0112.
+Cpu Wrote 16 bits of 0x00008200 to register 0x0104.
+Cpu Wrote 16 bits of 0x00000101 to register 0x0114.
+Cpu Wrote 16 bits of 0x00000000 to register 0x0106.
+Cpu Wrote 16 bits of 0x00001E83 to register 0x0116.
+Cpu Wrote 16 bits of 0x00000040 to register 0x010A.
+Cpu Wrote 16 bits of 0x00000000 to register 0x0C02.
+Cpu Wrote 16 bits of 0x0000C03F to register 0x0C04.
+Cpu Wrote 16 bits of 0x00004020 to register 0x0C00.
+Cpu Wrote 16 bits of 0x00008000 to register 0x0C02.
+Cpu Wrote 16 bits of 0x0000C83F to register 0x0C04.
+Cpu Wrote 16 bits of 0x0000D03F to register 0x0C04.
+Cpu Wrote 16 bits of 0x0000D43F to register 0x0C04.
+Cpu Wrote 16 bits of 0x00001A81 to register 0x0116.
+Cpu Wrote 16 bits of 0x00000000 to register 0x0C02.
+Cpu Wrote 16 bits of 0x0000C017 to register 0x0C04.
+Cpu Wrote 16 bits of 0x00008000 to register 0x0C02.
+Cpu Wrote 16 bits of 0x0000C817 to register 0x0C04.
+Cpu Wrote 16 bits of 0x0000D017 to register 0x0C04.
+Cpu Wrote 16 bits of 0x0000D417 to register 0x0C04.
+Cpu Read 16 bits from register 0x0310.
+Cpu Read 8 bits from register 0x0423.
+Cpu Wrote 8 bits of 0x000000C8 to register 0x0423.
+Cpu Read 8 bits from register 0x042B.
+Cpu Wrote 8 bits of 0x000000E1 to register 0x042B.
+Cpu Wrote 16 bits of 0x00000C80 to register 0x0200.
+New CPU frequency of:33161216 cycles per second.
+New clk32 cycle count of :1012.
+Ran frame, executed 553603 cycles.
+Ran frame, executed 553469 cycles.
+Ran frame, executed 553335 cycles.
+Ran frame, executed 553201 cycles.
+Ran frame, executed 553067 cycles.
+Ran frame, executed 552933 cycles.
+Ran frame, executed 552799 cycles.
+Ran frame, executed 553677 cycles.
+Ran frame, executed 553543 cycles.
+Ran frame, executed 553409 cycles.
+Ran frame, executed 553275 cycles.
+Ran frame, executed 553141 cycles.
+Ran frame, executed 553007 cycles.
+Ran frame, executed 552873 cycles.
+Ran frame, executed 552739 cycles.
+Ran frame, executed 553617 cycles.
+Ran frame, executed 553483 cycles.
+Ran frame, executed 553349 cycles.
+Ran frame, executed 553215 cycles.
+Ran frame, executed 553081 cycles.
+Ran frame, executed 552947 cycles.
+Ran frame, executed 552813 cycles.
+Ran frame, executed 553691 cycles.
+Ran frame, executed 553557 cycles.
+Ran frame, executed 553423 cycles.
+Ran frame, executed 553289 cycles.
+Ran frame, executed 553155 cycles.
+Ran frame, executed 553021 cycles.
+Ran frame, executed 552887 cycles.
+Ran frame, executed 552753 cycles.
+Ran frame, executed 553631 cycles.
+Ran frame, executed 553497 cycles.
+Ran frame, executed 553363 cycles.
+Ran frame, executed 553229 cycles.
+Ran frame, executed 553095 cycles.
+Ran frame, executed 552961 cycles.
+Ran frame, executed 552827 cycles.
+Ran frame, executed 552693 cycles.
+Ran frame, executed 553571 cycles.
+Ran frame, executed 553437 cycles.
+Ran frame, executed 553303 cycles.
+Ran frame, executed 553169 cycles.
+Ran frame, executed 553035 cycles.
+Ran frame, executed 552901 cycles.
+Ran frame, executed 552767 cycles.
+Ran frame, executed 553645 cycles.
+Ran frame, executed 553511 cycles.
+Ran frame, executed 553377 cycles.
+Ran frame, executed 553243 cycles.
+Ran frame, executed 553109 cycles.
+Ran frame, executed 552975 cycles.
+Ran frame, executed 552841 cycles.
+Ran frame, executed 552707 cycles.
+Ran frame, executed 553585 cycles.
+Ran frame, executed 553451 cycles.
+Ran frame, executed 553317 cycles.
+Ran frame, executed 553183 cycles.
+Ran frame, executed 553049 cycles.
+Ran frame, executed 552915 cycles.
+Ran frame, executed 552781 cycles.
+Ran frame, executed 553659 cycles.
+Ran frame, executed 553525 cycles.
+Ran frame, executed 553391 cycles.
+Ran frame, executed 553257 cycles.
+Ran frame, executed 553123 cycles.
+Ran frame, executed 552989 cycles.
+Ran frame, executed 552855 cycles.
+Ran frame, executed 552721 cycles.
+Ran frame, executed 553599 cycles.
+Ran frame, executed 553465 cycles.
+Ran frame, executed 553331 cycles.
+Ran frame, executed 553197 cycles.
+Ran frame, executed 553063 cycles.
+Ran frame, executed 552929 cycles.
+Ran frame, executed 552795 cycles.
+Ran frame, executed 553673 cycles.
+Ran frame, executed 553539 cycles.
+Ran frame, executed 553405 cycles.
+Ran frame, executed 553271 cycles.
+Ran frame, executed 553137 cycles.
+Ran frame, executed 553003 cycles.
+Ran frame, executed 552869 cycles.
+Ran frame, executed 552735 cycles.
+Ran frame, executed 553613 cycles.
+Ran frame, executed 553479 cycles.
+Ran frame, executed 553345 cycles.
+Ran frame, executed 553211 cycles.
+Ran frame, executed 553077 cycles.
+Ran frame, executed 552943 cycles.
+Ran frame, executed 552809 cycles.
+Ran frame, executed 553687 cycles.
+Ran frame, executed 553553 cycles.
+Ran frame, executed 553419 cycles.
+Ran frame, executed 553285 cycles.
+Ran frame, executed 553151 cycles.
+Ran frame, executed 553017 cycles.
+Ran frame, executed 552883 cycles.
+Ran frame, executed 552749 cycles.
+Ran frame, executed 553627 cycles.
+Ran frame, executed 553493 cycles.
+Ran frame, executed 553359 cycles.
+Ran frame, executed 553225 cycles.
+Ran frame, executed 553091 cycles.
+Ran frame, executed 552957 cycles.
+Ran frame, executed 552823 cycles.
+Ran frame, executed 552689 cycles.
+Ran frame, executed 553567 cycles.
+Ran frame, executed 553433 cycles.
+Ran frame, executed 553299 cycles.
+Ran frame, executed 553165 cycles.
+Ran frame, executed 553031 cycles.
+Ran frame, executed 552897 cycles.
+Ran frame, executed 552763 cycles.
+Ran frame, executed 553641 cycles.
+Ran frame, executed 553507 cycles.
+Ran frame, executed 553373 cycles.
+Ran frame, executed 553239 cycles.
+Ran frame, executed 553105 cycles.
+Ran frame, executed 552971 cycles.
+Ran frame, executed 552837 cycles.
+Ran frame, executed 552703 cycles.
+Ran frame, executed 553581 cycles.
+Ran frame, executed 553447 cycles.
+Ran frame, executed 553313 cycles.
+Ran frame, executed 553179 cycles.
+Ran frame, executed 553045 cycles.
+Ran frame, executed 552911 cycles.
+Ran frame, executed 552777 cycles.
+Ran frame, executed 553655 cycles.
+Ran frame, executed 553521 cycles.
+Ran frame, executed 553387 cycles.
+Ran frame, executed 553253 cycles.
+Ran frame, executed 553119 cycles.
+Ran frame, executed 552985 cycles.
+Ran frame, executed 552851 cycles.
+Ran frame, executed 552717 cycles.
+Ran frame, executed 553595 cycles.
+Ran frame, executed 553461 cycles.
+Ran frame, executed 553327 cycles.
+Ran frame, executed 553193 cycles.
+Ran frame, executed 553059 cycles.
+Ran frame, executed 552925 cycles.
+Ran frame, executed 552791 cycles.
+Ran frame, executed 553669 cycles.
+Ran frame, executed 553535 cycles.
+Ran frame, executed 553401 cycles.
+Ran frame, executed 553267 cycles.
+Ran frame, executed 553133 cycles.
+Ran frame, executed 552999 cycles.
+Ran frame, executed 552865 cycles.
+Ran frame, executed 552731 cycles.
+Ran frame, executed 553609 cycles.
+Ran frame, executed 553475 cycles.
+Ran frame, executed 553341 cycles.
+Ran frame, executed 553207 cycles.
+Ran frame, executed 553073 cycles.
+Ran frame, executed 552939 cycles.
+Ran frame, executed 552805 cycles.
+Ran frame, executed 553683 cycles.
+Ran frame, executed 553549 cycles.
+Ran frame, executed 553415 cycles.
+Ran frame, executed 553281 cycles.
+Ran frame, executed 553147 cycles.
+Ran frame, executed 553013 cycles.
+Ran frame, executed 552879 cycles.
+Ran frame, executed 552745 cycles.
+Ran frame, executed 553623 cycles.
+Ran frame, executed 553489 cycles.
+Ran frame, executed 553355 cycles.
+Ran frame, executed 553221 cycles.
+Ran frame, executed 553087 cycles.
+Ran frame, executed 552953 cycles.
+Ran frame, executed 552819 cycles.
+Ran frame, executed 553697 cycles.
+Ran frame, executed 553563 cycles.
+Ran frame, executed 553429 cycles.
+Ran frame, executed 553295 cycles.
+Ran frame, executed 553161 cycles.
+Ran frame, executed 553027 cycles.
+Ran frame, executed 552893 cycles.
+Ran frame, executed 552759 cycles.
+Ran frame, executed 553637 cycles.
+Ran frame, executed 553503 cycles.
+Ran frame, executed 553369 cycles.
+Ran frame, executed 553235 cycles.
+Ran frame, executed 553101 cycles.
+Ran frame, executed 552967 cycles.
+Ran frame, executed 552833 cycles.
+Ran frame, executed 552699 cycles.
+Ran frame, executed 553577 cycles.
+Ran frame, executed 553443 cycles.
+Ran frame, executed 553309 cycles.
+Ran frame, executed 553175 cycles.
+Ran frame, executed 553041 cycles.
+Ran frame, executed 552907 cycles.
+Ran frame, executed 552773 cycles.
+Ran frame, executed 553651 cycles.
+Ran frame, executed 553517 cycles.
+Ran frame, executed 553383 cycles.
+Ran frame, executed 553249 cycles.
+Ran frame, executed 553115 cycles.
+Ran frame, executed 552981 cycles.
+Ran frame, executed 552847 cycles.
+Ran frame, executed 552713 cycles.
+Ran frame, executed 553591 cycles.
+Ran frame, executed 553457 cycles.
+Ran frame, executed 553323 cycles.
+Ran frame, executed 553189 cycles.
+Ran frame, executed 553055 cycles.
+Ran frame, executed 552921 cycles.
+Ran frame, executed 552787 cycles.
+Ran frame, executed 553665 cycles.
+Ran frame, executed 553531 cycles.
+Ran frame, executed 553397 cycles.
+Ran frame, executed 553263 cycles.
+Ran frame, executed 553129 cycles.
+Ran frame, executed 552995 cycles.
+Ran frame, executed 552861 cycles.
+Ran frame, executed 552727 cycles.
+Ran frame, executed 553605 cycles.
+Ran frame, executed 553471 cycles.
+Ran frame, executed 553337 cycles.
+Ran frame, executed 553203 cycles.
+Ran frame, executed 553069 cycles.
+Ran frame, executed 552935 cycles.
+Ran frame, executed 552801 cycles.
+Ran frame, executed 553679 cycles.
+Ran frame, executed 553545 cycles.
+Ran frame, executed 553411 cycles.
+Ran frame, executed 553277 cycles.
+Ran frame, executed 553143 cycles.
+Tried to write 16 bits to ROM at 0x10002B04 with value of 0x0008.
+Ran frame, executed 553010 cycles.
+Ran frame, executed 552876 cycles.
+Ran frame, executed 552742 cycles.
+Ran frame, executed 553620 cycles.
+Ran frame, executed 553486 cycles.
+Ran frame, executed 553352 cycles.
+Ran frame, executed 553218 cycles.
+Ran frame, executed 553084 cycles.
+Ran frame, executed 552950 cycles.
+Ran frame, executed 552816 cycles.
+Ran frame, executed 553694 cycles.
+Ran frame, executed 553560 cycles.
+Ran frame, executed 553426 cycles.
+Ran frame, executed 553292 cycles.
+Ran frame, executed 553158 cycles.
+Ran frame, executed 553024 cycles.
+Ran frame, executed 552890 cycles.
+Ran frame, executed 552756 cycles.
+Ran frame, executed 553634 cycles.
+Ran frame, executed 553500 cycles.
+Ran frame, executed 553366 cycles.
+Ran frame, executed 553232 cycles.
+Ran frame, executed 553098 cycles.
+Ran frame, executed 552964 cycles.
+Ran frame, executed 552830 cycles.
+Ran frame, executed 552696 cycles.
+Ran frame, executed 553574 cycles.
+Ran frame, executed 553440 cycles.
+Ran frame, executed 553306 cycles.
+Ran frame, executed 553172 cycles.
+Ran frame, executed 553038 cycles.
+Ran frame, executed 552904 cycles.
+Ran frame, executed 552770 cycles.
+Ran frame, executed 553648 cycles.
+Ran frame, executed 553514 cycles.
+Ran frame, executed 553380 cycles.
+Ran frame, executed 553246 cycles.
+Ran frame, executed 553112 cycles.
+Ran frame, executed 552978 cycles.
+Ran frame, executed 552844 cycles.
+Ran frame, executed 552710 cycles.
+Ran frame, executed 553588 cycles.
+Ran frame, executed 553454 cycles.
+Ran frame, executed 553320 cycles.
+Ran frame, executed 553186 cycles.
+Ran frame, executed 553052 cycles.
+Ran frame, executed 552918 cycles.
+Ran frame, executed 552784 cycles.
+Ran frame, executed 553662 cycles.
+Ran frame, executed 553528 cycles.
+Ran frame, executed 553394 cycles.
+Ran frame, executed 553260 cycles.
+Ran frame, executed 553126 cycles.
+Ran frame, executed 552992 cycles.
+Ran frame, executed 552858 cycles.
+Ran frame, executed 552724 cycles.
+Ran frame, executed 553602 cycles.
+Ran frame, executed 553468 cycles.
+Ran frame, executed 553334 cycles.
+Ran frame, executed 553200 cycles.
+Ran frame, executed 553066 cycles.
+Ran frame, executed 552932 cycles.
+Ran frame, executed 552798 cycles.
+Ran frame, executed 553676 cycles.
+Ran frame, executed 553542 cycles.
+Ran frame, executed 553408 cycles.
+Ran frame, executed 553274 cycles.
+Ran frame, executed 553140 cycles.
+Ran frame, executed 553006 cycles.
+Ran frame, executed 552872 cycles.
+Ran frame, executed 552738 cycles.
+Ran frame, executed 553616 cycles.
+Ran frame, executed 553482 cycles.
+Ran frame, executed 553348 cycles.
+Ran frame, executed 553214 cycles.
+Ran frame, executed 553080 cycles.
+Ran frame, executed 552946 cycles.
+Ran frame, executed 552812 cycles.
+Ran frame, executed 553690 cycles.
+Ran frame, executed 553556 cycles.
+Ran frame, executed 553422 cycles.
+Ran frame, executed 553288 cycles.
+Ran frame, executed 553154 cycles.
+Ran frame, executed 553020 cycles.
+Ran frame, executed 552886 cycles.
+Ran frame, executed 552752 cycles.
+Ran frame, executed 553630 cycles.
+Ran frame, executed 553496 cycles.
+Ran frame, executed 553362 cycles.
+Ran frame, executed 553228 cycles.
+Ran frame, executed 553094 cycles.
+Ran frame, executed 552960 cycles.
+Ran frame, executed 552826 cycles.
+Ran frame, executed 552692 cycles.
+Ran frame, executed 553570 cycles.
+Ran frame, executed 553436 cycles.
+Ran frame, executed 553302 cycles.
+Ran frame, executed 553168 cycles.
+Ran frame, executed 553034 cycles.
+Ran frame, executed 552900 cycles.
+Ran frame, executed 552766 cycles.
+Ran frame, executed 553644 cycles.
+Ran frame, executed 553510 cycles.
+Ran frame, executed 553376 cycles.
+Ran frame, executed 553242 cycles.
+Ran frame, executed 553108 cycles.
+Ran frame, executed 552974 cycles.
+Ran frame, executed 552840 cycles.
+Ran frame, executed 552706 cycles.
+Ran frame, executed 553584 cycles.
+Ran frame, executed 553450 cycles.
+Ran frame, executed 553316 cycles.
+Ran frame, executed 553182 cycles.
+Ran frame, executed 553048 cycles.
+Ran frame, executed 552914 cycles.
+Ran frame, executed 552780 cycles.
+Ran frame, executed 553658 cycles.
+Ran frame, executed 553524 cycles.
+Ran frame, executed 553390 cycles.
+Ran frame, executed 553256 cycles.
+Ran frame, executed 553122 cycles.
+Ran frame, executed 552988 cycles.
+Ran frame, executed 552854 cycles.
+Ran frame, executed 552720 cycles.
+Ran frame, executed 553598 cycles.
+Ran frame, executed 553464 cycles.
+Ran frame, executed 553330 cycles.
+Ran frame, executed 553196 cycles.
+Ran frame, executed 553062 cycles.
+Ran frame, executed 552928 cycles.
+Ran frame, executed 552794 cycles.
+Ran frame, executed 553672 cycles.
+Ran frame, executed 553538 cycles.
+Ran frame, executed 553404 cycles.
+Ran frame, executed 553270 cycles.
+Ran frame, executed 553136 cycles.
+Ran frame, executed 553002 cycles.
+Ran frame, executed 552868 cycles.
+Ran frame, executed 552734 cycles.
+Ran frame, executed 553612 cycles.
+Ran frame, executed 553478 cycles.
+Ran frame, executed 553344 cycles.
+Ran frame, executed 553210 cycles.
+Ran frame, executed 553076 cycles.
+Ran frame, executed 552942 cycles.
+Ran frame, executed 552808 cycles.
+Ran frame, executed 553686 cycles.
+Ran frame, executed 553552 cycles.
+Ran frame, executed 553418 cycles.
+Ran frame, executed 553284 cycles.
+Ran frame, executed 553150 cycles.
+Ran frame, executed 553016 cycles.
+Ran frame, executed 552882 cycles.
+Ran frame, executed 552748 cycles.
+Ran frame, executed 553626 cycles.
+Ran frame, executed 553492 cycles.
+Ran frame, executed 553358 cycles.
+Ran frame, executed 553224 cycles.
+Ran frame, executed 553090 cycles.
+Ran frame, executed 552956 cycles.
+Ran frame, executed 552822 cycles.
+Ran frame, executed 552688 cycles.
+Ran frame, executed 553566 cycles.
+Ran frame, executed 553432 cycles.
+Ran frame, executed 553298 cycles.
+Ran frame, executed 553164 cycles.
+Ran frame, executed 553030 cycles.
+Ran frame, executed 552896 cycles.
+Ran frame, executed 552762 cycles.
+Ran frame, executed 553640 cycles.
+Ran frame, executed 553506 cycles.
+Ran frame, executed 553372 cycles.
+Ran frame, executed 553238 cycles.
+Ran frame, executed 553104 cycles.
+Ran frame, executed 552970 cycles.
+Ran frame, executed 552836 cycles.
+Ran frame, executed 552702 cycles.
+Ran frame, executed 553580 cycles.
+Ran frame, executed 553446 cycles.
+Ran frame, executed 553312 cycles.
+Ran frame, executed 553178 cycles.
+Ran frame, executed 553044 cycles.
+Ran frame, executed 552910 cycles.
+Ran frame, executed 552776 cycles.
+Ran frame, executed 553654 cycles.
+Ran frame, executed 553520 cycles.
+Ran frame, executed 553386 cycles.
+Ran frame, executed 553252 cycles.
+Ran frame, executed 553118 cycles.
+Ran frame, executed 552984 cycles.
+Ran frame, executed 552850 cycles.
+Ran frame, executed 552716 cycles.
+Ran frame, executed 553594 cycles.
+Ran frame, executed 553460 cycles.
+Ran frame, executed 553326 cycles.
+Ran frame, executed 553192 cycles.
+Ran frame, executed 553058 cycles.
+Ran frame, executed 552924 cycles.
+Ran frame, executed 552790 cycles.
+Ran frame, executed 553668 cycles.
+Ran frame, executed 553534 cycles.
+Ran frame, executed 553400 cycles.
+Ran frame, executed 553266 cycles.
+Ran frame, executed 553132 cycles.
+Ran frame, executed 552998 cycles.
+Ran frame, executed 552864 cycles.
+Ran frame, executed 552730 cycles.
+Ran frame, executed 553608 cycles.
+Ran frame, executed 553474 cycles.
+Ran frame, executed 553340 cycles.
+Ran frame, executed 553206 cycles.
+Ran frame, executed 553072 cycles.
+Ran frame, executed 552938 cycles.
+Ran frame, executed 552804 cycles.
+Ran frame, executed 553682 cycles.
+Ran frame, executed 553548 cycles.
+Ran frame, executed 553414 cycles.
+Ran frame, executed 553280 cycles.
+Ran frame, executed 553146 cycles.
+Ran frame, executed 553012 cycles.
+Ran frame, executed 552878 cycles.
+Ran frame, executed 552744 cycles.
+Ran frame, executed 553622 cycles.
+Ran frame, executed 553488 cycles.
+Ran frame, executed 553354 cycles.
+Ran frame, executed 553220 cycles.
+Ran frame, executed 553086 cycles.
+Ran frame, executed 552952 cycles.
+Ran frame, executed 552818 cycles.
+Ran frame, executed 553696 cycles.
+Ran frame, executed 553562 cycles.
+Ran frame, executed 553428 cycles.
+Ran frame, executed 553294 cycles.
+Ran frame, executed 553160 cycles.
+Ran frame, executed 553026 cycles.
+Ran frame, executed 552892 cycles.
+Ran frame, executed 552758 cycles.
+Ran frame, executed 553636 cycles.
+Ran frame, executed 553502 cycles.
+Ran frame, executed 553368 cycles.
+Ran frame, executed 553234 cycles.
+Ran frame, executed 553100 cycles.
+Ran frame, executed 552966 cycles.
+Ran frame, executed 552832 cycles.
+Ran frame, executed 552698 cycles.
+Ran frame, executed 553576 cycles.
+Ran frame, executed 553442 cycles.
+Ran frame, executed 553308 cycles.
+Ran frame, executed 553174 cycles.
+Ran frame, executed 553040 cycles.
+Ran frame, executed 552906 cycles.
+Ran frame, executed 552772 cycles.
+Ran frame, executed 553650 cycles.
+Ran frame, executed 553516 cycles.
+Ran frame, executed 553382 cycles.
+Ran frame, executed 553248 cycles.
+Ran frame, executed 553114 cycles.
+Ran frame, executed 552980 cycles.
+Ran frame, executed 552846 cycles.
+Ran frame, executed 552712 cycles.
+Ran frame, executed 553590 cycles.
+Ran frame, executed 553456 cycles.
+Ran frame, executed 553322 cycles.
+Ran frame, executed 553188 cycles.
+Ran frame, executed 553054 cycles.
