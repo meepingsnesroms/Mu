@@ -1,4 +1,4 @@
-# Palm m515/OS 4.1 emulator
+﻿# Palm m515/OS 4.1 emulator
 
 This is a complete restart of my Palm OS emulator, with the last one the code got too messy and the goal too ambitious(to emulate every palm API in software and for compatibility with all Palm OS versions and devices).
 
@@ -27,19 +27,19 @@ These patches will not be worked on until the emulator is actually running.
 
 I have made a video of OS 5 doing that "more", it is extremely incompatible with OS 4 games which most games are, very few games used the ARM CPU and those that did are available on other platforms, some used the 320x320 display mode.
 
-On Clie PEG-SL10:
-ArgonV:      Normal
-Galax:        Normal
-Zap!20XX:  Normal
-Invaders:    Normal
+On Clie PEG-SL10:  
+ArgonV:      Normal  
+Galax:        Normal  
+Zap!20XX:  Normal  
+Invaders:    Normal  
 Platypus:    No ARM CPU, Cant Run
 
-On Palm T|X:
-ArgonV:      Runs At Warpspeed
-Galax:         Audio Cuts Out
-Zap!20XX:  Audio Cuts Out
-Invaders:    Reboots System
-Platypus:    Normal, Used To Prove Speaker Isnt Defective
+On Palm T|X:  
+ArgonV:      Runs At Warpspeed  
+Galax:         Audio Cuts Out  
+Zap!20XX:  Audio Cuts Out  
+Invaders:    Reboots System  
+Platypus:    Normal, Used To Prove Speaker Isnt Defective  
 Bonus:        Has Adware(Addit)
 
 [Palm T|X vs OS 4 Games](https://youtu.be/ithVLI_M6i0)
