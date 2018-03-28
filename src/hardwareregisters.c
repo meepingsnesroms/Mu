@@ -8,7 +8,7 @@
 #include "hardwareRegisters.h"
 #include "cpu32Opcodes.h"
 #include "m68k/m68k.h"
-#include "silkscreen.h"
+#include "m68k/m68kcpu.h"
 
 
 static inline unsigned int registerArrayRead8(unsigned int address){
@@ -40,7 +40,7 @@ static inline void registerArrayWrite32(unsigned int address, unsigned int value
 }
 
 
-uint32_t rtiInterruptCounter;
+uint32_t clk32Counter;
 
 void checkInterrupts();
 void setIprIsrBit(uint32_t interruptBit);
@@ -63,12 +63,9 @@ void setPllfsr16(unsigned int value){
       uint32_t prescaler1 = (registerArrayRead16(PLLCR) & 0x0080) ? 2 : 1;
       uint32_t p = value & 0x00FF;
       uint32_t q = (value & 0x0F00) >> 8;
-      uint32_t newCrystalCycles = 2 * (14 * (p + 1) + q + 1) / prescaler1;
-      uint32_t newFrequency = newCrystalCycles * CRYSTAL_FREQUENCY;
-      printf("New CPU frequency of:%d cycles per second.\n", newFrequency);
-      printf("New clk32 cycle count of :%d.\n", newCrystalCycles);
-      
-      palmCpuFrequency = newFrequency;
+      palmCrystalCycles = 2 * (14 * (p + 1) + q + 1) / prescaler1;
+      printf("New CPU frequency of:%d cycles per second.\n", CPU_FREQUENCY);
+      printf("New clk32 cycle count of :%d.\n", palmCrystalCycles);
    }
 }
 
@@ -79,12 +76,9 @@ void setPllcr(unsigned int value){
    uint32_t prescaler1 = (value & 0x0080) ? 2 : 1;
    uint32_t p = pllfsr & 0x00FF;
    uint32_t q = (pllfsr & 0x0F00) >> 8;
-   uint32_t newCrystalCycles = 2 * (14 * (p + 1) + q + 1) / prescaler1;
-   uint32_t newFrequency = newCrystalCycles * CRYSTAL_FREQUENCY;
-   printf("New CPU frequency of:%d cycles per second.\n", newFrequency);
-   printf("New clk32 cycle count of :%d.\n", newCrystalCycles);
-   
-   palmCpuFrequency = newFrequency;
+   palmCrystalCycles = 2 * (14 * (p + 1) + q + 1) / prescaler1;
+   printf("New CPU frequency of:%d cycles per second.\n", CPU_FREQUENCY);
+   printf("New clk32 cycle count of :%d.\n", palmCrystalCycles);
    
    if(value & 0x0008){
       //the pll is disabled, the cpu is off, end execution now
@@ -96,41 +90,35 @@ static inline void rtiInterruptClk32(){
    //this function is part of clk32();
    uint16_t triggeredRtiInterrupts = 0;
    
-   //rolls over every second
-   if(rtiInterruptCounter >= CRYSTAL_FREQUENCY - 1)
-      rtiInterruptCounter = 0;
-   else
-      rtiInterruptCounter++;
-   
-   if(rtiInterruptCounter % (CRYSTAL_FREQUENCY / 512) == 0){
+   if(clk32Counter % (CRYSTAL_FREQUENCY / 512) == 0){
       //RIS7 - 512HZ
       triggeredRtiInterrupts |= 0x8000;
    }
-   if(rtiInterruptCounter % (CRYSTAL_FREQUENCY / 256) == 0){
+   if(clk32Counter % (CRYSTAL_FREQUENCY / 256) == 0){
       //RIS6 - 256HZ
       triggeredRtiInterrupts |= 0x4000;
    }
-   if(rtiInterruptCounter % (CRYSTAL_FREQUENCY / 128) == 0){
+   if(clk32Counter % (CRYSTAL_FREQUENCY / 128) == 0){
       //RIS5 - 128HZ
       triggeredRtiInterrupts |= 0x2000;
    }
-   if(rtiInterruptCounter % (CRYSTAL_FREQUENCY / 64) == 0){
+   if(clk32Counter % (CRYSTAL_FREQUENCY / 64) == 0){
       //RIS4 - 64HZ
       triggeredRtiInterrupts |= 0x1000;
    }
-   if(rtiInterruptCounter % (CRYSTAL_FREQUENCY / 32) == 0){
+   if(clk32Counter % (CRYSTAL_FREQUENCY / 32) == 0){
       //RIS3 - 32HZ
       triggeredRtiInterrupts |= 0x0800;
    }
-   if(rtiInterruptCounter % (CRYSTAL_FREQUENCY / 16) == 0){
+   if(clk32Counter % (CRYSTAL_FREQUENCY / 16) == 0){
       //RIS2 - 16HZ
       triggeredRtiInterrupts |= 0x0400;
    }
-   if(rtiInterruptCounter % (CRYSTAL_FREQUENCY / 8) == 0){
+   if(clk32Counter % (CRYSTAL_FREQUENCY / 8) == 0){
       //RIS1 - 8HZ
       triggeredRtiInterrupts |= 0x0200;
    }
-   if(rtiInterruptCounter % (CRYSTAL_FREQUENCY / 4) == 0){
+   if(clk32Counter % (CRYSTAL_FREQUENCY / 4) == 0){
       //RIS0 - 4HZ
       triggeredRtiInterrupts |= 0x0100;
    }
@@ -312,6 +300,9 @@ void checkInterrupts(){
 
 
 void rtcAddSecond(){
+   //this function is part of clk32();
+   
+   //rtc
    if(registerArrayRead16(RTCCTL) & 0x0080){
       //rtc enable bit set
       uint16_t rtcInterruptEvents;
@@ -352,10 +343,40 @@ void rtcAddSecond(){
       newRtcTime |= hours << 24;
       registerArrayWrite32(RTCTIME, newRtcTime);
    }
+   
+   //watchdog
+   uint16_t watchdogState = registerArrayRead16(WATCHDOG);
+   if(watchdogState & 0x0001){
+      //watchdog enabled
+      watchdogState += 0x0100;//add second to watchdog timer
+      watchdogState &= 0x0383;//cap overflow
+      if(watchdogState & 0x0200 == 0x0200){
+         //time expired
+         if(watchdogState & 0x0002){
+            //interrupt
+            setIprIsrBit(INT_WDT);
+         }
+         else{
+            //reset
+            emulatorReset();
+            return;
+         }
+      }
+      registerArrayWrite16(WATCHDOG, watchdogState);
+   }
 }
 
 void clk32(){
    registerArrayWrite16(PLLFSR, registerArrayRead16(PLLFSR) ^ 0x8000);
+   //rolls over every second
+   if(clk32Counter >= CRYSTAL_FREQUENCY - 1){
+      clk32Counter = 0;
+      rtcAddSecond();
+   }
+   else{
+      clk32Counter++;
+   }
+   
    rtiInterruptClk32();
    
    //more will be added here for timers
@@ -369,10 +390,23 @@ bool cpuIsOn(){
 
 
 int interruptAcknowledge(int intLevel){
+   int vectorOffset = registerArrayRead8(IVR);
+   int vector;
+   
+   //If an interrupt occurs before the IVR has been programmed, the interrupt vector number 0x0F is returned to the CPU as an uninitialized interrupt.
+   if(!vectorOffset)
+      vector = EXCEPTION_UNINITIALIZED_INTERRUPT;
+   else
+      vector = vectorOffset | intLevel;
+   
    //dont know if interrupts reenable the pll if disabled, but they exit low power stop mode
    lowPowerStopActive = false;
    
-   return M68K_INT_ACK_AUTOVECTOR;
+   //the interrupt is not really cleared until the handler writes a 1 to its source register, if the os doesnt
+   //clear the interrupt properly it will trigger again on the first clk32 after returning from this interrupt
+   CPU_INT_LEVEL = 0;
+   
+   return vector;
 }
 
 
@@ -505,6 +539,31 @@ void setHwRegister16(unsigned int address, unsigned int value){
          registerArrayWrite16(address, value & 0xFF3F);
          break;
          
+      case IMR:
+         //this is a 32 bit register but palm os writes it as 16 bit chunks
+         registerArrayWrite16(address, value & 0x00FF);
+         break;
+      case IMR + 2:
+         //this is a 32 bit register but palm os writes it as 16 bit chunks
+         registerArrayWrite16(address, value & 0x03FF);
+         break;
+         
+      case ISR + 2:
+         //this is a 32 bit register but palm os writes it as 16 bit chunks
+         registerArrayWrite16(ISR + 2, registerArrayRead16(ISR + 2) & ~(value & 0x0F00));
+         break;
+         
+         /*
+      case TCTL1:
+         dprk
+         break;
+         */
+         
+      case WATCHDOG:
+         //writing to the watchdog resets the counter bits(8 and 9) to 0
+         registerArrayWrite16(address, value & 0x0083);
+         break;
+         
       case RTCISR:
          registerArrayWrite16(RTCISR, registerArrayRead16(RTCISR) & ~value);
          if(!(registerArrayRead16(RTCISR) & 0xFF00))
@@ -575,7 +634,7 @@ void setHwRegister32(unsigned int address, unsigned int value){
 
 void resetHwRegisters(){
    memset(palmReg, 0x00, REG_SIZE);
-   rtiInterruptCounter = 0;
+   clk32Counter = 0;
    
    //system control
    registerArrayWrite8(SCR, 0x1C);

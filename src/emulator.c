@@ -25,10 +25,8 @@
 uint8_t  palmRam[RAM_SIZE];
 uint8_t  palmRom[ROM_SIZE];
 uint8_t  palmReg[REG_SIZE];
-uint32_t palmCpuFrequency;//cycles per second
 uint32_t palmCrystalCycles;//how many cycles before toggling the 32.768 kHz crystal
 uint32_t palmCycleCounter;//can be greater then 0 if too many cycles where run
-uint32_t palmRtcFrameCounter;//when this reaches EMU_FPS increment the real time clock
 
 uint16_t palmFramebuffer[160 * (160 + 60)];//really 160*160, the extra pixels are the silkscreened digitizer area
 uint16_t palmButtonState;
@@ -50,9 +48,7 @@ void emulatorInit(uint8_t* palmRomDump){
    resetHwRegisters();
    sed1376Reset();
    palmCrystalCycles = 2 * (14 * (71/*p*/ + 1) + 3/*q*/ + 1) / 2/*prescaler1*/;
-   palmCpuFrequency = palmCrystalCycles * CRYSTAL_FREQUENCY;
    palmCycleCounter = 0;
-   palmRtcFrameCounter = 0;
    
    palmClockMultiplier = 1;//Overclock disabled
    lowPowerStopActive = false;
@@ -85,15 +81,11 @@ void emulatorSaveState(uint8_t* data){
    offset += RAM_SIZE;
    memcpy(data + offset, palmReg, REG_SIZE);
    offset += REG_SIZE;
-   memcpy(data + offset, &palmCpuFrequency, sizeof(uint32_t));
-   offset += sizeof(uint32_t);
    memcpy(data + offset, &palmCrystalCycles, sizeof(uint32_t));
    offset += sizeof(uint32_t);
    memcpy(data + offset, &palmCycleCounter, sizeof(uint32_t));
    offset += sizeof(uint32_t);
-   memcpy(data + offset, &palmRtcFrameCounter, sizeof(uint32_t));
-   offset += sizeof(uint32_t);
-   memcpy(data + offset, &rtiInterruptCounter, sizeof(uint32_t));
+   memcpy(data + offset, &clk32Counter, sizeof(uint32_t));
    offset += sizeof(uint32_t);
    data[offset] = lowPowerStopActive;
    offset += 1;
@@ -107,15 +99,11 @@ void emulatorLoadState(uint8_t* data){
    offset += RAM_SIZE;
    memcpy(palmReg, data + offset, REG_SIZE);
    offset += REG_SIZE;
-   memcpy(&palmCpuFrequency, data + offset, sizeof(uint32_t));
-   offset += sizeof(uint32_t);
    memcpy(&palmCrystalCycles, data + offset, sizeof(uint32_t));
    offset += sizeof(uint32_t);
    memcpy(&palmCycleCounter, data + offset, sizeof(uint32_t));
    offset += sizeof(uint32_t);
-   memcpy(&palmRtcFrameCounter, data + offset, sizeof(uint32_t));
-   offset += sizeof(uint32_t);
-   memcpy(&rtiInterruptCounter, data + offset, sizeof(uint32_t));
+   memcpy(&clk32Counter, data + offset, sizeof(uint32_t));
    offset += sizeof(uint32_t);
    lowPowerStopActive = data[offset];
    offset += 1;
@@ -126,19 +114,14 @@ uint32_t emulatorInstallPrcPdb(uint8_t* data, uint32_t size){
 }
 
 void emulateFrame(){
-   while(palmCycleCounter < palmCpuFrequency / EMU_FPS){
+   while(palmCycleCounter < CPU_FREQUENCY / EMU_FPS){
       if(cpuIsOn())
          palmCycleCounter += m68k_execute(palmCrystalCycles * palmClockMultiplier) / palmClockMultiplier;//normaly 33mhz / 60fps
       else
          palmCycleCounter += palmCrystalCycles;
       clk32();
    }
-   palmCycleCounter -= palmCpuFrequency / EMU_FPS;
-   
-   palmRtcFrameCounter++;
-   if(palmRtcFrameCounter >= EMU_FPS){
-      rtcAddSecond();
-      palmRtcFrameCounter = 0;
-   }
-   printf("Ran frame, executed %d cycles.\n", palmCycleCounter + palmCpuFrequency / EMU_FPS);
+   palmCycleCounter -= CPU_FREQUENCY / EMU_FPS;
+
+   printf("Ran frame, executed %d cycles.\n", palmCycleCounter + CPU_FREQUENCY / EMU_FPS);
 }

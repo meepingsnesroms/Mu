@@ -29,7 +29,7 @@
 #define INT_SPI2   0x00000001 //level 4
 
 //variables
-extern uint32_t rtiInterruptCounter;
+extern uint32_t clk32Counter;
 
 //memory accessors
 unsigned int getHwRegister8(unsigned int address);
@@ -40,11 +40,10 @@ void setHwRegister16(unsigned int address, unsigned int value);
 void setHwRegister32(unsigned int address, unsigned int value);
 
 //timing
-void rtcAddSecond();
 void clk32();//also checks all interrupts
-bool cpuIsOn();
 
 //cpu
+bool cpuIsOn();
 int interruptAcknowledge(int intLevel);
 
 //config

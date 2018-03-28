@@ -18,6 +18,7 @@ enum emu_error_t{
 //config options
 #define EMU_FPS 60
 #define CRYSTAL_FREQUENCY 32768
+#define CPU_FREQUENCY (palmCrystalCycles * CRYSTAL_FREQUENCY)
 
 //memory chip addresses
 #define RAM_START_ADDRESS 0x00000000
@@ -37,7 +38,6 @@ enum emu_error_t{
 extern uint8_t  palmRam[];
 extern uint8_t  palmRom[];
 extern uint8_t  palmReg[];
-extern uint32_t palmCpuFrequency;
 extern uint32_t palmCrystalCycles;
 extern uint32_t palmCycleCounter;
 extern uint32_t palmRtcFrameCounter;
