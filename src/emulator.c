@@ -25,15 +25,11 @@
 uint8_t  palmRam[RAM_SIZE];
 uint8_t  palmRom[ROM_SIZE];
 uint8_t  palmReg[REG_SIZE];
-uint32_t palmCrystalCycles;//how many cycles before toggling the 32.768 kHz crystal
-uint32_t palmCycleCounter;//can be greater then 0 if too many cycles where run
-
+input_t  palmIo;
 uint16_t palmFramebuffer[160 * (160 + 60)];//really 160*160, the extra pixels are the silkscreened digitizer area
-uint16_t palmButtonState;
-uint16_t palmTouchscreenX;
-uint16_t palmTouchscreenY;
-bool     palmTouchscreenTouched;
-uint32_t palmClockMultiplier;//used by the emulator to overclock the emulated palm
+double   palmCrystalCycles;//how many cycles before toggling the 32.768 kHz crystal
+double   palmCycleCounter;//can be greater then 0 if too many cycles where run
+double   palmClockMultiplier;//used by the emulator to overclock the emulated palm
 
 
 void emulatorInit(uint8_t* palmRomDump){
@@ -44,13 +40,14 @@ void emulatorInit(uint8_t* palmRomDump){
    memset(palmRam, 0x00, RAM_SIZE);
    memcpy(palmRom, palmRomDump, ROM_SIZE);
    memcpy(palmRam, palmRom, 256);//copy ROM header
+   memset(&palmIo, 0x00, sizeof(input_t));
    memcpy(&palmFramebuffer[160 * 160], silkscreenData, SILKSCREEN_WIDTH * SILKSCREEN_HEIGHT * (SILKSCREEN_BPP / 8));
    resetHwRegisters();
    sed1376Reset();
-   palmCrystalCycles = 2 * (14 * (71/*p*/ + 1) + 3/*q*/ + 1) / 2/*prescaler1*/;
-   palmCycleCounter = 0;
+   palmCrystalCycles = 2.0 * (14.0 * (71.0/*p*/ + 1.0) + 3.0/*q*/ + 1.0) / 2.0/*prescaler1*/;
+   palmCycleCounter = 0.0;
    
-   palmClockMultiplier = 1;//Overclock disabled
+   palmClockMultiplier = 1.0;//Overclock disabled
    lowPowerStopActive = false;
    
    m68k_set_reset_instr_callback(emulatorReset);
@@ -81,12 +78,12 @@ void emulatorSaveState(uint8_t* data){
    offset += RAM_SIZE;
    memcpy(data + offset, palmReg, REG_SIZE);
    offset += REG_SIZE;
-   memcpy(data + offset, &palmCrystalCycles, sizeof(uint32_t));
-   offset += sizeof(uint32_t);
-   memcpy(data + offset, &palmCycleCounter, sizeof(uint32_t));
-   offset += sizeof(uint32_t);
+   memcpy(data + offset, &palmCrystalCycles, sizeof(double));
+   offset += sizeof(double);
+   memcpy(data + offset, &palmCycleCounter, sizeof(double));
+   offset += sizeof(double);
    memcpy(data + offset, &clk32Counter, sizeof(uint32_t));
-   offset += sizeof(uint32_t);
+   offset += sizeof(double);
    data[offset] = lowPowerStopActive;
    offset += 1;
 }
@@ -99,12 +96,12 @@ void emulatorLoadState(uint8_t* data){
    offset += RAM_SIZE;
    memcpy(palmReg, data + offset, REG_SIZE);
    offset += REG_SIZE;
-   memcpy(&palmCrystalCycles, data + offset, sizeof(uint32_t));
-   offset += sizeof(uint32_t);
-   memcpy(&palmCycleCounter, data + offset, sizeof(uint32_t));
-   offset += sizeof(uint32_t);
-   memcpy(&clk32Counter, data + offset, sizeof(uint32_t));
-   offset += sizeof(uint32_t);
+   memcpy(&palmCrystalCycles, data + offset, sizeof(double));
+   offset += sizeof(double);
+   memcpy(&palmCycleCounter, data + offset, sizeof(double));
+   offset += sizeof(double);
+   memcpy(&clk32Counter, data + offset, sizeof(double));
+   offset += sizeof(double);
    lowPowerStopActive = data[offset];
    offset += 1;
 }
@@ -123,5 +120,5 @@ void emulateFrame(){
    }
    palmCycleCounter -= CPU_FREQUENCY / EMU_FPS;
 
-   printf("Ran frame, executed %d cycles.\n", palmCycleCounter + CPU_FREQUENCY / EMU_FPS);
+   printf("Ran frame, executed %f cycles.\n", palmCycleCounter + CPU_FREQUENCY / EMU_FPS);
 }

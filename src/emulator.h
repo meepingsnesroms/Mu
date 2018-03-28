@@ -11,13 +11,21 @@ enum emu_error_t{
    EMU_ERROR_NOT_DOCUMENTED
 };
 
+//types
+typedef struct{
+   uint16_t buttonState;
+   uint16_t touchscreenX;
+   uint16_t touchscreenY;
+   bool     touchscreenTouched;
+}input_t;
+
 //buttons
 #define buttonUp 0
 //etc...
 
 //config options
-#define EMU_FPS 60
-#define CRYSTAL_FREQUENCY 32768
+#define EMU_FPS 60.0
+#define CRYSTAL_FREQUENCY 32768.0
 #define CPU_FREQUENCY (palmCrystalCycles * CRYSTAL_FREQUENCY)
 
 //memory chip addresses
@@ -38,17 +46,11 @@ enum emu_error_t{
 extern uint8_t  palmRam[];
 extern uint8_t  palmRom[];
 extern uint8_t  palmReg[];
-extern uint32_t palmCrystalCycles;
-extern uint32_t palmCycleCounter;
-extern uint32_t palmRtcFrameCounter;
-
-//i/o
+extern input_t  palmIo;
 extern uint16_t palmFramebuffer[];
-extern uint16_t palmButtonState;
-extern uint16_t palmTouchscreenX;
-extern uint16_t palmTouchscreenY;
-extern bool     palmTouchscreenTouched;
-extern uint32_t palmClockMultiplier;
+extern double   palmCrystalCycles;
+extern double   palmCycleCounter;
+extern double   palmClockMultiplier;
 
 //functions
 void emulatorInit(uint8_t* palmRomDump);
