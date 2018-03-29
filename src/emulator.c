@@ -84,6 +84,10 @@ void emulatorSaveState(uint8_t* data){
    offset += sizeof(double);
    memcpy(data + offset, &clk32Counter, sizeof(uint32_t));
    offset += sizeof(double);
+   memcpy(data + offset, &timer1CycleCounter, sizeof(uint32_t));
+   offset += sizeof(double);
+   memcpy(data + offset, &timer2CycleCounter, sizeof(uint32_t));
+   offset += sizeof(double);
    data[offset] = lowPowerStopActive;
    offset += 1;
 }
@@ -101,6 +105,10 @@ void emulatorLoadState(uint8_t* data){
    memcpy(&palmCycleCounter, data + offset, sizeof(double));
    offset += sizeof(double);
    memcpy(&clk32Counter, data + offset, sizeof(double));
+   offset += sizeof(double);
+   memcpy(&timer1CycleCounter, data + offset, sizeof(uint32_t));
+   offset += sizeof(double);
+   memcpy(&timer2CycleCounter, data + offset, sizeof(uint32_t));
    offset += sizeof(double);
    lowPowerStopActive = data[offset];
    offset += 1;

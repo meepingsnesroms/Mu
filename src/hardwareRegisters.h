@@ -30,6 +30,8 @@
 
 //variables
 extern uint32_t clk32Counter;
+extern double timer1CycleCounter;
+extern double timer2CycleCounter;
 
 //memory accessors
 unsigned int getHwRegister8(unsigned int address);

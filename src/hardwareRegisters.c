@@ -53,6 +53,8 @@ static inline void clearIprIsrBit(uint32_t interruptBit){
 
 
 uint32_t clk32Counter;
+double timer1CycleCounter;
+double timer2CycleCounter;
 
 
 void printUnknownHwAccess(unsigned int address, unsigned int value, unsigned int size, bool isWrite){
@@ -94,21 +96,27 @@ static inline void setPllcr(uint16_t value){
    }
 }
 
-static inline double sysclksPerClk32(){
-   //extreme precision must be used with the prescalers since it is possible to divide the int so much it is zero and timers will never increment
+static inline double dmaclksPerClk32(){
    uint16_t pllcr = registerArrayRead16(PLLCR);
-   double   sysclks = palmCrystalCycles;
-   uint16_t sysclkSelect = (pllcr >> 8) & 0x0003;
+   double   dmaclks = palmCrystalCycles;
    
    if(pllcr & 0x0080){
       //prescaler 1 enabled, divide by 2
-      sysclks /= 2.0;
+      dmaclks /= 2.0;
    }
    
    if(pllcr & 0x0020){
       //prescaler 2 enabled, divides value from prescaler 1 by 2
-      sysclks /= 2.0;
+      dmaclks /= 2.0;
    }
+   
+   return dmaclks;
+}
+
+static inline double sysclksPerClk32(){
+   uint16_t pllcr = registerArrayRead16(PLLCR);
+   double   sysclks = dmaclksPerClk32();
+   uint16_t sysclkSelect = (pllcr >> 8) & 0x0003;
    
    switch(sysclkSelect){
          
@@ -183,11 +191,99 @@ static inline void rtiInterruptClk32(){
 static inline void timer12Clk32(){
    //this function is part of clk32();
    uint16_t timer1Control = registerArrayRead16(TCTL1);
-   uint16_t timer2Control = registerArrayRead16(TCTL2);
+   uint16_t timer1Prescaler = registerArrayRead16(TPRER1) & 0x00FF;
+   uint16_t timer1Compare = registerArrayRead16(TCMP1);
+   uint16_t timer1Count = registerArrayRead16(TCN1);
    
-   if(timer1Control & 0x0001 && timer1Control & 0x000E){
-      //enabled and clock source set
+   uint16_t timer2Control = registerArrayRead16(TCTL2);
+   uint16_t timer2Prescaler = registerArrayRead16(TPRER2) & 0x00FF;
+   uint16_t timer2Compare = registerArrayRead16(TCMP2);
+   uint16_t timer2Count = registerArrayRead16(TCN2);
+   
+   //timer 1
+   if(timer1Control & 0x0001){
+      //enabled
+      switch((timer1Control & 0x000E) >> 1){
+            
+         case 0x0000://stop counter
+         case 0x0003://TIN pin / timer prescaler, nothing is attached to TIN
+            //do nothing
+            break;
+            
+         case 0x0001://sysclk / timer prescaler
+            timer1CycleCounter += sysclksPerClk32() / (double)timer1Prescaler;
+            break;
+            
+         case 0x0002://sysclk / 16 / timer prescaler
+            timer1CycleCounter += sysclksPerClk32() / 16.0 / (double)timer1Prescaler;
+            break;
+            
+         default://clk32 / timer prescaler
+            timer1CycleCounter += 1.0 / (double)timer1Prescaler;
+            break;
+      }
       
+      if(timer1CycleCounter >= 1.0){
+         timer1Count += (uint16_t)timer1CycleCounter;
+         timer1CycleCounter -= (uint16_t)timer1CycleCounter;
+      }
+      
+      if(timer1Count == timer1Compare){
+         if(timer1Control & 0x0010){
+            //interrupt enabled
+            setIprIsrBit(INT_TMR1);
+         }
+         
+         if(!(timer1Control & 0x0100)){
+            //not free running, reset to 0
+            timer1Count = 0x0000;
+         }
+      }
+      
+      registerArrayWrite16(TCN1, timer1Count);
+   }
+   
+   //timer 2
+   if(timer2Control & 0x0001){
+      //enabled
+      switch((timer2Control & 0x000E) >> 1){
+            
+         case 0x0000://stop counter
+         case 0x0003://TIN pin / timer prescaler, nothing is attached to TIN
+            //do nothing
+            break;
+            
+         case 0x0001://sysclk / timer prescaler
+            timer2CycleCounter += sysclksPerClk32() / (double)timer2Prescaler;
+            break;
+            
+         case 0x0002://sysclk / 16 / timer prescaler
+            timer2CycleCounter += sysclksPerClk32() / 16.0 / (double)timer2Prescaler;
+            break;
+            
+         default://clk32 / timer prescaler
+            timer2CycleCounter += 1.0 / (double)timer2Prescaler;
+            break;
+      }
+      
+      if(timer2CycleCounter >= 1.0){
+         timer2Count += (uint16_t)timer2CycleCounter;
+         timer2CycleCounter -= (uint16_t)timer2CycleCounter;
+      }
+      
+      if(timer2Count == timer2Compare){
+         if(timer2Control & 0x0010){
+            //interrupt enabled
+            setIprIsrBit(INT_TMR2);
+         }
+         
+         if(!(timer2Control & 0x0100)){
+            //not free running, reset to 0
+            timer2Count = 0x0000;
+         }
+      }
+      
+      registerArrayWrite16(TCN2, timer2Count);
    }
 }
 
@@ -602,11 +698,10 @@ void setHwRegister16(unsigned int address, unsigned int value){
          registerArrayWrite16(ISR + 2, registerArrayRead16(ISR + 2) & ~(value & 0x0F00));
          break;
          
-         /*
       case TCTL1:
-         dprk
+      case TCTL2:
+         registerArrayWrite16(address, value & 0x01FF);
          break;
-         */
          
       case WATCHDOG:
          //writing to the watchdog resets the counter bits(8 and 9) to 0
@@ -684,6 +779,8 @@ void setHwRegister32(unsigned int address, unsigned int value){
 void resetHwRegisters(){
    memset(palmReg, 0x00, REG_SIZE);
    clk32Counter = 0;
+   timer1CycleCounter = 0.0;
+   timer2CycleCounter = 0.0;
    
    //system control
    registerArrayWrite8(SCR, 0x1C);

@@ -1,5 +1,4 @@
-Timer 1
-Timer 2
+Timer capture events, I don't think there possible though with the palms hardware
 sed1376 register access
 storage ram protect
 sysTrapPceNativeCall, ARM Emulator
