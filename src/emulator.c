@@ -26,32 +26,46 @@ uint8_t  palmRam[RAM_SIZE];
 uint8_t  palmRom[ROM_SIZE];
 uint8_t  palmReg[REG_SIZE];
 input_t  palmIo;
+sdcard_t palmSdCard;
 uint16_t palmFramebuffer[160 * (160 + 60)];//really 160*160, the extra pixels are the silkscreened digitizer area
 double   palmCrystalCycles;//how many cycles before toggling the 32.768 kHz crystal
 double   palmCycleCounter;//can be greater then 0 if too many cycles where run
 double   palmClockMultiplier;//used by the emulator to overclock the emulated palm
 
 
-void emulatorInit(uint8_t* palmRomDump){
+void emulatorInit(uint8_t* palmRomDump, uint16_t specialFeatures){
+   //cpu
    m68k_init();
    m68k_set_cpu_type(M68K_CPU_TYPE_68020);
+   m68k_set_reset_instr_callback(emulatorReset);
+   m68k_set_int_ack_callback(interruptAcknowledge);
    patchMusashiOpcodeHandlerCpu32();
-   
-   memset(palmRam, 0x00, RAM_SIZE);
-   memcpy(palmRom, palmRomDump, ROM_SIZE);
-   memcpy(palmRam, palmRom, 256);//copy ROM header
-   memset(&palmIo, 0x00, sizeof(input_t));
-   memcpy(&palmFramebuffer[160 * 160], silkscreenData, SILKSCREEN_WIDTH * SILKSCREEN_HEIGHT * (SILKSCREEN_BPP / 8));
    resetHwRegisters();
-   sed1376Reset();
+   lowPowerStopActive = false;
    palmCrystalCycles = 2.0 * (14.0 * (71.0/*p*/ + 1.0) + 3.0/*q*/ + 1.0) / 2.0/*prescaler1*/;
    palmCycleCounter = 0.0;
    
-   palmClockMultiplier = 1.0;//Overclock disabled
-   lowPowerStopActive = false;
+   //memory
+   memset(palmRam, 0x00, RAM_SIZE);
+   memcpy(palmRom, palmRomDump, ROM_SIZE);
+   memcpy(palmRam, palmRom, 256);//copy ROM header
+   memcpy(&palmFramebuffer[160 * 160], silkscreenData, SILKSCREEN_WIDTH * SILKSCREEN_HEIGHT * (SILKSCREEN_BPP / 8));
+   sed1376Reset();
    
-   m68k_set_reset_instr_callback(emulatorReset);
-   m68k_set_int_ack_callback(interruptAcknowledge);
+   //interfaces
+   palmIo.buttonState = 0x0000;
+   palmIo.touchscreenX = 0;
+   palmIo.touchscreenY = 0;
+   palmIo.touchscreenTouched = false;
+   
+   palmSdCard.getSdCardChunk = NULL;
+   palmSdCard.setSdCardChunk = NULL;
+   palmSdCard.inserted = false;
+   
+   //config
+   palmClockMultiplier = 1.0;//Overclock disabled
+   
+   //start running
    m68k_pulse_reset();
 }
 
