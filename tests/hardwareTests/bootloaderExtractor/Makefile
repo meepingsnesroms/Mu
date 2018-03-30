@@ -5,10 +5,18 @@ APPID = Bdmp
 SRCS = bootloaderExtractor.c
 
 # Tool locations
-CC = m68k-palmos-gcc -palmos3.5
-BUILDPRC = build-prc
-PILRC = pilrc
-OBJRES = m68k-palmos-obj-res
+ifeq ($(PALM_OS_TOOLCHAIN),)
+$(error PALM_OS_TOOLCHAIN not defined)
+endif
+
+ifeq ($(PALM_OS_RESOURCE_TOOLS),)
+$(error PALM_OS_RESOURCE_TOOLS not defined)
+endif
+
+CC = $(PALM_OS_TOOLCHAIN)/m68k-palmos/gcc295/gcc/gcc-cross -palmos3.5
+BUILDPRC = $(PALM_OS_TOOLCHAIN)/tools/build-prc
+PILRC = $(PALM_OS_RESOURCE_TOOLS)/pilrc
+OBJRES = $(PALM_OS_TOOLCHAIN)/tools/obj-res
 
 # File names
 RESFILE = $(APPNAME).rcp
