@@ -644,6 +644,8 @@ void setHwRegister8(unsigned int address, unsigned int value){
       case PMSEL:
       case PGPUEN:
       case PMPUEN:
+      case PGDIR:
+      case PMDIR:
          //write without the top 2 bits
          registerArrayWrite8(address, value & 0x3F);
          break;
@@ -655,6 +657,16 @@ void setHwRegister8(unsigned int address, unsigned int value){
       case PFSEL:
       case PJSEL:
       case PKSEL:
+      
+      //direction select
+      case PADIR:
+      case PBDIR:
+      case PCDIR:
+      case PDDIR:
+      case PEDIR:
+      case PFDIR:
+      case PJDIR:
+      case PKDIR:
       
       //pull up/down enable
       case PAPUEN:
@@ -726,7 +738,7 @@ void setHwRegister16(unsigned int address, unsigned int value){
          
       case ICR:
          //missing bottom 7 bits
-         registerArrayWrite16(address, value & 0xFFF8);
+         registerArrayWrite16(address, value & 0xFF80);
          break;
          
       case SDCTRL:

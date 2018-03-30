@@ -4,3 +4,5 @@ storage ram protect
 sysTrapPceNativeCall, ARM Emulator
 cpu32 table lookup opcodes
 PLL Control Register, Wake Select
+Peripheral Control Register, audio ppm mixing selection
+System Control Register, 0xXXFFF000 all upper banks are registers mode
