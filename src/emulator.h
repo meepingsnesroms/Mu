@@ -13,27 +13,41 @@ enum emu_error_t{
 
 //types
 typedef struct{
-   uint16_t buttonState;
+   bool     buttonUp;
+   bool     buttonDown;
+   bool     buttonLeft;//only used in hybrid mode
+   bool     buttonRight;//only used in hybrid mode
+   bool     buttonCalender;//hw button 1
+   bool     buttonAddress;//hw button 2
+   bool     buttonTodo;//hw button 3
+   bool     buttonNotes;//hw button 4
+   bool     buttonPower;
+   bool     buttonContrast;
    uint16_t touchscreenX;
    uint16_t touchscreenY;
    bool     touchscreenTouched;
 }input_t;
 
 typedef struct{
-   void (*getSdCardChunk)(uint8_t* data, uint32_t size);
-   void (*setSdCardChunk)(uint8_t* data, uint32_t size);
-   bool inserted;
+   void     (*getSdCardChunk)(uint8_t* data, uint32_t size);
+   void     (*setSdCardChunk)(uint8_t* data, uint32_t size);
+   uint64_t size;
+   bool     inserted;
 }sdcard_t;
 
-//buttons
-#define buttonUp 0
-//etc...
+typedef struct{
+   bool    powerButtonLed;
+   bool    batteryCharging;
+   uint8_t batteryLevel;
+}misc_hw_t;
 
 //special features, these make the emulator inaccurate in a good way, but still inaccurate and are therefore optional, they dont do anything yet
-#define ACCURATE                0x0000 //no hacks/addons
-#define INACCURATE_RAM_HUGE     0x0001 //128 mb ram
-#define INACCURATE_FAST_CPU     0x0002 //doubles cpu speed
-#define INACCURATE_HYBRID_CPU   0x0004 //allows running arm opcodes in an OS 4 enviroment
+#define ACCURATE                0x0000//no hacks/addons
+#define INACCURATE_RAM_HUGE     0x0001//128 mb ram
+#define INACCURATE_FAST_CPU     0x0002//doubles cpu speed
+#define INACCURATE_HYBRID_CPU   0x0004//allows running arm opcodes in an OS 4 enviroment
+#define INACCURATE_320x320      0x0008//creates a 320x320 frambuffer for hires mode, the 320x320 framebuffer is a transparent overlay over the 160x160 one and covers it where its pixels are enabled
+#define INACCURATE_SYNCED_RTC   0x0010//rtc always equals host system time
 
 //config options
 #define EMU_FPS 60.0
@@ -55,15 +69,16 @@ typedef struct{
 #define SED1376_FB_SIZE  0x14000//likely also has 0x20000 used address space entrys
 
 //emulator data
-extern uint8_t  palmRam[];
-extern uint8_t  palmRom[];
-extern uint8_t  palmReg[];
-extern input_t  palmIo;
-extern sdcard_t palmSdCard;
-extern uint16_t palmFramebuffer[];
-extern double   palmCrystalCycles;
-extern double   palmCycleCounter;
-extern double   palmClockMultiplier;
+extern uint8_t   palmRam[];
+extern uint8_t   palmRom[];
+extern uint8_t   palmReg[];
+extern input_t   palmIo;
+extern sdcard_t  palmSdCard;
+extern misc_hw_t palmMisc;
+extern uint16_t  palmFramebuffer[];
+extern double    palmCrystalCycles;
+extern double    palmCycleCounter;
+extern double    palmClockMultiplier;
 
 //functions
 void emulatorInit(uint8_t* palmRomDump, uint16_t specialFeatures);

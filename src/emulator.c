@@ -22,15 +22,16 @@
 //0xFFFFFF00-0xFFFFFFFF Bootloader, pesumably does the 256 byte ROM to RAM copy, never been dumped
 
 
-uint8_t  palmRam[RAM_SIZE];
-uint8_t  palmRom[ROM_SIZE];
-uint8_t  palmReg[REG_SIZE];
-input_t  palmIo;
-sdcard_t palmSdCard;
-uint16_t palmFramebuffer[160 * (160 + 60)];//really 160*160, the extra pixels are the silkscreened digitizer area
-double   palmCrystalCycles;//how many cycles before toggling the 32.768 kHz crystal
-double   palmCycleCounter;//can be greater then 0 if too many cycles where run
-double   palmClockMultiplier;//used by the emulator to overclock the emulated palm
+uint8_t   palmRam[RAM_SIZE];
+uint8_t   palmRom[ROM_SIZE];
+uint8_t   palmReg[REG_SIZE];
+input_t   palmIo;
+sdcard_t  palmSdCard;
+misc_hw_t palmMisc;
+uint16_t  palmFramebuffer[160 * (160 + 60)];//really 160*160, the extra pixels are the silkscreened digitizer area
+double    palmCrystalCycles;//how many cycles before toggling the 32.768 kHz crystal
+double    palmCycleCounter;//can be greater then 0 if too many cycles where run
+double    palmClockMultiplier;//used by the emulator to overclock the emulated palm
 
 
 void emulatorInit(uint8_t* palmRomDump, uint16_t specialFeatures){
@@ -53,14 +54,28 @@ void emulatorInit(uint8_t* palmRomDump, uint16_t specialFeatures){
    sed1376Reset();
    
    //interfaces
-   palmIo.buttonState = 0x0000;
+   palmIo.buttonUp = false;
+   palmIo.buttonDown = false;
+   palmIo.buttonLeft = false;//only used in hybrid mode
+   palmIo.buttonRight = false;//only used in hybrid mode
+   palmIo.buttonCalender = false;
+   palmIo.buttonAddress = false;
+   palmIo.buttonTodo = false;
+   palmIo.buttonNotes = false;
+   palmIo.buttonPower = false;
+   palmIo.buttonContrast = false;
    palmIo.touchscreenX = 0;
    palmIo.touchscreenY = 0;
    palmIo.touchscreenTouched = false;
    
    palmSdCard.getSdCardChunk = NULL;
    palmSdCard.setSdCardChunk = NULL;
+   palmSdCard.size = 0;
    palmSdCard.inserted = false;
+   
+   palmMisc.powerButtonLed = false;
+   palmMisc.batteryCharging = false;
+   palmMisc.batteryLevel = 100;
    
    //config
    palmClockMultiplier = 1.0;//Overclock disabled

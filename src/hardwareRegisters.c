@@ -11,6 +11,9 @@
 #include "m68k/m68kcpu.h"
 
 
+void checkInterrupts();
+
+
 static inline uint8_t registerArrayRead8(uint32_t address){
    return palmReg[address];
 }
@@ -49,6 +52,108 @@ static inline void setIprIsrBit(uint32_t interruptBit){
 static inline void clearIprIsrBit(uint32_t interruptBit){
    registerArrayWrite32(IPR, registerArrayRead32(IPR) & ~interruptBit);
    registerArrayWrite32(ISR, registerArrayRead32(ISR) & ~interruptBit);
+}
+
+
+static inline void checkPortDInts(){
+   uint8_t requestedRow = registerArrayRead8(PKDIR) & registerArrayRead8(PKDATA);//keys are requested on port k and read on port d
+   uint8_t portDValue = 0x00;//ports always read the chip pins even if they are set to output
+   uint8_t portDpolarity = registerArrayRead8(PDPOL);
+   uint8_t portDIrqEnable = registerArrayRead8(PDIRQEN);
+   uint8_t portDIrqPins = ~registerArrayRead8(PDSEL);
+   
+   portDValue |= 0x80/*battery not dead bit*/;
+   
+   if(palmSdCard.inserted){
+      portDValue |= 0x20;
+   }
+   
+   if((requestedRow & 0x20) == 0){
+      //kbd row 0
+      portDValue |= (!palmIo.buttonCalender | (!palmIo.buttonAddress << 1) | (!palmIo.buttonTodo << 2) | (!palmIo.buttonNotes << 3)) ^ portDpolarity;
+   }
+   
+   if((requestedRow & 0x40) == 0){
+      //kbd row 1
+      portDValue |= (!palmIo.buttonUp | (!palmIo.buttonDown << 1)) ^ portDpolarity;
+   }
+   
+   if((requestedRow & 0x80) == 0){
+      //kbd row 2
+      portDValue |= (!palmIo.buttonPower | (!palmIo.buttonContrast << 1) | (!palmIo.buttonAddress << 3)) ^ portDpolarity;
+   }
+   
+   if(portDIrqEnable & portDValue & 0x01){
+      //int 0
+      setIprIsrBit(INT_INT0);
+   }
+   
+   if(portDIrqEnable & portDValue & 0x02){
+      //int 1
+      setIprIsrBit(INT_INT1);
+   }
+   
+   if(portDIrqEnable & portDValue & 0x04){
+      //int 2
+      setIprIsrBit(INT_INT2);
+   }
+   
+   if(portDIrqEnable & portDValue & 0x08){
+      //int 3
+      setIprIsrBit(INT_INT3);
+   }
+   
+   if(portDIrqPins & portDValue & 0x10){
+      //irq 1
+      setIprIsrBit(INT_IRQ1);
+   }
+   
+   if(portDIrqPins & portDValue & 0x20){
+      //irq 2
+      setIprIsrBit(INT_IRQ2);
+   }
+   
+   if(portDIrqPins & portDValue & 0x40){
+      //irq 3
+      setIprIsrBit(INT_IRQ3);
+   }
+   
+   if(portDIrqPins & portDValue & 0x80){
+      //irq 6
+      setIprIsrBit(INT_IRQ6);
+   }
+   
+   checkInterrupts();
+}
+
+static inline uint8_t getPortDValue(){
+   uint8_t requestedRow = registerArrayRead8(PKDIR) & registerArrayRead8(PKDATA);//keys are requested on port k and read on port d
+   uint8_t portDValue = 0x00;//ports always read the chip pins even if they are set to output
+   uint8_t portDpolarity = registerArrayRead8(PDPOL);
+   uint8_t portDIrqEnable = registerArrayRead8(PDIRQEN);
+   
+   portDValue |= 0x80/*battery not dead bit*/;
+   
+   if(palmSdCard.inserted){
+      portDValue |= 0x20;
+   }
+   
+   if((requestedRow & 0x20) == 0){
+      //kbd row 0
+      portDValue |= (!palmIo.buttonCalender | (!palmIo.buttonAddress << 1) | (!palmIo.buttonTodo << 2) | (!palmIo.buttonNotes << 3)) ^ portDpolarity;
+   }
+   
+   if((requestedRow & 0x40) == 0){
+      //kbd row 1
+      portDValue |= (!palmIo.buttonUp | (!palmIo.buttonDown << 1)) ^ portDpolarity;
+   }
+   
+   if((requestedRow & 0x80) == 0){
+      //kbd row 2
+      portDValue |= (!palmIo.buttonPower | (!palmIo.buttonContrast << 1) | (!palmIo.buttonAddress << 3)) ^ portDpolarity;
+   }
+   
+   return portDValue;
 }
 
 
@@ -533,7 +638,6 @@ bool cpuIsOn(){
    return !((registerArrayRead16(PLLCR) & 0x0008) || lowPowerStopActive);
 }
 
-
 int interruptAcknowledge(int intLevel){
    int vectorOffset = registerArrayRead8(IVR);
    int vector;
@@ -557,6 +661,9 @@ int interruptAcknowledge(int intLevel){
 
 unsigned int getHwRegister8(unsigned int address){
    switch(address){
+         
+      case PADATA:
+         return getPortDValue();
          
       //select between gpio or special function
       case PBSEL:
@@ -630,9 +737,21 @@ unsigned int getHwRegister32(unsigned int address){
 void setHwRegister8(unsigned int address, unsigned int value){
    switch(address){
          
+      case PKDIR:
+      case PKDATA:
+         checkPortDInts();
+         break;
+         
       case PDSEL:
          //write without the bottom 4 bits
          registerArrayWrite8(address, value & 0xF0);
+         break;
+         
+      case PDPOL:
+      case PDIRQEN:
+      case PDIRQEG:
+         //write without the top 4 bits
+         registerArrayWrite8(address, value & 0x0F);
          break;
          
       case IVR:
@@ -666,7 +785,6 @@ void setHwRegister8(unsigned int address, unsigned int value){
       case PEDIR:
       case PFDIR:
       case PJDIR:
-      case PKDIR:
       
       //pull up/down enable
       case PAPUEN:
