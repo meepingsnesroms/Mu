@@ -41,13 +41,14 @@ typedef struct{
    uint8_t batteryLevel;
 }misc_hw_t;
 
-//special features, these make the emulator inaccurate in a good way, but still inaccurate and are therefore optional, they dont do anything yet
+//special features, these make the emulator inaccurate in a good way, but still inaccurate and are therefore optional
 #define ACCURATE                0x0000//no hacks/addons
 #define INACCURATE_RAM_HUGE     0x0001//128 mb ram
 #define INACCURATE_FAST_CPU     0x0002//doubles cpu speed
 #define INACCURATE_HYBRID_CPU   0x0004//allows running arm opcodes in an OS 4 enviroment
 #define INACCURATE_320x320      0x0008//creates a 320x320 frambuffer for hires mode, the 320x320 framebuffer is a transparent overlay over the 160x160 one and covers it where its pixels are enabled
 #define INACCURATE_SYNCED_RTC   0x0010//rtc always equals host system time
+#define INACCURATE_HLE_APIS     0x0020//memcpy, memcmp, wait on timer will be replaced with the hosts function
 
 //config options
 #define EMU_FPS 60.0

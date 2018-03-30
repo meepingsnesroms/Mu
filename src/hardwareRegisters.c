@@ -658,6 +658,11 @@ int interruptAcknowledge(int intLevel){
    return vector;
 }
 
+bool sed1376ClockConnected(){
+   //this is the clock output pin for the sed1376, if its disabled so is the lcd controller
+   return !(registerArrayRead8(PFSEL) & 0x04);
+}
+
 
 unsigned int getHwRegister8(unsigned int address){
    switch(address){

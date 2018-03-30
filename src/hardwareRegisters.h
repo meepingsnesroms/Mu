@@ -46,7 +46,8 @@ void clk32();//also checks all interrupts
 
 //cpu
 bool cpuIsOn();
-int interruptAcknowledge(int intLevel);
+int  interruptAcknowledge(int intLevel);
+bool sed1376ClockConnected();
 
 //config
 void resetHwRegisters();

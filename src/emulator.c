@@ -78,7 +78,7 @@ void emulatorInit(uint8_t* palmRomDump, uint16_t specialFeatures){
    palmMisc.batteryLevel = 100;
    
    //config
-   palmClockMultiplier = 1.0;//Overclock disabled
+   palmClockMultiplier = (specialFeatures & INACCURATE_FAST_CPU) ? 2.0 : 1.0;//Overclock disabled
    
    //start running
    m68k_pulse_reset();
