@@ -1,7 +1,7 @@
 #include <PalmOS.h>
-#include <PalmCompatiblity.h>
+#include <PalmCompatibility.h>
 #include <stdint.h>
-#include <ugui.h>
+#include "ugui.h"
 
 /* register for direct video hardware access on OS 3.1 */
 #define LSSA  *((         void **)0xFFFFFA00)
@@ -91,7 +91,7 @@ void testerExit(){
    LLBAR = oldLlbar;
 }
 
-Bool testerFrameLoop(){
+Boolean testerFrameLoop(){
    uint16_t buttons = KeyCurrentState();
    
    if(buttons & keyBitHard3){
@@ -105,12 +105,12 @@ Bool testerFrameLoop(){
 }
 
 DWord PilotMain(Word cmd, Ptr cmdBPB, Word launchFlags){
-   Bool running = true;
-   testerInit()
+   Boolean running = true;
+   testerInit();
    
    while(running){
       running = testerFrameLoop();
-      usleep(333333);//30 fps
+      SysTaskDelay(4);//30 fps
    }
    
    testerExit();
