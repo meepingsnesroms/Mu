@@ -105,7 +105,11 @@ static void listModeFrame(){
 
 
 var initViewer(){
-   UG_RESULT passed = UG_WindowCreate(&fbWindow, fbObjects, MAX_OBJECTS, windowCallback);
+   int newTextboxY;
+   int entry;
+   UG_RESULT passed;
+   
+   passed = UG_WindowCreate(&fbWindow, fbObjects, MAX_OBJECTS, windowCallback);
    if (passed != UG_RESULT_OK)
       return makeVar(LENGTH_1, TYPE_BOOL, false);
    
@@ -113,8 +117,7 @@ var initViewer(){
    UG_WindowSetForeColor(&fbWindow, TEXTBOX_DEFAULT_TEXT_COLOR);
    UG_WindowSetBackColor(&fbWindow, TEXTBOX_DEFAULT_COLOR);
    
-   int newTextboxY = 0;
-   int entry;
+   newTextboxY = 0;
    for (entry = 0; entry < ITEM_LIST_ENTRYS; entry++)
    {
       UG_TextboxCreate(&fbWindow, &listEntrys[entry], entry, 0/*x start*/, newTextboxY, TEXTBOX_PIXEL_WIDTH - 1/*x end*/, newTextboxY + TEXTBOX_PIXEL_HEIGHT - 1);
@@ -130,16 +133,18 @@ var initViewer(){
 
 
 var hexViewer(){
+   var where;
+   
    if(!viewerInitialized){
       var passFail = initViewer();
-      if(varsEqual(passFail, makeVar(LENGTH_1, TYPE_BOOL, true)){
+      if(varsEqual(passFail, makeVar(LENGTH_1, TYPE_BOOL, true))){
          callSubprogram(memoryAllocationError);
          return makeVar(LENGTH_1, TYPE_BOOL, false);
       }
       viewerInitialized = true;
    }
    
-   var where = getSubprogramArgs();
+   where = getSubprogramArgs();
    if(getVarType(where) == TYPE_POINTER){
       
    }
@@ -154,7 +159,7 @@ var hexViewer(){
 var testViewer(){
    if(!viewerInitialized){
       var passFail = initViewer();
-      if(varsEqual(passFail, makeVar(LENGTH_1, TYPE_BOOL, true)){
+      if(varsEqual(passFail, makeVar(LENGTH_1, TYPE_BOOL, true))){
          callSubprogram(memoryAllocationError);
          return makeVar(LENGTH_1, TYPE_BOOL, false);
       }

@@ -213,8 +213,8 @@ void testerInit(){
    CKCON |= 0x80;
    
    UG_Init(&uguiStruct, uguiDrawPixel, 160, 160);
-   UG_ConsoleSetBackground(C_WHITE);
-   UG_ConsoleSetForecolor(C_BLACK);
+   UG_SetBackcolor(C_WHITE);
+   UG_SetForecolor(C_BLACK);
    
    subprogramIndex = 0;
    subprogramArgsSet = false;
