@@ -1,7 +1,6 @@
 #include <PalmOS.h>
 #include <PalmCompatibility.h>
 #include <stdint.h>
-#include <stdbool.h>
 #include "ugui.h"
 #include "testSuiteConfig.h"
 #include "testSuite.h"
@@ -24,12 +23,57 @@
 #define FRCM  *((unsigned char  *)0xFFFFFA31)
 #define LGPMR *((unsigned short *)0xFFFFFA32)
 
-//exports
+
+/*functions that should be macros but are screwed up by c89*/
+uint8_t getVarType(var thisVar){
+   return thisVar.type & 0x0F;
+}
+uint8_t getVarLength(var thisVar){
+   return thisVar.type & 0xF0;
+}
+uint32_t getVarDataLength(var thisVar){
+   return thisVar.value >> 32;
+}
+void* getVarPointer(var thisVar){
+   return (void*)(thisVar.value & 0xFFFFFFFF);
+}
+var_value getVarValue(var thisVar){
+   return thisVar.value;
+}
+var makeVar(uint8_t length, uint8_t type, uint64_t value){
+   var newVar;
+   newVar.type = (length & 0xF0) | (type & 0x0F);
+   newVar.value = value;
+}
+Boolean varsEqual(var var1, var var2){
+   if(var1.type == var2.type && var1.value == var2.value)
+      return true;
+   return false;
+}
+
+Boolean getButton(uint16_t button){
+   return (palmButtons & button) != 0;
+}
+Boolean getButtonLastFrame(uint16_t button){
+   return (palmButtonsLastFrame & button) != 0;
+}
+Boolean getButtonChanged(uint16_t button){
+   return (palmButtons & button) != (palmButtonsLastFrame & button);
+}
+Boolean getButtonPressed(uint16_t button){
+   return (palmButtonsLastFrame & button) && !(palmButtonsLastFrame & button);
+}
+Boolean getButtonReleased(uint16_t button){
+   return !(palmButtonsLastFrame & button) && (palmButtonsLastFrame & button);
+}
+
+
+/*exports*/
 uint16_t palmButtons;
 uint16_t palmButtonsLastFrame;
 
 
-//video stuff
+/*video stuff*/
 static UG_GUI   uguiStruct;
 static uint8_t* framebuffer;
 static uint8_t* oldFramebuffer;
@@ -38,47 +82,47 @@ static uint8_t  oldPicf;
 static uint8_t  oldVpw;
 static uint8_t  oldLlbar;
 
-//other
+/*other*/
 static activity_t parentSubprograms[MAX_SUBPROGRAMS];
 static uint32_t   subprogramIndex;
 static activity_t currentSubprogram;
 static var        subprogramData[MAX_SUBPROGRAMS];
-static var        subprogramArgs;//optional arguments when one subprogram calls another
-static bool       subprogramArgsSet;
-static bool       applicationRunning;
+static var        subprogramArgs;/*optional arguments when one subprogram calls another*/
+static Boolean    subprogramArgsSet;
+static Boolean    applicationRunning;
 
 
 static var errorSubprogramStackOverflow(){
-   static bool wipedScreen = false;
+   static Boolean wipedScreen = false;
    if(!wipedScreen){
       UG_FillScreen(C_WHITE);
       UG_PutString(0, 0, "Subprogram stack overflow!\nYou must close the program.");
       wipedScreen = true;
    }
    if(getButtonPressed(buttonBack)){
-      //force kill when back pressed
+      /*force kill when back pressed*/
       applicationRunning = false;
    }
-   //do nothing, this is a safe crash
+   /*do nothing, this is a safe crash*/
 }
 
 var memoryAllocationError(){
-   static bool wipedScreen = false;
+   static Boolean wipedScreen = false;
    if(!wipedScreen){
       UG_FillScreen(C_WHITE);
       UG_PutString(0, 0, "Could not allocate memory!\nYou must close the program.");
       wipedScreen = true;
    }
    if(getButtonPressed(buttonBack)){
-      //force kill when back pressed
+      /*force kill when back pressed*/
       applicationRunning = false;
    }
-   //do nothing, this is a safe crash
+   /*do nothing, this is a safe crash*/
 }
 
 
 void uguiDrawPixel(UG_S16 x, UG_S16 y, UG_COLOR color){
-   //using 1bit grayscale
+   /*using 1bit grayscale*/
    int pixel = x + y * SCREEN_WIDTH;
    int byte = pixel / 8;
    int bit = pixel % 8;
@@ -97,11 +141,11 @@ void callSubprogram(activity_t activity){
       currentSubprogram = activity;
       if(!subprogramArgsSet)
          subprogramArgs = makeVar(LENGTH_0, TYPE_NULL, 0);
-      subprogramArgsSet = false;//clear to prevent next subprogram called from inheriting the args
+      subprogramArgsSet = false;/*clear to prevent next subprogram called from inheriting the args*/
    }
    else{
       currentSubprogram = errorSubprogramStackOverflow;
-      //cant recover from this
+      /*cant recover from this*/
    }
 }
 
@@ -111,7 +155,7 @@ void exitSubprogram(){
       currentSubprogram = parentSubprograms[subprogramIndex];
    }
    else{
-      //last subprogram is complete, exit application
+      /*last subprogram is complete, exit application*/
       applicationRunning = false;
    }
 }
@@ -199,7 +243,7 @@ DWord PilotMain(Word cmd, Ptr cmdBPB, Word launchFlags){
    applicationRunning = true;
    while(applicationRunning){
       testerFrameLoop();
-      SysTaskDelay(4);//30 fps
+      SysTaskDelay(4);/*30 fps*/
    }
    
    testerExit();

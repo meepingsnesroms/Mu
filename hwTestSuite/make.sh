@@ -13,7 +13,6 @@ PRC=$APPNAME.prc
 
 SRCS="testSuite.c viewer.c ugui.c"
 DEFINES="-DHW_TEST"
-CSFLAGS="-O2 -S $DEFINES $INCLUDES"
 CFLAGS="-O2 -g $DEFINES $INCLUDES"
 
 if [ "$1" = "clean" ]; then
