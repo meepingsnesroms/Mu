@@ -5,5 +5,6 @@
 
 
 var hexViewer();
-var testViewer();
+var testPicker();
+void initTestList();
 #endif

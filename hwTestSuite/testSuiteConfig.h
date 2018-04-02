@@ -5,5 +5,6 @@
 #define SCREEN_HEIGHT 160
 
 #define MAX_SUBPROGRAMS 20
+#define TESTS_AVAILABLE 20
 
 #endif

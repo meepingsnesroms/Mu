@@ -65,7 +65,7 @@ typedef struct{
 
 //display chip addresses
 #define SED1376_REG_START_ADDRESS 0x1FF80000
-#define SED1376_FB_START_ADDRESS 0x1FFA0000
+#define SED1376_FB_START_ADDRESS  0x1FFA0000
 #define SED1376_REG_SIZE 0xB4//it has 0x20000 used address space entrys but only 0xB4 registers
 #define SED1376_FB_SIZE  0x14000//likely also has 0x20000 used address space entrys
 

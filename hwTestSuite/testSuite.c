@@ -37,6 +37,9 @@ uint32_t getVarDataLength(var thisVar){
 void* getVarPointer(var thisVar){
    return (void*)(thisVar.value & 0xFFFFFFFF);
 }
+uint32_t getVarPointerSize(var thisVar){
+   return thisVar.value >> 32;
+}
 var_value getVarValue(var thisVar){
    return thisVar.value;
 }
@@ -67,6 +70,25 @@ Boolean getButtonReleased(uint16_t button){
    return !(palmButtonsLastFrame & button) && (palmButtonsLastFrame & button);
 }
 
+uint8_t readArbitraryMemory8(uint32_t address){
+   return *((uint8_t*)address);
+}
+uint16_t readArbitraryMemory16(uint32_t address){
+   return *((uint16_t*)address);
+}
+uint32_t readArbitraryMemory32(uint32_t address){
+   return *((uint32_t*)address);
+}
+void writeArbitraryMemory8(uint32_t address, uint8_t value){
+   *((uint8_t*)address) = value;
+}
+void writeArbitraryMemory16(uint32_t address, uint16_t value){
+   *((uint16_t*)address) = value;
+}
+void writeArbitraryMemory32(uint32_t address, uint32_t value){
+   *((uint32_t*)address) = value;
+}
+
 
 /*exports*/
 uint16_t palmButtons;
@@ -88,6 +110,7 @@ static uint32_t   subprogramIndex;
 static activity_t currentSubprogram;
 static var        subprogramData[MAX_SUBPROGRAMS];
 static var        subprogramArgs;/*optional arguments when one subprogram calls another*/
+static var        lastSubprogramReturnValue;
 static Boolean    subprogramArgsSet;
 static Boolean    applicationRunning;
 
@@ -160,6 +183,18 @@ void exitSubprogram(){
    }
 }
 
+void execSubprogram(activity_t activity){
+   if(!subprogramArgsSet)
+      subprogramArgs = makeVar(LENGTH_0, TYPE_NULL, 0);
+   subprogramArgsSet = false;/*clear to prevent next subprogram called from inheriting the args*/
+   parentSubprograms[subprogramIndex] = activity;
+   currentSubprogram = activity;
+}
+
+var getSubprogramReturnValue(){
+   return lastSubprogramReturnValue;
+}
+
 var getSubprogramArgs(){
    return subprogramArgs;
 }
@@ -215,10 +250,18 @@ void testerInit(){
    UG_Init(&uguiStruct, uguiDrawPixel, 160, 160);
    UG_SetBackcolor(C_WHITE);
    UG_SetForecolor(C_BLACK);
+   UG_ConsoleSetBackcolor(C_WHITE);
+   UG_ConsoleSetForecolor(C_BLACK);
    
+   //make test list, c89 again
+   initTestList();
+   
+   //load first subprogram
    subprogramIndex = 0;
    subprogramArgsSet = false;
-   currentSubprogram = testViewer;
+   lastSubprogramReturnValue = makeVar(LENGTH_0, TYPE_NULL, 0);
+   subprogramArgs = makeVar(LENGTH_0, TYPE_NULL, 0);
+   currentSubprogram = testPicker;
 }
 
 void testerExit(){
@@ -232,7 +275,7 @@ void testerExit(){
 void testerFrameLoop(){
    palmButtons = KeyCurrentState();
    
-   currentSubprogram();
+   lastSubprogramReturnValue = currentSubprogram();
    
    palmButtonsLastFrame = palmButtons;
 }
