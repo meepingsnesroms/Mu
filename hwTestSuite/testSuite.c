@@ -1,7 +1,12 @@
 #include <PalmOS.h>
 #include <PalmCompatibility.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include "ugui.h"
+#include "testSuiteConfig.h"
+#include "testSuite.h"
+#include "viewer.h"
+
 
 /* register for direct video hardware access on OS 3.1 */
 #define LSSA  *((         void **)0xFFFFFA00)
@@ -19,16 +24,58 @@
 #define FRCM  *((unsigned char  *)0xFFFFFA31)
 #define LGPMR *((unsigned short *)0xFFFFFA32)
 
-#define SCREEN_WIDTH  160
-#define SCREEN_HEIGHT 160
+//exports
+uint16_t palmButtons;
+uint16_t palmButtonsLastFrame;
 
-UG_GUI   uguiStruct;
-uint8_t* framebuffer;
-uint8_t* oldFramebuffer;
-uint8_t  oldLpxcd;
-uint8_t  oldPicf;
-uint8_t  oldVpw;
-uint8_t  oldLlbar;
+
+//video stuff
+static UG_GUI   uguiStruct;
+static uint8_t* framebuffer;
+static uint8_t* oldFramebuffer;
+static uint8_t  oldLpxcd;
+static uint8_t  oldPicf;
+static uint8_t  oldVpw;
+static uint8_t  oldLlbar;
+
+//other
+static activity_t parentSubprograms[MAX_SUBPROGRAMS];
+static uint32_t   subprogramIndex;
+static activity_t currentSubprogram;
+static var        subprogramData[MAX_SUBPROGRAMS];
+static var        subprogramArgs;//optional arguments when one subprogram calls another
+static bool       subprogramArgsSet;
+static bool       applicationRunning;
+
+
+static var errorSubprogramStackOverflow(){
+   static bool wipedScreen = false;
+   if(!wipedScreen){
+      UG_FillScreen(C_WHITE);
+      UG_PutString(0, 0, "Subprogram stack overflow!\nYou must close the program.");
+      wipedScreen = true;
+   }
+   if(getButtonPressed(buttonBack)){
+      //force kill when back pressed
+      applicationRunning = false;
+   }
+   //do nothing, this is a safe crash
+}
+
+var memoryAllocationError(){
+   static bool wipedScreen = false;
+   if(!wipedScreen){
+      UG_FillScreen(C_WHITE);
+      UG_PutString(0, 0, "Could not allocate memory!\nYou must close the program.");
+      wipedScreen = true;
+   }
+   if(getButtonPressed(buttonBack)){
+      //force kill when back pressed
+      applicationRunning = false;
+   }
+   //do nothing, this is a safe crash
+}
+
 
 void uguiDrawPixel(UG_S16 x, UG_S16 y, UG_COLOR color){
    //using 1bit grayscale
@@ -41,6 +88,48 @@ void uguiDrawPixel(UG_S16 x, UG_S16 y, UG_COLOR color){
    else{
       framebuffer[byte] &= ~(1 << (7 - bit));
    }
+}
+
+void callSubprogram(activity_t activity){
+   if(subprogramIndex < MAX_SUBPROGRAMS - 1){
+      subprogramIndex++;
+      parentSubprograms[subprogramIndex] = activity;
+      currentSubprogram = activity;
+      if(!subprogramArgsSet)
+         subprogramArgs = makeVar(LENGTH_0, TYPE_NULL, 0);
+      subprogramArgsSet = false;//clear to prevent next subprogram called from inheriting the args
+   }
+   else{
+      currentSubprogram = errorSubprogramStackOverflow;
+      //cant recover from this
+   }
+}
+
+void exitSubprogram(){
+   if(subprogramIndex > 0){
+      subprogramIndex--;
+      currentSubprogram = parentSubprograms[subprogramIndex];
+   }
+   else{
+      //last subprogram is complete, exit application
+      applicationRunning = false;
+   }
+}
+
+var getSubprogramArgs(){
+   return subprogramArgs;
+}
+
+void setSubprogramArgs(var args){
+   subprogramArgs = args;
+}
+
+var subprogramGetData(){
+   return subprogramData[subprogramIndex];
+}
+
+void subprogramSetData(var data){
+   subprogramData[subprogramIndex] = data;
 }
 
 void testerInit(){
@@ -80,7 +169,12 @@ void testerInit(){
    CKCON |= 0x80;
    
    UG_Init(&uguiStruct, uguiDrawPixel, 160, 160);
+   UG_ConsoleSetBackground(C_WHITE);
+   UG_ConsoleSetForecolor(C_BLACK);
    
+   subprogramIndex = 0;
+   subprogramArgsSet = false;
+   currentSubprogram = testViewer;
 }
 
 void testerExit(){
@@ -91,25 +185,20 @@ void testerExit(){
    LLBAR = oldLlbar;
 }
 
-Boolean testerFrameLoop(){
-   uint16_t buttons = KeyCurrentState();
+void testerFrameLoop(){
+   palmButtons = KeyCurrentState();
    
-   if(buttons & keyBitHard3){
-      //back button
-      return false;
-   }
+   currentSubprogram();
    
-   UG_PutString(0, 0, "TestSuite running!");
-   
-   return true;
+   palmButtonsLastFrame = palmButtons;
 }
 
 DWord PilotMain(Word cmd, Ptr cmdBPB, Word launchFlags){
-   Boolean running = true;
    testerInit();
    
-   while(running){
-      running = testerFrameLoop();
+   applicationRunning = true;
+   while(applicationRunning){
+      testerFrameLoop();
       SysTaskDelay(4);//30 fps
    }
    

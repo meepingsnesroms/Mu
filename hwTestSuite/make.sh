@@ -11,7 +11,7 @@ CREATORID="guiC"
 RESFILE=$APPNAME.rcp
 PRC=$APPNAME.prc
 
-SRCS="testSuite.c ugui.c"
+SRCS="testSuite.c viewer.c ugui.c"
 DEFINES="-DHW_TEST"
 CSFLAGS="-O2 -S $DEFINES $INCLUDES"
 CFLAGS="-O2 -g $DEFINES $INCLUDES"
