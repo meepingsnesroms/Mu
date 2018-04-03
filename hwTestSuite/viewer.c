@@ -105,24 +105,24 @@ static void resetListHandler(){
 }
 
 static var listModeFrame(){
-   if (getButtonPressed(buttonUp)){
+   if(getButtonPressed(buttonUp)){
       if(selectedEntry > 0)
          selectedEntry--;
    }
    
-   if (getButtonPressed(buttonDown)){
+   if(getButtonPressed(buttonDown)){
       if(selectedEntry + 1 < listLength)
          selectedEntry++;
    }
    
-   if (getButtonPressed(buttonLeft) && listLength > ITEM_LIST_ENTRYS){
+   if(getButtonPressed(buttonLeft) && listLength > ITEM_LIST_ENTRYS){
       if(selectedEntry - ITEM_LIST_ENTRYS >= 0)
          selectedEntry -= ITEM_LIST_ENTRYS;/*flip the page*/
       else
          selectedEntry = 0;
    }
    
-   if (getButtonPressed(buttonRight) && listLength > ITEM_LIST_ENTRYS){
+   if(getButtonPressed(buttonRight) && listLength > ITEM_LIST_ENTRYS){
       if(selectedEntry + ITEM_LIST_ENTRYS < listLength)
          selectedEntry += ITEM_LIST_ENTRYS;/*flip the page*/
       else
@@ -132,23 +132,22 @@ static var listModeFrame(){
    page  = selectedEntry / ITEM_LIST_ENTRYS;
    index = selectedEntry % ITEM_LIST_ENTRYS;
    
-   if ((page != lastPage || index != lastIndex || forceListRefresh) && listHandler){
+   if((page != lastPage || index != lastIndex || forceListRefresh) && listHandler){
       listHandler(LIST_REFRESH);
    }
    
-   if (getButtonPressed(buttonSelect)){
+   if(getButtonPressed(buttonSelect)){
       /*select*/
       listHandler(LIST_ITEM_SELECTED);
    }
    
-   if (getButtonPressed(buttonBack)){
+   if(getButtonPressed(buttonBack)){
       /*go back*/
       exitSubprogram();
    }
    
    
-   if (index != lastIndex)
-   {
+   if(index != lastIndex){
       /*update item colors*/
       UG_TextboxSetForeColor(&fbWindow, lastIndex, TEXTBOX_DEFAULT_TEXT_COLOR);
       UG_TextboxSetBackColor(&fbWindow, lastIndex, TEXTBOX_DEFAULT_COLOR);
@@ -171,38 +170,6 @@ static var listModeFrame(){
    
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
-
-static Boolean initViewer(){
-   int newTextboxY;
-   int entry;
-   UG_RESULT passed;
-   
-   passed = UG_WindowCreate(&fbWindow, fbObjects, MAX_OBJECTS, windowCallback);
-   if (passed != UG_RESULT_OK)
-      return false;
-   
-   UG_WindowSetStyle(&fbWindow, WND_STYLE_HIDE_TITLE | WND_STYLE_2D);
-   UG_WindowSetForeColor(&fbWindow, TEXTBOX_DEFAULT_TEXT_COLOR);
-   UG_WindowSetBackColor(&fbWindow, TEXTBOX_DEFAULT_COLOR);
-   
-   newTextboxY = 0;
-   for (entry = 0; entry < ITEM_LIST_ENTRYS; entry++)
-   {
-      textboxString[entry][0] = '\0';
-      UG_TextboxCreate(&fbWindow, &listEntrys[entry], entry, 0/*x start*/, newTextboxY, TEXTBOX_PIXEL_WIDTH - 1/*x end*/, newTextboxY + TEXTBOX_PIXEL_HEIGHT - 1);
-      UG_TextboxSetAlignment(&fbWindow, entry, ALIGN_CENTER);
-      UG_TextboxSetText(&fbWindow, entry, textboxString[entry]);
-      UG_TextboxSetForeColor(&fbWindow, entry, TEXTBOX_DEFAULT_TEXT_COLOR);
-      UG_TextboxSetBackColor(&fbWindow, entry, TEXTBOX_DEFAULT_COLOR);
-      UG_TextboxShow(&fbWindow, entry);
-      newTextboxY += TEXTBOX_PIXEL_HEIGHT;
-   }
-   
-   /*set_main_window*/
-   UG_WindowShow(&fbWindow);
-   return true;
-}
-
 
 var hexViewer(){
    var where = getSubprogramArgs();
@@ -235,13 +202,8 @@ var testPicker(){
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
 
-Boolean initTestList(){
+static void initTestList(){
    var nullVar = makeVar(LENGTH_0, TYPE_NULL, 0);
-   Boolean memoryAllocSuccess = initViewer();
-   
-   if(!memoryAllocSuccess){
-      return false;
-   }
    
    totalHwTests = 0;
    
@@ -250,6 +212,36 @@ Boolean initTestList(){
    hwTests[0].expectedResult = nullVar;
    hwTests[0].testFunction = hexRamBrowser;
    totalHwTests++;
+}
+
+Boolean initViewer(){
+   int newTextboxY;
+   int entry;
+   UG_RESULT passed;
    
+   passed = UG_WindowCreate(&fbWindow, fbObjects, MAX_OBJECTS, windowCallback);
+   if(passed != UG_RESULT_OK)
+      return false;
+   
+   initTestList();
+   
+   UG_WindowSetStyle(&fbWindow, WND_STYLE_HIDE_TITLE | WND_STYLE_2D);
+   UG_WindowSetForeColor(&fbWindow, TEXTBOX_DEFAULT_TEXT_COLOR);
+   UG_WindowSetBackColor(&fbWindow, TEXTBOX_DEFAULT_COLOR);
+   
+   newTextboxY = 0;
+   for (entry = 0; entry < ITEM_LIST_ENTRYS; entry++){
+      textboxString[entry][0] = '\0';
+      UG_TextboxCreate(&fbWindow, &listEntrys[entry], entry, 0/*x start*/, newTextboxY, TEXTBOX_PIXEL_WIDTH - 1/*x end*/, newTextboxY + TEXTBOX_PIXEL_HEIGHT - 1);
+      UG_TextboxSetAlignment(&fbWindow, entry, ALIGN_CENTER);
+      UG_TextboxSetText(&fbWindow, entry, textboxString[entry]);
+      UG_TextboxSetForeColor(&fbWindow, entry, TEXTBOX_DEFAULT_TEXT_COLOR);
+      UG_TextboxSetBackColor(&fbWindow, entry, TEXTBOX_DEFAULT_COLOR);
+      UG_TextboxShow(&fbWindow, entry);
+      newTextboxY += TEXTBOX_PIXEL_HEIGHT;
+   }
+   
+   /*set_main_window*/
+   UG_WindowShow(&fbWindow);
    return true;
 }

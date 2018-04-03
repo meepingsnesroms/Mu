@@ -8,8 +8,6 @@ var hexRamBrowser(){
    static uint32_t pointerValue = 0x00000000;
    static char     hexString[100];
    
-   MemSet(hexString, '\0', 100);
-   
    
    if(getButtonPressed(buttonUp)){
       pointerValue += 0x1 << (4 * (7 - column));

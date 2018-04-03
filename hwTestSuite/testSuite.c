@@ -237,7 +237,7 @@ static Boolean testerInit(){
    unsafeMode = false;
    
    /*make test list*/
-   memoryAllocSuccess = initTestList();
+   memoryAllocSuccess = initViewer();
    if(!memoryAllocSuccess){
       FrmCustomAlert(alt_err, "Could not allocate UG_WINDOW", 0, 0);
       return false;
@@ -248,8 +248,8 @@ static Boolean testerInit(){
    subprogramArgsSet = false;
    lastSubprogramReturnValue = makeVar(LENGTH_0, TYPE_NULL, 0);
    subprogramArgs = makeVar(LENGTH_0, TYPE_NULL, 0);
-   /*currentSubprogram = testPicker;*/
-   currentSubprogram = hexRamBrowser;
+   currentSubprogram = testPicker;
+   /*currentSubprogram = hexRamBrowser;*/
    
    return true;
 }
