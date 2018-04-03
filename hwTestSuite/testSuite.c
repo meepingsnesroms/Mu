@@ -202,7 +202,6 @@ void subprogramSetData(var data){
 static Boolean testerInit(){
    long     osVer;
    Err      error;
-   Boolean  memoryAllocSuccess;
    
    FtrGet(sysFtrCreator, sysFtrNumROMVersion, &osVer);
    
@@ -237,11 +236,7 @@ static Boolean testerInit(){
    unsafeMode = false;
    
    /*make test list*/
-   memoryAllocSuccess = initViewer();
-   if(!memoryAllocSuccess){
-      FrmCustomAlert(alt_err, "Could not allocate UG_WINDOW", 0, 0);
-      return false;
-   }
+   initViewer();
    
    /*load first subprogram*/
    subprogramIndex = 0;

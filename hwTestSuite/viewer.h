@@ -6,5 +6,5 @@
 
 var hexViewer();
 var testPicker();
-Boolean initViewer();
+void initViewer();
 #endif
