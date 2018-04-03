@@ -298,12 +298,14 @@ static inline void timer12Clk32(){
    uint16_t timer1Control = registerArrayRead16(TCTL1);
    uint16_t timer1Prescaler = registerArrayRead16(TPRER1) & 0x00FF;
    uint16_t timer1Compare = registerArrayRead16(TCMP1);
-   uint16_t timer1Count = registerArrayRead16(TCN1);
+   uint16_t timer1OldCount = registerArrayRead16(TCN1);
+   uint16_t timer1Count = timer1OldCount;
    
    uint16_t timer2Control = registerArrayRead16(TCTL2);
    uint16_t timer2Prescaler = registerArrayRead16(TPRER2) & 0x00FF;
    uint16_t timer2Compare = registerArrayRead16(TCMP2);
-   uint16_t timer2Count = registerArrayRead16(TCN2);
+   uint16_t timer2OldCount = registerArrayRead16(TCN2);
+   uint16_t timer2Count = timer2OldCount;
    
    //timer 1
    if(timer1Control & 0x0001){
@@ -333,7 +335,8 @@ static inline void timer12Clk32(){
          timer1CycleCounter -= (uint16_t)timer1CycleCounter;
       }
       
-      if(timer1Count == timer1Compare){
+      if(timer1OldCount < timer1Compare && timer1Count >= timer1Compare){
+         //the timer is not cycle accurate and may not hit the value in the compare register perfectly so check if it would have during in the emulated time
          if(timer1Control & 0x0010){
             //interrupt enabled
             setIprIsrBit(INT_TMR1);
@@ -376,7 +379,8 @@ static inline void timer12Clk32(){
          timer2CycleCounter -= (uint16_t)timer2CycleCounter;
       }
       
-      if(timer2Count == timer2Compare){
+      if(timer2OldCount < timer2Compare && timer2Count >= timer2Compare){
+         //the timer is not cycle accurate and may not hit the value in the compare register perfectly so check if it would have during in the emulated time
          if(timer2Control & 0x0010){
             //interrupt enabled
             setIprIsrBit(INT_TMR2);
