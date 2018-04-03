@@ -1,6 +1,7 @@
 #include <PalmOS.h>
 #include <PalmCompatibility.h>
 #include <stdint.h>
+#include <string.h>
 #include "ugui.h"
 #include "testSuiteConfig.h"
 #include "testSuite.h"
@@ -10,7 +11,7 @@
 #include "TstSuiteRsc.h"
 
 
-#define PalmOS35   sysMakeROMVersion(3,5,0,sysROMStageRelease,0)
+#define PalmOS35 sysMakeROMVersion(3,5,0,sysROMStageRelease,0)
 
 
 /*functions that should be macros but are screwed up by c89*/
@@ -86,8 +87,9 @@ Boolean  unsafeMode;
 
 
 /*video stuff*/
-static UG_GUI   uguiStruct;
-static uint8_t* framebuffer;
+static UG_GUI      uguiStruct;
+static BitmapType* offscreenBitmap;
+static uint8_t*    framebuffer;
 
 /*other*/
 static activity_t parentSubprograms[MAX_SUBPROGRAMS];
@@ -135,7 +137,7 @@ void uguiDrawPixel(UG_S16 x, UG_S16 y, UG_COLOR color){
    int byte = pixel / 8;
    int bit = pixel % 8;
    if(color){
-      framebuffer[byte] |= 1 << (7 - bit);
+      framebuffer[byte] |= (1 << (7 - bit));
    }
    else{
       framebuffer[byte] &= ~(1 << (7 - bit));
@@ -198,10 +200,7 @@ void subprogramSetData(var data){
 
 static Boolean testerInit(){
    long     osVer;
-   Err      setFramebufferFormatError;
-   uint32_t width;
-   uint32_t height;
-   uint32_t depth;
+   Err      error;
    Boolean  memoryAllocSuccess;
    
    FtrGet(sysFtrCreator, sysFtrNumROMVersion, &osVer);
@@ -215,19 +214,19 @@ static Boolean testerInit(){
                 keyBitHard1  | keyBitHard2 |
                 keyBitHard3  | keyBitHard4 ));
    
-   width = 160;
-   height = 160;
-   depth = 1;
-   setFramebufferFormatError = ScrDisplayMode(scrDisplayModeSet, &width, &height, &depth, NULL);
+   WinSetActiveWindow(WinGetDisplayWindow());
    
-   if(setFramebufferFormatError){
-      FrmCustomAlert(alt_err, "Framebuffer unusable", 0, 0);
+   offscreenBitmap = BmpCreate(SCREEN_WIDTH, SCREEN_HEIGHT, 1, NULL, &error);
+   
+   if(error){
+      FrmCustomAlert(alt_err, "Cant create bitmap", 0, 0);
       return false;
    }
    
-   framebuffer = BmpGetBits(WinGetBitmap(WinGetDrawWindow()));
+   framebuffer = BmpGetBits(offscreenBitmap);
+   memset(framebuffer, 0xFF, SCREEN_WIDTH * SCREEN_HEIGHT / 8);/*set to white*/
    
-   UG_Init(&uguiStruct, uguiDrawPixel, 160, 160);
+   UG_Init(&uguiStruct, uguiDrawPixel, SCREEN_WIDTH, SCREEN_HEIGHT);
    UG_FontSelect(&FONT_4X6);
    UG_SetBackcolor(C_WHITE);
    UG_SetForecolor(C_BLACK);
@@ -269,7 +268,10 @@ static void testerFrameLoop(){
          applicationRunning = false;
    }
    
-   lastSubprogramReturnValue = currentSubprogram();
+   //lastSubprogramReturnValue = currentSubprogram();
+   UG_PutString(0, 0, "Text rendering test");
+   
+   WinDrawBitmap(offscreenBitmap, 0, 0);
    
    palmButtonsLastFrame = palmButtons;
 }

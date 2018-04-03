@@ -138,7 +138,6 @@ static var listModeFrame(){
    
    if ((page != lastPage || index != lastIndex || forceListRefresh) && listHandler){
       listHandler(LIST_REFRESH);
-      forceListRefresh = false;
    }
    
    if (getButtonPressed(buttonSelect)){
@@ -161,11 +160,18 @@ static var listModeFrame(){
       UG_TextboxSetForeColor(&fbWindow, index, TEXTBOX_CURSOR_TEXT_COLOR);
       UG_TextboxSetBackColor(&fbWindow, index, TEXTBOX_CURSOR_COLOR);
    }
+   else if(forceListRefresh){
+      UG_TextboxSetForeColor(&fbWindow, index, TEXTBOX_CURSOR_TEXT_COLOR);
+      UG_TextboxSetBackColor(&fbWindow, index, TEXTBOX_CURSOR_COLOR);
+   }
    
    lastIndex = index;
    lastPage  = page;
    
    UG_Update();
+   
+   if(forceListRefresh)
+      forceListRefresh = false;
    
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
