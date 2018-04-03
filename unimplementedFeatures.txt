@@ -8,3 +8,4 @@ Peripheral Control Register, audio ppm mixing selection
 System Control Register, 0xXXFFF000 all upper banks are registers mode
 Port D level sensitive interrupts
 Port D keyboard enable register
+The data sheet says LRRA is 0xFFFFFA29 and 0xFFFFFA28 but its only 8bits?

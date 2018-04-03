@@ -226,7 +226,7 @@ void testerInit(){
    oldLlbar = LLBAR;
    
    /* set to full refresh */
-   LPXCD = 0;
+   /*LPXCD = 0;*/
    
    /* display off */
    CKCON &= ~0x80;
@@ -237,7 +237,7 @@ void testerInit(){
    LLBAR  = 10;     /* line buffer now 20 bytes */
    
    /* register to control grayscale pixel oscillations */
-   FRCM = 0xB9;//not listed in Dragonball VZ datasheet
+   /*FRCM = 0xB9;*//*not listed in Dragonball VZ datasheet*/
    
    LSSA = framebuffer;
    
@@ -253,10 +253,10 @@ void testerInit(){
    UG_ConsoleSetBackcolor(C_WHITE);
    UG_ConsoleSetForecolor(C_BLACK);
    
-   //make test list, c89 again
+   /*make test list*/
    initTestList();
    
-   //load first subprogram
+   /*load first subprogram*/
    subprogramIndex = 0;
    subprogramArgsSet = false;
    lastSubprogramReturnValue = makeVar(LENGTH_0, TYPE_NULL, 0);
@@ -268,7 +268,7 @@ void testerExit(){
    LSSA = oldFramebuffer;
    LPXCD = oldLpxcd;
    PICF = oldPicf;
-   VPW= oldVpw;
+   VPW = oldVpw;
    LLBAR = oldLlbar;
 }
 
@@ -281,15 +281,17 @@ void testerFrameLoop(){
 }
 
 DWord PilotMain(Word cmd, Ptr cmdBPB, Word launchFlags){
-   testerInit();
-   
-   applicationRunning = true;
-   while(applicationRunning){
-      testerFrameLoop();
-      SysTaskDelay(4);/*30 fps*/
+   if(cmd == sysAppLaunchCmdNormalLaunch){
+      testerInit();
+      
+      applicationRunning = true;
+      while(applicationRunning){
+         testerFrameLoop();
+         SysTaskDelay(4);/*30 fps*/
+      }
+      
+      testerExit();
    }
-   
-   testerExit();
    return(0);
 }
 
