@@ -2,15 +2,14 @@
 #include <string.h>
 #include "testSuiteConfig.h"
 #include "testSuite.h"
-#include "snprintf.h"
 #include "tests.h"
 #include "ugui.h"
 
 
 #define MAX_OBJECTS 50
 
-#define FONT_WIDTH   8
-#define FONT_HEIGHT  8
+#define FONT_WIDTH   4
+#define FONT_HEIGHT  6
 #define FONT_SPACING 0
 
 #define RESERVED_PIXELS_Y (SCREEN_HEIGHT / 4)/*save pixels at the bottom of the screen for other information on the current item*/
@@ -35,7 +34,6 @@ static test_t hwTests[TESTS_AVAILABLE];
 static uint32_t      totalHwTests;
 
 /*graphics*/
-static UG_GUI     fbGui;
 static UG_WINDOW  fbWindow;
 static UG_OBJECT  fbObjects[MAX_OBJECTS];
 static UG_TEXTBOX listEntrys[ITEM_LIST_ENTRYS];
@@ -71,7 +69,7 @@ static void hexHandler(uint32_t command){
       
       /*fill strings*/
       for(i = 0; i < ITEM_LIST_ENTRYS; i++){
-         snprintf(textboxString[i], ITEM_STRING_SIZE, "0x%08X:0x%02X", hexViewOffset - bufferAddress, readArbitraryMemory8(hexViewOffset));
+         StrPrintF(textboxString[i], "0x%08X:0x%02X", hexViewOffset - bufferAddress, readArbitraryMemory8(hexViewOffset));
          forceTextEntryRefresh(i);
          hexViewOffset++;
       }
@@ -195,6 +193,8 @@ static Boolean initViewer(){
       UG_TextboxCreate(&fbWindow, &listEntrys[entry], entry, 0/*x start*/, newTextboxY, TEXTBOX_PIXEL_WIDTH - 1/*x end*/, newTextboxY + TEXTBOX_PIXEL_HEIGHT - 1);
       UG_TextboxSetAlignment(&fbWindow, entry, ALIGN_CENTER);
       UG_TextboxSetText(&fbWindow, entry, textboxString[entry]);
+      UG_TextboxSetForeColor(&fbWindow, entry, TEXTBOX_DEFAULT_TEXT_COLOR);
+      UG_TextboxSetBackColor(&fbWindow, entry, TEXTBOX_DEFAULT_COLOR);
       UG_TextboxShow(&fbWindow, entry);
       newTextboxY += TEXTBOX_PIXEL_HEIGHT;
    }
@@ -232,6 +232,8 @@ var testPicker(){
    listLength = totalHwTests;
    listHandler = testPickerHandler;
    execSubprogram(listModeFrame);
+   
+   /*UG_PutString(0, SCREEN_HEIGHT - RESERVED_PIXELS_Y + 1, "Loaded test picker");*/
    
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }

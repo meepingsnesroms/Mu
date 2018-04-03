@@ -7,7 +7,10 @@ var hexRamBrowser(){
    static Boolean  clearScreen = true;
    static uint32_t column = 0;/*what column to change with up/down keys*/
    static uint32_t pointerValue = 0x00000000;
-   static char     hexString[32];
+   static char     hexString[100];
+   
+   memset(hexString, '\0', 100);
+   
    
    if(getButtonPressed(buttonUp)){
       pointerValue += 0x1 << (4 * (7 - column));
@@ -39,11 +42,12 @@ var hexRamBrowser(){
       exitSubprogram();
    }
    
-   snprintf(hexString, 32, "Open Hex Viewer At:0x%08X", pointerValue);
+   StrPrintF(hexString, "Open Hex Viewer At:\n0x%08X", pointerValue);
    
    if(clearScreen){
       UG_FillScreen(C_WHITE);
       clearScreen = false;
    }
+   
    UG_PutString(0, 0, hexString);
 }

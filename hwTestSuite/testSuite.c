@@ -6,6 +6,7 @@
 #include "testSuiteConfig.h"
 #include "testSuite.h"
 #include "viewer.h"
+#include "tests.h"
 
 /*dont include this anywhere else*/
 #include "TstSuiteRsc.h"
@@ -136,7 +137,8 @@ void uguiDrawPixel(UG_S16 x, UG_S16 y, UG_COLOR color){
    int pixel = x + y * SCREEN_WIDTH;
    int byte = pixel / 8;
    int bit = pixel % 8;
-   if(color){
+   if(!color){
+      /*1 is black not white*/
       framebuffer[byte] |= (1 << (7 - bit));
    }
    else{
@@ -224,7 +226,6 @@ static Boolean testerInit(){
    }
    
    framebuffer = BmpGetBits(offscreenBitmap);
-   memset(framebuffer, 0xFF, SCREEN_WIDTH * SCREEN_HEIGHT / 8);/*set to white*/
    
    UG_Init(&uguiStruct, uguiDrawPixel, SCREEN_WIDTH, SCREEN_HEIGHT);
    UG_FontSelect(&FONT_4X6);
@@ -232,6 +233,7 @@ static Boolean testerInit(){
    UG_SetForecolor(C_BLACK);
    UG_ConsoleSetBackcolor(C_WHITE);
    UG_ConsoleSetForecolor(C_BLACK);
+   UG_FillScreen(C_WHITE);
    
    unsafeMode = false;
    
@@ -247,7 +249,8 @@ static Boolean testerInit(){
    subprogramArgsSet = false;
    lastSubprogramReturnValue = makeVar(LENGTH_0, TYPE_NULL, 0);
    subprogramArgs = makeVar(LENGTH_0, TYPE_NULL, 0);
-   currentSubprogram = testPicker;
+   /*currentSubprogram = testPicker;*/
+   currentSubprogram = hexRamBrowser;
    
    return true;
 }
@@ -268,8 +271,7 @@ static void testerFrameLoop(){
          applicationRunning = false;
    }
    
-   //lastSubprogramReturnValue = currentSubprogram();
-   UG_PutString(0, 0, "Text rendering test");
+   lastSubprogramReturnValue = currentSubprogram();
    
    WinDrawBitmap(offscreenBitmap, 0, 0);
    

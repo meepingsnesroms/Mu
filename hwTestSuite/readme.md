@@ -4,6 +4,7 @@ The tests available in the end will be:
 Dump Bootloader(Original, EZ, VZ)  
 Rom Writes  
 m68k CPU Version  
+Test emu registers  
 
 
 
