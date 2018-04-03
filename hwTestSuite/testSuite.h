@@ -3,7 +3,7 @@
 
 #include <PalmOS.h>
 #include <stdint.h>
-
+#include "testSuiteConfig.h"
 
 /*defines*/
 #define buttonLeft   keyBitHard1
@@ -41,7 +41,7 @@ typedef struct{
 typedef var (*activity_t)();
 
 typedef struct{
-   char       name[32];
+   char       name[TEST_NAME_LENGTH];
    Boolean    isSimpleTest;/*if simple run once, if complex take control over user input and runloop*/
    var        expectedResult;
    activity_t testFunction;
@@ -74,12 +74,14 @@ c89 also doesnt support them
 #define getVarValue(thisVar)         (thisVar.value);
 #define makeVar(length, type, value) {(uint8_t)((length & 0xF0) | (type & 0x0F)), (uint64_t)value}
 */
+/*hardware buttons*/
 Boolean getButton(uint16_t button);
 Boolean getButtonLastFrame(uint16_t button);
 Boolean getButtonChanged(uint16_t button);
 Boolean getButtonPressed(uint16_t button);
 Boolean getButtonReleased(uint16_t button);
 
+/*var type operators*/
 uint8_t   getVarType(var thisVar);
 uint8_t   getVarLength(var thisVar);
 uint32_t  getVarDataLength(var thisVar);
@@ -89,6 +91,7 @@ var_value getVarValue(var thisVar);
 var       makeVar(uint8_t length, uint8_t type, uint64_t value);
 Boolean   varsEqual(var var1, var var2);
 
+/*kernel memory access*/
 uint8_t  readArbitraryMemory8(uint32_t address);
 uint16_t readArbitraryMemory16(uint32_t address);
 uint32_t readArbitraryMemory32(uint32_t address);
@@ -96,6 +99,10 @@ void     writeArbitraryMemory8(uint32_t address, uint8_t value);
 void     writeArbitraryMemory16(uint32_t address, uint16_t value);
 void     writeArbitraryMemory32(uint32_t address, uint32_t value);
 
+/*graphics*/
+void forceFrameRedraw();
+
+/*execution state*/
 void callSubprogram(activity_t activity);
 void exitSubprogram();
 void execSubprogram(activity_t activity);/*replace current subprogram with a new one*/

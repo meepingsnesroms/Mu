@@ -11,9 +11,9 @@ CREATORID="guiC"
 RESFILE=$APPNAME.rcp
 PRC=$APPNAME.prc
 
-SRCS="testSuite.c viewer.c tests.c ugui.c"
-DEFINES="-DHW_TEST -DNEED_SNPRINTF_ONLY"
-CFLAGS="-O2 -g $DEFINES $INCLUDES"
+SRCS="testSuite.c viewer.c tests.c debug.c ugui.c"
+DEFINES="-DHW_TEST -DDEBUG"
+CFLAGS="-O2 -g $DEFINES"
 
 if [ "$1" = "clean" ]; then
    rm -rf *.o *.a $APPNAME $PRC *.bin *.grc

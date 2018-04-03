@@ -5,6 +5,7 @@
 #include "testSuiteConfig.h"
 #include "testSuite.h"
 #include "viewer.h"
+#include "debug.h"
 #include "tests.h"
 
 /*dont include this anywhere else*/
@@ -105,7 +106,7 @@ static Boolean    applicationRunning;
 static var errorSubprogramStackOverflow(){
    static Boolean wipedScreen = false;
    if(!wipedScreen){
-      UG_FillScreen(C_WHITE);
+      debugSafeScreenClear(C_WHITE);
       UG_PutString(0, 0, "Subprogram stack overflow!\nYou must close the program.");
       wipedScreen = true;
    }
@@ -119,7 +120,7 @@ static var errorSubprogramStackOverflow(){
 var memoryAllocationError(){
    static Boolean wipedScreen = false;
    if(!wipedScreen){
-      UG_FillScreen(C_WHITE);
+      debugSafeScreenClear(C_WHITE);
       UG_PutString(0, 0, "Could not allocate memory!\nYou must close the program.");
       wipedScreen = true;
    }
@@ -131,7 +132,7 @@ var memoryAllocationError(){
 }
 
 
-void uguiDrawPixel(UG_S16 x, UG_S16 y, UG_COLOR color){
+static void uguiDrawPixel(UG_S16 x, UG_S16 y, UG_COLOR color){
    /*using 1bit grayscale*/
    int pixel = x + y * SCREEN_WIDTH;
    int byte = pixel / 8;
@@ -145,6 +146,10 @@ void uguiDrawPixel(UG_S16 x, UG_S16 y, UG_COLOR color){
    }
 }
 
+void forceFrameRedraw(){
+   WinDrawBitmap(offscreenBitmap, 0, 0);
+}
+
 void callSubprogram(activity_t activity){
    if(subprogramIndex < MAX_SUBPROGRAMS - 1){
       subprogramIndex++;
@@ -153,6 +158,7 @@ void callSubprogram(activity_t activity){
       if(!subprogramArgsSet)
          subprogramArgs = makeVar(LENGTH_0, TYPE_NULL, 0);
       subprogramArgsSet = false;/*clear to prevent next subprogram called from inheriting the args*/
+      setDebugTag("Subprogram Called");
    }
    else{
       currentSubprogram = errorSubprogramStackOverflow;
@@ -164,10 +170,12 @@ void exitSubprogram(){
    if(subprogramIndex > 0){
       subprogramIndex--;
       currentSubprogram = parentSubprograms[subprogramIndex];
+      setDebugTag("Subprogram Exited");
    }
    else{
       /*last subprogram is complete, exit application*/
       applicationRunning = false;
+      setDebugTag("Application Exiting");
    }
 }
 
@@ -177,6 +185,7 @@ void execSubprogram(activity_t activity){
    subprogramArgsSet = false;/*clear to prevent next subprogram called from inheriting the args*/
    parentSubprograms[subprogramIndex] = activity;
    currentSubprogram = activity;
+   setDebugTag("Subprogram Swapped Out");
 }
 
 var getSubprogramReturnValue(){

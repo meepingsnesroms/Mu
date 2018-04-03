@@ -1,6 +1,7 @@
 #include "testSuiteConfig.h"
 #include "testSuite.h"
 #include "tests.h"
+#include "debug.h"
 #include "ugui.h"
 
 
@@ -43,10 +44,11 @@ static uint32_t bufferAddress;/*used to put the hex viewer in buffer mode instea
 
 
 /*functions*/
-
 static void renderListFrame(){
    int textBoxes;
    int y = 0;
+   
+   setDebugTag("Rendering List Frame");
    
    for(textBoxes = 0; textBoxes < ITEM_LIST_ENTRYS; textBoxes++){
       if(textBoxes = index){
@@ -71,6 +73,8 @@ static void hexHandler(uint32_t command){
       int i;
       uint32_t hexViewOffset = bufferAddress + selectedEntry;
       
+      setDebugTag("Hex Handler Refresh");
+      
       /*fill strings*/
       for(i = 0; i < ITEM_LIST_ENTRYS; i++){
          StrPrintF(itemStrings[i], "0x%08X:0x%02X", hexViewOffset - bufferAddress, readArbitraryMemory8(hexViewOffset));
@@ -83,6 +87,8 @@ static void testPickerHandler(uint32_t command){
    if(command == LIST_REFRESH){
       int i;
       
+      setDebugTag("Test Picker Handler Refresh");
+      
       /*fill strings*/
       for(i = 0; i < ITEM_LIST_ENTRYS; i++){
          if(i < totalHwTests){
@@ -94,6 +100,7 @@ static void testPickerHandler(uint32_t command){
       }
    }
    else if(command == LIST_ITEM_SELECTED){
+      setDebugTag("Test Picker Test Selected");
       callSubprogram(hwTests[selectedEntry].testFunction);
    }
 }
@@ -110,10 +117,15 @@ static void resetListHandler(){
    for(i = 0; i < ITEM_LIST_ENTRYS; i++)
       itemStrings[i][0] = '\0';
    forceListRefresh = true;
-   UG_FillScreen(C_WHITE);
+   debugSafeScreenClear(C_WHITE);
+   
+   setDebugTag("List Handler Reset");
 }
 
 static var listModeFrame(){
+   
+   setDebugTag("List Mode Running");
+   
    if(getButtonPressed(buttonUp)){
       if(selectedEntry > 0)
          selectedEntry--;
@@ -186,10 +198,12 @@ var hexViewer(){
       /*free roam ram access*/
       selectedEntry = (uint32_t)getVarPointer(where);
       bufferAddress = 0;
-      listLength = 0xFFFFFFFF;
+      listLength = UINT32_C(0xFFFFFFFF);
    }
    listHandler = hexHandler;
    execSubprogram(listModeFrame);
+   
+   setDebugTag("Hex Viewer Starting");
    
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
@@ -200,6 +214,8 @@ var testPicker(){
    listHandler = testPickerHandler;
    execSubprogram(listModeFrame);
    
+   setDebugTag("Test Picker Starting");
+   
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
 
@@ -208,7 +224,7 @@ void initViewer(){
    
    totalHwTests = 0;
    
-   StrNCopy(hwTests[0].name, "Ram Browser", 32);
+   StrNCopy(hwTests[0].name, "Ram Browser", TEST_NAME_LENGTH);
    hwTests[0].isSimpleTest = false;
    hwTests[0].expectedResult = nullVar;
    hwTests[0].testFunction = hexRamBrowser;

@@ -1,12 +1,13 @@
 #include "testSuite.h"
 #include "viewer.h"
+#include "debug.h"
 #include "ugui.h"
 
 
 var hexRamBrowser(){
    static Boolean  clearScreen = true;
    static uint32_t nibble = 0;/*what column to change with up/down keys*/
-   static uint32_t pointerValue = UINT32_C(0x77777777);/*in the middle of everything*/
+   static uint32_t pointerValue = UINT32_C(0x77777777);/*in the middle of the address space*/
    static char     hexString[100];
    
    if(getButtonPressed(buttonUp)){
@@ -45,9 +46,11 @@ var hexRamBrowser(){
    StrPrintF(hexString, "Open Hex Viewer At:\n0x%04X%04X", (uint16_t)(pointerValue >> 16), (uint16_t)pointerValue);
    
    if(clearScreen){
-      UG_FillScreen(C_WHITE);
+      debugSafeScreenClear(C_WHITE);
       clearScreen = false;
    }
+   
+   setDebugTag("Hex Ram Browser Address Select");
    
    UG_PutString(0, 0, hexString);
 }

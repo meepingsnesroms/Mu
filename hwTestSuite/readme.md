@@ -15,4 +15,4 @@ If you enable unsafe mode you will have to reboot to exit, this is because it wi
 
 In the hex viewer registers that are not safe to read will say "UNSAFE" instead of a hex value, the main unsafe reads are the uart registers.
 
-There is almost no memory, 4KB stack on some devices.
+There is almost no memory, 4KB stack on some devices.  
