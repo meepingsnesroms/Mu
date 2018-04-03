@@ -6,22 +6,11 @@
 #include "testSuite.h"
 #include "viewer.h"
 
+/*dont include this anywhere else*/
+#include "TstSuiteRsc.h"
 
-/* register for direct video hardware access on OS 3.1 */
-#define LSSA  *((         void **)0xFFFFFA00)
-#define VPW   *((unsigned char  *)0xFFFFFA05)
-#define LYMAX *((unsigned short *)0xFFFFFA0A)
-#define LCXP  *((unsigned short *)0xFFFFFA18)
-#define LCYP  *((unsigned short *)0xFFFFFA1A)
-#define LCWCH *((unsigned short *)0xFFFFFA1C)
-#define LBLCK *((unsigned char  *)0xFFFFFA1F)
-#define PICF  *((unsigned char  *)0xFFFFFA20)
-#define LPXCD *((unsigned char  *)0xFFFFFA25)
-#define CKCON *((unsigned char  *)0xFFFFFA27)
-#define LLBAR *((unsigned char  *)0xFFFFFA29)
-#define LPOSR *((unsigned char  *)0xFFFFFA2D)
-#define FRCM  *((unsigned char  *)0xFFFFFA31)
-#define LGPMR *((unsigned short *)0xFFFFFA32)
+
+#define PalmOS35   sysMakeROMVersion(3,5,0,sysROMStageRelease,0)
 
 
 /*functions that should be macros but are screwed up by c89*/
@@ -35,7 +24,7 @@ uint32_t getVarDataLength(var thisVar){
    return thisVar.value >> 32;
 }
 void* getVarPointer(var thisVar){
-   return (void*)(thisVar.value & 0xFFFFFFFF);
+   return (void*)(uint32_t)(thisVar.value & 0xFFFFFFFF);
 }
 uint32_t getVarPointerSize(var thisVar){
    return thisVar.value >> 32;
@@ -93,16 +82,12 @@ void writeArbitraryMemory32(uint32_t address, uint32_t value){
 /*exports*/
 uint16_t palmButtons;
 uint16_t palmButtonsLastFrame;
+Boolean  unsafeMode;
 
 
 /*video stuff*/
 static UG_GUI   uguiStruct;
 static uint8_t* framebuffer;
-static uint8_t* oldFramebuffer;
-static uint8_t  oldLpxcd;
-static uint8_t  oldPicf;
-static uint8_t  oldVpw;
-static uint8_t  oldLlbar;
 
 /*other*/
 static activity_t parentSubprograms[MAX_SUBPROGRAMS];
@@ -211,47 +196,42 @@ void subprogramSetData(var data){
    subprogramData[subprogramIndex] = data;
 }
 
-void testerInit(){
+static Boolean testerInit(){
+   long     osVer;
+   Err      setFramebufferFormatError;
+   uint32_t width;
+   uint32_t height;
+   uint32_t depth;
+   
+   FtrGet(sysFtrCreator, sysFtrNumROMVersion, &osVer);
+   
+   if (osVer < PalmOS35) {
+      FrmCustomAlert(alt_err, "TestSuite requires at least PalmOS 3.5", 0, 0);
+      return false;
+   }
+   
    KeySetMask(~(keyBitPageUp | keyBitPageDown |
                 keyBitHard1  | keyBitHard2 |
                 keyBitHard3  | keyBitHard4 ));
    
-   framebuffer = MemPtrNew(SCREEN_WIDTH * SCREEN_HEIGHT / 8);
+   width = 160;
+   height = 160;
+   depth = 1;
+   setFramebufferFormatError = ScrDisplayMode(scrDisplayModeSet, &width, &height, &depth, NULL);
    
-   /* save old video regs */
-   oldFramebuffer = LSSA;
-   oldLpxcd = LPXCD;
-   oldPicf = PICF;
-   oldVpw = VPW;
-   oldLlbar = LLBAR;
+   if(setFramebufferFormatError){
+      return false;
+   }
    
-   /* set to full refresh */
-   /*LPXCD = 0;*/
-   
-   /* display off */
-   CKCON &= ~0x80;
-   
-   /* virtual page width now 20 bytes (160 greyscale pixels) */
-   VPW    = 10;
-   PICF  &= ~0x03;  /* switch to black and white mode */
-   LLBAR  = 10;     /* line buffer now 20 bytes */
-   
-   /* register to control grayscale pixel oscillations */
-   /*FRCM = 0xB9;*//*not listed in Dragonball VZ datasheet*/
-   
-   LSSA = framebuffer;
-   
-   /* let the LCD get to a 2 new frames (40ms delay) */
-   SysTaskDelay(4);
-   
-   /* switch LCD back on */
-   CKCON |= 0x80;
+   framebuffer = BmpGetBits(WinGetBitmap(WinGetDrawWindow()));
    
    UG_Init(&uguiStruct, uguiDrawPixel, 160, 160);
    UG_SetBackcolor(C_WHITE);
    UG_SetForecolor(C_BLACK);
    UG_ConsoleSetBackcolor(C_WHITE);
    UG_ConsoleSetForecolor(C_BLACK);
+   
+   unsafeMode = false;
    
    /*make test list*/
    initTestList();
@@ -262,18 +242,25 @@ void testerInit(){
    lastSubprogramReturnValue = makeVar(LENGTH_0, TYPE_NULL, 0);
    subprogramArgs = makeVar(LENGTH_0, TYPE_NULL, 0);
    currentSubprogram = testPicker;
+   
+   return true;
 }
 
-void testerExit(){
-   LSSA = oldFramebuffer;
-   LPXCD = oldLpxcd;
-   PICF = oldPicf;
-   VPW = oldVpw;
-   LLBAR = oldLlbar;
+static void testerExit(){
+   /*nothing right now*/
 }
 
-void testerFrameLoop(){
+static void testerFrameLoop(){
    palmButtons = KeyCurrentState();
+   
+   if(!unsafeMode){
+      /*allow exiting the app normally*/
+      EventType event;
+      EvtGetEvent(&event, 1);
+      SysHandleEvent(&event);
+      if(event.eType == appStopEvent)
+         applicationRunning = false;
+   }
    
    lastSubprogramReturnValue = currentSubprogram();
    
@@ -282,7 +269,12 @@ void testerFrameLoop(){
 
 DWord PilotMain(Word cmd, Ptr cmdBPB, Word launchFlags){
    if(cmd == sysAppLaunchCmdNormalLaunch){
-      testerInit();
+      Boolean initSuccess;
+      initSuccess = testerInit();
+      
+      if(!initSuccess){
+         return(0);
+      }
       
       applicationRunning = true;
       while(applicationRunning){

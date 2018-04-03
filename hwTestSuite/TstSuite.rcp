@@ -1,3 +1,14 @@
+#include "TstSuiteRsc.h"
+
+ALERT ID alt_err
+ERROR
+BEGIN
+TITLE "Error"
+MESSAGE "^1"
+
+BUTTONS "OK"
+END
+
 //ICONFAMILY "icon_1.bmp" "icon_2.bmp" "icon_4.bmp" "icon_8.bmp"
 //SMALLICON "icon_sm.bmp"  // icon for P3 list view
 //so fracking tired of the icon shit, it can be blank for now
