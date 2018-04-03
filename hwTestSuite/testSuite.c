@@ -202,6 +202,7 @@ static Boolean testerInit(){
    uint32_t width;
    uint32_t height;
    uint32_t depth;
+   Boolean  memoryAllocSuccess;
    
    FtrGet(sysFtrCreator, sysFtrNumROMVersion, &osVer);
    
@@ -220,12 +221,14 @@ static Boolean testerInit(){
    setFramebufferFormatError = ScrDisplayMode(scrDisplayModeSet, &width, &height, &depth, NULL);
    
    if(setFramebufferFormatError){
+      FrmCustomAlert(alt_err, "Framebuffer unusable", 0, 0);
       return false;
    }
    
    framebuffer = BmpGetBits(WinGetBitmap(WinGetDrawWindow()));
    
    UG_Init(&uguiStruct, uguiDrawPixel, 160, 160);
+   UG_FontSelect(&FONT_4X6);
    UG_SetBackcolor(C_WHITE);
    UG_SetForecolor(C_BLACK);
    UG_ConsoleSetBackcolor(C_WHITE);
@@ -234,7 +237,11 @@ static Boolean testerInit(){
    unsafeMode = false;
    
    /*make test list*/
-   initTestList();
+   memoryAllocSuccess = initTestList();
+   if(!memoryAllocSuccess){
+      FrmCustomAlert(alt_err, "Could not allocate UG_WINDOW", 0, 0);
+      return false;
+   }
    
    /*load first subprogram*/
    subprogramIndex = 0;

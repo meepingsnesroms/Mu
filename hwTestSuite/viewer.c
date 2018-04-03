@@ -42,7 +42,6 @@ static UG_TEXTBOX listEntrys[ITEM_LIST_ENTRYS];
 static char       textboxString[ITEM_LIST_ENTRYS][ITEM_STRING_SIZE];
 
 /*list handler variables*/
-static Boolean  viewerInitialized = false;
 static uint32_t page = 0;
 static uint32_t index = 0;
 static uint32_t lastIndex = 0;
@@ -109,7 +108,7 @@ static void resetListHandler(){
    forceListRefresh = true;
 }
 
-static void listModeFrame(){
+static var listModeFrame(){
    if (getButtonPressed(buttonUp)){
       if(selectedEntry > 0)
          selectedEntry--;
@@ -167,17 +166,18 @@ static void listModeFrame(){
    lastPage  = page;
    
    UG_Update();
+   
+   return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
 
-
-var initViewer(){
+static Boolean initViewer(){
    int newTextboxY;
    int entry;
    UG_RESULT passed;
    
    passed = UG_WindowCreate(&fbWindow, fbObjects, MAX_OBJECTS, windowCallback);
    if (passed != UG_RESULT_OK)
-      return makeVar(LENGTH_1, TYPE_BOOL, false);
+      return false;
    
    UG_WindowSetStyle(&fbWindow, WND_STYLE_HIDE_TITLE | WND_STYLE_2D);
    UG_WindowSetForeColor(&fbWindow, TEXTBOX_DEFAULT_TEXT_COLOR);
@@ -192,25 +192,15 @@ var initViewer(){
       UG_TextboxShow(&fbWindow, entry);
       newTextboxY += TEXTBOX_PIXEL_HEIGHT;
    }
+   
    /*set_main_window*/
    UG_WindowShow(&fbWindow);
-   return makeVar(LENGTH_1, TYPE_BOOL, true);
+   return true;
 }
 
 
 var hexViewer(){
-   var where;
-   
-   if(!viewerInitialized){
-      var passFail = initViewer();
-      if(varsEqual(passFail, makeVar(LENGTH_1, TYPE_BOOL, true))){
-         callSubprogram(memoryAllocationError);
-         return makeVar(LENGTH_1, TYPE_BOOL, false);
-      }
-      viewerInitialized = true;
-   }
-   
-   where = getSubprogramArgs();
+   var where = getSubprogramArgs();
    
    resetListHandler();
    listLength = getVarPointerSize(where);
@@ -226,36 +216,35 @@ var hexViewer(){
       listLength = 0xFFFFFFFF;
    }
    listHandler = hexHandler;
-   listModeFrame();
+   execSubprogram(listModeFrame);
    
-   return makeVar(LENGTH_1, TYPE_BOOL, true);
+   return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
 
 var testPicker(){
-   if(!viewerInitialized){
-      var passFail = initViewer();
-      if(varsEqual(passFail, makeVar(LENGTH_1, TYPE_BOOL, true))){
-         callSubprogram(memoryAllocationError);
-         return makeVar(LENGTH_1, TYPE_BOOL, false);
-      }
-      viewerInitialized = true;
-   }
-   
    resetListHandler();
    listLength = totalHwTests;
    listHandler = testPickerHandler;
-   listModeFrame();
+   execSubprogram(listModeFrame);
    
-   return makeVar(LENGTH_1, TYPE_BOOL, true);
+   return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
 
-void initTestList(){
+Boolean initTestList(){
    var nullVar = makeVar(LENGTH_0, TYPE_NULL, 0);
+   Boolean memoryAllocSuccess = initViewer();
+   
+   if(!memoryAllocSuccess){
+      return false;
+   }
+   
+   totalHwTests = 0;
    
    strncpy(hwTests[0].name, "Ram Browser", 32);
    hwTests[0].isSimpleTest = false;
    hwTests[0].expectedResult = nullVar;
    hwTests[0].testFunction = hexRamBrowser;
+   totalHwTests++;
    
-   totalHwTests = 1;
+   return true;
 }

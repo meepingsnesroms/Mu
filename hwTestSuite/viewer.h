@@ -6,5 +6,5 @@
 
 var hexViewer();
 var testPicker();
-void initTestList();
+Boolean initTestList();
 #endif
