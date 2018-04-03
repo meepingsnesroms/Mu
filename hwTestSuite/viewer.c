@@ -28,8 +28,8 @@
 
 
 /*tests*/
-static test_t hwTests[TESTS_AVAILABLE];
-static uint32_t      totalHwTests;
+static test_t   hwTests[TESTS_AVAILABLE];
+static uint32_t totalHwTests;
 
 /*graphics*/
 static UG_WINDOW  fbWindow;
@@ -38,13 +38,13 @@ static UG_TEXTBOX listEntrys[ITEM_LIST_ENTRYS];
 static char       textboxString[ITEM_LIST_ENTRYS][ITEM_STRING_SIZE];
 
 /*list handler variables*/
-static uint32_t page = 0;
-static uint32_t index = 0;
-static uint32_t lastIndex = 0;
-static uint32_t lastPage  = 0;
-static uint32_t listLength = 0;
-static uint32_t selectedEntry = 0;
-static Boolean  forceListRefresh = true;
+static uint32_t page;
+static uint32_t index;
+static uint32_t lastIndex;
+static uint32_t lastPage;
+static uint32_t listLength;
+static uint32_t selectedEntry;
+static Boolean  forceListRefresh;
 static void     (*listHandler)(uint32_t command);
 
 /*specific handler variables*/
@@ -163,6 +163,8 @@ static var listModeFrame(){
    lastIndex = index;
    lastPage  = page;
    
+   //forceTextEntryRefresh(0);
+   fbWindow.state |= WND_STATE_UPDATE;
    UG_Update();
    UG_PutString(0, 50, "subprogram exec worked");
    

@@ -249,7 +249,6 @@ static Boolean testerInit(){
    lastSubprogramReturnValue = makeVar(LENGTH_0, TYPE_NULL, 0);
    subprogramArgs = makeVar(LENGTH_0, TYPE_NULL, 0);
    currentSubprogram = testPicker;
-   /*currentSubprogram = hexRamBrowser;*/
    
    return true;
 }
