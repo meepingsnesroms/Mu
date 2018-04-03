@@ -1,7 +1,6 @@
 #include <PalmOS.h>
 #include <PalmCompatibility.h>
 #include <stdint.h>
-#include <string.h>
 #include "ugui.h"
 #include "testSuiteConfig.h"
 #include "testSuite.h"

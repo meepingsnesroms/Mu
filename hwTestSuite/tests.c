@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include "testSuite.h"
 #include "viewer.h"
 #include "ugui.h"
@@ -9,7 +8,7 @@ var hexRamBrowser(){
    static uint32_t pointerValue = 0x00000000;
    static char     hexString[100];
    
-   memset(hexString, '\0', 100);
+   MemSet(hexString, '\0', 100);
    
    
    if(getButtonPressed(buttonUp)){

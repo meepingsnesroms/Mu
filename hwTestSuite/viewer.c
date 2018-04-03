@@ -1,5 +1,3 @@
-#include <stdio.h>
-#include <string.h>
 #include "testSuiteConfig.h"
 #include "testSuite.h"
 #include "tests.h"
@@ -83,10 +81,10 @@ static void testPickerHandler(uint32_t command){
       /*fill strings*/
       for(i = 0; i < ITEM_LIST_ENTRYS; i++){
          if(i < totalHwTests){
-            strncpy(textboxString[i], hwTests[i].name, ITEM_STRING_SIZE);
+            StrNCopy(textboxString[i], hwTests[i].name, ITEM_STRING_SIZE);
          }
          else{
-            strncpy(textboxString[i], "Test List Overflow", ITEM_STRING_SIZE);
+            StrNCopy(textboxString[i], "Test List Overflow", ITEM_STRING_SIZE);
          }
          forceTextEntryRefresh(i);
       }
@@ -190,6 +188,7 @@ static Boolean initViewer(){
    newTextboxY = 0;
    for (entry = 0; entry < ITEM_LIST_ENTRYS; entry++)
    {
+      textboxString[entry][0] = '\0';
       UG_TextboxCreate(&fbWindow, &listEntrys[entry], entry, 0/*x start*/, newTextboxY, TEXTBOX_PIXEL_WIDTH - 1/*x end*/, newTextboxY + TEXTBOX_PIXEL_HEIGHT - 1);
       UG_TextboxSetAlignment(&fbWindow, entry, ALIGN_CENTER);
       UG_TextboxSetText(&fbWindow, entry, textboxString[entry]);
@@ -233,8 +232,6 @@ var testPicker(){
    listHandler = testPickerHandler;
    execSubprogram(listModeFrame);
    
-   /*UG_PutString(0, SCREEN_HEIGHT - RESERVED_PIXELS_Y + 1, "Loaded test picker");*/
-   
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
 
@@ -248,7 +245,7 @@ Boolean initTestList(){
    
    totalHwTests = 0;
    
-   strncpy(hwTests[0].name, "Ram Browser", 32);
+   StrNCopy(hwTests[0].name, "Ram Browser", 32);
    hwTests[0].isSimpleTest = false;
    hwTests[0].expectedResult = nullVar;
    hwTests[0].testFunction = hexRamBrowser;
