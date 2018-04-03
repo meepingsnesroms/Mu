@@ -54,10 +54,10 @@ Boolean getButtonChanged(uint16_t button){
    return (palmButtons & button) != (palmButtonsLastFrame & button);
 }
 Boolean getButtonPressed(uint16_t button){
-   return (palmButtonsLastFrame & button) && !(palmButtonsLastFrame & button);
+   return (palmButtons & button) && !(palmButtonsLastFrame & button);
 }
 Boolean getButtonReleased(uint16_t button){
-   return !(palmButtonsLastFrame & button) && (palmButtonsLastFrame & button);
+   return !(palmButtons & button) && (palmButtonsLastFrame & button);
 }
 
 uint8_t readArbitraryMemory8(uint32_t address){

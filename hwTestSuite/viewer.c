@@ -57,7 +57,7 @@ static void windowCallback(UG_MESSAGE* message){
 }
 
 static void forceTextEntryRefresh(uint32_t box){
-   UG_TextboxSetText(&fbWindow, 0, textboxString[0]);
+   UG_TextboxSetText(&fbWindow, box, textboxString[box]);
 }
 
 static void hexHandler(uint32_t command){
@@ -164,6 +164,7 @@ static var listModeFrame(){
    lastPage  = page;
    
    UG_Update();
+   UG_PutString(0, 50, "subprogram exec worked");
    
    if(forceListRefresh)
       forceListRefresh = false;
