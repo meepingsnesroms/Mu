@@ -6,38 +6,40 @@
 
 var hexRamBrowser(){
    static Boolean  clearScreen = true;
-   static uint32_t nibble = 0;/*what column to change with up/down keys*/
+   static uint32_t nibble = 0x10000000;
    static uint32_t pointerValue = UINT32_C(0x77777777);/*in the middle of the address space*/
    static char     hexString[100];
    
    if(getButtonPressed(buttonUp)){
-      pointerValue += 0x1 << (4 * (7 - nibble));
+      pointerValue += nibble;
+      setDebugTag("Nibble Up");
    }
    
    if(getButtonPressed(buttonDown)){
-      pointerValue -= 0x1 << (4 * (7 - nibble));
-   }
-   
-   if(getButtonPressed(buttonLeft)){
-      if(nibble > 0)
-         nibble--;
+      pointerValue -= nibble;
+      setDebugTag("Nibble Down");
    }
    
    if(getButtonPressed(buttonRight)){
-      if(nibble < 7)
-         nibble++;
+      if(nibble > 0x00000001)
+         nibble >>= 4;
+   }
+   
+   if(getButtonPressed(buttonLeft)){
+      if(nibble < 0x10000000)
+         nibble <<= 4;
    }
    
    if(getButtonPressed(buttonSelect)){
       /*open hex viewer*/
-      nibble = 0;
+      nibble = 0x10000000;
       clearScreen = true;
-      setSubprogramArgs(makeVar(LENGTH_ANY, TYPE_PTR, pointerValue));/*length doesnt matter*/
+      setSubprogramArgs(makeVar(LENGTH_ANY, TYPE_PTR, (uint64_t)pointerValue));/*length doesnt matter*/
       execSubprogram(hexViewer);
    }
    
    if(getButtonPressed(buttonBack)){
-      nibble = 0;
+      nibble = 0x10000000;
       clearScreen = true;
       exitSubprogram();
    }

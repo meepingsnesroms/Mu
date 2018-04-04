@@ -35,6 +35,7 @@ var makeVar(uint8_t length, uint8_t type, uint64_t value){
    var newVar;
    newVar.type = (length & 0xF0) | (type & 0x0F);
    newVar.value = value;
+   return newVar;
 }
 Boolean varsEqual(var var1, var var2){
    if(var1.type == var2.type && var1.value == var2.value)
@@ -195,6 +196,7 @@ var getSubprogramArgs(){
 
 void setSubprogramArgs(var args){
    subprogramArgs = args;
+   subprogramArgsSet = true;
 }
 
 var subprogramGetData(){

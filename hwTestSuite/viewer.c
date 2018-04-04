@@ -79,9 +79,14 @@ static void hexHandler(uint32_t command){
       /*fill strings*/
       for(i = 0; i < ITEM_LIST_ENTRYS; i++){
          uint32_t displayAddress = hexViewOffset - bufferAddress;
-         /*Palm OS sprintf only supports 16 bit ints*/
-         StrPrintF(itemStrings[i], "0x%04X%04X:0x%02X", (uint16_t)(displayAddress >> 16), (uint16_t)displayAddress , readArbitraryMemory8(hexViewOffset));
-         hexViewOffset++;
+         if(displayAddress + i < listLength){
+            /*Palm OS sprintf only supports 16 bit ints*/
+            StrPrintF(itemStrings[i], "0x%04X%04X:0x%02X", (uint16_t)(displayAddress >> 16), (uint16_t)displayAddress , readArbitraryMemory8(hexViewOffset));
+            hexViewOffset++;
+         }
+         else{
+            itemStrings[i][0] = '\0';
+         }
       }
    }
 }
@@ -98,7 +103,7 @@ static void testPickerHandler(uint32_t command){
             StrNCopy(itemStrings[i], hwTests[i].name, ITEM_STRING_SIZE);
          }
          else{
-            StrNCopy(itemStrings[i], "Test List Overflow", ITEM_STRING_SIZE);
+            itemStrings[i][0] = '\0';
          }
       }
    }
