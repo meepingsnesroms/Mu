@@ -31,10 +31,9 @@ static uint32_t totalHwTests;
 /*list handler variables*/
 static uint32_t page;
 static uint32_t index;
-static uint32_t lastIndex;
-static uint32_t lastPage;
-static uint32_t listLength;
-static uint32_t selectedEntry;
+static uint64_t listLength;
+static uint64_t lastSelectedEntry;
+static uint64_t selectedEntry;
 static char     itemStrings[ITEM_LIST_ENTRYS][ITEM_STRING_SIZE];
 static Boolean  forceListRefresh;
 static void     (*listHandler)(uint32_t command);
@@ -50,11 +49,13 @@ static void renderListFrame(){
    
    setDebugTag("Rendering List Frame");
    
+   debugSafeScreenClear(C_WHITE);
    for(textBoxes = 0; textBoxes < ITEM_LIST_ENTRYS; textBoxes++){
       if(textBoxes == index){
          /*render list cursor inverted*/
          UG_SetBackcolor(C_BLACK);
          UG_SetForecolor(C_WHITE);
+         UG_FillFrame(0, y, SCREEN_WIDTH - 1, y + TEXTBOX_PIXEL_HEIGHT - 1, C_BLACK);/*remove white lines between characters*/
          UG_PutString(0, y, itemStrings[textBoxes]);
          UG_SetBackcolor(C_WHITE);
          UG_SetForecolor(C_BLACK);
@@ -71,7 +72,7 @@ static void renderListFrame(){
 static void hexHandler(uint32_t command){
    if(command == LIST_REFRESH){
       int i;
-      uint32_t hexViewOffset = bufferAddress + selectedEntry;
+      uint32_t hexViewOffset = bufferAddress + page * ITEM_LIST_ENTRYS;
       
       setDebugTag("Hex Handler Refresh");
       
@@ -112,9 +113,8 @@ static void resetListHandler(){
    
    page = 0;
    index = 0;
-   lastIndex = 0;
-   lastPage  = 0;
    listLength = 0;
+   lastSelectedEntry = 0;
    selectedEntry = 0;
    for(i = 0; i < ITEM_LIST_ENTRYS; i++)
       itemStrings[i][0] = '\0';
@@ -149,14 +149,7 @@ static var listModeFrame(){
       if(selectedEntry + ITEM_LIST_ENTRYS < listLength)
          selectedEntry += ITEM_LIST_ENTRYS;/*flip the page*/
       else
-         selectedEntry = listLength - ITEM_LIST_ENTRYS - 1;
-   }
-   
-   page  = selectedEntry / ITEM_LIST_ENTRYS;
-   index = selectedEntry % ITEM_LIST_ENTRYS;
-   
-   if((page != lastPage || index != lastIndex || forceListRefresh) && listHandler){
-      listHandler(LIST_REFRESH);
+         selectedEntry = listLength - 1;
    }
    
    if(getButtonPressed(buttonSelect)){
@@ -169,14 +162,19 @@ static var listModeFrame(){
       exitSubprogram();
    }
    
+   page  = selectedEntry / ITEM_LIST_ENTRYS;
+   index = selectedEntry % ITEM_LIST_ENTRYS;
    
-   if(index != lastIndex || forceListRefresh){
+   if(selectedEntry != lastSelectedEntry || forceListRefresh){
+      listHandler(LIST_REFRESH);
+   }
+   
+   if(selectedEntry != lastSelectedEntry || forceListRefresh){
       /*update item colors*/
       renderListFrame();
    }
    
-   lastIndex = index;
-   lastPage  = page;
+   lastSelectedEntry = selectedEntry;
    
    if(forceListRefresh)
       forceListRefresh = false;
@@ -198,7 +196,7 @@ var hexViewer(){
       /*free roam ram access*/
       selectedEntry = (uint32_t)getVarPointer(where);
       bufferAddress = 0;
-      listLength = UINT32_C(0xFFFFFFFF);
+      listLength = UINT64_C(0x100000000);
    }
    listHandler = hexHandler;
    callSubprogram(listModeFrame);

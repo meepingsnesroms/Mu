@@ -42,9 +42,6 @@ var hexRamBrowser(){
       exitSubprogram();
    }
    
-   /*Palm OS sprintf only supports 16 bit ints*/
-   StrPrintF(hexString, "Open Hex Viewer At:\n0x%04X%04X", (uint16_t)(pointerValue >> 16), (uint16_t)pointerValue);
-   
    if(clearScreen){
       debugSafeScreenClear(C_WHITE);
       clearScreen = false;
@@ -52,5 +49,9 @@ var hexRamBrowser(){
    
    setDebugTag("Hex Ram Browser Address Select");
    
+   /*Palm OS sprintf only supports 16 bit ints*/
+   StrPrintF(hexString, "Open Hex Viewer At:\n0x%04X%04X", (uint16_t)(pointerValue >> 16), (uint16_t)pointerValue);
    UG_PutString(0, 0, hexString);
+   
+   return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
