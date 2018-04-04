@@ -10,6 +10,7 @@
 #include "hardwareRegisters.h"
 #include "sed1376.h"
 #include "silkscreen.h"
+#include "emuFeatureRegistersSpec.h"
 
 
 //Memory Map of Palm m515
@@ -34,7 +35,7 @@ double    palmCycleCounter;//can be greater then 0 if too many cycles where run
 double    palmClockMultiplier;//used by the emulator to overclock the emulated palm
 
 
-void emulatorInit(uint8_t* palmRomDump, uint16_t specialFeatures){
+void emulatorInit(uint8_t* palmRomDump, uint32_t specialFeatures){
    //cpu
    m68k_init();
    m68k_set_cpu_type(M68K_CPU_TYPE_68020);
@@ -78,7 +79,7 @@ void emulatorInit(uint8_t* palmRomDump, uint16_t specialFeatures){
    palmMisc.batteryLevel = 100;
    
    //config
-   palmClockMultiplier = (specialFeatures & INACCURATE_FAST_CPU) ? 2.0 : 1.0;//Overclock disabled
+   palmClockMultiplier = (specialFeatures & FEATURE_FAST_CPU) ? 2.0 : 1.0;//Overclock disabled
    
    //start running
    m68k_pulse_reset();

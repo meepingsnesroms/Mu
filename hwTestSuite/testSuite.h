@@ -5,7 +5,12 @@
 #include <stdint.h>
 #include "testSuiteConfig.h"
 
+
 /*defines*/
+
+#define PalmOS35 sysMakeROMVersion(3,5,0,sysROMStageRelease,0)
+#define PalmOS50 sysMakeROMVersion(5,0,0,sysROMStageRelease,0)
+
 #define buttonLeft   keyBitHard1
 #define buttonRight  keyBitHard2
 #define buttonUp     keyBitPageUp
@@ -59,20 +64,6 @@ no inline functions
 old gcc versions have broken handling of inline functions where variables with the same name
 inside the function and outside can result in the outside variable being written
 c89 also doesnt support them
-*/
-/*
-#define getButton(button)          ((palmButtons & button) != 0)
-#define getButtonLastFrame(button) ((palmButtonsLastFrame & button) != 0)
-#define getButtonChanged(button)   ((palmButtons & button) != (palmButtonsLastFrame & button))
-#define getButtonPressed(button)   ((palmButtons & button) && !(palmButtonsLastFrame & button));
-#define getButtonReleased(button)  (!(palmButtons & button) && (palmButtonsLastFrame & button))
-
-#define getVarType(thisVar)          (thisVar.type & 0x0F)
-#define getVarLength(thisVar)        (thisVar.type & 0xF0)
-#define getVarDataLength(thisVar)    (thisVar.value >> 32)
-#define getVarPointer(thisVar)       (thisVar.value & 0xFFFFFFFF);
-#define getVarValue(thisVar)         (thisVar.value);
-#define makeVar(length, type, value) {(uint8_t)((length & 0xF0) | (type & 0x0F)), (uint64_t)value}
 */
 /*hardware buttons*/
 Boolean getButton(uint16_t button);

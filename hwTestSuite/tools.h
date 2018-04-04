@@ -1,8 +1,7 @@
-#ifndef TESTS_HEADER
-#define TESTS_HEADER
+#ifndef TOOLS_HEADER
+#define TOOLS_HEADER
 
 #include "testSuite.h"
-
 
 var hexRamBrowser();
 #endif

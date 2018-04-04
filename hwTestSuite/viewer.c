@@ -1,6 +1,6 @@
 #include "testSuiteConfig.h"
 #include "testSuite.h"
-#include "tests.h"
+#include "tools.h"
 #include "debug.h"
 #include "ugui.h"
 
@@ -77,7 +77,9 @@ static void hexHandler(uint32_t command){
       
       /*fill strings*/
       for(i = 0; i < ITEM_LIST_ENTRYS; i++){
-         StrPrintF(itemStrings[i], "0x%08X:0x%02X", hexViewOffset - bufferAddress, readArbitraryMemory8(hexViewOffset));
+         uint32_t displayAddress = hexViewOffset - bufferAddress;
+         /*Palm OS sprintf only supports 16 bit ints*/
+         StrPrintF(itemStrings[i], "0x%04X%04X:0x%02X", (uint16_t)(displayAddress >> 16), (uint16_t)displayAddress , readArbitraryMemory8(hexViewOffset));
          hexViewOffset++;
       }
    }
@@ -101,7 +103,7 @@ static void testPickerHandler(uint32_t command){
    }
    else if(command == LIST_ITEM_SELECTED){
       setDebugTag("Test Picker Test Selected");
-      callSubprogram(hwTests[selectedEntry].testFunction);
+      execSubprogram(hwTests[selectedEntry].testFunction);
    }
 }
 
@@ -176,8 +178,6 @@ static var listModeFrame(){
    lastIndex = index;
    lastPage  = page;
    
-   /*UG_PutString(0, 50, "subprogram exec worked");*/
-   
    if(forceListRefresh)
       forceListRefresh = false;
    
@@ -201,18 +201,18 @@ var hexViewer(){
       listLength = UINT32_C(0xFFFFFFFF);
    }
    listHandler = hexHandler;
-   execSubprogram(listModeFrame);
+   callSubprogram(listModeFrame);
    
    setDebugTag("Hex Viewer Starting");
    
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
 
-var testPicker(){
+var functionPicker(){
    resetListHandler();
    listLength = totalHwTests;
    listHandler = testPickerHandler;
-   execSubprogram(listModeFrame);
+   callSubprogram(listModeFrame);
    
    setDebugTag("Test Picker Starting");
    

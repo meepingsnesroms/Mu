@@ -1,8 +1,11 @@
 #pragma once
+//This is the only header a frontend needs to include
 
 #include <stdint.h>
 
 #include <boolean.h>
+
+#include "emuFeatureRegistersSpec.h"//needed by frontends that want to specify what features to use
 
 //emu errors
 enum emu_error_t{
@@ -42,13 +45,13 @@ typedef struct{
 }misc_hw_t;
 
 //special features, these make the emulator inaccurate in a good way, but still inaccurate and are therefore optional
-#define ACCURATE                0x0000//no hacks/addons
-#define INACCURATE_RAM_HUGE     0x0001//128 mb ram
-#define INACCURATE_FAST_CPU     0x0002//doubles cpu speed
-#define INACCURATE_HYBRID_CPU   0x0004//allows running arm opcodes in an OS 4 enviroment
-#define INACCURATE_320x320      0x0008//creates a 320x320 frambuffer for hires mode, the 320x320 framebuffer is a transparent overlay over the 160x160 one and covers it where its pixels are enabled
-#define INACCURATE_SYNCED_RTC   0x0010//rtc always equals host system time
-#define INACCURATE_HLE_APIS     0x0020//memcpy, memcmp, wait on timer will be replaced with the hosts function
+#define ACCURATE                0x00000000//no hacks/addons
+#define INACCURATE_RAM_HUGE     0x00000001//128 mb ram
+#define INACCURATE_FAST_CPU     0x00000002//doubles cpu speed
+#define INACCURATE_HYBRID_CPU   0x00000004//allows running arm opcodes in an OS 4 enviroment
+#define INACCURATE_320x320      0x00000008//creates a 320x320 frambuffer for hires mode, the 320x320 framebuffer is a transparent overlay over the 160x160 one and covers it where its pixels are enabled
+#define INACCURATE_SYNCED_RTC   0x00000010//rtc always equals host system time
+#define INACCURATE_HLE_APIS     0x00000020//memcpy, memcmp, wait on timer will be replaced with the hosts function
 
 //config options
 #define EMU_FPS 60.0
@@ -82,7 +85,7 @@ extern double    palmCycleCounter;
 extern double    palmClockMultiplier;
 
 //functions
-void emulatorInit(uint8_t* palmRomDump, uint16_t specialFeatures);
+void emulatorInit(uint8_t* palmRomDump, uint32_t specialFeatures);
 void emulatorReset();
 void emulatorSetRtc(uint32_t days, uint32_t hours, uint32_t minutes, uint32_t seconds);
 uint32_t emulatorGetStateSize();

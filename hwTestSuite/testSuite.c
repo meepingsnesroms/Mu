@@ -6,13 +6,10 @@
 #include "testSuite.h"
 #include "viewer.h"
 #include "debug.h"
-#include "tests.h"
+#include "tools.h"
 
 /*dont include this anywhere else*/
 #include "TstSuiteRsc.h"
-
-
-#define PalmOS35 sysMakeROMVersion(3,5,0,sysROMStageRelease,0)
 
 
 /*functions that should be macros but are screwed up by c89*/
@@ -252,7 +249,7 @@ static Boolean testerInit(){
    subprogramArgsSet = false;
    lastSubprogramReturnValue = makeVar(LENGTH_0, TYPE_NULL, 0);
    subprogramArgs = makeVar(LENGTH_0, TYPE_NULL, 0);
-   currentSubprogram = testPicker;
+   currentSubprogram = functionPicker;
    
    return true;
 }

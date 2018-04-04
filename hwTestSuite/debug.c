@@ -8,6 +8,7 @@
 #define DEBUG_AREA_SIZE   10
 #define DEBUG_STRING_SIZE 100
 
+
 static char debugTag[DEBUG_STRING_SIZE];
 
 
