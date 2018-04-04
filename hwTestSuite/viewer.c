@@ -51,7 +51,7 @@ static void renderListFrame(){
    setDebugTag("Rendering List Frame");
    
    for(textBoxes = 0; textBoxes < ITEM_LIST_ENTRYS; textBoxes++){
-      if(textBoxes = index){
+      if(textBoxes == index){
          /*render list cursor inverted*/
          UG_SetBackcolor(C_BLACK);
          UG_SetForecolor(C_WHITE);
