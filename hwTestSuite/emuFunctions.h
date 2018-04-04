@@ -5,6 +5,6 @@
 #include <stdint.h>
 
 Boolean isEmulator();
-Boolean isEmulatorFeatureEnabled(uint16_t feature);
+Boolean isEmulatorFeatureEnabled(uint32_t feature);
 #endif
 

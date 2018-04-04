@@ -31,9 +31,9 @@ static uint32_t totalHwTests;
 /*list handler variables*/
 static uint32_t page;
 static uint32_t index;
-static uint64_t listLength;
-static uint64_t lastSelectedEntry;
-static uint64_t selectedEntry;
+static int64_t listLength;
+static int64_t lastSelectedEntry;
+static int64_t selectedEntry;
 static char     itemStrings[ITEM_LIST_ENTRYS][ITEM_STRING_SIZE];
 static Boolean  forceListRefresh;
 static void     (*listHandler)(uint32_t command);

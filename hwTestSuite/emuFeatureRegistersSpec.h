@@ -15,6 +15,7 @@ These registers will do nothing it there corresponding feature bit is not set on
 #define FEATURE_320x320      0x00000008/*creates a 320x320 framebuffer for hires mode, the 320x320 framebuffer is a transparent overlay over the 160x160 framebuffer*/
 #define FEATURE_SYNCED_RTC   0x00000010/*rtc always equals host system time*/
 #define FEATURE_HLE_APIS     0x00000020/*memcpy, memcmp, wait on timer will be replaced with the hosts function*/
+#define FEATURE_EMU_HONEST   0x00000040/*tell the OS that its running in an emu, does nothing else*/
 /*new features go here*/
 
 /*registers*/

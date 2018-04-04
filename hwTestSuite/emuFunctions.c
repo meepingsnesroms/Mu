@@ -1,13 +1,13 @@
 #include <PalmOS.h>
 #include <stdint.h>
-
+#include "emuFeatureRegistersSpec.h"
 
 Boolean isEmulator(){
-   /*false for now*/
-   return false;
+   return (readArbitraryMemory32(EMU_REGISTER_BASE | EMU_INFO) & FEATURE_EMU_HONEST) != 0;
 }
 
-Boolean isEmulatorFeatureEnabled(uint16_t feature){
-   /*false for now*/
+Boolean isEmulatorFeatureEnabled(uint32_t feature){
+   if(isEmulator())
+      return (readArbitraryMemory32(EMU_REGISTER_BASE | EMU_INFO) & feature) != 0;
    return false;
 }
