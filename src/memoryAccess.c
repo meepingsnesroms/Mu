@@ -8,7 +8,7 @@
 #include "sed1376.h"
 
 
-static memory_access_t bankAccessors[TOTAL_MEMORY_BANKS];//these are not part of savestates because function pointers can change with -fPIC
+static memory_access_t bankAccessors[TOTAL_MEMORY_BANKS];//these are not part of savestates because function pointers change with -fPIC
 uint8_t                bankType[TOTAL_MEMORY_BANKS];//these go in savestates
 
 //used for unmapped address space and writes to rom
@@ -48,6 +48,7 @@ void m68k_write_memory_16(unsigned int address, unsigned int value){bankAccessor
 void m68k_write_memory_32(unsigned int address, unsigned int value){bankAccessors[address >> 16].write32(address, value);}
 void m68k_write_memory_32_pd(unsigned int address, unsigned int value){
    //musashi says to write 2 16 bit words, but for now I am just writing as 32bit long
+   //normal 68k has 16 bit bus but Dragonball VZ has 32 bit bus, so just write all at once(unverified, may not be accurate)
    bankAccessors[address >> 16].write32(address, value >> 16 | value << 16);
 }
 
@@ -59,17 +60,30 @@ unsigned int m68k_read_disassembler_32(unsigned int address){return m68k_read_me
 
 static uint8_t getProperBankType(uint16_t bank){
    //ram bank 0x0000 not correct, inaccurate but works fine
-   //0xXXFF register mode is handled separately
-   if(BANK_IN_RANGE(bank, RAM_START_ADDRESS, RAM_SIZE))
-      return RAM_BANK;
-   else if(BANK_IN_RANGE(bank, ROM_START_ADDRESS, ROM_SIZE))
-      return ROM_BANK;
-   else if(BANK_IN_RANGE(bank, REG_START_ADDRESS, REG_SIZE))
+   
+   //special conditions
+   if((bank & 0x00FF) == 0x00FF && registersAreXXFFMapped()){
+      //XXFF register mode
       return REG_BANK;
-   else if(BANK_IN_RANGE(bank, SED1376_REG_START_ADDRESS, SED1376_REG_SIZE))
+   }
+   
+   //normal banks
+   if(BANK_IN_RANGE(bank, RAM_START_ADDRESS, RAM_SIZE)){
+      return RAM_BANK;
+   }
+   else if(BANK_IN_RANGE(bank, ROM_START_ADDRESS, ROM_SIZE)){
+      return ROM_BANK;
+   }
+   else if(BANK_IN_RANGE(bank, REG_START_ADDRESS, REG_SIZE)){
+      return REG_BANK;
+   }
+   else if(BANK_IN_RANGE(bank, SED1376_REG_START_ADDRESS, SED1376_REG_SIZE) && sed1376ClockConnected()){
       return SED1376_REG_BANK;
-   else if(BANK_IN_RANGE(bank, SED1376_FB_START_ADDRESS, SED1376_FB_SIZE))
+   }
+   else if(BANK_IN_RANGE(bank, SED1376_FB_START_ADDRESS, SED1376_FB_SIZE) && sed1376ClockConnected()){
       return SED1376_FB_BANK;
+   }
+   
    
    return EMPTY_BANK;
 }
@@ -175,8 +189,4 @@ void refreshBankHandlers(){
 void resetAddressSpace(){
    for(uint32_t bank = 0; bank < TOTAL_MEMORY_BANKS; bank++)
       setBankType(bank, getProperBankType(bank));
-   
-   //PFSEL = 0x87, sed1376 needs bit 0x04 set to be on, sed1376 is on at boot
-   
-   setRegisterXXFFAccessMode();
 }

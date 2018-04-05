@@ -89,8 +89,8 @@ void emulatorInit(uint8_t* palmRomDump, uint32_t specialFeatures){
 
 void emulatorReset(){
    //reset doesnt clear ram, all programs are stored in ram
-   resetAddressSpace();
    resetHwRegisters();
+   resetAddressSpace();//address space must be reset after hardware registers because it is dependant on them
    sed1376Reset();
    m68k_pulse_reset();
 }

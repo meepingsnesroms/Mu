@@ -561,7 +561,16 @@ void clk32(){
 }
 
 bool cpuIsOn(){
-   return !((registerArrayRead16(PLLCR) & 0x0008) || lowPowerStopActive);
+   return !((registerArrayRead16(PLLCR) & 0x0008) != 0 || lowPowerStopActive);
+}
+
+bool registersAreXXFFMapped(){
+   return (registerArrayRead8(SCR) & 0x04) != 0;
+}
+
+bool sed1376ClockConnected(){
+   //this is the clock output pin for the sed1376, if its disabled so is the lcd controller
+   return (registerArrayRead8(PFSEL) & 0x04) == 0;
 }
 
 int interruptAcknowledge(int intLevel){
@@ -586,6 +595,12 @@ int interruptAcknowledge(int intLevel){
 
 
 unsigned int getHwRegister8(unsigned int address){
+   if((address & 0x0000F000) != 0x0000F000){
+      //not emu or hardware register, invalid access
+      return 0x00;
+   }
+   
+   address &= 0x00000FFF;
    switch(address){
          
       case PADATA:
@@ -622,9 +637,17 @@ unsigned int getHwRegister8(unsigned int address){
          printUnknownHwAccess(address, 0, 8, false);
          return registerArrayRead8(address);
    }
+   
+   return 0x00;//silence warnings
 }
 
 unsigned int getHwRegister16(unsigned int address){
+   if((address & 0x0000F000) != 0x0000F000){
+      //not emu or hardware register, invalid access
+      return 0x0000;
+   }
+   
+   address &= 0x00000FFF;
    switch(address){
          
       case PLLCR:
@@ -640,9 +663,21 @@ unsigned int getHwRegister16(unsigned int address){
          printUnknownHwAccess(address, 0, 16, false);
          return registerArrayRead16(address);
    }
+   
+   return 0x0000;//silence warnings
 }
 
 unsigned int getHwRegister32(unsigned int address){
+   if((address & 0x0000F000) == 0x0000E000){
+      //32 bit emu register read, valid
+      return 0x00000000;
+   }
+   else if((address & 0x0000F000) != 0x0000F000){
+      //not emu or hardware register, invalid access
+      return 0x00000000;
+   }
+   
+   address &= 0x00000FFF;
    switch(address){
          
       case ISR:
@@ -657,10 +692,18 @@ unsigned int getHwRegister32(unsigned int address){
          printUnknownHwAccess(address, 0, 32, false);
          return registerArrayRead32(address);
    }
+   
+   return 0x00000000;//silence warnings
 }
 
 
 void setHwRegister8(unsigned int address, unsigned int value){
+   if((address & 0x0000F000) != 0x0000F000){
+      //not emu or hardware register, invalid access
+      return;
+   }
+   
+   address &= 0x00000FFF;
    switch(address){
       case SCR:
          if((value & 0x04) != (registerArrayRead8(SCR) & 0x04)){
@@ -669,11 +712,13 @@ void setHwRegister8(unsigned int address, unsigned int value){
             else
                setRegisterFFFFAccessMode();
          }
+         registerArrayWrite8(SCR, value);
          break;
          
       case PFSEL:
          //this is the clock output pin for the sed1376, if its disabled so is the lcd controller
          setSed1376Attached(value & 0x04);
+         registerArrayWrite8(PFSEL, value);
          break;
          
       case PKDIR:
@@ -745,6 +790,12 @@ void setHwRegister8(unsigned int address, unsigned int value){
 }
 
 void setHwRegister16(unsigned int address, unsigned int value){
+   if((address & 0x0000F000) != 0x0000F000){
+      //not emu or hardware register, invalid access
+      return;
+   }
+   
+   address &= 0x00000FFF;
    switch(address){
          
       case RTCIENR:
@@ -810,6 +861,16 @@ void setHwRegister16(unsigned int address, unsigned int value){
 }
 
 void setHwRegister32(unsigned int address, unsigned int value){
+   if((address & 0x0000F000) == 0x0000E000){
+      //32 bit emu register write, valid
+      return;
+   }
+   else if((address & 0x0000F000) != 0x0000F000){
+      //not emu or hardware register, invalid access
+      return;
+   }
+   
+   address &= 0x00000FFF;
    switch(address){
          
       case RTCTIME:
