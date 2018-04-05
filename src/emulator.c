@@ -100,7 +100,7 @@ void emulatorSetRtc(uint32_t days, uint32_t hours, uint32_t minutes, uint32_t se
 }
 
 uint32_t emulatorGetStateSize(){
-   return RAM_SIZE + REG_SIZE + m68k_context_size();
+   return m68k_context_size() + RAM_SIZE + REG_SIZE + TOTAL_MEMORY_BANKS + sizeof(double) * 5 + 1;
 }
 
 void emulatorSaveState(uint8_t* data){
