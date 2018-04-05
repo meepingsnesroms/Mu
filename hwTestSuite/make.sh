@@ -23,4 +23,4 @@ fi
 m68k-palmos-gcc -palmos3.5 $CFLAGS $SRCS -o $APPNAME
 m68k-palmos-obj-res $APPNAME
 pilrc $RESFILE
-build-prc $PRC $APPID $CREATORID *.grc *.bin
+build-prc $PRC $ICONTEXT $CREATORID *.grc *.bin

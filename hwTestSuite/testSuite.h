@@ -47,8 +47,6 @@ typedef var (*activity_t)();
 
 typedef struct{
    char       name[TEST_NAME_LENGTH];
-   Boolean    isSimpleTest;/*if simple run once, if complex take control over user input and runloop*/
-   var        expectedResult;
    activity_t testFunction;
 }test_t;
 

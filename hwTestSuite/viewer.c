@@ -228,8 +228,14 @@ void initViewer(){
    totalHwTests = 0;
    
    StrNCopy(hwTests[0].name, "Ram Browser", TEST_NAME_LENGTH);
-   hwTests[0].isSimpleTest = false;
-   hwTests[0].expectedResult = nullVar;
    hwTests[0].testFunction = hexRamBrowser;
+   totalHwTests++;
+   
+   StrNCopy(hwTests[1].name, "Dump Bootloader", TEST_NAME_LENGTH);
+   hwTests[1].testFunction = dumpBootloaderToFile;
+   totalHwTests++;
+   
+   StrNCopy(hwTests[2].name, "File Access Test", TEST_NAME_LENGTH);
+   hwTests[2].testFunction = testFileAccessWorks;
    totalHwTests++;
 }
