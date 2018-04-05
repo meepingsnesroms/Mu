@@ -5,7 +5,8 @@ All emu feature registers are 32 bit accessing them in any other way will be und
 These registers will do nothing it there corresponding feature bit is not set on launch.
 */
 
-#define EMU_REGISTER_BASE 0xFFFFE000/*just before the m68k hardware registers*/
+#define EMU_REGISTER_BASE 0xFFFFE000/*just before the m68k hardware registers, in the same bank*/
+#define EMU_REGISTER_SIZE 0x1000
 
 /*features*/
 #define ACCURATE             0x00000000/*no hacks/addons*/

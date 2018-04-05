@@ -6,6 +6,7 @@
 #include "emulator.h"
 #include "hardwareRegisterNames.h"
 #include "hardwareRegisters.h"
+#include "memoryAccess.h"
 #include "cpu32Opcodes.h"
 #include "m68k/m68k.h"
 #include "m68k/m68kcpu.h"
@@ -130,7 +131,6 @@ static inline uint8_t getPortDValue(){
    uint8_t requestedRow = registerArrayRead8(PKDIR) & registerArrayRead8(PKDATA);//keys are requested on port k and read on port d
    uint8_t portDValue = 0x00;//ports always read the chip pins even if they are set to output
    uint8_t portDpolarity = registerArrayRead8(PDPOL);
-   uint8_t portDIrqEnable = registerArrayRead8(PDIRQEN);
    
    portDValue |= 0x80/*battery not dead bit*/;
    
@@ -406,14 +406,6 @@ void checkInterrupts(){
       intLevel = 7;
    }
    
-   /*
-    if(activeInterrupts & INT_RTI){
-    //RTI - Real Time Interrupt
-    if(intLevel < 4)
-    intLevel = 4;
-    }
-    */
-   
    if(activeInterrupts & INT_SPI1){
       uint32_t spi1IrqLevel = interruptLevelControlRegister >> 12;
       if(intLevel < spi1IrqLevel)
@@ -424,13 +416,6 @@ void checkInterrupts(){
       if(intLevel < 5)
          intLevel = 5;
    }
-   
-   /*
-    if(activeInterrupts & INT_IRQ6){
-    if(intLevel < 6)
-    intLevel = 6;
-    }
-    */
    
    if(activeInterrupts & INT_IRQ3){
       if(intLevel < 3)
@@ -459,75 +444,12 @@ void checkInterrupts(){
          intLevel = uart2IrqLevel;
    }
    
-   /*
-    if(activeInterrupts & INT_INT3){
-    if(intLevel < 4)
-    intLevel = 4;
-    }
-    
-    if(activeInterrupts & INT_INT2){
-    if(intLevel < 4)
-    intLevel = 4;
-    }
-    
-    if(activeInterrupts & INT_INT1){
-    if(intLevel < 4)
-    intLevel = 4;
-    }
-    
-    if(activeInterrupts & INT_INT0){
-    if(intLevel < 4)
-    intLevel = 4;
-    }
-    
-    if(activeInterrupts & INT_PWM1){
-    if(intLevel < 6)
-    intlevel = 6;
-    }
-    
-    if(activeInterrupts & INT_KB){
-    //KB - Keyboard
-    if(intLevel < 4)
-    intLevel = 4;
-    }
-    */
-   
    if(activeInterrupts & INT_TMR2){
       //TMR2 - Timer 2
       uint32_t timer2IrqLevel = interruptLevelControlRegister & 0x0007;
       if(intLevel < timer2IrqLevel)
          intLevel = timer2IrqLevel;
    }
-   
-   /*
-    if(activeInterrupts & INT_RTC){
-    //RTC - Real Time Clock
-    if(intLevel < 4)
-    intLevel = 4;
-    }
-    
-    if(activeInterrupts & INT_WDT){
-    //WDT - Watchdog Timer
-    if(intLevel < 4)
-    intLevel = 4;
-    }
-    
-    if(activeInterrupts & INT_UART1){
-    if(intLevel < 4)
-    intLevel = 4;
-    }
-    
-    if(activeInterrupts & INT_TMR1){
-    //TMR1 - Timer 1
-    if(intLevel < 6)
-    intLevel = 6;
-    }
-    
-    if(activeInterrupts & INT_SPI2){
-    if(intLevel < 4)
-    intLevel = 4;
-    }
-    */
    
    if(activeInterrupts & (INT_TMR1 | INT_PWM1 | INT_IRQ6)){
       //All Fixed Level 6 Interrupts
@@ -662,11 +584,6 @@ int interruptAcknowledge(int intLevel){
    return vector;
 }
 
-bool sed1376ClockConnected(){
-   //this is the clock output pin for the sed1376, if its disabled so is the lcd controller
-   return !(registerArrayRead8(PFSEL) & 0x04);
-}
-
 
 unsigned int getHwRegister8(unsigned int address){
    switch(address){
@@ -745,6 +662,19 @@ unsigned int getHwRegister32(unsigned int address){
 
 void setHwRegister8(unsigned int address, unsigned int value){
    switch(address){
+      case SCR:
+         if((value & 0x04) != (registerArrayRead8(SCR) & 0x04)){
+            if(value & 0x04)
+               setRegisterXXFFAccessMode();
+            else
+               setRegisterFFFFAccessMode();
+         }
+         break;
+         
+      case PFSEL:
+         //this is the clock output pin for the sed1376, if its disabled so is the lcd controller
+         setSed1376Attached(value & 0x04);
+         break;
          
       case PKDIR:
       case PKDATA:
@@ -782,7 +712,6 @@ void setHwRegister8(unsigned int address, unsigned int value){
       case PBSEL:
       case PCSEL:
       case PESEL:
-      case PFSEL:
       case PJSEL:
       case PKSEL:
       

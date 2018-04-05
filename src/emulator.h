@@ -5,7 +5,7 @@
 
 #include <boolean.h>
 
-#include "emuFeatureRegistersSpec.h"//needed by frontends that want to specify what features to use
+#include "emuFeatureRegistersSpec.h"
 
 //emu errors
 enum emu_error_t{
@@ -58,6 +58,19 @@ typedef struct{
 #define CRYSTAL_FREQUENCY 32768.0
 #define CPU_FREQUENCY (palmCrystalCycles * CRYSTAL_FREQUENCY)
 
+//address space
+#define NUM_BANKS(areaSize) (areaSize & 0xFFFF ? (areaSize >> 16) + 1 : areaSize >> 16)
+#define START_BANK(address) (address >> 16)
+#define END_BANK(address, size) (START_BANK(address) + NUM_BANKS(size))
+#define BANK_IN_RANGE(bank, address, size) (bank >= START_BANK(address) && bank <= END_BANK(address, size))
+#define TOTAL_MEMORY_BANKS 0x10000
+#define EMPTY_BANK       0
+#define RAM_BANK         1
+#define ROM_BANK         2
+#define REG_BANK         3
+#define SED1376_REG_BANK 4
+#define SED1376_FB_BANK  5
+
 //memory chip addresses
 #define RAM_START_ADDRESS 0x00000000
 #define ROM_START_ADDRESS 0x10000000
@@ -70,7 +83,7 @@ typedef struct{
 #define SED1376_REG_START_ADDRESS 0x1FF80000
 #define SED1376_FB_START_ADDRESS  0x1FFA0000
 #define SED1376_REG_SIZE 0xB4//it has 0x20000 used address space entrys but only 0xB4 registers
-#define SED1376_FB_SIZE  0x14000//likely also has 0x20000 used address space entrys
+#define SED1376_FB_SIZE  0x20000//0x14000 in size, likely also has 0x20000 used address space entrys, using 0x20000 to prevent speed penalty of checking validity on every access
 
 //emulator data
 extern uint8_t   palmRam[];

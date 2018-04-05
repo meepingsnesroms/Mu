@@ -8,6 +8,7 @@
 #include "cpu32Opcodes.h"
 #include "emulator.h"
 #include "hardwareRegisters.h"
+#include "memoryAccess.h"
 #include "sed1376.h"
 #include "silkscreen.h"
 #include "emuFeatureRegistersSpec.h"
@@ -52,6 +53,7 @@ void emulatorInit(uint8_t* palmRomDump, uint32_t specialFeatures){
    memcpy(palmRom, palmRomDump, ROM_SIZE);
    memcpy(palmRam, palmRom, 256);//copy ROM header
    memcpy(&palmFramebuffer[160 * 160], silkscreenData, SILKSCREEN_WIDTH * SILKSCREEN_HEIGHT * (SILKSCREEN_BPP / 8));
+   resetAddressSpace();
    sed1376Reset();
    
    //interfaces
@@ -87,6 +89,7 @@ void emulatorInit(uint8_t* palmRomDump, uint32_t specialFeatures){
 
 void emulatorReset(){
    //reset doesnt clear ram, all programs are stored in ram
+   resetAddressSpace();
    resetHwRegisters();
    sed1376Reset();
    m68k_pulse_reset();
@@ -108,6 +111,8 @@ void emulatorSaveState(uint8_t* data){
    offset += RAM_SIZE;
    memcpy(data + offset, palmReg, REG_SIZE);
    offset += REG_SIZE;
+   memcpy(data + offset, bankType, TOTAL_MEMORY_BANKS);
+   offset += TOTAL_MEMORY_BANKS;
    memcpy(data + offset, &palmCrystalCycles, sizeof(double));
    offset += sizeof(double);
    memcpy(data + offset, &palmCycleCounter, sizeof(double));
@@ -130,6 +135,8 @@ void emulatorLoadState(uint8_t* data){
    offset += RAM_SIZE;
    memcpy(palmReg, data + offset, REG_SIZE);
    offset += REG_SIZE;
+   memcpy(bankType, data + offset, TOTAL_MEMORY_BANKS);
+   offset += TOTAL_MEMORY_BANKS;
    memcpy(&palmCrystalCycles, data + offset, sizeof(double));
    offset += sizeof(double);
    memcpy(&palmCycleCounter, data + offset, sizeof(double));
@@ -142,6 +149,8 @@ void emulatorLoadState(uint8_t* data){
    offset += sizeof(double);
    lowPowerStopActive = data[offset];
    offset += 1;
+   
+   refreshBankHandlers();
 }
 
 uint32_t emulatorInstallPrcPdb(uint8_t* data, uint32_t size){
