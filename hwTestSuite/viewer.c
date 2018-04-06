@@ -32,9 +32,9 @@ static uint32_t totalHwTests;
 /*list handler variables*/
 static uint32_t page;
 static uint32_t index;
-static int64_t listLength;
-static int64_t lastSelectedEntry;
-static int64_t selectedEntry;
+static int64_t  listLength;
+static int64_t  lastSelectedEntry;
+static int64_t  selectedEntry;
 static char     itemStrings[ITEM_LIST_ENTRYS][ITEM_STRING_SIZE];
 static Boolean  forceListRefresh;
 static void     (*listHandler)(uint32_t command);
@@ -81,8 +81,7 @@ static void hexHandler(uint32_t command){
       for(i = 0; i < ITEM_LIST_ENTRYS; i++){
          uint32_t displayAddress = hexViewOffset - bufferAddress;
          if(displayAddress + i < listLength){
-            /*Palm OS sprintf only supports 16 bit ints*/
-            StrPrintF(itemStrings[i], "0x%04X%04X:0x%02X", (uint16_t)(displayAddress >> 16), (uint16_t)displayAddress, readArbitraryMemory8(hexViewOffset));
+            StrPrintF(itemStrings[i], "0x%08lX:0x%02X", displayAddress, readArbitraryMemory8(hexViewOffset));
             hexViewOffset++;
          }
          else{
@@ -204,9 +203,34 @@ var valueViewer(){
       debugSafeScreenClear(C_WHITE);
       
       switch(getVarType(value)){
-         case TYPE_INT:
-            StrPrintF(printBuffer, "uint32_t:0x%04X%04X", (uint16_t)(varData >> 16), (uint16_t)varData);
+            
+         case TYPE_UINT:
+            StrPrintF(printBuffer, "uint32_t:0x%08lX", (uint32_t)varData);
             UG_PutString(0, 0, printBuffer);
+            break;
+            
+         case TYPE_INT:
+            StrPrintF(printBuffer, "int32_t:0x%08lX", (uint32_t)varData);
+            UG_PutString(0, 0, printBuffer);
+            break;
+            
+         case TYPE_PTR:
+            StrPrintF(printBuffer, "pointer:0x%08lX", (uint32_t)varData);
+            UG_PutString(0, 0, printBuffer);
+            break;
+            
+            /*
+         case TYPE_FLOAT:
+            StrPrintF(printBuffer, "pointer:%f", (uint16_t)(varData >> 16), (uint16_t)varData);
+            UG_PutString(0, 0, printBuffer);
+            break;
+            */
+            
+         case TYPE_BOOL:
+            if(varData)
+               UG_PutString(0, 0, "Bool:true");
+            else
+               UG_PutString(0, 0, "Bool:false");
             break;
             
          default:
