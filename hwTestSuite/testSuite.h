@@ -7,7 +7,6 @@
 
 
 /*defines*/
-
 #define PalmOS35 sysMakeROMVersion(3,5,0,sysROMStageRelease,0)
 #define PalmOS50 sysMakeROMVersion(5,0,0,sysROMStageRelease,0)
 
@@ -19,11 +18,11 @@
 #define buttonSelect keyBitHard4
 
 #define TYPE_NULL    0x00
-#define TYPE_BOOL    0x01/*bool can share with uint*/
-#define TYPE_UINT    0x01
-#define TYPE_INT     0x02
-#define TYPE_FLOAT   0x03
-#define TYPE_PTR     0x04
+#define TYPE_BOOL    0x01
+#define TYPE_UINT    0x02
+#define TYPE_INT     0x03
+#define TYPE_FLOAT   0x04
+#define TYPE_PTR     0x05
 #define LENGTH_0     0x00/*for null*/
 #define LENGTH_1     0x10
 #define LENGTH_8     0x20

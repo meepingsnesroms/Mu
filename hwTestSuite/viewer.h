@@ -3,6 +3,7 @@
 
 #include "testSuite.h"
 
+var valueViewer();
 var hexViewer();
 var functionPicker();
 void initViewer();

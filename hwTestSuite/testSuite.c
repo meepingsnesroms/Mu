@@ -234,7 +234,7 @@ static Boolean testerInit(){
    framebuffer = BmpGetBits(offscreenBitmap);
    
    UG_Init(&uguiStruct, uguiDrawPixel, SCREEN_WIDTH, SCREEN_HEIGHT);
-   UG_FontSelect(&FONT_4X6);
+   UG_FontSelect(&FONT_8X8);
    UG_SetBackcolor(C_WHITE);
    UG_SetForecolor(C_BLACK);
    UG_ConsoleSetBackcolor(C_WHITE);

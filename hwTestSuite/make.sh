@@ -11,7 +11,7 @@ CREATORID="guiC"
 RESFILE=$APPNAME.rcp
 PRC=$APPNAME.prc
 
-SRCS="testSuite.c viewer.c tools.c cpu.c emuFunctions.c debug.c ugui.c"
+SRCS="testSuite.c viewer.c tools.c tests.c cpu.c emuFunctions.c debug.c ugui.c"
 DEFINES="-DHW_TEST -DDEBUG"
 CFLAGS="-O2 -g $DEFINES"
 

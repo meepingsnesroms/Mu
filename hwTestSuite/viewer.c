@@ -1,14 +1,15 @@
 #include "testSuiteConfig.h"
 #include "testSuite.h"
 #include "tools.h"
+#include "tests.h"
 #include "debug.h"
 #include "ugui.h"
 
 
 #define MAX_OBJECTS 50
 
-#define FONT_WIDTH   4
-#define FONT_HEIGHT  6
+#define FONT_WIDTH   8
+#define FONT_HEIGHT  8
 #define FONT_SPACING 0
 
 #define RESERVED_PIXELS_Y (SCREEN_HEIGHT / 4)/*save pixels at the bottom of the screen for other information on the current item*/
@@ -81,7 +82,7 @@ static void hexHandler(uint32_t command){
          uint32_t displayAddress = hexViewOffset - bufferAddress;
          if(displayAddress + i < listLength){
             /*Palm OS sprintf only supports 16 bit ints*/
-            StrPrintF(itemStrings[i], "0x%04X%04X:0x%02X", (uint16_t)(displayAddress >> 16), (uint16_t)displayAddress , readArbitraryMemory8(hexViewOffset));
+            StrPrintF(itemStrings[i], "0x%04X%04X:0x%02X", (uint16_t)(displayAddress >> 16), (uint16_t)displayAddress, readArbitraryMemory8(hexViewOffset));
             hexViewOffset++;
          }
          else{
@@ -187,6 +188,36 @@ static var listModeFrame(){
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
 
+var valueViewer(){
+   static Boolean clearNeeded = true;
+   var value = getSubprogramArgs();
+   uint64_t varData = getVarValue(value);
+   
+   if(getButtonPressed(buttonBack)){
+      /*go back*/
+      clearNeeded = true;
+      exitSubprogram();
+   }
+   
+   if(clearNeeded){
+      char printBuffer[100];
+      debugSafeScreenClear(C_WHITE);
+      
+      switch(getVarType(value)){
+         case TYPE_INT:
+            StrPrintF(printBuffer, "uint32_t:0x%04X%04X", (uint16_t)(varData >> 16), (uint16_t)varData);
+            UG_PutString(0, 0, printBuffer);
+            break;
+            
+         default:
+            UG_PutString(0, 0, "Unknown Var Type");
+            break;
+      }
+      
+      clearNeeded = false;
+   }
+}
+
 var hexViewer(){
    var where = getSubprogramArgs();
    
@@ -204,7 +235,7 @@ var hexViewer(){
       listLength = UINT64_C(0x100000000);
    }
    listHandler = hexHandler;
-   callSubprogram(listModeFrame);
+   execSubprogram(listModeFrame);
    
    setDebugTag("Hex Viewer Starting");
    
@@ -215,7 +246,7 @@ var functionPicker(){
    resetListHandler();
    listLength = totalHwTests;
    listHandler = testPickerHandler;
-   callSubprogram(listModeFrame);
+   execSubprogram(listModeFrame);
    
    setDebugTag("Test Picker Starting");
    
@@ -227,15 +258,21 @@ void initViewer(){
    
    totalHwTests = 0;
    
-   StrNCopy(hwTests[0].name, "Ram Browser", TEST_NAME_LENGTH);
-   hwTests[0].testFunction = hexRamBrowser;
+   StrNCopy(hwTests[totalHwTests].name, "Ram Browser", TEST_NAME_LENGTH);
+   hwTests[totalHwTests].testFunction = hexRamBrowser;
    totalHwTests++;
    
-   StrNCopy(hwTests[1].name, "Dump Bootloader", TEST_NAME_LENGTH);
-   hwTests[1].testFunction = dumpBootloaderToFile;
+   /*
+   StrNCopy(hwTests[totalHwTests].name, "Get Trap Address", TEST_NAME_LENGTH);
+   hwTests[totalHwTests].testFunction = testFileAccessWorks;
+   totalHwTests++;
+   */
+   
+   StrNCopy(hwTests[totalHwTests].name, "Dump Bootloader", TEST_NAME_LENGTH);
+   hwTests[totalHwTests].testFunction = dumpBootloaderToFile;
    totalHwTests++;
    
-   StrNCopy(hwTests[2].name, "File Access Test", TEST_NAME_LENGTH);
-   hwTests[2].testFunction = testFileAccessWorks;
+   StrNCopy(hwTests[totalHwTests].name, "File Access Test", TEST_NAME_LENGTH);
+   hwTests[totalHwTests].testFunction = testFileAccessWorks;
    totalHwTests++;
 }

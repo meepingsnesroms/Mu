@@ -1,17 +1,18 @@
+#include <PalmOS.h>
 #include "testSuite.h"
 #include "viewer.h"
 #include "debug.h"
 #include "ugui.h"
 
 
-uint32_t makeFile(uint8_t* data, uint32_t size, char* fileName){
+Err makeFile(uint8_t* data, uint32_t size, char* fileName){
    FileHand file;
    Err      error;
    uint8_t  dataBuffer[100];//used to anonymize data source
    uint32_t count;
    
-   file = FileOpen(0 /*cardNo*/, fileName, 'DATA', 'GuiC', fileModeReadWrite | fileModeAnyTypeCreator, &error);
-   if(!file || error)
+   file = FileOpen(0 /*cardNo*/, fileName, (uint32_t)'DATA', (uint32_t)'GuiC', fileModeReadWrite | fileModeAnyTypeCreator, &error);
+   if(file == fileNullHandle || error)
       return error;
    
    count = size;
@@ -28,11 +29,10 @@ uint32_t makeFile(uint8_t* data, uint32_t size, char* fileName){
       count -= chunkSize;
    }
    
-   error = FileClose(file);
-   if(error)
-      return error;
+   UG_PutString(0, 0, "File close next");
    
-   return 0;//success
+   error = FileClose(file);//I have no idea why, but this function causes a fatal execption but i still get valid data in the file after reboot
+   return error;
 }
 
 var hexRamBrowser(){
@@ -86,15 +86,7 @@ var hexRamBrowser(){
 }
 
 var dumpBootloaderToFile(){
-   makeFile((uint8_t*)UINT32_C(0xFFFFFE00), 0x200, "BOOTLOAD.BIN");
+   makeFile((uint8_t*)UINT32_C(0xFFFFFE00), 0x200, "BOOTLOADER.BIN");
    exitSubprogram();
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
-
-var testFileAccessWorks(){
-   uint32_t testTook = UINT32_C(0xFFFFFE00);
-   makeFile((uint8_t*)&testTook, 4, "FILEOUT.BIN");
-   exitSubprogram();
-   return makeVar(LENGTH_0, TYPE_NULL, 0);
-}
-

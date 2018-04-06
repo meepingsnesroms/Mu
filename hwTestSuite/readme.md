@@ -16,3 +16,4 @@ If you enable unsafe mode you will have to reboot to exit, this is because it wi
 In the hex viewer registers that are not safe to read will say "UNSAFE" instead of a hex value, the main unsafe reads are the uart registers.
 
 There is almost no memory, 4KB stack on some devices.  
+For some reason the official FileClose(FileHandle) crashes with "Fatal Exeption" on Clie Peg-SL10 and "illegal instruction 19F0 at 00000002" on Tungsten E and black screen reboot on Palm T|X, I think that it corrupts the stack triggering a jump to 0x00000000.
