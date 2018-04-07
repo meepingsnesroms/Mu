@@ -10,7 +10,7 @@ Err makeFile(uint8_t* data, uint32_t size, char* fileName){
    Err             error;
    uint32_t        count;
    
-   file = FileOpen(0 /*cardNo*/, fileName, (uint32_t)'DATA', (uint32_t)'GuiC', fileModeReadWrite | fileModeAnyTypeCreator, &error);
+   file = FileOpen(0 /*cardNo*/, fileName, (uint32_t)'DATA', (uint32_t)'GuiC', fileModeReadWrite, &error);
    if(file == fileNullHandle || error)
       return error;
    
@@ -78,6 +78,54 @@ var hexRamBrowser(){
    }
    
    StrPrintF(sharedDataBuffer, "Open Hex Viewer At:\n0x%08lX", pointerValue);
+   UG_PutString(0, 0, sharedDataBuffer);
+   
+   return makeVar(LENGTH_0, TYPE_NULL, 0);
+}
+
+var getTrapAddress(){
+   static Boolean  clearScreen = true;
+   static uint16_t nibble = 0x100;
+   static uint16_t trapNum = 0xA377;/*in the middle of the trap list*/
+   
+   if(getButtonPressed(buttonUp)){
+      trapNum = (trapNum + nibble & 0xFFF) | 0xA000;
+   }
+   
+   if(getButtonPressed(buttonDown)){
+      trapNum = (trapNum - nibble & 0xFFF) | 0xA000;
+   }
+   
+   if(getButtonPressed(buttonRight)){
+      if(nibble > 0x001)
+         nibble >>= 4;
+   }
+   
+   if(getButtonPressed(buttonLeft)){
+      if(nibble < 0x100)
+         nibble <<= 4;
+   }
+   
+   if(getButtonPressed(buttonSelect)){
+      /*open hex viewer*/
+      nibble = 0x100;
+      clearScreen = true;
+      setSubprogramArgs(makeVar(LENGTH_ANY, TYPE_PTR, (uint64_t)(uint32_t)SysGetTrapAddress(trapNum)));
+      execSubprogram(valueViewer);
+   }
+   
+   if(getButtonPressed(buttonBack)){
+      nibble = 0x100;
+      clearScreen = true;
+      exitSubprogram();
+   }
+   
+   if(clearScreen){
+      debugSafeScreenClear(C_WHITE);
+      clearScreen = false;
+   }
+   
+   StrPrintF(sharedDataBuffer, "Trap Num:\n0x%04X", trapNum);
    UG_PutString(0, 0, sharedDataBuffer);
    
    return makeVar(LENGTH_0, TYPE_NULL, 0);

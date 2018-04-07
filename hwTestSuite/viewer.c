@@ -6,8 +6,6 @@
 #include "ugui.h"
 
 
-#define MAX_OBJECTS 50
-
 #define FONT_WIDTH   8
 #define FONT_HEIGHT  8
 #define FONT_SPACING 0
@@ -199,30 +197,29 @@ var valueViewer(){
    }
    
    if(clearNeeded){
-      char printBuffer[100];
       debugSafeScreenClear(C_WHITE);
       
       switch(getVarType(value)){
             
          case TYPE_UINT:
-            StrPrintF(printBuffer, "uint32_t:0x%08lX", (uint32_t)varData);
-            UG_PutString(0, 0, printBuffer);
+            StrPrintF(sharedDataBuffer, "uint32_t:0x%08lX", (uint32_t)varData);
+            UG_PutString(0, 0, sharedDataBuffer);
             break;
             
          case TYPE_INT:
-            StrPrintF(printBuffer, "int32_t:0x%08lX", (uint32_t)varData);
-            UG_PutString(0, 0, printBuffer);
+            StrPrintF(sharedDataBuffer, "int32_t:0x%08lX", (uint32_t)varData);
+            UG_PutString(0, 0, sharedDataBuffer);
             break;
             
          case TYPE_PTR:
-            StrPrintF(printBuffer, "pointer:0x%08lX", (uint32_t)varData);
-            UG_PutString(0, 0, printBuffer);
+            StrPrintF(sharedDataBuffer, "pointer:0x%08lX", (uint32_t)varData);
+            UG_PutString(0, 0, sharedDataBuffer);
             break;
             
             /*
          case TYPE_FLOAT:
-            StrPrintF(printBuffer, "pointer:%f", (uint16_t)(varData >> 16), (uint16_t)varData);
-            UG_PutString(0, 0, printBuffer);
+            StrPrintF(sharedDataBuffer, "float:%f", *(float*)(&varData + 4));
+            UG_PutString(0, 0, sharedDataBuffer);
             break;
             */
             
@@ -286,11 +283,9 @@ void initViewer(){
    hwTests[totalHwTests].testFunction = hexRamBrowser;
    totalHwTests++;
    
-   /*
    StrNCopy(hwTests[totalHwTests].name, "Get Trap Address", TEST_NAME_LENGTH);
-   hwTests[totalHwTests].testFunction = testFileAccessWorks;
+   hwTests[totalHwTests].testFunction = getTrapAddress;
    totalHwTests++;
-   */
    
    StrNCopy(hwTests[totalHwTests].name, "Dump Bootloader", TEST_NAME_LENGTH);
    hwTests[totalHwTests].testFunction = dumpBootloaderToFile;

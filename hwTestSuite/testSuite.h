@@ -37,11 +37,9 @@
 
 
 /*types*/
-typedef uint64_t var_value;/*can hold all other types*/
-
 typedef struct{
-   uint8_t   type;
-   var_value value;
+   uint8_t  type;
+   uint64_t value;
 }var;
 
 typedef var (*activity_t)();
