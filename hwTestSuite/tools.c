@@ -6,24 +6,24 @@
 
 
 Err makeFile(uint8_t* data, uint32_t size, char* fileName){
-   FileHand file;
-   Err      error;
-   uint8_t  dataBuffer[100];//used to anonymize data source
-   uint32_t count;
+   FileHand        file;
+   Err             error;
+   uint32_t        count;
    
    file = FileOpen(0 /*cardNo*/, fileName, (uint32_t)'DATA', (uint32_t)'GuiC', fileModeReadWrite | fileModeAnyTypeCreator, &error);
    if(file == fileNullHandle || error)
       return error;
    
+   /*the copy is used to anonymize the data source*/
    count = size;
    while(count != 0){
-      uint32_t chunkSize = count > 100 ? 100 : count;
+      uint32_t chunkSize = count > SHARED_DATA_BUFFER_SIZE ? SHARED_DATA_BUFFER_SIZE : count;
       int32_t  bytesWritten;
       uint32_t i;
       for(i = 0; i < chunkSize; i++){
-         dataBuffer[i] = data[i + size - count];
+         sharedDataBuffer[i] = data[i + size - count];
       }
-      bytesWritten = FileWrite(file, dataBuffer, 1, chunkSize, &error);
+      bytesWritten = FileWrite(file, sharedDataBuffer, 1, chunkSize, &error);
       if(bytesWritten != chunkSize || error)
          return error;
       count -= chunkSize;
@@ -39,7 +39,6 @@ var hexRamBrowser(){
    static Boolean  clearScreen = true;
    static uint32_t nibble = UINT32_C(0x10000000);
    static uint32_t pointerValue = UINT32_C(0x77777777);/*in the middle of the address space*/
-   static char     hexString[100];
    
    if(getButtonPressed(buttonUp)){
       pointerValue += nibble;
@@ -78,8 +77,8 @@ var hexRamBrowser(){
       clearScreen = false;
    }
    
-   StrPrintF(hexString, "Open Hex Viewer At:\n0x%08lX", pointerValue);
-   UG_PutString(0, 0, hexString);
+   StrPrintF(sharedDataBuffer, "Open Hex Viewer At:\n0x%08lX", pointerValue);
+   UG_PutString(0, 0, sharedDataBuffer);
    
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }

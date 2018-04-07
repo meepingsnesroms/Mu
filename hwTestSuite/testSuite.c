@@ -12,51 +12,11 @@
 #include "TstSuiteRsc.h"
 
 
-/*functions that should be macros but are screwed up by c89*/
-uint8_t getVarType(var thisVar){
-   return thisVar.type & 0x0F;
-}
-uint8_t getVarLength(var thisVar){
-   return thisVar.type & 0xF0;
-}
-uint32_t getVarDataLength(var thisVar){
-   return thisVar.value >> 32;
-}
-void* getVarPointer(var thisVar){
-   return (void*)(uint32_t)(thisVar.value & 0xFFFFFFFF);
-}
-uint32_t getVarPointerSize(var thisVar){
-   return thisVar.value >> 32;
-}
-var_value getVarValue(var thisVar){
-   return thisVar.value;
-}
 var makeVar(uint8_t length, uint8_t type, uint64_t value){
    var newVar;
    newVar.type = (length & 0xF0) | (type & 0x0F);
    newVar.value = value;
    return newVar;
-}
-Boolean varsEqual(var var1, var var2){
-   if(var1.type == var2.type && var1.value == var2.value)
-      return true;
-   return false;
-}
-
-Boolean getButton(uint16_t button){
-   return (palmButtons & button) != 0;
-}
-Boolean getButtonLastFrame(uint16_t button){
-   return (palmButtonsLastFrame & button) != 0;
-}
-Boolean getButtonChanged(uint16_t button){
-   return (palmButtons & button) != (palmButtonsLastFrame & button);
-}
-Boolean getButtonPressed(uint16_t button){
-   return (palmButtons & button) && !(palmButtonsLastFrame & button);
-}
-Boolean getButtonReleased(uint16_t button){
-   return !(palmButtons & button) && (palmButtonsLastFrame & button);
 }
 
 uint8_t readArbitraryMemory8(uint32_t address){
@@ -83,6 +43,7 @@ void writeArbitraryMemory32(uint32_t address, uint32_t value){
 uint16_t palmButtons;
 uint16_t palmButtonsLastFrame;
 Boolean  unsafeMode;
+uint8_t* sharedDataBuffer;
 
 
 /*video stuff*/
@@ -212,26 +173,27 @@ static Boolean testerInit(){
    Err      error;
    
    FtrGet(sysFtrCreator, sysFtrNumROMVersion, &osVer);
-   
    if (osVer < PalmOS35) {
       FrmCustomAlert(alt_err, "TestSuite requires at least PalmOS 3.5", 0, 0);
       return false;
    }
    
-   KeySetMask(~(keyBitPageUp | keyBitPageDown |
-                keyBitHard1  | keyBitHard2 |
-                keyBitHard3  | keyBitHard4 ));
-   
-   WinSetActiveWindow(WinGetDisplayWindow());
+   sharedDataBuffer = MemPtrNew(SHARED_DATA_BUFFER_SIZE);
+   if(sharedDataBuffer == NULL){
+      FrmCustomAlert(alt_err, "Cant create memory buffer", 0, 0);
+      return false;
+   }
    
    offscreenBitmap = BmpCreate(SCREEN_WIDTH, SCREEN_HEIGHT, 1, NULL, &error);
-   
    if(error){
       FrmCustomAlert(alt_err, "Cant create bitmap", 0, 0);
       return false;
    }
    
+   KeySetMask(~(keyBitPageUp | keyBitPageDown | keyBitHard1  | keyBitHard2 | keyBitHard3  | keyBitHard4 ));
+   
    framebuffer = BmpGetBits(offscreenBitmap);
+   WinSetActiveWindow(WinGetDisplayWindow());
    
    UG_Init(&uguiStruct, uguiDrawPixel, SCREEN_WIDTH, SCREEN_HEIGHT);
    UG_FontSelect(&FONT_8X8);
@@ -241,12 +203,11 @@ static Boolean testerInit(){
    UG_ConsoleSetForecolor(C_BLACK);
    UG_FillScreen(C_WHITE);
    
-   unsafeMode = false;
-   
    /*make test list*/
    initViewer();
    
    /*load first subprogram*/
+   unsafeMode = false;
    subprogramIndex = 0;
    subprogramArgsSet = false;
    lastSubprogramReturnValue = makeVar(LENGTH_0, TYPE_NULL, 0);
@@ -257,7 +218,7 @@ static Boolean testerInit(){
 }
 
 static void testerExit(){
-   /*nothing right now*/
+   MemPtrFree(sharedDataBuffer);
 }
 
 static void testerFrameLoop(){

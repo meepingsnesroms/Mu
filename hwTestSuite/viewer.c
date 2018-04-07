@@ -246,7 +246,7 @@ var hexViewer(){
    var where = getSubprogramArgs();
    
    resetListHandler();
-   listLength = getVarPointerSize(where);
+   listLength = getVarDataLength(where);
    if(listLength){
       /*displaying a result buffer*/
       selectedEntry = 0;

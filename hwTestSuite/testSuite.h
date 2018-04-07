@@ -7,6 +7,8 @@
 
 
 /*defines*/
+#define SHARED_DATA_BUFFER_SIZE 1000
+
 #define PalmOS35 sysMakeROMVersion(3,5,0,sysROMStageRelease,0)
 #define PalmOS50 sysMakeROMVersion(5,0,0,sysROMStageRelease,0)
 
@@ -54,6 +56,7 @@ typedef struct{
 extern uint16_t palmButtons;
 extern uint16_t palmButtonsLastFrame;
 extern Boolean  unsafeMode;
+extern uint8_t* sharedDataBuffer;
 
 /*
 functions
@@ -63,21 +66,20 @@ inside the function and outside can result in the outside variable being written
 c89 also doesnt support them
 */
 /*hardware buttons*/
-Boolean getButton(uint16_t button);
-Boolean getButtonLastFrame(uint16_t button);
-Boolean getButtonChanged(uint16_t button);
-Boolean getButtonPressed(uint16_t button);
-Boolean getButtonReleased(uint16_t button);
+#define getButton(x) ((palmButtons & x) != 0)
+#define getButtonLastFrame(x) ((palmButtonsLastFrame & x) != 0)
+#define getButtonChanged(x) ((palmButtons & x) != (palmButtonsLastFrame & x))
+#define getButtonPressed(x) ((palmButtons & x) && !(palmButtonsLastFrame & x))
+#define getButtonReleased(x) (!(palmButtons & x) && (palmButtonsLastFrame & x))
 
 /*var type operators*/
-uint8_t   getVarType(var thisVar);
-uint8_t   getVarLength(var thisVar);
-uint32_t  getVarDataLength(var thisVar);
-void*     getVarPointer(var thisVar);
-uint32_t  getVarPointerSize(var thisVar);
-var_value getVarValue(var thisVar);
-var       makeVar(uint8_t length, uint8_t type, uint64_t value);
-Boolean   varsEqual(var var1, var var2);
+#define getVarType(x) (x.type & 0x0F)
+#define getVarValue(x) (x.value)
+#define getVarLength(x) (x.type & 0xF0)
+#define getVarPointer(x) ((void*)(uint32_t)(x.value & 0xFFFFFFFF))
+#define getVarDataLength(x) ((uint32_t)(x.value >> 32))
+#define varsEqual(x, y) (x.type == y.type && x.value == y.value)
+var     makeVar(uint8_t length, uint8_t type, uint64_t value);
 
 /*kernel memory access*/
 uint8_t  readArbitraryMemory8(uint32_t address);
