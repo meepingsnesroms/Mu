@@ -924,6 +924,8 @@ void resetHwRegisters(){
    registerArrayWrite16(CSA, 0x00B0);
    registerArrayWrite16(CSD, 0x0200);
    registerArrayWrite16(EMUCS, 0x0060);
+   registerArrayWrite16(CSCTRL2, 0x1000);
+   registerArrayWrite16(CSCTRL3, 0x9C00);
    
    //phase lock loop
    registerArrayWrite16(PLLCR, 0x24B3);
@@ -984,8 +986,8 @@ void resetHwRegisters(){
    registerArrayWrite16(TCMP2, 0xFFFF);
    
    //serial i/o
-   registerArrayWrite16(UBAUD1, 0x003F);
-   registerArrayWrite16(UBAUD2, 0x003F);
+   registerArrayWrite16(UBAUD1, 0x0002);
+   registerArrayWrite16(UBAUD2, 0x0002);
    registerArrayWrite16(HMARK, 0x0102);
    
    //lcd control registers, unused since the sed1376 is present
@@ -994,7 +996,7 @@ void resetHwRegisters(){
    registerArrayWrite16(LYMAX, 0x01FF);
    registerArrayWrite16(LCWCH, 0x0101);
    registerArrayWrite8(LBLKC, 0x7F);
-   registerArrayWrite8(LRRA, 0xFF);
+   registerArrayWrite16(LRRA, 0x00FF);
    registerArrayWrite8(LGPMR, 0x84);
    registerArrayWrite8(DMACR, 0x62);
    

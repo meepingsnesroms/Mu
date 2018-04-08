@@ -16,6 +16,9 @@
 #define CSGBC     0x104 // Chip Select Group C Base Register
 #define CSGBD     0x106 // Chip Select Group D Base Register
 #define CSUGBA    0x108 // Chip Select Upper Group Address Register
+#define CSCTRL1   0x10A // Chip Select Control Register 1
+#define CSCTRL2   0x10C // Chip Select Control Register 2
+#define CSCTRL3   0x150 // Chip Select Control Register 3
 #define CSA       0x110 // Group A Chip Select Register
 #define CSC       0x114 // Group C Chip Select Register
 #define CSD       0x116 // Group D Chip Select Register
@@ -150,7 +153,7 @@
 #define LPICF     0xA20 // Panel Interface Config Register
 #define LPXCD     0xA25 // Pixel Clock Divider Register
 #define LCKCON    0xA27 // Clocking Control Register
-#define LRRA      0xA29 // LCD Refresh Rate Adjustment Register
+#define LRRA      0xA28 // LCD Refresh Rate Adjustment Register
 // Reserved       0xA2B // Octet Terminal Count Register On Original Dragonball
 #define LFRCM     0xA31 // Frame Rate Control Modulation Register
 #define LGPMR     0xA33 // Gray Palette Mapping Register
