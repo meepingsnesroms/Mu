@@ -1,4 +1,4 @@
-# Palm m515/OS 4.1 emulator
+# Palm m515/OS 4.1 emulator(Mu)
 
 This is a complete restart of my Palm OS emulator, with the last one the code got too messy and the goal too ambitious(to emulate every palm API in software and for compatibility with all Palm OS versions and devices).
 

@@ -93,7 +93,7 @@ else ifneq ($(findstring MINGW,$(shell uname -a)),)
 endif
 
 #CC         = gcc
-TARGET_NAME	:= persiantree
+TARGET_NAME	:= mu
 LIBM		= -lm
 
 ifeq ($(STATIC_LINKING),1)
