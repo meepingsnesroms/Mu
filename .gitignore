@@ -3,3 +3,7 @@
 *.dll
 *.so
 *.dylib
+/hwTestSuite/*.bin
+/hwTestSuite/*.grc
+/hwTestSuite/*.prc
+/hwTestSuite/TstSuite

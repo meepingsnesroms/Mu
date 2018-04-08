@@ -141,6 +141,7 @@ var manualLssa(){
       hexValue = UINT32_C(0x77777777);
       originalLssa = readArbitraryMemory32(0xFFFFFA00);
       customEnabled = false;
+      debugSafeScreenClear(C_WHITE);
       firstRun = false;
    }
    

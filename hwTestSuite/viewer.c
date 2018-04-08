@@ -47,7 +47,6 @@ static void renderListFrame(){
    
    setDebugTag("Rendering List Frame");
    
-   debugSafeScreenClear(C_WHITE);
    for(textBoxes = 0; textBoxes < ITEM_LIST_ENTRYS; textBoxes++){
       if(textBoxes == index){
          /*render list cursor inverted*/
@@ -58,8 +57,12 @@ static void renderListFrame(){
          UG_SetBackcolor(C_WHITE);
          UG_SetForecolor(C_BLACK);
       }
-      else{
-         /*just the text*/
+      else if(textBoxes == lastSelectedEntry){
+         UG_FillFrame(0, y, SCREEN_WIDTH - 1, y + TEXTBOX_PIXEL_HEIGHT - 1, C_WHITE);/*remove black lines between characters*/
+         UG_PutString(0, y, itemStrings[textBoxes]);
+      }
+      else if(forceListRefresh){
+         /*render everything the first time, only render changes after that*/
          UG_PutString(0, y, itemStrings[textBoxes]);
       }
       
