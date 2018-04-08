@@ -1,4 +1,4 @@
-﻿# Palm m515/OS 4.1 emulator
+# Palm m515/OS 4.1 emulator
 
 This is a complete restart of my Palm OS emulator, with the last one the code got too messy and the goal too ambitious(to emulate every palm API in software and for compatibility with all Palm OS versions and devices).
 
@@ -48,6 +48,9 @@ The lack of ARM CPU will be fixed in my emulator see "OS improvements".
 
 ## Credits
 Musashi v3.4(last version that builds outside of mame) (68k core)
+
+## Tools
+[Prc-tools, Palm OS SDKs, pilrc, pilot-link](https://github.com/meepingsnesroms/prc-tools-remix)
 
 ## License
 <a rel="license" href="http://creativecommons.org/licenses/by-nc/3.0/us/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc/3.0/us/88x31.png" /></a><br />This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc/3.0/us/">Creative Commons Attribution-NonCommercial 3.0 United States License</a>.

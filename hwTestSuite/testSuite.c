@@ -92,16 +92,15 @@ var memoryAllocationError(){
 
 
 static void uguiDrawPixel(UG_S16 x, UG_S16 y, UG_COLOR color){
-   /*ugui will call this function even if its over the screen bounds, dont let those writes through*/
-   /*
-   if(x >= 0 && x < SCREEN_WIDTH && y >= 0 && y < SCREEN_HEIGHT){
-   }
-   */
-   
    /*using 1bit grayscale*/
    int pixel = x + y * SCREEN_WIDTH;
    int byte = pixel / 8;
    int bit = pixel % 8;
+   
+   /*ugui will call this function even if its over the screen bounds, dont let those writes through*/
+   if(byte > SCREEN_WIDTH * SCREEN_HEIGHT - 1)
+      return;
+   
    if(!color){
       /*1 is black not white*/
       framebuffer[byte] |= (1 << (7 - bit));

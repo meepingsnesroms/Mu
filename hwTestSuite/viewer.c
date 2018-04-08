@@ -303,5 +303,4 @@ void initViewer(){
    StrNCopy(hwTests[totalHwTests].name, "File Access Test", TEST_NAME_LENGTH);
    hwTests[totalHwTests].testFunction = testFileAccessWorks;
    totalHwTests++;
-   
 }

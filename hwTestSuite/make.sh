@@ -11,14 +11,20 @@ CREATORID="guiC"
 RESFILE=$APPNAME.rcp
 PRC=$APPNAME.prc
 
-SRCS="testSuite.c viewer.c tools.c tests.c cpu.c emuFunctions.c debug.c ugui.c"
-DEFINES="-DHW_TEST -DDEBUG"
-CFLAGS="-O2 -g $DEFINES"
-
 if [ "$1" = "clean" ]; then
    rm -rf *.o *.a $APPNAME $PRC *.bin *.grc
    exit
 fi
+
+SRCS="testSuite.c viewer.c tools.c tests.c cpu.c emuFunctions.c ugui.c"
+DEFINES="-DHW_TEST"
+
+if [ "$1" = "debug" ]; then
+   DEFINES="$DEFINES -DDEBUG"
+   SRCS="$SRCS debug.c"
+fi
+
+CFLAGS="-O2 -g $DEFINES"
 
 m68k-palmos-gcc -palmos3.5 $CFLAGS $SRCS -o $APPNAME
 m68k-palmos-obj-res $APPNAME
