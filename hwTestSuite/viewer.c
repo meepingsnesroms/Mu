@@ -3,11 +3,10 @@
 #include "tools.h"
 #include "tests.h"
 #include "debug.h"
+#include "cpu.h"
 #include "ugui.h"
 
 
-#define FONT_WIDTH   8
-#define FONT_HEIGHT  8
 #define FONT_SPACING 0
 
 #define RESERVED_PIXELS_Y (SCREEN_HEIGHT / 4)/*save pixels at the bottom of the screen for other information on the current item*/
@@ -107,7 +106,7 @@ static void testPickerHandler(uint32_t command){
    }
    else if(command == LIST_ITEM_SELECTED){
       setDebugTag("Test Picker Test Selected");
-      execSubprogram(hwTests[selectedEntry].testFunction);
+      callSubprogram(hwTests[selectedEntry].testFunction);
    }
 }
 
@@ -287,11 +286,19 @@ void initViewer(){
    hwTests[totalHwTests].testFunction = getTrapAddress;
    totalHwTests++;
    
-   StrNCopy(hwTests[totalHwTests].name, "Dump Bootloader", TEST_NAME_LENGTH);
-   hwTests[totalHwTests].testFunction = dumpBootloaderToFile;
-   totalHwTests++;
+   if(getPhysicalCpuType() & CPU_M68K){
+      /*68k only functions*/
+      StrNCopy(hwTests[totalHwTests].name, "Dump Bootloader", TEST_NAME_LENGTH);
+      hwTests[totalHwTests].testFunction = dumpBootloaderToFile;
+      totalHwTests++;
+      
+      StrNCopy(hwTests[totalHwTests].name, "Manual LSSA", TEST_NAME_LENGTH);
+      hwTests[totalHwTests].testFunction = manualLssa;
+      totalHwTests++;
+   }
    
    StrNCopy(hwTests[totalHwTests].name, "File Access Test", TEST_NAME_LENGTH);
    hwTests[totalHwTests].testFunction = testFileAccessWorks;
    totalHwTests++;
+   
 }

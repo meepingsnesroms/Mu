@@ -92,6 +92,12 @@ var memoryAllocationError(){
 
 
 static void uguiDrawPixel(UG_S16 x, UG_S16 y, UG_COLOR color){
+   /*ugui will call this function even if its over the screen bounds, dont let those writes through*/
+   /*
+   if(x >= 0 && x < SCREEN_WIDTH && y >= 0 && y < SCREEN_HEIGHT){
+   }
+   */
+   
    /*using 1bit grayscale*/
    int pixel = x + y * SCREEN_WIDTH;
    int byte = pixel / 8;
@@ -196,7 +202,7 @@ static Boolean testerInit(){
    WinSetActiveWindow(WinGetDisplayWindow());
    
    UG_Init(&uguiStruct, uguiDrawPixel, SCREEN_WIDTH, SCREEN_HEIGHT);
-   UG_FontSelect(&FONT_8X8);
+   UG_FontSelect(&SELECTED_FONT);
    UG_SetBackcolor(C_WHITE);
    UG_SetForecolor(C_BLACK);
    UG_ConsoleSetBackcolor(C_WHITE);
@@ -225,12 +231,17 @@ static void testerFrameLoop(){
    palmButtons = KeyCurrentState();
    
    if(!unsafeMode){
-      /*allow exiting the app normally*/
+      /*allow exiting the app normally and prevent filling up the event loop*/
       EventType event;
-      EvtGetEvent(&event, 1);
-      SysHandleEvent(&event);
-      if(event.eType == appStopEvent)
-         applicationRunning = false;
+      do{
+         EvtGetEvent(&event, 1);
+         SysHandleEvent(&event);
+         if(event.eType == appStopEvent){
+            applicationRunning = false;
+            break;
+         }
+      }
+      while(event.eType != nilEvent);
    }
    
    lastSubprogramReturnValue = currentSubprogram();
@@ -256,6 +267,18 @@ DWord PilotMain(Word cmd, Ptr cmdBPB, Word launchFlags){
       }
       
       testerExit();
+   }
+
+   else if(cmd == sysAppLaunchCmdSystemReset){
+ #ifdef DEBUG
+      /*app crashed, to ease development just self delete from internal storage*/
+      /*
+      LocalID whatToDelete;
+      whatToDelete = DmFindDatabase(0, "HWTests");
+      DmDeleteDatabase(0, whatToDelete);
+      SysReset();
+      */
+ #endif
    }
    return(0);
 }

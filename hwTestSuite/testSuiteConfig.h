@@ -8,4 +8,8 @@
 #define TESTS_AVAILABLE  20
 #define TEST_NAME_LENGTH 32
 
+#define FONT_WIDTH   6
+#define FONT_HEIGHT  8
+#define SELECTED_FONT FONT_6X8
+
 #endif

@@ -29,9 +29,7 @@ Err makeFile(uint8_t* data, uint32_t size, char* fileName){
       count -= chunkSize;
    }
    
-   UG_PutString(0, 0, "File close next");
-   
-   error = FileClose(file);//I have no idea why, but this function causes a fatal execption but i still get valid data in the file after reboot
+   error = FileClose(file);
    return error;
 }
 
@@ -63,7 +61,7 @@ var hexRamBrowser(){
       nibble = UINT32_C(0x10000000);
       clearScreen = true;
       setSubprogramArgs(makeVar(LENGTH_ANY, TYPE_PTR, (uint64_t)pointerValue));/*length doesnt matter*/
-      execSubprogram(hexViewer);
+      callSubprogram(hexViewer);
    }
    
    if(getButtonPressed(buttonBack)){
@@ -111,7 +109,7 @@ var getTrapAddress(){
       nibble = 0x100;
       clearScreen = true;
       setSubprogramArgs(makeVar(LENGTH_ANY, TYPE_PTR, (uint64_t)(uint32_t)SysGetTrapAddress(trapNum)));
-      execSubprogram(valueViewer);
+      callSubprogram(valueViewer);
    }
    
    if(getButtonPressed(buttonBack)){
@@ -126,6 +124,61 @@ var getTrapAddress(){
    }
    
    StrPrintF(sharedDataBuffer, "Trap Num:\n0x%04X", trapNum);
+   UG_PutString(0, 0, sharedDataBuffer);
+   
+   return makeVar(LENGTH_0, TYPE_NULL, 0);
+}
+
+var manualLssa(){
+   static uint32_t nibble;
+   static uint32_t hexValue;
+   static uint32_t originalLssa;
+   static Boolean  customEnabled;
+   static Boolean  firstRun = true;
+   
+   if(firstRun == true){
+      nibble = UINT32_C(0x10000000);
+      hexValue = UINT32_C(0x77777777);
+      originalLssa = readArbitraryMemory32(0xFFFFFA00);
+      customEnabled = false;
+      firstRun = false;
+   }
+   
+   if(getButtonPressed(buttonUp)){
+      hexValue += nibble;
+   }
+   
+   if(getButtonPressed(buttonDown)){
+      hexValue -= nibble;
+   }
+   
+   if(getButtonPressed(buttonRight)){
+      if(nibble > UINT32_C(0x00000001))
+         nibble >>= 4;
+   }
+   
+   if(getButtonPressed(buttonLeft)){
+      if(nibble < UINT32_C(0x10000000))
+         nibble <<= 4;
+   }
+   
+   if(getButtonPressed(buttonSelect)){
+      if(customEnabled){
+         writeArbitraryMemory32(0xFFFFFA00, originalLssa);
+         customEnabled = false;
+      }
+      else{
+         writeArbitraryMemory32(0xFFFFFA00, hexValue);
+         customEnabled = true;
+      }
+   }
+   
+   if(getButtonPressed(buttonBack)){
+      firstRun = true;
+      exitSubprogram();
+   }
+   
+   StrPrintF(sharedDataBuffer, "Enter switchs between this address and the custom LSSA.\nNew LSSA:\n0x%08lX", hexValue);
    UG_PutString(0, 0, sharedDataBuffer);
    
    return makeVar(LENGTH_0, TYPE_NULL, 0);

@@ -5,7 +5,7 @@
 
 #ifdef DEBUG
 
-#define DEBUG_AREA_SIZE   10
+#define DEBUG_AREA_SIZE   30
 #define DEBUG_STRING_SIZE 100
 
 

@@ -5,7 +5,8 @@
 #include "testSuite.h"
 
 Err makeFile(uint8_t* data, uint32_t size, char* fileName);
-var getTrapAddress();
 var hexRamBrowser();
+var getTrapAddress();
+var manualLssa();
 var dumpBootloaderToFile();
 #endif

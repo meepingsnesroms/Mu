@@ -2,6 +2,7 @@
 #define __UGUI_CONFIG_H
 
 #include <stdint.h>
+#include "testSuiteConfig.h"
 
 /* -------------------------------------------------------------------------------- */
 /* -- CONFIG SECTION                                                             -- */
@@ -14,13 +15,20 @@
 #define USE_COLOR_RGB565   // RGB = 0bRRRRRGGGGGGBBBBB
 
 /* Enable needed fonts here */
+#if FONT_WIDTH == 4 && FONT_HEIGHT == 6
+#define  USE_FONT_4X6
+#elif FONT_WIDTH == 5 && FONT_HEIGHT == 8
+#define  USE_FONT_5X8
+#elif FONT_WIDTH == 6 && FONT_HEIGHT == 8
+#define  USE_FONT_6X8
+#endif
 //#define  USE_FONT_4X6
 //#define  USE_FONT_5X8
 //#define  USE_FONT_5X12
 //#define  USE_FONT_6X8
 //#define  USE_FONT_6X10
 //#define  USE_FONT_7X12
-#define  USE_FONT_8X8
+//#define  USE_FONT_8X8
 //#define  USE_FONT_8X12_CYRILLIC
 //#define  USE_FONT_8X12
 //#define  USE_FONT_8X12
