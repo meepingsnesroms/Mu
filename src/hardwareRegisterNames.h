@@ -1,14 +1,11 @@
 #pragma once
-
-// Dragonball VZ Hrdware Register Definitions
-//"verified" means that the definitions above it have been checked against the dragonball vz datasheet, this file was for the original dragonball and some things arent in the same location anymore
+// Dragonball VZ Hardware Register Definitions
 
 // SIM - System Integration Module
 #define SCR       0x000 // System Control Register
 #define PCR       0x003 // Peripheral control register
 #define IDR       0x004 // Silicon ID register
 #define IODCR     0x008 // I/O drive control register
-//verified
 
 // CS - Chip Select
 #define CSGBA     0x100 // Chip Select Group A Base Register
@@ -23,13 +20,11 @@
 #define CSC       0x114 // Group C Chip Select Register
 #define CSD       0x116 // Group D Chip Select Register
 #define EMUCS     0x118 // Emulation chip-select register
-//verified
 
 // PLL - Phase Locked Loop
 #define PLLCR     0x200 // PLL Control Register
 #define PLLFSR    0x202 // PLL Frequency Select Register
 #define PCTLR     0x207 // Power Control Register
-//verified
 
 // INTR - Interrupt controller
 #define IVR       0x300 // Interrupt Vector Register
@@ -39,7 +34,6 @@
 #define ISR       0x30C // Interrupt Status Register
 #define IPR       0x310 // Interrupt Pending Register
 #define ILCR      0x314 // Interrupt Level Control Register
-//verified
 
 // PIO - Parallel IO
 #define PADIR     0x400 // Port A Direction Register
@@ -94,14 +88,12 @@
 #define PMDATA    0x449 // Port M Data Register
 #define PMPUEN    0x44A // Port M Pull-Up Enable Register
 #define PMSEL     0x44B // Port M Select Register
-//verified
 
 // PWM - Pulse Width Modulator
 #define PWMC1      0x500 // PWM Unit 1 Control Register
 #define PWMS1      0x502 // PWM Unit 1 Sample Register
 #define PWMP1      0x504 // PWM Unit 1 Period Register
 #define PWMCNT1    0x505 // PWM Unit 1 Counter Register
-//verified
 
 // Timer
 #define TCTL1     0x600 // Timer Unit 1 Control Register
@@ -114,16 +106,13 @@
 #define TCMP2     0x614 // Timer Unit 2 Compare Register
 #define TCN2      0x618 // Timer Unit 2 Counter
 #define TSTAT2    0x61A // Timer Unit 2 Status Register
-//verified
 
 // WD - Watchdog
 #define WATCHDOG    0xB0A // Watchdog Timer Register
-//verified
 
 // SPI - Serial Peripheral Interface
 #define SPIDATA2  0x800 // SPI Unit 2 Data Register
 #define SPICONT2  0x802 // SPI Unit 2 Control/Status Register
-//verified
 
 // UART - Universal Asynchronous Receiver/Transmitter
 #define USTCNT1    0x900 // UART Unit 1 Status/Control Register
@@ -139,7 +128,6 @@
 #define UMISC2     0x918 // UART Unit 2 Misc Register
 #define NIPR2      0x91A // UART Unit 2 Non-Integer Prescaler Register
 #define HMARK      0x91C // UART Unit 2 FIFO Half Mark Register
-//verified
 
 // LCDC - LCD Controller
 #define LSSA      0xA00 // Screen Starting Address Register
@@ -158,7 +146,6 @@
 #define LFRCM     0xA31 // Frame Rate Control Modulation Register
 #define LGPMR     0xA33 // Gray Palette Mapping Register
 #define DMACR     0xA39 // DMA Control Register
-//verified
 
 // RTC - Real Time Clock
 #define RTCTIME   0xB00 // RTC Time Of Day Register
@@ -168,10 +155,8 @@
 #define RTCIENR   0xB10 // RTC Interrupt Enable Register
 #define STPWCH    0xB12 // Stopwatch Minutes Register
 #define DAYR      0xB1A // RTC Day Count Register
-//verified
 
 // RAM - (S)DRAM Control
 #define DRAMMC    0xC00 // DRAM Memory Configuration Register
 #define DRAMC     0xC02 // DRAM Control Register
 #define SDCTRL    0xC04 // SDRAM Control Register
-//verified

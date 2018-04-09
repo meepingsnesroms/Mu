@@ -884,7 +884,19 @@ void setHwRegister16(unsigned int address, unsigned int value){
          registerArrayWrite16(address, value & 0xFF80);
          break;
          
+      case DRAMC:
+         //unemulated
+         //missing bit 7 and 6
+         registerArrayWrite16(address, value & 0xFF3F);
+         break;
+         
+      case DRAMMMC:
+         //unemulated
+         registerArrayWrite16(address, value);
+         break;
+         
       case SDCTRL:
+         //unemulated
          //missing bits 13, 9, 8 and 7
          registerArrayWrite16(address, value & 0xDC7F);
          break;
