@@ -206,12 +206,9 @@ bool retro_load_game(const struct retro_game_info *info)
    emulatorSetRtc(timeInfo->tm_yday, timeInfo->tm_hour, timeInfo->tm_min, timeInfo->tm_sec);
    
    if(info != NULL){
-      uint32_t prcSuccess = emulatorInstallPrcPdb(info->data, info->size);
-      //pretend to pass for now
-      /*
+      uint32_t prcSuccess = emulatorInstallPrcPdb((uint8_t*)info->data, info->size);
       if(prcSuccess != EMU_ERROR_NONE)
          return false;
-      */
    }
 
    return true;
@@ -241,13 +238,13 @@ size_t retro_serialize_size(void)
 
 bool retro_serialize(void *data, size_t size)
 {
-   emulatorSaveState(data);
+   emulatorSaveState((uint8_t*)data);
    return true;
 }
 
 bool retro_unserialize(const void *data, size_t size)
 {
-   emulatorLoadState(data);
+   emulatorLoadState((uint8_t*)data);
    return true;
 }
 

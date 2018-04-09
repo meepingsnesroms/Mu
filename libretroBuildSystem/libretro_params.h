@@ -8,7 +8,7 @@
 
 #define LR_SOUNDRATE    44100.0
 
-#define LR_CORENAME        "PersianTree"
+#define LR_CORENAME        "Mu"
 #define LR_LIBVERSION      "0.86+"
 #define LR_VALIDFILEEXT    "prc|pdb"
 #define LR_NEEDFILEPATH    false

@@ -40,9 +40,14 @@ typedef struct{
 
 typedef struct{
    bool    powerButtonLed;
+   bool    alarmLed;
+   bool    lcdOn;
    bool    batteryCharging;
    uint8_t batteryLevel;
 }misc_hw_t;
+
+//compatiblity
+#define CAST_TO_BOOL(x) ((x) != 0)//if bool is typedefed to uint8_t and a 0x100 or above value is passed as a bool it will always be false because of the implicit cast, otherwise this will just be optimized out
 
 //special features, these make the emulator inaccurate in a good way, but still inaccurate and are therefore optional
 #define ACCURATE                0x00000000//no hacks/addons
@@ -89,7 +94,7 @@ typedef struct{
 extern uint8_t   palmRam[];
 extern uint8_t   palmRom[];
 extern uint8_t   palmReg[];
-extern input_t   palmIo;
+extern input_t   palmInput;
 extern sdcard_t  palmSdCard;
 extern misc_hw_t palmMisc;
 extern uint16_t  palmFramebuffer[];

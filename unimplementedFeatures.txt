@@ -6,10 +6,11 @@ cpu32 table lookup opcodes
 PLL Control Register, Wake Select
 Peripheral Control Register, audio ppm mixing selection
 Port D level sensitive interrupts
-Port D keyboard enable register
 The data sheet says LRRA is 0xFFFFFA29 and 0xFFFFFA28 but its only 8bits?
 The boot memory mapping where rom starts at 0x00000000 and ram is swapped in
 (debug tools)missing icons
+Port G spi stuff
 
 Fixed:
 System Control Register, 0xXXFFF000 all upper banks are registers mode
+Port D keyboard enable register
