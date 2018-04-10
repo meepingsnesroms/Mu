@@ -8,10 +8,28 @@
 #include "emuFeatureRegistersSpec.h"
 
 //emu errors
-enum emu_error_t{
+enum{
    EMU_ERROR_NONE = 0,
    EMU_ERROR_NOT_IMPLEMENTED,
+   EMU_ERROR_CALLBACKS_NOT_SET,
    EMU_ERROR_NOT_DOCUMENTED
+};
+
+//sdcard types
+enum{
+   CARD_NONE = 0,
+   CARD_SD,
+   CARD_MMC
+};
+
+//memory banks
+enum{
+   EMPTY_BANK = 0,
+   RAM_BANK,
+   ROM_BANK,
+   REG_BANK,
+   SED1376_REG_BANK,
+   SED1376_FB_BANK
 };
 
 //types
@@ -20,21 +38,32 @@ typedef struct{
    bool     buttonDown;
    bool     buttonLeft;//only used in hybrid mode
    bool     buttonRight;//only used in hybrid mode
+   bool     buttonSelect;//only used in hybrid mode
+   
    bool     buttonCalender;//hw button 1
    bool     buttonAddress;//hw button 2
    bool     buttonTodo;//hw button 3
    bool     buttonNotes;//hw button 4
+   
    bool     buttonPower;
    bool     buttonContrast;
+   
    uint16_t touchscreenX;
    uint16_t touchscreenY;
    bool     touchscreenTouched;
 }input_t;
 
 typedef struct{
-   void     (*getSdCardChunk)(uint8_t* data, uint32_t size);
-   void     (*setSdCardChunk)(uint8_t* data, uint32_t size);
+   //the sdcard is stored as a directory structure with an /(SESSIONID)/sdcard(STATEID).info and /(SESSIONID)/sdcard(CHUNKID).bps
+   //each emulator instance has its own sdcard SESSIONID directory if it has an sdcard
+   //sdcard(STATEID).info specifys the bps files to used
+   //every savestate a new bps file is created with the changes made to the sdcard since the last savestate
+   //the first bps is a patch over a buffer of sdcard size filled with 0x00
+   //the frontend provides file access but the emulator does all the patching
+   uint64_t sessionId;//64 bit system time when emulator starts
+   uint64_t stateId;//64 bit system time when the savestate was taken
    uint64_t size;
+   uint8_t  type;
    bool     inserted;
 }sdcard_t;
 
@@ -71,12 +100,6 @@ typedef struct{
 #define END_BANK(address, size) (START_BANK(address) + NUM_BANKS(size))
 #define BANK_IN_RANGE(bank, address, size) (bank >= START_BANK(address) && bank <= END_BANK(address, size))
 #define TOTAL_MEMORY_BANKS 0x10000
-#define EMPTY_BANK       0
-#define RAM_BANK         1
-#define ROM_BANK         2
-#define REG_BANK         3
-#define SED1376_REG_BANK 4
-#define SED1376_FB_BANK  5
 
 //memory chip addresses
 #define RAM_START_ADDRESS 0x00000000
@@ -104,10 +127,18 @@ extern double    palmCrystalCycles;
 extern double    palmCycleCounter;
 extern double    palmClockMultiplier;
 
+//callbacks
+uint64_t (*emulatorGetSysTime)();
+uint64_t* (*emulatorGetSdCardStateChunkList)(uint64_t sessionId, uint64_t stateId);//returns the bps chunkIds for a stateId in the order they need to be applied
+void (*emulatorSetSdCardStateChunkList)(uint64_t sessionId, uint64_t stateId, uint64_t* data);//sets the bps chunkIds for a stateId in the order they need to be applied
+uint8_t* (*emulatorGetSdCardChunk)(uint64_t sessionId, uint64_t chunkId);
+void (*emulatorSetSdCardChunk)(uint64_t sessionId, uint64_t chunkId, uint8_t* data, uint64_t size);
+
 //functions
 void emulatorInit(uint8_t* palmRomDump, uint32_t specialFeatures);
 void emulatorReset();
 void emulatorSetRtc(uint32_t days, uint32_t hours, uint32_t minutes, uint32_t seconds);
+uint32_t emulatorSetSdCard(uint64_t size, uint8_t type);
 uint32_t emulatorGetStateSize();
 void emulatorSaveState(uint8_t* data);
 void emulatorLoadState(uint8_t* data);

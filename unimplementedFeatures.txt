@@ -15,6 +15,7 @@ DRAMC write enable
 All of DRAMMC
 Chip select registers
 Setting the battery dead bit(PDDATA 0x80) if the emulated battery percent gets too low
+endian safe savestates
 
 Fixed:
 System Control Register, 0xXXFFF000 all upper banks are registers mode
