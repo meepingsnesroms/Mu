@@ -294,28 +294,26 @@ void resetFunctionViewer(){
       hwTests[totalHwTests].testFunction = dumpBootloaderToFile;
       totalHwTests++;
       
-      /*
       if(unsafeMode){
-       
+         StrNCopy(hwTests[totalHwTests].name, "Manual LSSA", TEST_NAME_LENGTH);
+         hwTests[totalHwTests].testFunction = manualLssa;
+         totalHwTests++;
       }
-      */
-      
-      StrNCopy(hwTests[totalHwTests].name, "Manual LSSA", TEST_NAME_LENGTH);
-      hwTests[totalHwTests].testFunction = manualLssa;
-      totalHwTests++;
       
       StrNCopy(hwTests[totalHwTests].name, "Button Test", TEST_NAME_LENGTH);
       hwTests[totalHwTests].testFunction = testButtonInput;
       totalHwTests++;
       
-      /*
-      StrNCopy(hwTests[totalHwTests].name, "Toggle Unsafe Mode", TEST_NAME_LENGTH);
-      hwTests[totalHwTests].testFunction = toggleUnsafeMode;
-      totalHwTests++;
-      */
+      if(!unsafeMode){
+         StrNCopy(hwTests[totalHwTests].name, "Enter Unsafe Mode", TEST_NAME_LENGTH);
+         hwTests[totalHwTests].testFunction = enterUnsafeMode;
+         totalHwTests++;
+      }
    }
    
+   /*
    StrNCopy(hwTests[totalHwTests].name, "File Access Test", TEST_NAME_LENGTH);
    hwTests[totalHwTests].testFunction = testFileAccessWorks;
    totalHwTests++;
+   */
 }

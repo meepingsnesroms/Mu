@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include "testSuite.h"
 #include "emuFunctions.h"
+#include "viewer.h"
 #include "cpu.h"
 
 
@@ -69,11 +70,15 @@ char* getCpuString(){
    return cpuStringBuffer;
 }
 
-Boolean enterUnsafeMode(){
+var enterUnsafeMode(){
+   exitSubprogram();/*only run once/for one frame*/
+   
    if((getPhysicalCpuType() & CPU_M68K) || isEmulator()){
       /*here all ram banks must be set to read/write and all memory access execptions must be turned off, along with most interrupts*/
       unsafeMode = true;
-      return true;/*now in unsafe mode*/
+      resetFunctionViewer();
+      return makeVar(LENGTH_1, TYPE_BOOL, true);/*now in unsafe mode*/
    }
-   return false;
+
+   return makeVar(LENGTH_1, TYPE_BOOL, false);
 }

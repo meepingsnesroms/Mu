@@ -98,7 +98,7 @@ static void uguiDrawPixel(UG_S16 x, UG_S16 y, UG_COLOR color){
    int bit = pixel % 8;
    
    /*ugui will call this function even if its over the screen bounds, dont let those writes through*/
-   if(byte > SCREEN_WIDTH * SCREEN_HEIGHT - 1)
+   if(pixel > SCREEN_WIDTH * SCREEN_HEIGHT - 1)
       return;
    
    if(!color){
@@ -267,7 +267,6 @@ DWord PilotMain(Word cmd, Ptr cmdBPB, Word launchFlags){
       
       testerExit();
    }
-
    else if(cmd == sysAppLaunchCmdSystemReset){
  #ifdef DEBUG
       /*app crashed, to ease development just self delete from internal storage*/

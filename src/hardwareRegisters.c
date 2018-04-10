@@ -56,16 +56,12 @@ static inline void clearIprIsrBit(uint32_t interruptBit){
 }
 
 
-static inline void checkPortDInts(){
+static inline uint8_t getPortDValue(){
    uint8_t requestedRow = registerArrayRead8(PKDIR) & registerArrayRead8(PKDATA);//keys are requested on port k and read on port d
    uint8_t portDValue = 0x00;//ports always read the chip pins even if they are set to output
    uint8_t portDData = registerArrayRead8(PDDATA);
    uint8_t portDDir = registerArrayRead8(PDDIR);
-   uint8_t portDpolarity = registerArrayRead8(PDPOL);
-   uint8_t portDIrqEnable = registerArrayRead8(PDIRQEN);
-   uint8_t portDKeyboardEnable = registerArrayRead8(PDKBEN);
-   uint8_t portDDirInputs = ~registerArrayRead8(PDDIR);
-   uint8_t portDIrqPins = ~registerArrayRead8(PDSEL);
+   uint8_t portDPolarity = registerArrayRead8(PDPOL);
    
    portDValue |= 0x80/*battery not dead bit*/;
    
@@ -75,38 +71,48 @@ static inline void checkPortDInts(){
    
    if((requestedRow & 0x20) == 0){
       //kbd row 0
-      portDValue |= (!palmInput.buttonCalender | (!palmInput.buttonAddress << 1) | (!palmInput.buttonTodo << 2) | (!palmInput.buttonNotes << 3)) ^ portDpolarity;
+      portDValue |= palmInput.buttonCalender | palmInput.buttonAddress << 1 | palmInput.buttonTodo << 2 | palmInput.buttonNotes << 3;
    }
    
    if((requestedRow & 0x40) == 0){
       //kbd row 1
-      portDValue |= (!palmInput.buttonUp | (!palmInput.buttonDown << 1)) ^ portDpolarity;
+      portDValue |= palmInput.buttonUp | palmInput.buttonDown << 1;
    }
    
    if((requestedRow & 0x80) == 0){
       //kbd row 2
-      portDValue |= (!palmInput.buttonPower | (!palmInput.buttonContrast << 1) | (!palmInput.buttonAddress << 3)) ^ portDpolarity;
+      portDValue |= palmInput.buttonPower | palmInput.buttonContrast << 1 | palmInput.buttonAddress << 3;
    }
    
-   portDValue &= ~portDDir;//only return pins that are inputs
-   portDValue |= portDData & portDDir;//if a pin is an output and has its data set return that too
+   portDValue &= ~portDDir;//only use above pin values for inputs
+   portDValue |= portDData & portDDir;//if a pin is an output and has its data bit set return that too
+   portDValue ^= portDPolarity;//swap polarity after everything is done
    
-   if(portDIrqEnable & portDValue & 0x01){
+   return portDValue;
+}
+
+static inline void checkPortDInts(){
+   uint8_t portDValue = getPortDValue();
+   uint8_t portDIntEnable = registerArrayRead8(PDIRQEN);
+   uint8_t portDKeyboardEnable = registerArrayRead8(PDKBEN);
+   uint8_t portDIrqPins = ~registerArrayRead8(PDSEL);
+   
+   if(portDIntEnable & portDValue & 0x01){
       //int 0
       setIprIsrBit(INT_INT0);
    }
    
-   if(portDIrqEnable & portDValue & 0x02){
+   if(portDIntEnable & portDValue & 0x02){
       //int 1
       setIprIsrBit(INT_INT1);
    }
    
-   if(portDIrqEnable & portDValue & 0x04){
+   if(portDIntEnable & portDValue & 0x04){
       //int 2
       setIprIsrBit(INT_INT2);
    }
    
-   if(portDIrqEnable & portDValue & 0x08){
+   if(portDIntEnable & portDValue & 0x08){
       //int 3
       setIprIsrBit(INT_INT3);
    }
@@ -131,69 +137,35 @@ static inline void checkPortDInts(){
       setIprIsrBit(INT_IRQ6);
    }
    
-   if(portDKeyboardEnable & portDDirInputs & portDValue){
+   if(portDKeyboardEnable & portDValue){
       setIprIsrBit(INT_KB);
    }
    
    checkInterrupts();
 }
 
-static inline uint8_t getPortDValue(){
-   uint8_t requestedRow = registerArrayRead8(PKDIR) & registerArrayRead8(PKDATA);//keys are requested on port k and read on port d
-   uint8_t portDValue = 0x00;//ports always read the chip pins even if they are set to output
-   uint8_t portDData = registerArrayRead8(PDDATA);
-   uint8_t portDDir = registerArrayRead8(PDDIR);
-   uint8_t portDpolarity = registerArrayRead8(PDPOL);
-   
-   portDValue |= 0x80/*battery not dead bit*/;
-   
-   if(palmSdCard.inserted){
-      portDValue |= 0x20;
-   }
-   
-   if((requestedRow & 0x20) == 0){
-      //kbd row 0
-      portDValue |= (!palmInput.buttonCalender | (!palmInput.buttonAddress << 1) | (!palmInput.buttonTodo << 2) | (!palmInput.buttonNotes << 3)) ^ portDpolarity;
-   }
-   
-   if((requestedRow & 0x40) == 0){
-      //kbd row 1
-      portDValue |= (!palmInput.buttonUp | (!palmInput.buttonDown << 1)) ^ portDpolarity;
-   }
-   
-   if((requestedRow & 0x80) == 0){
-      //kbd row 2
-      portDValue |= (!palmInput.buttonPower | (!palmInput.buttonContrast << 1) | (!palmInput.buttonAddress << 3)) ^ portDpolarity;
-   }
-   
-   portDValue &= ~portDDir;//only return pins that are inputs
-   portDValue |= portDData & portDDir;//if a pin is an output and has its data set return that too
-   
-   return portDValue;
-}
-
-static inline updateAlarmLedStatus(){
+static inline void updateAlarmLedStatus(){
    if(registerArrayRead8(PBDATA) & registerArrayRead8(PBSEL) & registerArrayRead8(PBDIR) & 0x40)
       palmMisc.alarmLed = true;
    else
       palmMisc.alarmLed = false;
 }
 
-static inline updateLcdStatus(){
+static inline void updateLcdStatus(){
    if(registerArrayRead8(PKDATA) & registerArrayRead8(PKSEL) & registerArrayRead8(PKDIR) & 0x02)
       palmMisc.lcdOn = true;
    else
       palmMisc.lcdOn = false;
 }
 
-static inline updateBacklightStatus(){
+static inline void updateBacklightStatus(){
    if(registerArrayRead8(PGDATA) & registerArrayRead8(PGSEL) & registerArrayRead8(PGDIR) & 0x02)
       palmMisc.backlightOn = true;
    else
       palmMisc.backlightOn = false;
 }
 
-static inline updateVibratorStatus(){
+static inline void updateVibratorStatus(){
    if(registerArrayRead8(PKDATA) & registerArrayRead8(PKSEL) & registerArrayRead8(PKDIR) & 0x10)
       palmMisc.vibratorOn = true;
    else

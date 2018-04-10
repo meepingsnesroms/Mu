@@ -190,8 +190,3 @@ var dumpBootloaderToFile(){
    exitSubprogram();
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
-
-var toggleUnsafeMode(){
-   //nothing yet
-   return makeVar(LENGTH_0, TYPE_NULL, 0);
-}

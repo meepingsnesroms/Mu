@@ -14,8 +14,9 @@ Ram location and size setting, Dragonball VZ can set the page mapping SDCTRL
 DRAMC write enable
 All of DRAMMC
 Chip select registers
-Port D inversion / control flow(is the data inverted or just the interrupt trigger), can be tested on clie
+Setting the battery dead bit(PDDATA 0x80) if the emulated battery percent gets too low
 
 Fixed:
 System Control Register, 0xXXFFF000 all upper banks are registers mode
 Port D keyboard enable register
+(HW verified)PDPOL inverts interrupts by inverting PDDATA bits, the data register is affected by PDPOL
