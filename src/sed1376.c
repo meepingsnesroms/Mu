@@ -44,8 +44,11 @@ void sed1376Reset(){
 }
 
 void sed1376Render(){
-   //only render if lcd on and backlight on
-   if(0){
+   if(palmMisc.lcdOn && palmMisc.backlightOn){
+      //only render if lcd on and backlight on
+      
+   }
+   else{
       
    }
 }

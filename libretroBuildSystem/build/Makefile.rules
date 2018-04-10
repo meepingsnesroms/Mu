@@ -1,4 +1,4 @@
-TARGET_NAME ?= snes9x2010
+TARGET_NAME ?= mu
 
 ifeq ($(STATIC_LINKING), 1)
   TARGET = $(TARGET_NAME)_libretro_$(platform).a

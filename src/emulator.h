@@ -12,6 +12,7 @@ enum{
    EMU_ERROR_NONE = 0,
    EMU_ERROR_NOT_IMPLEMENTED,
    EMU_ERROR_CALLBACKS_NOT_SET,
+   EMU_ERROR_OUT_OF_MEMORY,
    EMU_ERROR_NOT_DOCUMENTED
 };
 
@@ -89,8 +90,7 @@ typedef struct{
 #define INACCURATE_SYNCED_RTC   0x00000010//rtc always equals host system time
 #define INACCURATE_HLE_APIS     0x00000020//memcpy, memcmp, wait on timer will be replaced with the hosts function
 
-//config options
-#define EMU_FPS 60.0
+//cpu
 #define CRYSTAL_FREQUENCY 32768.0
 #define CPU_FREQUENCY (palmCrystalCycles * CRYSTAL_FREQUENCY)
 
@@ -115,6 +115,10 @@ typedef struct{
 #define SED1376_REG_SIZE 0xB4//it has 0x20000 used address space entrys but only 0xB4 registers
 #define SED1376_FB_SIZE  0x20000//0x14000 in size, likely also has 0x20000 used address space entrys, using 0x20000 to prevent speed penalty of checking validity on every access
 
+//config options
+#define EMU_FPS 60.0
+#define SDCARD_STATE_CHUNKS_VECTOR_SIZE 100
+
 //emulator data
 extern uint8_t   palmRam[];
 extern uint8_t   palmRom[];
@@ -136,6 +140,7 @@ void (*emulatorSetSdCardChunk)(uint64_t sessionId, uint64_t chunkId, uint8_t* da
 
 //functions
 void emulatorInit(uint8_t* palmRomDump, uint32_t specialFeatures);
+void emulatorExit();
 void emulatorReset();
 void emulatorSetRtc(uint32_t days, uint32_t hours, uint32_t minutes, uint32_t seconds);
 uint32_t emulatorSetSdCard(uint64_t size, uint8_t type);

@@ -10,6 +10,7 @@
 #include "hardwareRegisters.h"
 #include "memoryAccess.h"
 #include "sed1376.h"
+#include "sdcard.h"
 #include "silkscreen.h"
 #include "emuFeatureRegistersSpec.h"
 
@@ -69,6 +70,7 @@ void emulatorInit(uint8_t* palmRomDump, uint32_t specialFeatures){
    memcpy(&palmFramebuffer[160 * 160], silkscreenData, SILKSCREEN_WIDTH * SILKSCREEN_HEIGHT * (SILKSCREEN_BPP / 8));
    resetAddressSpace();
    sed1376Reset();
+   sdCardInit();
    
    //input
    palmInput.buttonUp = false;
@@ -107,8 +109,12 @@ void emulatorInit(uint8_t* palmRomDump, uint32_t specialFeatures){
    m68k_pulse_reset();
 }
 
+void emulatorExit(){
+   sdCardExit();
+}
+
 void emulatorReset(){
-   //reset doesnt clear ram, all programs are stored in ram
+   //reset doesnt clear ram or sdcard, all programs are stored in ram or on sdcard
    resetHwRegisters();
    resetAddressSpace();//address space must be reset after hardware registers because it is dependant on them
    sed1376Reset();
@@ -137,10 +143,16 @@ uint32_t emulatorGetStateSize(){
 }
 
 void emulatorSaveState(uint8_t* data){
-   //save sdcard here
-   
    uint32_t offset = 0;
-   m68k_get_context(data + offset);
+   
+   //update sdcard struct, save sdcard data
+   if(allSdCardCallbacksPresent() && palmSdCard.type != CARD_NONE){
+      uint64_t stateId = emulatorGetSysTime();
+      sdCardSaveState(palmSdCard.sessionId, stateId);
+      palmSdCard.stateId = stateId;
+   }
+   
+   m68k_get_context(data + offset);//not endian safe
    offset += m68k_context_size();
    memcpy(data + offset, palmRam, RAM_SIZE);
    offset += RAM_SIZE;
@@ -148,32 +160,30 @@ void emulatorSaveState(uint8_t* data){
    offset += REG_SIZE;
    memcpy(data + offset, bankType, TOTAL_MEMORY_BANKS);
    offset += TOTAL_MEMORY_BANKS;
-   memcpy(data + offset, &palmMisc, sizeof(misc_hw_t));
+   memcpy(data + offset, &palmMisc, sizeof(misc_hw_t));//not endian safe
    offset += sizeof(misc_hw_t);
-   memcpy(data + offset, &palmSdCard, sizeof(sdcard_t));
+   memcpy(data + offset, &palmSdCard, sizeof(sdcard_t));//not endian safe
    offset += sizeof(sdcard_t);
    //input is not part of savestates
-   memcpy(data + offset, &palmSpecialFeatures, sizeof(uint32_t));
+   memcpy(data + offset, &palmSpecialFeatures, sizeof(uint32_t));//not endian safe
    offset += sizeof(uint32_t);
-   memcpy(data + offset, &palmCrystalCycles, sizeof(double));
+   memcpy(data + offset, &palmCrystalCycles, sizeof(double));//not endian safe
    offset += sizeof(double);
-   memcpy(data + offset, &palmCycleCounter, sizeof(double));
+   memcpy(data + offset, &palmCycleCounter, sizeof(double));//not endian safe
    offset += sizeof(double);
-   memcpy(data + offset, &clk32Counter, sizeof(uint32_t));
+   memcpy(data + offset, &clk32Counter, sizeof(uint32_t));//not endian safe
    offset += sizeof(uint32_t);
-   memcpy(data + offset, &timer1CycleCounter, sizeof(double));
+   memcpy(data + offset, &timer1CycleCounter, sizeof(double));//not endian safe
    offset += sizeof(double);
-   memcpy(data + offset, &timer2CycleCounter, sizeof(double));
+   memcpy(data + offset, &timer2CycleCounter, sizeof(double));//not endian safe
    offset += sizeof(double);
    data[offset] = lowPowerStopActive;
    offset += 1;
 }
 
 void emulatorLoadState(uint8_t* data){
-   //load sdcard here
-   
    uint32_t offset = 0;
-   m68k_set_context(data + offset);
+   m68k_set_context(data + offset);//not endian safe
    offset += m68k_context_size();
    memcpy(palmRam, data + offset, RAM_SIZE);
    offset += RAM_SIZE;
@@ -181,27 +191,32 @@ void emulatorLoadState(uint8_t* data){
    offset += REG_SIZE;
    memcpy(bankType, data + offset, TOTAL_MEMORY_BANKS);
    offset += TOTAL_MEMORY_BANKS;
-   memcpy(&palmMisc, data + offset, sizeof(misc_hw_t));
+   memcpy(&palmMisc, data + offset, sizeof(misc_hw_t));//not endian safe
    offset += sizeof(misc_hw_t);
-   memcpy(&palmSdCard, data + offset, sizeof(sdcard_t));
+   memcpy(&palmSdCard, data + offset, sizeof(sdcard_t));//not endian safe
    offset += sizeof(sdcard_t);
    //input is not part of savestates
-   memcpy(&palmSpecialFeatures, data + offset, sizeof(uint32_t));
+   memcpy(&palmSpecialFeatures, data + offset, sizeof(uint32_t));//not endian safe
    offset += sizeof(uint32_t);
-   memcpy(&palmCrystalCycles, data + offset, sizeof(double));
+   memcpy(&palmCrystalCycles, data + offset, sizeof(double));//not endian safe
    offset += sizeof(double);
-   memcpy(&palmCycleCounter, data + offset, sizeof(double));
+   memcpy(&palmCycleCounter, data + offset, sizeof(double));//not endian safe
    offset += sizeof(double);
-   memcpy(&clk32Counter, data + offset, sizeof(uint32_t));
+   memcpy(&clk32Counter, data + offset, sizeof(uint32_t));//not endian safe
    offset += sizeof(uint32_t);
-   memcpy(&timer1CycleCounter, data + offset, sizeof(double));
+   memcpy(&timer1CycleCounter, data + offset, sizeof(double));//not endian safe
    offset += sizeof(double);
-   memcpy(&timer2CycleCounter, data + offset, sizeof(double));
+   memcpy(&timer2CycleCounter, data + offset, sizeof(double));//not endian safe
    offset += sizeof(double);
    lowPowerStopActive = data[offset];
    offset += 1;
    
    refreshBankHandlers();
+   
+   //update sdcard data from sdcard struct
+   if(allSdCardCallbacksPresent() && palmSdCard.type != CARD_NONE){
+      sdCardLoadState(palmSdCard.sessionId, palmSdCard.stateId);
+   }
 }
 
 uint32_t emulatorInstallPrcPdb(uint8_t* data, uint32_t size){

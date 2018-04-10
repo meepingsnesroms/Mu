@@ -1,6 +1,6 @@
 //Module name: libbps
 //Author: Alcaro
-//Date: December 20, 2014
+//Date: November 7, 2015
 //Licence: GPL v3.0 or higher
 
 #include "libbps.h"
@@ -22,6 +22,37 @@ static uint32_t read32(uint8_t * ptr)
 
 enum { SourceRead, TargetRead, SourceCopy, TargetCopy };
 
+static bool try_add(size_t* a, size_t b)
+{
+	if (SIZE_MAX-*a < b) return false;
+	*a+=b;
+	return true;
+}
+
+static bool try_shift(size_t* a, size_t b)
+{
+	if (SIZE_MAX>>b < *a) return false;
+	*a<<=b;
+	return true;
+}
+
+static bool decodenum(const uint8_t* ptr, size_t* out)
+{
+	*out=0;
+	unsigned int shift=0;
+	while (true)
+	{
+		uint8_t next=*ptr++;
+		size_t addthis=(next&0x7F);
+		if (shift) addthis++;
+		if (!try_shift(&addthis, shift)) return false;
+		// unchecked because if it was shifted, the lowest bit is zero, and if not, it's <=0x7F.
+		if (!try_add(out, addthis)) return false;
+		if (next&0x80) return true;
+		shift+=7;
+	}
+}
+
 #define error(which) do { error=which; goto exit; } while(0)
 #define assert_sum(a,b) do { if (SIZE_MAX-(a)<(b)) error(bps_too_big); } while(0)
 #define assert_shift(a,b) do { if (SIZE_MAX>>(b)<(a)) error(bps_too_big); } while(0)
@@ -42,20 +73,7 @@ enum bpserror bps_apply(struct mem patch, struct mem in, struct mem * out, struc
 #define read8() (*(patchat++))
 #define decodeto(var) \
 				do { \
-					var=0; \
-					unsigned int shift=0; \
-					while (true) \
-					{ \
-						uint8_t next=read8(); \
-						assert_shift(next&0x7F, shift); \
-						size_t addthis=(next&0x7F)<<shift; \
-						assert_sum(var, addthis); \
-						var+=addthis; \
-						if (next&0x80) break; \
-						shift+=7; \
-						assert_sum(var, 1U<<shift); \
-						var+=1<<shift; \
-					} \
+					if (!decodenum(patchat, &var)) error(bps_too_big); \
 				} while(false)
 #define write8(byte) (*(outat++)=byte)
 		
@@ -197,6 +215,8 @@ exit:
 	return error;
 }
 
+
+
 #define write(val) \
 			do { \
 				out[outlen++]=(val); \
@@ -264,7 +284,7 @@ enum bpserror bps_create_linear(struct mem sourcemem, struct mem targetmem, stru
 	{
 		size_t numunchanged=0;
 		while (source+numunchanged<sourceend && source[numunchanged]==target[numunchanged]) numunchanged++;
-		if (numunchanged>1)
+		if (numunchanged>1 || numunchanged == (uintptr_t)(targetend-target))
 		{
 			//assert_shift((numunchanged-1), 2);
 			writenum((numunchanged-1)<<2 | 0);//SourceRead
@@ -367,155 +387,8 @@ enum bpserror bps_create_linear(struct mem sourcemem, struct mem targetmem, stru
 #undef write
 #undef writenum
 
-enum bpserror bps_get_checksums(file* patch, uint32_t * inromsum, uint32_t * outromsum, uint32_t * patchsum)
-{
-	size_t len = patch->len();
-	if (len<4+3+12) return bps_broken;
-	
-	uint8_t verify[4];
-	if (!patch->read(verify, 0, 4) || memcmp(verify, "BPS1", 4)) return bps_broken;
-	
-	uint8_t checksums[12];
-	if (!patch->read(checksums, len-12, 12)) return bps_broken;
-	if (inromsum)  *inromsum =read32(checksums+0);
-	if (outromsum) *outromsum=read32(checksums+4);
-	if (patchsum)  *patchsum =read32(checksums+8);
-	return bps_ok;
-}
-
 void bps_free(struct mem mem)
 {
 	free(mem.ptr);
 }
-
-#if 0
-#warning Disable this in release versions.
-
-#include <stdio.h>
-
-//Congratulations, you found the undocumented feature! It compares two equivalent BPS patches and
-//  tells where each one is more compact. (It crashes or gives bogus answers on invalid or
-//  non-equivalent patches.) Have fun.
-void bps_compare(struct mem patch1mem, struct mem patch2mem)
-{
-	const uint8_t * patch[2]={patch1mem.ptr, patch2mem.ptr};
-	size_t patchpos[2]={0,0};
-	size_t patchlen[2]={patch1mem.len-12, patch2mem.len-12};
-	size_t patchoutpos[2]={0,0};
-	
-	size_t patchcopypos[2][4]={0,0};//[0] and [1] are unused, but this is just debug code, it doesn't need to be neat.
-	
-#define read8(id) (patch[id][patchpos[id]++])
-#define decodeto(id, var) \
-				do { \
-					var=0; \
-					int shift=0; \
-					while (true) \
-					{ \
-						uint8_t next=read8(id); \
-						size_t addthis=(next&0x7F)<<shift; \
-						var+=addthis; \
-						if (next&0x80) break; \
-						shift+=7; \
-						var+=1<<shift; \
-					} \
-				} while(false)
-	
-	size_t lastmatch=0;
-	size_t patchposatmatch[2]={0,0};
-	
-	size_t outlen;
-	patch[0]+=4; patch[1]+=4;//BPS1
-	size_t tempuint;
-	decodeto(0, tempuint); decodeto(1, tempuint);//source-size
-	decodeto(0, outlen); decodeto(1, outlen);//target-size
-	decodeto(0, tempuint); patch[0]+=tempuint;//metadata
-	decodeto(1, tempuint); patch[1]+=tempuint;//metadata
-	
-	bool show=false;
-	while (patchpos[0]<patchlen[0] && patchpos[1]<patchlen[1])
-	{
-		bool step[2]={(patchoutpos[0]<=patchoutpos[1]), (patchoutpos[0]>=patchoutpos[1])};
-		char describe[2][256];
-		for (int i=0;i<2;i++)
-		{
-			if (step[i])
-			{
-				size_t patchposstart=patchpos[i];
-				decodeto(i, tempuint);
-				size_t len=(tempuint>>2)+1;
-				patchoutpos[i]+=len;
-				int action=(tempuint&3);
-//enum { SourceRead, TargetRead, SourceCopy, TargetCopy };
-				const char * actionnames[]={"SourceRead", "TargetRead", "SourceCopy", "TargetCopy"};
-				if (action==TargetRead) patchpos[i]+=len;
-				if (action==SourceCopy || action==TargetCopy)
-				{
-					decodeto(i, tempuint);
-					int delta = tempuint>>1;
-					if (tempuint&1) delta=-delta;
-					patchcopypos[i][action]+=delta;
-					sprintf(describe[i], "%s from %i (%+i) for %i in %i",  actionnames[action], patchcopypos[i][action], delta, len, patchpos[i]-patchposstart);
-					patchcopypos[i][action]+=len;
-				}
-				else sprintf(describe[i], "%s from %i for %i in %i",  actionnames[action], patchoutpos[i], len, patchpos[i]-patchposstart);
-				if (!step[i^1])
-				{
-					printf("%i: %s\n", i+1, describe[i]);
-					show=true;
-				}
-			}
-		}
-		if (step[0] && step[1])
-		{
-			if (!strcmp(describe[0], describe[1])) /*printf("3: %s\n", describe[0])*/;
-			else
-			{
-				printf("1: %s\n2: %s\n", describe[0], describe[1]);
-				show=true;
-			}
-		}
-		if (patchoutpos[0]==patchoutpos[1])
-		{
-			size_t used[2]={patchpos[0]-patchposatmatch[0], patchpos[1]-patchposatmatch[1]};
-			char which='=';
-			if (used[0]<used[1]) which='+';
-			if (used[0]>used[1]) which='-';
-			if (show)
-			{
-				printf("%c: %i,%i bytes since last match (%i)\n", which, used[0], used[1], patchoutpos[0]);
-				show=false;
-			}
-			patchposatmatch[0]=patchpos[0];
-			patchposatmatch[1]=patchpos[1];
-			lastmatch=patchoutpos[0];
-		}
-	}
-}
-
-static struct mem ReadWholeFile(const char * filename)
-{
-	struct mem null = {NULL, 0};
-	
-	FILE * file=fopen(filename, "rb");
-	if (!file) return null;
-	fseek(file, 0, SEEK_END);
-	size_t len=ftell(file);
-	fseek(file, 0, SEEK_SET);
-	unsigned char * data=(unsigned char*)malloc(len);
-	size_t truelen=fread(data, 1,len, file);
-	fclose(file);
-	if (len!=truelen)
-	{
-		free(data);
-		return null;
-	}
-	
-	struct mem ret = { (unsigned char*)data, len };
-	return ret;
-}
-int main(int argc,char**argv)
-{
-bps_compare(ReadWholeFile(argv[1]),ReadWholeFile(argv[2]));
-}
-#endif
+#undef error
