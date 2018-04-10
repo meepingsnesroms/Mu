@@ -59,6 +59,8 @@ static inline void clearIprIsrBit(uint32_t interruptBit){
 static inline void checkPortDInts(){
    uint8_t requestedRow = registerArrayRead8(PKDIR) & registerArrayRead8(PKDATA);//keys are requested on port k and read on port d
    uint8_t portDValue = 0x00;//ports always read the chip pins even if they are set to output
+   uint8_t portDData = registerArrayRead8(PDDATA);
+   uint8_t portDDir = registerArrayRead8(PDDIR);
    uint8_t portDpolarity = registerArrayRead8(PDPOL);
    uint8_t portDIrqEnable = registerArrayRead8(PDIRQEN);
    uint8_t portDKeyboardEnable = registerArrayRead8(PDKBEN);
@@ -85,6 +87,9 @@ static inline void checkPortDInts(){
       //kbd row 2
       portDValue |= (!palmInput.buttonPower | (!palmInput.buttonContrast << 1) | (!palmInput.buttonAddress << 3)) ^ portDpolarity;
    }
+   
+   portDValue &= ~portDDir;//only return pins that are inputs
+   portDValue |= portDData & portDDir;//if a pin is an output and has its data set return that too
    
    if(portDIrqEnable & portDValue & 0x01){
       //int 0
@@ -136,6 +141,8 @@ static inline void checkPortDInts(){
 static inline uint8_t getPortDValue(){
    uint8_t requestedRow = registerArrayRead8(PKDIR) & registerArrayRead8(PKDATA);//keys are requested on port k and read on port d
    uint8_t portDValue = 0x00;//ports always read the chip pins even if they are set to output
+   uint8_t portDData = registerArrayRead8(PDDATA);
+   uint8_t portDDir = registerArrayRead8(PDDIR);
    uint8_t portDpolarity = registerArrayRead8(PDPOL);
    
    portDValue |= 0x80/*battery not dead bit*/;
@@ -159,7 +166,38 @@ static inline uint8_t getPortDValue(){
       portDValue |= (!palmInput.buttonPower | (!palmInput.buttonContrast << 1) | (!palmInput.buttonAddress << 3)) ^ portDpolarity;
    }
    
+   portDValue &= ~portDDir;//only return pins that are inputs
+   portDValue |= portDData & portDDir;//if a pin is an output and has its data set return that too
+   
    return portDValue;
+}
+
+static inline updateAlarmLedStatus(){
+   if(registerArrayRead8(PBDATA) & registerArrayRead8(PBSEL) & registerArrayRead8(PBDIR) & 0x40)
+      palmMisc.alarmLed = true;
+   else
+      palmMisc.alarmLed = false;
+}
+
+static inline updateLcdStatus(){
+   if(registerArrayRead8(PKDATA) & registerArrayRead8(PKSEL) & registerArrayRead8(PKDIR) & 0x02)
+      palmMisc.lcdOn = true;
+   else
+      palmMisc.lcdOn = false;
+}
+
+static inline updateBacklightStatus(){
+   if(registerArrayRead8(PGDATA) & registerArrayRead8(PGSEL) & registerArrayRead8(PGDIR) & 0x02)
+      palmMisc.backlightOn = true;
+   else
+      palmMisc.backlightOn = false;
+}
+
+static inline updateVibratorStatus(){
+   if(registerArrayRead8(PKDATA) & registerArrayRead8(PKSEL) & registerArrayRead8(PKDIR) & 0x10)
+      palmMisc.vibratorOn = true;
+   else
+      palmMisc.vibratorOn = false;
 }
 
 
@@ -656,6 +694,10 @@ unsigned int getHwRegister16(unsigned int address){
    address &= 0x00000FFF;
    switch(address){
          
+      //32 bit register accessed as 16 bit
+      case IMR:
+      case IMR + 2:
+         
       case PLLCR:
       case PLLFSR:
       case SDCTRL:
@@ -731,10 +773,7 @@ void setHwRegister8(unsigned int address, unsigned int value){
       case PBDIR:
       case PBDATA:
          registerArrayWrite8(address, value);
-         if(registerArrayRead8(PBDATA) & 0x40 && registerArrayRead8(PBSEL) & 0x40 && registerArrayRead8(PBDIR) & 0x40)
-            palmMisc.alarmLed = true;
-         else
-            palmMisc.alarmLed = false;
+         updateAlarmLedStatus();
          break;
          
       case PDSEL:
@@ -761,16 +800,16 @@ void setHwRegister8(unsigned int address, unsigned int value){
          //port g also does spi stuff, unemulated so far
          //write without the top 2 bits
          registerArrayWrite8(address, value & 0x3F);
-         if(registerArrayRead8(PGDATA) & 0x02 && registerArrayRead8(PGSEL) & 0x02 && registerArrayRead8(PGDIR) & 0x02)
-            palmMisc.lcdOn = true;
-         else
-            palmMisc.lcdOn = false;
+         updateBacklightStatus();
          break;
          
+      case PKSEL:
       case PKDIR:
       case PKDATA:
          registerArrayWrite8(address, value);
          checkPortDInts();
+         updateLcdStatus();
+         updateVibratorStatus();
          break;
          
       case PMSEL:
@@ -785,7 +824,6 @@ void setHwRegister8(unsigned int address, unsigned int value){
       case PCSEL:
       case PESEL:
       case PJSEL:
-      case PKSEL:
       
       //direction select
       case PADIR:
@@ -890,7 +928,7 @@ void setHwRegister16(unsigned int address, unsigned int value){
          registerArrayWrite16(address, value & 0xFF3F);
          break;
          
-      case DRAMMMC:
+      case DRAMMC:
          //unemulated
          registerArrayWrite16(address, value);
          break;
@@ -1057,6 +1095,12 @@ void resetHwRegisters(){
    
    //sdram control, unused since ram refresh is unemulated
    registerArrayWrite16(SDCTRL, 0x003C);
+   
+   //add register settings to misc i/o
+   updateAlarmLedStatus();
+   updateLcdStatus();
+   updateBacklightStatus();
+   updateVibratorStatus();
 }
 
 void setRtc(uint32_t days, uint32_t hours, uint32_t minutes, uint32_t seconds){

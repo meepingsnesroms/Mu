@@ -42,6 +42,8 @@ typedef struct{
    bool    powerButtonLed;
    bool    alarmLed;
    bool    lcdOn;
+   bool    backlightOn;
+   bool    vibratorOn;
    bool    batteryCharging;
    uint8_t batteryLevel;
 }misc_hw_t;

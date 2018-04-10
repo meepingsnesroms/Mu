@@ -78,8 +78,10 @@ void emulatorInit(uint8_t* palmRomDump, uint32_t specialFeatures){
    palmSdCard.inserted = false;
    
    palmMisc.powerButtonLed = false;
-   palmMisc.alarmLed = false;
-   palmMisc.lcdOn = false;
+   //palmMisc.alarmLed = false;
+   //palmMisc.lcdOn = false;
+   //palmMisc.backlightOn = false;
+   //palmMisc.vibratorOn = false;
    palmMisc.batteryCharging = false;
    palmMisc.batteryLevel = 100;
    
@@ -183,5 +185,5 @@ void emulateFrame(){
    }
    palmCycleCounter -= CPU_FREQUENCY / EMU_FPS;
 
-   printf("Ran frame, executed %f cycles.\n", palmCycleCounter + CPU_FREQUENCY / EMU_FPS);
+   //printf("Ran frame, executed %f cycles.\n", palmCycleCounter + CPU_FREQUENCY / EMU_FPS);
 }
