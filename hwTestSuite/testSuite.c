@@ -208,8 +208,8 @@ static Boolean testerInit(){
    UG_ConsoleSetForecolor(C_BLACK);
    UG_FillScreen(C_WHITE);
    
-   /*make test list*/
-   initViewer();
+   /*make function list*/
+   resetFunctionViewer();
    
    /*load first subprogram*/
    unsafeMode = false;

@@ -3,6 +3,7 @@
 
 #include <PalmOS.h>
 #include <stdint.h>
+#include "emuFeatureRegistersSpec.h"
 
 Boolean isEmulator();
 Boolean isEmulatorFeatureEnabled(uint32_t feature);

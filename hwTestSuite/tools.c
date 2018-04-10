@@ -34,9 +34,16 @@ Err makeFile(uint8_t* data, uint32_t size, char* fileName){
 }
 
 var hexRamBrowser(){
-   static Boolean  clearScreen = true;
-   static uint32_t nibble = UINT32_C(0x10000000);
-   static uint32_t pointerValue = UINT32_C(0x77777777);/*in the middle of the address space*/
+   static Boolean  firstRun = true;
+   static uint32_t nibble;
+   static uint32_t pointerValue;
+   
+   if(firstRun){
+      debugSafeScreenClear(C_WHITE);
+      nibble = UINT32_C(0x10000000);
+      pointerValue = UINT32_C(0x77777777);/*in the middle of the address space*/
+      firstRun = false;
+   }
    
    if(getButtonPressed(buttonUp)){
       pointerValue += nibble;
@@ -58,21 +65,14 @@ var hexRamBrowser(){
    
    if(getButtonPressed(buttonSelect)){
       /*open hex viewer*/
-      nibble = UINT32_C(0x10000000);
-      clearScreen = true;
+      firstRun = true;
       setSubprogramArgs(makeVar(LENGTH_ANY, TYPE_PTR, (uint64_t)pointerValue));/*length doesnt matter*/
       callSubprogram(hexViewer);
    }
    
    if(getButtonPressed(buttonBack)){
-      nibble = UINT32_C(0x10000000);
-      clearScreen = true;
+      firstRun = true;
       exitSubprogram();
-   }
-   
-   if(clearScreen){
-      debugSafeScreenClear(C_WHITE);
-      clearScreen = false;
    }
    
    StrPrintF(sharedDataBuffer, "Open Hex Viewer At:\n0x%08lX", pointerValue);
@@ -82,9 +82,16 @@ var hexRamBrowser(){
 }
 
 var getTrapAddress(){
-   static Boolean  clearScreen = true;
-   static uint16_t nibble = 0x100;
-   static uint16_t trapNum = 0xA377;/*in the middle of the trap list*/
+   static Boolean firstRun = true;
+   static uint16_t nibble;
+   static uint16_t trapNum;
+   
+   if(firstRun){
+      debugSafeScreenClear(C_WHITE);
+      nibble = 0x100;
+      trapNum = 0xA377;/*in the middle of the trap list*/
+      firstRun = false;
+   }
    
    if(getButtonPressed(buttonUp)){
       trapNum = (trapNum + nibble & 0xFFF) | 0xA000;
@@ -106,21 +113,14 @@ var getTrapAddress(){
    
    if(getButtonPressed(buttonSelect)){
       /*open hex viewer*/
-      nibble = 0x100;
-      clearScreen = true;
+      firstRun = true;
       setSubprogramArgs(makeVar(LENGTH_ANY, TYPE_PTR, (uint64_t)(uint32_t)SysGetTrapAddress(trapNum)));
       callSubprogram(valueViewer);
    }
    
    if(getButtonPressed(buttonBack)){
-      nibble = 0x100;
-      clearScreen = true;
+      firstRun = true;
       exitSubprogram();
-   }
-   
-   if(clearScreen){
-      debugSafeScreenClear(C_WHITE);
-      clearScreen = false;
    }
    
    StrPrintF(sharedDataBuffer, "Trap Num:\n0x%04X", trapNum);
@@ -136,7 +136,7 @@ var manualLssa(){
    static Boolean  customEnabled;
    static Boolean  firstRun = true;
    
-   if(firstRun == true){
+   if(firstRun){
       nibble = UINT32_C(0x10000000);
       hexValue = UINT32_C(0x77777777);
       originalLssa = readArbitraryMemory32(0xFFFFFA00);
@@ -188,5 +188,10 @@ var manualLssa(){
 var dumpBootloaderToFile(){
    makeFile((uint8_t*)UINT32_C(0xFFFFFE00), 0x200, "BOOTLOADER.BIN");
    exitSubprogram();
+   return makeVar(LENGTH_0, TYPE_NULL, 0);
+}
+
+var toggleUnsafeMode(){
+   //nothing yet
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }

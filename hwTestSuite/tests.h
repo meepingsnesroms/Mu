@@ -4,4 +4,5 @@
 #include "testSuite.h"
 
 var testFileAccessWorks();
+var testButtonInput();
 #endif

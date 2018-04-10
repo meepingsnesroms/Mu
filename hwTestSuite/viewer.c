@@ -27,14 +27,18 @@ static test_t   hwTests[TESTS_AVAILABLE];
 static uint32_t totalHwTests;
 
 /*list handler variables*/
-static uint32_t page;
-static uint32_t index;
 static int64_t  listLength;
-static int64_t  lastSelectedEntry;
 static int64_t  selectedEntry;
+static int64_t  lastSelectedEntry;
 static char     itemStrings[ITEM_LIST_ENTRYS][ITEM_STRING_SIZE];
 static Boolean  forceListRefresh;
 static void     (*listHandler)(uint32_t command);
+
+#define PAGE (selectedEntry / ITEM_LIST_ENTRYS)
+#define INDEX (selectedEntry % ITEM_LIST_ENTRYS)
+#define LAST_PAGE (lastSelectedEntry / ITEM_LIST_ENTRYS)
+#define LAST_INDEX (lastSelectedEntry % ITEM_LIST_ENTRYS)
+
 
 /*specific handler variables*/
 static uint32_t bufferAddress;/*used to put the hex viewer in buffer mode instead of free roam*/
@@ -48,7 +52,7 @@ static void renderListFrame(){
    setDebugTag("Rendering List Frame");
    
    for(textBoxes = 0; textBoxes < ITEM_LIST_ENTRYS; textBoxes++){
-      if(textBoxes == index){
+      if(textBoxes == INDEX){
          /*render list cursor inverted*/
          UG_SetBackcolor(C_BLACK);
          UG_SetForecolor(C_WHITE);
@@ -57,12 +61,12 @@ static void renderListFrame(){
          UG_SetBackcolor(C_WHITE);
          UG_SetForecolor(C_BLACK);
       }
-      else if(textBoxes == lastSelectedEntry){
+      else if(textBoxes == LAST_INDEX){
          UG_FillFrame(0, y, SCREEN_WIDTH - 1, y + TEXTBOX_PIXEL_HEIGHT - 1, C_WHITE);/*remove black lines between characters*/
          UG_PutString(0, y, itemStrings[textBoxes]);
       }
-      else if(forceListRefresh){
-         /*render everything the first time, only render changes after that*/
+      else if(forceListRefresh || PAGE != LAST_PAGE){
+         /*render everything the first time or on page change, only render changes after that*/
          UG_PutString(0, y, itemStrings[textBoxes]);
       }
       
@@ -73,7 +77,7 @@ static void renderListFrame(){
 static void hexHandler(uint32_t command){
    if(command == LIST_REFRESH){
       int i;
-      uint32_t hexViewOffset = bufferAddress + page * ITEM_LIST_ENTRYS;
+      uint32_t hexViewOffset = bufferAddress + PAGE * ITEM_LIST_ENTRYS;
       
       setDebugTag("Hex Handler Refresh");
       
@@ -116,11 +120,9 @@ static void testPickerHandler(uint32_t command){
 static void resetListHandler(){
    int i;
    
-   page = 0;
-   index = 0;
    listLength = 0;
-   lastSelectedEntry = 0;
    selectedEntry = 0;
+   lastSelectedEntry = 0;
    for(i = 0; i < ITEM_LIST_ENTRYS; i++)
       itemStrings[i][0] = '\0';
    forceListRefresh = true;
@@ -166,9 +168,6 @@ static var listModeFrame(){
       /*go back*/
       exitSubprogram();
    }
-   
-   page  = selectedEntry / ITEM_LIST_ENTRYS;
-   index = selectedEntry % ITEM_LIST_ENTRYS;
    
    if(selectedEntry != lastSelectedEntry || forceListRefresh){
       listHandler(LIST_REFRESH);
@@ -276,7 +275,7 @@ var functionPicker(){
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
 
-void initViewer(){
+void resetFunctionViewer(){
    var nullVar = makeVar(LENGTH_0, TYPE_NULL, 0);
    
    totalHwTests = 0;
@@ -295,9 +294,25 @@ void initViewer(){
       hwTests[totalHwTests].testFunction = dumpBootloaderToFile;
       totalHwTests++;
       
+      /*
+      if(unsafeMode){
+       
+      }
+      */
+      
       StrNCopy(hwTests[totalHwTests].name, "Manual LSSA", TEST_NAME_LENGTH);
       hwTests[totalHwTests].testFunction = manualLssa;
       totalHwTests++;
+      
+      StrNCopy(hwTests[totalHwTests].name, "Button Test", TEST_NAME_LENGTH);
+      hwTests[totalHwTests].testFunction = testButtonInput;
+      totalHwTests++;
+      
+      /*
+      StrNCopy(hwTests[totalHwTests].name, "Toggle Unsafe Mode", TEST_NAME_LENGTH);
+      hwTests[totalHwTests].testFunction = toggleUnsafeMode;
+      totalHwTests++;
+      */
    }
    
    StrNCopy(hwTests[totalHwTests].name, "File Access Test", TEST_NAME_LENGTH);
