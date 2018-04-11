@@ -69,7 +69,6 @@ typedef struct{
 }sdcard_t;
 
 typedef struct{
-   bool    powerButtonLed;
    bool    alarmLed;
    bool    lcdOn;
    bool    backlightOn;
@@ -77,18 +76,6 @@ typedef struct{
    bool    batteryCharging;
    uint8_t batteryLevel;
 }misc_hw_t;
-
-//compatiblity
-#define CAST_TO_BOOL(x) ((x) != 0)//if bool is typedefed to uint8_t and a 0x100 or above value is passed as a bool it will always be false because of the implicit cast, otherwise this will just be optimized out
-
-//special features, these make the emulator inaccurate in a good way, but still inaccurate and are therefore optional
-#define ACCURATE                0x00000000//no hacks/addons
-#define INACCURATE_RAM_HUGE     0x00000001//128 mb ram
-#define INACCURATE_FAST_CPU     0x00000002//doubles cpu speed
-#define INACCURATE_HYBRID_CPU   0x00000004//allows running arm opcodes in an OS 4 enviroment
-#define INACCURATE_320x320      0x00000008//creates a 320x320 frambuffer for hires mode, the 320x320 framebuffer is a transparent overlay over the 160x160 one and covers it where its pixels are enabled
-#define INACCURATE_SYNCED_RTC   0x00000010//rtc always equals host system time
-#define INACCURATE_HLE_APIS     0x00000020//memcpy, memcmp, wait on timer will be replaced with the hosts function
 
 //cpu
 #define CRYSTAL_FREQUENCY 32768.0

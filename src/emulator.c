@@ -25,9 +25,9 @@
 //0xFFFFFF00-0xFFFFFFFF Bootloader, pesumably does the 256 byte ROM to RAM copy, never been dumped
 
 
-uint8_t   palmRam[RAM_SIZE];
-uint8_t   palmRom[ROM_SIZE];
-uint8_t   palmReg[REG_SIZE];
+uint8_t   palmRam[RAM_SIZE + 3];//+ 3 to prevent 32 bit writes on last byte from corrupting memory
+uint8_t   palmRom[ROM_SIZE + 3];//+ 3 to prevent 32 bit writes on last byte from corrupting memory
+uint8_t   palmReg[REG_SIZE + 3];//+ 3 to prevent 32 bit writes on last byte from corrupting memory
 input_t   palmInput;
 sdcard_t  palmSdCard;
 misc_hw_t palmMisc;
@@ -77,27 +77,28 @@ void emulatorInit(uint8_t* palmRomDump, uint32_t specialFeatures){
    palmInput.buttonDown = false;
    palmInput.buttonLeft = false;//only used in hybrid mode
    palmInput.buttonRight = false;//only used in hybrid mode
+   palmInput.buttonSelect = false;//only used in hybrid mode
+   
    palmInput.buttonCalender = false;
    palmInput.buttonAddress = false;
    palmInput.buttonTodo = false;
    palmInput.buttonNotes = false;
+   
    palmInput.buttonPower = false;
    palmInput.buttonContrast = false;
+   
    palmInput.touchscreenX = 0;
    palmInput.touchscreenY = 0;
    palmInput.touchscreenTouched = false;
    
+   //sdcard
    palmSdCard.sessionId = 0x0000000000000000;
    palmSdCard.stateId = 0x0000000000000000;
    palmSdCard.size = 0;
    palmSdCard.type = CARD_NONE;
    palmSdCard.inserted = false;
    
-   palmMisc.powerButtonLed = false;
-   //palmMisc.alarmLed = false;
-   //palmMisc.lcdOn = false;
-   //palmMisc.backlightOn = false;
-   //palmMisc.vibratorOn = false;
+   //misc attributes
    palmMisc.batteryCharging = false;
    palmMisc.batteryLevel = 100;
    

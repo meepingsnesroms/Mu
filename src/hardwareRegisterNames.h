@@ -17,6 +17,7 @@
 #define CSCTRL2   0x10C // Chip Select Control Register 2
 #define CSCTRL3   0x150 // Chip Select Control Register 3
 #define CSA       0x110 // Group A Chip Select Register
+#define CSB       0x112 // Group B Chip Select Register
 #define CSC       0x114 // Group C Chip Select Register
 #define CSD       0x116 // Group D Chip Select Register
 #define EMUCS     0x118 // Emulation chip-select register

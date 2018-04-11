@@ -8,6 +8,7 @@
 #include "hardwareRegisters.h"
 #include "memoryAccess.h"
 #include "cpu32Opcodes.h"
+#include "portability.h"
 #include "m68k/m68k.h"
 #include "m68k/m68kcpu.h"
 
@@ -784,10 +785,17 @@ void setHwRegister8(unsigned int address, unsigned int value){
          updateVibratorStatus();
          break;
          
+      
       case PMSEL:
-      case PGPUEN:
-      case PMPUEN:
       case PMDIR:
+      case PMDATA:
+         //unemulated
+         //infrared shutdown
+         registerArrayWrite8(address, value & 0x3F);
+         break;
+         
+      case PMPUEN:
+      case PGPUEN:
          //write without the top 2 bits
          registerArrayWrite8(address, value & 0x3F);
          break;
@@ -820,9 +828,13 @@ void setHwRegister8(unsigned int address, unsigned int value){
       case PDDATA:
       case PEDATA:
       case PFDATA:
+      case PJDATA:
          
       //misc port config
       case PDKBEN:
+         
+      //dragonball lcd controller, not attached to anything in palm m515
+      case LCKCON:
          
          //simple write, no actions needed
          registerArrayWrite8(address, value);
@@ -909,6 +921,31 @@ void setHwRegister16(unsigned int address, unsigned int value){
          //unemulated
          //missing bits 13, 9, 8 and 7
          registerArrayWrite16(address, value & 0xDC7F);
+         break;
+         
+      case CSGBA:
+         //unemulated
+         //sets the starting location of ROM
+         registerArrayWrite16(address, value & 0xFFFE);
+         break;
+         
+      case CSGBB:
+         //unemulated
+         //sets the starting location of the sed1376
+         registerArrayWrite16(address, value & 0xFFFE);
+         break;
+         
+      case CSGBC:
+         //unemulated
+         //sets the starting location of USBPhilipsPDIUSBD12(address 0x10400000)
+         //since I dont plan on adding hotsync should be fine to leave unemulated, its unemulated in pose
+         registerArrayWrite16(address, value & 0xFFFE);
+         break;
+         
+      case CSGBD:
+         //unemulated
+         //sets the starting location of RAM
+         registerArrayWrite16(address, value & 0xFFFE);
          break;
          
       default:

@@ -13,12 +13,13 @@ Port G spi stuff
 Ram location and size setting, Dragonball VZ can set the page mapping SDCTRL
 DRAMC write enable
 All of DRAMMC
-Chip select registers
+All Chip select registers
 Setting the battery dead bit(PDDATA 0x80) if the emulated battery percent gets too low
 endian safe savestates
 sdcard can't be read or written to
 sdcard can't be inserted or removed
 sdcard has no error handling in save/load state
+Port m Infrared shutdown (PMDATA 0x20)
 
 Fixed:
 System Control Register, 0xXXFFF000 all upper banks are registers mode

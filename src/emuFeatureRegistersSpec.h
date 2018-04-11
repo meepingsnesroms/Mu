@@ -17,6 +17,7 @@ These registers will do nothing it there corresponding feature bit is not set on
 #define FEATURE_SYNCED_RTC   0x00000010/*rtc always equals host system time*/
 #define FEATURE_HLE_APIS     0x00000020/*memcpy, memcmp, wait on timer will be replaced with the hosts function*/
 #define FEATURE_EMU_HONEST   0x00000040/*tell the OS that its running in an emu, does nothing else*/
+#define FEATURE_EMU_EXT_KEYS 0x00000080/*enables the OS 5 buttons, left, right and select*/
 /*new features go here*/
 
 /*registers*/
@@ -27,6 +28,7 @@ These registers will do nothing it there corresponding feature bit is not set on
 #define EMU_SIZE    0x010/*used for hle apis, write only*/
 #define EMU_VALUE   0x014/*used for hle apis, read/write*/
 #define EMU_CMD     0x018/*used for hle apis, the hle api is actually run when this register is written with a value, write only*/
+#define EMU_KEYS    0x01C/*read only, stores the extra left/right/select keys that OS 4 palms lack*/
 /*new registers go here*/
 
 
@@ -43,7 +45,13 @@ These registers will do nothing it there corresponding feature bit is not set on
 /*new hle api cmds go here*/
 
 /*new system cmds go here*/
-#define CMD_WASTE_CYCLES 0xFFFF
+#define CMD_WASTE_CYCLES   0xFFFF
 
 #define MAKE_EMU_CMD(cmd) ((EMU_CMD_KEY << 16) | cmd)
+
+
+/*buttons*/
+#define EXT_BUTTON_LEFT   0x01000000
+#define EXT_BUTTON_RIGHT  0x02000000
+#define EXT_BUTTON_SELECT 0x04000000
 #endif
