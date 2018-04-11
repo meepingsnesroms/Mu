@@ -141,34 +141,50 @@ uint32_t emulatorSetSdCard(uint64_t size, uint8_t type){
 }
 
 uint32_t emulatorGetStateSize(){
-   return m68k_context_size() + RAM_SIZE + REG_SIZE + TOTAL_MEMORY_BANKS + sizeof(misc_hw_t) + sizeof(sdcard_t) + sizeof(double) * 4 + sizeof(uint32_t) * 2 + 1;
+   uint32_t size = 0;
+   
+   size += sizeof(uint32_t) * (M68K_REG_CAAR + 1);//cpu registers
+   size += RAM_SIZE;//system ram buffer
+   size += REG_SIZE;//hardware registers
+   size += TOTAL_MEMORY_BANKS;//bank handlers
+   size += sizeof(misc_hw_t);
+   size += sizeof(sdcard_t);
+   size += sizeof(double) * 4;//precision timers
+   size += sizeof(uint32_t) * 2;//special features, clk32 cycles
+   size += 1;//lowPowerStopActive
+   
+   return size;
 }
 
 void emulatorSaveState(uint8_t* data){
    uint32_t offset = 0;
    
-   //update sdcard struct, save sdcard data
+   //update sdcard struct and save sdcard data
    if(allSdCardCallbacksPresent() && palmSdCard.type != CARD_NONE){
       uint64_t stateId = emulatorGetSysTime();
       sdCardSaveState(palmSdCard.sessionId, stateId);
       palmSdCard.stateId = stateId;
    }
    
-   m68k_get_context(data + offset);//not endian safe
-   offset += m68k_context_size();
+   //cpu
+   for(uint32_t cpuReg = 0; cpuReg <=  M68K_REG_CAAR; cpuReg++){
+      writeStateValueUint32(data + offset, m68k_get_reg(NULL, cpuReg));
+      offset += sizeof(uint32_t);
+   }
+   writeStateValueBool(data + offset, lowPowerStopActive);
+   offset += 1;
+   
+   //memory
    memcpy(data + offset, palmRam, RAM_SIZE);
    offset += RAM_SIZE;
    memcpy(data + offset, palmReg, REG_SIZE);
    offset += REG_SIZE;
    memcpy(data + offset, bankType, TOTAL_MEMORY_BANKS);
    offset += TOTAL_MEMORY_BANKS;
-   memcpy(data + offset, &palmMisc, sizeof(misc_hw_t));//not endian safe
-   offset += sizeof(misc_hw_t);
    memcpy(data + offset, &palmSdCard, sizeof(sdcard_t));//not endian safe
    offset += sizeof(sdcard_t);
-   //input is not part of savestates
-   writeStateValueUint32(data + offset, palmSpecialFeatures);
-   offset += sizeof(uint32_t);
+
+   //timing
    writeStateValueDouble(data + offset, palmCrystalCycles);
    offset += sizeof(double);
    writeStateValueDouble(data + offset, palmCycleCounter);
@@ -179,27 +195,37 @@ void emulatorSaveState(uint8_t* data){
    offset += sizeof(double);
    writeStateValueDouble(data + offset, timer2CycleCounter);
    offset += sizeof(double);
-   writeStateValueBool(data + offset, lowPowerStopActive);
-   offset += 1;
+   
+   //other
+   //input is not part of savestates
+   memcpy(data + offset, &palmMisc, sizeof(misc_hw_t));//not endian safe
+   offset += sizeof(misc_hw_t);
+   writeStateValueUint32(data + offset, palmSpecialFeatures);
+   offset += sizeof(uint32_t);
 }
 
 void emulatorLoadState(uint8_t* data){
    uint32_t offset = 0;
-   m68k_set_context(data + offset);//not endian safe
-   offset += m68k_context_size();
+   
+   //cpu
+   for(uint32_t cpuReg = 0; cpuReg <=  M68K_REG_CAAR; cpuReg++){
+      m68k_set_reg(cpuReg, readStateValueUint32(data + offset));
+      offset += sizeof(uint32_t);
+   }
+   lowPowerStopActive = readStateValueBool(data + offset);
+   offset += 1;
+   
+   //memory
    memcpy(palmRam, data + offset, RAM_SIZE);
    offset += RAM_SIZE;
    memcpy(palmReg, data + offset, REG_SIZE);
    offset += REG_SIZE;
    memcpy(bankType, data + offset, TOTAL_MEMORY_BANKS);
    offset += TOTAL_MEMORY_BANKS;
-   memcpy(&palmMisc, data + offset, sizeof(misc_hw_t));//not endian safe
-   offset += sizeof(misc_hw_t);
    memcpy(&palmSdCard, data + offset, sizeof(sdcard_t));//not endian safe
    offset += sizeof(sdcard_t);
-   //input is not part of savestates
-   palmSpecialFeatures = readStateValueUint32(data + offset);
-   offset += sizeof(uint32_t);
+
+   //timing
    palmCrystalCycles = readStateValueDouble(data + offset);
    offset += sizeof(double);
    palmCycleCounter = readStateValueDouble(data + offset);
@@ -210,8 +236,13 @@ void emulatorLoadState(uint8_t* data){
    offset += sizeof(double);
    timer2CycleCounter = readStateValueDouble(data + offset);
    offset += sizeof(double);
-   lowPowerStopActive = readStateValueBool(data + offset);
-   offset += 1;
+   
+   //other
+   //input is not part of savestates
+   memcpy(&palmMisc, data + offset, sizeof(misc_hw_t));//not endian safe
+   offset += sizeof(misc_hw_t);
+   palmSpecialFeatures = readStateValueUint32(data + offset);
+   offset += sizeof(uint32_t);
    
    refreshBankHandlers();
    
