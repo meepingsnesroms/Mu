@@ -7,3 +7,4 @@
 /hwTestSuite/*.grc
 /hwTestSuite/*.prc
 /hwTestSuite/TstSuite
+/qtBuildSystem/build-Mu-*

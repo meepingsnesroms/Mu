@@ -1,4 +1,4 @@
-# Palm m515/OS 4.1 emulator(Mu)
+﻿# Palm m515/OS 4.1 emulator(Mu)
 
 This is a complete restart of my Palm OS emulator, with the last one the code got too messy and the goal too ambitious(to emulate every palm API in software and for compatibility with all Palm OS versions and devices).
 
@@ -48,6 +48,22 @@ The lack of ARM CPU will be fixed in my emulator see "OS improvements".
 
 ## Credits
 Musashi v3.4(last version that builds outside of mame) (68k core)
+http://www.iconarchive.com/show/clean-3d-icons-by-mysitemyway.html (Qt Button Icons)
+
+## Building
+#### For RetroArch
+Make sure you have done all the steps here https://docs.libretro.com/ under "For Developers/Compilation" so you build environment works.  
+
+    cd ./libretroBuildSystem
+    make
+#### For Qt
+Open the .pro file in Qt Creator click "Run"
+
+#### TestSuite for Palm OS
+Install prc-tools from the below link(self compiled or prepackaged vm)  
+
+    cd ./hwTestSuite
+    ./make.sh
 
 ## Tools
 [Prc-tools, Palm OS SDKs, pilrc, pilot-link](https://github.com/meepingsnesroms/prc-tools-remix)

@@ -5,6 +5,10 @@
 
 #include <boolean.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "emuFeatureRegistersSpec.h"
 
 //emu errors
@@ -136,3 +140,7 @@ void emulatorSaveState(uint8_t* data);
 void emulatorLoadState(uint8_t* data);
 uint32_t emulatorInstallPrcPdb(uint8_t* data, uint32_t size);
 void emulateFrame();
+   
+#ifdef __cplusplus
+}
+#endif
