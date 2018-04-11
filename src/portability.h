@@ -2,39 +2,65 @@
 
 #include <stdint.h>
 
-#if defined(BIG_ENDIAN) || defined(MSB_FIRST)
-
-//host and be64 are the same thing
-#define hostToBe64(x) x
-#define be64ToHost(x) x
-
-#else
-
-static inline uint64_t NO_DIRECT_CALL_swap64(uint64_t data){
-   uint64_t swapped = 0;
-   
-   swapped |= data >> 56;
-   swapped |= (data & 0x00FF000000000000) >> 40;
-   swapped |= (data & 0x0000FF0000000000) >> 24;
-   swapped |= (data & 0x000000FF00000000) >> 8;
-   swapped |= (data & 0x00000000FF000000) << 8;
-   swapped |= (data & 0x0000000000FF0000) << 24;
-   swapped |= (data & 0x000000000000FF00) << 40;
-   swapped |= data << 56;
-   
-   return swapped;
-}
-
-#define hostToBe64(x) NO_DIRECT_CALL_swap64(x)
-#define be64ToHost(x) NO_DIRECT_CALL_swap64(x)
-
-#endif
-
-static inline uint64_t getUint64FromDouble(double data){
-   uint64_t* toPtr = (uint64_t*)&data;
-   return *toPtr;
-}
+#include <retro_endianness.h>
 
 //if bool is typedefed to uint8_t and a 0x100 or above value is passed as a bool it will implicit cast to false
 //other systems will just be optimize this out
 #define CAST_TO_BOOL(x) ((x) != 0)
+
+
+static inline uint64_t getUint64FromDouble(double data){
+   return *(uint64_t*)&data;
+}
+
+static inline double getDoubleFromUint64(uint64_t data){
+   return *(double*)&data;
+}
+
+static inline double readStateValueDouble(uint8_t* where){
+   return getDoubleFromUint64(swap_if_little64(*(uint64_t*)where));
+}
+
+static inline void writeStateValueDouble(uint8_t* where, double value){
+   *(uint64_t*)where = swap_if_little64(getUint64FromDouble(value));
+}
+
+static inline uint64_t readStateValueUint64(uint8_t* where){
+   return swap_if_little64(*(uint64_t*)where);
+}
+
+static inline void writeStateValueUint64(uint8_t* where, uint64_t value){
+   *(uint64_t*)where = swap_if_little64(value);
+}
+
+static inline uint32_t readStateValueUint32(uint8_t* where){
+   return swap_if_little32(*(uint32_t*)where);
+}
+
+static inline void writeStateValueUint32(uint8_t* where, uint32_t value){
+   *(uint32_t*)where = swap_if_little32(value);
+}
+
+static inline uint16_t readStateValueUint16(uint8_t* where){
+   return swap_if_little16(*(uint16_t*)where);
+}
+
+static inline void writeStateValueUint16(uint8_t* where, uint16_t value){
+   *(uint16_t*)where = swap_if_little16(value);
+}
+
+static inline uint8_t readStateValueUint8(uint8_t* where){
+   return *where;
+}
+
+static inline void writeStateValueUint8(uint8_t* where, uint8_t value){
+   *where = value;
+}
+
+static inline bool readStateValueBool(uint8_t* where){
+   return *where;
+}
+
+static inline void writeStateValueBool(uint8_t* where, bool value){
+   *where = value;
+}

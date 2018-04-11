@@ -12,6 +12,7 @@
 #include "sed1376.h"
 #include "sdcard.h"
 #include "silkscreen.h"
+#include "portability.h"
 #include "emuFeatureRegistersSpec.h"
 
 
@@ -166,19 +167,19 @@ void emulatorSaveState(uint8_t* data){
    memcpy(data + offset, &palmSdCard, sizeof(sdcard_t));//not endian safe
    offset += sizeof(sdcard_t);
    //input is not part of savestates
-   memcpy(data + offset, &palmSpecialFeatures, sizeof(uint32_t));//not endian safe
+   writeStateValueUint32(data + offset, palmSpecialFeatures);
    offset += sizeof(uint32_t);
-   memcpy(data + offset, &palmCrystalCycles, sizeof(double));//not endian safe
+   writeStateValueDouble(data + offset, palmCrystalCycles);
    offset += sizeof(double);
-   memcpy(data + offset, &palmCycleCounter, sizeof(double));//not endian safe
+   writeStateValueDouble(data + offset, palmCycleCounter);
    offset += sizeof(double);
-   memcpy(data + offset, &clk32Counter, sizeof(uint32_t));//not endian safe
+   writeStateValueUint32(data + offset, clk32Counter);
    offset += sizeof(uint32_t);
-   memcpy(data + offset, &timer1CycleCounter, sizeof(double));//not endian safe
+   writeStateValueDouble(data + offset, timer1CycleCounter);
    offset += sizeof(double);
-   memcpy(data + offset, &timer2CycleCounter, sizeof(double));//not endian safe
+   writeStateValueDouble(data + offset, timer2CycleCounter);
    offset += sizeof(double);
-   data[offset] = lowPowerStopActive;
+   writeStateValueBool(data + offset, lowPowerStopActive);
    offset += 1;
 }
 
@@ -197,19 +198,19 @@ void emulatorLoadState(uint8_t* data){
    memcpy(&palmSdCard, data + offset, sizeof(sdcard_t));//not endian safe
    offset += sizeof(sdcard_t);
    //input is not part of savestates
-   memcpy(&palmSpecialFeatures, data + offset, sizeof(uint32_t));//not endian safe
+   palmSpecialFeatures = readStateValueUint32(data + offset);
    offset += sizeof(uint32_t);
-   memcpy(&palmCrystalCycles, data + offset, sizeof(double));//not endian safe
+   palmCrystalCycles = readStateValueDouble(data + offset);
    offset += sizeof(double);
-   memcpy(&palmCycleCounter, data + offset, sizeof(double));//not endian safe
+   palmCycleCounter = readStateValueDouble(data + offset);
    offset += sizeof(double);
-   memcpy(&clk32Counter, data + offset, sizeof(uint32_t));//not endian safe
+   clk32Counter = readStateValueUint32(data + offset);
    offset += sizeof(uint32_t);
-   memcpy(&timer1CycleCounter, data + offset, sizeof(double));//not endian safe
+   timer1CycleCounter = readStateValueDouble(data + offset);
    offset += sizeof(double);
-   memcpy(&timer2CycleCounter, data + offset, sizeof(double));//not endian safe
+   timer2CycleCounter = readStateValueDouble(data + offset);
    offset += sizeof(double);
-   lowPowerStopActive = data[offset];
+   lowPowerStopActive = readStateValueBool(data + offset);
    offset += 1;
    
    refreshBankHandlers();
@@ -236,5 +237,5 @@ void emulateFrame(){
    }
    palmCycleCounter -= CPU_FREQUENCY / EMU_FPS;
 
-   //printf("Ran frame, executed %f cycles.\n", palmCycleCounter + CPU_FREQUENCY / EMU_FPS);
+   printf("Ran frame, executed %f cycles.\n", palmCycleCounter + CPU_FREQUENCY / EMU_FPS);
 }
