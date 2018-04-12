@@ -10,7 +10,6 @@
 #include "cpu32Opcodes.h"
 #include "portability.h"
 #include "m68k/m68k.h"
-#include "m68k/m68kcpu.h"
 
 
 void checkInterrupts();
@@ -487,9 +486,8 @@ void checkInterrupts(){
     lowPowerStopActive = false;
     }
     */
-   
-   if(intLevel != 0)
-      m68k_set_irq(intLevel);
+
+   m68k_set_irq(intLevel);//should be called even if intLevel is 0, that is how the interrupt state gets cleared
 }
 
 
@@ -596,16 +594,15 @@ int interruptAcknowledge(int intLevel){
    
    //If an interrupt occurs before the IVR has been programmed, the interrupt vector number 0x0F is returned to the CPU as an uninitialized interrupt.
    if(!vectorOffset)
-      vector = EXCEPTION_UNINITIALIZED_INTERRUPT;
+	  vector = 15/*EXCEPTION_UNINITIALIZED_INTERRUPT*/;
    else
       vector = vectorOffset | intLevel;
    
    //dont know if interrupts reenable the pll if disabled, but they exit low power stop mode
    lowPowerStopActive = false;
    
-   //the interrupt is not really cleared until the handler writes a 1 to its source register, if the os doesnt
-   //clear the interrupt properly it will trigger again on the first clk32 after returning from this interrupt
-   CPU_INT_LEVEL = 0;
+   //the interrupt is not cleared until the handler writes a 1 to its source register, or manages the calling hardware
+   //m68k_set_irq(0);//the interrupt should only be set to 0 after its been handled
    
    return vector;
 }

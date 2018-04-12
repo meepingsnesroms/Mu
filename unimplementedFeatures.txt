@@ -4,6 +4,7 @@ storage ram protect
 sysTrapPceNativeCall, ARM Emulator
 cpu32 table lookup opcodes
 PLL Control Register, Wake Select
+Check if interrupts restart PLL when its disabled
 Peripheral Control Register, audio ppm mixing selection
 Port D level sensitive interrupts
 The data sheet says LRRA is 0xFFFFFA29 and 0xFFFFFA28 but its only 8bits?

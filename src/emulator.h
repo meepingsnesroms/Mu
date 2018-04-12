@@ -123,11 +123,11 @@ extern double    palmCycleCounter;
 extern double    palmClockMultiplier;
 
 //callbacks
-uint64_t (*emulatorGetSysTime)();
-uint64_t* (*emulatorGetSdCardStateChunkList)(uint64_t sessionId, uint64_t stateId);//returns the bps chunkIds for a stateId in the order they need to be applied
-void (*emulatorSetSdCardStateChunkList)(uint64_t sessionId, uint64_t stateId, uint64_t* data);//sets the bps chunkIds for a stateId in the order they need to be applied
-uint8_t* (*emulatorGetSdCardChunk)(uint64_t sessionId, uint64_t chunkId);
-void (*emulatorSetSdCardChunk)(uint64_t sessionId, uint64_t chunkId, uint8_t* data, uint64_t size);
+extern uint64_t (*emulatorGetSysTime)();
+extern uint64_t* (*emulatorGetSdCardStateChunkList)(uint64_t sessionId, uint64_t stateId);//returns the bps chunkIds for a stateId in the order they need to be applied
+extern void (*emulatorSetSdCardStateChunkList)(uint64_t sessionId, uint64_t stateId, uint64_t* data);//sets the bps chunkIds for a stateId in the order they need to be applied
+extern uint8_t* (*emulatorGetSdCardChunk)(uint64_t sessionId, uint64_t chunkId);
+extern void (*emulatorSetSdCardChunk)(uint64_t sessionId, uint64_t chunkId, uint8_t* data, uint64_t size);
 
 //functions
 void emulatorInit(uint8_t* palmRomDump, uint32_t specialFeatures);

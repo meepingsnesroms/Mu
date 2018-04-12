@@ -1,13 +1,22 @@
-#ifndef MAINWINDOW_H
-#define MAINWINDOW_H
+#pragma once
 
 #include <QMainWindow>
 #include <string>
-#include "palmwrapper.h"
+#include <stdint.h>
 
-extern emu_config settings;
+extern uint32_t screenWidth;
+extern uint32_t screenHeight;
 
-extern QApplication* thisapp;
+enum{
+	FRONTEND_ERR_NONE,
+	FRONTEND_FILE_DOESNT_EXIST,
+	FRONTEND_FILE_EMPTY_PATH,
+	FRONTEND_FILE_UNFINISHED,
+	FRONTEND_FILE_MODIFYED,
+	FRONTEND_FILE_INVALID_TYPE,
+	FRONTEND_FILE_PROTECTED,
+	FRONTEND_OUT_OF_MEMORY
+};
 
 namespace Ui {
 class MainWindow;
@@ -20,61 +29,37 @@ class MainWindow : public QMainWindow
 public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
-	void errdisplay(std::string err);
-
-protected:
-    void keyPressEvent(QKeyEvent* ev);
-	void keyReleaseEvent(QKeyEvent* ev);
 
 private slots:
-    void updatedisplay();
-
-    void on_display_destroyed();
-
-    void on_keyboard_pressed();
-
+	void loadRom();
+	void selectRom();
     void on_install_pressed();
 
-    void on_mainleft_clicked();
+	//display
+	void updateDisplay();
+	void on_display_destroyed();
 
-    void on_mainright_clicked();
-
-    void on_settingsleft_clicked();
-
-    void on_settingsright_clicked();
-
-    void on_joyleft_clicked();
-
-    void on_joyright_clicked();
-
-    void on_settings_clicked();
-
-    void on_clock_pressed();
-
-    void on_clock_released();
-
-    void on_controlemulator_clicked();
-
-	void on_exitemulator_pressed();
-
-	void on_exitemulator_released();
-
-	void on_phone_pressed();
-
-	void on_phone_released();
-
+	//palm buttons
+	void on_power_pressed();
+	void on_power_released();
+	void on_calender_pressed();
+	void on_calender_released();
+	void on_addressBook_pressed();
+	void on_addressBook_released();
 	void on_todo_pressed();
-
 	void on_todo_released();
-
 	void on_notes_pressed();
-
 	void on_notes_released();
 
-	void on_runtest_clicked();
+	//ui buttons
+	void on_mainLeft_clicked();
+	void on_mainRight_clicked();
+	void on_settingsLeft_clicked();
+	void on_settingsRight_clicked();
+	void on_joyLeft_clicked();
+	void on_joyRight_clicked();
+	void on_settings_clicked();
 
 private:
     Ui::MainWindow *ui;
 };
-
-#endif // MAINWINDOW_H

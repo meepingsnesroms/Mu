@@ -25,17 +25,52 @@ DEFINES += QT_DEPRECATED_WARNINGS
 INCLUDEPATH += $$PWD/qt-common/include
 
 SOURCES += \
-        main.cpp \
-        mainwindow.cpp \
-        touchscreen.cpp
+    main.cpp \
+    mainwindow.cpp \
+    touchscreen.cpp \
+    src/bps/crc32.c \
+    src/bps/libbps.c \
+    src/m68k/m68kcpu.c \
+    src/m68k/m68kdasm.c \
+    src/m68k/m68kopac.c \
+    src/m68k/m68kopdm.c \
+    src/m68k/m68kopnz.c \
+    src/m68k/m68kops.c \
+    src/cpu32Opcodes.c \
+    src/emulator.c \
+    src/hardwareRegisters.c \
+    src/memoryAccess.c \
+    src/sdcard.c \
+    src/sed1376.c \
+    src/silkscreen.c
 
 HEADERS += \
-        mainwindow.h \
-    touchscreen.h
+    mainwindow.h \
+    touchscreen.h \
+    qt-common/include/boolean.h \
+    qt-common/include/retro_endianness.h \
+    qt-common/include/retro_inline.h \
+    src/bps/crc32.h \
+    src/bps/global.h \
+    src/bps/libbps.h \
+    src/m68k/m68k.h \
+    src/m68k/m68kconf.h \
+    src/m68k/m68kcpu.h \
+    src/m68k/m68kops.h \
+    src/cpu32Opcodes.h \
+    src/emuFeatureRegistersSpec.h \
+    src/emulator.h \
+    src/hardwareRegisterNames.h \
+    src/hardwareRegisters.h \
+    src/memoryAccess.h \
+    src/portability.h \
+    src/sdcard.h \
+    src/sed1376.h \
+    src/silkscreen.h \
 
 FORMS += \
         mainwindow.ui
 
-CONFIG += mobility
+CONFIG += mobility c++11
 MOBILITY = 
 
