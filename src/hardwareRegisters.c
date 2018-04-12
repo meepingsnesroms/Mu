@@ -196,7 +196,7 @@ static inline void setPllfsr16(uint16_t value){
       double q = (value & 0x0F00) >> 8;
       palmCrystalCycles = 2.0 * (14.0 * (p + 1.0) + q + 1.0) / prescaler1;
       printf("New CPU frequency of:%f cycles per second.\n", CPU_FREQUENCY);
-      printf("New clk32 cycle count of :%f.\n", palmCrystalCycles);
+	  printf("New clk32 cycle count of:%f.\n", palmCrystalCycles);
    }
 }
 
@@ -209,7 +209,7 @@ static inline void setPllcr(uint16_t value){
    double q = (pllfsr & 0x0F00) >> 8;
    palmCrystalCycles = 2.0 * (14.0 * (p + 1.0) + q + 1.0) / prescaler1;
    printf("New CPU frequency of:%f cycles per second.\n", CPU_FREQUENCY);
-   printf("New clk32 cycle count of :%f.\n", palmCrystalCycles);
+   printf("New clk32 cycle count of:%f.\n", palmCrystalCycles);
    
    if(value & 0x0008){
       //the pll is disabled, the cpu is off, end execution now

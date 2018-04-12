@@ -104,7 +104,7 @@ void emulatorInit(uint8_t* palmRomDump, uint32_t specialFeatures){
    palmMisc.batteryLevel = 100;
    
    //config
-   palmClockMultiplier = (specialFeatures & FEATURE_FAST_CPU) ? 2.0 : 1.0;//Overclock disabled
+   palmClockMultiplier = (specialFeatures & FEATURE_FAST_CPU) ? 2.0 : 1.0;//overclock
    palmSpecialFeatures = specialFeatures;
    
    //start running
@@ -153,14 +153,16 @@ uint32_t emulatorGetStateSize(){
    uint32_t size = 0;
    
    size += sizeof(uint32_t) * (M68K_REG_CAAR + 1);//cpu registers
+   size += sizeof(uint8_t);//lowPowerStopActive
    size += RAM_SIZE;//system ram buffer
    size += REG_SIZE;//hardware registers
    size += TOTAL_MEMORY_BANKS;//bank handlers
-   size += sizeof(misc_hw_t);
-   size += sizeof(sdcard_t);
+   size += sizeof(uint64_t) * 3;//palmSdCard
+   size += sizeof(uint8_t) * 2;//palmSdCard
    size += sizeof(uint64_t) * 4;//32.32 fixed point double precision timers
-   size += sizeof(uint32_t) * 2;//special features, clk32 cycles
-   size += 1;//lowPowerStopActive
+   size += sizeof(uint32_t);//clk32Counter
+   size += sizeof(uint8_t) * 6;//palmMisc
+   size += sizeof(uint32_t);//palmSpecialFeatures
    
    return size;
 }
@@ -181,7 +183,7 @@ void emulatorSaveState(uint8_t* data){
       offset += sizeof(uint32_t);
    }
    writeStateValueBool(data + offset, lowPowerStopActive);
-   offset += 1;
+   offset += sizeof(uint8_t);
    
    //memory
    memcpy(data + offset, palmRam, RAM_SIZE);
@@ -190,8 +192,18 @@ void emulatorSaveState(uint8_t* data){
    offset += REG_SIZE;
    memcpy(data + offset, bankType, TOTAL_MEMORY_BANKS);
    offset += TOTAL_MEMORY_BANKS;
-   memcpy(data + offset, &palmSdCard, sizeof(sdcard_t));//not endian safe
-   offset += sizeof(sdcard_t);
+
+   //sdcard
+   writeStateValueUint64(data + offset, palmSdCard.sessionId);
+   offset += sizeof(uint64_t);
+   writeStateValueUint64(data + offset, palmSdCard.stateId);
+   offset += sizeof(uint64_t);
+   writeStateValueUint64(data + offset, palmSdCard.size);
+   offset += sizeof(uint64_t);
+   writeStateValueUint8(data + offset, palmSdCard.type);
+   offset += sizeof(uint8_t);
+   writeStateValueBool(data + offset, palmSdCard.inserted);
+   offset += sizeof(uint8_t);
 
    //timing
    writeStateValueDouble(data + offset, palmCrystalCycles);
@@ -205,10 +217,21 @@ void emulatorSaveState(uint8_t* data){
    writeStateValueDouble(data + offset, timer2CycleCounter);
    offset += sizeof(uint64_t);
    
-   //other
-   //input is not part of savestates
-   memcpy(data + offset, &palmMisc, sizeof(misc_hw_t));//not endian safe
-   offset += sizeof(misc_hw_t);
+   //misc
+   writeStateValueBool(data + offset, palmMisc.alarmLed);
+   offset += sizeof(uint8_t);
+   writeStateValueBool(data + offset, palmMisc.lcdOn);
+   offset += sizeof(uint8_t);
+   writeStateValueBool(data + offset, palmMisc.backlightOn);
+   offset += sizeof(uint8_t);
+   writeStateValueBool(data + offset, palmMisc.vibratorOn);
+   offset += sizeof(uint8_t);
+   writeStateValueBool(data + offset, palmMisc.batteryCharging);
+   offset += sizeof(uint8_t);
+   writeStateValueUint8(data + offset, palmMisc.batteryLevel);
+   offset += sizeof(uint8_t);
+
+   //features
    writeStateValueUint32(data + offset, palmSpecialFeatures);
    offset += sizeof(uint32_t);
 }
@@ -231,8 +254,18 @@ void emulatorLoadState(uint8_t* data){
    offset += REG_SIZE;
    memcpy(bankType, data + offset, TOTAL_MEMORY_BANKS);
    offset += TOTAL_MEMORY_BANKS;
-   memcpy(&palmSdCard, data + offset, sizeof(sdcard_t));//not endian safe
-   offset += sizeof(sdcard_t);
+
+   //sdcard
+   palmSdCard.sessionId = readStateValueUint64(data + offset);
+   offset += sizeof(uint64_t);
+   palmSdCard.stateId = readStateValueUint64(data + offset);
+   offset += sizeof(uint64_t);
+   palmSdCard.size = readStateValueUint64(data + offset);
+   offset += sizeof(uint64_t);
+   palmSdCard.type = readStateValueUint8(data + offset);
+   offset += sizeof(uint8_t);
+   palmSdCard.inserted = readStateValueBool(data + offset);
+   offset += sizeof(uint8_t);
 
    //timing
    palmCrystalCycles = readStateValueDouble(data + offset);
@@ -246,10 +279,21 @@ void emulatorLoadState(uint8_t* data){
    timer2CycleCounter = readStateValueDouble(data + offset);
    offset += sizeof(uint64_t);
    
-   //other
-   //input is not part of savestates
-   memcpy(&palmMisc, data + offset, sizeof(misc_hw_t));//not endian safe
-   offset += sizeof(misc_hw_t);
+   //misc
+   palmMisc.alarmLed = readStateValueBool(data + offset);
+   offset += sizeof(uint8_t);
+   palmMisc.lcdOn = readStateValueBool(data + offset);
+   offset += sizeof(uint8_t);
+   palmMisc.backlightOn = readStateValueBool(data + offset);
+   offset += sizeof(uint8_t);
+   palmMisc.vibratorOn = readStateValueBool(data + offset);
+   offset += sizeof(uint8_t);
+   palmMisc.batteryCharging = readStateValueBool(data + offset);
+   offset += sizeof(uint8_t);
+   palmMisc.batteryLevel = readStateValueUint8(data + offset);
+   offset += sizeof(uint8_t);
+
+   //features
    palmSpecialFeatures = readStateValueUint32(data + offset);
    offset += sizeof(uint32_t);
    
