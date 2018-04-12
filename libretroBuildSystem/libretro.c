@@ -202,7 +202,7 @@ bool retro_load_game(const struct retro_game_info *info)
    fclose(romFile);
 
    if(bytesRead == ROM_SIZE)
-      emulatorInit(palmRom, ACCURATE);
+      emulatorInit(palmRom, NULL/*bootloader*/, ACCURATE);
    else
       return false;
    

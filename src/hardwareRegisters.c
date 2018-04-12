@@ -196,7 +196,7 @@ static inline void setPllfsr16(uint16_t value){
       double q = (value & 0x0F00) >> 8;
       palmCrystalCycles = 2.0 * (14.0 * (p + 1.0) + q + 1.0) / prescaler1;
       printf("New CPU frequency of:%f cycles per second.\n", CPU_FREQUENCY);
-	  printf("New clk32 cycle count of:%f.\n", palmCrystalCycles);
+      printf("New clk32 cycle count of:%f.\n", palmCrystalCycles);
    }
 }
 
@@ -478,14 +478,6 @@ void checkInterrupts(){
       if(intLevel < 4)
          intLevel = 4;
    }
-   
-   /*
-    if(lowPowerStopActive){
-    uint32_t intMask = (m68k_get_reg(NULL, M68K_REG_SR) >> 8) & 0x0007;
-    if(intLevel == 7 || intLevel > intMask)
-    lowPowerStopActive = false;
-    }
-    */
 
    m68k_set_irq(intLevel);//should be called even if intLevel is 0, that is how the interrupt state gets cleared
 }
@@ -594,7 +586,7 @@ int interruptAcknowledge(int intLevel){
    
    //If an interrupt occurs before the IVR has been programmed, the interrupt vector number 0x0F is returned to the CPU as an uninitialized interrupt.
    if(!vectorOffset)
-	  vector = 15/*EXCEPTION_UNINITIALIZED_INTERRUPT*/;
+      vector = 15/*EXCEPTION_UNINITIALIZED_INTERRUPT*/;
    else
       vector = vectorOffset | intLevel;
    
@@ -617,7 +609,7 @@ unsigned int getHwRegister8(unsigned int address){
    address &= 0x00000FFF;
    switch(address){
          
-      case PADATA:
+      case PDDATA:
          return getPortDValue();
          
       //select between gpio or special function

@@ -99,6 +99,7 @@ typedef struct{
 #define RAM_SIZE (16 * 0x100000)//16mb ram
 #define ROM_SIZE (4 * 0x100000)//4mb rom
 #define REG_SIZE 0xE00
+#define BOOTLOADER_SIZE 0x200
 
 //display chip addresses
 #define SED1376_REG_START_ADDRESS 0x1FF80000
@@ -114,6 +115,7 @@ typedef struct{
 extern uint8_t   palmRam[];
 extern uint8_t   palmRom[];
 extern uint8_t   palmReg[];
+extern uint8_t   palmBootloader[];
 extern input_t   palmInput;
 extern sdcard_t  palmSdCard;
 extern misc_hw_t palmMisc;
@@ -130,7 +132,7 @@ extern uint8_t* (*emulatorGetSdCardChunk)(uint64_t sessionId, uint64_t chunkId);
 extern void (*emulatorSetSdCardChunk)(uint64_t sessionId, uint64_t chunkId, uint8_t* data, uint64_t size);
 
 //functions
-void emulatorInit(uint8_t* palmRomDump, uint32_t specialFeatures);
+void emulatorInit(uint8_t* palmRomDump, uint8_t* palmBootDump, uint32_t specialFeatures);
 void emulatorExit();
 void emulatorReset();
 void emulatorSetRtc(uint32_t days, uint32_t hours, uint32_t minutes, uint32_t seconds);

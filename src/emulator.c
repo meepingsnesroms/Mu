@@ -29,6 +29,7 @@
 uint8_t   palmRam[RAM_SIZE + 3];//+ 3 to prevent 32 bit writes on last byte from corrupting memory
 uint8_t   palmRom[ROM_SIZE + 3];//+ 3 to prevent 32 bit writes on last byte from corrupting memory
 uint8_t   palmReg[REG_SIZE + 3];//+ 3 to prevent 32 bit writes on last byte from corrupting memory
+uint8_t   palmBootloader[BOOTLOADER_SIZE + 3];//+ 3 to prevent 32 bit writes on last byte from corrupting memory
 input_t   palmInput;
 sdcard_t  palmSdCard;
 misc_hw_t palmMisc;
@@ -52,7 +53,7 @@ static inline bool allSdCardCallbacksPresent(){
 }
 
 
-void emulatorInit(uint8_t* palmRomDump, uint32_t specialFeatures){
+void emulatorInit(uint8_t* palmRomDump, uint8_t* palmBootDump, uint32_t specialFeatures){
    //cpu
    m68k_init();
    m68k_set_cpu_type(M68K_CPU_TYPE_68020);
@@ -67,6 +68,10 @@ void emulatorInit(uint8_t* palmRomDump, uint32_t specialFeatures){
    //memory
    memset(palmRam, 0x00, RAM_SIZE);
    memcpy(palmRom, palmRomDump, ROM_SIZE);
+   if(palmBootloader)
+       memcpy(palmBootloader, palmBootDump, BOOTLOADER_SIZE);
+   else
+       memset(palmBootloader, 0x00, BOOTLOADER_SIZE);
    memcpy(palmRam, palmRom, 256);//copy ROM header
    memcpy(&palmFramebuffer[160 * 160], silkscreenData, SILKSCREEN_WIDTH * SILKSCREEN_HEIGHT * (SILKSCREEN_BPP / 8));
    resetAddressSpace();

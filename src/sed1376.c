@@ -49,6 +49,6 @@ void sed1376Render(){
       
    }
    else{
-	  //black screen
+      //black screen
    }
 }
