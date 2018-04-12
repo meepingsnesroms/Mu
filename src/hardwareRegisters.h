@@ -49,6 +49,7 @@ bool cpuIsOn();
 int  interruptAcknowledge(int intLevel);
 bool registersAreXXFFMapped();
 bool sed1376ClockConnected();
+void refreshButtonState();
 
 //config
 void resetHwRegisters();

@@ -12,36 +12,17 @@
 #include "m68k/m68k.h"
 
 
-void checkInterrupts();
+uint32_t clk32Counter;
+double timer1CycleCounter;
+double timer2CycleCounter;
 
 
-static inline uint8_t registerArrayRead8(uint32_t address){
-   return palmReg[address];
-}
-
-static inline uint16_t registerArrayRead16(uint32_t address){
-   return palmReg[address] << 8 | palmReg[address + 1];
-}
-
-static inline uint32_t registerArrayRead32(uint32_t address){
-   return palmReg[address] << 24 | palmReg[address + 1] << 16 | palmReg[address + 2] << 8 | palmReg[address + 3];
-}
-
-static inline void registerArrayWrite8(uint32_t address, uint8_t value){
-   palmReg[address] = value;
-}
-
-static inline void registerArrayWrite16(uint32_t address, uint16_t value){
-   palmReg[address] = value >> 8;
-   palmReg[address + 1] = value & 0xFF;
-}
-
-static inline void registerArrayWrite32(uint32_t address, uint32_t value){
-   palmReg[address] = value >> 24;
-   palmReg[address + 1] = (value >> 16) & 0xFF;
-   palmReg[address + 2] = (value >> 8) & 0xFF;
-   palmReg[address + 3] = value & 0xFF;
-}
+static inline uint8_t registerArrayRead8(uint32_t address){return BUFFER_READ_8(palmReg, address, 0);}
+static inline uint16_t registerArrayRead16(uint32_t address){return BUFFER_READ_16(palmReg, address, 0);}
+static inline uint32_t registerArrayRead32(uint32_t address){return BUFFER_READ_32(palmReg, address, 0);}
+static inline void registerArrayWrite8(uint32_t address, uint8_t value){BUFFER_WRITE_8(palmReg, address, 0, value);}
+static inline void registerArrayWrite16(uint32_t address, uint16_t value){BUFFER_WRITE_16(palmReg, address, 0, value);}
+static inline void registerArrayWrite32(uint32_t address, uint32_t value){BUFFER_WRITE_32(palmReg, address, 0, value);}
 
 
 static inline void setIprIsrBit(uint32_t interruptBit){
@@ -55,6 +36,86 @@ static inline void clearIprIsrBit(uint32_t interruptBit){
    registerArrayWrite32(ISR, registerArrayRead32(ISR) & ~interruptBit);
 }
 
+
+void printUnknownHwAccess(unsigned int address, unsigned int value, unsigned int size, bool isWrite){
+   if(isWrite){
+      printf("Cpu Wrote %d bits of 0x%08X to register 0x%04X.\n", size, value, address);
+   }
+   else{
+      printf("Cpu Read %d bits from register 0x%04X.\n", size, address);
+   }
+}
+
+
+void checkInterrupts(){
+   uint32_t activeInterrupts = registerArrayRead32(ISR);
+   uint16_t interruptLevelControlRegister = registerArrayRead16(ILCR);
+   uint32_t intLevel = 0;
+
+   if(activeInterrupts & INT_EMIQ){
+      //EMIQ - Emulator Irq, has nothing to do with emulation, used for debugging on a dev board
+      intLevel = 7;
+   }
+
+   if(activeInterrupts & INT_SPI1){
+      uint32_t spi1IrqLevel = interruptLevelControlRegister >> 12;
+      if(intLevel < spi1IrqLevel)
+         intLevel = spi1IrqLevel;
+   }
+
+   if(activeInterrupts & INT_IRQ5){
+      if(intLevel < 5)
+         intLevel = 5;
+   }
+
+   if(activeInterrupts & INT_IRQ3){
+      if(intLevel < 3)
+         intLevel = 3;
+   }
+
+   if(activeInterrupts & INT_IRQ2){
+      if(intLevel < 2)
+         intLevel = 2;
+   }
+
+   if(activeInterrupts & INT_IRQ1){
+      if(intLevel < 1)
+         intLevel = 1;
+   }
+
+   if(activeInterrupts & INT_PWM2){
+      uint32_t pwm2IrqLevel = (interruptLevelControlRegister >> 4) & 0x0007;
+      if(intLevel < pwm2IrqLevel)
+         intLevel = pwm2IrqLevel;
+   }
+
+   if(activeInterrupts & INT_UART2){
+      uint32_t uart2IrqLevel = (interruptLevelControlRegister >> 8) & 0x0007;
+      if(intLevel < uart2IrqLevel)
+         intLevel = uart2IrqLevel;
+   }
+
+   if(activeInterrupts & INT_TMR2){
+      //TMR2 - Timer 2
+      uint32_t timer2IrqLevel = interruptLevelControlRegister & 0x0007;
+      if(intLevel < timer2IrqLevel)
+         intLevel = timer2IrqLevel;
+   }
+
+   if(activeInterrupts & (INT_TMR1 | INT_PWM1 | INT_IRQ6)){
+      //All Fixed Level 6 Interrupts
+      if(intLevel < 6)
+         intLevel = 6;
+   }
+
+   if(activeInterrupts & (INT_SPI2 | INT_UART1 | INT_WDT | INT_RTC | INT_KB | INT_INT0 | INT_INT1 | INT_INT2 | INT_INT3 | INT_RTI)){
+      //All Fixed Level 4 Interrupts
+      if(intLevel < 4)
+         intLevel = 4;
+   }
+
+   m68k_set_irq(intLevel);//should be called even if intLevel is 0, that is how the interrupt state gets cleared
+}
 
 static inline uint8_t getPortDValue(){
    uint8_t requestedRow = registerArrayRead8(PKDIR) & registerArrayRead8(PKDATA);//keys are requested on port k and read on port d
@@ -182,21 +243,6 @@ static inline void updateVibratorStatus(){
       palmMisc.vibratorOn = true;
    else
       palmMisc.vibratorOn = false;
-}
-
-
-uint32_t clk32Counter;
-double timer1CycleCounter;
-double timer2CycleCounter;
-
-
-void printUnknownHwAccess(unsigned int address, unsigned int value, unsigned int size, bool isWrite){
-   if(isWrite){
-      printf("Cpu Wrote %d bits of 0x%08X to register 0x%04X.\n", size, value, address);
-   }
-   else{
-      printf("Cpu Read %d bits from register 0x%04X.\n", size, address);
-   }
 }
 
 static inline void setPllfsr16(uint16_t value){
@@ -424,77 +470,6 @@ static inline void timer12Clk32(){
    }
 }
 
-void checkInterrupts(){
-   uint32_t activeInterrupts = registerArrayRead32(ISR);
-   uint16_t interruptLevelControlRegister = registerArrayRead16(ILCR);
-   uint32_t intLevel = 0;
-   
-   if(activeInterrupts & INT_EMIQ){
-      //EMIQ - Emulator Irq, has nothing to do with emulation, used for debugging on a dev board
-      intLevel = 7;
-   }
-   
-   if(activeInterrupts & INT_SPI1){
-      uint32_t spi1IrqLevel = interruptLevelControlRegister >> 12;
-      if(intLevel < spi1IrqLevel)
-         intLevel = spi1IrqLevel;
-   }
-   
-   if(activeInterrupts & INT_IRQ5){
-      if(intLevel < 5)
-         intLevel = 5;
-   }
-   
-   if(activeInterrupts & INT_IRQ3){
-      if(intLevel < 3)
-         intLevel = 3;
-   }
-   
-   if(activeInterrupts & INT_IRQ2){
-      if(intLevel < 2)
-         intLevel = 2;
-   }
-   
-   if(activeInterrupts & INT_IRQ1){
-      if(intLevel < 1)
-         intLevel = 1;
-   }
-   
-   if(activeInterrupts & INT_PWM2){
-      uint32_t pwm2IrqLevel = (interruptLevelControlRegister >> 4) & 0x0007;
-      if(intLevel < pwm2IrqLevel)
-         intLevel = pwm2IrqLevel;
-   }
-   
-   if(activeInterrupts & INT_UART2){
-      uint32_t uart2IrqLevel = (interruptLevelControlRegister >> 8) & 0x0007;
-      if(intLevel < uart2IrqLevel)
-         intLevel = uart2IrqLevel;
-   }
-   
-   if(activeInterrupts & INT_TMR2){
-      //TMR2 - Timer 2
-      uint32_t timer2IrqLevel = interruptLevelControlRegister & 0x0007;
-      if(intLevel < timer2IrqLevel)
-         intLevel = timer2IrqLevel;
-   }
-   
-   if(activeInterrupts & (INT_TMR1 | INT_PWM1 | INT_IRQ6)){
-      //All Fixed Level 6 Interrupts
-      if(intLevel < 6)
-         intLevel = 6;
-   }
-   
-   if(activeInterrupts & (INT_SPI2 | INT_UART1 | INT_WDT | INT_RTC | INT_KB | INT_INT0 | INT_INT1 | INT_INT2 | INT_INT3 | INT_RTI)){
-      //All Fixed Level 4 Interrupts
-      if(intLevel < 4)
-         intLevel = 4;
-   }
-
-   m68k_set_irq(intLevel);//should be called even if intLevel is 0, that is how the interrupt state gets cleared
-}
-
-
 static inline void rtcAddSecondClk32(){
    //this function is part of clk32();
    
@@ -592,6 +567,10 @@ bool sed1376ClockConnected(){
    return !CAST_TO_BOOL(registerArrayRead8(PFSEL) & 0x04);
 }
 
+void refreshButtonState(){
+   checkPortDInts();
+}
+
 int interruptAcknowledge(int intLevel){
    int vectorOffset = registerArrayRead8(IVR);
    int vector;
@@ -619,6 +598,7 @@ unsigned int getHwRegister8(unsigned int address){
    }
    
    address &= 0x00000FFF;
+   printUnknownHwAccess(address, 0, 8, false);
    switch(address){
          
       case PDDATA:
@@ -659,7 +639,7 @@ unsigned int getHwRegister8(unsigned int address){
          return registerArrayRead8(address);
          
       default:
-         printUnknownHwAccess(address, 0, 8, false);
+         //printUnknownHwAccess(address, 0, 8, false);
          return registerArrayRead8(address);
    }
    
@@ -673,6 +653,7 @@ unsigned int getHwRegister16(unsigned int address){
    }
    
    address &= 0x00000FFF;
+   printUnknownHwAccess(address, 0, 16, false);
    switch(address){
          
       //32 bit registers accessed as 16 bit
@@ -692,7 +673,7 @@ unsigned int getHwRegister16(unsigned int address){
          return registerArrayRead16(address);
          
       default:
-         printUnknownHwAccess(address, 0, 16, false);
+         //printUnknownHwAccess(address, 0, 16, false);
          return registerArrayRead16(address);
    }
    
@@ -710,6 +691,7 @@ unsigned int getHwRegister32(unsigned int address){
    }
    
    address &= 0x00000FFF;
+   printUnknownHwAccess(address, 0, 32, false);
    switch(address){
          
       case ISR:
@@ -721,7 +703,7 @@ unsigned int getHwRegister32(unsigned int address){
          return registerArrayRead32(address);
          
       default:
-         printUnknownHwAccess(address, 0, 32, false);
+         //printUnknownHwAccess(address, 0, 32, false);
          return registerArrayRead32(address);
    }
    
@@ -736,6 +718,7 @@ void setHwRegister8(unsigned int address, unsigned int value){
    }
    
    address &= 0x00000FFF;
+   printUnknownHwAccess(address, value, 8, true);
    switch(address){
          
       case SCR:
@@ -857,7 +840,7 @@ void setHwRegister8(unsigned int address, unsigned int value){
          break;
          
       default:
-         printUnknownHwAccess(address, value, 8, true);
+         //printUnknownHwAccess(address, value, 8, true);
          registerArrayWrite8(address, value);
          break;
    }
@@ -870,6 +853,7 @@ void setHwRegister16(unsigned int address, unsigned int value){
    }
    
    address &= 0x00000FFF;
+   printUnknownHwAccess(address, value, 16, true);
    switch(address){
          
       case RTCIENR:
@@ -965,7 +949,7 @@ void setHwRegister16(unsigned int address, unsigned int value){
          break;
          
       default:
-         printUnknownHwAccess(address, value, 16, true);
+         //printUnknownHwAccess(address, value, 16, true);
          registerArrayWrite16(address, value);
          break;
    }
@@ -982,6 +966,7 @@ void setHwRegister32(unsigned int address, unsigned int value){
    }
    
    address &= 0x00000FFF;
+   printUnknownHwAccess(address, value, 32, true);
    switch(address){
          
       case RTCTIME:
@@ -1009,7 +994,7 @@ void setHwRegister32(unsigned int address, unsigned int value){
          break;
       
       default:
-         printUnknownHwAccess(address, value, 32, true);
+         //printUnknownHwAccess(address, value, 32, true);
          registerArrayWrite32(address, value);
          break;
    }

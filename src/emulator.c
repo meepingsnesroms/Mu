@@ -322,6 +322,7 @@ uint32_t emulatorInstallPrcPdb(uint8_t* data, uint32_t size){
 }
 
 void emulateFrame(){
+   refreshButtonState();
    while(palmCycleCounter < CPU_FREQUENCY / EMU_FPS){
       if(cpuIsOn())
          palmCycleCounter += m68k_execute(palmCrystalCycles * palmClockMultiplier) / palmClockMultiplier;//normaly 33mhz / 60fps
@@ -330,6 +331,8 @@ void emulateFrame(){
       clk32();
    }
    palmCycleCounter -= CPU_FREQUENCY / EMU_FPS;
+
+   memcpy(palmFramebuffer, sed1376Framebuffer, 160 * 160 * sizeof(uint16_t));
 
    //printf("Ran frame, executed %f cycles.\n", palmCycleCounter + CPU_FREQUENCY / EMU_FPS);
 }
