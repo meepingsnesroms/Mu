@@ -71,17 +71,17 @@ static inline uint8_t getPortDValue(){
    
    if((requestedRow & 0x20) == 0){
       //kbd row 0
-      portDValue |= palmInput.buttonCalender | palmInput.buttonAddress << 1 | palmInput.buttonTodo << 2 | palmInput.buttonNotes << 3;
+      portDValue |= !palmInput.buttonCalender | !palmInput.buttonAddress << 1 | !palmInput.buttonTodo << 2 | !palmInput.buttonNotes << 3;
    }
    
    if((requestedRow & 0x40) == 0){
       //kbd row 1
-      portDValue |= palmInput.buttonUp | palmInput.buttonDown << 1;
+      portDValue |= !palmInput.buttonUp | !palmInput.buttonDown << 1;
    }
    
    if((requestedRow & 0x80) == 0){
       //kbd row 2
-      portDValue |= palmInput.buttonPower | palmInput.buttonContrast << 1 | palmInput.buttonAddress << 3;
+      portDValue |= !palmInput.buttonPower | !palmInput.buttonContrast << 1 | !palmInput.buttonAddress << 3;
    }
    
    portDValue &= ~portDDir;//only use above pin values for inputs
@@ -89,6 +89,18 @@ static inline uint8_t getPortDValue(){
    portDValue ^= portDPolarity;//swap polarity after everything is done
    
    return portDValue;
+}
+
+static inline uint8_t getPortKValue(){
+    uint8_t portKValue = 0x00;//ports always read the chip pins even if they are set to output
+    uint8_t portKData = registerArrayRead8(PKDATA);
+    uint8_t portKDir = registerArrayRead8(PKDIR);
+    uint8_t portKSel = registerArrayRead8(PKSEL);
+
+    portKValue |= !palmMisc.inDock << 2 & ~portKDir & portKSel;
+    portKValue |= portKData & portKDir & portKSel;
+
+    return portKValue;
 }
 
 static inline void checkPortDInts(){
@@ -611,7 +623,14 @@ unsigned int getHwRegister8(unsigned int address){
          
       case PDDATA:
          return getPortDValue();
+
+      case PKDATA:
+         return getPortKValue();
          
+      //i/o direction
+      case PDDIR:
+      case PKDIR:
+
       //select between gpio or special function
       case PBSEL:
       case PCSEL:
@@ -656,12 +675,15 @@ unsigned int getHwRegister16(unsigned int address){
    address &= 0x00000FFF;
    switch(address){
          
-      //32 bit register accessed as 16 bit
+      //32 bit registers accessed as 16 bit
       case IMR:
       case IMR + 2:
+      case IPR:
+      case IPR + 2:
          
       case PLLCR:
       case PLLFSR:
+      case DRAMC:
       case SDCTRL:
       case RTCISR:
       case RTCCTL:
@@ -743,16 +765,22 @@ void setHwRegister8(unsigned int address, unsigned int value){
          registerArrayWrite8(address, value & 0xF0);
          break;
          
+      case PDDATA:
+         registerArrayWrite8(address, value);
+         checkPortDInts();
+         break;
+
       case PDPOL:
       case PDIRQEN:
       case PDIRQEG:
          //write without the top 4 bits
          registerArrayWrite8(address, value & 0x0F);
+         checkPortDInts();
          break;
          
       case PFSEL:
          //this is the clock output pin for the sed1376, if its disabled so is the lcd controller
-         setSed1376Attached(CAST_TO_BOOL(value & 0x04));
+         setSed1376Attached(!CAST_TO_BOOL(value & 0x04));
          registerArrayWrite8(PFSEL, value);
          break;
          
@@ -814,7 +842,6 @@ void setHwRegister8(unsigned int address, unsigned int value){
          
       //port data value, nothing attached to port
       case PCDATA:
-      case PDDATA:
       case PEDATA:
       case PFDATA:
       case PJDATA:

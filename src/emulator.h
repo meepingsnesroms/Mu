@@ -79,6 +79,7 @@ typedef struct{
    bool    vibratorOn;
    bool    batteryCharging;
    uint8_t batteryLevel;
+   bool    inDock;
 }misc_hw_t;
 
 //cpu

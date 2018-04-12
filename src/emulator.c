@@ -68,7 +68,7 @@ void emulatorInit(uint8_t* palmRomDump, uint8_t* palmBootDump, uint32_t specialF
    //memory
    memset(palmRam, 0x00, RAM_SIZE);
    memcpy(palmRom, palmRomDump, ROM_SIZE);
-   if(palmBootloader)
+   if(palmBootDump)
        memcpy(palmBootloader, palmBootDump, BOOTLOADER_SIZE);
    else
        memset(palmBootloader, 0x00, BOOTLOADER_SIZE);
@@ -107,6 +107,7 @@ void emulatorInit(uint8_t* palmRomDump, uint8_t* palmBootDump, uint32_t specialF
    //misc attributes
    palmMisc.batteryCharging = false;
    palmMisc.batteryLevel = 100;
+   palmMisc.inDock = false;
    
    //config
    palmClockMultiplier = (specialFeatures & FEATURE_FAST_CPU) ? 2.0 : 1.0;//overclock
@@ -166,7 +167,7 @@ uint32_t emulatorGetStateSize(){
    size += sizeof(uint8_t) * 2;//palmSdCard
    size += sizeof(uint64_t) * 4;//32.32 fixed point double precision timers
    size += sizeof(uint32_t);//clk32Counter
-   size += sizeof(uint8_t) * 6;//palmMisc
+   size += sizeof(uint8_t) * 7;//palmMisc
    size += sizeof(uint32_t);//palmSpecialFeatures
    
    return size;
@@ -235,6 +236,8 @@ void emulatorSaveState(uint8_t* data){
    offset += sizeof(uint8_t);
    writeStateValueUint8(data + offset, palmMisc.batteryLevel);
    offset += sizeof(uint8_t);
+   writeStateValueUint8(data + offset, palmMisc.inDock);
+   offset += sizeof(uint8_t);
 
    //features
    writeStateValueUint32(data + offset, palmSpecialFeatures);
@@ -296,6 +299,8 @@ void emulatorLoadState(uint8_t* data){
    palmMisc.batteryCharging = readStateValueBool(data + offset);
    offset += sizeof(uint8_t);
    palmMisc.batteryLevel = readStateValueUint8(data + offset);
+   offset += sizeof(uint8_t);
+   palmMisc.inDock = readStateValueUint8(data + offset);
    offset += sizeof(uint8_t);
 
    //features
