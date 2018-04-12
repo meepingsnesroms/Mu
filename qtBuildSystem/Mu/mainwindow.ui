@@ -85,7 +85,7 @@
        </size>
       </property>
       <property name="currentIndex">
-       <number>1</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="buttons">
        <layout class="QGridLayout" name="gridLayout">
@@ -277,7 +277,7 @@
           </property>
          </widget>
         </item>
-        <item row="0" column="9">
+        <item row="0" column="8">
          <widget class="QPushButton" name="power">
           <property name="sizePolicy">
            <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
@@ -287,6 +287,19 @@
           </property>
           <property name="text">
            <string>Power</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="9">
+         <widget class="QPushButton" name="ctrlBtn">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="text">
+           <string>ctrl_btn</string>
           </property>
          </widget>
         </item>

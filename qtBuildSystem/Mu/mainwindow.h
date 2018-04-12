@@ -60,6 +60,8 @@ private slots:
 	void on_joyRight_clicked();
 	void on_settings_clicked();
 
+	void on_ctrlBtn_clicked();
+
 private:
     Ui::MainWindow *ui;
 };

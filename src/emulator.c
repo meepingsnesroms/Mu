@@ -321,5 +321,5 @@ void emulateFrame(){
    }
    palmCycleCounter -= CPU_FREQUENCY / EMU_FPS;
 
-   printf("Ran frame, executed %f cycles.\n", palmCycleCounter + CPU_FREQUENCY / EMU_FPS);
+   //printf("Ran frame, executed %f cycles.\n", palmCycleCounter + CPU_FREQUENCY / EMU_FPS);
 }

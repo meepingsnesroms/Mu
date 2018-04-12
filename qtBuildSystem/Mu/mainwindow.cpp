@@ -11,6 +11,7 @@
 
 #include <new>
 #include <atomic>
+#include <mutex>
 #include <cstdint>
 #include <unistd.h>
 #include <sys/stat.h>
@@ -23,9 +24,10 @@ uint32_t screenHeight;
 static QImage video;
 static QTimer* refreshDisplay;
 static QSettings settings;
+std::mutex emuMutex;
 static std::atomic<bool> emuOn;
-static std::atomic<bool> emuLock;
-static bool emuInited;
+static std::atomic<bool> emuInited;
+static uint8_t romBuffer[ROM_SIZE];
 
 
 void popupErrorDialog(std::string error){
@@ -84,12 +86,13 @@ MainWindow::MainWindow(QWidget* parent) :
     ui(new Ui::MainWindow){
 	ui->setupUi(this);
 	emuOn = false;
-	emuLock = false;
 	emuInited = false;
 	screenWidth = 160;
-	screenHeight = 160;
+	screenHeight = 160 + 60;
 
 	loadRom();
+
+	ui->ctrlBtn->setText("Start");
 
 	refreshDisplay = new QTimer(this);
 	connect(refreshDisplay, SIGNAL(timeout()), this, SLOT(updateDisplay()));
@@ -98,8 +101,9 @@ MainWindow::MainWindow(QWidget* parent) :
 }
 
 MainWindow::~MainWindow(){
-	while(emuLock)usleep(10);
+	emuMutex.lock();
 	emulatorExit();
+	emuMutex.unlock();
 	delete ui;
 }
 
@@ -117,7 +121,7 @@ void MainWindow::loadRom(){
 	uint8_t* romData = getFileBuffer(rom, size, error);
 	if(romData){
 		size_t romSize = size < ROM_SIZE ? size : ROM_SIZE;
-		memcpy(palmRom, romData, romSize);
+		memcpy(romBuffer, romData, romSize);
 		delete[] romData;
 	}
 
@@ -160,13 +164,14 @@ void MainWindow::on_install_pressed(){
 
 //display
 void MainWindow::updateDisplay(){
-	if(emuOn && !emuLock){
-		emuLock = true;
-		emulateFrame();
-		video = QImage((unsigned char*)palmFramebuffer, screenWidth, screenHeight, QImage::Format_RGB16);//16 bit
-		ui->display->setPixmap(QPixmap::fromImage(video).scaled(ui->display->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
-		ui->display->update();
-		emuLock = false;
+	if(emuOn){
+		if(emuMutex.try_lock()){
+			emulateFrame();
+			video = QImage((unsigned char*)palmFramebuffer, screenWidth, screenHeight, QImage::Format_RGB16);//16 bit
+			ui->display->setPixmap(QPixmap::fromImage(video).scaled(ui->display->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
+			ui->display->update();
+			emuMutex.unlock();
+		}
 	}
 }
 
@@ -242,4 +247,26 @@ void MainWindow::on_joyRight_clicked(){
 
 void MainWindow::on_settings_clicked(){
 	//setprocess(SETUP);
+}
+
+//emu control
+void MainWindow::on_ctrlBtn_clicked()
+{
+	emuMutex.lock();
+	if(!emuOn && !emuInited){
+		//start emu
+		emulatorInit(romBuffer, ACCURATE);
+		emuInited = true;
+		emuOn = true;
+		ui->ctrlBtn->setText("Pause");
+	}
+	else if(emuOn){
+		emuOn = false;
+		ui->ctrlBtn->setText("Resume");
+	}
+	else if(!emuOn){
+		emuOn = true;
+		ui->ctrlBtn->setText("Pause");
+	}
+	emuMutex.unlock();
 }

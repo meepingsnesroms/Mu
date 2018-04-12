@@ -20,7 +20,7 @@
 //The LCD power-off sequence is activated by programming the Power Save Mode Enable bit (REG[A0h] bit 0) to 1.
 
 uint8_t sed1376Registers[SED1376_REG_SIZE];
-uint8_t sed1376Framebuffer[SED1376_FB_SIZE];
+uint8_t sed1376Framebuffer[SED1376_FB_SIZE + 3];//+ 3 to prevent 32 bit writes on last byte from corrupting memory
 
 
 unsigned int sed1376GetRegister(unsigned int address){
@@ -49,6 +49,6 @@ void sed1376Render(){
       
    }
    else{
-      
+	  //black screen
    }
 }
