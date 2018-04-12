@@ -91,7 +91,6 @@ MainWindow::MainWindow(QWidget* parent) :
 
 	loadRom();
 
-
 	refreshDisplay = new QTimer(this);
 	connect(refreshDisplay, SIGNAL(timeout()), this, SLOT(updateDisplay()));
 	//update display every 16.67 miliseconds = 60*second

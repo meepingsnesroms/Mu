@@ -10,11 +10,22 @@
 
 
 static inline uint64_t getUint64FromDouble(double data){
-   return *(uint64_t*)&data;
+   //32.32 fixed point
+   uint64_t fixedPointDouble = ((uint64_t)data) << 32;
+   data -= (uint64_t)data;
+   data *= 100000000.0;
+   fixedPointDouble |= (uint64_t)data;
+   
+   return fixedPointDouble;
 }
 
 static inline double getDoubleFromUint64(uint64_t data){
-   return *(double*)&data;
+   //32.32 fixed point
+   double floatingPointDouble = (double)(data & 0x00000000FFFFFFFF);
+   floatingPointDouble /= 100000000.0;
+   floatingPointDouble += (double)(data >> 32);
+   
+   return floatingPointDouble;
 }
 
 static inline double readStateValueDouble(uint8_t* where){

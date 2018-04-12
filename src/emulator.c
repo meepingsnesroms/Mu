@@ -109,6 +109,15 @@ void emulatorInit(uint8_t* palmRomDump, uint32_t specialFeatures){
    
    //start running
    m68k_pulse_reset();
+   
+   /*
+   double test = 342553325.13436322;
+   uint64_t fixed3232 = getUint64FromDouble(test);
+   double rebuilt = getDoubleFromUint64(fixed3232);
+   printf("Original double:%f\n", test);
+   printf("Fixed 32.32:0x%08lX\n", fixed3232);
+   printf("Rebuilt double:%f\n", rebuilt);
+   */
 }
 
 void emulatorExit(){
@@ -149,7 +158,7 @@ uint32_t emulatorGetStateSize(){
    size += TOTAL_MEMORY_BANKS;//bank handlers
    size += sizeof(misc_hw_t);
    size += sizeof(sdcard_t);
-   size += sizeof(double) * 4;//precision timers
+   size += sizeof(uint64_t) * 4;//32.32 fixed point double precision timers
    size += sizeof(uint32_t) * 2;//special features, clk32 cycles
    size += 1;//lowPowerStopActive
    
@@ -186,15 +195,15 @@ void emulatorSaveState(uint8_t* data){
 
    //timing
    writeStateValueDouble(data + offset, palmCrystalCycles);
-   offset += sizeof(double);
+   offset += sizeof(uint64_t);
    writeStateValueDouble(data + offset, palmCycleCounter);
-   offset += sizeof(double);
+   offset += sizeof(uint64_t);
    writeStateValueUint32(data + offset, clk32Counter);
    offset += sizeof(uint32_t);
    writeStateValueDouble(data + offset, timer1CycleCounter);
-   offset += sizeof(double);
+   offset += sizeof(uint64_t);
    writeStateValueDouble(data + offset, timer2CycleCounter);
-   offset += sizeof(double);
+   offset += sizeof(uint64_t);
    
    //other
    //input is not part of savestates
@@ -227,15 +236,15 @@ void emulatorLoadState(uint8_t* data){
 
    //timing
    palmCrystalCycles = readStateValueDouble(data + offset);
-   offset += sizeof(double);
+   offset += sizeof(uint64_t);
    palmCycleCounter = readStateValueDouble(data + offset);
-   offset += sizeof(double);
+   offset += sizeof(uint64_t);
    clk32Counter = readStateValueUint32(data + offset);
    offset += sizeof(uint32_t);
    timer1CycleCounter = readStateValueDouble(data + offset);
-   offset += sizeof(double);
+   offset += sizeof(uint64_t);
    timer2CycleCounter = readStateValueDouble(data + offset);
-   offset += sizeof(double);
+   offset += sizeof(uint64_t);
    
    //other
    //input is not part of savestates
