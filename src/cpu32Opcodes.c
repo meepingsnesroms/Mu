@@ -1,8 +1,8 @@
 #include <stdint.h>
-#include <stdio.h>
 
 #include <boolean.h>
 
+#include "emulator.h"
 #include "m68k/m68kcpu.h"
 #include "m68k/m68kops.h"
 
@@ -35,24 +35,24 @@ void cpu32OpLpstop(void){
 }
 
 void cpu32OpTbls(void){
-   printf("TBLS opcode not implemented!\n");
+   debugLog("TBLS opcode not implemented!\n");
 }
 
 void cpu32OpTblsn(void){
-   printf("TBLSN opcode not implemented!\n");
+   debugLog("TBLSN opcode not implemented!\n");
 }
 
 void cpu32OpTblu(void){
-   printf("TBLU opcode not implemented!\n");
+   debugLog("TBLU opcode not implemented!\n");
 }
 
 void cpu32OpTblun(void){
-   printf("TBLUN opcode not implemented!\n");
+   debugLog("TBLUN opcode not implemented!\n");
 }
 
 
 void m68k_op_bgnd(void){
-   printf("Opcode BGND not implemented!\n");
+   debugLog("Opcode BGND not implemented!\n");
 }
 
 void m68k_op_cpu32_dispatch(void){
@@ -91,6 +91,6 @@ void m68k_op_cpu32_dispatch(void){
 void patchMusashiOpcodeHandlerCpu32(){
    patchOpcode(OPCODE_BGND, m68k_op_bgnd, 16/*dont know how many cycles, average opcode*/);
    
-   for(uint16_t currentOpcode = OPCODE_CPU32_START; currentOpcode <= OPCODE_CPU32_END; currentOpcode++)
-      patchOpcode(currentOpcode, m68k_op_cpu32_dispatch, 91/*dont know how many cycles, most expenceive opcode*/);
+   for(uint32_t currentOpcode = OPCODE_CPU32_START; currentOpcode <= OPCODE_CPU32_END; currentOpcode++)
+      patchOpcode(currentOpcode, m68k_op_cpu32_dispatch, 91/*dont know how many cycles, most expensive opcode*/);
 }

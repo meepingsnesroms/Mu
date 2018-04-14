@@ -66,7 +66,7 @@ HEADERS += \
     src/portability.h \
     src/sdcard.h \
     src/sed1376.h \
-    src/silkscreen.h \
+    src/silkscreen.h
 
 FORMS += \
         mainwindow.ui

@@ -1,6 +1,5 @@
 #include <stdint.h>
 #include <string.h>
-#include <stdio.h>
 
 #include <boolean.h>
 
@@ -120,9 +119,9 @@ void emulatorInit(uint8_t* palmRomDump, uint8_t* palmBootDump, uint32_t specialF
    double test = 342553325.13436322;
    uint64_t fixed3232 = getUint64FromDouble(test);
    double rebuilt = getDoubleFromUint64(fixed3232);
-   printf("Original double:%f\n", test);
-   printf("Fixed 32.32:0x%08lX\n", fixed3232);
-   printf("Rebuilt double:%f\n", rebuilt);
+   debugLog("Original double:%f\n", test);
+   debugLog("Fixed 32.32:0x%08lX\n", fixed3232);
+   debugLog("Rebuilt double:%f\n", rebuilt);
    */
 }
 
@@ -334,5 +333,5 @@ void emulateFrame(){
 
    memcpy(palmFramebuffer, sed1376Framebuffer, 160 * 160 * sizeof(uint16_t));
 
-   //printf("Ran frame, executed %f cycles.\n", palmCycleCounter + CPU_FREQUENCY / EMU_FPS);
+   //debugLog("Ran frame, executed %f cycles.\n", palmCycleCounter + CPU_FREQUENCY / EMU_FPS);
 }

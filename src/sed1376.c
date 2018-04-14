@@ -1,6 +1,5 @@
 #include <stdint.h>
 #include <string.h>
-#include <stdio.h>
 
 #include "emulator.h"
 
@@ -24,12 +23,12 @@ uint8_t sed1376Framebuffer[SED1376_FB_SIZE + 3];//+ 3 to prevent 32 bit writes o
 
 
 unsigned int sed1376GetRegister(unsigned int address){
-   printf("SED1376 Register Read from 0x%02X.\n", address);
+   debugLog("SED1376 Register Read from 0x%02X.\n", address);
    return sed1376Registers[address];
 }
 
 void sed1376SetRegister(unsigned int address, unsigned int value){
-   printf("SED1376 Register write 0x%02X to 0x%02X.\n", value, address);
+   debugLog("SED1376 Register write 0x%02X to 0x%02X.\n", value, address);
    sed1376Registers[address] = value;
 }
 

@@ -1,5 +1,4 @@
 #include <stdint.h>
-#include <stdio.h>
 
 #include "emulator.h"
 #include "hardwareRegisters.h"

@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include <string.h>
 
 #include <boolean.h>
@@ -39,10 +38,10 @@ static inline void clearIprIsrBit(uint32_t interruptBit){
 
 void printUnknownHwAccess(unsigned int address, unsigned int value, unsigned int size, bool isWrite){
    if(isWrite){
-      printf("Cpu Wrote %d bits of 0x%08X to register 0x%04X.\n", size, value, address);
+      debugLog("Cpu Wrote %d bits of 0x%08X to register 0x%04X.\n", size, value, address);
    }
    else{
-      printf("Cpu Read %d bits from register 0x%04X.\n", size, address);
+      debugLog("Cpu Read %d bits from register 0x%04X.\n", size, address);
    }
 }
 
@@ -254,8 +253,8 @@ static inline void setPllfsr16(uint16_t value){
       double p = value & 0x00FF;
       double q = (value & 0x0F00) >> 8;
       palmCrystalCycles = 2.0 * (14.0 * (p + 1.0) + q + 1.0) / prescaler1;
-      printf("New CPU frequency of:%f cycles per second.\n", CPU_FREQUENCY);
-      printf("New clk32 cycle count of:%f.\n", palmCrystalCycles);
+      debugLog("New CPU frequency of:%f cycles per second.\n", CPU_FREQUENCY);
+      debugLog("New clk32 cycle count of:%f.\n", palmCrystalCycles);
    }
 }
 
@@ -267,13 +266,13 @@ static inline void setPllcr(uint16_t value){
    double p = pllfsr & 0x00FF;
    double q = (pllfsr & 0x0F00) >> 8;
    palmCrystalCycles = 2.0 * (14.0 * (p + 1.0) + q + 1.0) / prescaler1;
-   printf("New CPU frequency of:%f cycles per second.\n", CPU_FREQUENCY);
-   printf("New clk32 cycle count of:%f.\n", palmCrystalCycles);
+   debugLog("New CPU frequency of:%f cycles per second.\n", CPU_FREQUENCY);
+   debugLog("New clk32 cycle count of:%f.\n", palmCrystalCycles);
    
    if(value & 0x0008){
       //the pll is disabled, the cpu is off, end execution now
       m68k_end_timeslice();
-      printf("Disable PLL set, cpu is off!\n");
+      debugLog("Disable PLL set, cpu is off!\n");
    }
 }
 
@@ -419,8 +418,8 @@ static inline void timer12Clk32(){
          }
          
          if(!(timer1Control & 0x0100)){
-            //not free running, reset to 0
-            timer1Count = 0x0000;
+            //not free running, reset to 0, to prevent loss of ticks after compare event just subtract timerXCompare
+            timer1Count -= timer1Compare;
          }
       }
       
@@ -463,8 +462,8 @@ static inline void timer12Clk32(){
          }
          
          if(!(timer2Control & 0x0100)){
-            //not free running, reset to 0
-            timer2Count = 0x0000;
+             //not free running, reset to 0, to prevent loss of ticks after compare event just subtract timerXCompare
+             timer2Count -= timer2Compare;
          }
       }
       

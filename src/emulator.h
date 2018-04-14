@@ -2,8 +2,16 @@
 //This is the only header a frontend needs to include
 
 #include <stdint.h>
+#include <stdarg.h>
+#include <stdio.h>
 
 #include <boolean.h>
+
+#ifdef DEBUG
+#define debugLog(fmtString, ...) printf(fmtString, __VA_ARGS__)
+#else
+#define debugLog(fmtString, ...)
+#endif
 
 #ifdef __cplusplus
 extern "C" {
