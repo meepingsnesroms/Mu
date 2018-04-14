@@ -1,28 +1,29 @@
-Timer capture events, I don't think there possible though with the palms hardware
-sed1376 register access
-storage ram protect
+Timer capture events, I don't think there possible though with the Palms hardware
+SED1376 register access
+storage RAM protect
 sysTrapPceNativeCall, ARM Emulator
 cpu32 table lookup opcodes
-PLL Control Register, Wake Select
 Check if interrupts restart PLL when its disabled
 Peripheral Control Register, audio ppm mixing selection
-Port D level sensitive interrupts
-The data sheet says LRRA is 0xFFFFFA29 and 0xFFFFFA28 but its only 8bits?
-The boot memory mapping where rom starts at 0x00000000 and ram is swapped in
+Port D edge sensitive interrupts(currently always level sensitive), currently always triggers an interrupt when a button is pressed
+The data sheet says LRRA is 0xFFFFFA29 and 0xFFFFFA28 but its only 8 bits?
+The boot memory mapping where ROM starts at 0x00000000 and RAM is swapped in
 (debug tools)missing icons
-Port G spi stuff
-Ram location and size setting, Dragonball VZ can set the page mapping SDCTRL
+Port G SPI stuff
+RAM location and size setting, Dragonball VZ can set the page mapping SDCTRL
 DRAMC write enable
 All of DRAMMC
-All Chip select registers
+All chip select registers
 Setting the battery dead bit(PDDATA 0x80) if the emulated battery percent gets too low
-endian safe savestates
-sdcard can't be read or written to
-sdcard can't be inserted or removed
-sdcard has no error handling in save/load state
-Port m Infrared shutdown (PMDATA 0x20)
+Sdcard can't be read or written to
+Sdcard can't be inserted or removed
+Sdcard has no error handling in save/load state
+Port M Infrared shutdown (PMDATA 0x20)
+Disabling PLL also turns off all timers except the realtime clock unless they are set to use clk32 as there source
 
 Fixed:
 System Control Register, 0xXXFFF000 all upper banks are registers mode
 Port D keyboard enable register
 (HW verified)PDPOL inverts interrupts by inverting PDDATA bits, the data register is affected by PDPOL
+Endian safe savestates
+PLL Control Register, Wake Select

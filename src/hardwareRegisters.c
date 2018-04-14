@@ -11,9 +11,10 @@
 #include "m68k/m68k.h"
 
 
+int32_t  pllWakeWait;
 uint32_t clk32Counter;
-double timer1CycleCounter;
-double timer2CycleCounter;
+double   timer1CycleCounter;
+double   timer2CycleCounter;
 
 
 static inline uint8_t registerArrayRead8(uint32_t address){return BUFFER_READ_8(palmReg, address, 0);}
@@ -22,7 +23,6 @@ static inline uint32_t registerArrayRead32(uint32_t address){return BUFFER_READ_
 static inline void registerArrayWrite8(uint32_t address, uint8_t value){BUFFER_WRITE_8(palmReg, address, 0, value);}
 static inline void registerArrayWrite16(uint32_t address, uint16_t value){BUFFER_WRITE_16(palmReg, address, 0, value);}
 static inline void registerArrayWrite32(uint32_t address, uint32_t value){BUFFER_WRITE_32(palmReg, address, 0, value);}
-
 
 static inline void setIprIsrBit(uint32_t interruptBit){
    //allows for setting an interrupt with masking by IMR and logging in IPR
@@ -33,6 +33,31 @@ static inline void setIprIsrBit(uint32_t interruptBit){
 static inline void clearIprIsrBit(uint32_t interruptBit){
    registerArrayWrite32(IPR, registerArrayRead32(IPR) & ~interruptBit);
    registerArrayWrite32(ISR, registerArrayRead32(ISR) & ~interruptBit);
+}
+
+static inline void pllWakeCpuIfOff(){
+   uint16_t pllcr = registerArrayRead16(PLLCR);
+   if(pllcr & 0x0008 && pllWakeWait == -1){
+      //CPU is off and not already in the process of waking up
+      switch(pllcr & 0x0003){
+
+         case 0x0000:
+            pllWakeWait = 32;
+            break;
+
+         case 0x0001:
+            pllWakeWait = 48;
+            break;
+
+         case 0x0002:
+            pllWakeWait = 64;
+            break;
+
+         case 0x0003:
+            pllWakeWait = 96;
+            break;
+      }
+   }
 }
 
 
@@ -49,49 +74,59 @@ void printUnknownHwAccess(unsigned int address, unsigned int value, unsigned int
 void checkInterrupts(){
    uint32_t activeInterrupts = registerArrayRead32(ISR);
    uint16_t interruptLevelControlRegister = registerArrayRead16(ILCR);
+   uint16_t portDEdgeSelect = registerArrayRead16(PDIRQEG);
    uint32_t intLevel = 0;
+   bool reenablePllIfOff = false;
 
    if(activeInterrupts & INT_EMIQ){
       //EMIQ - Emulator Irq, has nothing to do with emulation, used for debugging on a dev board
       intLevel = 7;
+      reenablePllIfOff = true;
    }
 
    if(activeInterrupts & INT_SPI1){
       uint32_t spi1IrqLevel = interruptLevelControlRegister >> 12;
       if(intLevel < spi1IrqLevel)
          intLevel = spi1IrqLevel;
+      reenablePllIfOff = true;
    }
 
    if(activeInterrupts & INT_IRQ5){
       if(intLevel < 5)
          intLevel = 5;
+      reenablePllIfOff = true;
    }
 
    if(activeInterrupts & INT_IRQ3){
       if(intLevel < 3)
          intLevel = 3;
+      reenablePllIfOff = true;
    }
 
    if(activeInterrupts & INT_IRQ2){
       if(intLevel < 2)
          intLevel = 2;
+      reenablePllIfOff = true;
    }
 
    if(activeInterrupts & INT_IRQ1){
       if(intLevel < 1)
          intLevel = 1;
+      reenablePllIfOff = true;
    }
 
    if(activeInterrupts & INT_PWM2){
       uint32_t pwm2IrqLevel = (interruptLevelControlRegister >> 4) & 0x0007;
       if(intLevel < pwm2IrqLevel)
          intLevel = pwm2IrqLevel;
+      reenablePllIfOff = true;
    }
 
    if(activeInterrupts & INT_UART2){
       uint32_t uart2IrqLevel = (interruptLevelControlRegister >> 8) & 0x0007;
       if(intLevel < uart2IrqLevel)
          intLevel = uart2IrqLevel;
+      reenablePllIfOff = true;
    }
 
    if(activeInterrupts & INT_TMR2){
@@ -99,19 +134,57 @@ void checkInterrupts(){
       uint32_t timer2IrqLevel = interruptLevelControlRegister & 0x0007;
       if(intLevel < timer2IrqLevel)
          intLevel = timer2IrqLevel;
+      reenablePllIfOff = true;
    }
 
    if(activeInterrupts & (INT_TMR1 | INT_PWM1 | INT_IRQ6)){
       //All Fixed Level 6 Interrupts
       if(intLevel < 6)
          intLevel = 6;
+      reenablePllIfOff = true;
    }
 
-   if(activeInterrupts & (INT_SPI2 | INT_UART1 | INT_WDT | INT_RTC | INT_KB | INT_INT0 | INT_INT1 | INT_INT2 | INT_INT3 | INT_RTI)){
+   if(activeInterrupts & (INT_SPI2 | INT_UART1 | INT_WDT | INT_RTC | INT_KB | INT_RTI)){
       //All Fixed Level 4 Interrupts
       if(intLevel < 4)
          intLevel = 4;
+      reenablePllIfOff = true;
    }
+
+   if(activeInterrupts & INT_INT0){
+      //INTx, only reenable the PLL if interrupt is set to level sensitive
+      if(intLevel < 4)
+         intLevel = 4;
+      if(!(portDEdgeSelect & 0x01))
+         reenablePllIfOff = true;
+   }
+
+   if(activeInterrupts & INT_INT1){
+      //INTx, only reenable the PLL if interrupt is set to level sensitive
+      if(intLevel < 4)
+         intLevel = 4;
+      if(!(portDEdgeSelect & 0x02))
+         reenablePllIfOff = true;
+   }
+
+   if(activeInterrupts & INT_INT2){
+      //INTx, only reenable the PLL if interrupt is set to level sensitive
+      if(intLevel < 4)
+         intLevel = 4;
+      if(!(portDEdgeSelect & 0x04))
+         reenablePllIfOff = true;
+   }
+
+   if(activeInterrupts & INT_INT3){
+      //INTx, only reenable the PLL if interrupt is set to level sensitive
+      if(intLevel < 4)
+         intLevel = 4;
+      if(!(portDEdgeSelect & 0x08))
+         reenablePllIfOff = true;
+   }
+
+   if(reenablePllIfOff)
+      pllWakeCpuIfOff();
 
    m68k_set_irq(intLevel);//should be called even if intLevel is 0, that is how the interrupt state gets cleared
 }
@@ -152,15 +225,15 @@ static inline uint8_t getPortDValue(){
 }
 
 static inline uint8_t getPortKValue(){
-    uint8_t portKValue = 0x00;//ports always read the chip pins even if they are set to output
-    uint8_t portKData = registerArrayRead8(PKDATA);
-    uint8_t portKDir = registerArrayRead8(PKDIR);
-    uint8_t portKSel = registerArrayRead8(PKSEL);
+   uint8_t portKValue = 0x00;//ports always read the chip pins even if they are set to output
+   uint8_t portKData = registerArrayRead8(PKDATA);
+   uint8_t portKDir = registerArrayRead8(PKDIR);
+   uint8_t portKSel = registerArrayRead8(PKSEL);
 
-    portKValue |= !palmMisc.inDock << 2 & ~portKDir & portKSel;
-    portKValue |= portKData & portKDir & portKSel;
+   portKValue |= !palmMisc.inDock << 2 & ~portKDir & portKSel;
+   portKValue |= portKData & portKDir & portKSel;
 
-    return portKValue;
+   return portKValue;
 }
 
 static inline void checkPortDInts(){
@@ -270,9 +343,9 @@ static inline void setPllcr(uint16_t value){
    debugLog("New clk32 cycle count of:%f.\n", palmCrystalCycles);
    
    if(value & 0x0008){
-      //the PLL is disabled, the CPU is off, end execution now
-      m68k_end_timeslice();
-      debugLog("Disable PLL set, CPU is off!\n");
+      //The PLL shuts down 30 clock cycles of SYSCLK after the DISPLL bit is set in the PLLCR
+      m68k_modify_timeslice(-m68k_cycles_remaining() + 30);
+      debugLog("Disable PLL set, CPU off in 30 cycles!\n");
    }
 }
 
@@ -462,8 +535,8 @@ static inline void timer12Clk32(){
          }
          
          if(!(timer2Control & 0x0100)){
-             //not free running, reset to 0, to prevent loss of ticks after compare event just subtract timerXCompare
-             timer2Count -= timer2Compare;
+            //not free running, reset to 0, to prevent loss of ticks after compare event just subtract timerXCompare
+            timer2Count -= timer2Compare;
          }
       }
       
@@ -540,13 +613,24 @@ static inline void rtcAddSecondClk32(){
 
 void clk32(){
    registerArrayWrite16(PLLFSR, registerArrayRead16(PLLFSR) ^ 0x8000);
-   //rolls over every second
+
+   //second position counter
    if(clk32Counter >= CRYSTAL_FREQUENCY - 1){
       clk32Counter = 0;
       rtcAddSecondClk32();
    }
    else{
       clk32Counter++;
+   }
+
+   //PLLCR wake select wait
+   if(pllWakeWait != -1){
+      if(pllWakeWait == 0){
+         //reenable PLL and CPU
+         registerArrayWrite16(PLLCR, registerArrayRead16(PLLCR) & 0xFFF7);
+         debugLog("PLL reenabled, CPU is on!\n");
+      }
+      pllWakeWait--;
    }
    
    rtiInterruptClk32();
@@ -581,12 +665,10 @@ int interruptAcknowledge(int intLevel){
       vector = 15/*EXCEPTION_UNINITIALIZED_INTERRUPT*/;
    else
       vector = vectorOffset | intLevel;
-   
-   //dont know if interrupts reenable the PLL if disabled, but they exit low power stop mode
+
    lowPowerStopActive = false;
    
-   //the interrupt is not cleared until the handler writes a 1 to its source register, or manages the calling hardware
-   //m68k_set_irq(0);//the interrupt should only be set to 0 after its been handled
+   //the interrupt should only be cleared after its been handled
    
    return vector;
 }
@@ -1008,6 +1090,7 @@ void setHwRegister32(unsigned int address, unsigned int value){
 void resetHwRegisters(){
    memset(palmReg, 0x00, REG_SIZE);
    clk32Counter = 0;
+   pllWakeWait = -1;
    timer1CycleCounter = 0.0;
    timer2CycleCounter = 0.0;
    

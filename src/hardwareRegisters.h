@@ -29,6 +29,7 @@
 #define INT_SPI2   0x00000001 //level 4
 
 //variables
+extern int32_t  pllWakeWait;
 extern uint32_t clk32Counter;
 extern double   timer1CycleCounter;
 extern double   timer2CycleCounter;

@@ -164,7 +164,8 @@ uint32_t emulatorGetStateSize(){
    size += TOTAL_MEMORY_BANKS;//bank handlers
    size += sizeof(uint64_t) * 3;//palmSdCard
    size += sizeof(uint8_t) * 2;//palmSdCard
-   size += sizeof(uint64_t) * 4;//32.32 fixed point double precision timers
+   size += sizeof(uint64_t) * 4;//32.32 fixed point double, timerXCycleCounter and CPU cycle timers
+   size += sizeof(int32_t);//pllWakeWait
    size += sizeof(uint32_t);//clk32Counter
    size += sizeof(uint8_t) * 7;//palmMisc
    size += sizeof(uint32_t);//palmSpecialFeatures
@@ -215,6 +216,8 @@ void emulatorSaveState(uint8_t* data){
    offset += sizeof(uint64_t);
    writeStateValueDouble(data + offset, palmCycleCounter);
    offset += sizeof(uint64_t);
+   writeStateValueInt32(data + offset, pllWakeWait);
+   offset += sizeof(int32_t);
    writeStateValueUint32(data + offset, clk32Counter);
    offset += sizeof(uint32_t);
    writeStateValueDouble(data + offset, timer1CycleCounter);
@@ -279,6 +282,8 @@ void emulatorLoadState(uint8_t* data){
    offset += sizeof(uint64_t);
    palmCycleCounter = readStateValueDouble(data + offset);
    offset += sizeof(uint64_t);
+   pllWakeWait = readStateValueInt32(data + offset);
+   offset += sizeof(int32_t);
    clk32Counter = readStateValueUint32(data + offset);
    offset += sizeof(uint32_t);
    timer1CycleCounter = readStateValueDouble(data + offset);

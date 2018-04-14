@@ -44,11 +44,27 @@ static inline void writeStateValueUint64(uint8_t* where, uint64_t value){
    *(uint64_t*)where = swap_if_little64(value);
 }
 
+static inline int64_t readStateValueInt64(uint8_t* where){
+   return swap_if_little64(*(uint64_t*)where);
+}
+
+static inline void writeStateValueInt64(uint8_t* where, int64_t value){
+   *(uint64_t*)where = swap_if_little64(value);
+}
+
 static inline uint32_t readStateValueUint32(uint8_t* where){
    return swap_if_little32(*(uint32_t*)where);
 }
 
 static inline void writeStateValueUint32(uint8_t* where, uint32_t value){
+   *(uint32_t*)where = swap_if_little32(value);
+}
+
+static inline int32_t readStateValueInt32(uint8_t* where){
+   return swap_if_little32(*(uint32_t*)where);
+}
+
+static inline void writeStateValueInt32(uint8_t* where, int32_t value){
    *(uint32_t*)where = swap_if_little32(value);
 }
 
@@ -60,11 +76,27 @@ static inline void writeStateValueUint16(uint8_t* where, uint16_t value){
    *(uint16_t*)where = swap_if_little16(value);
 }
 
+static inline int16_t readStateValueInt16(uint8_t* where){
+   return swap_if_little16(*(uint16_t*)where);
+}
+
+static inline void writeStateValueInt16(uint8_t* where, int16_t value){
+   *(uint16_t*)where = swap_if_little16(value);
+}
+
 static inline uint8_t readStateValueUint8(uint8_t* where){
    return *where;
 }
 
 static inline void writeStateValueUint8(uint8_t* where, uint8_t value){
+   *where = value;
+}
+
+static inline int8_t readStateValueInt8(uint8_t* where){
+   return *where;
+}
+
+static inline void writeStateValueInt8(uint8_t* where, int8_t value){
    *where = value;
 }
 
