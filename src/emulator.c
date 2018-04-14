@@ -16,13 +16,13 @@
 
 
 //Memory Map of Palm m515
-//0x00000000-0x00FFFFFF RAM, the first 256(0x100) bytes is copyed from the first 256 bytes of ROM before boot, this applys to all palms with the 68k architecture
+//0x00000000-0x00FFFFFF RAM, the first 256(0x100) bytes is copyed from the first 256 bytes of ROM before boot, this applys to all Palms with the 68k architecture
 //0x10000000-0x103FFFFF ROM, palmos41-en-m515.rom, substitute "en" for your language code
-//0x1FF80000-0x1FF800B3 sed1376(Display Controller) Registers
-//0x1FFA0000-0x1FFB3FFF sed1376(Display Controller) Framebuffer, this is not the same as the palm framebuffer which is always 16 bit color,
-//this buffer must be processed depending on whats in the sed1376 registers, the result is the palm framebuffer
+//0x1FF80000-0x1FF800B3 SED1376(Display Controller) Registers
+//0x1FFA0000-0x1FFB3FFF SED1376(Display Controller) Framebuffer, this is not the same as the Palm framebuffer which is always 16 bit color,
+//this buffer must be processed depending on whats in the SED1376 registers, the result is the Palm framebuffer
 //0xFFFFF000-0xFFFFFDFF Hardware Registers
-//0xFFFFFF00-0xFFFFFFFF Bootloader, pesumably does the 256 byte ROM to RAM copy, never been dumped
+//0xFFFFFF00-0xFFFFFFFF Bootloader, only reads from UART into RAM and jumps to it, never executed in consumer Palms
 
 
 uint8_t   palmRam[RAM_SIZE + 3];//+ 3 to prevent 32 bit writes on last byte from corrupting memory
@@ -36,7 +36,7 @@ uint16_t  palmFramebuffer[160 * (160 + 60)];//really 160*160, the extra pixels a
 uint32_t  palmSpecialFeatures;
 double    palmCrystalCycles;//how many cycles before toggling the 32.768 kHz crystal
 double    palmCycleCounter;//can be greater then 0 if too many cycles where run
-double    palmClockMultiplier;//used by the emulator to overclock the emulated palm
+double    palmClockMultiplier;//used by the emulator to overclock the emulated Palm
 
 uint64_t (*emulatorGetSysTime)();
 uint64_t* (*emulatorGetSdCardStateChunkList)(uint64_t sessionId, uint64_t stateId);//returns the bps chunkIds for a stateId in the order they need to be applied
@@ -103,7 +103,7 @@ void emulatorInit(uint8_t* palmRomDump, uint8_t* palmBootDump, uint32_t specialF
    palmSdCard.type = CARD_NONE;
    palmSdCard.inserted = false;
    
-   //misc attributes
+   //misc settable attributes
    palmMisc.batteryCharging = false;
    palmMisc.batteryLevel = 100;
    palmMisc.inDock = false;
@@ -130,7 +130,7 @@ void emulatorExit(){
 }
 
 void emulatorReset(){
-   //reset doesnt clear ram or sdcard, all programs are stored in ram or on sdcard
+   //reset doesnt clear RAM or sdcard, all programs are stored in RAM or on sdcard
    resetHwRegisters();
    resetAddressSpace();//address space must be reset after hardware registers because it is dependant on them
    sed1376Reset();
@@ -157,9 +157,9 @@ uint32_t emulatorSetSdCard(uint64_t size, uint8_t type){
 uint32_t emulatorGetStateSize(){
    uint32_t size = 0;
    
-   size += sizeof(uint32_t) * (M68K_REG_CAAR + 1);//cpu registers
+   size += sizeof(uint32_t) * (M68K_REG_CAAR + 1);//CPU registers
    size += sizeof(uint8_t);//lowPowerStopActive
-   size += RAM_SIZE;//system ram buffer
+   size += RAM_SIZE;//system RAM buffer
    size += REG_SIZE;//hardware registers
    size += TOTAL_MEMORY_BANKS;//bank handlers
    size += sizeof(uint64_t) * 3;//palmSdCard
@@ -182,7 +182,7 @@ void emulatorSaveState(uint8_t* data){
       palmSdCard.stateId = stateId;
    }
    
-   //cpu
+   //CPU
    for(uint32_t cpuReg = 0; cpuReg <=  M68K_REG_CAAR; cpuReg++){
       writeStateValueUint32(data + offset, m68k_get_reg(NULL, cpuReg));
       offset += sizeof(uint32_t);
@@ -246,7 +246,7 @@ void emulatorSaveState(uint8_t* data){
 void emulatorLoadState(uint8_t* data){
    uint32_t offset = 0;
    
-   //cpu
+   //CPU
    for(uint32_t cpuReg = 0; cpuReg <=  M68K_REG_CAAR; cpuReg++){
       m68k_set_reg(cpuReg, readStateValueUint32(data + offset));
       offset += sizeof(uint32_t);

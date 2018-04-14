@@ -7,9 +7,9 @@
 #include "m68k/m68kops.h"
 
 
-#define OPCODE_BGND 0x4AFA
+#define OPCODE_BGND        0x4AFA
 #define OPCODE_CPU32_START 0xF800
-#define OPCODE_CPU32_END 0xF83F
+#define OPCODE_CPU32_END   0xF83F
 
 
 bool lowPowerStopActive;
@@ -24,7 +24,7 @@ static inline void patchOpcode(uint16_t opcode, void (*handler)(void), unsigned 
 void cpu32OpLpstop(void){
    uint immData = OPER_I_16();
    if(FLAG_S && immData & 0x2000){
-      //turn off the cpu and wait for interrupts
+      //turn off the CPU and wait for interrupts
       m68ki_set_sr(immData);
       lowPowerStopActive = true;
    }
@@ -32,6 +32,7 @@ void cpu32OpLpstop(void){
       //program lacks authority
       m68ki_exception_privilege_violation();
    }
+   debugLog("LowPowerStop set, CPU is off!\n");
 }
 
 void cpu32OpTbls(void){

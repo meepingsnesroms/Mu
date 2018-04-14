@@ -10,11 +10,11 @@
 static memory_access_t bankAccessors[TOTAL_MEMORY_BANKS];//these are not part of savestates because function pointers change with -fPIC
 uint8_t                bankType[TOTAL_MEMORY_BANKS];//these go in savestates
 
-//used for unmapped address space and writes to rom
+//used for unmapped address space and writes to ROM
 static unsigned int unmappedRead(unsigned int address){return 0x00000000;}
 static void unmappedWrite(unsigned int address, unsigned int value){}
 
-//ram accesses
+//RAM accesses
 static unsigned int ramRead8(unsigned int address){return BUFFER_READ_8(palmRam, address, RAM_START_ADDRESS);}
 static unsigned int ramRead16(unsigned int address){return BUFFER_READ_16(palmRam, address, RAM_START_ADDRESS);}
 static unsigned int ramRead32(unsigned int address){return BUFFER_READ_32(palmRam, address, RAM_START_ADDRESS);}
@@ -22,12 +22,12 @@ static void ramWrite8(unsigned int address, unsigned int value){BUFFER_WRITE_8(p
 static void ramWrite16(unsigned int address, unsigned int value){BUFFER_WRITE_16(palmRam, address, RAM_START_ADDRESS, value);}
 static void ramWrite32(unsigned int address, unsigned int value){BUFFER_WRITE_32(palmRam, address, RAM_START_ADDRESS, value);}
 
-//rom accesses
+//ROM accesses
 static unsigned int romRead8(unsigned int address){return BUFFER_READ_8(palmRom, address, ROM_START_ADDRESS);}
 static unsigned int romRead16(unsigned int address){return BUFFER_READ_16(palmRom, address, ROM_START_ADDRESS);}
 static unsigned int romRead32(unsigned int address){return BUFFER_READ_32(palmRom, address, ROM_START_ADDRESS);}
 
-//sed1376 framebuffer
+//SED1376 framebuffer
 static unsigned int sed1376FramebufferRead8(unsigned int address){return BUFFER_READ_8(sed1376Framebuffer, address, SED1376_FB_START_ADDRESS);}
 static unsigned int sed1376FramebufferRead16(unsigned int address){return BUFFER_READ_16(sed1376Framebuffer, address, SED1376_FB_START_ADDRESS);}
 static unsigned int sed1376FramebufferRead32(unsigned int address){return BUFFER_READ_32(sed1376Framebuffer, address, SED1376_FB_START_ADDRESS);}
@@ -58,7 +58,7 @@ unsigned int m68k_read_disassembler_32(unsigned int address){return m68k_read_me
 
 
 static uint8_t getProperBankType(uint16_t bank){
-   //ram bank 0x0000 not correct, inaccurate but works fine
+   //RAM bank 0x0000 not correct, inaccurate but works fine
    
    //special conditions
    if((bank & 0x00FF) == 0x00FF && registersAreXXFFMapped()){

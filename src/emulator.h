@@ -7,10 +7,10 @@
 
 #include <boolean.h>
 
-#ifdef DEBUG
-#define debugLog(fmtString, ...) printf(fmtString, __VA_ARGS__)
+#ifdef EMU_DEBUG
+#define debugLog(...) printf(__VA_ARGS__)
 #else
-#define debugLog(fmtString, ...)
+#define debugLog(...)
 #endif
 
 #ifdef __cplusplus
@@ -90,7 +90,7 @@ typedef struct{
    bool    inDock;
 }misc_hw_t;
 
-//cpu
+//CPU
 #define CRYSTAL_FREQUENCY 32768.0
 #define CPU_FREQUENCY (palmCrystalCycles * CRYSTAL_FREQUENCY)
 

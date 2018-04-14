@@ -38,10 +38,10 @@ static inline void clearIprIsrBit(uint32_t interruptBit){
 
 void printUnknownHwAccess(unsigned int address, unsigned int value, unsigned int size, bool isWrite){
    if(isWrite){
-      debugLog("Cpu Wrote %d bits of 0x%08X to register 0x%04X.\n", size, value, address);
+      debugLog("CPU Wrote %d bits of 0x%08X to register 0x%04X.\n", size, value, address);
    }
    else{
-      debugLog("Cpu Read %d bits from register 0x%04X.\n", size, address);
+      debugLog("CPU Read %d bits from register 0x%04X.\n", size, address);
    }
 }
 
@@ -259,7 +259,7 @@ static inline void setPllfsr16(uint16_t value){
 }
 
 static inline void setPllcr(uint16_t value){
-   //values that matter are disable pll, prescaler 1 and possibly wakeselect
+   //values that matter are disable PLL, prescaler 1 and possibly wakeselect
    registerArrayWrite16(PLLCR, value & 0x3FBB);
    uint16_t pllfsr = registerArrayRead16(PLLFSR);
    double prescaler1 = (value & 0x0080) ? 2.0 : 1.0;
@@ -270,9 +270,9 @@ static inline void setPllcr(uint16_t value){
    debugLog("New clk32 cycle count of:%f.\n", palmCrystalCycles);
    
    if(value & 0x0008){
-      //the pll is disabled, the cpu is off, end execution now
+      //the PLL is disabled, the CPU is off, end execution now
       m68k_end_timeslice();
-      debugLog("Disable PLL set, cpu is off!\n");
+      debugLog("Disable PLL set, CPU is off!\n");
    }
 }
 
@@ -564,7 +564,7 @@ bool registersAreXXFFMapped(){
 }
 
 bool sed1376ClockConnected(){
-   //this is the clock output pin for the sed1376, if its disabled so is the lcd controller
+   //this is the clock output pin for the SED1376, if its disabled so is the LCD controller
    return !CAST_TO_BOOL(registerArrayRead8(PFSEL) & 0x04);
 }
 
@@ -582,7 +582,7 @@ int interruptAcknowledge(int intLevel){
    else
       vector = vectorOffset | intLevel;
    
-   //dont know if interrupts reenable the pll if disabled, but they exit low power stop mode
+   //dont know if interrupts reenable the PLL if disabled, but they exit low power stop mode
    lowPowerStopActive = false;
    
    //the interrupt is not cleared until the handler writes a 1 to its source register, or manages the calling hardware
@@ -612,7 +612,7 @@ unsigned int getHwRegister8(unsigned int address){
       case PDDIR:
       case PKDIR:
 
-      //select between gpio or special function
+      //select between GPIO or special function
       case PBSEL:
       case PCSEL:
       case PDSEL:
@@ -766,7 +766,7 @@ void setHwRegister8(unsigned int address, unsigned int value){
          break;
          
       case PFSEL:
-         //this is the clock output pin for the sed1376, if its disabled so is the lcd controller
+         //this is the clock output pin for the SED1376, if its disabled so is the LCD controller
          setSed1376Attached(!CAST_TO_BOOL(value & 0x04));
          registerArrayWrite8(PFSEL, value);
          break;
@@ -804,7 +804,7 @@ void setHwRegister8(unsigned int address, unsigned int value){
          registerArrayWrite8(address, value & 0x3F);
          break;
          
-      //select between gpio or special function
+      //select between GPIO or special function
       case PCSEL:
       case PESEL:
       case PJSEL:
@@ -836,7 +836,7 @@ void setHwRegister8(unsigned int address, unsigned int value){
       //misc port config
       case PDKBEN:
          
-      //dragonball lcd controller, not attached to anything in palm m515
+      //dragonball LCD controller, not attached to anything in Palm m515
       case LCKCON:
          
          //simple write, no actions needed
@@ -866,16 +866,16 @@ void setHwRegister16(unsigned int address, unsigned int value){
          break;
          
       case IMR:
-         //this is a 32 bit register but palm os writes it as 16 bit chunks
+         //this is a 32 bit register but Palm OS writes it as 16 bit chunks
          registerArrayWrite16(address, value & 0x00FF);
          break;
       case IMR + 2:
-         //this is a 32 bit register but palm os writes it as 16 bit chunks
+         //this is a 32 bit register but Palm OS writes it as 16 bit chunks
          registerArrayWrite16(address, value & 0x03FF);
          break;
          
       case ISR + 2:
-         //this is a 32 bit register but palm os writes it as 16 bit chunks
+         //this is a 32 bit register but Palm OS writes it as 16 bit chunks
          registerArrayWrite16(ISR + 2, registerArrayRead16(ISR + 2) & ~(value & 0x0F00));
          break;
          
@@ -935,7 +935,7 @@ void setHwRegister16(unsigned int address, unsigned int value){
          
       case CSGBB:
          //unemulated
-         //sets the starting location of the sed1376
+         //sets the starting location of the SED1376
          registerArrayWrite16(address, value & 0xFFFE);
          break;
          
@@ -1014,7 +1014,7 @@ void resetHwRegisters(){
    //system control
    registerArrayWrite8(SCR, 0x1C);
    
-   //cpu id
+   //CPU id
    registerArrayWrite32(IDR, 0x56000000);
    
    //i/o drive control //probably unused
@@ -1034,11 +1034,11 @@ void resetHwRegisters(){
    //power control
    registerArrayWrite8(PCTLR, 0x1F);
    
-   //cpu interrupts
+   //interrupts
    registerArrayWrite32(IMR, 0x00FFFFFF);
    registerArrayWrite16(ILCR, 0x6533);
    
-   //gpio ports
+   //GPIO ports
    registerArrayWrite8(PADATA, 0xFF);
    registerArrayWrite8(PAPUEN, 0xFF);
    
@@ -1090,7 +1090,7 @@ void resetHwRegisters(){
    registerArrayWrite16(UBAUD2, 0x0002);
    registerArrayWrite16(HMARK, 0x0102);
    
-   //lcd control registers, unused since the sed1376 is present
+   //LCD control registers, unused since the SED1376 is present
    registerArrayWrite8(LVPW, 0xFF);
    registerArrayWrite16(LXMAX, 0x03F0);
    registerArrayWrite16(LYMAX, 0x01FF);
@@ -1107,7 +1107,7 @@ void resetHwRegisters(){
    registerArrayWrite16(STPWCH, 0x003F);//conflicting size in datasheet, it says its 8 bit but provides 16 bit values
    //DAYR is not changed on reset
    
-   //sdram control, unused since ram refresh is unemulated
+   //SDRAM control, unused since RAM refresh is unemulated
    registerArrayWrite16(SDCTRL, 0x003C);
    
    //add register settings to misc i/o
