@@ -67,10 +67,10 @@ static inline bool pllOn(){
 
 void printUnknownHwAccess(unsigned int address, unsigned int value, unsigned int size, bool isWrite){
    if(isWrite){
-      debugLog("CPU Wrote %d bits of 0x%08X to register 0x%04X.\n", size, value, address);
+      debugLog("CPU Wrote %d bits of 0x%08X to register 0x%04X, PC 0x%08X.\n", size, value, address, m68k_get_reg(NULL, M68K_REG_PC));
    }
    else{
-      debugLog("CPU Read %d bits from register 0x%04X.\n", size, address);
+      debugLog("CPU Read %d bits from register 0x%04X, PC 0x%08X.\n", size, address, m68k_get_reg(NULL, M68K_REG_PC));
    }
 }
 
@@ -246,7 +246,7 @@ static inline void checkPortDInts(){
    uint8_t portDIntEnable = registerArrayRead8(PDIRQEN);
    uint8_t portDKeyboardEnable = registerArrayRead8(PDKBEN);
    uint8_t portDIrqPins = ~registerArrayRead8(PDSEL);
-   uint8_t interruptControlRegister = registerArrayRead8(ICR);
+   uint16_t interruptControlRegister = registerArrayRead16(ICR);
 
    if(portDIntEnable & portDValue & ~portDDir & 0x01){
       //int 0, polarity set with PDPOL
@@ -353,6 +353,17 @@ static inline void setPllcr(uint16_t value){
       //The PLL shuts down 30 clock cycles of SYSCLK after the DISPLL bit is set in the PLLCR
       m68k_modify_timeslice(-m68k_cycles_remaining() + 30);
       debugLog("Disable PLL set, CPU off in 30 cycles!\n");
+   }
+}
+
+static inline void setScr(uint8_t value){
+   uint8_t oldScr = registerArrayRead8(SCR);
+   registerArrayWrite8(SCR, value);
+   if((value & 0x04) != (oldScr & 0x04)){
+      if(value & 0x04)
+         setRegisterXXFFAccessMode();
+      else
+         setRegisterFFFFAccessMode();
    }
 }
 
@@ -789,7 +800,10 @@ unsigned int getHwRegister32(unsigned int address){
    address &= 0x00000FFF;
    //printUnknownHwAccess(address, 0, 32, false);
    switch(address){
-         
+
+      //16 bit registers being read as 32 bit
+      case PLLFSR:
+
       case ISR:
       case IPR:
       case IMR:
@@ -819,13 +833,7 @@ void setHwRegister8(unsigned int address, unsigned int value){
    switch(address){
          
       case SCR:
-         if((value & 0x04) != (registerArrayRead8(SCR) & 0x04)){
-            if(value & 0x04)
-               setRegisterXXFFAccessMode();
-            else
-               setRegisterFFFFAccessMode();
-         }
-         registerArrayWrite8(SCR, value);
+         setScr(value);
          break;
          
       case IVR:
