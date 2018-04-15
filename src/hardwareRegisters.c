@@ -289,7 +289,7 @@ static inline void checkPortDInts(){
    }
    
    if(portDKeyboardEnable & ~portDValue & ~portDDir){
-      //active low/off
+      //active low/off level triggered interrupt
       setIprIsrBit(INT_KB);
    }
    
@@ -328,13 +328,13 @@ static inline void setPllfsr16(uint16_t value){
    uint16_t oldPllfsr = registerArrayRead16(PLLFSR);
    if(!(oldPllfsr & 0x4000)){
       //frequency protect bit not set
-      registerArrayWrite16(PLLFSR, (value & 0x4FFF) | (oldPllfsr & 0x8000));//preserve clk32 bit
+      registerArrayWrite16(PLLFSR, (value & 0x4FFF) | (oldPllfsr & 0x8000));//preserve CLK32 bit
       double prescaler1 = (registerArrayRead16(PLLCR) & 0x0080) ? 2.0 : 1.0;
       double p = value & 0x00FF;
       double q = (value & 0x0F00) >> 8;
       palmCrystalCycles = 2.0 * (14.0 * (p + 1.0) + q + 1.0) / prescaler1;
       debugLog("New CPU frequency of:%f cycles per second.\n", CPU_FREQUENCY);
-      debugLog("New clk32 cycle count of:%f.\n", palmCrystalCycles);
+      debugLog("New CLK32 cycle count of:%f.\n", palmCrystalCycles);
    }
 }
 
@@ -347,7 +347,7 @@ static inline void setPllcr(uint16_t value){
    double q = (pllfsr & 0x0F00) >> 8;
    palmCrystalCycles = 2.0 * (14.0 * (p + 1.0) + q + 1.0) / prescaler1;
    debugLog("New CPU frequency of:%f cycles per second.\n", CPU_FREQUENCY);
-   debugLog("New clk32 cycle count of:%f.\n", palmCrystalCycles);
+   debugLog("New CLK32 cycle count of:%f.\n", palmCrystalCycles);
    
    if(value & 0x0008){
       //The PLL shuts down 30 clock cycles of SYSCLK after the DISPLL bit is set in the PLLCR
@@ -483,17 +483,17 @@ static inline void timer12Clk32(){
             //do nothing
             break;
             
-         case 0x0001://sysclk / timer prescaler
+         case 0x0001://SYSCLK / timer prescaler
             if(pllOn())
                timer1CycleCounter += sysclksPerClk32() / (double)timer1Prescaler;
             break;
             
-         case 0x0002://sysclk / 16 / timer prescaler
+         case 0x0002://SYSCLK / 16 / timer prescaler
             if(pllOn())
                timer1CycleCounter += sysclksPerClk32() / 16.0 / (double)timer1Prescaler;
             break;
             
-         default://clk32 / timer prescaler
+         default://CLK32 / timer prescaler
             timer1CycleCounter += 1.0 / (double)timer1Prescaler;
             break;
       }
@@ -529,17 +529,17 @@ static inline void timer12Clk32(){
             //do nothing
             break;
             
-         case 0x0001://sysclk / timer prescaler
+         case 0x0001://SYSCLK / timer prescaler
             if(pllOn())
                timer2CycleCounter += sysclksPerClk32() / (double)timer2Prescaler;
             break;
             
-         case 0x0002://sysclk / 16 / timer prescaler
+         case 0x0002://SYSCLK / 16 / timer prescaler
             if(pllOn())
                timer2CycleCounter += sysclksPerClk32() / 16.0 / (double)timer2Prescaler;
             break;
             
-         default://clk32 / timer prescaler
+         default://CLK32 / timer prescaler
             timer2CycleCounter += 1.0 / (double)timer2Prescaler;
             break;
       }
@@ -745,7 +745,6 @@ unsigned int getHwRegister8(unsigned int address){
          
       default:
          //printUnknownHwAccess(address, 0, 8, false);
-         //return registerArrayRead8(address);
          return 0x00;
    }
    
@@ -780,7 +779,6 @@ unsigned int getHwRegister16(unsigned int address){
          
       default:
          printUnknownHwAccess(address, 0, 16, false);
-         //return registerArrayRead16(address);
          return 0x0000;
    }
    
@@ -814,7 +812,6 @@ unsigned int getHwRegister32(unsigned int address){
          
       default:
          printUnknownHwAccess(address, 0, 32, false);
-         //return registerArrayRead32(address);
          return 0x00000000;
    }
    
@@ -851,11 +848,6 @@ void setHwRegister8(unsigned int address, unsigned int value){
       case PDSEL:
          //write without the bottom 4 bits
          registerArrayWrite8(address, value & 0xF0);
-         break;
-         
-      case PDDATA:
-         registerArrayWrite8(address, value);
-         checkPortDInts();
          break;
 
       case PDPOL:
@@ -930,6 +922,7 @@ void setHwRegister8(unsigned int address, unsigned int value){
          
       //port data value, nothing attached to port
       case PCDATA:
+      case PDDATA:
       case PEDATA:
       case PFDATA:
       case PJDATA:
@@ -946,7 +939,6 @@ void setHwRegister8(unsigned int address, unsigned int value){
          
       default:
          printUnknownHwAccess(address, value, 8, true);
-         //registerArrayWrite8(address, value);
          break;
    }
 }
@@ -1028,6 +1020,7 @@ void setHwRegister16(unsigned int address, unsigned int value){
          registerArrayWrite16(address, value & 0xDC7F);
          break;
          
+         /*
       case CSGBA:
          //unemulated
          //sets the starting location of ROM
@@ -1052,10 +1045,10 @@ void setHwRegister16(unsigned int address, unsigned int value){
          //sets the starting location of RAM
          registerArrayWrite16(address, value & 0xFFFE);
          break;
+         */
          
       default:
          printUnknownHwAccess(address, value, 16, true);
-         //registerArrayWrite16(address, value);
          break;
    }
 }
@@ -1100,7 +1093,6 @@ void setHwRegister32(unsigned int address, unsigned int value){
       
       default:
          printUnknownHwAccess(address, value, 32, true);
-         //registerArrayWrite32(address, value);
          break;
    }
 }

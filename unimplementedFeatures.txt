@@ -3,10 +3,8 @@ SED1376 register access
 storage RAM protect
 sysTrapPceNativeCall, ARM Emulator
 cpu32 table lookup opcodes
-Check if interrupts restart PLL when its disabled
 Peripheral Control Register, audio ppm mixing selection
-Port D edge sensitive interrupts(currently always level sensitive), currently always triggers an interrupt when a button is pressed
-The data sheet says LRRA is 0xFFFFFA29 and 0xFFFFFA28 but its only 8 bits?
+All edge triggered interrupts(currently always level triggered)
 The boot memory mapping where ROM starts at 0x00000000 and RAM is swapped in
 (debug tools)missing icons
 Port G SPI stuff
@@ -19,7 +17,6 @@ Sdcard can't be read or written to
 Sdcard can't be inserted or removed
 Sdcard has no error handling in save/load state
 Port M Infrared shutdown (PMDATA 0x20)
-Disabling PLL also turns off all timers except the realtime clock unless they are set to use clk32 as there source
 interrupt control register (ICR) partially unimplemented
 
 Fixed:
@@ -28,3 +25,6 @@ Port D keyboard enable register
 (HW verified)PDPOL inverts interrupts by inverting PDDATA bits, the data register is affected by PDPOL
 Endian safe savestates
 PLL Control Register, Wake Select
+(Resolved by MC68VZ328UM_CORRECTIONS datasheet, its 0xA28, 16 bits)The data sheet says LRRA is 0xFFFFFA29 and 0xFFFFFA28 but its only 8 bits?
+(All except edge triggered INT0/1/2/3 restart PLL)Check if interrupts restart PLL when its disabled
+Disabling PLL also turns off general purpose timer 1 and 2 unless they are set to use clk32 as there source

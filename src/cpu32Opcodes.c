@@ -32,28 +32,28 @@ void cpu32OpLpstop(void){
       //program lacks authority
       m68ki_exception_privilege_violation();
    }
-   debugLog("LowPowerStop set, CPU is off!\n");
+   debugLog("LowPowerStop set, CPU is off, PC 0x%08X!\n", m68k_get_reg(NULL, M68K_REG_PC));
 }
 
 void cpu32OpTbls(void){
-   debugLog("TBLS opcode not implemented!\n");
+   debugLog("TBLS opcode not implemented, PC 0x%08X!\n", m68k_get_reg(NULL, M68K_REG_PC));
 }
 
 void cpu32OpTblsn(void){
-   debugLog("TBLSN opcode not implemented!\n");
+   debugLog("TBLSN opcode not implemented, PC 0x%08X!\n", m68k_get_reg(NULL, M68K_REG_PC));
 }
 
 void cpu32OpTblu(void){
-   debugLog("TBLU opcode not implemented!\n");
+   debugLog("TBLU opcode not implemented, PC 0x%08X!\n", m68k_get_reg(NULL, M68K_REG_PC));
 }
 
 void cpu32OpTblun(void){
-   debugLog("TBLUN opcode not implemented!\n");
+   debugLog("TBLUN opcode not implemented, PC 0x%08X!\n", m68k_get_reg(NULL, M68K_REG_PC));
 }
 
 
 void m68k_op_bgnd(void){
-   debugLog("Opcode BGND not implemented!\n");
+   debugLog("Opcode BGND not implemented, PC 0x%08X!\n", m68k_get_reg(NULL, M68K_REG_PC));
 }
 
 void m68k_op_cpu32_dispatch(void){

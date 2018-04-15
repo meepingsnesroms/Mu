@@ -123,6 +123,8 @@ void emulatorInit(uint8_t* palmRomDump, uint8_t* palmBootDump, uint32_t specialF
    debugLog("Fixed 32.32:0x%08lX\n", fixed3232);
    debugLog("Rebuilt double:%f\n", rebuilt);
    */
+
+   //debugLog("0x01000014 bank type:%d\n", bankType[0x0100]);
 }
 
 void emulatorExit(){
