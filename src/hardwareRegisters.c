@@ -60,6 +60,10 @@ static inline void pllWakeCpuIfOff(){
    }
 }
 
+static inline bool pllOn(){
+   return (registerArrayRead16(PLLCR) & 0x0008) == 0;
+}
+
 
 void printUnknownHwAccess(unsigned int address, unsigned int value, unsigned int size, bool isWrite){
    if(isWrite){
@@ -198,28 +202,28 @@ static inline uint8_t getPortDValue(){
    
    portDValue |= 0x80/*battery not dead bit*/;
    
-   if(palmSdCard.inserted){
+   if(!palmSdCard.inserted){
       portDValue |= 0x20;
    }
    
    if((requestedRow & 0x20) == 0){
-      //kbd row 0
+      //kbd row 0, pins are 0 when button pressed and 1 when released, Palm OS then uses PDPOL to swap back to pressed == 1
       portDValue |= !palmInput.buttonCalender | !palmInput.buttonAddress << 1 | !palmInput.buttonTodo << 2 | !palmInput.buttonNotes << 3;
    }
    
    if((requestedRow & 0x40) == 0){
-      //kbd row 1
+      //kbd row 1, pins are 0 when button pressed and 1 when released, Palm OS then uses PDPOL to swap back to pressed == 1
       portDValue |= !palmInput.buttonUp | !palmInput.buttonDown << 1;
    }
    
    if((requestedRow & 0x80) == 0){
-      //kbd row 2
+      //kbd row 2, pins are 0 when button pressed and 1 when released, Palm OS then uses PDPOL to swap back to pressed == 1
       portDValue |= !palmInput.buttonPower | !palmInput.buttonContrast << 1 | !palmInput.buttonAddress << 3;
    }
    
+   portDValue ^= portDPolarity;//only input polarity is affected by PDPOL
    portDValue &= ~portDDir;//only use above pin values for inputs
    portDValue |= portDData & portDDir;//if a pin is an output and has its data bit set return that too
-   portDValue ^= portDPolarity;//swap polarity after everything is done
    
    return portDValue;
 }
@@ -238,51 +242,54 @@ static inline uint8_t getPortKValue(){
 
 static inline void checkPortDInts(){
    uint8_t portDValue = getPortDValue();
+   uint8_t portDDir = registerArrayRead8(PDDIR);
    uint8_t portDIntEnable = registerArrayRead8(PDIRQEN);
    uint8_t portDKeyboardEnable = registerArrayRead8(PDKBEN);
    uint8_t portDIrqPins = ~registerArrayRead8(PDSEL);
-   
-   if(portDIntEnable & portDValue & 0x01){
-      //int 0
+   uint8_t interruptControlRegister = registerArrayRead8(ICR);
+
+   if(portDIntEnable & portDValue & ~portDDir & 0x01){
+      //int 0, polarity set with PDPOL
       setIprIsrBit(INT_INT0);
    }
    
-   if(portDIntEnable & portDValue & 0x02){
-      //int 1
+   if(portDIntEnable & portDValue & ~portDDir & 0x02){
+      //int 1, polarity set with PDPOL
       setIprIsrBit(INT_INT1);
    }
    
-   if(portDIntEnable & portDValue & 0x04){
-      //int 2
+   if(portDIntEnable & portDValue & ~portDDir & 0x04){
+      //int 2, polarity set with PDPOL
       setIprIsrBit(INT_INT2);
    }
    
-   if(portDIntEnable & portDValue & 0x08){
-      //int 3
+   if(portDIntEnable & portDValue & ~portDDir & 0x08){
+      //int 3, polarity set with PDPOL
       setIprIsrBit(INT_INT3);
    }
    
-   if(portDIrqPins & portDValue & 0x10){
-      //irq 1
+   if(portDIrqPins & ~portDDir & 0x10 && ((portDValue & 0x10) != 0) == ((interruptControlRegister & 0x8000) != 0)){
+      //irq 1, polarity set in ICR
       setIprIsrBit(INT_IRQ1);
    }
    
-   if(portDIrqPins & portDValue & 0x20){
-      //irq 2
+   if(portDIrqPins & ~portDDir & 0x20 && ((portDValue & 0x20) != 0) == ((interruptControlRegister & 0x4000) != 0)){
+      //irq 2, polarity set in ICR
       setIprIsrBit(INT_IRQ2);
    }
    
-   if(portDIrqPins & portDValue & 0x40){
-      //irq 3
+   if(portDIrqPins & ~portDDir & 0x40 && ((portDValue & 0x40) != 0) == ((interruptControlRegister & 0x2000) != 0)){
+      //irq 3, polarity set in ICR
       setIprIsrBit(INT_IRQ3);
    }
    
-   if(portDIrqPins & portDValue & 0x80){
-      //irq 6
+   if(portDIrqPins & ~portDDir & 0x80 && ((portDValue & 0x80) != 0) == ((interruptControlRegister & 0x1000) != 0)){
+      //irq 6, polarity set in ICR
       setIprIsrBit(INT_IRQ6);
    }
    
-   if(portDKeyboardEnable & portDValue){
+   if(portDKeyboardEnable & ~portDValue & ~portDDir){
+      //active low/off
       setIprIsrBit(INT_KB);
    }
    
@@ -466,11 +473,13 @@ static inline void timer12Clk32(){
             break;
             
          case 0x0001://sysclk / timer prescaler
-            timer1CycleCounter += sysclksPerClk32() / (double)timer1Prescaler;
+            if(pllOn())
+               timer1CycleCounter += sysclksPerClk32() / (double)timer1Prescaler;
             break;
             
          case 0x0002://sysclk / 16 / timer prescaler
-            timer1CycleCounter += sysclksPerClk32() / 16.0 / (double)timer1Prescaler;
+            if(pllOn())
+               timer1CycleCounter += sysclksPerClk32() / 16.0 / (double)timer1Prescaler;
             break;
             
          default://clk32 / timer prescaler
@@ -510,11 +519,13 @@ static inline void timer12Clk32(){
             break;
             
          case 0x0001://sysclk / timer prescaler
-            timer2CycleCounter += sysclksPerClk32() / (double)timer2Prescaler;
+            if(pllOn())
+               timer2CycleCounter += sysclksPerClk32() / (double)timer2Prescaler;
             break;
             
          case 0x0002://sysclk / 16 / timer prescaler
-            timer2CycleCounter += sysclksPerClk32() / 16.0 / (double)timer2Prescaler;
+            if(pllOn())
+               timer2CycleCounter += sysclksPerClk32() / 16.0 / (double)timer2Prescaler;
             break;
             
          default://clk32 / timer prescaler
@@ -640,7 +651,7 @@ void clk32(){
 }
 
 bool cpuIsOn(){
-   return !CAST_TO_BOOL((registerArrayRead16(PLLCR) & 0x0008) != 0 || lowPowerStopActive);
+   return pllOn() && !lowPowerStopActive;
 }
 
 bool registersAreXXFFMapped(){
@@ -737,7 +748,7 @@ unsigned int getHwRegister16(unsigned int address){
    }
    
    address &= 0x00000FFF;
-   printUnknownHwAccess(address, 0, 16, false);
+   //printUnknownHwAccess(address, 0, 16, false);
    switch(address){
          
       //32 bit registers accessed as 16 bit
@@ -757,7 +768,7 @@ unsigned int getHwRegister16(unsigned int address){
          return registerArrayRead16(address);
          
       default:
-         //printUnknownHwAccess(address, 0, 16, false);
+         printUnknownHwAccess(address, 0, 16, false);
          //return registerArrayRead16(address);
          return 0x0000;
    }
@@ -776,7 +787,7 @@ unsigned int getHwRegister32(unsigned int address){
    }
    
    address &= 0x00000FFF;
-   printUnknownHwAccess(address, 0, 32, false);
+   //printUnknownHwAccess(address, 0, 32, false);
    switch(address){
          
       case ISR:
@@ -788,7 +799,7 @@ unsigned int getHwRegister32(unsigned int address){
          return registerArrayRead32(address);
          
       default:
-         //printUnknownHwAccess(address, 0, 32, false);
+         printUnknownHwAccess(address, 0, 32, false);
          //return registerArrayRead32(address);
          return 0x00000000;
    }
@@ -804,7 +815,7 @@ void setHwRegister8(unsigned int address, unsigned int value){
    }
    
    address &= 0x00000FFF;
-   printUnknownHwAccess(address, value, 8, true);
+   //printUnknownHwAccess(address, value, 8, true);
    switch(address){
          
       case SCR:
@@ -926,7 +937,7 @@ void setHwRegister8(unsigned int address, unsigned int value){
          break;
          
       default:
-         //printUnknownHwAccess(address, value, 8, true);
+         printUnknownHwAccess(address, value, 8, true);
          //registerArrayWrite8(address, value);
          break;
    }
@@ -939,7 +950,7 @@ void setHwRegister16(unsigned int address, unsigned int value){
    }
    
    address &= 0x00000FFF;
-   printUnknownHwAccess(address, value, 16, true);
+   //printUnknownHwAccess(address, value, 16, true);
    switch(address){
          
       case RTCIENR:
@@ -1035,7 +1046,7 @@ void setHwRegister16(unsigned int address, unsigned int value){
          break;
          
       default:
-         //printUnknownHwAccess(address, value, 16, true);
+         printUnknownHwAccess(address, value, 16, true);
          //registerArrayWrite16(address, value);
          break;
    }
@@ -1052,7 +1063,7 @@ void setHwRegister32(unsigned int address, unsigned int value){
    }
    
    address &= 0x00000FFF;
-   printUnknownHwAccess(address, value, 32, true);
+   //printUnknownHwAccess(address, value, 32, true);
    switch(address){
          
       case RTCTIME:
@@ -1080,7 +1091,7 @@ void setHwRegister32(unsigned int address, unsigned int value){
          break;
       
       default:
-         //printUnknownHwAccess(address, value, 32, true);
+         printUnknownHwAccess(address, value, 32, true);
          //registerArrayWrite32(address, value);
          break;
    }

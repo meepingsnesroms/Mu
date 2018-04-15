@@ -20,6 +20,7 @@ Sdcard can't be inserted or removed
 Sdcard has no error handling in save/load state
 Port M Infrared shutdown (PMDATA 0x20)
 Disabling PLL also turns off all timers except the realtime clock unless they are set to use clk32 as there source
+interrupt control register (ICR) partially unimplemented
 
 Fixed:
 System Control Register, 0xXXFFF000 all upper banks are registers mode
