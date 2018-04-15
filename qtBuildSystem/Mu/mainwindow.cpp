@@ -45,7 +45,7 @@ uint8_t* getFileBuffer(std::string filePath, size_t& size, uint32_t& error){
                 rawData = new (std::nothrow) uint8_t[st.st_size];
                 if(rawData){
                     size_t bytesRead = fread(rawData, 1, st.st_size, dataFile);
-                    if(bytesRead == st.st_size){
+                    if(bytesRead == (size_t)st.st_size){
                         size = bytesRead;
                         error = FRONTEND_ERR_NONE;
                     }
