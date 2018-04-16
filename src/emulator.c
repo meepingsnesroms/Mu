@@ -38,6 +38,7 @@ double    palmCrystalCycles;//how many cycles before toggling the 32.768 kHz cry
 double    palmCycleCounter;//can be greater then 0 if too many cycles where run
 double    palmClockMultiplier;//used by the emulator to overclock the emulated Palm
 
+
 uint64_t (*emulatorGetSysTime)();
 uint64_t* (*emulatorGetSdCardStateChunkList)(uint64_t sessionId, uint64_t stateId);//returns the bps chunkIds for a stateId in the order they need to be applied
 void (*emulatorSetSdCardStateChunkList)(uint64_t sessionId, uint64_t stateId, uint64_t* data);//sets the bps chunkIds for a stateId in the order they need to be applied
@@ -52,12 +53,48 @@ static inline bool allSdCardCallbacksPresent(){
 }
 
 
+//debug
+#ifdef EMU_OPCODE_LEVEL_DEBUG
+#define LOGGED_OPCODES 10
+static bool invalidBehaviorAbort;
+static char disassemblyBuffer[LOGGED_OPCODES][100];//store the opcode and program counter for the last 10 opcodes
+
+static void invalidBehaviorCheck(){
+   for(uint32_t i = 0; i < LOGGED_OPCODES - 1; i++)
+      strcpy(disassemblyBuffer[i], disassemblyBuffer[i + 1]);
+
+   uint32_t programCounter = m68k_get_reg(NULL, M68K_REG_PC);
+   uint16_t instruction = m68k_get_reg(NULL, M68K_REG_IR);
+
+   m68k_disassemble(disassemblyBuffer[LOGGED_OPCODES - 1], programCounter, M68K_CPU_TYPE_68020);
+   strcat(disassemblyBuffer[LOGGED_OPCODES - 1], "\n");
+
+   if(bankType[programCounter >> 16] == EMPTY_BANK)
+      invalidBehaviorAbort = true;
+
+   if(!m68k_is_valid_instruction(instruction, M68K_CPU_TYPE_68020) || instruction == 0x0000){
+      //0x0000 is "ori.b #$0, D0", effectivly NOP but still a valid opcode
+      //usualy never encountered unless executing empty address space, so it still triggers debug abort
+      invalidBehaviorAbort = true;
+   }
+
+   if(invalidBehaviorAbort)
+      m68k_end_timeslice();
+}
+#endif
+
+
 void emulatorInit(uint8_t* palmRomDump, uint8_t* palmBootDump, uint32_t specialFeatures){
-   //cpu
+   //CPU
    m68k_init();
    m68k_set_cpu_type(M68K_CPU_TYPE_68020);
    m68k_set_reset_instr_callback(emulatorReset);
    m68k_set_int_ack_callback(interruptAcknowledge);
+#ifdef EMU_OPCODE_LEVEL_DEBUG
+   for(uint32_t i = 0; i < LOGGED_OPCODES; i++)
+      strcpy(disassemblyBuffer[i], "Not an opcode.\n");
+   m68k_set_instr_hook_callback(invalidBehaviorCheck);
+#endif
    patchMusashiOpcodeHandlerCpu32();
    resetHwRegisters();
    lowPowerStopActive = false;
@@ -341,4 +378,31 @@ void emulateFrame(){
    memcpy(palmFramebuffer, sed1376Framebuffer, 160 * 160 * sizeof(uint16_t));
 
    //debugLog("Ran frame, executed %f cycles.\n", palmCycleCounter + CPU_FREQUENCY / EMU_FPS);
+}
+
+bool emulateUntilDebugEventOrFrameEnd(){
+#ifdef EMU_OPCODE_LEVEL_DEBUG
+   invalidBehaviorAbort = false;
+
+   refreshButtonState();
+   while(palmCycleCounter < CPU_FREQUENCY / EMU_FPS){
+      if(cpuIsOn())
+         palmCycleCounter += m68k_execute(palmCrystalCycles * palmClockMultiplier) / palmClockMultiplier;//normaly 33mhz / 60fps
+      else
+         palmCycleCounter += palmCrystalCycles;
+      clk32();
+      if(invalidBehaviorAbort)
+         break;
+   }
+   palmCycleCounter -= CPU_FREQUENCY / EMU_FPS;
+
+   if(invalidBehaviorAbort)
+      for(uint32_t i = 0; i < LOGGED_OPCODES; i++)
+         debugLog(disassemblyBuffer[i]);
+
+   return invalidBehaviorAbort;
+#else
+   emulateFrame();
+   return false;
+#endif
 }

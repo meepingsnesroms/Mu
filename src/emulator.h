@@ -7,6 +7,8 @@
 
 #include <boolean.h>
 
+//to enable opcode level debugging define EMU_OPCODE_LEVEL_DEBUG
+
 #ifdef EMU_DEBUG
 #define debugLog(...) printf(__VA_ARGS__)
 #else
@@ -151,6 +153,7 @@ void emulatorSaveState(uint8_t* data);
 void emulatorLoadState(uint8_t* data);
 uint32_t emulatorInstallPrcPdb(uint8_t* data, uint32_t size);
 void emulateFrame();
+bool emulateUntilDebugEventOrFrameEnd();//false for frame end, true for debug event
    
 #ifdef __cplusplus
 }

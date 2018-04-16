@@ -45,7 +45,7 @@ void setHwRegister32(unsigned int address, unsigned int value);
 //timing
 void clk32();//also checks all interrupts
 
-//cpu
+//CPU
 bool cpuIsOn();
 int  interruptAcknowledge(int intLevel);
 bool registersAreXXFFMapped();

@@ -3,12 +3,12 @@
 
 int main(int argc, char *argv[])
 {
-	QApplication a(argc, argv);
-	MainWindow w;
+   QApplication a(argc, argv);
+   MainWindow w;
 
-	a.setOrganizationDomain("meepingsnesroms.github.com");
-	a.setApplicationName("Mu");
-	w.show();
+   a.setOrganizationDomain("meepingsnesroms.github.com");
+   a.setApplicationName("Mu");
+   w.show();
 
-	return a.exec();
+   return a.exec();
 }

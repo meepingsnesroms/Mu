@@ -18,7 +18,7 @@ TEMPLATE = app
 DEFINES += QT_DEPRECATED_WARNINGS
 
 CONFIG(debug, debug|release){
-    DEFINES += EMU_DEBUG
+    DEFINES += EMU_DEBUG EMU_OPCODE_LEVEL_DEBUG
 }
 
 # You can also make your code fail to compile if you use deprecated APIs.
