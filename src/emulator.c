@@ -60,26 +60,35 @@ static bool invalidBehaviorAbort;
 static char disassemblyBuffer[LOGGED_OPCODES][100];//store the opcode and program counter for the last 10 opcodes
 
 static void invalidBehaviorCheck(){
+   char opcodeName[100];
+   uint32_t lastProgramCounter = m68k_get_reg(NULL, M68K_REG_PPC);
+   uint32_t programCounter = m68k_get_reg(NULL, M68K_REG_PC);
+   uint16_t instruction = m68k_get_reg(NULL, M68K_REG_IR);
+   bool invalidInstruction = !m68k_is_valid_instruction(instruction, M68K_CPU_TYPE_68020);
+   bool invalidBank = (bankType[programCounter >> 16] == EMPTY_BANK);
+
+   //get current opcode
+   m68k_disassemble(opcodeName, programCounter, M68K_CPU_TYPE_68020);
+
+   //shift opcode buffer
    for(uint32_t i = 0; i < LOGGED_OPCODES - 1; i++)
       strcpy(disassemblyBuffer[i], disassemblyBuffer[i + 1]);
 
-   uint32_t programCounter = m68k_get_reg(NULL, M68K_REG_PC);
-   uint16_t instruction = m68k_get_reg(NULL, M68K_REG_IR);
-
-   m68k_disassemble(disassemblyBuffer[LOGGED_OPCODES - 1], programCounter, M68K_CPU_TYPE_68020);
+   //add to opcode buffer
+   strcpy(disassemblyBuffer[LOGGED_OPCODES - 1], opcodeName);
    strcat(disassemblyBuffer[LOGGED_OPCODES - 1], "\n");
 
-   if(bankType[programCounter >> 16] == EMPTY_BANK)
-      invalidBehaviorAbort = true;
-
-   if(!m68k_is_valid_instruction(instruction, M68K_CPU_TYPE_68020) || instruction == 0x0000){
+   if(invalidInstruction || invalidBank || (instruction == 0x0000 && lastProgramCounter != 0x00000000)){
       //0x0000 is "ori.b #$0, D0", effectivly NOP but still a valid opcode
       //usualy never encountered unless executing empty address space, so it still triggers debug abort
-      invalidBehaviorAbort = true;
-   }
-
-   if(invalidBehaviorAbort)
       m68k_end_timeslice();
+      invalidBehaviorAbort = true;
+
+      for(uint32_t i = 0; i < LOGGED_OPCODES; i++)
+         debugLog(disassemblyBuffer[i]);
+      //currently CPU32 opcodes will be listed as "unknown", I cant change that properly unless I directly edit musashi source, something I want to avoid doing
+      debugLog("Instruction:\"%s\", instruction value:0x%04X, program counter:0x%08X\n", invalidInstruction ? "unknown" : opcodeName, instruction, programCounter);
+   }
 }
 #endif
 
@@ -109,6 +118,7 @@ void emulatorInit(uint8_t* palmRomDump, uint8_t* palmBootDump, uint32_t specialF
    else
        memset(palmBootloader, 0x00, BOOTLOADER_SIZE);
    memcpy(palmRam, palmRom, 256);//copy ROM header
+   //memcpy(palmRam, palmRom, ROM_SIZE);//copy whole ROM
    memcpy(&palmFramebuffer[160 * 160], silkscreenData, SILKSCREEN_WIDTH * SILKSCREEN_HEIGHT * (SILKSCREEN_BPP / 8));
    resetAddressSpace();
    sed1376Reset();
@@ -395,10 +405,6 @@ bool emulateUntilDebugEventOrFrameEnd(){
          break;
    }
    palmCycleCounter -= CPU_FREQUENCY / EMU_FPS;
-
-   if(invalidBehaviorAbort)
-      for(uint32_t i = 0; i < LOGGED_OPCODES; i++)
-         debugLog(disassemblyBuffer[i]);
 
    return invalidBehaviorAbort;
 #else
