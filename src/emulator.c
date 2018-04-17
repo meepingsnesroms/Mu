@@ -64,7 +64,7 @@ static void invalidBehaviorCheck(){
    uint32_t programCounter = m68k_get_reg(NULL, M68K_REG_PC);
    uint16_t instruction = m68k_get_reg(NULL, M68K_REG_IR);
    bool invalidInstruction = !m68k_is_valid_instruction(instruction, M68K_CPU_TYPE_68020);
-   bool invalidBank = (bankType[programCounter >> 16] == EMPTY_BANK);
+   bool invalidBank = (bankType[programCounter >> 16] == CHIP_NONE);
 
    //get current opcode
    m68k_disassemble(opcodeName, programCounter, M68K_CPU_TYPE_68020);
@@ -247,7 +247,7 @@ void emulatorSaveState(uint8_t* data){
    offset += REG_SIZE;
    memcpy(data + offset, bankType, TOTAL_MEMORY_BANKS);
    offset += TOTAL_MEMORY_BANKS;
-   for(uint32_t chip = CHIP_BEGIN; chip < CHIP_END; chip++){
+   for(uint32_t chip = CHIP_A_ROM; chip <= CHIP_D_RAM; chip++){
       writeStateValueBool(data + offset, chips[chip].enable);
       offset += sizeof(uint8_t);
       writeStateValueUint32(data + offset, chips[chip].start);
@@ -331,7 +331,7 @@ void emulatorLoadState(uint8_t* data){
    offset += REG_SIZE;
    memcpy(bankType, data + offset, TOTAL_MEMORY_BANKS);
    offset += TOTAL_MEMORY_BANKS;
-   for(uint32_t chip = CHIP_BEGIN; chip < CHIP_END; chip++){
+   for(uint32_t chip = CHIP_A_ROM; chip <= CHIP_D_RAM; chip++){
       chips[chip].enable = readStateValueBool(data + offset);
       offset += sizeof(uint8_t);
       chips[chip].start = readStateValueUint32(data + offset);
@@ -395,8 +395,6 @@ void emulatorLoadState(uint8_t* data){
    //features
    palmSpecialFeatures = readStateValueUint32(data + offset);
    offset += sizeof(uint32_t);
-   
-   refreshBankHandlers();
    
    //update sdcard data from sdcard struct
    if(allSdCardCallbacksPresent() && palmSdCard.type != CARD_NONE){

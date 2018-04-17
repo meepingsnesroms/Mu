@@ -30,12 +30,12 @@
 
 //chip names
 enum{
-   CHIP_BEGIN = 0,
    CHIP_A_ROM = 0,
    CHIP_B_SED,
    CHIP_C_USB,
    CHIP_D_RAM,
-   CHIP_END
+   CHIP_NONE,
+   CHIP_REGISTERS
 };
 
 //types
@@ -76,6 +76,11 @@ int  interruptAcknowledge(int intLevel);
 bool registersAreXXFFMapped();
 bool sed1376ClockConnected();
 void refreshButtonState();
+
+//memory errors
+void setBusErrorTimeOut();
+void setPrivilegeViolation();
+void setWriteProtectViolation();
 
 //config
 void resetHwRegisters();

@@ -814,6 +814,30 @@ void refreshButtonState(){
    checkPortDInts();
 }
 
+void setBusErrorTimeOut(){
+   uint8_t scr = registerArrayRead8(SCR);
+   if(scr & 0x10){
+      //trigger interrupt
+   }
+   registerArrayWrite8(SCR, scr | 0x80);
+}
+
+void setWriteProtectViolation(){
+   uint8_t scr = registerArrayRead8(SCR);
+   if(scr & 0x10){
+      //trigger interrupt
+   }
+   registerArrayWrite8(SCR, scr | 0x40);
+}
+
+void setPrivilegeViolation(){
+   uint8_t scr = registerArrayRead8(SCR);
+   if(scr & 0x10){
+      //trigger interrupt
+   }
+   registerArrayWrite8(SCR, scr | 0x20);
+}
+
 int interruptAcknowledge(int intLevel){
    int vectorOffset = registerArrayRead8(IVR);
    int vector;
@@ -1273,7 +1297,7 @@ void resetHwRegisters(){
    pllWakeWait = -1;
    timer1CycleCounter = 0.0;
    timer2CycleCounter = 0.0;
-   for(uint32_t chip = CHIP_BEGIN; chip < CHIP_END; chip++){
+   for(uint32_t chip = CHIP_A_ROM; chip <= CHIP_D_RAM; chip++){
       chips[chip].enable = false;
       chips[chip].start = 0x00000000;
       chips[chip].size = 0x00000000;

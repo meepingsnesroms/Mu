@@ -28,32 +28,9 @@
 #define BUFFER_WRITE_16(segment, accessAddress, startAddress, mask, value) segment[accessAddress - startAddress & mask] = value >> 8; segment[accessAddress - startAddress + 1  & mask] = value & 0xFF
 #define BUFFER_WRITE_32(segment, accessAddress, startAddress, mask, value) segment[accessAddress - startAddress & mask] = value >> 24; segment[accessAddress - startAddress + 1  & mask] = (value >> 16) & 0xFF; segment[accessAddress - startAddress + 2  & mask] = (value >> 8) & 0xFF; segment[accessAddress - startAddress + 3  & mask] = value & 0xFF
 
-//memory banks
-enum{
-   EMPTY_BANK = 0,
-   RAM_BANK,
-   ROM_BANK,
-   REG_BANK,
-   SED1376_REG_BANK,
-   SED1376_FB_BANK,
-   UNSAFE_BANK//if a chip select uses base address bits 15 or 14 accesses wont be bank aligned and will use "if(address >= chips[chip].start && address <= chips[chip].start + chips[chip].size)"
-};
-
-//types
-typedef struct{
-   unsigned int (*read8)(unsigned int address);
-   unsigned int (*read16)(unsigned int address);
-   unsigned int (*read32)(unsigned int address);
-   
-   void         (*write8)(unsigned int address, unsigned int value);
-   void         (*write16)(unsigned int address, unsigned int value);
-   void         (*write32)(unsigned int address, unsigned int value);
-}memory_access_t;
-
 extern uint8_t bankType[];
 
 void setRegisterXXFFAccessMode();
 void setRegisterFFFFAccessMode();
 void setSed1376Attached(bool attached);
-void refreshBankHandlers();//must call after loadstate or you will SIGSEGV
 void resetAddressSpace();
