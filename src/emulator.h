@@ -95,11 +95,11 @@ typedef struct{
 extern uint8_t   palmRam[];
 extern uint8_t   palmRom[];
 extern uint8_t   palmReg[];
-extern uint8_t   palmBootloader[];
 extern input_t   palmInput;
 extern sdcard_t  palmSdCard;
 extern misc_hw_t palmMisc;
 extern uint16_t  palmFramebuffer[];
+extern uint32_t  palmSpecialFeatures;
 extern double    palmCrystalCycles;
 extern double    palmCycleCounter;
 extern double    palmClockMultiplier;

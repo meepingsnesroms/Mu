@@ -25,10 +25,9 @@
 //0xFFFFFF00-0xFFFFFFFF Bootloader, only reads from UART into RAM and jumps to it, never executed in consumer Palms
 
 
-uint8_t   palmRam[RAM_SIZE + 3];//+ 3 to prevent 32 bit writes on last byte from corrupting memory
-uint8_t   palmRom[ROM_SIZE + 3];//+ 3 to prevent 32 bit writes on last byte from corrupting memory
-uint8_t   palmReg[REG_SIZE + 3];//+ 3 to prevent 32 bit writes on last byte from corrupting memory
-uint8_t   palmBootloader[BOOTLOADER_SIZE + 3];//+ 3 to prevent 32 bit writes on last byte from corrupting memory
+uint8_t   palmRam[RAM_SIZE];
+uint8_t   palmRom[ROM_SIZE];
+uint8_t   palmReg[REG_SIZE];
 input_t   palmInput;
 sdcard_t  palmSdCard;
 misc_hw_t palmMisc;
@@ -114,9 +113,9 @@ void emulatorInit(uint8_t* palmRomDump, uint8_t* palmBootDump, uint32_t specialF
    memset(palmRam, 0x00, RAM_SIZE);
    memcpy(palmRom, palmRomDump, ROM_SIZE);
    if(palmBootDump)
-       memcpy(palmBootloader, palmBootDump, BOOTLOADER_SIZE);
+       memcpy(palmReg + REG_SIZE - 1 - BOOTLOADER_SIZE, palmBootDump, BOOTLOADER_SIZE);
    else
-       memset(palmBootloader, 0x00, BOOTLOADER_SIZE);
+       memset(palmReg + REG_SIZE - 1 - BOOTLOADER_SIZE, 0x00, BOOTLOADER_SIZE);
    memcpy(palmRam, palmRom, 256);//copy ROM header
    //memcpy(palmRam, palmRom, ROM_SIZE);//copy whole ROM
    memcpy(&palmFramebuffer[160 * 160], silkscreenData, SILKSCREEN_WIDTH * SILKSCREEN_HEIGHT * (SILKSCREEN_BPP / 8));

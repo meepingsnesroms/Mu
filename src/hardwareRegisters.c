@@ -18,12 +18,12 @@ double   timer1CycleCounter;
 double   timer2CycleCounter;
 
 
-static inline uint8_t registerArrayRead8(uint32_t address){return BUFFER_READ_8(palmReg, address, 0);}
-static inline uint16_t registerArrayRead16(uint32_t address){return BUFFER_READ_16(palmReg, address, 0);}
-static inline uint32_t registerArrayRead32(uint32_t address){return BUFFER_READ_32(palmReg, address, 0);}
-static inline void registerArrayWrite8(uint32_t address, uint8_t value){BUFFER_WRITE_8(palmReg, address, 0, value);}
-static inline void registerArrayWrite16(uint32_t address, uint16_t value){BUFFER_WRITE_16(palmReg, address, 0, value);}
-static inline void registerArrayWrite32(uint32_t address, uint32_t value){BUFFER_WRITE_32(palmReg, address, 0, value);}
+static inline uint8_t registerArrayRead8(uint32_t address){return BUFFER_READ_8(palmReg, address, 0, 0xFFF);}
+static inline uint16_t registerArrayRead16(uint32_t address){return BUFFER_READ_16(palmReg, address, 0, 0xFFF);}
+static inline uint32_t registerArrayRead32(uint32_t address){return BUFFER_READ_32(palmReg, address, 0, 0xFFF);}
+static inline void registerArrayWrite8(uint32_t address, uint8_t value){BUFFER_WRITE_8(palmReg, address, 0, 0xFFF, value);}
+static inline void registerArrayWrite16(uint32_t address, uint16_t value){BUFFER_WRITE_16(palmReg, address, 0, 0xFFF, value);}
+static inline void registerArrayWrite32(uint32_t address, uint32_t value){BUFFER_WRITE_32(palmReg, address, 0, 0xFFF, value);}
 
 static inline void setIprIsrBit(uint32_t interruptBit){
    //allows for setting an interrupt with masking by IMR and logging in IPR
@@ -1158,47 +1158,47 @@ void setHwRegister16(unsigned int address, unsigned int value){
 
       case CSA:
          setCsa(value);
-         refreshBankHandlers();
+         resetAddressSpace();
          break;
 
       case CSB:
          setCsb(value);
-         refreshBankHandlers();
+         resetAddressSpace();
          break;
 
       case CSC:
          setCsc(value);
-         refreshBankHandlers();
+         resetAddressSpace();
          break;
 
       case CSD:
          setCsd(value);
-         refreshBankHandlers();
+         resetAddressSpace();
          break;
 
       case CSGBA:
          //sets the starting location of ROM(0x10000000)
          setCsgba(value);
-         refreshBankHandlers();
+         resetAddressSpace();
          break;
 
       case CSGBB:
          //sets the starting location of the SED1376(0x1FF80000)
          setCsgbb(value);
-         refreshBankHandlers();
+         resetAddressSpace();
          break;
 
       case CSGBC:
          //sets the starting location of USBPhilipsPDIUSBD12(address 0x10400000)
          //since I dont plan on adding hotsync should be fine to leave unemulated, its unemulated in pose
          setCsgbc(value);
-         refreshBankHandlers();
+         resetAddressSpace();
          break;
 
       case CSGBD:
          //sets the starting location of RAM(0x00000000)
          setCsgbd(value);
-         refreshBankHandlers();
+         resetAddressSpace();
          break;
 
       case CSUGBA:
@@ -1208,12 +1208,12 @@ void setHwRegister16(unsigned int address, unsigned int value){
          setCsgbb(registerArrayRead16(CSGBB));
          setCsgbc(registerArrayRead16(CSGBC));
          setCsgbd(registerArrayRead16(CSGBD));
-         refreshBankHandlers();
+         resetAddressSpace();
          break;
 
       case CSCTRL1:
          setCsctrl1(value);
-         refreshBankHandlers();
+         resetAddressSpace();
          break;
          
       default:
@@ -1268,7 +1268,7 @@ void setHwRegister32(unsigned int address, unsigned int value){
 
 
 void resetHwRegisters(){
-   memset(palmReg, 0x00, REG_SIZE);
+   memset(palmReg, 0x00, REG_SIZE - BOOTLOADER_SIZE);
    clk32Counter = 0;
    pllWakeWait = -1;
    timer1CycleCounter = 0.0;
@@ -1288,7 +1288,12 @@ void resetHwRegisters(){
    chips[CHIP_A_ROM].enable = true;
    chips[CHIP_A_ROM].start = 0x00000000;
    chips[CHIP_A_ROM].size = 0xFFFFFFFF;
-   chips[CHIP_A_ROM].mask = 0xFFFFFFFF;
+
+   //masks for reading and writing
+   chips[CHIP_A_ROM].mask = 0x003FFFFF;
+   chips[CHIP_B_SED].mask = 0x0003FFFF;
+   chips[CHIP_C_USB].mask = 0x00000000;
+   chips[CHIP_D_RAM].mask = palmSpecialFeatures & FEATURE_RAM_HUGE ? 0x07FFFFFF/*128mb*/ : 0x00FFFFFF/*16mb*/;
    
    //system control
    registerArrayWrite8(SCR, 0x1C);
