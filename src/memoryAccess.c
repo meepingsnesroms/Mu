@@ -10,30 +10,30 @@
 static memory_access_t bankAccessors[TOTAL_MEMORY_BANKS];//these are not part of savestates because function pointers change with -fPIC
 uint8_t                bankType[TOTAL_MEMORY_BANKS];//these go in savestates
 
-//used for unmapped address space and writes to ROM
+//used for unmapped address space and writes to ROM, should trigger access exceptions if enabled
 static unsigned int unmappedRead(unsigned int address){return 0x00000000;}
 static void unmappedWrite(unsigned int address, unsigned int value){}
 
 //RAM accesses
-static unsigned int ramRead8(unsigned int address){return BUFFER_READ_8(palmRam, address, RAM_START_ADDRESS);}
-static unsigned int ramRead16(unsigned int address){return BUFFER_READ_16(palmRam, address, RAM_START_ADDRESS);}
-static unsigned int ramRead32(unsigned int address){return BUFFER_READ_32(palmRam, address, RAM_START_ADDRESS);}
-static void ramWrite8(unsigned int address, unsigned int value){BUFFER_WRITE_8(palmRam, address, RAM_START_ADDRESS, value);}
-static void ramWrite16(unsigned int address, unsigned int value){BUFFER_WRITE_16(palmRam, address, RAM_START_ADDRESS, value);}
-static void ramWrite32(unsigned int address, unsigned int value){BUFFER_WRITE_32(palmRam, address, RAM_START_ADDRESS, value);}
+static unsigned int ramRead8(unsigned int address){return BUFFER_READ_8(palmRam, address, chips[CHIP_D_RAM].start);}
+static unsigned int ramRead16(unsigned int address){return BUFFER_READ_16(palmRam, address, chips[CHIP_D_RAM].start);}
+static unsigned int ramRead32(unsigned int address){return BUFFER_READ_32(palmRam, address, chips[CHIP_D_RAM].start);}
+static void ramWrite8(unsigned int address, unsigned int value){BUFFER_WRITE_8(palmRam, address, chips[CHIP_D_RAM].start, value);}
+static void ramWrite16(unsigned int address, unsigned int value){BUFFER_WRITE_16(palmRam, address, chips[CHIP_D_RAM].start, value);}
+static void ramWrite32(unsigned int address, unsigned int value){BUFFER_WRITE_32(palmRam, address, chips[CHIP_D_RAM].start, value);}
 
 //ROM accesses
-static unsigned int romRead8(unsigned int address){return BUFFER_READ_8(palmRom, address, ROM_START_ADDRESS);}
-static unsigned int romRead16(unsigned int address){return BUFFER_READ_16(palmRom, address, ROM_START_ADDRESS);}
-static unsigned int romRead32(unsigned int address){return BUFFER_READ_32(palmRom, address, ROM_START_ADDRESS);}
+static unsigned int romRead8(unsigned int address){return BUFFER_READ_8(palmRom, address, chips[CHIP_A_ROM].start);}
+static unsigned int romRead16(unsigned int address){return BUFFER_READ_16(palmRom, address, chips[CHIP_A_ROM].start);}
+static unsigned int romRead32(unsigned int address){return BUFFER_READ_32(palmRom, address, chips[CHIP_A_ROM].start);}
 
 //SED1376 framebuffer
-static unsigned int sed1376FramebufferRead8(unsigned int address){return BUFFER_READ_8(sed1376Framebuffer, address, SED1376_FB_START_ADDRESS);}
-static unsigned int sed1376FramebufferRead16(unsigned int address){return BUFFER_READ_16(sed1376Framebuffer, address, SED1376_FB_START_ADDRESS);}
-static unsigned int sed1376FramebufferRead32(unsigned int address){return BUFFER_READ_32(sed1376Framebuffer, address, SED1376_FB_START_ADDRESS);}
-static void sed1376FramebufferWrite8(unsigned int address, unsigned int value){BUFFER_WRITE_8(sed1376Framebuffer, address, SED1376_FB_START_ADDRESS, value);}
-static void sed1376FramebufferWrite16(unsigned int address, unsigned int value){BUFFER_WRITE_16(sed1376Framebuffer, address, SED1376_FB_START_ADDRESS, value);}
-static void sed1376FramebufferWrite32(unsigned int address, unsigned int value){BUFFER_WRITE_32(sed1376Framebuffer, address, SED1376_FB_START_ADDRESS, value);}
+static unsigned int sed1376FramebufferRead8(unsigned int address){return BUFFER_READ_8(sed1376Framebuffer, address, chips[CHIP_B_SED].start + SED1376_REG_SIZE);}
+static unsigned int sed1376FramebufferRead16(unsigned int address){return BUFFER_READ_16(sed1376Framebuffer, address, chips[CHIP_B_SED].start + SED1376_REG_SIZE);}
+static unsigned int sed1376FramebufferRead32(unsigned int address){return BUFFER_READ_32(sed1376Framebuffer, address, chips[CHIP_B_SED].start + SED1376_REG_SIZE);}
+static void sed1376FramebufferWrite8(unsigned int address, unsigned int value){BUFFER_WRITE_8(sed1376Framebuffer, address, chips[CHIP_B_SED].start + SED1376_REG_SIZE, value);}
+static void sed1376FramebufferWrite16(unsigned int address, unsigned int value){BUFFER_WRITE_16(sed1376Framebuffer, address, chips[CHIP_B_SED].start + SED1376_REG_SIZE, value);}
+static void sed1376FramebufferWrite32(unsigned int address, unsigned int value){BUFFER_WRITE_32(sed1376Framebuffer, address, chips[CHIP_B_SED].start + SED1376_REG_SIZE, value);}
 
 
 /* Read from anywhere */
@@ -58,8 +58,6 @@ unsigned int m68k_read_disassembler_32(unsigned int address){return m68k_read_me
 
 
 static uint8_t getProperBankType(uint16_t bank){
-   //RAM bank 0x0000 not correct, inaccurate but works fine
-   
    //special conditions
    if((bank & 0x00FF) == 0x00FF && registersAreXXFFMapped()){
       //XXFF register mode
@@ -67,22 +65,20 @@ static uint8_t getProperBankType(uint16_t bank){
    }
    
    //normal banks
-   if(BANK_IN_RANGE(bank, RAM_START_ADDRESS, RAM_SIZE)){
+   if(BANK_IN_RANGE(bank, chips[CHIP_D_RAM].start, chips[CHIP_D_RAM].size)){
       return RAM_BANK;
    }
-   else if(BANK_IN_RANGE(bank, ROM_START_ADDRESS, ROM_SIZE)){
+   else if(BANK_IN_RANGE(bank, chips[CHIP_A_ROM].start, chips[CHIP_A_ROM].size)){
       return ROM_BANK;
    }
    else if(BANK_IN_RANGE(bank, REG_START_ADDRESS, REG_SIZE)){
       return REG_BANK;
    }
-   else if(BANK_IN_RANGE(bank, SED1376_REG_START_ADDRESS, SED1376_REG_SIZE) && sed1376ClockConnected()){
-      return SED1376_REG_BANK;
-   }
-   else if(BANK_IN_RANGE(bank, SED1376_FB_START_ADDRESS, SED1376_FB_SIZE) && sed1376ClockConnected()){
+   else if(BANK_IN_RANGE(bank, chips[CHIP_B_SED].start, chips[CHIP_B_SED].size) && sed1376ClockConnected()){
+      if(bank - START_BANK(chips[CHIP_B_SED].start) < NUM_BANKS(SED1376_REG_SIZE))
+         return SED1376_REG_BANK;
       return SED1376_FB_BANK;
    }
-   
    
    return EMPTY_BANK;
 }
@@ -163,18 +159,15 @@ void setRegisterFFFFAccessMode(){
 
 void setSed1376Attached(bool attached){
    if(attached){
-      for(uint32_t bank = START_BANK(SED1376_REG_START_ADDRESS); bank < END_BANK(SED1376_REG_START_ADDRESS, SED1376_REG_SIZE); bank++){
-         setBankType(bank, SED1376_REG_BANK);
-      }
-      for(uint32_t bank = START_BANK(SED1376_FB_START_ADDRESS); bank < END_BANK(SED1376_FB_START_ADDRESS, SED1376_FB_SIZE); bank++){
-         setBankType(bank, SED1376_FB_BANK);
+      for(uint32_t bank = START_BANK(chips[CHIP_B_SED].start); bank < END_BANK(chips[CHIP_B_SED].start, chips[CHIP_B_SED].size); bank++){
+         if(bank - START_BANK(chips[CHIP_B_SED].start) < NUM_BANKS(SED1376_REG_SIZE))
+            setBankType(bank, SED1376_REG_BANK);
+         else
+            setBankType(bank, SED1376_FB_BANK);
       }
    }
    else{
-      for(uint32_t bank = START_BANK(SED1376_REG_START_ADDRESS); bank < END_BANK(SED1376_REG_START_ADDRESS, SED1376_REG_SIZE); bank++){
-         setBankType(bank, EMPTY_BANK);
-      }
-      for(uint32_t bank = START_BANK(SED1376_FB_START_ADDRESS); bank < END_BANK(SED1376_FB_START_ADDRESS, SED1376_FB_SIZE); bank++){
+      for(uint32_t bank = START_BANK(chips[CHIP_B_SED].start); bank < END_BANK(chips[CHIP_B_SED].start, chips[CHIP_B_SED].size); bank++){
          setBankType(bank, EMPTY_BANK);
       }
    }

@@ -19,6 +19,7 @@
 extern "C" {
 #endif
 
+#include "memoryAccess.h"//for size macros
 #include "emuFeatureRegistersSpec.h"
 
 //emu errors
@@ -35,16 +36,6 @@ enum{
    CARD_NONE = 0,
    CARD_SD,
    CARD_MMC
-};
-
-//memory banks
-enum{
-   EMPTY_BANK = 0,
-   RAM_BANK,
-   ROM_BANK,
-   REG_BANK,
-   SED1376_REG_BANK,
-   SED1376_FB_BANK
 };
 
 //types
@@ -95,28 +86,6 @@ typedef struct{
 //CPU
 #define CRYSTAL_FREQUENCY 32768.0
 #define CPU_FREQUENCY (palmCrystalCycles * CRYSTAL_FREQUENCY)
-
-//address space
-#define NUM_BANKS(areaSize) (areaSize & 0x0000FFFF ? (areaSize >> 16) + 1 : areaSize >> 16)
-#define START_BANK(address) (address >> 16)
-#define END_BANK(address, size) (START_BANK(address) + NUM_BANKS(size) - 1)
-#define BANK_IN_RANGE(bank, address, size) (bank >= START_BANK(address) && bank <= END_BANK(address, size))
-#define TOTAL_MEMORY_BANKS 0x10000
-
-//memory chip addresses
-#define RAM_START_ADDRESS 0x00000000
-#define ROM_START_ADDRESS 0x10000000
-#define REG_START_ADDRESS 0xFFFFF000
-#define RAM_SIZE (16 * 0x100000)//16mb RAM
-#define ROM_SIZE (4 * 0x100000)//4mb ROM
-#define REG_SIZE 0xE00
-#define BOOTLOADER_SIZE 0x200
-
-//display chip addresses
-#define SED1376_REG_START_ADDRESS 0x1FF80000
-#define SED1376_FB_START_ADDRESS  0x1FFA0000
-#define SED1376_REG_SIZE 0xB4//it has 0x20000 used address space entrys but only 0xB4 registers
-#define SED1376_FB_SIZE  0x20000//0x14000 in size, likely also has 0x20000 used address space entrys, using 0x20000 to prevent speed penalty of checking validity on every access
 
 //config options
 #define EMU_FPS 60.0

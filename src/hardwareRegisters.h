@@ -28,7 +28,32 @@
 #define INT_TMR1   0x00000002 //level 6
 #define INT_SPI2   0x00000001 //level 4
 
+//chip names
+enum{
+   CHIP_BEGIN = 0,
+   CHIP_A_ROM = 0,
+   CHIP_B_SED,
+   CHIP_C_USB,
+   CHIP_D_RAM,
+   CHIP_END
+};
+
+//types
+typedef struct{
+   bool     enable;
+   uint32_t start;
+   uint32_t size;
+   uint32_t mask;//the address lines the chip responds to, so 0x10000 on an chip with 16 address lines will return the value at 0x0000
+
+   //attributes
+   bool     readOnly;
+   bool     readOnlyForProtectedMemory;
+   bool     supervisorOnlyProtectedMemory;
+   uint32_t unprotectedSize;
+}chip_t;
+
 //variables
+extern chip_t   chips[4];
 extern int32_t  pllWakeWait;
 extern uint32_t clk32Counter;
 extern double   timer1CycleCounter;

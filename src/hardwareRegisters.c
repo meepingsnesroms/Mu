@@ -11,6 +11,7 @@
 #include "m68k/m68k.h"
 
 
+chip_t   chips[4];
 int32_t  pllWakeWait;
 uint32_t clk32Counter;
 double   timer1CycleCounter;
@@ -63,6 +64,133 @@ static inline void pllWakeCpuIfOff(){
 static inline bool pllOn(){
    return (registerArrayRead16(PLLCR) & 0x0008) == 0;
 }
+
+static inline void setCsa(uint16_t value){
+   chips[CHIP_A_ROM].enable = CAST_TO_BOOL(value & 0x0001);
+   chips[CHIP_A_ROM].readOnly = CAST_TO_BOOL(value & 0x8000);
+   chips[CHIP_A_ROM].size = 0x20000/*128kb*/ << ((value >> 1) & 0x0007);
+
+   registerArrayWrite16(CSA, value & 0x81FF);
+}
+
+static inline void setCsb(uint16_t value){
+   uint16_t csControl1 = registerArrayRead16(CSCTRL1);
+
+   chips[CHIP_B_SED].enable = CAST_TO_BOOL(value & 0x0001);
+   chips[CHIP_B_SED].readOnly = CAST_TO_BOOL(value & 0x8000);
+   chips[CHIP_B_SED].size = 0x20000/*128kb*/ << ((value >> 1) & 0x0007);
+
+   //attributes
+   chips[CHIP_B_SED].supervisorOnlyProtectedMemory = CAST_TO_BOOL(value & 0x4000);
+   chips[CHIP_B_SED].readOnlyForProtectedMemory = CAST_TO_BOOL(value & 0x2000);
+   if(csControl1 & 0x4000 && csControl1 & 0x0001)
+      chips[CHIP_B_SED].unprotectedSize = 0x8000/*32kb*/ << (((value >> 11) & 0x0003) | 0x0004);
+   else
+      chips[CHIP_B_SED].unprotectedSize = 0x8000/*32kb*/ << ((value >> 11) & 0x0003);
+
+   registerArrayWrite16(CSB, value & 0xF9FF);
+}
+
+static inline void setCsc(uint16_t value){
+   uint16_t csControl1 = registerArrayRead16(CSCTRL1);
+
+   chips[CHIP_C_USB].enable = CAST_TO_BOOL(value & 0x0001);
+   chips[CHIP_C_USB].readOnly = CAST_TO_BOOL(value & 0x8000);
+   chips[CHIP_C_USB].size = 0x8000/*32kb*/ << ((value >> 1) & 0x0007);
+
+   //attributes
+   chips[CHIP_C_USB].supervisorOnlyProtectedMemory = CAST_TO_BOOL(value & 0x4000);
+   chips[CHIP_C_USB].readOnlyForProtectedMemory = CAST_TO_BOOL(value & 0x2000);
+   if(csControl1 & 0x4000 && csControl1 & 0x0004)
+      chips[CHIP_C_USB].unprotectedSize = 0x8000/*32kb*/ << (((value >> 11) & 0x0003) | 0x0004);
+   else
+      chips[CHIP_C_USB].unprotectedSize = 0x8000/*32kb*/ << ((value >> 11) & 0x0003);
+
+   registerArrayWrite16(CSC, value & 0xF9FF);
+}
+
+static inline void setCsd(uint16_t value){
+   uint16_t csControl1 = registerArrayRead16(CSCTRL1);
+
+   chips[CHIP_D_RAM].enable = CAST_TO_BOOL(value & 0x0001);
+   chips[CHIP_D_RAM].readOnly = CAST_TO_BOOL(value & 0x8000);
+   if(csControl1 & 0x0040 && value & 0x0200)
+      chips[CHIP_D_RAM].size = 0x800000/*8mb*/ << ((value >> 1) & 0x0001);
+   else
+      chips[CHIP_D_RAM].size = 0x8000/*32kb*/ << ((value >> 1) & 0x0007);
+
+   //attributes
+   chips[CHIP_D_RAM].supervisorOnlyProtectedMemory = CAST_TO_BOOL(value & 0x4000);
+   chips[CHIP_D_RAM].readOnlyForProtectedMemory = CAST_TO_BOOL(value & 0x2000);
+   if(csControl1 & 0x4000 && csControl1 & 0x0010)
+      chips[CHIP_D_RAM].unprotectedSize = 0x8000/*32kb*/ << (((value >> 11) & 0x0003) | 0x0004);
+   else
+      chips[CHIP_D_RAM].unprotectedSize = 0x8000/*32kb*/ << ((value >> 11) & 0x0003);
+
+   registerArrayWrite16(CSD, value);
+}
+
+static inline void setCsgba(uint16_t value){
+   uint16_t csugba = registerArrayRead16(CSUGBA);
+
+   //add extra address bits if enabled
+   if(csugba & 0x8000)
+      chips[CHIP_A_ROM].start = ((csugba >> 12) & 0x0007) << 29 | (value >> 1) << 13;
+   else
+      chips[CHIP_A_ROM].start = (value >> 1) << 13;
+
+   registerArrayWrite16(CSGBA, value & 0xFFFE);
+}
+
+static inline void setCsgbb(uint16_t value){
+   uint16_t csugba = registerArrayRead16(CSUGBA);
+
+   //add extra address bits if enabled
+   if(csugba & 0x8000)
+      chips[CHIP_B_SED].start = ((csugba >> 8) & 0x0007) << 29 | (value >> 1) << 13;
+   else
+      chips[CHIP_B_SED].start = (value >> 1) << 13;
+
+   registerArrayWrite16(CSGBB, value & 0xFFFE);
+}
+
+static inline void setCsgbc(uint16_t value){
+   uint16_t csugba = registerArrayRead16(CSUGBA);
+
+   //add extra address bits if enabled
+   if(csugba & 0x8000)
+      chips[CHIP_C_USB].start = ((csugba >> 4) & 0x0007) << 29 | (value >> 1) << 13;
+   else
+      chips[CHIP_C_USB].start = (value >> 1) << 13;
+
+   registerArrayWrite16(CSGBC, value & 0xFFFE);
+}
+
+static inline void setCsgbd(uint16_t value){
+   uint16_t csugba = registerArrayRead16(CSUGBA);
+
+   //add extra address bits if enabled
+   if(csugba & 0x8000)
+      chips[CHIP_D_RAM].start = (csugba & 0x0007) << 29 | (value >> 1) << 13;
+   else
+      chips[CHIP_D_RAM].start = (value >> 1) << 13;
+
+   registerArrayWrite16(CSGBD, value & 0xFFFE);
+}
+
+static inline void setCsctrl1(uint16_t value){
+   uint16_t oldCsctrl1 = registerArrayRead16(CSCTRL1);
+
+   registerArrayWrite16(CSCTRL1, value & 0x7F55);
+   if((oldCsctrl1 & 0x4055) != (value & 0x4055)){
+      //something important changed, update all chipselects
+      //CSA is not dependant on CSCTRL1
+      setCsb(registerArrayRead16(CSB));
+      setCsc(registerArrayRead16(CSC));
+      setCsd(registerArrayRead16(CSD));
+   }
+}
+//csctrl 2 and 3 only deal with timing and bus transfer size
 
 
 void printUnknownHwAccess(unsigned int address, unsigned int value, unsigned int size, bool isWrite){
@@ -358,9 +486,17 @@ static inline void setPllcr(uint16_t value){
 
 static inline void setScr(uint8_t value){
    uint8_t oldScr = registerArrayRead8(SCR);
-   registerArrayWrite8(SCR, value);
-   if((value & 0x04) != (oldScr & 0x04)){
-      if(value & 0x04)
+   uint8_t newScr = value;
+
+   //preserve privilege violation, write protect violation and bus error timeout
+   newScr |= oldScr & 0xE0;
+
+   //clear violations on writing 1 to them
+   newScr &= ~(oldScr & value & 0xE0);
+
+   registerArrayWrite8(SCR, newScr);//must be written before calling setRegisterFFFFAccessMode
+   if((newScr & 0x04) != (oldScr & 0x04)){
+      if(newScr & 0x04)
          setRegisterXXFFAccessMode();
       else
          setRegisterFFFFAccessMode();
@@ -1019,33 +1155,66 @@ void setHwRegister16(unsigned int address, unsigned int value){
          //missing bits 13, 9, 8 and 7
          registerArrayWrite16(address, value & 0xDC7F);
          break;
-         
-         /*
+
+      case CSA:
+         setCsa(value);
+         refreshBankHandlers();
+         break;
+
+      case CSB:
+         setCsb(value);
+         refreshBankHandlers();
+         break;
+
+      case CSC:
+         setCsc(value);
+         refreshBankHandlers();
+         break;
+
+      case CSD:
+         setCsd(value);
+         refreshBankHandlers();
+         break;
+
       case CSGBA:
-         //unemulated
-         //sets the starting location of ROM
-         registerArrayWrite16(address, value & 0xFFFE);
+         //sets the starting location of ROM(0x10000000)
+         setCsgba(value);
+         refreshBankHandlers();
          break;
-         
+
       case CSGBB:
-         //unemulated
-         //sets the starting location of the SED1376
-         registerArrayWrite16(address, value & 0xFFFE);
+         //sets the starting location of the SED1376(0x1FF80000)
+         setCsgbb(value);
+         refreshBankHandlers();
          break;
-         
+
       case CSGBC:
-         //unemulated
          //sets the starting location of USBPhilipsPDIUSBD12(address 0x10400000)
          //since I dont plan on adding hotsync should be fine to leave unemulated, its unemulated in pose
-         registerArrayWrite16(address, value & 0xFFFE);
+         setCsgbc(value);
+         refreshBankHandlers();
          break;
-         
+
       case CSGBD:
-         //unemulated
-         //sets the starting location of RAM
-         registerArrayWrite16(address, value & 0xFFFE);
+         //sets the starting location of RAM(0x00000000)
+         setCsgbd(value);
+         refreshBankHandlers();
          break;
-         */
+
+      case CSUGBA:
+         registerArrayWrite16(CSUGBA, value);
+         //refresh all chipselect address lines
+         setCsgba(registerArrayRead16(CSGBA));
+         setCsgbb(registerArrayRead16(CSGBB));
+         setCsgbc(registerArrayRead16(CSGBC));
+         setCsgbd(registerArrayRead16(CSGBD));
+         refreshBankHandlers();
+         break;
+
+      case CSCTRL1:
+         setCsctrl1(value);
+         refreshBankHandlers();
+         break;
          
       default:
          printUnknownHwAccess(address, value, 16, true);
@@ -1104,6 +1273,22 @@ void resetHwRegisters(){
    pllWakeWait = -1;
    timer1CycleCounter = 0.0;
    timer2CycleCounter = 0.0;
+   for(uint32_t chip = CHIP_BEGIN; chip < CHIP_END; chip++){
+      chips[chip].enable = false;
+      chips[chip].start = 0x00000000;
+      chips[chip].size = 0x00000000;
+      chips[chip].mask = 0x00000000;
+
+      chips[chip].readOnly = false;
+      chips[chip].readOnlyForProtectedMemory = false;
+      chips[chip].supervisorOnlyProtectedMemory = false;
+      chips[chip].unprotectedSize = 0x00000000;
+   }
+   //all chipselects are disabled at boot and CSA is mapped to 0x00000000 and covers the entire address range until CSGBA set otherwise
+   chips[CHIP_A_ROM].enable = true;
+   chips[CHIP_A_ROM].start = 0x00000000;
+   chips[CHIP_A_ROM].size = 0xFFFFFFFF;
+   chips[CHIP_A_ROM].mask = 0xFFFFFFFF;
    
    //system control
    registerArrayWrite8(SCR, 0x1C);
