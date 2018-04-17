@@ -75,7 +75,6 @@ static void invalidBehaviorCheck(){
 
    //add to opcode buffer
    strcpy(disassemblyBuffer[LOGGED_OPCODES - 1], opcodeName);
-   strcat(disassemblyBuffer[LOGGED_OPCODES - 1], "\n");
 
    if(invalidInstruction || invalidBank || (instruction == 0x0000 && lastProgramCounter != 0x00000000)){
       //0x0000 is "ori.b #$0, D0", effectivly NOP but still a valid opcode
@@ -84,7 +83,7 @@ static void invalidBehaviorCheck(){
       invalidBehaviorAbort = true;
 
       for(uint32_t i = 0; i < LOGGED_OPCODES; i++)
-         debugLog(disassemblyBuffer[i]);
+         debugLog("%s\n", disassemblyBuffer[i]);
       //currently CPU32 opcodes will be listed as "unknown", I cant change that properly unless I directly edit musashi source, something I want to avoid doing
       debugLog("Instruction:\"%s\", instruction value:0x%04X, program counter:0x%08X\n", invalidInstruction ? "unknown" : opcodeName, instruction, programCounter);
    }
@@ -116,7 +115,7 @@ void emulatorInit(uint8_t* palmRomDump, uint8_t* palmBootDump, uint32_t specialF
        memcpy(palmReg + REG_SIZE - 1 - BOOTLOADER_SIZE, palmBootDump, BOOTLOADER_SIZE);
    else
        memset(palmReg + REG_SIZE - 1 - BOOTLOADER_SIZE, 0x00, BOOTLOADER_SIZE);
-   memcpy(palmRam, palmRom, 256);//copy ROM header
+   //memcpy(palmRam, palmRom, 256);//copy ROM header
    //memcpy(palmRam, palmRom, ROM_SIZE);//copy whole ROM
    memcpy(&palmFramebuffer[160 * 160], silkscreenData, SILKSCREEN_WIDTH * SILKSCREEN_HEIGHT * (SILKSCREEN_BPP / 8));
    resetAddressSpace();

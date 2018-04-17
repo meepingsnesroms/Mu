@@ -10,9 +10,10 @@
 static memory_access_t bankAccessors[TOTAL_MEMORY_BANKS];//these are not part of savestates because function pointers change with -fPIC
 uint8_t                bankType[TOTAL_MEMORY_BANKS];//these go in savestates
 
-//used for unmapped address space and writes to ROM, should trigger access exceptions if enabled
-static unsigned int unmappedRead(unsigned int address){return 0x00000000;}
-static void unmappedWrite(unsigned int address, unsigned int value){}
+
+//used for unmapped address space and writes to write protected chipselects, should trigger access exceptions if enabled
+static unsigned int invalidRead(unsigned int address){return 0x00000000;}
+static void invalidWrite(unsigned int address, unsigned int value){}
 
 //RAM accesses
 static unsigned int ramRead8(unsigned int address){return BUFFER_READ_8(palmRam, address, chips[CHIP_D_RAM].start, chips[CHIP_D_RAM].mask);}
@@ -26,6 +27,8 @@ static void ramWrite32(unsigned int address, unsigned int value){BUFFER_WRITE_32
 static unsigned int romRead8(unsigned int address){return BUFFER_READ_8(palmRom, address, chips[CHIP_A_ROM].start, chips[CHIP_A_ROM].mask);}
 static unsigned int romRead16(unsigned int address){return BUFFER_READ_16(palmRom, address, chips[CHIP_A_ROM].start, chips[CHIP_A_ROM].mask);}
 static unsigned int romRead32(unsigned int address){return BUFFER_READ_32(palmRom, address, chips[CHIP_A_ROM].start, chips[CHIP_A_ROM].mask);}
+//the validity of attempting to write to ROM is determined by the read only bit in CSA, either way the write will do nothing
+static void romWrite(unsigned int address, unsigned int value){}
 
 //SED1376 framebuffer
 static unsigned int sed1376FramebufferRead8(unsigned int address){return BUFFER_READ_8(sed1376Framebuffer, address, chips[CHIP_B_SED].start + SED1376_REG_SIZE, chips[CHIP_B_SED].mask);}
@@ -83,102 +86,159 @@ static uint8_t getProperBankType(uint16_t bank){
    return EMPTY_BANK;
 }
 
-static void setBankType(uint16_t bank, uint8_t type){
+static bool getBankProtection(uint16_t bank){
+   //special conditions
+   if((bank & 0x00FF) == 0x00FF && registersAreXXFFMapped()){
+      //XXFF register mode
+      return false;
+   }
+
+   //normal banks
+   else if(chips[CHIP_A_ROM].enable && BANK_IN_RANGE(bank, chips[CHIP_A_ROM].start, chips[CHIP_A_ROM].size)){
+      return chips[CHIP_A_ROM].readOnly;//CSA has no protected memory segment
+   }
+   if(chips[CHIP_D_RAM].enable && BANK_IN_RANGE(bank, chips[CHIP_D_RAM].start, chips[CHIP_D_RAM].size)){
+      return BANK_READ_ONLY(bank, CHIP_D_RAM);
+   }
+   else if(chips[CHIP_B_SED].enable && BANK_IN_RANGE(bank, chips[CHIP_B_SED].start, chips[CHIP_B_SED].size) && sed1376ClockConnected()){
+      return BANK_READ_ONLY(bank, CHIP_B_SED);
+   }
+   else if(BANK_IN_RANGE(bank, REG_START_ADDRESS, REG_SIZE)){
+      return false;
+   }
+
+   return false;
+}
+
+static void setBankType(uint16_t bank, uint8_t type, bool writeProtected){
    bankType[bank] = type;
+
+   //read handlers
    switch(type){
          
       case EMPTY_BANK:
-         bankAccessors[bank].read8 = unmappedRead;
-         bankAccessors[bank].read16 = unmappedRead;
-         bankAccessors[bank].read32 = unmappedRead;
-         bankAccessors[bank].write8 = unmappedWrite;
-         bankAccessors[bank].write16 = unmappedWrite;
-         bankAccessors[bank].write32 = unmappedWrite;
+         bankAccessors[bank].read8 = invalidRead;
+         bankAccessors[bank].read16 = invalidRead;
+         bankAccessors[bank].read32 = invalidRead;
          break;
          
       case RAM_BANK:
          bankAccessors[bank].read8 = ramRead8;
          bankAccessors[bank].read16 = ramRead16;
          bankAccessors[bank].read32 = ramRead32;
-         bankAccessors[bank].write8 = ramWrite8;
-         bankAccessors[bank].write16 = ramWrite16;
-         bankAccessors[bank].write32 = ramWrite32;
          break;
          
       case ROM_BANK:
          bankAccessors[bank].read8 = romRead8;
          bankAccessors[bank].read16 = romRead16;
          bankAccessors[bank].read32 = romRead32;
-         bankAccessors[bank].write8 = unmappedWrite;
-         bankAccessors[bank].write16 = unmappedWrite;
-         bankAccessors[bank].write32 = unmappedWrite;
          break;
          
       case REG_BANK:
          bankAccessors[bank].read8 = getHwRegister8;
          bankAccessors[bank].read16 = getHwRegister16;
          bankAccessors[bank].read32 = getHwRegister32;
-         bankAccessors[bank].write8 = setHwRegister8;
-         bankAccessors[bank].write16 = setHwRegister16;
-         bankAccessors[bank].write32 = setHwRegister32;
          break;
          
       case SED1376_REG_BANK:
          bankAccessors[bank].read8 = sed1376GetRegister;
          bankAccessors[bank].read16 = sed1376GetRegister;
          bankAccessors[bank].read32 = sed1376GetRegister;
-         bankAccessors[bank].write8 = sed1376SetRegister;
-         bankAccessors[bank].write16 = sed1376SetRegister;
-         bankAccessors[bank].write32 = sed1376SetRegister;
          break;
          
       case SED1376_FB_BANK:
          bankAccessors[bank].read8 = sed1376FramebufferRead8;
          bankAccessors[bank].read16 = sed1376FramebufferRead16;
          bankAccessors[bank].read32 = sed1376FramebufferRead32;
-         bankAccessors[bank].write8 = sed1376FramebufferWrite8;
-         bankAccessors[bank].write16 = sed1376FramebufferWrite16;
-         bankAccessors[bank].write32 = sed1376FramebufferWrite32;
          break;
+   }
+
+   //write handlers
+   if(!writeProtected){
+      switch(type){
+
+         case EMPTY_BANK:
+            bankAccessors[bank].write8 = invalidWrite;
+            bankAccessors[bank].write16 = invalidWrite;
+            bankAccessors[bank].write32 = invalidWrite;
+            break;
+
+         case RAM_BANK:
+            bankAccessors[bank].write8 = ramWrite8;
+            bankAccessors[bank].write16 = ramWrite16;
+            bankAccessors[bank].write32 = ramWrite32;
+            break;
+
+         case ROM_BANK:
+            bankAccessors[bank].write8 = romWrite;
+            bankAccessors[bank].write16 = romWrite;
+            bankAccessors[bank].write32 = romWrite;
+            break;
+
+         case REG_BANK:
+            bankAccessors[bank].write8 = setHwRegister8;
+            bankAccessors[bank].write16 = setHwRegister16;
+            bankAccessors[bank].write32 = setHwRegister32;
+            break;
+
+         case SED1376_REG_BANK:
+            bankAccessors[bank].write8 = sed1376SetRegister;
+            bankAccessors[bank].write16 = sed1376SetRegister;
+            bankAccessors[bank].write32 = sed1376SetRegister;
+            break;
+
+         case SED1376_FB_BANK:
+            bankAccessors[bank].write8 = sed1376FramebufferWrite8;
+            bankAccessors[bank].write16 = sed1376FramebufferWrite16;
+            bankAccessors[bank].write32 = sed1376FramebufferWrite32;
+            break;
+      }
+   }
+   else{
+      bankAccessors[bank].write8 = invalidWrite;
+      bankAccessors[bank].write16 = invalidWrite;
+      bankAccessors[bank].write32 = invalidWrite;
    }
 }
 
 void setRegisterXXFFAccessMode(){
    for(uint16_t topByte = 0; topByte < 0x100; topByte++){
       uint32_t bank = topByte << 8 | 0xFF;
-      setBankType(bank, REG_BANK);
+      setBankType(bank, REG_BANK, false);
    }
 }
 
 void setRegisterFFFFAccessMode(){
    for(uint16_t topByte = 0; topByte < 0x100; topByte++){
       uint32_t bank = topByte << 8 | 0xFF;
-      setBankType(bank, getProperBankType(bank));
+      setBankType(bank, getProperBankType(bank), getBankProtection(bank));
    }
 }
 
 void setSed1376Attached(bool attached){
-   if(attached){
-      for(uint32_t bank = START_BANK(chips[CHIP_B_SED].start); bank < END_BANK(chips[CHIP_B_SED].start, chips[CHIP_B_SED].size); bank++){
-         if(bank - START_BANK(chips[CHIP_B_SED].start) < NUM_BANKS(SED1376_REG_SIZE))
-            setBankType(bank, SED1376_REG_BANK);
-         else
-            setBankType(bank, SED1376_FB_BANK);
+   if(chips[CHIP_B_SED].enable){
+      if(attached){
+         for(uint32_t bank = START_BANK(chips[CHIP_B_SED].start); bank < END_BANK(chips[CHIP_B_SED].start, chips[CHIP_B_SED].size); bank++){
+            if(bank - START_BANK(chips[CHIP_B_SED].start) < NUM_BANKS(SED1376_REG_SIZE))
+               setBankType(bank, SED1376_REG_BANK, getBankProtection(bank));
+            else
+               setBankType(bank, SED1376_FB_BANK, getBankProtection(bank));
+         }
       }
-   }
-   else{
-      for(uint32_t bank = START_BANK(chips[CHIP_B_SED].start); bank < END_BANK(chips[CHIP_B_SED].start, chips[CHIP_B_SED].size); bank++){
-         setBankType(bank, EMPTY_BANK);
+      else{
+         for(uint32_t bank = START_BANK(chips[CHIP_B_SED].start); bank < END_BANK(chips[CHIP_B_SED].start, chips[CHIP_B_SED].size); bank++){
+            setBankType(bank, EMPTY_BANK, getBankProtection(bank));
+         }
       }
    }
 }
 
 void refreshBankHandlers(){
    for(uint32_t bank = 0; bank < TOTAL_MEMORY_BANKS; bank++)
-      setBankType(bank, bankType[bank]);
+      setBankType(bank, bankType[bank], getBankProtection(bank));
 }
 
 void resetAddressSpace(){
    for(uint32_t bank = 0; bank < TOTAL_MEMORY_BANKS; bank++)
-      setBankType(bank, getProperBankType(bank));
+      setBankType(bank, getProperBankType(bank), getBankProtection(bank));
 }

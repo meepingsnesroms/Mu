@@ -7,11 +7,11 @@
 #define START_BANK(address) (address >> 16)
 #define END_BANK(address, size) (START_BANK(address) + NUM_BANKS(size) - 1)
 #define BANK_IN_RANGE(bank, address, size) (bank >= START_BANK(address) && bank <= END_BANK(address, size))
+#define BANK_ADDRESS(bank) (bank << 16)
+#define BANK_READ_ONLY(bank, chip) (chips[chip].readOnly || (chips[chip].readOnlyForProtectedMemory && (BANK_ADDRESS(bank) - chips[chip].start) >= chips[chip].unprotectedSize))
 #define TOTAL_MEMORY_BANKS 0x10000
 
 //memory chip addresses
-//#define RAM_START_ADDRESS 0x00000000
-//#define ROM_START_ADDRESS 0x10000000
 #define REG_START_ADDRESS 0xFFFFF000
 #define RAM_SIZE (16 * 0x100000)//16mb RAM
 #define ROM_SIZE (4 * 0x100000)//4mb ROM
@@ -19,8 +19,6 @@
 #define BOOTLOADER_SIZE 0x200
 
 //display chip addresses
-//#define SED1376_REG_START_ADDRESS 0x1FF80000
-//#define SED1376_FB_START_ADDRESS  0x1FFA0000
 #define SED1376_REG_SIZE 0x20000//it has 0x20000 used address space entrys but only 0xB4 registers
 #define SED1376_FB_SIZE  0x20000//0x14000 in size, likely also has 0x20000 used address space entrys, using 0x20000 to prevent speed penalty of checking validity on every access
 
