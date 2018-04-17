@@ -209,6 +209,8 @@ uint32_t emulatorGetStateSize(){
    size += RAM_SIZE;//system RAM buffer
    size += REG_SIZE;//hardware registers
    size += TOTAL_MEMORY_BANKS;//bank handlers
+   size += sizeof(uint32_t) * 4 * 4;//chip select states
+   size += sizeof(uint8_t) * 4 * 4;//chip select states
    size += sizeof(uint64_t) * 3;//palmSdCard
    size += sizeof(uint8_t) * 2;//palmSdCard
    size += sizeof(uint64_t) * 4;//32.32 fixed point double, timerXCycleCounter and CPU cycle timers
@@ -245,6 +247,24 @@ void emulatorSaveState(uint8_t* data){
    offset += REG_SIZE;
    memcpy(data + offset, bankType, TOTAL_MEMORY_BANKS);
    offset += TOTAL_MEMORY_BANKS;
+   for(uint32_t chip = CHIP_BEGIN; chip < CHIP_END; chip++){
+      writeStateValueBool(data + offset, chips[chip].enable);
+      offset += sizeof(uint8_t);
+      writeStateValueUint32(data + offset, chips[chip].start);
+      offset += sizeof(uint32_t);
+      writeStateValueUint32(data + offset, chips[chip].size);
+      offset += sizeof(uint32_t);
+      writeStateValueUint32(data + offset, chips[chip].mask);
+      offset += sizeof(uint32_t);
+      writeStateValueBool(data + offset, chips[chip].readOnly);
+      offset += sizeof(uint8_t);
+      writeStateValueBool(data + offset, chips[chip].readOnlyForProtectedMemory);
+      offset += sizeof(uint8_t);
+      writeStateValueBool(data + offset, chips[chip].supervisorOnlyProtectedMemory);
+      offset += sizeof(uint8_t);
+      writeStateValueUint32(data + offset, chips[chip].unprotectedSize);
+      offset += sizeof(uint32_t);
+   }
 
    //sdcard
    writeStateValueUint64(data + offset, palmSdCard.sessionId);
@@ -311,6 +331,24 @@ void emulatorLoadState(uint8_t* data){
    offset += REG_SIZE;
    memcpy(bankType, data + offset, TOTAL_MEMORY_BANKS);
    offset += TOTAL_MEMORY_BANKS;
+   for(uint32_t chip = CHIP_BEGIN; chip < CHIP_END; chip++){
+      chips[chip].enable = readStateValueBool(data + offset);
+      offset += sizeof(uint8_t);
+      chips[chip].start = readStateValueUint32(data + offset);
+      offset += sizeof(uint32_t);
+      chips[chip].size = readStateValueUint32(data + offset);
+      offset += sizeof(uint32_t);
+      chips[chip].mask = readStateValueUint32(data + offset);
+      offset += sizeof(uint32_t);
+      chips[chip].readOnly = readStateValueBool(data + offset);
+      offset += sizeof(uint8_t);
+      chips[chip].readOnlyForProtectedMemory = readStateValueBool(data + offset);
+      offset += sizeof(uint8_t);
+      chips[chip].supervisorOnlyProtectedMemory = readStateValueBool(data + offset);
+      offset += sizeof(uint8_t);
+      chips[chip].unprotectedSize = readStateValueUint32(data + offset);
+      offset += sizeof(uint32_t);
+   }
 
    //sdcard
    palmSdCard.sessionId = readStateValueUint64(data + offset);
