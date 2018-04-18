@@ -3,13 +3,13 @@
 #include <stdint.h>
 
 //address space
-#define NUM_BANKS(areaSize) (areaSize & 0x0000FFFF ? (areaSize >> 16) + 1 : areaSize >> 16)
-#define START_BANK(address) (address >> 16)
+//new bank size (0x4000)
+#define NUM_BANKS(areaSize) ((areaSize) & 0x00003FFF ? ((areaSize) >> 14) + 1 : (areaSize) >> 14)
+#define START_BANK(address) ((address) >> 14)
 #define END_BANK(address, size) (START_BANK(address) + NUM_BANKS(size) - 1)
-#define BANK_IN_RANGE(bank, address, size) (bank >= START_BANK(address) && bank <= END_BANK(address, size))
-#define BANK_ADDRESS(bank) (bank << 16)
-#define BANK_READ_ONLY(bank, chip) (chips[chip].readOnly || (chips[chip].readOnlyForProtectedMemory && (BANK_ADDRESS(bank) - chips[chip].start) >= chips[chip].unprotectedSize))
-#define TOTAL_MEMORY_BANKS 0x10000
+#define BANK_IN_RANGE(bank, address, size) ((bank) >= START_BANK(address) && (bank) <= END_BANK(address, size))
+#define BANK_ADDRESS(bank) ((bank) << 14)
+#define TOTAL_MEMORY_BANKS 0x40000
 
 //chip addresses and sizes
 #define REG_START_ADDRESS 0xFFFFF000
@@ -18,7 +18,7 @@
 #define REG_SIZE 0x1000//is actually 0xE00 without bootloader
 #define BOOTLOADER_SIZE 0x200
 #define SED1376_REG_SIZE 0x20000//it has 0x20000 used address space entrys but only 0xB4 registers
-#define SED1376_FB_SIZE  0x20000//0x14000 in size, likely also has 0x20000 used address space entrys, using 0x20000 to prevent speed penalty of checking validity on every access
+#define SED1376_FB_SIZE  0x14000//0x14000 in size
 
 //the read/write stuff looks messy here but makes the memory access functions alot cleaner
 #define BUFFER_READ_8(segment, accessAddress, startAddress, mask)  segment[accessAddress - startAddress & mask]

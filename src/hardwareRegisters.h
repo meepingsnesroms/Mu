@@ -30,12 +30,14 @@
 
 //chip names
 enum{
+   CHIP_BEGIN = 0,
    CHIP_A_ROM = 0,
    CHIP_B_SED,
    CHIP_C_USB,
    CHIP_D_RAM,
+   CHIP_REGISTERS,
    CHIP_NONE,
-   CHIP_REGISTERS
+   CHIP_END
 };
 
 //types
@@ -53,7 +55,7 @@ typedef struct{
 }chip_t;
 
 //variables
-extern chip_t   chips[4];
+extern chip_t   chips[];
 extern int32_t  pllWakeWait;
 extern uint32_t clk32Counter;
 extern double   timer1CycleCounter;

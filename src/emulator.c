@@ -115,8 +115,6 @@ void emulatorInit(uint8_t* palmRomDump, uint8_t* palmBootDump, uint32_t specialF
        memcpy(palmReg + REG_SIZE - 1 - BOOTLOADER_SIZE, palmBootDump, BOOTLOADER_SIZE);
    else
        memset(palmReg + REG_SIZE - 1 - BOOTLOADER_SIZE, 0x00, BOOTLOADER_SIZE);
-   //memcpy(palmRam, palmRom, 256);//copy ROM header
-   //memcpy(palmRam, palmRom, ROM_SIZE);//copy whole ROM
    memcpy(&palmFramebuffer[160 * 160], silkscreenData, SILKSCREEN_WIDTH * SILKSCREEN_HEIGHT * (SILKSCREEN_BPP / 8));
    resetAddressSpace();
    sed1376Reset();
@@ -209,8 +207,8 @@ uint32_t emulatorGetStateSize(){
    size += RAM_SIZE;//system RAM buffer
    size += REG_SIZE;//hardware registers
    size += TOTAL_MEMORY_BANKS;//bank handlers
-   size += sizeof(uint32_t) * 4 * 4;//chip select states
-   size += sizeof(uint8_t) * 4 * 4;//chip select states
+   size += sizeof(uint32_t) * 4 * CHIP_END;//chip select states
+   size += sizeof(uint8_t) * 4 * CHIP_END;//chip select states
    size += sizeof(uint64_t) * 3;//palmSdCard
    size += sizeof(uint8_t) * 2;//palmSdCard
    size += sizeof(uint64_t) * 4;//32.32 fixed point double, timerXCycleCounter and CPU cycle timers
@@ -247,7 +245,7 @@ void emulatorSaveState(uint8_t* data){
    offset += REG_SIZE;
    memcpy(data + offset, bankType, TOTAL_MEMORY_BANKS);
    offset += TOTAL_MEMORY_BANKS;
-   for(uint32_t chip = CHIP_A_ROM; chip <= CHIP_D_RAM; chip++){
+   for(uint32_t chip = CHIP_BEGIN; chip < CHIP_END; chip++){
       writeStateValueBool(data + offset, chips[chip].enable);
       offset += sizeof(uint8_t);
       writeStateValueUint32(data + offset, chips[chip].start);
@@ -331,7 +329,7 @@ void emulatorLoadState(uint8_t* data){
    offset += REG_SIZE;
    memcpy(bankType, data + offset, TOTAL_MEMORY_BANKS);
    offset += TOTAL_MEMORY_BANKS;
-   for(uint32_t chip = CHIP_A_ROM; chip <= CHIP_D_RAM; chip++){
+   for(uint32_t chip = CHIP_BEGIN; chip < CHIP_END; chip++){
       chips[chip].enable = readStateValueBool(data + offset);
       offset += sizeof(uint8_t);
       chips[chip].start = readStateValueUint32(data + offset);

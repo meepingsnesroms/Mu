@@ -61,9 +61,8 @@ static inline void sed1376Write32(unsigned int address, unsigned int value){
    BUFFER_WRITE_32(sed1376Framebuffer, address, chips[CHIP_B_SED].start + SED1376_REG_SIZE, chips[CHIP_B_SED].mask, value);
 }
 
-
 static inline bool probeRead(uint8_t bank, unsigned int address){
-   if(bank <= CHIP_D_RAM && chips[bank].supervisorOnlyProtectedMemory && address >= chips[bank].unprotectedSize  && !(m68k_get_reg(NULL, M68K_REG_SR) & 0x4000)){
+   if(chips[bank].supervisorOnlyProtectedMemory && address >= chips[bank].unprotectedSize  && !(m68k_get_reg(NULL, M68K_REG_SR) & 0x4000)){
       setPrivilegeViolation();
       return false;
    }
@@ -71,19 +70,16 @@ static inline bool probeRead(uint8_t bank, unsigned int address){
 }
 
 static inline bool probeWrite(uint8_t bank, unsigned int address){
-   if(bank <= CHIP_D_RAM){
-      if(chips[bank].supervisorOnlyProtectedMemory && address >= chips[bank].unprotectedSize  && !(m68k_get_reg(NULL, M68K_REG_SR) & 0x4000)){
-         setPrivilegeViolation();
-         return false;
-      }
-      if(chips[bank].readOnly || (chips[bank].readOnlyForProtectedMemory && address >= chips[bank].unprotectedSize)){
-         setWriteProtectViolation();
-         return false;
-      }
+   if(chips[bank].supervisorOnlyProtectedMemory && address >= chips[bank].unprotectedSize  && !(m68k_get_reg(NULL, M68K_REG_SR) & 0x4000)){
+      setPrivilegeViolation();
+      return false;
+   }
+   if(chips[bank].readOnly || (chips[bank].readOnlyForProtectedMemory && address >= chips[bank].unprotectedSize)){
+      setWriteProtectViolation();
+      return false;
    }
    return true;
 }
-
 
 /* Read from anywhere */
 unsigned int m68k_read_memory_8(unsigned int address){
@@ -307,7 +303,7 @@ unsigned int m68k_read_disassembler_16(unsigned int address){return m68k_read_me
 unsigned int m68k_read_disassembler_32(unsigned int address){return m68k_read_memory_32(address);}
 
 
-static uint8_t getProperBankType(uint16_t bank){
+static uint8_t getProperBankType(uint32_t bank){
    //special conditions
    if((bank & 0x00FF) == 0x00FF && registersAreXXFFMapped()){
       //XXFF register mode
@@ -332,13 +328,13 @@ static uint8_t getProperBankType(uint16_t bank){
 }
 
 void setRegisterXXFFAccessMode(){
-   for(uint16_t topByte = 0; topByte < 0x100; topByte++)
-      bankType[topByte << 8 | 0xFF] = CHIP_REGISTERS;
+   for(uint32_t topByte = 0; topByte < 0x100; topByte++)
+      bankType[START_BANK(topByte << 24 | 0x00FFF000)] = CHIP_REGISTERS;
 }
 
 void setRegisterFFFFAccessMode(){
-   for(uint16_t topByte = 0; topByte < 0x100; topByte++){
-      uint32_t bank = topByte << 8 | 0xFF;
+   for(uint32_t topByte = 0; topByte < 0x100; topByte++){
+      uint32_t bank = START_BANK(topByte << 24 | 0x00FFF000);
       bankType[bank] = getProperBankType(bank);
    }
 }

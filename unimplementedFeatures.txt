@@ -1,13 +1,11 @@
 Timer capture events, I don't think there possible though with the Palms hardware
 SED1376 register access
-storage RAM protect
 sysTrapPceNativeCall, ARM Emulator
 cpu32 table lookup opcodes
 Peripheral Control Register, audio ppm mixing selection
 All edge triggered interrupts(currently always level triggered)
 (debug tools)missing icons
 Port G SPI stuff
-RAM location and size setting, Dragonball VZ can set the page mapping SDCTRL
 DRAMC write enable
 All of DRAMMC
 Setting the battery dead bit(PDDATA 0x80) if the emulated battery percent gets too low
@@ -16,8 +14,7 @@ Sdcard can't be inserted or removed
 Sdcard has no error handling in save/load state
 Port M Infrared shutdown (PMDATA 0x20)
 interrupt control register (ICR), POL5 and edge trigger selects
-Bits 15 and 14 of the chip selects, currently only the upper 16 bits are taken into account
-Supervisor only chip select bits
+storage RAM protect(likely already done from fixing chip select bits)
 
 Fixed:
 System Control Register, 0xXXFFF000 all upper banks are registers mode
@@ -27,6 +24,9 @@ Endian safe savestates
 PLL Control Register, Wake Select
 (Resolved by MC68VZ328UM_CORRECTIONS datasheet, its 0xA28, 16 bits)The data sheet says LRRA is 0xFFFFFA29 and 0xFFFFFA28 but its only 8 bits?
 (All except edge triggered INT0/1/2/3 restart PLL)Check if interrupts restart PLL when its disabled
-Disabling PLL also turns off general purpose timer 1 and 2 unless they are set to use clk32 as there source
+Disabling PLL also turns off general purpose timer 1 and 2 unless they are set to use CLK32 as there source
 All chip select registers
 The boot memory mapping where ROM starts at 0x00000000 and RAM is swapped in
+Bits 15 and 14 of the chip selects, currently only the upper 16 bits are taken into account
+Supervisor only chip select bits
+RAM location and size setting, Dragonball VZ can set the page mapping SDCTRL(SDCTRL only sets external physical pins not RAM mapping)

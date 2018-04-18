@@ -11,7 +11,7 @@
 #include "m68k/m68k.h"
 
 
-chip_t   chips[4];
+chip_t   chips[CHIP_END];
 int32_t  pllWakeWait;
 uint32_t clk32Counter;
 double   timer1CycleCounter;
@@ -918,7 +918,7 @@ unsigned int getHwRegister16(unsigned int address){
    }
    
    address &= 0x00000FFF;
-   //printUnknownHwAccess(address, 0, 16, false);
+   printUnknownHwAccess(address, 0, 16, false);
    switch(address){
          
       //32 bit registers accessed as 16 bit
@@ -938,7 +938,7 @@ unsigned int getHwRegister16(unsigned int address){
          return registerArrayRead16(address);
          
       default:
-         printUnknownHwAccess(address, 0, 16, false);
+         //printUnknownHwAccess(address, 0, 16, false);
          return 0x0000;
    }
    
@@ -956,7 +956,7 @@ unsigned int getHwRegister32(unsigned int address){
    }
    
    address &= 0x00000FFF;
-   //printUnknownHwAccess(address, 0, 32, false);
+   printUnknownHwAccess(address, 0, 32, false);
    switch(address){
 
       //16 bit registers being read as 32 bit
@@ -971,7 +971,7 @@ unsigned int getHwRegister32(unsigned int address){
          return registerArrayRead32(address);
          
       default:
-         printUnknownHwAccess(address, 0, 32, false);
+         //printUnknownHwAccess(address, 0, 32, false);
          return 0x00000000;
    }
    
@@ -986,7 +986,7 @@ void setHwRegister8(unsigned int address, unsigned int value){
    }
    
    address &= 0x00000FFF;
-   //printUnknownHwAccess(address, value, 8, true);
+   printUnknownHwAccess(address, value, 8, true);
    switch(address){
          
       case SCR:
@@ -1098,7 +1098,7 @@ void setHwRegister8(unsigned int address, unsigned int value){
          break;
          
       default:
-         printUnknownHwAccess(address, value, 8, true);
+         //printUnknownHwAccess(address, value, 8, true);
          break;
    }
 }
@@ -1110,7 +1110,7 @@ void setHwRegister16(unsigned int address, unsigned int value){
    }
    
    address &= 0x00000FFF;
-   //printUnknownHwAccess(address, value, 16, true);
+   printUnknownHwAccess(address, value, 16, true);
    switch(address){
          
       case RTCIENR:
@@ -1241,7 +1241,7 @@ void setHwRegister16(unsigned int address, unsigned int value){
          break;
          
       default:
-         printUnknownHwAccess(address, value, 16, true);
+         //printUnknownHwAccess(address, value, 16, true);
          break;
    }
 }
@@ -1257,7 +1257,7 @@ void setHwRegister32(unsigned int address, unsigned int value){
    }
    
    address &= 0x00000FFF;
-   //printUnknownHwAccess(address, value, 32, true);
+   printUnknownHwAccess(address, value, 32, true);
    switch(address){
          
       case RTCTIME:
@@ -1285,7 +1285,7 @@ void setHwRegister32(unsigned int address, unsigned int value){
          break;
       
       default:
-         printUnknownHwAccess(address, value, 32, true);
+         //printUnknownHwAccess(address, value, 32, true);
          break;
    }
 }
@@ -1297,7 +1297,7 @@ void resetHwRegisters(){
    pllWakeWait = -1;
    timer1CycleCounter = 0.0;
    timer2CycleCounter = 0.0;
-   for(uint32_t chip = CHIP_A_ROM; chip <= CHIP_D_RAM; chip++){
+   for(uint32_t chip = CHIP_BEGIN; chip < CHIP_END; chip++){
       chips[chip].enable = false;
       chips[chip].start = 0x00000000;
       chips[chip].size = 0x00000000;
