@@ -62,7 +62,7 @@ static inline void sed1376Write32(unsigned int address, unsigned int value){
 }
 
 static inline bool probeRead(uint8_t bank, unsigned int address){
-   if(chips[bank].supervisorOnlyProtectedMemory && address >= chips[bank].unprotectedSize  && !(m68k_get_reg(NULL, M68K_REG_SR) & 0x4000)){
+   if(chips[bank].supervisorOnlyProtectedMemory && address >= chips[bank].unprotectedSize && !(m68k_get_reg(NULL, M68K_REG_SR) & 0x2000)){
       setPrivilegeViolation();
       return false;
    }
@@ -70,13 +70,19 @@ static inline bool probeRead(uint8_t bank, unsigned int address){
 }
 
 static inline bool probeWrite(uint8_t bank, unsigned int address){
-   if(chips[bank].supervisorOnlyProtectedMemory && address >= chips[bank].unprotectedSize  && !(m68k_get_reg(NULL, M68K_REG_SR) & 0x4000)){
-      setPrivilegeViolation();
-      return false;
-   }
-   if(chips[bank].readOnly || (chips[bank].readOnlyForProtectedMemory && address >= chips[bank].unprotectedSize)){
+   if(chips[bank].readOnly){
       setWriteProtectViolation();
       return false;
+   }
+   else if(address >= chips[bank].unprotectedSize){
+      if(chips[bank].supervisorOnlyProtectedMemory && !(m68k_get_reg(NULL, M68K_REG_SR) & 0x2000)){
+         setPrivilegeViolation();
+         return false;
+      }
+      if(chips[bank].readOnlyForProtectedMemory){
+         setWriteProtectViolation();
+         return false;
+      }
    }
    return true;
 }
