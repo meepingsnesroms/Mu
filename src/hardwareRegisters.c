@@ -6,7 +6,7 @@
 #include "hardwareRegisterNames.h"
 #include "hardwareRegisters.h"
 #include "memoryAccess.h"
-#include "cpu32Opcodes.h"
+#include "68328Functions.h"
 #include "portability.h"
 #include "m68k/m68k.h"
 
@@ -69,6 +69,10 @@ static inline void setCsa(uint16_t value){
    chips[CHIP_A_ROM].enable = CAST_TO_BOOL(value & 0x0001);
    chips[CHIP_A_ROM].readOnly = CAST_TO_BOOL(value & 0x8000);
    chips[CHIP_A_ROM].size = 0x20000/*128kb*/ << ((value >> 1) & 0x0007);
+
+   //CSA is now just a normal chipselect
+   if(chips[CHIP_A_ROM].enable && chips[CHIP_A_ROM].inBootMode)
+      chips[CHIP_A_ROM].inBootMode = false;
 
    registerArrayWrite16(CSA, value & 0x81FF);
 }
@@ -818,6 +822,7 @@ void refreshButtonState(){
 
 void setBusErrorTimeOut(){
    uint8_t scr = registerArrayRead8(SCR);
+   debugLog("Bus error timeout, PC:0x%08X\n", m68k_get_reg(NULL, M68K_REG_PC));
    if(scr & 0x10){
       //trigger bus error interrupt
    }
@@ -826,6 +831,7 @@ void setBusErrorTimeOut(){
 
 void setWriteProtectViolation(){
    uint8_t scr = registerArrayRead8(SCR);
+   debugLog("Write protect violation, PC:0x%08X\n", m68k_get_reg(NULL, M68K_REG_PC));
    if(scr & 0x10){
       //trigger bus error interrupt
    }
@@ -834,6 +840,7 @@ void setWriteProtectViolation(){
 
 void setPrivilegeViolation(){
    uint8_t scr = registerArrayRead8(SCR);
+   debugLog("Privilege violation, PC:0x%08X\n", m68k_get_reg(NULL, M68K_REG_PC));
    if(scr & 0x10){
       //trigger bus error interrupt
    }
@@ -920,7 +927,7 @@ unsigned int getHwRegister16(unsigned int address){
    }
    
    address &= 0x00000FFF;
-   printUnknownHwAccess(address, 0, 16, false);
+   //printUnknownHwAccess(address, 0, 16, false);
    switch(address){
          
       //32 bit registers accessed as 16 bit
@@ -940,7 +947,7 @@ unsigned int getHwRegister16(unsigned int address){
          return registerArrayRead16(address);
          
       default:
-         //printUnknownHwAccess(address, 0, 16, false);
+         printUnknownHwAccess(address, 0, 16, false);
          return 0x0000;
    }
    
@@ -1305,15 +1312,14 @@ void resetHwRegisters(){
       chips[chip].size = 0x00000000;
       chips[chip].mask = 0x00000000;
 
+      chips[chip].inBootMode = false;
       chips[chip].readOnly = false;
       chips[chip].readOnlyForProtectedMemory = false;
       chips[chip].supervisorOnlyProtectedMemory = false;
       chips[chip].unprotectedSize = 0x00000000;
    }
    //all chipselects are disabled at boot and CSA is mapped to 0x00000000 and covers the entire address range until CSGBA set otherwise
-   chips[CHIP_A_ROM].enable = true;
-   chips[CHIP_A_ROM].start = 0x00000000;
-   chips[CHIP_A_ROM].size = 0xFFFF0000;//0xFFFFFFFF will block hw registers and emu registers
+   chips[CHIP_A_ROM].inBootMode = true;
 
    //masks for reading and writing
    chips[CHIP_A_ROM].mask = 0x003FFFFF;

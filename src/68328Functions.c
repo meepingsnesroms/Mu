@@ -17,7 +17,9 @@ bool lowPowerStopActive;
 
 static inline void patchOpcode(uint16_t opcode, void (*handler)(void), unsigned char cycles){
       m68ki_instruction_jump_table[opcode] = handler;
-      m68ki_cycles[2][opcode] = cycles;//set how many cycles for 68020
+      m68ki_cycles[0][opcode] = cycles;
+      m68ki_cycles[1][opcode] = cycles;
+      m68ki_cycles[2][opcode] = cycles;
 }
 
 
@@ -32,28 +34,28 @@ void cpu32OpLpstop(void){
       //program lacks authority
       m68ki_exception_privilege_violation();
    }
-   debugLog("LowPowerStop set, CPU is off, PC 0x%08X!\n", m68k_get_reg(NULL, M68K_REG_PC));
+   debugLog("LowPowerStop set, CPU is off, PC:0x%08X!\n", m68k_get_reg(NULL, M68K_REG_PC));
 }
 
 void cpu32OpTbls(void){
-   debugLog("TBLS opcode not implemented, PC 0x%08X!\n", m68k_get_reg(NULL, M68K_REG_PC));
+   debugLog("TBLS opcode not implemented, PC:0x%08X!\n", m68k_get_reg(NULL, M68K_REG_PC));
 }
 
 void cpu32OpTblsn(void){
-   debugLog("TBLSN opcode not implemented, PC 0x%08X!\n", m68k_get_reg(NULL, M68K_REG_PC));
+   debugLog("TBLSN opcode not implemented, PC:0x%08X!\n", m68k_get_reg(NULL, M68K_REG_PC));
 }
 
 void cpu32OpTblu(void){
-   debugLog("TBLU opcode not implemented, PC 0x%08X!\n", m68k_get_reg(NULL, M68K_REG_PC));
+   debugLog("TBLU opcode not implemented, PC:0x%08X!\n", m68k_get_reg(NULL, M68K_REG_PC));
 }
 
 void cpu32OpTblun(void){
-   debugLog("TBLUN opcode not implemented, PC 0x%08X!\n", m68k_get_reg(NULL, M68K_REG_PC));
+   debugLog("TBLUN opcode not implemented, PC:0x%08X!\n", m68k_get_reg(NULL, M68K_REG_PC));
 }
 
 
 void m68k_op_bgnd(void){
-   debugLog("Opcode BGND not implemented, PC 0x%08X!\n", m68k_get_reg(NULL, M68K_REG_PC));
+   debugLog("Opcode BGND not implemented, PC:0x%08X!\n", m68k_get_reg(NULL, M68K_REG_PC));
 }
 
 void m68k_op_cpu32_dispatch(void){
@@ -89,9 +91,13 @@ void m68k_op_cpu32_dispatch(void){
 }
 
 
-void patchMusashiOpcodeHandlerCpu32(){
+void patchTo68328(){
+   CPU_ADDRESS_MASK = 0xFFFFFFFF;
+
    patchOpcode(OPCODE_BGND, m68k_op_bgnd, 16/*dont know how many cycles, average opcode*/);
    
    for(uint32_t currentOpcode = OPCODE_CPU32_START; currentOpcode <= OPCODE_CPU32_END; currentOpcode++)
       patchOpcode(currentOpcode, m68k_op_cpu32_dispatch, 91/*dont know how many cycles, most expensive opcode*/);
+
+   //68328 may actually use some 68020 opcodes, those will be patched in if and when Palm OS attempts to call one
 }

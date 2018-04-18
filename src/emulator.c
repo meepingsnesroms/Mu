@@ -4,7 +4,7 @@
 #include <boolean.h>
 
 #include "m68k/m68k.h"
-#include "cpu32Opcodes.h"
+#include "68328Functions.h"
 #include "emulator.h"
 #include "hardwareRegisters.h"
 #include "memoryAccess.h"
@@ -54,20 +54,42 @@ static inline bool allSdCardCallbacksPresent(){
 
 //debug
 #ifdef EMU_OPCODE_LEVEL_DEBUG
-#define LOGGED_OPCODES 10
+#define LOGGED_OPCODES 100
 static bool invalidBehaviorAbort;
 static char disassemblyBuffer[LOGGED_OPCODES][100];//store the opcode and program counter for the last 10 opcodes
+
+static char* takeStackDump(uint32_t bytes){
+   char* textBytes = malloc(bytes * 2);
+   uint32_t textBytesOffset = 0;
+   uint32_t stackAddress = m68k_get_reg(NULL, M68K_REG_SP);
+
+   textBytes[0] = '\0';
+
+   for(uint32_t count = 0; count < bytes; count++){
+      sprintf(textBytes + textBytesOffset, "%02X", m68k_read_memory_8(stackAddress + count));
+      textBytesOffset = strlen(textBytes);
+   }
+
+   return textBytes;
+}
 
 static void invalidBehaviorCheck(){
    char opcodeName[100];
    uint32_t lastProgramCounter = m68k_get_reg(NULL, M68K_REG_PPC);
    uint32_t programCounter = m68k_get_reg(NULL, M68K_REG_PC);
    uint16_t instruction = m68k_get_reg(NULL, M68K_REG_IR);
-   bool invalidInstruction = !m68k_is_valid_instruction(instruction, M68K_CPU_TYPE_68020);
+   bool invalidInstruction = !m68k_is_valid_instruction(instruction, M68K_CPU_TYPE_68000);
    bool invalidBank = (bankType[START_BANK(programCounter)] == CHIP_NONE);
 
    //get current opcode
-   m68k_disassemble(opcodeName, programCounter, M68K_CPU_TYPE_68020);
+   if(!invalidBank){
+      //must dissasemble as 68020 to prevent address masking, is also more descriptive for invalid opcodes
+      m68k_disassemble(opcodeName, programCounter, M68K_CPU_TYPE_68020);
+   }
+   else{
+      strcpy(opcodeName, "Invalid bank, cant read");
+   }
+   sprintf(opcodeName + strlen(opcodeName), " at PC:0x%08X", programCounter);
 
    //shift opcode buffer
    for(uint32_t i = 0; i < LOGGED_OPCODES - 1; i++)
@@ -85,7 +107,25 @@ static void invalidBehaviorCheck(){
       for(uint32_t i = 0; i < LOGGED_OPCODES; i++)
          debugLog("%s\n", disassemblyBuffer[i]);
       //currently CPU32 opcodes will be listed as "unknown", I cant change that properly unless I directly edit musashi source, something I want to avoid doing
-      debugLog("Instruction:\"%s\", instruction value:0x%04X, bank type:%d, program counter:0x%08X\n", invalidInstruction ? "unknown" : opcodeName, instruction, START_BANK(programCounter), programCounter);
+      debugLog("Instruction:\"%s\", instruction value:0x%04X, bank type:%d\n", invalidInstruction ? "unknown" : opcodeName, instruction, bankType[START_BANK(programCounter)]);
+   }
+
+   //custom debug operations
+   switch(programCounter){
+      /*
+      //case 0x10000566:
+      case 0x100003F8:
+         {
+            //failing on executing first trap "HwrPreDebugInit"
+            char* data = takeStackDump(32);
+            debugLog("Stack dump:%s\n", data);
+            free(data);
+         }
+         break;
+      */
+
+      default:
+         break;
    }
 }
 #endif
@@ -94,7 +134,8 @@ static void invalidBehaviorCheck(){
 void emulatorInit(uint8_t* palmRomDump, uint8_t* palmBootDump, uint32_t specialFeatures){
    //CPU
    m68k_init();
-   m68k_set_cpu_type(M68K_CPU_TYPE_68020);
+   m68k_set_cpu_type(M68K_CPU_TYPE_68000);
+   patchTo68328();
    m68k_set_reset_instr_callback(emulatorReset);
    m68k_set_int_ack_callback(interruptAcknowledge);
 #ifdef EMU_OPCODE_LEVEL_DEBUG
@@ -102,7 +143,6 @@ void emulatorInit(uint8_t* palmRomDump, uint8_t* palmBootDump, uint32_t specialF
       strcpy(disassemblyBuffer[i], "Not an opcode.\n");
    m68k_set_instr_hook_callback(invalidBehaviorCheck);
 #endif
-   patchMusashiOpcodeHandlerCpu32();
    resetHwRegisters();
    lowPowerStopActive = false;
    palmCrystalCycles = 2.0 * (14.0 * (71.0/*p*/ + 1.0) + 3.0/*q*/ + 1.0) / 2.0/*prescaler1*/;
@@ -166,8 +206,6 @@ void emulatorInit(uint8_t* palmRomDump, uint8_t* palmBootDump, uint32_t specialF
    debugLog("Fixed 32.32:0x%08lX\n", fixed3232);
    debugLog("Rebuilt double:%f\n", rebuilt);
    */
-
-   //debugLog("0x01000014 bank type:%d\n", bankType[0x0100]);
 }
 
 void emulatorExit(){
@@ -176,6 +214,7 @@ void emulatorExit(){
 
 void emulatorReset(){
    //reset doesnt clear RAM or sdcard, all programs are stored in RAM or on sdcard
+   debugLog("Reset triggered, PC:0x%08X\n", m68k_get_reg(NULL, M68K_REG_PC));
    resetHwRegisters();
    resetAddressSpace();//address space must be reset after hardware registers because it is dependant on them
    sed1376Reset();
@@ -208,7 +247,7 @@ uint32_t emulatorGetStateSize(){
    size += REG_SIZE;//hardware registers
    size += TOTAL_MEMORY_BANKS;//bank handlers
    size += sizeof(uint32_t) * 4 * CHIP_END;//chip select states
-   size += sizeof(uint8_t) * 4 * CHIP_END;//chip select states
+   size += sizeof(uint8_t) * 5 * CHIP_END;//chip select states
    size += sizeof(uint64_t) * 3;//palmSdCard
    size += sizeof(uint8_t) * 2;//palmSdCard
    size += sizeof(uint64_t) * 4;//32.32 fixed point double, timerXCycleCounter and CPU cycle timers
@@ -254,6 +293,8 @@ void emulatorSaveState(uint8_t* data){
       offset += sizeof(uint32_t);
       writeStateValueUint32(data + offset, chips[chip].mask);
       offset += sizeof(uint32_t);
+      writeStateValueBool(data + offset, chips[chip].inBootMode);
+      offset += sizeof(uint8_t);
       writeStateValueBool(data + offset, chips[chip].readOnly);
       offset += sizeof(uint8_t);
       writeStateValueBool(data + offset, chips[chip].readOnlyForProtectedMemory);
@@ -338,6 +379,8 @@ void emulatorLoadState(uint8_t* data){
       offset += sizeof(uint32_t);
       chips[chip].mask = readStateValueUint32(data + offset);
       offset += sizeof(uint32_t);
+      chips[chip].inBootMode = readStateValueBool(data + offset);
+      offset += sizeof(uint8_t);
       chips[chip].readOnly = readStateValueBool(data + offset);
       offset += sizeof(uint8_t);
       chips[chip].readOnlyForProtectedMemory = readStateValueBool(data + offset);

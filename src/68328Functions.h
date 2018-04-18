@@ -4,4 +4,4 @@
 
 extern bool lowPowerStopActive;
 
-void patchMusashiOpcodeHandlerCpu32();
+void patchTo68328();

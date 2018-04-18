@@ -17,6 +17,7 @@ interrupt control register (ICR), POL5 and edge trigger selects
 storage RAM protect(likely already done from fixing chip select bits)
 
 Fixed:
+Palm OS usage of the "rte" instruction is incompatible with the 68020, switch to 68000 core
 System Control Register, 0xXXFFF000 all upper banks are registers mode
 Port D keyboard enable register
 (HW verified)PDPOL inverts interrupts by inverting PDDATA bits, the data register is affected by PDPOL

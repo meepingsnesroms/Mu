@@ -40,13 +40,13 @@ SOURCES += \
     src/m68k/m68kopdm.c \
     src/m68k/m68kopnz.c \
     src/m68k/m68kops.c \
-    src/cpu32Opcodes.c \
     src/emulator.c \
     src/hardwareRegisters.c \
     src/memoryAccess.c \
     src/sdcard.c \
     src/sed1376.c \
-    src/silkscreen.c
+    src/silkscreen.c \
+    src/68328Functions.c
 
 HEADERS += \
     mainwindow.h \
@@ -61,7 +61,6 @@ HEADERS += \
     src/m68k/m68kconf.h \
     src/m68k/m68kcpu.h \
     src/m68k/m68kops.h \
-    src/cpu32Opcodes.h \
     src/emuFeatureRegistersSpec.h \
     src/emulator.h \
     src/hardwareRegisterNames.h \
@@ -70,7 +69,8 @@ HEADERS += \
     src/portability.h \
     src/sdcard.h \
     src/sed1376.h \
-    src/silkscreen.h
+    src/silkscreen.h \
+    src/68328Functions.h
 
 FORMS += \
         mainwindow.ui

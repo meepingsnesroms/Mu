@@ -48,6 +48,7 @@ typedef struct{
    uint32_t mask;//the address lines the chip responds to, so 0x10000 on an chip with 16 address lines will return the value at 0x0000
 
    //attributes
+   bool     inBootMode;
    bool     readOnly;
    bool     readOnlyForProtectedMemory;
    bool     supervisorOnlyProtectedMemory;
