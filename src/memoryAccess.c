@@ -311,17 +311,18 @@ static uint8_t getProperBankType(uint32_t bank){
    }
    
    //normal banks
+   if(BANK_IN_RANGE(bank, REG_START_ADDRESS, REG_SIZE)){
+      //registers have first priority, they cover 0xFFFFF000 even if a chipselect overlaps this area
+      return CHIP_REGISTERS;
+   }
    else if(chips[CHIP_A_ROM].enable && BANK_IN_RANGE(bank, chips[CHIP_A_ROM].start, chips[CHIP_A_ROM].size)){
       return CHIP_A_ROM;
    }
-   if(chips[CHIP_D_RAM].enable && BANK_IN_RANGE(bank, chips[CHIP_D_RAM].start, chips[CHIP_D_RAM].size)){
+   else if(chips[CHIP_D_RAM].enable && BANK_IN_RANGE(bank, chips[CHIP_D_RAM].start, chips[CHIP_D_RAM].size)){
       return CHIP_D_RAM;
    }
    else if(chips[CHIP_B_SED].enable && BANK_IN_RANGE(bank, chips[CHIP_B_SED].start, chips[CHIP_B_SED].size) && sed1376ClockConnected()){
       return CHIP_B_SED;
-   }
-   else if(BANK_IN_RANGE(bank, REG_START_ADDRESS, REG_SIZE)){
-      return CHIP_REGISTERS;
    }
    
    return CHIP_NONE;

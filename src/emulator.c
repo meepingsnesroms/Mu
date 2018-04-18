@@ -64,7 +64,7 @@ static void invalidBehaviorCheck(){
    uint32_t programCounter = m68k_get_reg(NULL, M68K_REG_PC);
    uint16_t instruction = m68k_get_reg(NULL, M68K_REG_IR);
    bool invalidInstruction = !m68k_is_valid_instruction(instruction, M68K_CPU_TYPE_68020);
-   bool invalidBank = (bankType[programCounter >> 16] == CHIP_NONE);
+   bool invalidBank = (bankType[START_BANK(programCounter)] == CHIP_NONE);
 
    //get current opcode
    m68k_disassemble(opcodeName, programCounter, M68K_CPU_TYPE_68020);
@@ -85,7 +85,7 @@ static void invalidBehaviorCheck(){
       for(uint32_t i = 0; i < LOGGED_OPCODES; i++)
          debugLog("%s\n", disassemblyBuffer[i]);
       //currently CPU32 opcodes will be listed as "unknown", I cant change that properly unless I directly edit musashi source, something I want to avoid doing
-      debugLog("Instruction:\"%s\", instruction value:0x%04X, program counter:0x%08X\n", invalidInstruction ? "unknown" : opcodeName, instruction, programCounter);
+      debugLog("Instruction:\"%s\", instruction value:0x%04X, bank type:%d, program counter:0x%08X\n", invalidInstruction ? "unknown" : opcodeName, instruction, START_BANK(programCounter), programCounter);
    }
 }
 #endif

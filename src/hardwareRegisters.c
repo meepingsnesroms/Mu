@@ -494,6 +494,8 @@ static inline void setScr(uint8_t value){
    //clear violations on writing 1 to them
    newScr &= ~(oldScr & value & 0xE0);
 
+   chips[CHIP_REGISTERS].supervisorOnlyProtectedMemory = CAST_TO_BOOL(value & 0x08);
+
    registerArrayWrite8(SCR, newScr);//must be written before calling setRegisterFFFFAccessMode
    if((newScr & 0x04) != (oldScr & 0x04)){
       if(newScr & 0x04)
@@ -817,7 +819,7 @@ void refreshButtonState(){
 void setBusErrorTimeOut(){
    uint8_t scr = registerArrayRead8(SCR);
    if(scr & 0x10){
-      //trigger interrupt
+      //trigger bus error interrupt
    }
    registerArrayWrite8(SCR, scr | 0x80);
 }
@@ -825,7 +827,7 @@ void setBusErrorTimeOut(){
 void setWriteProtectViolation(){
    uint8_t scr = registerArrayRead8(SCR);
    if(scr & 0x10){
-      //trigger interrupt
+      //trigger bus error interrupt
    }
    registerArrayWrite8(SCR, scr | 0x40);
 }
@@ -833,7 +835,7 @@ void setWriteProtectViolation(){
 void setPrivilegeViolation(){
    uint8_t scr = registerArrayRead8(SCR);
    if(scr & 0x10){
-      //trigger interrupt
+      //trigger bus error interrupt
    }
    registerArrayWrite8(SCR, scr | 0x20);
 }
@@ -1311,7 +1313,7 @@ void resetHwRegisters(){
    //all chipselects are disabled at boot and CSA is mapped to 0x00000000 and covers the entire address range until CSGBA set otherwise
    chips[CHIP_A_ROM].enable = true;
    chips[CHIP_A_ROM].start = 0x00000000;
-   chips[CHIP_A_ROM].size = 0xFFFFFFFF;
+   chips[CHIP_A_ROM].size = 0xFFFF0000;//0xFFFFFFFF will block hw registers and emu registers
 
    //masks for reading and writing
    chips[CHIP_A_ROM].mask = 0x003FFFFF;

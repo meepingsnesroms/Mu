@@ -13,6 +13,7 @@
 
 //chip addresses and sizes
 #define REG_START_ADDRESS 0xFFFFF000
+#define SUPERMASSIVE_RAM_SIZE (128 * 0x100000)//128mb RAM
 #define RAM_SIZE (16 * 0x100000)//16mb RAM
 #define ROM_SIZE (4 * 0x100000)//4mb ROM
 #define REG_SIZE 0x1000//is actually 0xE00 without bootloader
