@@ -62,7 +62,7 @@ static inline void pllWakeCpuIfOff(){
 }
 
 static inline bool pllOn(){
-   return (registerArrayRead16(PLLCR) & 0x0008) == 0;
+   return !CAST_TO_BOOL(registerArrayRead16(PLLCR) & 0x0008);
 }
 
 static inline void setCsa(uint16_t value){
@@ -135,9 +135,9 @@ static inline void setCsgba(uint16_t value){
 
    //add extra address bits if enabled
    if(csugba & 0x8000)
-      chips[CHIP_A_ROM].start = ((csugba >> 12) & 0x0007) << 29 | (value >> 1) << 13;
+      chips[CHIP_A_ROM].start = ((csugba >> 12) & 0x0007) << 29 | (value >> 1) << 14;
    else
-      chips[CHIP_A_ROM].start = (value >> 1) << 13;
+      chips[CHIP_A_ROM].start = (value >> 1) << 14;
 
    registerArrayWrite16(CSGBA, value & 0xFFFE);
 }
@@ -147,9 +147,9 @@ static inline void setCsgbb(uint16_t value){
 
    //add extra address bits if enabled
    if(csugba & 0x8000)
-      chips[CHIP_B_SED].start = ((csugba >> 8) & 0x0007) << 29 | (value >> 1) << 13;
+      chips[CHIP_B_SED].start = ((csugba >> 8) & 0x0007) << 29 | (value >> 1) << 14;
    else
-      chips[CHIP_B_SED].start = (value >> 1) << 13;
+      chips[CHIP_B_SED].start = (value >> 1) << 14;
 
    registerArrayWrite16(CSGBB, value & 0xFFFE);
 }
@@ -159,9 +159,9 @@ static inline void setCsgbc(uint16_t value){
 
    //add extra address bits if enabled
    if(csugba & 0x8000)
-      chips[CHIP_C_USB].start = ((csugba >> 4) & 0x0007) << 29 | (value >> 1) << 13;
+      chips[CHIP_C_USB].start = ((csugba >> 4) & 0x0007) << 29 | (value >> 1) << 14;
    else
-      chips[CHIP_C_USB].start = (value >> 1) << 13;
+      chips[CHIP_C_USB].start = (value >> 1) << 14;
 
    registerArrayWrite16(CSGBC, value & 0xFFFE);
 }
@@ -171,9 +171,9 @@ static inline void setCsgbd(uint16_t value){
 
    //add extra address bits if enabled
    if(csugba & 0x8000)
-      chips[CHIP_D_RAM].start = (csugba & 0x0007) << 29 | (value >> 1) << 13;
+      chips[CHIP_D_RAM].start = (csugba & 0x0007) << 29 | (value >> 1) << 14;
    else
-      chips[CHIP_D_RAM].start = (value >> 1) << 13;
+      chips[CHIP_D_RAM].start = (value >> 1) << 14;
 
    registerArrayWrite16(CSGBD, value & 0xFFFE);
 }

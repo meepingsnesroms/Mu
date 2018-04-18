@@ -4,12 +4,13 @@
 
 //address space
 //new bank size (0x4000)
-#define NUM_BANKS(areaSize) ((areaSize) & 0x00003FFF ? ((areaSize) >> 14) + 1 : (areaSize) >> 14)
-#define START_BANK(address) ((address) >> 14)
+#define BANK_SCOOT 14
+#define NUM_BANKS(areaSize) ((areaSize) & 0x00003FFF ? ((areaSize) >> BANK_SCOOT) + 1 : (areaSize) >> BANK_SCOOT)
+#define START_BANK(address) ((address) >> BANK_SCOOT)
 #define END_BANK(address, size) (START_BANK(address) + NUM_BANKS(size) - 1)
 #define BANK_IN_RANGE(bank, address, size) ((bank) >= START_BANK(address) && (bank) <= END_BANK(address, size))
-#define BANK_ADDRESS(bank) ((bank) << 14)
-#define TOTAL_MEMORY_BANKS 0x40000
+#define BANK_ADDRESS(bank) ((bank) << BANK_SCOOT)
+#define TOTAL_MEMORY_BANKS (1 << (32 - BANK_SCOOT))//0x40000 banks for BANK_SCOOT = 14
 
 //chip addresses and sizes
 #define REG_START_ADDRESS 0xFFFFF000

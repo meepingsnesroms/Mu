@@ -96,6 +96,9 @@ unsigned int m68k_read_memory_8(unsigned int address){
       case CHIP_B_SED:
          return sed1376Read8(address);
 
+      case CHIP_C_USB:
+         return 0x00;
+
       case CHIP_D_RAM:
          return ramRead8(address);
 
@@ -128,6 +131,9 @@ unsigned int m68k_read_memory_16(unsigned int address){
 
       case CHIP_B_SED:
          return sed1376Read16(address);
+
+      case CHIP_C_USB:
+         return 0x0000;
 
       case CHIP_D_RAM:
          return ramRead16(address);
@@ -162,6 +168,9 @@ unsigned int m68k_read_memory_32(unsigned int address){
       case CHIP_B_SED:
          return sed1376Read32(address);
 
+      case CHIP_C_USB:
+         return 0x00000000;
+
       case CHIP_D_RAM:
          return ramRead32(address);
 
@@ -195,6 +204,9 @@ void m68k_write_memory_8(unsigned int address, unsigned int value){
 
       case CHIP_B_SED:
          sed1376Write8(address, value);
+         break;
+
+      case CHIP_C_USB:
          break;
 
       case CHIP_D_RAM:
@@ -233,6 +245,9 @@ void m68k_write_memory_16(unsigned int address, unsigned int value){
          sed1376Write16(address, value);
          break;
 
+      case CHIP_C_USB:
+         break;
+
       case CHIP_D_RAM:
          ramWrite16(address, value);
          break;
@@ -255,7 +270,6 @@ void m68k_write_memory_16(unsigned int address, unsigned int value){
 }
 
 void m68k_write_memory_32(unsigned int address, unsigned int value){
-
    uint8_t addressType = bankType[START_BANK(address)];
 
    if(!probeWrite(addressType, address))
@@ -268,6 +282,9 @@ void m68k_write_memory_32(unsigned int address, unsigned int value){
 
       case CHIP_B_SED:
          sed1376Write32(address, value);
+         break;
+
+      case CHIP_C_USB:
          break;
 
       case CHIP_D_RAM:
@@ -318,13 +335,16 @@ static uint8_t getProperBankType(uint32_t bank){
    else if(chips[CHIP_A_ROM].enable && BANK_IN_RANGE(bank, chips[CHIP_A_ROM].start, chips[CHIP_A_ROM].size)){
       return CHIP_A_ROM;
    }
-   else if(chips[CHIP_D_RAM].enable && BANK_IN_RANGE(bank, chips[CHIP_D_RAM].start, chips[CHIP_D_RAM].size)){
-      return CHIP_D_RAM;
-   }
    else if(chips[CHIP_B_SED].enable && BANK_IN_RANGE(bank, chips[CHIP_B_SED].start, chips[CHIP_B_SED].size) && sed1376ClockConnected()){
       return CHIP_B_SED;
    }
-   
+   else if(chips[CHIP_C_USB].enable && BANK_IN_RANGE(bank, chips[CHIP_C_USB].start, chips[CHIP_C_USB].size)){
+      return CHIP_C_USB;
+   }
+   else if(chips[CHIP_D_RAM].enable && BANK_IN_RANGE(bank, chips[CHIP_D_RAM].start, chips[CHIP_D_RAM].size)){
+      return CHIP_D_RAM;
+   }
+
    return CHIP_NONE;
 }
 
