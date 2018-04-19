@@ -19,7 +19,8 @@
 #define ROM_SIZE (4 * 0x100000)//4mb ROM
 #define REG_SIZE 0x1000//is actually 0xE00 without bootloader
 #define BOOTLOADER_SIZE 0x200
-#define SED1376_REG_SIZE 0x20000//it has 0x20000 used address space entrys but only 0xB4 registers
+#define SED1376_REG_SIZE 0x100//it has 0x20000 used address space entrys but only 0xB4 registers
+#define SED1376_LUT_SIZE 0x100//it has 0x20000 used address space entrys but only 0xB4 registers
 #define SED1376_FB_SIZE  0x14000//0x14000 in size
 
 //the read/write stuff looks messy here but makes the memory access functions alot cleaner

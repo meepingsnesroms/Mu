@@ -22,6 +22,8 @@ extern "C" {
 #include "memoryAccess.h"//for size macros
 #include "emuFeatureRegistersSpec.h"
 
+#define SAVE_STATE_VERSION 1
+
 //emu errors
 enum{
    EMU_ERROR_NONE = 0,

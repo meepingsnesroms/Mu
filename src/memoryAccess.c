@@ -25,16 +25,22 @@ static inline unsigned int romRead32(unsigned int address){return BUFFER_READ_32
 
 //SED1376 accesses
 static inline unsigned int sed1376Read8(unsigned int address){
+   if(sed1376PowerSaveEnabled())
+      return 0x00;
    if(address - chips[CHIP_B_SED].start < SED1376_REG_SIZE)
       return sed1376GetRegister(address);
    return BUFFER_READ_8(sed1376Framebuffer, address, chips[CHIP_B_SED].start + SED1376_REG_SIZE, chips[CHIP_B_SED].mask);
 }
 static inline unsigned int sed1376Read16(unsigned int address){
+   if(sed1376PowerSaveEnabled())
+      return 0x0000;
    if(address - chips[CHIP_B_SED].start < SED1376_REG_SIZE)
       return sed1376GetRegister(address);
    return BUFFER_READ_16(sed1376Framebuffer, address, chips[CHIP_B_SED].start + SED1376_REG_SIZE, chips[CHIP_B_SED].mask);
 }
 static inline unsigned int sed1376Read32(unsigned int address){
+   if(sed1376PowerSaveEnabled())
+      return 0x00000000;
    if(address - chips[CHIP_B_SED].start < SED1376_REG_SIZE)
       return sed1376GetRegister(address);
    return BUFFER_READ_32(sed1376Framebuffer, address, chips[CHIP_B_SED].start + SED1376_REG_SIZE, chips[CHIP_B_SED].mask);

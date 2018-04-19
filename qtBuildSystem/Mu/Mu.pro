@@ -71,7 +71,8 @@ HEADERS += \
     src/sed1376.h \
     src/silkscreen.h \
     mainwindow.h \
-    touchscreen.h
+    touchscreen.h \
+    src/sed1376RegisterNames.h
 
 FORMS += \
         mainwindow.ui

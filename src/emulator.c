@@ -249,10 +249,14 @@ uint32_t emulatorSetSdCard(uint64_t size, uint8_t type){
 uint32_t emulatorGetStateSize(){
    uint32_t size = 0;
    
+   size += sizeof(uint32_t);//save state version
    size += sizeof(uint32_t) * (M68K_REG_CAAR + 1);//CPU registers
    size += sizeof(uint8_t);//lowPowerStopActive
    size += RAM_SIZE;//system RAM buffer
    size += REG_SIZE;//hardware registers
+   size += SED1376_FB_SIZE;//SED1376
+   size += SED1376_LUT_SIZE;//SED1376
+   size += SED1376_REG_SIZE;//SED1376
    size += TOTAL_MEMORY_BANKS;//bank handlers
    size += sizeof(uint32_t) * 4 * CHIP_END;//chip select states
    size += sizeof(uint8_t) * 5 * CHIP_END;//chip select states
@@ -270,12 +274,9 @@ uint32_t emulatorGetStateSize(){
 void emulatorSaveState(uint8_t* data){
    uint32_t offset = 0;
    
-   //update sdcard struct and save sdcard data
-   if(allSdCardCallbacksPresent() && palmSdCard.type != CARD_NONE){
-      uint64_t stateId = emulatorGetSysTime();
-      sdCardSaveState(palmSdCard.sessionId, stateId);
-      palmSdCard.stateId = stateId;
-   }
+   //state validation, wont load states that are not from the same state version
+   writeStateValueUint32(data + offset, SAVE_STATE_VERSION);
+   offset += sizeof(uint32_t);
    
    //CPU
    for(uint32_t cpuReg = 0; cpuReg <=  M68K_REG_CAAR; cpuReg++){
@@ -292,6 +293,12 @@ void emulatorSaveState(uint8_t* data){
    offset += REG_SIZE;
    memcpy(data + offset, bankType, TOTAL_MEMORY_BANKS);
    offset += TOTAL_MEMORY_BANKS;
+   memcpy(data + offset, sed1376Registers, SED1376_REG_SIZE);
+   offset += SED1376_REG_SIZE;
+   memcpy(data + offset, sed1376Lut, SED1376_LUT_SIZE);
+   offset += SED1376_LUT_SIZE;
+   memcpy(data + offset, sed1376Framebuffer, SED1376_FB_SIZE);
+   offset += SED1376_FB_SIZE;
    for(uint32_t chip = CHIP_BEGIN; chip < CHIP_END; chip++){
       writeStateValueBool(data + offset, chips[chip].enable);
       offset += sizeof(uint8_t);
@@ -314,6 +321,12 @@ void emulatorSaveState(uint8_t* data){
    }
 
    //sdcard
+   //update sdcard struct and save sdcard data
+   if(allSdCardCallbacksPresent() && palmSdCard.type != CARD_NONE){
+      uint64_t stateId = emulatorGetSysTime();
+      sdCardSaveState(palmSdCard.sessionId, stateId);
+      palmSdCard.stateId = stateId;
+   }
    writeStateValueUint64(data + offset, palmSdCard.sessionId);
    offset += sizeof(uint64_t);
    writeStateValueUint64(data + offset, palmSdCard.stateId);
@@ -363,6 +376,11 @@ void emulatorSaveState(uint8_t* data){
 void emulatorLoadState(uint8_t* data){
    uint32_t offset = 0;
    
+   //state validation, wont load states that are not from the same state version
+   if(readStateValueUint32(data + offset) != SAVE_STATE_VERSION)
+      return;
+   offset += sizeof(uint32_t);
+
    //CPU
    for(uint32_t cpuReg = 0; cpuReg <=  M68K_REG_CAAR; cpuReg++){
       m68k_set_reg(cpuReg, readStateValueUint32(data + offset));
@@ -378,6 +396,12 @@ void emulatorLoadState(uint8_t* data){
    offset += REG_SIZE;
    memcpy(bankType, data + offset, TOTAL_MEMORY_BANKS);
    offset += TOTAL_MEMORY_BANKS;
+   memcpy(sed1376Registers, data + offset, SED1376_REG_SIZE);
+   offset += SED1376_REG_SIZE;
+   memcpy(sed1376Lut, data + offset, SED1376_LUT_SIZE);
+   offset += SED1376_LUT_SIZE;
+   memcpy(sed1376Framebuffer, data + offset, SED1376_FB_SIZE);
+   offset += SED1376_FB_SIZE;
    for(uint32_t chip = CHIP_BEGIN; chip < CHIP_END; chip++){
       chips[chip].enable = readStateValueBool(data + offset);
       offset += sizeof(uint8_t);
@@ -410,6 +434,10 @@ void emulatorLoadState(uint8_t* data){
    offset += sizeof(uint8_t);
    palmSdCard.inserted = readStateValueBool(data + offset);
    offset += sizeof(uint8_t);
+   //update sdcard data from sdcard struct
+   if(allSdCardCallbacksPresent() && palmSdCard.type != CARD_NONE){
+      sdCardLoadState(palmSdCard.sessionId, palmSdCard.stateId);
+   }
 
    //timing
    palmCrystalCycles = readStateValueDouble(data + offset);
@@ -444,11 +472,6 @@ void emulatorLoadState(uint8_t* data){
    //features
    palmSpecialFeatures = readStateValueUint32(data + offset);
    offset += sizeof(uint32_t);
-   
-   //update sdcard data from sdcard struct
-   if(allSdCardCallbacksPresent() && palmSdCard.type != CARD_NONE){
-      sdCardLoadState(palmSdCard.sessionId, palmSdCard.stateId);
-   }
 }
 
 uint32_t emulatorInstallPrcPdb(uint8_t* data, uint32_t size){

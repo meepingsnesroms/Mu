@@ -872,7 +872,7 @@ unsigned int getHwRegister8(unsigned int address){
    }
    
    address &= 0x00000FFF;
-   printUnknownHwAccess(address, 0, 8, false);
+   //printUnknownHwAccess(address, 0, 8, false);
    switch(address){
          
       case PDDATA:
@@ -913,7 +913,7 @@ unsigned int getHwRegister8(unsigned int address){
          return registerArrayRead8(address);
          
       default:
-         //printUnknownHwAccess(address, 0, 8, false);
+         printUnknownHwAccess(address, 0, 8, false);
          return 0x00;
    }
    
@@ -965,7 +965,7 @@ unsigned int getHwRegister32(unsigned int address){
    }
    
    address &= 0x00000FFF;
-   printUnknownHwAccess(address, 0, 32, false);
+   //printUnknownHwAccess(address, 0, 32, false);
    switch(address){
 
       //16 bit registers being read as 32 bit
@@ -980,7 +980,7 @@ unsigned int getHwRegister32(unsigned int address){
          return registerArrayRead32(address);
          
       default:
-         //printUnknownHwAccess(address, 0, 32, false);
+         printUnknownHwAccess(address, 0, 32, false);
          return 0x00000000;
    }
    
@@ -995,7 +995,7 @@ void setHwRegister8(unsigned int address, unsigned int value){
    }
    
    address &= 0x00000FFF;
-   printUnknownHwAccess(address, value, 8, true);
+   //printUnknownHwAccess(address, value, 8, true);
    switch(address){
          
       case SCR:
@@ -1107,7 +1107,7 @@ void setHwRegister8(unsigned int address, unsigned int value){
          break;
          
       default:
-         //printUnknownHwAccess(address, value, 8, true);
+         printUnknownHwAccess(address, value, 8, true);
          break;
    }
 }
@@ -1119,7 +1119,7 @@ void setHwRegister16(unsigned int address, unsigned int value){
    }
    
    address &= 0x00000FFF;
-   printUnknownHwAccess(address, value, 16, true);
+   //printUnknownHwAccess(address, value, 16, true);
    switch(address){
          
       case RTCIENR:
@@ -1250,7 +1250,7 @@ void setHwRegister16(unsigned int address, unsigned int value){
          break;
          
       default:
-         //printUnknownHwAccess(address, value, 16, true);
+         printUnknownHwAccess(address, value, 16, true);
          break;
    }
 }
@@ -1266,7 +1266,7 @@ void setHwRegister32(unsigned int address, unsigned int value){
    }
    
    address &= 0x00000FFF;
-   printUnknownHwAccess(address, value, 32, true);
+   //printUnknownHwAccess(address, value, 32, true);
    switch(address){
          
       case RTCTIME:
@@ -1294,7 +1294,7 @@ void setHwRegister32(unsigned int address, unsigned int value){
          break;
       
       default:
-         //printUnknownHwAccess(address, value, 32, true);
+         printUnknownHwAccess(address, value, 32, true);
          break;
    }
 }
