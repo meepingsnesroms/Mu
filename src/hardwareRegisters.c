@@ -936,6 +936,15 @@ unsigned int getHwRegister16(unsigned int address){
       case IPR:
       case IPR + 2:
          
+      case CSA:
+      case CSB:
+      case CSC:
+      case CSD:
+      case CSGBA:
+      case CSGBB:
+      case CSGBC:
+      case CSGBD:
+      case CSUGBA:
       case PLLCR:
       case PLLFSR:
       case DRAMC:
