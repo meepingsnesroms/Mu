@@ -31,6 +31,7 @@ public:
    ~MainWindow();
 
 private slots:
+   bool eventFilter(QObject *object, QEvent *event);
    void loadRom();
    void selectRom();
    void on_install_pressed();

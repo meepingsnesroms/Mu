@@ -1,4 +1,4 @@
-﻿# Palm m515/OS 4.1 emulator(Mu)
+# Palm m515/OS 4.1 emulator(Mu)
 
 This is a complete restart of my Palm OS emulator, with the last one the code got too messy and the goal too ambitious(to emulate every palm API in software and for compatibility with all Palm OS versions and devices).
 
@@ -47,8 +47,9 @@ Bonus:        Has Adware(Addit)
 The lack of ARM CPU will be fixed in my emulator see "OS improvements".
 
 ## Credits
-Musashi v3.4(last version that builds outside of mame) (68k core)
-http://www.iconarchive.com/show/clean-3d-icons-by-mysitemyway.html (Qt Button Icons)
+Musashi v3.4(last version that builds outside of mame) (68k core)  
+http://www.iconarchive.com/show/clean-3d-icons-by-mysitemyway.html (Qt Button Icons)  
+http://www.iconarchive.com/show/crystal-clear-icons-by-everaldo/App-palm-icon.html (Desktop Icon)
 
 ## Building
 #### For RetroArch

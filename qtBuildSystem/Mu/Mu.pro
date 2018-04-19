@@ -79,3 +79,17 @@ FORMS += \
 CONFIG += mobility c++11
 MOBILITY = 
 
+DISTFILES += \
+    images/addressBook.png \
+    images/calender.png \
+    images/center.png \
+    images/down.png \
+    images/left.png \
+    images/notes.png \
+    images/power.png \
+    images/right.png \
+    images/up.png \
+    images/todo.png
+
+RESOURCES += \
+    mainwindow.qrc

@@ -29,6 +29,18 @@ static std::atomic<bool> emuOn;
 static std::atomic<bool> emuInited;
 static uint8_t romBuffer[ROM_SIZE];
 
+/*
+static QIcon calenderIcon(":/images/calender.png");
+static QIcon addressBookIcon(":/images/addressBook.png");
+static QIcon todoIcon(":/images/todo.png");
+static QIcon notesIcon(":/images/notes.png");
+static QIcon upIcon(":/images/up.png");
+static QIcon downIcon(":/images/down.png");
+static QIcon leftIcon(":/images/left.png");
+static QIcon rightIcon(":/images/right.png");
+static QIcon centerIcon(":/images/center.png");
+*/
+
 
 void popupErrorDialog(std::string error){
    //add error dialog code
@@ -85,6 +97,10 @@ MainWindow::MainWindow(QWidget* parent) :
    QMainWindow(parent),
    ui(new Ui::MainWindow){
    ui->setupUi(this);
+
+   //ui->addressBook->installEventFilter(this);
+   //ui->addressBook->eventFilter = resizeButtonIcons;
+
    emuOn = false;
    emuInited = false;
    screenWidth = 160;
@@ -107,6 +123,14 @@ MainWindow::~MainWindow(){
    delete ui;
 }
 
+bool MainWindow::eventFilter(QObject *object, QEvent *event){
+   if(std::string(object->metaObject()->className()) == "QPushButton" && event->type() == QEvent::Resize){
+      QPushButton* button = (QPushButton*)object;
+      button->setIconSize(button->size());
+   }
+
+   return QMainWindow::eventFilter(object, event);
+}
 
 void MainWindow::loadRom(){
    std::string rom = settings.value("romPath", "").toString().toStdString();

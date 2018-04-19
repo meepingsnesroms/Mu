@@ -1,0 +1,14 @@
+<RCC>
+    <qresource prefix="/buttons">
+        <file>images/addressBook.png</file>
+        <file>images/calender.png</file>
+        <file>images/center.png</file>
+        <file>images/down.png</file>
+        <file>images/left.png</file>
+        <file>images/notes.png</file>
+        <file>images/power.png</file>
+        <file>images/right.png</file>
+        <file>images/toDo.png</file>
+        <file>images/up.png</file>
+    </qresource>
+</RCC>
