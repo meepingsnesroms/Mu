@@ -29,18 +29,6 @@ static std::atomic<bool> emuOn;
 static std::atomic<bool> emuInited;
 static uint8_t romBuffer[ROM_SIZE];
 
-/*
-static QIcon calenderIcon(":/images/calender.png");
-static QIcon addressBookIcon(":/images/addressBook.png");
-static QIcon todoIcon(":/images/todo.png");
-static QIcon notesIcon(":/images/notes.png");
-static QIcon upIcon(":/images/up.png");
-static QIcon downIcon(":/images/down.png");
-static QIcon leftIcon(":/images/left.png");
-static QIcon rightIcon(":/images/right.png");
-static QIcon centerIcon(":/images/center.png");
-*/
-
 
 void popupErrorDialog(std::string error){
    //add error dialog code
@@ -98,8 +86,18 @@ MainWindow::MainWindow(QWidget* parent) :
    ui(new Ui::MainWindow){
    ui->setupUi(this);
 
-   //ui->addressBook->installEventFilter(this);
-   //ui->addressBook->eventFilter = resizeButtonIcons;
+   ui->calender->installEventFilter(this);
+   ui->addressBook->installEventFilter(this);
+   ui->todo->installEventFilter(this);
+   ui->notes->installEventFilter(this);
+
+   ui->up->installEventFilter(this);
+   ui->down->installEventFilter(this);
+   ui->left->installEventFilter(this);
+   ui->right->installEventFilter(this);
+   ui->center->installEventFilter(this);
+
+   ui->power->installEventFilter(this);
 
    emuOn = false;
    emuInited = false;
@@ -112,7 +110,7 @@ MainWindow::MainWindow(QWidget* parent) :
 
    refreshDisplay = new QTimer(this);
    connect(refreshDisplay, SIGNAL(timeout()), this, SLOT(updateDisplay()));
-   //update display every 16.67 miliseconds = 60*second
+   //update display every 16.67miliseconds = 60 * second
    refreshDisplay->start(16);
 }
 
@@ -126,7 +124,7 @@ MainWindow::~MainWindow(){
 bool MainWindow::eventFilter(QObject *object, QEvent *event){
    if(std::string(object->metaObject()->className()) == "QPushButton" && event->type() == QEvent::Resize){
       QPushButton* button = (QPushButton*)object;
-      button->setIconSize(button->size());
+      button->setIconSize(QSize(button->size().width() / 1.7, button->size().height() / 1.7));
    }
 
    return QMainWindow::eventFilter(object, event);

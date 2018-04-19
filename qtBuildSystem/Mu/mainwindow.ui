@@ -43,8 +43,8 @@
       </property>
       <property name="sizeIncrement">
        <size>
-        <width>320</width>
-        <height>320</height>
+        <width>0</width>
+        <height>0</height>
        </size>
       </property>
       <property name="cursor">
@@ -104,12 +104,6 @@
            <iconset resource="mainwindow.qrc">
             <normaloff>:/buttons/images/center.png</normaloff>:/buttons/images/center.png</iconset>
           </property>
-          <property name="iconSize">
-           <size>
-            <width>75</width>
-            <height>75</height>
-           </size>
-          </property>
          </widget>
         </item>
         <item row="0" column="8">
@@ -140,12 +134,6 @@
            <iconset resource="mainwindow.qrc">
             <normaloff>:/buttons/images/right.png</normaloff>:/buttons/images/right.png</iconset>
           </property>
-          <property name="iconSize">
-           <size>
-            <width>75</width>
-            <height>75</height>
-           </size>
-          </property>
          </widget>
         </item>
         <item row="5" column="0">
@@ -163,12 +151,6 @@
            <iconset resource="mainwindow.qrc">
             <normaloff>:/buttons/images/calender.png</normaloff>:/buttons/images/calender.png</iconset>
           </property>
-          <property name="iconSize">
-           <size>
-            <width>75</width>
-            <height>75</height>
-           </size>
-          </property>
          </widget>
         </item>
         <item row="5" column="1">
@@ -185,12 +167,6 @@
           <property name="icon">
            <iconset resource="mainwindow.qrc">
             <normaloff>:/buttons/images/addressBook.png</normaloff>:/buttons/images/addressBook.png</iconset>
-          </property>
-          <property name="iconSize">
-           <size>
-            <width>75</width>
-            <height>75</height>
-           </size>
           </property>
          </widget>
         </item>
@@ -221,12 +197,6 @@
            <iconset resource="mainwindow.qrc">
             <normaloff>:/buttons/images/toDo.png</normaloff>:/buttons/images/toDo.png</iconset>
           </property>
-          <property name="iconSize">
-           <size>
-            <width>75</width>
-            <height>75</height>
-           </size>
-          </property>
           <property name="autoDefault">
            <bool>false</bool>
           </property>
@@ -253,12 +223,6 @@
            <iconset resource="mainwindow.qrc">
             <normaloff>:/buttons/images/notes.png</normaloff>:/buttons/images/notes.png</iconset>
           </property>
-          <property name="iconSize">
-           <size>
-            <width>75</width>
-            <height>75</height>
-           </size>
-          </property>
          </widget>
         </item>
         <item row="2" column="2">
@@ -276,12 +240,6 @@
            <iconset resource="mainwindow.qrc">
             <normaloff>:/buttons/images/left.png</normaloff>:/buttons/images/left.png</iconset>
           </property>
-          <property name="iconSize">
-           <size>
-            <width>75</width>
-            <height>75</height>
-           </size>
-          </property>
          </widget>
         </item>
         <item row="0" column="7">
@@ -298,12 +256,6 @@
           <property name="icon">
            <iconset resource="mainwindow.qrc">
             <normaloff>:/buttons/images/power.png</normaloff>:/buttons/images/power.png</iconset>
-          </property>
-          <property name="iconSize">
-           <size>
-            <width>75</width>
-            <height>75</height>
-           </size>
           </property>
          </widget>
         </item>
@@ -348,28 +300,9 @@
            <iconset resource="mainwindow.qrc">
             <normaloff>:/buttons/images/down.png</normaloff>:/buttons/images/down.png</iconset>
           </property>
-          <property name="iconSize">
-           <size>
-            <width>75</width>
-            <height>75</height>
-           </size>
-          </property>
          </widget>
         </item>
         <item row="0" column="4">
-         <spacer name="verticalSpacer">
-          <property name="orientation">
-           <enum>Qt::Vertical</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>20</width>
-            <height>40</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item row="1" column="4">
          <widget class="QPushButton" name="up">
           <property name="sizePolicy">
            <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
@@ -383,12 +316,6 @@
           <property name="icon">
            <iconset resource="mainwindow.qrc">
             <normaloff>:/buttons/images/up.png</normaloff>:/buttons/images/up.png</iconset>
-          </property>
-          <property name="iconSize">
-           <size>
-            <width>75</width>
-            <height>75</height>
-           </size>
           </property>
          </widget>
         </item>
