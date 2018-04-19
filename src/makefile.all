@@ -5,6 +5,7 @@ EMU_SOURCES_C := $(EMU_PATH)/emulator.c \
       $(EMU_PATH)/sdcard.c \
       $(EMU_PATH)/silkscreen.c \
       $(EMU_PATH)/68328Functions.c \
+      $(EMU_PATH)/trapNumToName.c \
       $(EMU_PATH)/m68k/m68kops.c \
       $(EMU_PATH)/m68k/m68kopnz.c \
       $(EMU_PATH)/m68k/m68kopdm.c \

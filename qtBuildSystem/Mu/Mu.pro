@@ -40,17 +40,16 @@ SOURCES += \
     src/m68k/m68kopdm.c \
     src/m68k/m68kopnz.c \
     src/m68k/m68kops.c \
+    src/68328Functions.c \
     src/emulator.c \
     src/hardwareRegisters.c \
     src/memoryAccess.c \
     src/sdcard.c \
     src/sed1376.c \
     src/silkscreen.c \
-    src/68328Functions.c
+    src/trapNumToName.c
 
 HEADERS += \
-    mainwindow.h \
-    touchscreen.h \
     qt-common/include/boolean.h \
     qt-common/include/retro_endianness.h \
     qt-common/include/retro_inline.h \
@@ -61,6 +60,7 @@ HEADERS += \
     src/m68k/m68kconf.h \
     src/m68k/m68kcpu.h \
     src/m68k/m68kops.h \
+    src/68328Functions.h \
     src/emuFeatureRegistersSpec.h \
     src/emulator.h \
     src/hardwareRegisterNames.h \
@@ -70,7 +70,8 @@ HEADERS += \
     src/sdcard.h \
     src/sed1376.h \
     src/silkscreen.h \
-    src/68328Functions.h
+    mainwindow.h \
+    touchscreen.h
 
 FORMS += \
         mainwindow.ui

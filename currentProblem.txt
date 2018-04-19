@@ -1,0 +1,25 @@
+Endless waiting while trying to poll the usb chip
+
+ROM:10003A14                 move.b  #$F4,d0
+ROM:10003A18                 move.b  d0,($10400002).l
+ROM:10003A1E                 nop
+ROM:10003A20                 nop
+ROM:10003A22                 nop
+ROM:10003A24                 move.b  ($10400000).l,d0
+ROM:10003A2A                 nop
+ROM:10003A2C                 nop
+ROM:10003A2E                 nop
+ROM:10003A30                 moveq   #0,d1
+ROM:10003A32                 move.b  d0,d1
+ROM:10003A34                 cmp.w   d1,d4
+ROM:10003A36                 bne.s   loc_10003A4E
+ROM:10003A38                 pea     (unk_64).w
+ROM:10003A3C                 trap    #$F
+ROM:10003A3C                 dc.w    $A249
+ROM:10003A40                 moveq   #$64,d0 ; 'd'
+ROM:10003A42                 add.l   d0,d3
+ROM:10003A44                 addq.w  #4,sp
+ROM:10003A46
+ROM:10003A46 loc_10003A46:                           ; CODE XREF: sub_100038C0+152↑j
+ROM:10003A46                 cmpi.l  #$3A98,d3
+ROM:10003A4C                 bcs.s   loc_10003A14

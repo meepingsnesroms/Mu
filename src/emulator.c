@@ -58,6 +58,8 @@ static inline bool allSdCardCallbacksPresent(){
 static bool invalidBehaviorAbort;
 static char disassemblyBuffer[LOGGED_OPCODES][100];//store the opcode and program counter for the last 10 opcodes
 
+const char* lookupTrap(uint16_t trap);
+
 static char* takeStackDump(uint32_t bytes){
    char* textBytes = malloc(bytes * 2);
    uint32_t textBytesOffset = 0;
@@ -84,12 +86,12 @@ static void invalidBehaviorCheck(){
    //get current opcode
    if(!invalidBank){
       //must dissasemble as 68020 to prevent address masking, is also more descriptive for invalid opcodes
-      m68k_disassemble(opcodeName, programCounter, M68K_CPU_TYPE_68020);
+      m68k_disassemble(opcodeName, lastProgramCounter, M68K_CPU_TYPE_68020);
    }
    else{
       strcpy(opcodeName, "Invalid bank, cant read");
    }
-   sprintf(opcodeName + strlen(opcodeName), " at PC:0x%08X", programCounter);
+   sprintf(opcodeName + strlen(opcodeName), " at PC:0x%08X", lastProgramCounter);
 
    //shift opcode buffer
    for(uint32_t i = 0; i < LOGGED_OPCODES - 1; i++)
@@ -107,7 +109,7 @@ static void invalidBehaviorCheck(){
       for(uint32_t i = 0; i < LOGGED_OPCODES; i++)
          debugLog("%s\n", disassemblyBuffer[i]);
       //currently CPU32 opcodes will be listed as "unknown", I cant change that properly unless I directly edit musashi source, something I want to avoid doing
-      debugLog("Instruction:\"%s\", instruction value:0x%04X, bank type:%d\n", invalidInstruction ? "unknown" : opcodeName, instruction, bankType[START_BANK(programCounter)]);
+      debugLog("Instruction:\"%s\", instruction value:0x%04X, bank type:%d\n", invalidInstruction ? "unknown" : opcodeName, instruction, bankType[START_BANK(lastProgramCounter)]);
    }
 
    //custom debug operations
@@ -126,6 +128,12 @@ static void invalidBehaviorCheck(){
 
       default:
          break;
+   }
+
+   if(instruction == 0x4E4F){
+      //Trap F/api call
+      uint16_t trap = m68k_read_memory_16(lastProgramCounter + 2);
+      debugLog("Trap F API:%s, API number:0x%04X, PC:0x%08X\n", lookupTrap(trap), trap, lastProgramCounter);
    }
 }
 #endif
