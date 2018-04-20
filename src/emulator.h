@@ -1,5 +1,9 @@
 #pragma once
-//This is the only header a frontend needs to include
+//this is the only header a frontend needs to include
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #include <stdint.h>
 #include <stdarg.h>
@@ -7,22 +11,20 @@
 
 #include <boolean.h>
 
-//to enable opcode level debugging define EMU_OPCODE_LEVEL_DEBUG
+#include "memoryAccess.h"//for size macros
+#include "emuFeatureRegistersSpec.h"
 
-#ifdef EMU_DEBUG
+//to enable degguging define EMU_DEBUG, all options below do nothing unless EMU_DEBUG is defined
+//to enable opcode level debugging define EMU_OPCODE_LEVEL_DEBUG
+//to log unknown register reads and writes define EMU_LOG_REGISTER_ACCESS_UNKNOWN
+//to log all register reads and writes define EMU_LOG_REGISTER_ACCESS_ALL
+
+//debug
+#if defined(EMU_DEBUG)
 #define debugLog(...) printf(__VA_ARGS__)
 #else
 #define debugLog(...)
 #endif
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#include "memoryAccess.h"//for size macros
-#include "emuFeatureRegistersSpec.h"
-
-#define SAVE_STATE_VERSION 1
 
 //emu errors
 enum{
@@ -92,6 +94,7 @@ typedef struct{
 //config options
 #define EMU_FPS 60.0
 #define SDCARD_STATE_CHUNKS_VECTOR_SIZE 100
+#define SAVE_STATE_VERSION 1
 
 //emulator data
 extern uint8_t   palmRam[];

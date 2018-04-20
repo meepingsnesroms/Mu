@@ -872,7 +872,9 @@ unsigned int getHwRegister8(unsigned int address){
    }
    
    address &= 0x00000FFF;
-   //printUnknownHwAccess(address, 0, 8, false);
+#if defined(EMU_DEBUG) && defined(EMU_LOG_REGISTER_ACCESS_ALL)
+   printUnknownHwAccess(address, 0, 8, false);
+#endif
    switch(address){
          
       case PDDATA:
@@ -913,7 +915,9 @@ unsigned int getHwRegister8(unsigned int address){
          return registerArrayRead8(address);
          
       default:
+#if defined(EMU_DEBUG) && defined(EMU_LOG_REGISTER_ACCESS_UNKNOWN) && !defined(EMU_LOG_REGISTER_ACCESS_ALL)
          printUnknownHwAccess(address, 0, 8, false);
+#endif
          return 0x00;
    }
    
@@ -927,7 +931,9 @@ unsigned int getHwRegister16(unsigned int address){
    }
    
    address &= 0x00000FFF;
-   //printUnknownHwAccess(address, 0, 16, false);
+#if defined(EMU_DEBUG) && defined(EMU_LOG_REGISTER_ACCESS_ALL)
+   printUnknownHwAccess(address, 0, 16, false);
+#endif
    switch(address){
          
       //32 bit registers accessed as 16 bit
@@ -956,7 +962,9 @@ unsigned int getHwRegister16(unsigned int address){
          return registerArrayRead16(address);
          
       default:
+#if defined(EMU_DEBUG) && defined(EMU_LOG_REGISTER_ACCESS_UNKNOWN) && !defined(EMU_LOG_REGISTER_ACCESS_ALL)
          printUnknownHwAccess(address, 0, 16, false);
+#endif
          return 0x0000;
    }
    
@@ -974,7 +982,9 @@ unsigned int getHwRegister32(unsigned int address){
    }
    
    address &= 0x00000FFF;
-   //printUnknownHwAccess(address, 0, 32, false);
+#if defined(EMU_DEBUG) && defined(EMU_LOG_REGISTER_ACCESS_ALL)
+   printUnknownHwAccess(address, 0, 32, false);
+#endif
    switch(address){
 
       //16 bit registers being read as 32 bit
@@ -989,7 +999,9 @@ unsigned int getHwRegister32(unsigned int address){
          return registerArrayRead32(address);
          
       default:
+#if defined(EMU_DEBUG) && defined(EMU_LOG_REGISTER_ACCESS_UNKNOWN) && !defined(EMU_LOG_REGISTER_ACCESS_ALL)
          printUnknownHwAccess(address, 0, 32, false);
+#endif
          return 0x00000000;
    }
    
@@ -1004,7 +1016,9 @@ void setHwRegister8(unsigned int address, unsigned int value){
    }
    
    address &= 0x00000FFF;
-   //printUnknownHwAccess(address, value, 8, true);
+#if defined(EMU_DEBUG) && defined(EMU_LOG_REGISTER_ACCESS_ALL)
+   printUnknownHwAccess(address, value, 8, true);
+#endif
    switch(address){
          
       case SCR:
@@ -1116,7 +1130,9 @@ void setHwRegister8(unsigned int address, unsigned int value){
          break;
          
       default:
+#if defined(EMU_DEBUG) && defined(EMU_LOG_REGISTER_ACCESS_UNKNOWN) && !defined(EMU_LOG_REGISTER_ACCESS_ALL)
          printUnknownHwAccess(address, value, 8, true);
+#endif
          break;
    }
 }
@@ -1128,7 +1144,9 @@ void setHwRegister16(unsigned int address, unsigned int value){
    }
    
    address &= 0x00000FFF;
-   //printUnknownHwAccess(address, value, 16, true);
+#if defined(EMU_DEBUG) && defined(EMU_LOG_REGISTER_ACCESS_ALL)
+   printUnknownHwAccess(address, value, 16, true);
+#endif
    switch(address){
          
       case RTCIENR:
@@ -1259,7 +1277,9 @@ void setHwRegister16(unsigned int address, unsigned int value){
          break;
          
       default:
+#if defined(EMU_DEBUG) && defined(EMU_LOG_REGISTER_ACCESS_UNKNOWN) && !defined(EMU_LOG_REGISTER_ACCESS_ALL)
          printUnknownHwAccess(address, value, 16, true);
+#endif
          break;
    }
 }
@@ -1275,7 +1295,9 @@ void setHwRegister32(unsigned int address, unsigned int value){
    }
    
    address &= 0x00000FFF;
-   //printUnknownHwAccess(address, value, 32, true);
+#if defined(EMU_DEBUG) && defined(EMU_LOG_REGISTER_ACCESS_ALL)
+   printUnknownHwAccess(address, value, 32, true);
+#endif
    switch(address){
          
       case RTCTIME:
@@ -1303,7 +1325,9 @@ void setHwRegister32(unsigned int address, unsigned int value){
          break;
       
       default:
+#if defined(EMU_DEBUG) && defined(EMU_LOG_REGISTER_ACCESS_UNKNOWN) && !defined(EMU_LOG_REGISTER_ACCESS_ALL)
          printUnknownHwAccess(address, value, 32, true);
+#endif
          break;
    }
 }

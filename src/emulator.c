@@ -44,7 +44,6 @@ void (*emulatorSetSdCardStateChunkList)(uint64_t sessionId, uint64_t stateId, ui
 uint8_t* (*emulatorGetSdCardChunk)(uint64_t sessionId, uint64_t chunkId);
 void (*emulatorSetSdCardChunk)(uint64_t sessionId, uint64_t chunkId, uint8_t* data, uint64_t size);
 
-
 static inline bool allSdCardCallbacksPresent(){
    if(emulatorGetSysTime && emulatorGetSdCardStateChunkList && emulatorSetSdCardStateChunkList && emulatorGetSdCardChunk && emulatorSetSdCardChunk)
       return true;
@@ -53,7 +52,7 @@ static inline bool allSdCardCallbacksPresent(){
 
 
 //debug
-#ifdef EMU_OPCODE_LEVEL_DEBUG
+#if defined(EMU_DEBUG) && defined(EMU_OPCODE_LEVEL_DEBUG)
 #define LOGGED_OPCODES 100
 static bool invalidBehaviorAbort;
 static char disassemblyBuffer[LOGGED_OPCODES][100];//store the opcode and program counter for the last 10 opcodes
@@ -146,7 +145,7 @@ void emulatorInit(uint8_t* palmRomDump, uint8_t* palmBootDump, uint32_t specialF
    patchTo68328();
    m68k_set_reset_instr_callback(emulatorReset);
    m68k_set_int_ack_callback(interruptAcknowledge);
-#ifdef EMU_OPCODE_LEVEL_DEBUG
+#if defined(EMU_DEBUG) && defined(EMU_OPCODE_LEVEL_DEBUG)
    for(uint32_t i = 0; i < LOGGED_OPCODES; i++)
       strcpy(disassemblyBuffer[i], "Not an opcode.\n");
    m68k_set_instr_hook_callback(invalidBehaviorCheck);
@@ -497,7 +496,7 @@ void emulateFrame(){
 }
 
 bool emulateUntilDebugEventOrFrameEnd(){
-#ifdef EMU_OPCODE_LEVEL_DEBUG
+#if defined(EMU_DEBUG) && defined(EMU_OPCODE_LEVEL_DEBUG)
    invalidBehaviorAbort = false;
 
    refreshButtonState();
