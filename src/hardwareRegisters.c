@@ -199,10 +199,10 @@ static inline void setCsctrl1(uint16_t value){
 
 void printUnknownHwAccess(unsigned int address, unsigned int value, unsigned int size, bool isWrite){
    if(isWrite){
-      debugLog("CPU Wrote %d bits of 0x%08X to register 0x%04X, PC 0x%08X.\n", size, value, address, m68k_get_reg(NULL, M68K_REG_PC));
+      debugLog("CPU wrote %d bits of 0x%08X to register 0x%04X, PC 0x%08X.\n", size, value, address, m68k_get_reg(NULL, M68K_REG_PC));
    }
    else{
-      debugLog("CPU Read %d bits from register 0x%04X, PC 0x%08X.\n", size, address, m68k_get_reg(NULL, M68K_REG_PC));
+      debugLog("CPU read %d bits from register 0x%04X, PC 0x%08X.\n", size, address, m68k_get_reg(NULL, M68K_REG_PC));
    }
 }
 
@@ -883,7 +883,7 @@ unsigned int getHwRegister8(unsigned int address){
       case PKDATA:
          return getPortKValue();
          
-      //i/o direction
+      //I/O direction
       case PDDIR:
       case PKDIR:
 
@@ -1366,7 +1366,7 @@ void resetHwRegisters(){
    //CPU id
    registerArrayWrite32(IDR, 0x56000000);
    
-   //i/o drive control //probably unused
+   //I/O drive control //probably unused
    registerArrayWrite16(IODCR, 0x1FFF);
    
    //chip selects
@@ -1434,7 +1434,7 @@ void resetHwRegisters(){
    registerArrayWrite16(TCMP1, 0xFFFF);
    registerArrayWrite16(TCMP2, 0xFFFF);
    
-   //serial i/o
+   //serial I/O
    registerArrayWrite16(UBAUD1, 0x0002);
    registerArrayWrite16(UBAUD2, 0x0002);
    registerArrayWrite16(HMARK, 0x0102);
@@ -1459,7 +1459,7 @@ void resetHwRegisters(){
    //SDRAM control, unused since RAM refresh is unemulated
    registerArrayWrite16(SDCTRL, 0x003C);
    
-   //add register settings to misc i/o
+   //add register settings to misc I/O
    updateAlarmLedStatus();
    updateLcdStatus();
    updateBacklightStatus();

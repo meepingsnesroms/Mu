@@ -57,7 +57,9 @@ static inline bool allSdCardCallbacksPresent(){
 static bool invalidBehaviorAbort;
 static char disassemblyBuffer[LOGGED_OPCODES][100];//store the opcode and program counter for the last 10 opcodes
 
+#if defined(EMU_LOG_APIS)
 const char* lookupTrap(uint16_t trap);
+#endif
 
 static char* takeStackDump(uint32_t bytes){
    char* textBytes = malloc(bytes * 2);
@@ -73,6 +75,20 @@ static char* takeStackDump(uint32_t bytes){
 
    return textBytes;
 }
+
+#if defined(EMU_LOG_APIS)
+static bool spammingTrap(uint16_t trap){
+   switch(trap){
+
+      case 0xA249://sysTrapHwrDelay
+         return true;
+
+      default:
+         return false;
+   }
+   return false;
+}
+#endif
 
 static void invalidBehaviorCheck(){
    char opcodeName[100];
@@ -129,11 +145,15 @@ static void invalidBehaviorCheck(){
          break;
    }
 
+#if defined(EMU_LOG_APIS)
    if(instruction == 0x4E4F){
       //Trap F/api call
       uint16_t trap = m68k_read_memory_16(lastProgramCounter + 2);
-      debugLog("Trap F API:%s, API number:0x%04X, PC:0x%08X\n", lookupTrap(trap), trap, lastProgramCounter);
+      if(!spammingTrap(trap)){
+         debugLog("Trap F API:%s, API number:0x%04X, PC:0x%08X\n", lookupTrap(trap), trap, lastProgramCounter);
+      }
    }
+#endif
 }
 #endif
 
@@ -204,15 +224,6 @@ void emulatorInit(uint8_t* palmRomDump, uint8_t* palmBootDump, uint32_t specialF
    
    //start running
    m68k_pulse_reset();
-   
-   /*
-   double test = 342553325.13436322;
-   uint64_t fixed3232 = getUint64FromDouble(test);
-   double rebuilt = getDoubleFromUint64(fixed3232);
-   debugLog("Original double:%f\n", test);
-   debugLog("Fixed 32.32:0x%08lX\n", fixed3232);
-   debugLog("Rebuilt double:%f\n", rebuilt);
-   */
 }
 
 void emulatorExit(){
@@ -254,7 +265,7 @@ uint32_t emulatorGetStateSize(){
    size += RAM_SIZE;//system RAM buffer
    size += REG_SIZE;//hardware registers
    size += SED1376_FB_SIZE;//SED1376
-   size += SED1376_LUT_SIZE;//SED1376
+   size += SED1376_LUT_SIZE * 3;//SED1376 r, g and b luts
    size += SED1376_REG_SIZE;//SED1376
    size += TOTAL_MEMORY_BANKS;//bank handlers
    size += sizeof(uint32_t) * 4 * CHIP_END;//chip select states
@@ -292,12 +303,6 @@ void emulatorSaveState(uint8_t* data){
    offset += REG_SIZE;
    memcpy(data + offset, bankType, TOTAL_MEMORY_BANKS);
    offset += TOTAL_MEMORY_BANKS;
-   memcpy(data + offset, sed1376Registers, SED1376_REG_SIZE);
-   offset += SED1376_REG_SIZE;
-   memcpy(data + offset, sed1376Lut, SED1376_LUT_SIZE);
-   offset += SED1376_LUT_SIZE;
-   memcpy(data + offset, sed1376Framebuffer, SED1376_FB_SIZE);
-   offset += SED1376_FB_SIZE;
    for(uint32_t chip = CHIP_BEGIN; chip < CHIP_END; chip++){
       writeStateValueBool(data + offset, chips[chip].enable);
       offset += sizeof(uint8_t);
@@ -318,6 +323,18 @@ void emulatorSaveState(uint8_t* data){
       writeStateValueUint32(data + offset, chips[chip].unprotectedSize);
       offset += sizeof(uint32_t);
    }
+
+   //SED1376
+   memcpy(data + offset, sed1376Registers, SED1376_REG_SIZE);
+   offset += SED1376_REG_SIZE;
+   memcpy(data + offset, sed1376RLut, SED1376_LUT_SIZE);
+   offset += SED1376_LUT_SIZE;
+   memcpy(data + offset, sed1376GLut, SED1376_LUT_SIZE);
+   offset += SED1376_LUT_SIZE;
+   memcpy(data + offset, sed1376BLut, SED1376_LUT_SIZE);
+   offset += SED1376_LUT_SIZE;
+   memcpy(data + offset, sed1376Framebuffer, SED1376_FB_SIZE);
+   offset += SED1376_FB_SIZE;
 
    //sdcard
    //update sdcard struct and save sdcard data
@@ -395,12 +412,6 @@ void emulatorLoadState(uint8_t* data){
    offset += REG_SIZE;
    memcpy(bankType, data + offset, TOTAL_MEMORY_BANKS);
    offset += TOTAL_MEMORY_BANKS;
-   memcpy(sed1376Registers, data + offset, SED1376_REG_SIZE);
-   offset += SED1376_REG_SIZE;
-   memcpy(sed1376Lut, data + offset, SED1376_LUT_SIZE);
-   offset += SED1376_LUT_SIZE;
-   memcpy(sed1376Framebuffer, data + offset, SED1376_FB_SIZE);
-   offset += SED1376_FB_SIZE;
    for(uint32_t chip = CHIP_BEGIN; chip < CHIP_END; chip++){
       chips[chip].enable = readStateValueBool(data + offset);
       offset += sizeof(uint8_t);
@@ -421,6 +432,19 @@ void emulatorLoadState(uint8_t* data){
       chips[chip].unprotectedSize = readStateValueUint32(data + offset);
       offset += sizeof(uint32_t);
    }
+
+   //SED1376
+   memcpy(sed1376Registers, data + offset, SED1376_REG_SIZE);
+   offset += SED1376_REG_SIZE;
+   memcpy(sed1376RLut, data + offset, SED1376_LUT_SIZE);
+   offset += SED1376_LUT_SIZE;
+   memcpy(sed1376GLut, data + offset, SED1376_LUT_SIZE);
+   offset += SED1376_LUT_SIZE;
+   memcpy(sed1376BLut, data + offset, SED1376_LUT_SIZE);
+   offset += SED1376_LUT_SIZE;
+   memcpy(sed1376Framebuffer, data + offset, SED1376_FB_SIZE);
+   offset += SED1376_FB_SIZE;
+   sed1376RefreshLut();
 
    //sdcard
    palmSdCard.sessionId = readStateValueUint64(data + offset);

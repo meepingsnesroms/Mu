@@ -1,4 +1,6 @@
-#ifdef EMU_DEBUG
+#include "emulator.h"//for EMU_* flags
+
+#if defined(EMU_DEBUG) && defined(EMU_OPCODE_LEVEL_DEBUG) && defined(EMU_LOG_APIS)
 
 #include <stdint.h>
 #include <string.h>//for NULL

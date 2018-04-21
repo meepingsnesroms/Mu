@@ -23,22 +23,53 @@
 
 
 uint8_t  sed1376Registers[SED1376_REG_SIZE];
-uint16_t sed1376Lut[SED1376_LUT_SIZE];
+uint8_t  sed1376RLut[SED1376_LUT_SIZE];
+uint8_t  sed1376GLut[SED1376_LUT_SIZE];
+uint8_t  sed1376BLut[SED1376_LUT_SIZE];
 uint8_t  sed1376Framebuffer[SED1376_FB_SIZE];
 
+static uint16_t sed1376OutputLut[SED1376_LUT_SIZE];//used to speed up pixel conversion
 
-static inline uint16_t makeRgb16FromRgb666(uint8_t r, uint8_t g, uint8_t b){
-   uint16_t color = r << 10 & 0xF800;
-   color |= g << 5 & 0x07E0;
-   color |= b >> 1 & 0x008F;
-   return color;
-}
+#include "sed1376Accessors.ch"
 
-static inline void makeRgb666FromRgb16(uint16_t color, uint8_t* r, uint8_t* g, uint8_t* b){
-   *r = color >> 10 & 0x3E;
-   *g = color >> 5 & 0x3F;
-   *b = color << 1 & 0x3E;
+/*
+static inline uint32_t getBufferStartAddress(){
+   uint32_t screenStartAddress = sed1376Registers[DISP_ADDR_2] << 16 | sed1376Registers[DISP_ADDR_1] << 8 | sed1376Registers[DISP_ADDR_0];
+   switch(sed1376Registers[SPECIAL_EFFECT] & 0x03){
+
+      case 0x00:
+         //0 degrees
+         //desired byte address / 4.
+         screenStartAddress *= 4;
+         break;
+
+      case 0x01:
+         //90 degrees
+         //((desired byte address + (panel height * bpp / 8)) / 4) - 1.
+         screenStartAddress += 1;
+         screenStartAddress *= 4;
+         //screenStartAddress - (panelHeight * bpp / 8);
+         break;
+
+      case 0x02:
+         //180 degrees
+         //((desired byte address + (panel width * panel height * bpp / 8)) / 4) - 1.
+         screenStartAddress += 1;
+         screenStartAddress *= 4;
+         //screenStartAddress - (panelWidth * panelHeight * bpp / 8);
+         break;
+
+      case 0x03:
+         //270 degrees
+         //(desired byte address + ((panel width - 1) * panel height * bpp / 8)) / 4.
+         screenStartAddress *= 4;
+         //screenStartAddress -= ((panelWidth - 1) * panelHeight * bpp / 8);
+         break;
+   }
+
+   return screenStartAddress;
 }
+*/
 
 
 bool sed1376PowerSaveEnabled(){
@@ -49,10 +80,15 @@ unsigned int sed1376GetRegister(unsigned int address){
    //returning 0x00 on power save mode is done in the sed1376ReadXX functions
    address -= chips[CHIP_B_SED].start;
    address &= 0x000000FF;
+#if defined(EMU_DEBUG) && defined(EMU_LOG_REGISTER_ACCESS_ALL)
+   debugLog("SED1376 register read from 0x%02X.\n", address);
+#endif
    switch(address){
 
       default:
-         debugLog("SED1376 Register Read from 0x%02X.\n", address);
+#if defined(EMU_DEBUG) && defined(EMU_LOG_REGISTER_ACCESS_UNKNOWN) && !defined(EMU_LOG_REGISTER_ACCESS_ALL)
+         debugLog("SED1376 register read from 0x%02X.\n", address);
+#endif
          return 0x00;
    }
    return 0x00;//for compiler warnings
@@ -61,9 +97,34 @@ unsigned int sed1376GetRegister(unsigned int address){
 void sed1376SetRegister(unsigned int address, unsigned int value){
    address -= chips[CHIP_B_SED].start;
    address &= 0x000000FF;
+#if defined(EMU_DEBUG) && defined(EMU_LOG_REGISTER_ACCESS_ALL)
+   debugLog("SED1376 register write 0x%02X to 0x%02X.\n", value, address);
+#endif
    switch(address){
 
       case PWR_SAVE_CFG:
+         sed1376Registers[address] = value & 0x8E;
+         break;
+
+      case DISP_MODE:
+         sed1376Registers[address] = value & 0xF7;
+         break;
+
+      case SPECIAL_EFFECT:
+         sed1376Registers[address] = value & 0xD3;
+         break;
+
+      case DISP_ADDR_2:
+         sed1376Registers[address] = value & 0x01;
+         break;
+
+      case LINE_SIZE_1:
+         sed1376Registers[address] = value & 0x03;
+         break;
+
+      case DISP_ADDR_0:
+      case DISP_ADDR_1:
+      case LINE_SIZE_0:
       case LUT_R_WRITE:
       case LUT_G_WRITE:
       case LUT_B_WRITE:
@@ -72,32 +133,50 @@ void sed1376SetRegister(unsigned int address, unsigned int value){
          break;
 
       case LUT_WRITE_LOC:
-         sed1376Lut[value] = makeRgb16FromRgb666(sed1376Registers[LUT_R_WRITE], sed1376Registers[LUT_G_WRITE], sed1376Registers[LUT_B_WRITE]);
+         sed1376RLut[value] = sed1376Registers[LUT_R_WRITE];
+         sed1376GLut[value] = sed1376Registers[LUT_G_WRITE];
+         sed1376BLut[value] = sed1376Registers[LUT_B_WRITE];
+         sed1376OutputLut[value] = makeRgb16FromRgb666(sed1376Registers[LUT_R_WRITE], sed1376Registers[LUT_G_WRITE], sed1376Registers[LUT_B_WRITE]);
+         break;
+
+      case LUT_READ_LOC:
+         sed1376Registers[LUT_R_READ] = sed1376RLut[value];
+         sed1376Registers[LUT_G_READ] = sed1376GLut[value];
+         sed1376Registers[LUT_B_READ] = sed1376BLut[value];
          break;
 
       default:
-         debugLog("SED1376 Register write 0x%02X to 0x%02X.\n", value, address);
+#if defined(EMU_DEBUG) && defined(EMU_LOG_REGISTER_ACCESS_UNKNOWN) && !defined(EMU_LOG_REGISTER_ACCESS_ALL)
+         debugLog("SED1376 register write 0x%02X to 0x%02X.\n", value, address);
+#endif
          break;
    }
 }
 
-
 void sed1376Reset(){
    memset(sed1376Registers, 0x00, SED1376_REG_SIZE);
-   memset(sed1376Lut, 0x00, 0x100);
+   memset(sed1376OutputLut, 0x00, SED1376_LUT_SIZE * sizeof(uint16_t));
+   memset(sed1376RLut, 0x00, SED1376_LUT_SIZE);
+   memset(sed1376GLut, 0x00, SED1376_LUT_SIZE);
+   memset(sed1376BLut, 0x00, SED1376_LUT_SIZE);
    memset(sed1376Framebuffer, 0x00, SED1376_FB_SIZE);
    
-   sed1376Registers[0x00] = 0x28;//revision code
-   sed1376Registers[0x01] = 0x14;//display buffer size
-   
+   sed1376Registers[REV_CODE] = 0x28;
+   sed1376Registers[DISP_BUFF_SIZE] = 0x14;
+}
+
+void sed1376RefreshLut(){
+   for(uint16_t count = 0; count < SED1376_LUT_SIZE; count++)
+      sed1376OutputLut[count] = makeRgb16FromRgb666(sed1376RLut[count], sed1376GLut[count], sed1376BLut[count]);
 }
 
 void sed1376Render(){
-   if(palmMisc.lcdOn && palmMisc.backlightOn && cpuIsOn() && !sed1376PowerSaveEnabled()){
-      //only render if LCD on and backlight on, SED1376 clock is provided by the CPU, if its off so is the SED
+   if(palmMisc.lcdOn && palmMisc.backlightOn && cpuIsOn() && !sed1376PowerSaveEnabled() && !(sed1376Registers[DISP_MODE] & 0x80)){
+      //only render if LCD on, backlight on, CPU on, power save off, and force blank off, SED1376 clock is provided by the CPU, if its off so is the SED
 
    }
    else{
       //black screen
+      memset(palmFramebuffer, 0x00, 160 * 160 * sizeof(uint16_t));
    }
 }

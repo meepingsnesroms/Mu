@@ -18,6 +18,7 @@ extern "C" {
 //to enable opcode level debugging define EMU_OPCODE_LEVEL_DEBUG
 //to log unknown register reads and writes define EMU_LOG_REGISTER_ACCESS_UNKNOWN
 //to log all register reads and writes define EMU_LOG_REGISTER_ACCESS_ALL
+//to log all api calls define EMU_LOG_APIS
 
 //debug
 #if defined(EMU_DEBUG)

@@ -1,20 +1,34 @@
-Timer capture events, I don't think there possible though with the Palms hardware
-SED1376 register access
+CPU:
 sysTrapPceNativeCall, ARM Emulator
-cpu32 table lookup opcodes
+CPU32 table lookup opcodes
+
+CPU I/O:
+Timer capture events, I don't think there possible though with the Palms hardware
 Peripheral Control Register, audio ppm mixing selection
 All edge triggered interrupts(currently always level triggered)
-(debug tools)missing icons
 Port G SPI stuff
+Setting the battery dead bit(PDDATA 0x80) if the emulated battery percent gets too low
 DRAMC write enable
 All of DRAMMC
-Setting the battery dead bit(PDDATA 0x80) if the emulated battery percent gets too low
+pen input
+Port M Infrared shutdown (PMDATA 0x20)
+interrupt control register (ICR), POL5 and edge trigger selects
+
+Debug tools:
+missing icons
+
+Memory:
 Sdcard can't be read or written to
 Sdcard can't be inserted or removed
 Sdcard has no error handling in save/load state
-Port M Infrared shutdown (PMDATA 0x20)
-interrupt control register (ICR), POL5 and edge trigger selects
 storage RAM protect(likely already done from fixing chip select bits)
+
+SED1376:
+register access
+picture in picture SED1376 registers
+swivelview register
+byte and word swap bits
+
 
 Fixed:
 Palm OS usage of the "rte" instruction is incompatible with the 68020, switch to 68000 core
