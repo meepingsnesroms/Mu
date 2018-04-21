@@ -31,6 +31,19 @@
 #define LINE_SIZE_1    0x79
 
 //Picture-in-Picture Plus (PIP+) Registers
+#define PIP_ADDR_0     0x7C
+#define PIP_ADDR_1     0x7D
+#define PIP_ADDR_2     0x7E
+#define PIP_LINE_SZ_0  0x80
+#define PIP_LINE_SZ_1  0x81
+#define PIP_X_START_0  0x84
+#define PIP_X_START_1  0x85
+#define PIP_Y_START_0  0x88
+#define PIP_Y_START_1  0x89
+#define PIP_X_END_0    0x8C
+#define PIP_X_END_1    0x8D
+#define PIP_Y_END_0    0x90
+#define PIP_Y_END_1    0x91
 
 //Miscellaneous Registers
 #define PWR_SAVE_CFG   0xA0

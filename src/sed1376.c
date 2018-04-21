@@ -6,6 +6,7 @@
 #include "hardwareRegisters.h"
 #include "memoryAccess.h"
 #include "sed1376RegisterNames.h"
+#include "m68k/m68k.h"
 
 
 //the SED1376 has only 16 address lines(17 if you count the line that switches between registers and framebuffer) and 16 data lines, the most you can read is 16 bits, registers are 8 bits
@@ -30,37 +31,37 @@ uint8_t  sed1376Framebuffer[SED1376_FB_SIZE];
 
 static uint16_t sed1376OutputLut[SED1376_LUT_SIZE];//used to speed up pixel conversion
 
+static uint32_t screenStartAddress;
+static uint16_t lineSize;
+static uint16_t (*renderPixel)(uint16_t x, uint16_t y);
+
 #include "sed1376Accessors.ch"
 
-/*
+
 static inline uint32_t getBufferStartAddress(){
    uint32_t screenStartAddress = sed1376Registers[DISP_ADDR_2] << 16 | sed1376Registers[DISP_ADDR_1] << 8 | sed1376Registers[DISP_ADDR_0];
-   switch(sed1376Registers[SPECIAL_EFFECT] & 0x03){
+   switch((sed1376Registers[SPECIAL_EFFECT] & 0x03) * 90){
 
-      case 0x00:
-         //0 degrees
+      case 0:
          //desired byte address / 4.
          screenStartAddress *= 4;
          break;
 
-      case 0x01:
-         //90 degrees
+      case 90:
          //((desired byte address + (panel height * bpp / 8)) / 4) - 1.
          screenStartAddress += 1;
          screenStartAddress *= 4;
          //screenStartAddress - (panelHeight * bpp / 8);
          break;
 
-      case 0x02:
-         //180 degrees
+      case 180:
          //((desired byte address + (panel width * panel height * bpp / 8)) / 4) - 1.
          screenStartAddress += 1;
          screenStartAddress *= 4;
          //screenStartAddress - (panelWidth * panelHeight * bpp / 8);
          break;
 
-      case 0x03:
-         //270 degrees
+      case 270:
          //(desired byte address + ((panel width - 1) * panel height * bpp / 8)) / 4.
          screenStartAddress *= 4;
          //screenStartAddress -= ((panelWidth - 1) * panelHeight * bpp / 8);
@@ -69,7 +70,6 @@ static inline uint32_t getBufferStartAddress(){
 
    return screenStartAddress;
 }
-*/
 
 
 bool sed1376PowerSaveEnabled(){
@@ -81,13 +81,17 @@ unsigned int sed1376GetRegister(unsigned int address){
    address -= chips[CHIP_B_SED].start;
    address &= 0x000000FF;
 #if defined(EMU_DEBUG) && defined(EMU_LOG_REGISTER_ACCESS_ALL)
-   debugLog("SED1376 register read from 0x%02X.\n", address);
+   debugLog("SED1376 register read from 0x%02X, PC 0x%08X.\n", address, m68k_get_reg(NULL, M68K_REG_PC));
 #endif
    switch(address){
 
+      case PWR_SAVE_CFG://may need to attach "Vertical Non- Display Period Status" to RNG
+         debugLog("Read SED1376 power save config, PC 0x%08X.\n", m68k_get_reg(NULL, M68K_REG_PC));
+         return sed1376Registers[address] | 0x80;//pretend where in a non dispaly period
+
       default:
 #if defined(EMU_DEBUG) && defined(EMU_LOG_REGISTER_ACCESS_UNKNOWN) && !defined(EMU_LOG_REGISTER_ACCESS_ALL)
-         debugLog("SED1376 register read from 0x%02X.\n", address);
+         debugLog("SED1376 register read from 0x%02X, PC 0x%08X.\n", address, m68k_get_reg(NULL, M68K_REG_PC));
 #endif
          return 0x00;
    }
@@ -98,7 +102,7 @@ void sed1376SetRegister(unsigned int address, unsigned int value){
    address -= chips[CHIP_B_SED].start;
    address &= 0x000000FF;
 #if defined(EMU_DEBUG) && defined(EMU_LOG_REGISTER_ACCESS_ALL)
-   debugLog("SED1376 register write 0x%02X to 0x%02X.\n", value, address);
+   debugLog("SED1376 register write 0x%02X to 0x%02X, PC 0x%08X.\n", value, address, m68k_get_reg(NULL, M68K_REG_PC));
 #endif
    switch(address){
 
@@ -147,7 +151,7 @@ void sed1376SetRegister(unsigned int address, unsigned int value){
 
       default:
 #if defined(EMU_DEBUG) && defined(EMU_LOG_REGISTER_ACCESS_UNKNOWN) && !defined(EMU_LOG_REGISTER_ACCESS_ALL)
-         debugLog("SED1376 register write 0x%02X to 0x%02X.\n", value, address);
+         debugLog("SED1376 register write 0x%02X to 0x%02X, PC 0x%08X.\n", value, address, m68k_get_reg(NULL, M68K_REG_PC));
 #endif
          break;
    }
@@ -160,6 +164,8 @@ void sed1376Reset(){
    memset(sed1376GLut, 0x00, SED1376_LUT_SIZE);
    memset(sed1376BLut, 0x00, SED1376_LUT_SIZE);
    memset(sed1376Framebuffer, 0x00, SED1376_FB_SIZE);
+
+   renderPixel = NULL;
    
    sed1376Registers[REV_CODE] = 0x28;
    sed1376Registers[DISP_BUFF_SIZE] = 0x14;
@@ -173,10 +179,41 @@ void sed1376RefreshLut(){
 void sed1376Render(){
    if(palmMisc.lcdOn && palmMisc.backlightOn && cpuIsOn() && !sed1376PowerSaveEnabled() && !(sed1376Registers[DISP_MODE] & 0x80)){
       //only render if LCD on, backlight on, CPU on, power save off, and force blank off, SED1376 clock is provided by the CPU, if its off so is the SED
+      bool monochrome = CAST_TO_BOOL(sed1376Registers[PANEL_TYPE] & 0x40);
+      bool pictureInPictureEnabled = CAST_TO_BOOL(sed1376Registers[SPECIAL_EFFECT] & 0x10);
+      uint8_t bitDepth = 1 << (sed1376Registers[DISP_MODE] & 0x07);
+      uint16_t rotation = 90 * (sed1376Registers[SPECIAL_EFFECT] & 0x03);
 
+      screenStartAddress = getBufferStartAddress();
+      lineSize = (sed1376Registers[LINE_SIZE_1] << 8 | sed1376Registers[LINE_SIZE_0]) * 4;
+      selectRenderer(monochrome, bitDepth);
+
+      if(renderPixel != NULL){
+         for(uint16_t pixelY = 0; pixelY < 160; pixelY++)
+            for(uint16_t pixelX = 0; pixelX < 160; pixelX++)
+               palmFramebuffer[pixelY * 160 + pixelX] = renderPixel(pixelX, pixelY);
+
+         if(pictureInPictureEnabled){
+            screenStartAddress = getBufferStartAddress();
+            lineSize = (sed1376Registers[PIP_LINE_SZ_1] << 8 | sed1376Registers[PIP_LINE_SZ_0]) * 4;
+            //not done yet
+         }
+
+         //rotation
+         //later
+
+         //software display inversion
+         if((sed1376Registers[DISP_MODE] & 0x30) == 0x10)
+            for(uint32_t count = 0; count < 160 * 160; count++)
+               palmFramebuffer[count] ^= 0xFFFF;
+      }
+      else{
+         debugLog("Invalid screen format, monochrome:%s, BPP:%d, rotation:%d", monochrome ? "true" : "false", bitDepth, rotation);
+      }
    }
    else{
       //black screen
       memset(palmFramebuffer, 0x00, 160 * 160 * sizeof(uint16_t));
+
    }
 }

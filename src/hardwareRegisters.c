@@ -882,6 +882,8 @@ unsigned int getHwRegister8(unsigned int address){
 
       case PKDATA:
          return getPortKValue();
+
+      case LCKCON:
          
       //I/O direction
       case PDDIR:
@@ -1040,6 +1042,7 @@ void setHwRegister8(unsigned int address, unsigned int value){
       case PDSEL:
          //write without the bottom 4 bits
          registerArrayWrite8(address, value & 0xF0);
+         checkPortDInts();
          break;
 
       case PDPOL:
