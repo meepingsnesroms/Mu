@@ -35,8 +35,8 @@ static uint32_t screenStartAddress;
 static uint16_t lineSize;
 static uint16_t (*renderPixel)(uint16_t x, uint16_t y);
 
-#include "sed1376Accessors.ch"
 
+#include "sed1376Accessors.ch"
 
 static inline uint32_t getBufferStartAddress(){
    uint32_t screenStartAddress = sed1376Registers[DISP_ADDR_2] << 16 | sed1376Registers[DISP_ADDR_1] << 8 | sed1376Registers[DISP_ADDR_0];
@@ -71,15 +71,18 @@ static inline uint32_t getBufferStartAddress(){
    return screenStartAddress;
 }
 
+static inline void updateLcdStatus(){
+   palmMisc.lcdOn = CAST_TO_BOOL(sed1376Registers[GPIO_CONT_0] & sed1376Registers[GPIO_CONF_0] & 0x20) && CAST_TO_BOOL(sed1376Registers[GPIO_CONT_1] & 0x80);
+   palmMisc.backlightOn = CAST_TO_BOOL(sed1376Registers[GPIO_CONT_0] & sed1376Registers[GPIO_CONF_0] & 0x10) && CAST_TO_BOOL(sed1376Registers[GPIO_CONT_1] & 0x80);
+}
+
 
 bool sed1376PowerSaveEnabled(){
    return CAST_TO_BOOL(sed1376Registers[PWR_SAVE_CFG] & 0x01);
 }
 
-unsigned int sed1376GetRegister(unsigned int address){
+uint8_t sed1376GetRegister(uint8_t address){
    //returning 0x00 on power save mode is done in the sed1376ReadXX functions
-   address -= chips[CHIP_B_SED].start;
-   address &= 0x000000FF;
 #if defined(EMU_DEBUG) && defined(EMU_LOG_REGISTER_ACCESS_ALL)
    debugLog("SED1376 register read from 0x%02X, PC 0x%08X.\n", address, m68k_get_reg(NULL, M68K_REG_PC));
 #endif
@@ -88,6 +91,15 @@ unsigned int sed1376GetRegister(unsigned int address){
       case PWR_SAVE_CFG://may need to attach "Vertical Non- Display Period Status" to RNG
          debugLog("Read SED1376 power save config, PC 0x%08X.\n", m68k_get_reg(NULL, M68K_REG_PC));
          return sed1376Registers[address] | 0x80;//pretend where in a non dispaly period
+
+      case SCRATCH_0:
+      case SCRATCH_1:
+      case GPIO_CONF_0:
+      case GPIO_CONT_0:
+      case GPIO_CONF_1:
+      case GPIO_CONT_1:
+         //simple read, no actions needed
+         return sed1376Registers[address];
 
       default:
 #if defined(EMU_DEBUG) && defined(EMU_LOG_REGISTER_ACCESS_UNKNOWN) && !defined(EMU_LOG_REGISTER_ACCESS_ALL)
@@ -98,9 +110,7 @@ unsigned int sed1376GetRegister(unsigned int address){
    return 0x00;//for compiler warnings
 }
 
-void sed1376SetRegister(unsigned int address, unsigned int value){
-   address -= chips[CHIP_B_SED].start;
-   address &= 0x000000FF;
+void sed1376SetRegister(uint8_t address, uint8_t value){
 #if defined(EMU_DEBUG) && defined(EMU_LOG_REGISTER_ACCESS_ALL)
    debugLog("SED1376 register write 0x%02X to 0x%02X, PC 0x%08X.\n", value, address, m68k_get_reg(NULL, M68K_REG_PC));
 #endif
@@ -126,16 +136,6 @@ void sed1376SetRegister(unsigned int address, unsigned int value){
          sed1376Registers[address] = value & 0x03;
          break;
 
-      case DISP_ADDR_0:
-      case DISP_ADDR_1:
-      case LINE_SIZE_0:
-      case LUT_R_WRITE:
-      case LUT_G_WRITE:
-      case LUT_B_WRITE:
-         //simple write, no actions needed
-         sed1376Registers[address] = value;
-         break;
-
       case LUT_WRITE_LOC:
          sed1376RLut[value] = sed1376Registers[LUT_R_WRITE];
          sed1376GLut[value] = sed1376Registers[LUT_G_WRITE];
@@ -147,6 +147,37 @@ void sed1376SetRegister(unsigned int address, unsigned int value){
          sed1376Registers[LUT_R_READ] = sed1376RLut[value];
          sed1376Registers[LUT_G_READ] = sed1376GLut[value];
          sed1376Registers[LUT_B_READ] = sed1376BLut[value];
+         break;
+
+      case GPIO_CONF_0:
+      case GPIO_CONT_0:
+         sed1376Registers[address] = value & 0x7F;
+         updateLcdStatus();
+         break;
+
+      case GPIO_CONF_1:
+      case GPIO_CONT_1:
+         sed1376Registers[address] = value & 0x80;
+         break;
+
+      case MEM_CLK:
+         sed1376Registers[address] = value & 0x30;
+         break;
+
+      case PIXEL_CLK:
+         sed1376Registers[address] = value & 0x73;
+         break;
+
+      case SCRATCH_0:
+      case SCRATCH_1:
+      case DISP_ADDR_0:
+      case DISP_ADDR_1:
+      case LINE_SIZE_0:
+      case LUT_R_WRITE:
+      case LUT_G_WRITE:
+      case LUT_B_WRITE:
+         //simple write, no actions needed
+         sed1376Registers[address] = value;
          break;
 
       default:
@@ -165,6 +196,9 @@ void sed1376Reset(){
    memset(sed1376BLut, 0x00, SED1376_LUT_SIZE);
    memset(sed1376Framebuffer, 0x00, SED1376_FB_SIZE);
 
+   palmMisc.backlightOn = false;
+   palmMisc.lcdOn = false;
+
    renderPixel = NULL;
    
    sed1376Registers[REV_CODE] = 0x28;
@@ -177,8 +211,8 @@ void sed1376RefreshLut(){
 }
 
 void sed1376Render(){
-   if(palmMisc.lcdOn && palmMisc.backlightOn && cpuIsOn() && !sed1376PowerSaveEnabled() && !(sed1376Registers[DISP_MODE] & 0x80)){
-      //only render if LCD on, backlight on, CPU on, power save off, and force blank off, SED1376 clock is provided by the CPU, if its off so is the SED
+   if(palmMisc.lcdOn && cpuIsOn() && !sed1376PowerSaveEnabled() && !(sed1376Registers[DISP_MODE] & 0x80)){
+      //only render if LCD on, CPU on, power save off, and force blank off, SED1376 clock is provided by the CPU, if its off so is the SED
       bool monochrome = CAST_TO_BOOL(sed1376Registers[PANEL_TYPE] & 0x40);
       bool pictureInPictureEnabled = CAST_TO_BOOL(sed1376Registers[SPECIAL_EFFECT] & 0x10);
       uint8_t bitDepth = 1 << (sed1376Registers[DISP_MODE] & 0x07);
@@ -206,14 +240,21 @@ void sed1376Render(){
          if((sed1376Registers[DISP_MODE] & 0x30) == 0x10)
             for(uint32_t count = 0; count < 160 * 160; count++)
                palmFramebuffer[count] ^= 0xFFFF;
+
+         //backlight off, half color intensity
+         if(!palmMisc.backlightOn)
+            for(uint32_t count = 0; count < 160 * 160; count++){
+               palmFramebuffer[count] >>= 1;
+               palmFramebuffer[count] &= 0x7BEF;
+            }
       }
       else{
-         debugLog("Invalid screen format, monochrome:%s, BPP:%d, rotation:%d", monochrome ? "true" : "false", bitDepth, rotation);
+         debugLog("Invalid screen format, monochrome:%s, BPP:%d, rotation:%d\n", monochrome ? "true" : "false", bitDepth, rotation);
       }
    }
    else{
       //black screen
       memset(palmFramebuffer, 0x00, 160 * 160 * sizeof(uint16_t));
-
+      debugLog("Cant draw screen, LCD on:%s, CPU on:%s, power save on:%s, forced blank on:%s\n", palmMisc.lcdOn ? "true" : "false", cpuIsOn() ? "true" : "false", sed1376PowerSaveEnabled() ? "true" : "false", (sed1376Registers[DISP_MODE] & 0x80) ? "true" : "false");
    }
 }

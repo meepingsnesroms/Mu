@@ -28,9 +28,3 @@ void TouchScreen::mouseMoveEvent(QMouseEvent* ev){
 void TouchScreen::mouseReleaseEvent(QMouseEvent* ev){
    palmInput.touchscreenTouched = false;
 }
-
-/*
-void TouchScreen::touchPressEvent(QTouchEvent* ev){
-
-}
-*/

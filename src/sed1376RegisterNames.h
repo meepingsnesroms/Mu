@@ -1,10 +1,12 @@
 #pragma once
 //SED1376 Register Definitions
 
-//Configuration Registers
+//Read-Only Configuration Registers
 #define REV_CODE       0x00
 #define DISP_BUFF_SIZE 0x01
 #define CFG_READBACK   0x02
+
+//Clock Configuration Registers
 #define MEM_CLK        0x04
 #define PIXEL_CLK      0x05
 
@@ -20,6 +22,8 @@
 
 //Panel Configuration Registers
 #define PANEL_TYPE     0x10
+#define MOD_RATE       0x11
+//unfinished
 
 //Display Mode Registers
 #define DISP_MODE      0x70

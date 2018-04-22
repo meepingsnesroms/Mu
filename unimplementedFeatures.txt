@@ -1,6 +1,7 @@
 CPU:
 sysTrapPceNativeCall, ARM Emulator
 CPU32 table lookup opcodes
+RAM wait states
 
 CPU I/O:
 Timer capture events, I don't think there possible though with the Palms hardware

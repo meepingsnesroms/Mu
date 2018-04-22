@@ -105,6 +105,7 @@ extern input_t   palmInput;
 extern sdcard_t  palmSdCard;
 extern misc_hw_t palmMisc;
 extern uint16_t  palmFramebuffer[];
+extern uint16_t  palmExtendedFramebuffer[];
 extern uint32_t  palmSpecialFeatures;
 extern double    palmCrystalCycles;
 extern double    palmCycleCounter;

@@ -47,7 +47,8 @@ SOURCES += \
     src/sdcard.c \
     src/sed1376.c \
     src/silkscreen.c \
-    src/trapNumToName.c
+    src/trapNumToName.c \
+    hexviewer.cpp
 
 HEADERS += \
     qt-common/include/boolean.h \
@@ -73,10 +74,12 @@ HEADERS += \
     mainwindow.h \
     touchscreen.h \
     src/sed1376RegisterNames.h \
-    src/sed1376Accessors.ch
+    src/sed1376Accessors.ch \
+    hexviewer.h
 
 FORMS += \
-        mainwindow.ui
+        mainwindow.ui \
+    hexviewer.ui
 
 CONFIG += mobility c++11
 MOBILITY = 

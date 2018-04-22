@@ -31,6 +31,7 @@ public:
    ~MainWindow();
 
 private slots:
+   void popupErrorDialog(std::string error);
    bool eventFilter(QObject *object, QEvent *event);
    void loadRom();
    void selectRom();
@@ -62,6 +63,8 @@ private slots:
    void on_settings_clicked();
 
    void on_ctrlBtn_clicked();
+
+   void on_hexViewer_clicked();
 
 private:
    Ui::MainWindow *ui;

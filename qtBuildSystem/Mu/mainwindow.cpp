@@ -5,6 +5,7 @@
 #include <QFileDialog>
 #include <QTimer>
 #include <QTouchEvent>
+#include <QMessageBox>
 #include <QSettings>
 #include <QFont>
 #include <QKeyEvent>
@@ -16,6 +17,8 @@
 #include <unistd.h>
 #include <sys/stat.h>
 
+#include "hexviewer.h"
+
 #include "src/emulator.h"
 
 uint32_t screenWidth;
@@ -23,16 +26,13 @@ uint32_t screenHeight;
 
 static QImage video;
 static QTimer* refreshDisplay;
+static HexViewer* emuStateBrowser;
 static QSettings settings;
 std::mutex emuMutex;
 static std::atomic<bool> emuOn;
 static std::atomic<bool> emuInited;
 static uint8_t romBuffer[ROM_SIZE];
 
-
-void popupErrorDialog(std::string error){
-   //add error dialog code
-}
 
 uint8_t* getFileBuffer(std::string filePath, size_t& size, uint32_t& error){
    uint8_t* rawData = NULL;
@@ -86,6 +86,9 @@ MainWindow::MainWindow(QWidget* parent) :
    ui(new Ui::MainWindow){
    ui->setupUi(this);
 
+   emuStateBrowser = new HexViewer(this);
+   refreshDisplay = new QTimer(this);
+
    ui->calender->installEventFilter(this);
    ui->addressBook->installEventFilter(this);
    ui->todo->installEventFilter(this);
@@ -99,6 +102,8 @@ MainWindow::MainWindow(QWidget* parent) :
 
    ui->power->installEventFilter(this);
 
+   ui->ctrlBtn->setText("Start");
+
    emuOn = false;
    emuInited = false;
    screenWidth = 160;
@@ -106,12 +111,8 @@ MainWindow::MainWindow(QWidget* parent) :
 
    loadRom();
 
-   ui->ctrlBtn->setText("Start");
-
-   refreshDisplay = new QTimer(this);
    connect(refreshDisplay, SIGNAL(timeout()), this, SLOT(updateDisplay()));
-   //update display every 16.67miliseconds = 60 * second
-   refreshDisplay->start(16);
+   refreshDisplay->start(16);//update display every 16.67miliseconds = 60 * second
 }
 
 MainWindow::~MainWindow(){
@@ -119,6 +120,10 @@ MainWindow::~MainWindow(){
    emulatorExit();
    emuMutex.unlock();
    delete ui;
+}
+
+void MainWindow::popupErrorDialog(std::string error){
+   QMessageBox::information(this, "Mu", QString::fromStdString(error), QMessageBox::Ok);
 }
 
 bool MainWindow::eventFilter(QObject *object, QEvent *event){
@@ -282,8 +287,7 @@ void MainWindow::on_settings_clicked(){
 }
 
 //emu control
-void MainWindow::on_ctrlBtn_clicked()
-{
+void MainWindow::on_ctrlBtn_clicked(){
    emuMutex.lock();
    if(!emuOn && !emuInited){
       //start emu
@@ -300,5 +304,14 @@ void MainWindow::on_ctrlBtn_clicked()
       emuOn = true;
       ui->ctrlBtn->setText("Pause");
    }
+   emuMutex.unlock();
+}
+
+void MainWindow::on_hexViewer_clicked(){
+   emuMutex.lock();
+   emuOn = false;
+
+   emuStateBrowser->exec();
+
    emuMutex.unlock();
 }

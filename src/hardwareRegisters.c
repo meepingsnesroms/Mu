@@ -438,19 +438,23 @@ static inline void updateAlarmLedStatus(){
       palmMisc.alarmLed = false;
 }
 
+/*
 static inline void updateLcdStatus(){
    if(registerArrayRead8(PKDATA) & registerArrayRead8(PKSEL) & registerArrayRead8(PKDIR) & 0x02)
       palmMisc.lcdOn = true;
    else
       palmMisc.lcdOn = false;
 }
+*/
 
+/*
 static inline void updateBacklightStatus(){
    if(registerArrayRead8(PGDATA) & registerArrayRead8(PGSEL) & registerArrayRead8(PGDIR) & 0x02)
       palmMisc.backlightOn = true;
    else
       palmMisc.backlightOn = false;
 }
+*/
 
 static inline void updateVibratorStatus(){
    if(registerArrayRead8(PKDATA) & registerArrayRead8(PKSEL) & registerArrayRead8(PKDIR) & 0x10)
@@ -882,14 +886,14 @@ unsigned int getHwRegister8(unsigned int address){
 
       case PBDATA:
          //read outputs as is and inputs as true, floating pins are high
-         return registerArrayRead8(PBDATA) & registerArrayRead8(PBDIR) | ~registerArrayRead8(PBDIR);
+         return (registerArrayRead8(PBDATA) & registerArrayRead8(PBDIR)) | ~registerArrayRead8(PBDIR);
          
       case PDDATA:
          return getPortDValue();
 
       case PFDATA:
          //read outputs as is and inputs as true, floating pins are high
-         return registerArrayRead8(PFDATA) & registerArrayRead8(PFDIR) | ~registerArrayRead8(PFDIR);
+         return (registerArrayRead8(PFDATA) & registerArrayRead8(PFDIR)) | ~registerArrayRead8(PFDIR);
 
       case PKDATA:
          return getPortKValue();
@@ -1087,7 +1091,7 @@ void setHwRegister8(unsigned int address, unsigned int value){
          //port g also does spi stuff, unemulated so far
          //write without the top 2 bits
          registerArrayWrite8(address, value & 0x3F);
-         updateBacklightStatus();
+         //updateBacklightStatus();
          break;
          
       case PKSEL:
@@ -1095,7 +1099,7 @@ void setHwRegister8(unsigned int address, unsigned int value){
       case PKDATA:
          registerArrayWrite8(address, value);
          checkPortDInts();
-         updateLcdStatus();
+         //updateLcdStatus();
          updateVibratorStatus();
          break;
          
@@ -1491,8 +1495,8 @@ void resetHwRegisters(){
    
    //add register settings to misc I/O
    updateAlarmLedStatus();
-   updateLcdStatus();
-   updateBacklightStatus();
+   //updateLcdStatus();
+   //updateBacklightStatus();
    updateVibratorStatus();
 }
 

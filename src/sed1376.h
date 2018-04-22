@@ -10,8 +10,8 @@ extern uint8_t  sed1376Framebuffer[];
 
 bool sed1376PowerSaveEnabled();
 
-unsigned int sed1376GetRegister(unsigned int address);
-void sed1376SetRegister(unsigned int address, unsigned int value);
+uint8_t sed1376GetRegister(uint8_t address);
+void sed1376SetRegister(uint8_t address, uint8_t value);
 
 void sed1376Reset();
 void sed1376RefreshLut();
