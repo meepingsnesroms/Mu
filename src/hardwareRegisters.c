@@ -352,7 +352,8 @@ static inline uint8_t getPortDValue(){
       //kbd row 2, pins are 0 when button pressed and 1 when released, Palm OS then uses PDPOL to swap back to pressed == 1
       portDValue |= !palmInput.buttonPower | !palmInput.buttonContrast << 1 | !palmInput.buttonAddress << 3;
    }
-   
+
+   portDValue |= 0x50;//floating pins are high
    portDValue ^= portDPolarity;//only input polarity is affected by PDPOL
    portDValue &= ~portDDir;//only use above pin values for inputs
    portDValue |= portDData & portDDir;//if a pin is an output and has its data bit set return that too
@@ -366,7 +367,9 @@ static inline uint8_t getPortKValue(){
    uint8_t portKDir = registerArrayRead8(PKDIR);
    uint8_t portKSel = registerArrayRead8(PKSEL);
 
-   portKValue |= !palmMisc.inDock << 2 & ~portKDir & portKSel;
+   portKValue |= !palmMisc.inDock << 2;
+   portKValue |= 0xFB;//floating pins are high
+   portKValue &= ~portKDir & portKSel;
    portKValue |= portKData & portKDir & portKSel;
 
    return portKValue;
@@ -876,17 +879,34 @@ unsigned int getHwRegister8(unsigned int address){
    printUnknownHwAccess(address, 0, 8, false);
 #endif
    switch(address){
+
+      case PBDATA:
+         //read outputs as is and inputs as true, floating pins are high
+         return registerArrayRead8(PBDATA) & registerArrayRead8(PBDIR) | ~registerArrayRead8(PBDIR);
          
       case PDDATA:
          return getPortDValue();
 
+      case PFDATA:
+         //read outputs as is and inputs as true, floating pins are high
+         return registerArrayRead8(PFDATA) & registerArrayRead8(PFDIR) | ~registerArrayRead8(PFDIR);
+
       case PKDATA:
          return getPortKValue();
 
+      //LCD functions
       case LCKCON:
+
+      //port d special functions
+      case PDPOL:
+      case PDIRQEN:
+      case PDIRQEG:
+      case PDKBEN:
          
       //I/O direction
+      case PBDIR:
       case PDDIR:
+      case PFDIR:
       case PKDIR:
 
       //select between GPIO or special function
@@ -943,6 +963,8 @@ unsigned int getHwRegister16(unsigned int address){
       case IMR + 2:
       case IPR:
       case IPR + 2:
+      case ISR:
+      case ISR + 2:
          
       case CSA:
       case CSB:
@@ -1127,7 +1149,6 @@ void setHwRegister8(unsigned int address, unsigned int value){
          
       //dragonball LCD controller, not attached to anything in Palm m515
       case LCKCON:
-         
          //simple write, no actions needed
          registerArrayWrite8(address, value);
          break;
@@ -1165,10 +1186,16 @@ void setHwRegister16(unsigned int address, unsigned int value){
          //this is a 32 bit register but Palm OS writes it as 16 bit chunks
          registerArrayWrite16(address, value & 0x03FF);
          break;
-         
+
+      case ISR:
+         //this is a 32 bit register but Palm OS writes it as 16 bit chunks
+         registerArrayWrite16(IPR, registerArrayRead16(IPR) & ~(value & 0x001F/*external hardware int mask*/));
+         registerArrayWrite16(ISR, registerArrayRead16(ISR) & ~(value & 0x001F/*external hardware int mask*/));
+         break;
       case ISR + 2:
          //this is a 32 bit register but Palm OS writes it as 16 bit chunks
-         registerArrayWrite16(ISR + 2, registerArrayRead16(ISR + 2) & ~(value & 0x0F00));
+         registerArrayWrite16(IPR + 2, registerArrayRead16(IPR + 2) & ~(value & 0x0F00/*external hardware int mask*/));
+         registerArrayWrite16(ISR + 2, registerArrayRead16(ISR + 2) & ~(value & 0x0F00/*external hardware int mask*/));
          break;
          
       case TCTL1:

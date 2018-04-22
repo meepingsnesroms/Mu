@@ -22,6 +22,7 @@ Sdcard can't be read or written to
 Sdcard can't be inserted or removed
 Sdcard has no error handling in save/load state
 storage RAM protect(likely already done from fixing chip select bits)
+USB chip address range
 
 SED1376:
 register access

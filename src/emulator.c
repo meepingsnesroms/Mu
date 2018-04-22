@@ -146,12 +146,26 @@ static void invalidBehaviorCheck(){
    }
 
 #if defined(EMU_LOG_APIS)
+   /*
+   static uint32_t trapDumpWait = 300;
+   static bool trapsNotDumped = true;
+
+   if(trapsNotDumped && trapDumpWait == 0){
+      debugLog("Trap dispatch controller is at:0x%08X, table addr:0x%08X\n", programCounter, m68k_read_memory_32(0x00000122));
+      for(uint32_t count = 0x000; count < 0x475; count++){
+         debugLog("API:0x%04X, location:0x%08X\n", count | 0xA000, m68k_read_memory_32(0x000008CC + count * 4));
+      }
+      trapsNotDumped = false;
+   }
+   */
+
    if(instruction == 0x4E4F){
       //Trap F/api call
       uint16_t trap = m68k_read_memory_16(lastProgramCounter + 2);
       if(!spammingTrap(trap)){
          debugLog("Trap F API:%s, API number:0x%04X, PC:0x%08X\n", lookupTrap(trap), trap, lastProgramCounter);
       }
+      //trapDumpWait--;
    }
 #endif
 }
