@@ -111,6 +111,10 @@ MainWindow::MainWindow(QWidget* parent) :
 
    loadRom();
 
+#if !defined(FRONTEND_DEBUG)
+   ui->hexViewer->hide();
+#endif
+
    connect(refreshDisplay, SIGNAL(timeout()), this, SLOT(updateDisplay()));
    refreshDisplay->start(16);//update display every 16.67miliseconds = 60 * second
 }
@@ -194,7 +198,7 @@ void MainWindow::on_install_pressed(){
 void MainWindow::updateDisplay(){
    if(emuOn){
       if(emuMutex.try_lock()){
-#ifdef EMU_DEBUG
+#if defined(FRONTEND_DEBUG) && defined(EMU_DEBUG)
          if(emulateUntilDebugEventOrFrameEnd()){
             //debug event occured
             emuOn = false;

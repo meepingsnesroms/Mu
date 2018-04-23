@@ -30,5 +30,6 @@ private slots:
    void on_hex32Bit_clicked();
 
 private:
+   uint8_t bitsPerEntry;
    Ui::HexViewer *ui;
 };

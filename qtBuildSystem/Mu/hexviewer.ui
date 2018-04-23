@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>475</width>
-    <height>375</height>
+    <width>482</width>
+    <height>385</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -17,7 +17,16 @@
    </sizepolicy>
   </property>
   <property name="windowTitle">
-   <string>Dialog</string>
+   <string>Hex Viewer</string>
+  </property>
+  <property name="windowOpacity">
+   <double>-1.000000000000000</double>
+  </property>
+  <property name="layoutDirection">
+   <enum>Qt::LeftToRight</enum>
+  </property>
+  <property name="modal">
+   <bool>false</bool>
   </property>
   <layout class="QGridLayout" name="gridLayout">
    <item row="2" column="0">
@@ -42,7 +51,7 @@
       </sizepolicy>
      </property>
      <property name="currentIndex">
-      <number>1</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="hex">
       <property name="sizePolicy">
