@@ -28,6 +28,12 @@
   <layout class="QGridLayout" name="gridLayout">
    <item row="2" column="0">
     <widget class="QDialogButtonBox" name="buttonBox">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
      </property>
@@ -63,8 +69,8 @@
       <widget class="QPushButton" name="hexUpdate">
        <property name="geometry">
         <rect>
-         <x>330</x>
-         <y>260</y>
+         <x>320</x>
+         <y>250</y>
          <width>113</width>
          <height>32</height>
         </rect>
@@ -164,7 +170,7 @@
          <x>0</x>
          <y>0</y>
          <width>251</width>
-         <height>291</height>
+         <height>281</height>
         </rect>
        </property>
       </widget>
@@ -210,8 +216,8 @@
       <widget class="QPushButton" name="gfxUpdate">
        <property name="geometry">
         <rect>
-         <x>270</x>
-         <y>260</y>
+         <x>260</x>
+         <y>250</y>
          <width>171</width>
          <height>32</height>
         </rect>

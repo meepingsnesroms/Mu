@@ -68,7 +68,7 @@ static inline bool pllOn(){
 static inline void setCsa(uint16_t value){
    chips[CHIP_A_ROM].enable = CAST_TO_BOOL(value & 0x0001);
    chips[CHIP_A_ROM].readOnly = CAST_TO_BOOL(value & 0x8000);
-   chips[CHIP_A_ROM].size = 0x20000/*128kb*/ << ((value >> 1) & 0x0007);
+   chips[CHIP_A_ROM].size = 0x20000/*128kb*/ << (value >> 1 & 0x0007);
 
    //CSA is now just a normal chipselect
    if(chips[CHIP_A_ROM].enable && chips[CHIP_A_ROM].inBootMode)
@@ -82,15 +82,15 @@ static inline void setCsb(uint16_t value){
 
    chips[CHIP_B_SED].enable = CAST_TO_BOOL(value & 0x0001);
    chips[CHIP_B_SED].readOnly = CAST_TO_BOOL(value & 0x8000);
-   chips[CHIP_B_SED].size = 0x20000/*128kb*/ << ((value >> 1) & 0x0007);
+   chips[CHIP_B_SED].size = 0x20000/*128kb*/ << (value >> 1 & 0x0007);
 
    //attributes
    chips[CHIP_B_SED].supervisorOnlyProtectedMemory = CAST_TO_BOOL(value & 0x4000);
    chips[CHIP_B_SED].readOnlyForProtectedMemory = CAST_TO_BOOL(value & 0x2000);
    if(csControl1 & 0x4000 && csControl1 & 0x0001)
-      chips[CHIP_B_SED].unprotectedSize = 0x8000/*32kb*/ << (((value >> 11) & 0x0003) | 0x0004);
+      chips[CHIP_B_SED].unprotectedSize = 0x8000/*32kb*/ << ((value >> 11 & 0x0003) | 0x0004);
    else
-      chips[CHIP_B_SED].unprotectedSize = 0x8000/*32kb*/ << ((value >> 11) & 0x0003);
+      chips[CHIP_B_SED].unprotectedSize = 0x8000/*32kb*/ << (value >> 11 & 0x0003);
 
    registerArrayWrite16(CSB, value & 0xF9FF);
 }
@@ -100,15 +100,15 @@ static inline void setCsc(uint16_t value){
 
    chips[CHIP_C_USB].enable = CAST_TO_BOOL(value & 0x0001);
    chips[CHIP_C_USB].readOnly = CAST_TO_BOOL(value & 0x8000);
-   chips[CHIP_C_USB].size = 0x8000/*32kb*/ << ((value >> 1) & 0x0007);
+   chips[CHIP_C_USB].size = 0x8000/*32kb*/ << (value >> 1 & 0x0007);
 
    //attributes
    chips[CHIP_C_USB].supervisorOnlyProtectedMemory = CAST_TO_BOOL(value & 0x4000);
    chips[CHIP_C_USB].readOnlyForProtectedMemory = CAST_TO_BOOL(value & 0x2000);
    if(csControl1 & 0x4000 && csControl1 & 0x0004)
-      chips[CHIP_C_USB].unprotectedSize = 0x8000/*32kb*/ << (((value >> 11) & 0x0003) | 0x0004);
+      chips[CHIP_C_USB].unprotectedSize = 0x8000/*32kb*/ << ((value >> 11 & 0x0003) | 0x0004);
    else
-      chips[CHIP_C_USB].unprotectedSize = 0x8000/*32kb*/ << ((value >> 11) & 0x0003);
+      chips[CHIP_C_USB].unprotectedSize = 0x8000/*32kb*/ << (value >> 11 & 0x0003);
 
    registerArrayWrite16(CSC, value & 0xF9FF);
 }
@@ -119,17 +119,17 @@ static inline void setCsd(uint16_t value){
    chips[CHIP_D_RAM].enable = CAST_TO_BOOL(value & 0x0001);
    chips[CHIP_D_RAM].readOnly = CAST_TO_BOOL(value & 0x8000);
    if(csControl1 & 0x0040 && value & 0x0200)
-      chips[CHIP_D_RAM].size = 0x800000/*8mb*/ << ((value >> 1) & 0x0001);
+      chips[CHIP_D_RAM].size = 0x800000/*8mb*/ << (value >> 1 & 0x0001);
    else
-      chips[CHIP_D_RAM].size = 0x8000/*32kb*/ << ((value >> 1) & 0x0007);
+      chips[CHIP_D_RAM].size = 0x8000/*32kb*/ << (value >> 1 & 0x0007);
 
    //attributes
    chips[CHIP_D_RAM].supervisorOnlyProtectedMemory = CAST_TO_BOOL(value & 0x4000);
    chips[CHIP_D_RAM].readOnlyForProtectedMemory = CAST_TO_BOOL(value & 0x2000);
    if(csControl1 & 0x4000 && csControl1 & 0x0010)
-      chips[CHIP_D_RAM].unprotectedSize = 0x8000/*32kb*/ << (((value >> 11) & 0x0003) | 0x0004);
+      chips[CHIP_D_RAM].unprotectedSize = 0x8000/*32kb*/ << ((value >> 11 & 0x0003) | 0x0004);
    else
-      chips[CHIP_D_RAM].unprotectedSize = 0x8000/*32kb*/ << ((value >> 11) & 0x0003);
+      chips[CHIP_D_RAM].unprotectedSize = 0x8000/*32kb*/ << (value >> 11 & 0x0003);
 
    registerArrayWrite16(CSD, value);
 }
@@ -139,9 +139,9 @@ static inline void setCsgba(uint16_t value){
 
    //add extra address bits if enabled
    if(csugba & 0x8000)
-      chips[CHIP_A_ROM].start = ((csugba >> 12) & 0x0007) << 29 | (value >> 1) << 14;
+      chips[CHIP_A_ROM].start = (csugba >> 12 & 0x0007) << 29 | value >> 1 << 14;
    else
-      chips[CHIP_A_ROM].start = (value >> 1) << 14;
+      chips[CHIP_A_ROM].start = value >> 1 << 14;
 
    registerArrayWrite16(CSGBA, value & 0xFFFE);
 }
@@ -151,9 +151,9 @@ static inline void setCsgbb(uint16_t value){
 
    //add extra address bits if enabled
    if(csugba & 0x8000)
-      chips[CHIP_B_SED].start = ((csugba >> 8) & 0x0007) << 29 | (value >> 1) << 14;
+      chips[CHIP_B_SED].start = (csugba >> 8 & 0x0007) << 29 | value >> 1 << 14;
    else
-      chips[CHIP_B_SED].start = (value >> 1) << 14;
+      chips[CHIP_B_SED].start = value >> 1 << 14;
 
    registerArrayWrite16(CSGBB, value & 0xFFFE);
 }
@@ -163,9 +163,9 @@ static inline void setCsgbc(uint16_t value){
 
    //add extra address bits if enabled
    if(csugba & 0x8000)
-      chips[CHIP_C_USB].start = ((csugba >> 4) & 0x0007) << 29 | (value >> 1) << 14;
+      chips[CHIP_C_USB].start = (csugba >> 4 & 0x0007) << 29 | value >> 1 << 14;
    else
-      chips[CHIP_C_USB].start = (value >> 1) << 14;
+      chips[CHIP_C_USB].start = value >> 1 << 14;
 
    registerArrayWrite16(CSGBC, value & 0xFFFE);
 }
@@ -175,9 +175,9 @@ static inline void setCsgbd(uint16_t value){
 
    //add extra address bits if enabled
    if(csugba & 0x8000)
-      chips[CHIP_D_RAM].start = (csugba & 0x0007) << 29 | (value >> 1) << 14;
+      chips[CHIP_D_RAM].start = (csugba & 0x0007) << 29 | value >> 1 << 14;
    else
-      chips[CHIP_D_RAM].start = (value >> 1) << 14;
+      chips[CHIP_D_RAM].start = value >> 1 << 14;
 
    registerArrayWrite16(CSGBD, value & 0xFFFE);
 }
@@ -1353,7 +1353,7 @@ void resetHwRegisters(){
    pllWakeWait = -1;
    timer1CycleCounter = 0.0;
    timer2CycleCounter = 0.0;
-   for(uint32_t chip = CHIP_BEGIN; chip < CHIP_END; chip++){
+   for(uint8_t chip = CHIP_BEGIN; chip < CHIP_END; chip++){
       chips[chip].enable = false;
       chips[chip].start = 0x00000000;
       chips[chip].size = 0x00000000;

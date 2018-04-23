@@ -72,6 +72,9 @@
     </item>
     <item row="1" column="0">
      <widget class="QStackedWidget" name="controlPanel">
+      <property name="enabled">
+       <bool>true</bool>
+      </property>
       <property name="sizePolicy">
        <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
         <horstretch>0</horstretch>
@@ -321,6 +324,9 @@
         </item>
         <item row="2" column="8">
          <widget class="QPushButton" name="hexViewer">
+          <property name="enabled">
+           <bool>true</bool>
+          </property>
           <property name="sizePolicy">
            <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
             <horstretch>0</horstretch>

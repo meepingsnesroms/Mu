@@ -5,30 +5,31 @@
 
 extern "C" {
 #include "src/m68k/m68k.h"
+#include "src/hardwareRegisters.h"
+#include "src/memoryAccess.h"
 }
 
 
 #define INVALID_NUMBER (int64_t)0x8000000000000000//the biggest negative 64bit number
 
 
-bool memoryAccessSafe(uint32_t address, uint8_t size){
-   //until SPI and UART destructive reads are implemented all reads are safe
-   return true;
-}
-
 uint32_t getEmulatorMemorySafe(uint32_t address, uint8_t size){
-   if(memoryAccessSafe(address, size)){
+   //until SPI and UART destructive reads are implemented all reads to mapped addresses are safe
+   if(bankType[START_BANK(address)] != CHIP_NONE){
+      uint16_t m68kSr = m68k_get_reg(NULL, M68K_REG_SR);
+      m68k_set_reg(M68K_REG_SR, 0x2000);//prevent privilege violations
       switch(size){
 
          case 8:
             return m68k_read_memory_8(address);
 
          case 16:
-            return m68k_read_memory_8(address);
+            return m68k_read_memory_16(address);
 
          case 32:
-            return m68k_read_memory_8(address);
+            return m68k_read_memory_32(address);
       }
+      m68k_set_reg(M68K_REG_SR, m68kSr);
    }
    return 0x00000000;
 }
@@ -113,7 +114,7 @@ void HexViewer::on_hexUpdate_clicked(){
 
    ui->hexValueList->clear();
 
-   if(address != INVALID_NUMBER && length != INVALID_NUMBER && address + bits / 4 * length <= 0xFFFFFFFF){
+   if(address != INVALID_NUMBER && length != INVALID_NUMBER && length != 0 && address + bits / 8 * length - 1 <= 0xFFFFFFFF){
       for(int64_t count = 0; count < length; count++){
          QString value;
          value += stringFromNumber(address, true, 8);
