@@ -23,20 +23,19 @@
 //The LCD power-off sequence is activated by programming the Power Save Mode Enable bit (REG[A0h] bit 0) to 1.
 
 
-uint8_t  sed1376Registers[SED1376_REG_SIZE];
-uint8_t  sed1376RLut[SED1376_LUT_SIZE];
-uint8_t  sed1376GLut[SED1376_LUT_SIZE];
-uint8_t  sed1376BLut[SED1376_LUT_SIZE];
-uint8_t  sed1376Framebuffer[SED1376_FB_SIZE];
+uint8_t sed1376Registers[SED1376_REG_SIZE];
+uint8_t sed1376RLut[SED1376_LUT_SIZE];
+uint8_t sed1376GLut[SED1376_LUT_SIZE];
+uint8_t sed1376BLut[SED1376_LUT_SIZE];
+uint8_t sed1376Framebuffer[SED1376_FB_SIZE];
 
 static uint16_t sed1376OutputLut[SED1376_LUT_SIZE];//used to speed up pixel conversion
-
 static uint32_t screenStartAddress;
 static uint16_t lineSize;
 static uint16_t (*renderPixel)(uint16_t x, uint16_t y);
 
 
-#include "sed1376Accessors.ch"
+#include "sed1376Accessors.c.h"
 
 static inline uint32_t getBufferStartAddress(){
    uint32_t screenStartAddress = sed1376Registers[DISP_ADDR_2] << 16 | sed1376Registers[DISP_ADDR_1] << 8 | sed1376Registers[DISP_ADDR_0];
@@ -72,8 +71,8 @@ static inline uint32_t getBufferStartAddress(){
 }
 
 static inline void updateLcdStatus(){
-   palmMisc.lcdOn = CAST_TO_BOOL(sed1376Registers[GPIO_CONT_0] & sed1376Registers[GPIO_CONF_0] & 0x20) && CAST_TO_BOOL(sed1376Registers[GPIO_CONT_1] & 0x80);
-   palmMisc.backlightOn = CAST_TO_BOOL(sed1376Registers[GPIO_CONT_0] & sed1376Registers[GPIO_CONF_0] & 0x10) && CAST_TO_BOOL(sed1376Registers[GPIO_CONT_1] & 0x80);
+   palmMisc.lcdOn = CAST_TO_BOOL(sed1376Registers[GPIO_CONT_0] & sed1376Registers[GPIO_CONF_0] & 0x20);
+   palmMisc.backlightOn = CAST_TO_BOOL(sed1376Registers[GPIO_CONT_0] & sed1376Registers[GPIO_CONF_0] & 0x10);
 }
 
 
@@ -211,8 +210,8 @@ void sed1376RefreshLut(){
 }
 
 void sed1376Render(){
-   if(palmMisc.lcdOn && cpuIsOn() && !sed1376PowerSaveEnabled() && !(sed1376Registers[DISP_MODE] & 0x80)){
-      //only render if LCD on, CPU on, power save off, and force blank off, SED1376 clock is provided by the CPU, if its off so is the SED
+   if(palmMisc.lcdOn && pllIsOn() && !sed1376PowerSaveEnabled() && !(sed1376Registers[DISP_MODE] & 0x80)){
+      //only render if LCD on, PLL on, power save off, and force blank off, SED1376 clock is provided by the CPU, if its off so is the SED
       bool monochrome = CAST_TO_BOOL(sed1376Registers[PANEL_TYPE] & 0x40);
       bool pictureInPictureEnabled = CAST_TO_BOOL(sed1376Registers[SPECIAL_EFFECT] & 0x10);
       uint8_t bitDepth = 1 << (sed1376Registers[DISP_MODE] & 0x07);
@@ -227,11 +226,15 @@ void sed1376Render(){
             for(uint16_t pixelX = 0; pixelX < 160; pixelX++)
                palmFramebuffer[pixelY * 160 + pixelX] = renderPixel(pixelX, pixelY);
 
+         debugLog("Screen start address:0x%08X, buffer width:%d, swivel view:%d degrees\n", screenStartAddress, lineSize, rotation);
+
+         /*
          if(pictureInPictureEnabled){
             screenStartAddress = getBufferStartAddress();
             lineSize = (sed1376Registers[PIP_LINE_SZ_1] << 8 | sed1376Registers[PIP_LINE_SZ_0]) * 4;
             //not done yet
          }
+         */
 
          //rotation
          //later
@@ -255,6 +258,6 @@ void sed1376Render(){
    else{
       //black screen
       memset(palmFramebuffer, 0x00, 160 * 160 * sizeof(uint16_t));
-      debugLog("Cant draw screen, LCD on:%s, CPU on:%s, power save on:%s, forced blank on:%s\n", palmMisc.lcdOn ? "true" : "false", cpuIsOn() ? "true" : "false", sed1376PowerSaveEnabled() ? "true" : "false", (sed1376Registers[DISP_MODE] & 0x80) ? "true" : "false");
+      debugLog("Cant draw screen, LCD on:%s, PLL on:%s, power save on:%s, forced blank on:%s\n", palmMisc.lcdOn ? "true" : "false", pllIsOn() ? "true" : "false", sed1376PowerSaveEnabled() ? "true" : "false", (sed1376Registers[DISP_MODE] & 0x80) ? "true" : "false");
    }
 }

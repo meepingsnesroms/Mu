@@ -74,8 +74,10 @@ HEADERS += \
     mainwindow.h \
     touchscreen.h \
     src/sed1376RegisterNames.h \
-    src/sed1376Accessors.ch \
-    hexviewer.h
+    hexviewer.h \
+    src/hardwareRegistersTiming.c.h \
+    src/sed1376Accessors.c.h \
+    src/hardwareRegistersAccessors.c.h
 
 FORMS += \
         mainwindow.ui \

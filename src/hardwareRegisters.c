@@ -18,28 +18,78 @@ double   timer1CycleCounter;
 double   timer2CycleCounter;
 
 
-static inline uint8_t registerArrayRead8(uint32_t address){return BUFFER_READ_8(palmReg, address, 0, 0xFFF);}
-static inline uint16_t registerArrayRead16(uint32_t address){return BUFFER_READ_16(palmReg, address, 0, 0xFFF);}
-static inline uint32_t registerArrayRead32(uint32_t address){return BUFFER_READ_32(palmReg, address, 0, 0xFFF);}
-static inline void registerArrayWrite8(uint32_t address, uint8_t value){BUFFER_WRITE_8(palmReg, address, 0, 0xFFF, value);}
-static inline void registerArrayWrite16(uint32_t address, uint16_t value){BUFFER_WRITE_16(palmReg, address, 0, 0xFFF, value);}
-static inline void registerArrayWrite32(uint32_t address, uint32_t value){BUFFER_WRITE_32(palmReg, address, 0, 0xFFF, value);}
+bool pllIsOn();
+void checkInterrupts();
+void checkPortDInterrupts();
 
-static inline void setIprIsrBit(uint32_t interruptBit){
-   //allows for setting an interrupt with masking by IMR and logging in IPR
-   registerArrayWrite32(IPR, registerArrayRead32(IPR) | interruptBit);
-   registerArrayWrite32(ISR, registerArrayRead32(ISR) | (interruptBit & ~registerArrayRead32(IMR)));
+#include "hardwareRegistersAccessors.c.h"
+#include "hardwareRegistersTiming.c.h"
+
+bool pllIsOn(){
+   return !CAST_TO_BOOL(registerArrayRead16(PLLCR) & 0x0008);
 }
 
-static inline void clearIprIsrBit(uint32_t interruptBit){
-   registerArrayWrite32(IPR, registerArrayRead32(IPR) & ~interruptBit);
-   registerArrayWrite32(ISR, registerArrayRead32(ISR) & ~interruptBit);
+bool registersAreXXFFMapped(){
+   return CAST_TO_BOOL(registerArrayRead8(SCR) & 0x04);
+}
+
+bool sed1376ClockConnected(){
+   //this is the clock output pin for the SED1376, if its disabled so is the LCD controller
+   return !CAST_TO_BOOL(registerArrayRead8(PFSEL) & 0x04);
+}
+
+void refreshButtonState(){
+   checkPortDInterrupts();
+}
+
+int interruptAcknowledge(int intLevel){
+   int vectorOffset = registerArrayRead8(IVR);
+   int vector;
+
+   //If an interrupt occurs before the IVR has been programmed, the interrupt vector number 0x0F is returned to the CPU as an uninitialized interrupt.
+   if(!vectorOffset)
+      vector = 0x0F;//EXCEPTION_UNINITIALIZED_INTERRUPT
+   else
+      vector = vectorOffset | intLevel;
+
+   lowPowerStopActive = false;
+
+   //the interrupt should only be cleared after its been handled
+
+   return vector;
+}
+
+void setBusErrorTimeOut(){
+   uint8_t scr = registerArrayRead8(SCR);
+   debugLog("Bus error timeout, PC:0x%08X\n", m68k_get_reg(NULL, M68K_REG_PC));
+   if(scr & 0x10){
+      //trigger bus error interrupt
+   }
+   registerArrayWrite8(SCR, scr | 0x80);
+}
+
+void setWriteProtectViolation(){
+   uint8_t scr = registerArrayRead8(SCR);
+   debugLog("Write protect violation, PC:0x%08X\n", m68k_get_reg(NULL, M68K_REG_PC));
+   if(scr & 0x10){
+      //trigger bus error interrupt
+   }
+   registerArrayWrite8(SCR, scr | 0x40);
+}
+
+void setPrivilegeViolation(){
+   uint8_t scr = registerArrayRead8(SCR);
+   debugLog("Privilege violation, PC:0x%08X\n", m68k_get_reg(NULL, M68K_REG_PC));
+   if(scr & 0x10){
+      //trigger bus error interrupt
+   }
+   registerArrayWrite8(SCR, scr | 0x20);
 }
 
 static inline void pllWakeCpuIfOff(){
    uint16_t pllcr = registerArrayRead16(PLLCR);
-   if(pllcr & 0x0008 && pllWakeWait == -1){
-      //CPU is off and not already in the process of waking up
+   if(!pllIsOn() && pllWakeWait == -1){
+      //PLL is off and not already in the process of waking up
       switch(pllcr & 0x0003){
 
          case 0x0000:
@@ -61,167 +111,21 @@ static inline void pllWakeCpuIfOff(){
    }
 }
 
-static inline bool pllOn(){
-   return !CAST_TO_BOOL(registerArrayRead16(PLLCR) & 0x0008);
-}
-
-static inline void setCsa(uint16_t value){
-   chips[CHIP_A_ROM].enable = CAST_TO_BOOL(value & 0x0001);
-   chips[CHIP_A_ROM].readOnly = CAST_TO_BOOL(value & 0x8000);
-   chips[CHIP_A_ROM].size = 0x20000/*128kb*/ << (value >> 1 & 0x0007);
-
-   //CSA is now just a normal chipselect
-   if(chips[CHIP_A_ROM].enable && chips[CHIP_A_ROM].inBootMode)
-      chips[CHIP_A_ROM].inBootMode = false;
-
-   registerArrayWrite16(CSA, value & 0x81FF);
-}
-
-static inline void setCsb(uint16_t value){
-   uint16_t csControl1 = registerArrayRead16(CSCTRL1);
-
-   chips[CHIP_B_SED].enable = CAST_TO_BOOL(value & 0x0001);
-   chips[CHIP_B_SED].readOnly = CAST_TO_BOOL(value & 0x8000);
-   chips[CHIP_B_SED].size = 0x20000/*128kb*/ << (value >> 1 & 0x0007);
-
-   //attributes
-   chips[CHIP_B_SED].supervisorOnlyProtectedMemory = CAST_TO_BOOL(value & 0x4000);
-   chips[CHIP_B_SED].readOnlyForProtectedMemory = CAST_TO_BOOL(value & 0x2000);
-   if(csControl1 & 0x4000 && csControl1 & 0x0001)
-      chips[CHIP_B_SED].unprotectedSize = 0x8000/*32kb*/ << ((value >> 11 & 0x0003) | 0x0004);
-   else
-      chips[CHIP_B_SED].unprotectedSize = 0x8000/*32kb*/ << (value >> 11 & 0x0003);
-
-   registerArrayWrite16(CSB, value & 0xF9FF);
-}
-
-static inline void setCsc(uint16_t value){
-   uint16_t csControl1 = registerArrayRead16(CSCTRL1);
-
-   chips[CHIP_C_USB].enable = CAST_TO_BOOL(value & 0x0001);
-   chips[CHIP_C_USB].readOnly = CAST_TO_BOOL(value & 0x8000);
-   chips[CHIP_C_USB].size = 0x8000/*32kb*/ << (value >> 1 & 0x0007);
-
-   //attributes
-   chips[CHIP_C_USB].supervisorOnlyProtectedMemory = CAST_TO_BOOL(value & 0x4000);
-   chips[CHIP_C_USB].readOnlyForProtectedMemory = CAST_TO_BOOL(value & 0x2000);
-   if(csControl1 & 0x4000 && csControl1 & 0x0004)
-      chips[CHIP_C_USB].unprotectedSize = 0x8000/*32kb*/ << ((value >> 11 & 0x0003) | 0x0004);
-   else
-      chips[CHIP_C_USB].unprotectedSize = 0x8000/*32kb*/ << (value >> 11 & 0x0003);
-
-   registerArrayWrite16(CSC, value & 0xF9FF);
-}
-
-static inline void setCsd(uint16_t value){
-   uint16_t csControl1 = registerArrayRead16(CSCTRL1);
-
-   chips[CHIP_D_RAM].enable = CAST_TO_BOOL(value & 0x0001);
-   chips[CHIP_D_RAM].readOnly = CAST_TO_BOOL(value & 0x8000);
-   if(csControl1 & 0x0040 && value & 0x0200)
-      chips[CHIP_D_RAM].size = 0x800000/*8mb*/ << (value >> 1 & 0x0001);
-   else
-      chips[CHIP_D_RAM].size = 0x8000/*32kb*/ << (value >> 1 & 0x0007);
-
-   //attributes
-   chips[CHIP_D_RAM].supervisorOnlyProtectedMemory = CAST_TO_BOOL(value & 0x4000);
-   chips[CHIP_D_RAM].readOnlyForProtectedMemory = CAST_TO_BOOL(value & 0x2000);
-   if(csControl1 & 0x4000 && csControl1 & 0x0010)
-      chips[CHIP_D_RAM].unprotectedSize = 0x8000/*32kb*/ << ((value >> 11 & 0x0003) | 0x0004);
-   else
-      chips[CHIP_D_RAM].unprotectedSize = 0x8000/*32kb*/ << (value >> 11 & 0x0003);
-
-   registerArrayWrite16(CSD, value);
-}
-
-static inline void setCsgba(uint16_t value){
-   uint16_t csugba = registerArrayRead16(CSUGBA);
-
-   //add extra address bits if enabled
-   if(csugba & 0x8000)
-      chips[CHIP_A_ROM].start = (csugba >> 12 & 0x0007) << 29 | value >> 1 << 14;
-   else
-      chips[CHIP_A_ROM].start = value >> 1 << 14;
-
-   registerArrayWrite16(CSGBA, value & 0xFFFE);
-}
-
-static inline void setCsgbb(uint16_t value){
-   uint16_t csugba = registerArrayRead16(CSUGBA);
-
-   //add extra address bits if enabled
-   if(csugba & 0x8000)
-      chips[CHIP_B_SED].start = (csugba >> 8 & 0x0007) << 29 | value >> 1 << 14;
-   else
-      chips[CHIP_B_SED].start = value >> 1 << 14;
-
-   registerArrayWrite16(CSGBB, value & 0xFFFE);
-}
-
-static inline void setCsgbc(uint16_t value){
-   uint16_t csugba = registerArrayRead16(CSUGBA);
-
-   //add extra address bits if enabled
-   if(csugba & 0x8000)
-      chips[CHIP_C_USB].start = (csugba >> 4 & 0x0007) << 29 | value >> 1 << 14;
-   else
-      chips[CHIP_C_USB].start = value >> 1 << 14;
-
-   registerArrayWrite16(CSGBC, value & 0xFFFE);
-}
-
-static inline void setCsgbd(uint16_t value){
-   uint16_t csugba = registerArrayRead16(CSUGBA);
-
-   //add extra address bits if enabled
-   if(csugba & 0x8000)
-      chips[CHIP_D_RAM].start = (csugba & 0x0007) << 29 | value >> 1 << 14;
-   else
-      chips[CHIP_D_RAM].start = value >> 1 << 14;
-
-   registerArrayWrite16(CSGBD, value & 0xFFFE);
-}
-
-static inline void setCsctrl1(uint16_t value){
-   uint16_t oldCsctrl1 = registerArrayRead16(CSCTRL1);
-
-   registerArrayWrite16(CSCTRL1, value & 0x7F55);
-   if((oldCsctrl1 & 0x4055) != (value & 0x4055)){
-      //something important changed, update all chipselects
-      //CSA is not dependant on CSCTRL1
-      setCsb(registerArrayRead16(CSB));
-      setCsc(registerArrayRead16(CSC));
-      setCsd(registerArrayRead16(CSD));
-   }
-}
-//csctrl 2 and 3 only deal with timing and bus transfer size
-
-
-void printUnknownHwAccess(unsigned int address, unsigned int value, unsigned int size, bool isWrite){
-   if(isWrite){
-      debugLog("CPU wrote %d bits of 0x%08X to register 0x%04X, PC 0x%08X.\n", size, value, address, m68k_get_reg(NULL, M68K_REG_PC));
-   }
-   else{
-      debugLog("CPU read %d bits from register 0x%04X, PC 0x%08X.\n", size, address, m68k_get_reg(NULL, M68K_REG_PC));
-   }
-}
-
-
 void checkInterrupts(){
    uint32_t activeInterrupts = registerArrayRead32(ISR);
    uint16_t interruptLevelControlRegister = registerArrayRead16(ILCR);
    uint16_t portDEdgeSelect = registerArrayRead16(PDIRQEG);
-   uint32_t intLevel = 0;
+   uint8_t intLevel = 0;
    bool reenablePllIfOff = false;
 
    if(activeInterrupts & INT_EMIQ){
-      //EMIQ - Emulator Irq, has nothing to do with emulation, used for debugging on a dev board
+      //EMIQ - Emulator IRQ, has nothing to do with emulation, used for debugging on a dev board
       intLevel = 7;
       reenablePllIfOff = true;
    }
 
    if(activeInterrupts & INT_SPI1){
-      uint32_t spi1IrqLevel = interruptLevelControlRegister >> 12;
+      uint8_t spi1IrqLevel = interruptLevelControlRegister >> 12;
       if(intLevel < spi1IrqLevel)
          intLevel = spi1IrqLevel;
       reenablePllIfOff = true;
@@ -252,14 +156,14 @@ void checkInterrupts(){
    }
 
    if(activeInterrupts & INT_PWM2){
-      uint32_t pwm2IrqLevel = (interruptLevelControlRegister >> 4) & 0x0007;
+      uint8_t pwm2IrqLevel = (interruptLevelControlRegister >> 4) & 0x0007;
       if(intLevel < pwm2IrqLevel)
          intLevel = pwm2IrqLevel;
       reenablePllIfOff = true;
    }
 
    if(activeInterrupts & INT_UART2){
-      uint32_t uart2IrqLevel = (interruptLevelControlRegister >> 8) & 0x0007;
+      uint8_t uart2IrqLevel = (interruptLevelControlRegister >> 8) & 0x0007;
       if(intLevel < uart2IrqLevel)
          intLevel = uart2IrqLevel;
       reenablePllIfOff = true;
@@ -267,7 +171,7 @@ void checkInterrupts(){
 
    if(activeInterrupts & INT_TMR2){
       //TMR2 - Timer 2
-      uint32_t timer2IrqLevel = interruptLevelControlRegister & 0x0007;
+      uint8_t timer2IrqLevel = interruptLevelControlRegister & 0x0007;
       if(intLevel < timer2IrqLevel)
          intLevel = timer2IrqLevel;
       reenablePllIfOff = true;
@@ -325,57 +229,7 @@ void checkInterrupts(){
    m68k_set_irq(intLevel);//should be called even if intLevel is 0, that is how the interrupt state gets cleared
 }
 
-static inline uint8_t getPortDValue(){
-   uint8_t requestedRow = registerArrayRead8(PKDIR) & registerArrayRead8(PKDATA);//keys are requested on port k and read on port d
-   uint8_t portDValue = 0x00;//ports always read the chip pins even if they are set to output
-   uint8_t portDData = registerArrayRead8(PDDATA);
-   uint8_t portDDir = registerArrayRead8(PDDIR);
-   uint8_t portDPolarity = registerArrayRead8(PDPOL);
-   
-   portDValue |= 0x80/*battery not dead bit*/;
-   
-   if(!palmSdCard.inserted){
-      portDValue |= 0x20;
-   }
-   
-   if((requestedRow & 0x20) == 0){
-      //kbd row 0, pins are 0 when button pressed and 1 when released, Palm OS then uses PDPOL to swap back to pressed == 1
-      portDValue |= !palmInput.buttonCalender | !palmInput.buttonAddress << 1 | !palmInput.buttonTodo << 2 | !palmInput.buttonNotes << 3;
-   }
-   
-   if((requestedRow & 0x40) == 0){
-      //kbd row 1, pins are 0 when button pressed and 1 when released, Palm OS then uses PDPOL to swap back to pressed == 1
-      portDValue |= !palmInput.buttonUp | !palmInput.buttonDown << 1;
-   }
-   
-   if((requestedRow & 0x80) == 0){
-      //kbd row 2, pins are 0 when button pressed and 1 when released, Palm OS then uses PDPOL to swap back to pressed == 1
-      portDValue |= !palmInput.buttonPower | !palmInput.buttonContrast << 1 | !palmInput.buttonAddress << 3;
-   }
-
-   portDValue |= 0x50;//floating pins are high
-   portDValue ^= portDPolarity;//only input polarity is affected by PDPOL
-   portDValue &= ~portDDir;//only use above pin values for inputs
-   portDValue |= portDData & portDDir;//if a pin is an output and has its data bit set return that too
-   
-   return portDValue;
-}
-
-static inline uint8_t getPortKValue(){
-   uint8_t portKValue = 0x00;//ports always read the chip pins even if they are set to output
-   uint8_t portKData = registerArrayRead8(PKDATA);
-   uint8_t portKDir = registerArrayRead8(PKDIR);
-   uint8_t portKSel = registerArrayRead8(PKSEL);
-
-   portKValue |= !palmMisc.inDock << 2;
-   portKValue |= 0xFB;//floating pins are high
-   portKValue &= ~portKDir & portKSel;
-   portKValue |= portKData & portKDir & portKSel;
-
-   return portKValue;
-}
-
-static inline void checkPortDInts(){
+void checkPortDInterrupts(){
    uint8_t portDValue = getPortDValue();
    uint8_t portDDir = registerArrayRead8(PDDIR);
    uint8_t portDIntEnable = registerArrayRead8(PDIRQEN);
@@ -445,414 +299,14 @@ static inline void updateVibratorStatus(){
       palmMisc.vibratorOn = false;
 }
 
-static inline void setPllfsr16(uint16_t value){
-   uint16_t oldPllfsr = registerArrayRead16(PLLFSR);
-   if(!(oldPllfsr & 0x4000)){
-      //frequency protect bit not set
-      registerArrayWrite16(PLLFSR, (value & 0x4FFF) | (oldPllfsr & 0x8000));//preserve CLK32 bit
-      double prescaler1 = (registerArrayRead16(PLLCR) & 0x0080) ? 2.0 : 1.0;
-      double p = value & 0x00FF;
-      double q = (value & 0x0F00) >> 8;
-      palmCrystalCycles = 2.0 * (14.0 * (p + 1.0) + q + 1.0) / prescaler1;
-      debugLog("New CPU frequency of:%f cycles per second.\n", CPU_FREQUENCY);
-      debugLog("New CLK32 cycle count of:%f.\n", palmCrystalCycles);
-   }
-}
-
-static inline void setPllcr(uint16_t value){
-   //values that matter are disable PLL, prescaler 1 and possibly wakeselect
-   registerArrayWrite16(PLLCR, value & 0x3FBB);
-   uint16_t pllfsr = registerArrayRead16(PLLFSR);
-   double prescaler1 = (value & 0x0080) ? 2.0 : 1.0;
-   double p = pllfsr & 0x00FF;
-   double q = (pllfsr & 0x0F00) >> 8;
-   palmCrystalCycles = 2.0 * (14.0 * (p + 1.0) + q + 1.0) / prescaler1;
-   debugLog("New CPU frequency of:%f cycles per second.\n", CPU_FREQUENCY);
-   debugLog("New CLK32 cycle count of:%f.\n", palmCrystalCycles);
-   
-   if(value & 0x0008){
-      //The PLL shuts down 30 clock cycles of SYSCLK after the DISPLL bit is set in the PLLCR
-      m68k_modify_timeslice(-m68k_cycles_remaining() + 30);
-      debugLog("Disable PLL set, CPU off in 30 cycles!\n");
-   }
-}
-
-static inline void setScr(uint8_t value){
-   uint8_t oldScr = registerArrayRead8(SCR);
-   uint8_t newScr = value;
-
-   //preserve privilege violation, write protect violation and bus error timeout
-   newScr |= oldScr & 0xE0;
-
-   //clear violations on writing 1 to them
-   newScr &= ~(oldScr & value & 0xE0);
-
-   chips[CHIP_REGISTERS].supervisorOnlyProtectedMemory = CAST_TO_BOOL(value & 0x08);
-
-   registerArrayWrite8(SCR, newScr);//must be written before calling setRegisterFFFFAccessMode
-   if((newScr & 0x04) != (oldScr & 0x04)){
-      if(newScr & 0x04)
-         setRegisterXXFFAccessMode();
-      else
-         setRegisterFFFFAccessMode();
-   }
-}
-
-static inline double dmaclksPerClk32(){
-   uint16_t pllcr = registerArrayRead16(PLLCR);
-   double   dmaclks = palmCrystalCycles;
-   
-   if(pllcr & 0x0080){
-      //prescaler 1 enabled, divide by 2
-      dmaclks /= 2.0;
-   }
-   
-   if(pllcr & 0x0020){
-      //prescaler 2 enabled, divides value from prescaler 1 by 2
-      dmaclks /= 2.0;
-   }
-   
-   return dmaclks;
-}
-
-static inline double sysclksPerClk32(){
-   uint16_t pllcr = registerArrayRead16(PLLCR);
-   double   sysclks = dmaclksPerClk32();
-   uint16_t sysclkSelect = (pllcr >> 8) & 0x0003;
-   
-   switch(sysclkSelect){
-         
-      case 0x0000:
-         sysclks /= 2.0;
-         break;
-         
-      case 0x0001:
-         sysclks /= 4.0;
-         break;
-         
-      case 0x0002:
-         sysclks /= 8.0;
-         break;
-         
-      case 0x0003:
-         sysclks /= 16.0;
-         break;
-         
-      default:
-         //no divide for 0x0004, 0x0005, 0x0006 or 0x0007
-         break;
-   }
-   
-   return sysclks;
-}
-
-static inline void rtiInterruptClk32(){
-   //this function is part of clk32();
-   uint16_t triggeredRtiInterrupts = 0;
-   
-   if(clk32Counter % ((uint32_t)CRYSTAL_FREQUENCY / 512) == 0){
-      //RIS7 - 512HZ
-      triggeredRtiInterrupts |= 0x8000;
-   }
-   if(clk32Counter % ((uint32_t)CRYSTAL_FREQUENCY / 256) == 0){
-      //RIS6 - 256HZ
-      triggeredRtiInterrupts |= 0x4000;
-   }
-   if(clk32Counter % ((uint32_t)CRYSTAL_FREQUENCY / 128) == 0){
-      //RIS5 - 128HZ
-      triggeredRtiInterrupts |= 0x2000;
-   }
-   if(clk32Counter % ((uint32_t)CRYSTAL_FREQUENCY / 64) == 0){
-      //RIS4 - 64HZ
-      triggeredRtiInterrupts |= 0x1000;
-   }
-   if(clk32Counter % ((uint32_t)CRYSTAL_FREQUENCY / 32) == 0){
-      //RIS3 - 32HZ
-      triggeredRtiInterrupts |= 0x0800;
-   }
-   if(clk32Counter % ((uint32_t)CRYSTAL_FREQUENCY / 16) == 0){
-      //RIS2 - 16HZ
-      triggeredRtiInterrupts |= 0x0400;
-   }
-   if(clk32Counter % ((uint32_t)CRYSTAL_FREQUENCY / 8) == 0){
-      //RIS1 - 8HZ
-      triggeredRtiInterrupts |= 0x0200;
-   }
-   if(clk32Counter % ((uint32_t)CRYSTAL_FREQUENCY / 4) == 0){
-      //RIS0 - 4HZ
-      triggeredRtiInterrupts |= 0x0100;
-   }
-   
-   triggeredRtiInterrupts &= registerArrayRead16(RTCIENR);
-   if(triggeredRtiInterrupts){
-      registerArrayWrite16(RTCISR, registerArrayRead16(RTCISR) | triggeredRtiInterrupts);
-      setIprIsrBit(INT_RTI);
-   }
-}
-
-static inline void timer12Clk32(){
-   //this function is part of clk32();
-   uint16_t timer1Control = registerArrayRead16(TCTL1);
-   uint16_t timer1Prescaler = registerArrayRead16(TPRER1) & 0x00FF;
-   uint16_t timer1Compare = registerArrayRead16(TCMP1);
-   uint16_t timer1OldCount = registerArrayRead16(TCN1);
-   uint16_t timer1Count = timer1OldCount;
-   
-   uint16_t timer2Control = registerArrayRead16(TCTL2);
-   uint16_t timer2Prescaler = registerArrayRead16(TPRER2) & 0x00FF;
-   uint16_t timer2Compare = registerArrayRead16(TCMP2);
-   uint16_t timer2OldCount = registerArrayRead16(TCN2);
-   uint16_t timer2Count = timer2OldCount;
-   
-   //timer 1
-   if(timer1Control & 0x0001){
-      //enabled
-      switch((timer1Control & 0x000E) >> 1){
-            
-         case 0x0000://stop counter
-         case 0x0003://TIN pin / timer prescaler, nothing is attached to TIN
-            //do nothing
-            break;
-            
-         case 0x0001://SYSCLK / timer prescaler
-            if(pllOn())
-               timer1CycleCounter += sysclksPerClk32() / (double)timer1Prescaler;
-            break;
-            
-         case 0x0002://SYSCLK / 16 / timer prescaler
-            if(pllOn())
-               timer1CycleCounter += sysclksPerClk32() / 16.0 / (double)timer1Prescaler;
-            break;
-            
-         default://CLK32 / timer prescaler
-            timer1CycleCounter += 1.0 / (double)timer1Prescaler;
-            break;
-      }
-      
-      if(timer1CycleCounter >= 1.0){
-         timer1Count += (uint16_t)timer1CycleCounter;
-         timer1CycleCounter -= (uint16_t)timer1CycleCounter;
-      }
-      
-      if(timer1OldCount < timer1Compare && timer1Count >= timer1Compare){
-         //the timer is not cycle accurate and may not hit the value in the compare register perfectly so check if it would have during in the emulated time
-         if(timer1Control & 0x0010){
-            //interrupt enabled
-            setIprIsrBit(INT_TMR1);
-         }
-         
-         if(!(timer1Control & 0x0100)){
-            //not free running, reset to 0, to prevent loss of ticks after compare event just subtract timerXCompare
-            timer1Count -= timer1Compare;
-         }
-      }
-      
-      registerArrayWrite16(TCN1, timer1Count);
-   }
-   
-   //timer 2
-   if(timer2Control & 0x0001){
-      //enabled
-      switch((timer2Control & 0x000E) >> 1){
-            
-         case 0x0000://stop counter
-         case 0x0003://TIN pin / timer prescaler, nothing is attached to TIN
-            //do nothing
-            break;
-            
-         case 0x0001://SYSCLK / timer prescaler
-            if(pllOn())
-               timer2CycleCounter += sysclksPerClk32() / (double)timer2Prescaler;
-            break;
-            
-         case 0x0002://SYSCLK / 16 / timer prescaler
-            if(pllOn())
-               timer2CycleCounter += sysclksPerClk32() / 16.0 / (double)timer2Prescaler;
-            break;
-            
-         default://CLK32 / timer prescaler
-            timer2CycleCounter += 1.0 / (double)timer2Prescaler;
-            break;
-      }
-      
-      if(timer2CycleCounter >= 1.0){
-         timer2Count += (uint16_t)timer2CycleCounter;
-         timer2CycleCounter -= (uint16_t)timer2CycleCounter;
-      }
-      
-      if(timer2OldCount < timer2Compare && timer2Count >= timer2Compare){
-         //the timer is not cycle accurate and may not hit the value in the compare register perfectly so check if it would have during in the emulated time
-         if(timer2Control & 0x0010){
-            //interrupt enabled
-            setIprIsrBit(INT_TMR2);
-         }
-         
-         if(!(timer2Control & 0x0100)){
-            //not free running, reset to 0, to prevent loss of ticks after compare event just subtract timerXCompare
-            timer2Count -= timer2Compare;
-         }
-      }
-      
-      registerArrayWrite16(TCN2, timer2Count);
-   }
-}
-
-static inline void rtcAddSecondClk32(){
-   //this function is part of clk32();
-   
-   //rtc
-   if(registerArrayRead16(RTCCTL) & 0x0080){
-      //rtc enable bit set
-      uint16_t rtcInterruptEvents;
-      uint32_t newRtcTime;
-      uint32_t oldRtcTime = registerArrayRead32(RTCTIME);
-      uint32_t hours = oldRtcTime >> 24;
-      uint32_t minutes = (oldRtcTime >> 16) & 0x0000003F;
-      uint32_t seconds = oldRtcTime & 0x0000003F;
-      
-      seconds++;
-      rtcInterruptEvents = 0x0010;//1 second interrupt
-      if(seconds >= 60){
-         minutes++;
-         seconds = 0;
-         rtcInterruptEvents |= 0x0002;//1 minute interrupt
-         if(minutes >= 60){
-            hours++;
-            minutes = 0;
-            rtcInterruptEvents |= 0x0020;//1 hour interrupt
-            if(hours >= 24){
-               hours = 0;
-               uint16_t days = registerArrayRead16(DAYR);
-               days++;
-               registerArrayWrite16(DAYR, days & 0x01FF);
-               rtcInterruptEvents |= 0x0008;//1 day interrupt
-            }
-         }
-      }
-      
-      rtcInterruptEvents &= registerArrayRead16(RTCIENR);
-      if(rtcInterruptEvents){
-         registerArrayWrite16(RTCISR, registerArrayRead16(RTCISR) | rtcInterruptEvents);
-         setIprIsrBit(INT_RTC);
-      }
-      
-      newRtcTime = seconds & 0x0000003F;
-      newRtcTime |= minutes << 16;
-      newRtcTime |= hours << 24;
-      registerArrayWrite32(RTCTIME, newRtcTime);
-   }
-   
-   //watchdog
-   uint16_t watchdogState = registerArrayRead16(WATCHDOG);
-   if(watchdogState & 0x0001){
-      //watchdog enabled
-      watchdogState += 0x0100;//add second to watchdog timer
-      watchdogState &= 0x0383;//cap overflow
-      if((watchdogState & 0x0200) == 0x0200){
-         //time expired
-         if(watchdogState & 0x0002){
-            //interrupt
-            setIprIsrBit(INT_WDT);
-         }
-         else{
-            //reset
-            emulatorReset();
-            return;
-         }
-      }
-      registerArrayWrite16(WATCHDOG, watchdogState);
-   }
-}
-
-void clk32(){
-   registerArrayWrite16(PLLFSR, registerArrayRead16(PLLFSR) ^ 0x8000);
-
-   //second position counter
-   if(clk32Counter >= CRYSTAL_FREQUENCY - 1){
-      clk32Counter = 0;
-      rtcAddSecondClk32();
+void printUnknownHwAccess(unsigned int address, unsigned int value, unsigned int size, bool isWrite){
+   if(isWrite){
+      debugLog("CPU wrote %d bits of 0x%08X to register 0x%04X, PC 0x%08X.\n", size, value, address, m68k_get_reg(NULL, M68K_REG_PC));
    }
    else{
-      clk32Counter++;
+      debugLog("CPU read %d bits from register 0x%04X, PC 0x%08X.\n", size, address, m68k_get_reg(NULL, M68K_REG_PC));
    }
-
-   //PLLCR wake select wait
-   if(pllWakeWait != -1){
-      if(pllWakeWait == 0){
-         //reenable PLL and CPU
-         registerArrayWrite16(PLLCR, registerArrayRead16(PLLCR) & 0xFFF7);
-         debugLog("PLL reenabled, CPU is on!\n");
-      }
-      pllWakeWait--;
-   }
-   
-   rtiInterruptClk32();
-   timer12Clk32();
-   
-   checkInterrupts();
 }
-
-bool cpuIsOn(){
-   return pllOn() && !lowPowerStopActive;
-}
-
-bool registersAreXXFFMapped(){
-   return CAST_TO_BOOL(registerArrayRead8(SCR) & 0x04);
-}
-
-bool sed1376ClockConnected(){
-   //this is the clock output pin for the SED1376, if its disabled so is the LCD controller
-   return !CAST_TO_BOOL(registerArrayRead8(PFSEL) & 0x04);
-}
-
-void refreshButtonState(){
-   checkPortDInts();
-}
-
-void setBusErrorTimeOut(){
-   uint8_t scr = registerArrayRead8(SCR);
-   debugLog("Bus error timeout, PC:0x%08X\n", m68k_get_reg(NULL, M68K_REG_PC));
-   if(scr & 0x10){
-      //trigger bus error interrupt
-   }
-   registerArrayWrite8(SCR, scr | 0x80);
-}
-
-void setWriteProtectViolation(){
-   uint8_t scr = registerArrayRead8(SCR);
-   debugLog("Write protect violation, PC:0x%08X\n", m68k_get_reg(NULL, M68K_REG_PC));
-   if(scr & 0x10){
-      //trigger bus error interrupt
-   }
-   registerArrayWrite8(SCR, scr | 0x40);
-}
-
-void setPrivilegeViolation(){
-   uint8_t scr = registerArrayRead8(SCR);
-   debugLog("Privilege violation, PC:0x%08X\n", m68k_get_reg(NULL, M68K_REG_PC));
-   if(scr & 0x10){
-      //trigger bus error interrupt
-   }
-   registerArrayWrite8(SCR, scr | 0x20);
-}
-
-int interruptAcknowledge(int intLevel){
-   int vectorOffset = registerArrayRead8(IVR);
-   int vector;
-   
-   //If an interrupt occurs before the IVR has been programmed, the interrupt vector number 0x0F is returned to the CPU as an uninitialized interrupt.
-   if(!vectorOffset)
-      vector = 15/*EXCEPTION_UNINITIALIZED_INTERRUPT*/;
-   else
-      vector = vectorOffset | intLevel;
-
-   lowPowerStopActive = false;
-   
-   //the interrupt should only be cleared after its been handled
-   
-   return vector;
-}
-
 
 unsigned int getHwRegister8(unsigned int address){
    if((address & 0x0000F000) != 0x0000F000){
@@ -968,6 +422,7 @@ unsigned int getHwRegister16(unsigned int address){
       case RTCISR:
       case RTCCTL:
       case RTCIENR:
+      case ILCR:
          //simple read, no actions needed
          return registerArrayRead16(address);
          
@@ -1050,7 +505,7 @@ void setHwRegister8(unsigned int address, unsigned int value){
       case PDSEL:
          //write without the bottom 4 bits
          registerArrayWrite8(address, value & 0xF0);
-         checkPortDInts();
+         checkPortDInterrupts();
          break;
 
       case PDPOL:
@@ -1058,7 +513,7 @@ void setHwRegister8(unsigned int address, unsigned int value){
       case PDIRQEG:
          //write without the top 4 bits
          registerArrayWrite8(address, value & 0x0F);
-         checkPortDInts();
+         checkPortDInterrupts();
          break;
          
       case PFSEL:
@@ -1070,7 +525,7 @@ void setHwRegister8(unsigned int address, unsigned int value){
       case PGSEL:
       case PGDIR:
       case PGDATA:
-         //port g also does spi stuff, unemulated so far
+         //port g also does SPI stuff, unemulated so far
          //write without the top 2 bits
          registerArrayWrite8(address, value & 0x3F);
          break;
@@ -1079,10 +534,9 @@ void setHwRegister8(unsigned int address, unsigned int value){
       case PKDIR:
       case PKDATA:
          registerArrayWrite8(address, value);
-         checkPortDInts();
+         checkPortDInterrupts();
          updateVibratorStatus();
          break;
-         
       
       case PMSEL:
       case PMDIR:
@@ -1211,6 +665,10 @@ void setHwRegister16(unsigned int address, unsigned int value){
       case ICR:
          //missing bottom 7 bits
          registerArrayWrite16(address, value & 0xFF80);
+         break;
+
+      case ILCR:
+         setIlcr(value);
          break;
          
       case DRAMC:

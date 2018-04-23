@@ -117,7 +117,7 @@ static void invalidBehaviorCheck(){
    strcpy(disassemblyBuffer[LOGGED_OPCODES - 1], opcodeName);
 
    if(invalidInstruction || invalidBank || (instruction == 0x0000 && lastProgramCounter != 0x00000000)){
-      //0x0000 is "ori.b #$0, D0", effectivly NOP but still a valid opcode
+      //0x0000 is "ori.b #$IMM, D0", effectivly NOP if the post op byte is 0x00 but still a valid opcode
       //usualy never encountered unless executing empty address space, so it still triggers debug abort
       m68k_end_timeslice();
       invalidBehaviorAbort = true;
@@ -521,7 +521,7 @@ uint32_t emulatorInstallPrcPdb(uint8_t* data, uint32_t size){
 void emulateFrame(){
    refreshButtonState();
    while(palmCycleCounter < CPU_FREQUENCY / EMU_FPS){
-      if(cpuIsOn())
+      if(pllIsOn() && !lowPowerStopActive)
          palmCycleCounter += m68k_execute(palmCrystalCycles * palmClockMultiplier) / palmClockMultiplier;//normaly 33mhz / 60fps
       else
          palmCycleCounter += palmCrystalCycles;
@@ -529,7 +529,9 @@ void emulateFrame(){
    }
    palmCycleCounter -= CPU_FREQUENCY / EMU_FPS;
 
-   memcpy(palmFramebuffer, sed1376Framebuffer, 160 * 160 * sizeof(uint16_t));
+   sed1376Render();
+
+   //memcpy(palmFramebuffer, sed1376Framebuffer, 160 * 160 * sizeof(uint16_t));
 
    //debugLog("Ran frame, executed %f cycles.\n", palmCycleCounter + CPU_FREQUENCY / EMU_FPS);
 }
@@ -540,7 +542,7 @@ bool emulateUntilDebugEventOrFrameEnd(){
 
    refreshButtonState();
    while(palmCycleCounter < CPU_FREQUENCY / EMU_FPS){
-      if(cpuIsOn())
+      if(pllIsOn() && !lowPowerStopActive)
          palmCycleCounter += m68k_execute(palmCrystalCycles * palmClockMultiplier) / palmClockMultiplier;//normaly 33mhz / 60fps
       else
          palmCycleCounter += palmCrystalCycles;
@@ -549,6 +551,8 @@ bool emulateUntilDebugEventOrFrameEnd(){
          break;
    }
    palmCycleCounter -= CPU_FREQUENCY / EMU_FPS;
+
+   sed1376Render();
 
    return invalidBehaviorAbort;
 #else

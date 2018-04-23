@@ -74,11 +74,11 @@ void setHwRegister32(unsigned int address, unsigned int value);
 void clk32();//also checks all interrupts
 
 //CPU
-bool cpuIsOn();
-int  interruptAcknowledge(int intLevel);
+bool pllIsOn();
 bool registersAreXXFFMapped();
 bool sed1376ClockConnected();
 void refreshButtonState();
+int  interruptAcknowledge(int intLevel);
 
 //memory errors
 void setBusErrorTimeOut();

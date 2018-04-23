@@ -13,6 +13,9 @@
 #define TOTAL_MEMORY_BANKS (1 << (32 - BANK_SCOOT))//0x40000 banks for BANK_SCOOT = 14
 
 //chip addresses and sizes
+//after boot RAM is at 0x00000000,
+//ROM is at 0x10000000
+//and the SED1376 is at 0x1FF80000(+ 0x20000 for framebuffer)
 #define REG_START_ADDRESS 0xFFFFF000
 #define SUPERMASSIVE_RAM_SIZE (128 * 0x100000)//128mb RAM
 #define RAM_SIZE (16 * 0x100000)//16mb RAM
