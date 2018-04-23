@@ -19,9 +19,6 @@
   <property name="windowTitle">
    <string>Hex Viewer</string>
   </property>
-  <property name="windowOpacity">
-   <double>-1.000000000000000</double>
-  </property>
   <property name="layoutDirection">
    <enum>Qt::LeftToRight</enum>
   </property>
