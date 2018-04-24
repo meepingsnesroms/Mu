@@ -150,35 +150,12 @@ static inline void setCsctrl1(uint16_t value){
 
 //csctrl 2 and 3 only deal with timing and bus transfer size
 
-static inline void setPllfsr16(uint16_t value){
+static inline void setPllfsr(uint16_t value){
    uint16_t oldPllfsr = registerArrayRead16(PLLFSR);
    if(!(oldPllfsr & 0x4000)){
       //frequency protect bit not set
       registerArrayWrite16(PLLFSR, (value & 0x4FFF) | (oldPllfsr & 0x8000));//preserve CLK32 bit
-      double prescaler1 = (registerArrayRead16(PLLCR) & 0x0080) ? 2.0 : 1.0;
-      double p = value & 0x00FF;
-      double q = (value & 0x0F00) >> 8;
-      palmCrystalCycles = 2.0 * (14.0 * (p + 1.0) + q + 1.0) / prescaler1;
-      debugLog("New CPU frequency of:%f cycles per second.\n", CPU_FREQUENCY);
-      debugLog("New CLK32 cycle count of:%f.\n", palmCrystalCycles);
-   }
-}
-
-static inline void setPllcr(uint16_t value){
-   //values that matter are disable PLL, prescaler 1 and possibly wakeselect
-   registerArrayWrite16(PLLCR, value & 0x3FBB);
-   uint16_t pllfsr = registerArrayRead16(PLLFSR);
-   double prescaler1 = (value & 0x0080) ? 2.0 : 1.0;
-   double p = pllfsr & 0x00FF;
-   double q = (pllfsr & 0x0F00) >> 8;
-   palmCrystalCycles = 2.0 * (14.0 * (p + 1.0) + q + 1.0) / prescaler1;
-   debugLog("New CPU frequency of:%f cycles per second.\n", CPU_FREQUENCY);
-   debugLog("New CLK32 cycle count of:%f.\n", palmCrystalCycles);
-
-   if(value & 0x0008){
-      //The PLL shuts down 30 clock cycles of SYSCLK after the DISPLL bit is set in the PLLCR
-      m68k_modify_timeslice(-m68k_cycles_remaining() + 30);
-      debugLog("Disable PLL set, CPU off in 30 cycles!\n");
+      recalculateCpuSpeed();
    }
 }
 

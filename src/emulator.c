@@ -187,7 +187,6 @@ void emulatorInit(uint8_t* palmRomDump, uint8_t* palmBootDump, uint32_t specialF
 #endif
    resetHwRegisters();
    lowPowerStopActive = false;
-   palmCrystalCycles = 2.0 * (14.0 * (71.0/*p*/ + 1.0) + 3.0/*q*/ + 1.0) / 2.0/*prescaler1*/;
    palmCycleCounter = 0.0;
    
    //memory

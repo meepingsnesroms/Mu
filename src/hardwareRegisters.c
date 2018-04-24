@@ -19,8 +19,9 @@ double   timer2CycleCounter;
 
 
 bool pllIsOn();
-void checkInterrupts();
-void checkPortDInterrupts();
+static void checkInterrupts();
+static void checkPortDInterrupts();
+static void recalculateCpuSpeed();
 
 #include "hardwareRegistersAccessors.c.h"
 #include "hardwareRegistersTiming.c.h"
@@ -53,6 +54,8 @@ int interruptAcknowledge(int intLevel){
       vector = vectorOffset | intLevel;
 
    lowPowerStopActive = false;
+   registerArrayWrite8(PCTLR, registerArrayRead8(PCTLR) & 0x1F);
+   recalculateCpuSpeed();
 
    //the interrupt should only be cleared after its been handled
 
@@ -86,6 +89,22 @@ void setPrivilegeViolation(){
    registerArrayWrite8(SCR, scr | 0x20);
 }
 
+static void recalculateCpuSpeed(){
+   uint16_t pllfsr = registerArrayRead16(PLLFSR);
+   uint8_t pctlr = registerArrayRead8(PCTLR);
+   double prescaler1 = (registerArrayRead16(PLLCR) & 0x0080) ? 2.0 : 1.0;
+   double p = pllfsr & 0x00FF;
+   double q = (pllfsr & 0x0F00) >> 8;
+   double newCpuSpeed = 2.0 * (14.0 * (p + 1.0) + q + 1.0) / prescaler1;
+
+   if(pctlr & 0x80)
+      newCpuSpeed *= (double)(pctlr & 0x1F) / 31.0;
+
+   debugLog("New CPU frequency of:%f cycles per second.\n", newCpuSpeed * CRYSTAL_FREQUENCY);
+   debugLog("New CLK32 cycle count of:%f.\n", newCpuSpeed);
+   palmCrystalCycles = newCpuSpeed;
+}
+
 static inline void pllWakeCpuIfOff(){
    uint16_t pllcr = registerArrayRead16(PLLCR);
    if(!pllIsOn() && pllWakeWait == -1){
@@ -111,7 +130,7 @@ static inline void pllWakeCpuIfOff(){
    }
 }
 
-void checkInterrupts(){
+static void checkInterrupts(){
    uint32_t activeInterrupts = registerArrayRead32(ISR);
    uint16_t interruptLevelControlRegister = registerArrayRead16(ILCR);
    uint16_t portDEdgeSelect = registerArrayRead16(PDIRQEG);
@@ -229,7 +248,7 @@ void checkInterrupts(){
    m68k_set_irq(intLevel);//should be called even if intLevel is 0, that is how the interrupt state gets cleared
 }
 
-void checkPortDInterrupts(){
+static void checkPortDInterrupts(){
    uint8_t portDValue = getPortDValue();
    uint8_t portDDir = registerArrayRead8(PDDIR);
    uint8_t portDIntEnable = registerArrayRead8(PDIRQEN);
@@ -489,6 +508,11 @@ void setHwRegister8(unsigned int address, unsigned int value){
       case SCR:
          setScr(value);
          break;
+
+      case PCTLR:
+         registerArrayWrite8(address, value & 0x9F);
+         recalculateCpuSpeed();
+         break;
          
       case IVR:
          //write without the bottom 3 bits
@@ -658,11 +682,19 @@ void setHwRegister16(unsigned int address, unsigned int value){
          break;
          
       case PLLFSR:
-         setPllfsr16(value);
+         setPllfsr(value);
          break;
          
       case PLLCR:
-         setPllcr(value);
+         //values that matter are disable PLL, prescaler 1 and wakeselect
+         registerArrayWrite16(PLLCR, value & 0x3FBB);
+         recalculateCpuSpeed();
+
+         if(value & 0x0008){
+            //The PLL shuts down 30 clock cycles of SYSCLK after the DISPLL bit is set in the PLLCR
+            m68k_modify_timeslice(-m68k_cycles_remaining() + 30);
+            debugLog("Disable PLL set, CPU off in 30 cycles!\n");
+         }
          break;
          
       case ICR:
@@ -937,6 +969,8 @@ void resetHwRegisters(){
    //add register settings to misc I/O
    updateAlarmLedStatus();
    updateVibratorStatus();
+
+   recalculateCpuSpeed();
 }
 
 void setRtc(uint32_t days, uint32_t hours, uint32_t minutes, uint32_t seconds){

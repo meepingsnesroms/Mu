@@ -296,8 +296,8 @@ void sed1376Render(){
             for(uint16_t pixelX = 0; pixelX < 160; pixelX++)
                palmFramebuffer[pixelY * 160 + pixelX] = renderPixel(pixelX, pixelY);
 
-         //debugLog("Screen start address:0x%08X, buffer width:%d, swivel view:%d degrees\n", screenStartAddress, lineSize, rotation);
-         //debugLog("Screen format, color:%s, BPP:%d\n", color ? "true" : "false", bitDepth);
+         debugLog("Screen start address:0x%08X, buffer width:%d, swivel view:%d degrees\n", screenStartAddress, lineSize, rotation);
+         debugLog("Screen format, color:%s, BPP:%d\n", color ? "true" : "false", bitDepth);
 
          if(pictureInPictureEnabled){
             uint16_t pipStartX = sed1376Registers[PIP_X_START_1] << 8 | sed1376Registers[PIP_X_START_0];
@@ -312,7 +312,7 @@ void sed1376Render(){
                pipStartY *= 32 / bitDepth;
                pipEndY *= 32 / bitDepth;
             }
-            //debugLog("PIP state, start x:%d, end x:%d, start y:%d, end y:%d\n", pipStartX, pipEndX, pipStartY, pipEndY);
+            debugLog("PIP state, start x:%d, end x:%d, start y:%d, end y:%d\n", pipStartX, pipEndX, pipStartY, pipEndY);
             if(pipStartX < 160 && pipStartY < 160){
                pipEndX = pipEndX < 160 ? pipEndX : 160;
                pipEndY = pipEndY < 160 ? pipEndY : 160;
