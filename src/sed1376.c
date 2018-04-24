@@ -308,7 +308,7 @@ void sed1376Render(){
                pipStartY *= 32 / bitDepth;
                pipEndY *= 32 / bitDepth;
             }
-            debugLog("PIP state, start x:%d, end x:%d, start y:%d, end y:%d\n", pipStartX, pipEndX, pipStartY, pipEndY);
+            //debugLog("PIP state, start x:%d, end x:%d, start y:%d, end y:%d\n", pipStartX, pipEndX, pipStartY, pipEndY);
             if(pipStartX < 160 && pipStartY < 160){
                pipEndX = pipEndX < 160 ? pipEndX : 160;
                pipEndY = pipEndY < 160 ? pipEndY : 160;

@@ -2,7 +2,18 @@
 
 #include <stdint.h>
 
+#ifdef INLINE
+#define SKIP_DEF_INLINE INLINE
+#undef INLINE
+#endif
+//libretro common fights with musashi over #define INLINE, include retro_endianness.h without changing INLINE
 #include <retro_endianness.h>
+#ifdef SKIP_DEF_INLINE
+#ifdef INLINE
+#undef INLINE
+#endif
+#define INLINE SKIP_DEF_INLINE
+#endif
 
 //if bool is typedefed to uint8_t and a 0x100 or above value is passed as a bool it will implicit cast to false
 //other systems will just be optimize this out

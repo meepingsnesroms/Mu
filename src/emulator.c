@@ -116,7 +116,7 @@ static void invalidBehaviorCheck(){
    //add to opcode buffer
    strcpy(disassemblyBuffer[LOGGED_OPCODES - 1], opcodeName);
 
-   if(invalidInstruction || invalidBank || (instruction == 0x0000 && lastProgramCounter != 0x00000000)){
+   if(invalidInstruction || invalidBank/* || (instruction == 0x0000 && lastProgramCounter != 0x00000000)*/){
       //0x0000 is "ori.b #$IMM, D0", effectivly NOP if the post op byte is 0x00 but still a valid opcode
       //usualy never encountered unless executing empty address space, so it still triggers debug abort
       m68k_end_timeslice();
