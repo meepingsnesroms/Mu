@@ -60,33 +60,9 @@ static uint16_t get16BppColor(uint16_t x, uint16_t y){
    return sed1376Framebuffer[handlePanelDataSwaps(screenStartAddress + (y * lineSize + x) * 2)] << 8 | sed1376Framebuffer[handlePanelDataSwaps(screenStartAddress + (y * lineSize + x) * 2 + 1)];
 }
 
-static inline void selectRenderer(bool monochrome, uint8_t bpp){
+static inline void selectRenderer(bool color, uint8_t bpp){
    renderPixel = NULL;
-   if(monochrome){
-      switch(bpp){
-
-         case 1:
-            renderPixel = get1BppMonochrome;
-            break;
-
-         case 2:
-            renderPixel = get2BppMonochrome;
-            break;
-
-         case 4:
-            renderPixel = get4BppMonochrome;
-            break;
-
-         case 8:
-            renderPixel = get8BppMonochrome;
-            break;
-
-         case 16:
-            renderPixel = get16BppMonochrome;
-            break;
-      }
-   }
-   else{
+   if(color){
       switch(bpp){
 
          case 1:
@@ -107,6 +83,30 @@ static inline void selectRenderer(bool monochrome, uint8_t bpp){
 
          case 16:
             renderPixel = get16BppColor;
+            break;
+      }
+   }
+   else{
+      switch(bpp){
+
+         case 1:
+            renderPixel = get1BppMonochrome;
+            break;
+
+         case 2:
+            renderPixel = get2BppMonochrome;
+            break;
+
+         case 4:
+            renderPixel = get4BppMonochrome;
+            break;
+
+         case 8:
+            renderPixel = get8BppMonochrome;
+            break;
+
+         case 16:
+            renderPixel = get16BppMonochrome;
             break;
       }
    }

@@ -21,11 +21,11 @@
 
 uint32_t screenWidth;
 uint32_t screenHeight;
+QSettings settings;
 
 static QImage video;
 static QTimer* refreshDisplay;
 static HexViewer* emuStateBrowser;
-static QSettings settings;
 std::mutex emuMutex;
 static std::atomic<bool> emuOn;
 static std::atomic<bool> emuInited;
@@ -55,6 +55,9 @@ MainWindow::MainWindow(QWidget* parent) :
 
    ui->ctrlBtn->setText("Start");
 
+   if(settings.value("resourceDirectory", "").toString() == "")
+      settings.setValue("resourceDirectory", "~/Mu");
+
    emuOn = false;
    emuInited = false;
    screenWidth = 160;
@@ -77,12 +80,12 @@ MainWindow::~MainWindow(){
    delete ui;
 }
 
-void MainWindow::popupErrorDialog(std::string error){
-   QMessageBox::information(this, "Mu", QString::fromStdString(error), QMessageBox::Ok);
+void MainWindow::popupErrorDialog(QString error){
+   QMessageBox::information(this, "Mu", error, QMessageBox::Ok);
 }
 
 bool MainWindow::eventFilter(QObject *object, QEvent *event){
-   if(std::string(object->metaObject()->className()) == "QPushButton" && event->type() == QEvent::Resize){
+   if(QString(object->metaObject()->className()) == "QPushButton" && event->type() == QEvent::Resize){
       QPushButton* button = (QPushButton*)object;
       button->setIconSize(QSize(button->size().width() / 1.7, button->size().height() / 1.7));
    }
@@ -91,10 +94,10 @@ bool MainWindow::eventFilter(QObject *object, QEvent *event){
 }
 
 void MainWindow::loadRom(){
-   std::string rom = settings.value("romPath", "").toString().toStdString();
+   QString rom = settings.value("romPath", "").toString();
    if(rom == ""){
       //keep the selector open until a valid file is picked
-      while(settings.value("romPath", "").toString().toStdString() == "")
+      while(settings.value("romPath", "").toString() == "")
          selectRom();
    }
 
@@ -115,13 +118,13 @@ void MainWindow::loadRom(){
 }
 
 void MainWindow::selectRom(){
-   std::string rom = QFileDialog::getOpenFileName(this, "Palm OS ROM (palmos41-en-m515.rom)", QDir::root().path(), 0).toStdString();
+   QString rom = QFileDialog::getOpenFileName(this, "Palm OS ROM (palmos41-en-m515.rom)", QDir::root().path(), 0);
    uint32_t error;
    size_t size;
    uint8_t* romData = getFileBuffer(rom, size, error);
    if(romData){
       //valid file
-      settings.setValue("romPath", QString::fromStdString(rom));
+      settings.setValue("romPath", rom);
       delete[] romData;
    }
 
@@ -132,7 +135,7 @@ void MainWindow::selectRom(){
 }
 
 void MainWindow::on_install_pressed(){
-   std::string app = QFileDialog::getOpenFileName(this, "Open Prc/Pdb/Pqa", QDir::root().path(), 0).toStdString();
+   QString app = QFileDialog::getOpenFileName(this, "Open Prc/Pdb/Pqa", QDir::root().path(), 0);
    uint32_t error;
    size_t size;
    uint8_t* appData = getFileBuffer(app, size, error);
@@ -269,4 +272,21 @@ void MainWindow::on_hexViewer_clicked(){
    emuStateBrowser->exec();
 
    emuMutex.unlock();
+}
+
+void MainWindow::on_screenshot_clicked(){
+   uint64_t screenshotNumber = settings.value("screenshotNum", 0).toLongLong();
+   QString path = settings.value("resourceDirectory", "").toString();
+   QDir location;
+
+   if(path.startsWith("~/"))
+      path.replace(0, 1, QDir::homePath());
+
+   location = path + "/screenshots";
+   if(!location.exists())
+      location.mkpath(".");
+
+   video.save(path + "/screenshots/" + "screenshot" + QString::number(screenshotNumber, 10) + ".png", NULL, 100);
+   screenshotNumber++;
+   settings.setValue("screenshotNum", screenshotNumber);
 }

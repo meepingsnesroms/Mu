@@ -1,89 +1,75 @@
 #include <QtGlobal>
+#include <QFile>
 
 #include <new>
 #include <string>
 #include <stdint.h>
-#include <ctype.h>
-#include <sys/stat.h>
 
 #include "fileaccess.h"
 
-uint8_t* getFileBuffer(std::string filePath, size_t& size, uint32_t& error){
+uint8_t* getFileBuffer(QString filePath, size_t& size, uint32_t& error){
+   QFile file(filePath);
+   QByteArray tempArray;
    uint8_t* rawData = NULL;
-   if(filePath != ""){
-      struct stat st;
-      int doesntExist = stat(filePath.c_str(), &st);
-      if(doesntExist == 0 && st.st_size){
-         FILE* dataFile = fopen(filePath.c_str(), "rb");
-         if(dataFile != NULL){
-            rawData = new (std::nothrow) uint8_t[st.st_size];
-            if(rawData){
-               size_t bytesRead = fread(rawData, 1, st.st_size, dataFile);
-               if(bytesRead == (size_t)st.st_size){
-                  size = bytesRead;
-                  error = FRONTEND_ERR_NONE;
-               }
-               else{
-                  error = FRONTEND_FILE_UNFINISHED;
-               }
-            }
-            else{
-               error = FRONTEND_OUT_OF_MEMORY;
-            }
-            fclose(dataFile);
-         }
-         else{
-            error = FRONTEND_FILE_PROTECTED;
-         }
-      }
-      else{
-         error = FRONTEND_FILE_DOESNT_EXIST;
-      }
-   }
-   else{
-      error = FRONTEND_FILE_EMPTY_PATH;
-   }
 
-   if(error != FRONTEND_ERR_NONE){
-      if(rawData)
-         delete[] rawData;
-      rawData = NULL;
+   if(filePath == ""){
       size = 0;
+      error = FRONTEND_FILE_EMPTY_PATH;
+      return NULL;
    }
 
+   if(!file.exists()){
+      size = 0;
+      error = FRONTEND_FILE_DOESNT_EXIST;
+      return NULL;
+   }
+
+   if(!file.open(QIODevice::ReadOnly)){
+      size = 0;
+      error = FRONTEND_FILE_PROTECTED;
+      return NULL;
+   }
+
+   tempArray = file.readAll();
+   file.close();
+
+   rawData = new uint8_t[tempArray.size()];
+   memcpy(rawData, tempArray.data(), tempArray.size());
+   size = tempArray.size();
+   error = FRONTEND_ERR_NONE;
    return rawData;
 }
 
-uint32_t setFileBuffer(std::string filePath, uint8_t* data, size_t size){
-   uint32_t error = FRONTEND_ERR_NONE;
-   if(filePath != ""){
-      FILE* dataFile = fopen(filePath.c_str(), "wb");
-      if(dataFile != NULL){
-         size_t bytesWritten = fwrite(data, 1, size, dataFile);
-         if(bytesWritten != size)
-            error = FRONTEND_FILE_UNFINISHED;
-         fclose(dataFile);
-      }
-      else{
-         error = FRONTEND_FILE_PROTECTED;
-      }
-   }
-   else{
-      error = FRONTEND_FILE_EMPTY_PATH;
-   }
-   return error;
+uint32_t setFileBuffer(QString filePath, uint8_t* data, size_t size){
+   QFile file(filePath);
+   size_t bytesWritten;
+
+   if(filePath == "")
+      return FRONTEND_FILE_EMPTY_PATH;
+
+   if(!file.open(QIODevice::WriteOnly))
+      return FRONTEND_FILE_PROTECTED;
+
+   bytesWritten = file.write((const char*)data, size);
+
+   file.close();
+
+   if(bytesWritten != size)
+      return FRONTEND_FILE_UNFINISHED;
+
+   return FRONTEND_ERR_NONE;
 }
 
-bool validFilePath(std::string path){
+bool validFilePath(QString path){
 #ifdef Q_OS_WIN
-   if(path.length() < 3 || !isalpha(path[0]) || path[1] != ':' || (path[2] != '/' && path[2] != '\\'))
+   if(path.length() < 3 || !path[0].isLetter() || path[1] != ':' || (path[2] != '/' && path[2] != '\\'))
       return false;
 #else
    if(path.length() < 1 || path[0] != '/')
       return false;
 #endif
-   for(uint32_t count = 0; count < path.length(); count++){
-      if(!isalnum(path[count]) && !ispunct(path[count]))
+   for(int count = 0; count < path.length(); count++){
+      if(!path[count].isLetterOrNumber() && !path[count].isPunct())
          return false;
    }
    return true;

@@ -2,7 +2,9 @@
 #include "ui_hexviewer.h"
 
 #include <QString>
+#include <QDir>
 
+#include "mainwindow.h"
 #include "fileaccess.h"
 
 extern "C" {
@@ -155,13 +157,23 @@ void HexViewer::on_hexDump_clicked()
    int64_t address = numberFromString(ui->hexAddress->text(), false/*negative allowed*/);
    int64_t length = numberFromString(ui->hexLength->text(), false/*negative allowed*/);
    uint8_t bits = bitsPerEntry;
-   std::string filePath = ui->hexFilePath->text().toStdString();
-   if(validFilePath(filePath) && address != INVALID_NUMBER && length != INVALID_NUMBER && length != 0 && address + bits / 8 * length - 1 <= 0xFFFFFFFF){
+   QString fileName = ui->hexFilePath->text();
+   QString filePath = settings.value("resourceDirectory", "").toString() + "/hexDumps";
+   QDir location = filePath;
+
+   if(filePath.startsWith("~/"))
+      filePath.replace(0, 1, QDir::homePath());
+
+   location = filePath;
+   if(!location.exists())
+      location.mkpath(".");
+
+   if(validFilePath(filePath + "/" + fileName) && address != INVALID_NUMBER && length != INVALID_NUMBER && length != 0 && address + bits / 8 * length - 1 <= 0xFFFFFFFF){
       length *= bits / 8;
       uint8_t* dumpBuffer = new uint8_t[length];
       for(int64_t count = 0; count < length; count++)
          dumpBuffer[count] = getEmulatorMemorySafe(address + count, 8);
-      setFileBuffer(filePath, dumpBuffer, length);
+      setFileBuffer(filePath + "/" + fileName, dumpBuffer, length);
       delete[] dumpBuffer;
    }
 }

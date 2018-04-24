@@ -92,8 +92,8 @@
       </property>
       <widget class="QWidget" name="buttons">
        <layout class="QGridLayout" name="gridLayout">
-        <item row="2" column="4">
-         <widget class="QPushButton" name="center">
+        <item row="0" column="4">
+         <widget class="QPushButton" name="up">
           <property name="sizePolicy">
            <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
             <horstretch>0</horstretch>
@@ -105,12 +105,12 @@
           </property>
           <property name="icon">
            <iconset resource="mainwindow.qrc">
-            <normaloff>:/buttons/images/center.png</normaloff>:/buttons/images/center.png</iconset>
+            <normaloff>:/buttons/images/up.png</normaloff>:/buttons/images/up.png</iconset>
           </property>
          </widget>
         </item>
-        <item row="0" column="8">
-         <widget class="QPushButton" name="ctrlBtn">
+        <item row="0" column="0">
+         <widget class="QPushButton" name="mainLeft">
           <property name="sizePolicy">
            <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
             <horstretch>0</horstretch>
@@ -118,24 +118,7 @@
            </sizepolicy>
           </property>
           <property name="text">
-           <string>ctrl_btn</string>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="5">
-         <widget class="QPushButton" name="right">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="text">
-           <string/>
-          </property>
-          <property name="icon">
-           <iconset resource="mainwindow.qrc">
-            <normaloff>:/buttons/images/right.png</normaloff>:/buttons/images/right.png</iconset>
+           <string>L</string>
           </property>
          </widget>
         </item>
@@ -156,8 +139,8 @@
           </property>
          </widget>
         </item>
-        <item row="5" column="1">
-         <widget class="QPushButton" name="addressBook">
+        <item row="2" column="5">
+         <widget class="QPushButton" name="right">
           <property name="sizePolicy">
            <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
             <horstretch>0</horstretch>
@@ -169,7 +152,24 @@
           </property>
           <property name="icon">
            <iconset resource="mainwindow.qrc">
-            <normaloff>:/buttons/images/addressBook.png</normaloff>:/buttons/images/addressBook.png</iconset>
+            <normaloff>:/buttons/images/right.png</normaloff>:/buttons/images/right.png</iconset>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="2">
+         <widget class="QPushButton" name="left">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="text">
+           <string/>
+          </property>
+          <property name="icon">
+           <iconset resource="mainwindow.qrc">
+            <normaloff>:/buttons/images/left.png</normaloff>:/buttons/images/left.png</iconset>
           </property>
          </widget>
         </item>
@@ -228,8 +228,8 @@
           </property>
          </widget>
         </item>
-        <item row="2" column="2">
-         <widget class="QPushButton" name="left">
+        <item row="5" column="4">
+         <widget class="QPushButton" name="down">
           <property name="sizePolicy">
            <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
             <horstretch>0</horstretch>
@@ -241,7 +241,37 @@
           </property>
           <property name="icon">
            <iconset resource="mainwindow.qrc">
-            <normaloff>:/buttons/images/left.png</normaloff>:/buttons/images/left.png</iconset>
+            <normaloff>:/buttons/images/down.png</normaloff>:/buttons/images/down.png</iconset>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QPushButton" name="mainRight">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="text">
+           <string>R</string>
+          </property>
+         </widget>
+        </item>
+        <item row="5" column="1">
+         <widget class="QPushButton" name="addressBook">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="text">
+           <string/>
+          </property>
+          <property name="icon">
+           <iconset resource="mainwindow.qrc">
+            <normaloff>:/buttons/images/addressBook.png</normaloff>:/buttons/images/addressBook.png</iconset>
           </property>
          </widget>
         </item>
@@ -262,34 +292,8 @@
           </property>
          </widget>
         </item>
-        <item row="0" column="0">
-         <widget class="QPushButton" name="mainLeft">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="text">
-           <string>L</string>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="1">
-         <widget class="QPushButton" name="mainRight">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="text">
-           <string>R</string>
-          </property>
-         </widget>
-        </item>
-        <item row="5" column="4">
-         <widget class="QPushButton" name="down">
+        <item row="2" column="4">
+         <widget class="QPushButton" name="center">
           <property name="sizePolicy">
            <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
             <horstretch>0</horstretch>
@@ -301,12 +305,12 @@
           </property>
           <property name="icon">
            <iconset resource="mainwindow.qrc">
-            <normaloff>:/buttons/images/down.png</normaloff>:/buttons/images/down.png</iconset>
+            <normaloff>:/buttons/images/center.png</normaloff>:/buttons/images/center.png</iconset>
           </property>
          </widget>
         </item>
-        <item row="0" column="4">
-         <widget class="QPushButton" name="up">
+        <item row="0" column="8">
+         <widget class="QPushButton" name="ctrlBtn">
           <property name="sizePolicy">
            <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
             <horstretch>0</horstretch>
@@ -314,11 +318,7 @@
            </sizepolicy>
           </property>
           <property name="text">
-           <string/>
-          </property>
-          <property name="icon">
-           <iconset resource="mainwindow.qrc">
-            <normaloff>:/buttons/images/up.png</normaloff>:/buttons/images/up.png</iconset>
+           <string>ctrl_btn</string>
           </property>
          </widget>
         </item>
@@ -335,6 +335,19 @@
           </property>
           <property name="text">
            <string>HexViewer</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="7">
+         <widget class="QPushButton" name="screenshot">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="text">
+           <string>Screenshot</string>
           </property>
          </widget>
         </item>
