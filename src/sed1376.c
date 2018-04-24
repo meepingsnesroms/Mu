@@ -300,10 +300,17 @@ void sed1376Render(){
             uint16_t pipStartY = sed1376Registers[PIP_Y_START_1] << 8 | sed1376Registers[PIP_Y_START_0];
             uint16_t pipEndX = sed1376Registers[PIP_X_END_1] << 8 | sed1376Registers[PIP_X_END_0];
             uint16_t pipEndY = sed1376Registers[PIP_Y_END_1] << 8 | sed1376Registers[PIP_Y_END_0];
+            if(rotation == 0 || rotation == 180){
+               pipStartX *= 32 / bitDepth;
+               pipEndX *= 32 / bitDepth;
+            }
+            else{
+               pipStartY *= 32 / bitDepth;
+               pipEndY *= 32 / bitDepth;
+            }
             debugLog("PIP state, start x:%d, end x:%d, start y:%d, end y:%d\n", pipStartX, pipEndX, pipStartY, pipEndY);
             if(pipStartX < 160 && pipStartY < 160){
-               //pipEndX = pipEndX < 160 ? pipEndX : 160;
-               pipEndX = 160;
+               pipEndX = pipEndX < 160 ? pipEndX : 160;
                pipEndY = pipEndY < 160 ? pipEndY : 160;
                screenStartAddress = getPipStartAddress();
                lineSize = (sed1376Registers[PIP_LINE_SZ_1] << 8 | sed1376Registers[PIP_LINE_SZ_0]) * 4;
