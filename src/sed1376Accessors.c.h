@@ -10,19 +10,20 @@ static inline uint32_t handlePanelDataSwaps(uint32_t address){
 }
 
 //color conversion
-static inline uint16_t makeRgb16FromRgb666(uint8_t r, uint8_t g, uint8_t b){
-   uint16_t color = r << 10 & 0xF800;
-   color |= g << 5 & 0x07E0;
-   color |= b >> 1 & 0x001F;
+static inline uint16_t makeRgb16FromSed666(uint8_t r, uint8_t g, uint8_t b){
+   uint16_t color = r >> 2 << 10 & 0xF800;
+   color |= g >> 2 << 5 & 0x07E0;
+   color |= b >> 2 >> 1 & 0x001F;
    return color;
 }
-static inline void makeRgb666FromRgb16(uint16_t color, uint8_t* r, uint8_t* g, uint8_t* b){
-   *r = color >> 10 & 0x3E;
-   *g = color >> 5 & 0x3F;
-   *b = color << 1 & 0x3E;
+static inline uint16_t makeRgb16FromGreenComponent(uint16_t g){
+   uint16_t color = g;
+   color |= g >> 6;
+   color |= g << 5 & 0xF1;
+   return color;
 }
 static inline uint16_t lutMonochromeValue(uint8_t lutIndex){
-   return makeRgb16FromRgb666(sed1376GLut[lutIndex], sed1376GLut[lutIndex], sed1376GLut[lutIndex]);
+   return makeRgb16FromSed666(sed1376GLut[lutIndex], sed1376GLut[lutIndex], sed1376GLut[lutIndex]);
 }
 
 //monochrome
@@ -39,8 +40,8 @@ static uint16_t get8BppMonochrome(uint16_t x, uint16_t y){
    return lutMonochromeValue(sed1376Framebuffer[handlePanelDataSwaps(screenStartAddress + y * lineSize + x)]);
 }
 static uint16_t get16BppMonochrome(uint16_t x, uint16_t y){
-   uint16_t pixelValue = (sed1376Framebuffer[handlePanelDataSwaps(screenStartAddress + (y * lineSize + x) * 2)] << 8 | sed1376Framebuffer[handlePanelDataSwaps(screenStartAddress + (y * lineSize + x) * 2 + 1)]) >> 5 & 0x3F;
-   return makeRgb16FromRgb666(pixelValue, pixelValue, pixelValue);
+   uint16_t pixelValue = sed1376Framebuffer[handlePanelDataSwaps(screenStartAddress + (y * lineSize + x) * 2)] << 8 | sed1376Framebuffer[handlePanelDataSwaps(screenStartAddress + (y * lineSize + x) * 2 + 1)];
+   return makeRgb16FromGreenComponent(pixelValue);
 }
 
 //color

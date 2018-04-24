@@ -195,7 +195,8 @@ void sed1376SetRegister(uint8_t address, uint8_t value){
          sed1376Registers[LUT_R_READ] = sed1376RLut[value];
          sed1376Registers[LUT_G_READ] = sed1376GLut[value];
          sed1376Registers[LUT_B_READ] = sed1376BLut[value];
-         sed1376OutputLut[value] = makeRgb16FromRgb666(sed1376RLut[value], sed1376GLut[value], sed1376BLut[value]);
+         debugLog("Writing R:0x%02X, G:0x%02X, B:0x%02X to LUT:0x%02X\n", sed1376RLut[value], sed1376GLut[value], sed1376BLut[value], value);
+         sed1376OutputLut[value] = makeRgb16FromSed666(sed1376RLut[value], sed1376GLut[value], sed1376BLut[value]);
          break;
 
       case LUT_READ_LOC:
@@ -223,6 +224,12 @@ void sed1376SetRegister(uint8_t address, uint8_t value){
          sed1376Registers[address] = value & 0x73;
          break;
 
+      case LUT_R_WRITE:
+      case LUT_G_WRITE:
+      case LUT_B_WRITE:
+         sed1376Registers[address] = value & 0xFC;
+         break;
+
       case SCRATCH_0:
       case SCRATCH_1:
       case DISP_ADDR_0:
@@ -235,9 +242,6 @@ void sed1376SetRegister(uint8_t address, uint8_t value){
       case PIP_X_END_0:
       case PIP_Y_START_0:
       case PIP_Y_END_0:
-      case LUT_R_WRITE:
-      case LUT_G_WRITE:
-      case LUT_B_WRITE:
          //simple write, no actions needed
          sed1376Registers[address] = value;
          break;
@@ -272,7 +276,7 @@ void sed1376Reset(){
 
 void sed1376RefreshLut(){
    for(uint16_t count = 0; count < SED1376_LUT_SIZE; count++)
-      sed1376OutputLut[count] = makeRgb16FromRgb666(sed1376RLut[count], sed1376GLut[count], sed1376BLut[count]);
+      sed1376OutputLut[count] = makeRgb16FromSed666(sed1376RLut[count], sed1376GLut[count], sed1376BLut[count]);
 }
 
 void sed1376Render(){

@@ -111,7 +111,7 @@ ifeq ($(platform), unix)
 	EXT    ?= so
    TARGET := $(TARGET_NAME)_libretro$(PLAT).$(EXT)
 	fpic := -fPIC
-	SHARED := -shared -Wl,--version-script=libretro/link.T
+	SHARED := -shared -Wl,--version-script=build/link.T
 ifneq ($(findstring Haiku,$(shell uname -a)),)
 		LIBM :=
 endif
@@ -121,7 +121,7 @@ else ifeq ($(platform), linux-portable)
 	EXT    ?= so
 	TARGET := $(TARGET_NAME)_libretro.$(EXT)
 	fpic := -fPIC -nostdlib
-	SHARED := -shared -Wl,--version-script=libretro/link.T
+	SHARED := -shared -Wl,--version-script=build/link.T
 	LIBM :=
 
 # OS X
@@ -182,7 +182,7 @@ else ifeq ($(platform), qnx)
 	EXT    ?= so
 	TARGET := $(TARGET_NAME)_libretro_qnx.$(EXT)
 	fpic := -fPIC
-	SHARED := -shared -Wl,--version-script=libretro/link.T
+	SHARED := -shared -Wl,--version-script=build/link.T
 
 	CC = qcc -Vgcc_ntoarmv7le
 	AR = qcc -Vgcc_ntoarmv7le
@@ -266,7 +266,7 @@ else ifeq ($(platform), ctr)
 else ifeq ($(platform), rpi2)
         TARGET := $(TARGET_NAME)_libretro.so
         fpic := -fPIC
-        SHARED := -shared -Wl,--version-script=libretro/link.T -Wl,--no-undefined
+        SHARED := -shared -Wl,--version-script=build/link.T -Wl,--no-undefined
         CFLAGS += -DARM
         CFLAGS += -marm -mcpu=cortex-a7 -mfpu=neon-vfpv4 -mfloat-abi=hard -funsafe-math-optimizations
         CFLAGS += -fomit-frame-pointer -ffast-math
@@ -276,7 +276,7 @@ else ifeq ($(platform), rpi2)
 else ifeq ($(platform), rpi3)
         TARGET := $(TARGET_NAME)_libretro.so
         fpic := -fPIC
-        SHARED := -shared -Wl,--version-script=libretro/link.T -Wl,--no-undefined
+        SHARED := -shared -Wl,--version-script=build/link.T -Wl,--no-undefined
         CFLAGS += -DARM
         CFLAGS += -marm -mcpu=cortex-a53 -mfpu=neon-fp-armv8 -mfloat-abi=hard -funsafe-math-optimizations
         CFLAGS += -fomit-frame-pointer -ffast-math
@@ -366,7 +366,7 @@ else ifeq ($(platform), gcw0)
 	CC = /opt/gcw0-toolchain/usr/bin/mipsel-linux-gcc
 	CXX = /opt/gcw0-toolchain/usr/bin/mipsel-linux-g++
 	AR = /opt/gcw0-toolchain/usr/bin/mipsel-linux-ar
-	SHARED := -shared -Wl,--version-script=libretro/link.T
+	SHARED := -shared -Wl,--version-script=build/link.T
 	fpic := -fPIC
 	CFLAGS += $(PTHREAD_FLAGS)
 	CFLAGS += -ffast-math -march=mips32 -mtune=mips32r2 -mhard-float
@@ -405,7 +405,7 @@ else
 	EXT    ?= dll
 	TARGET := $(TARGET_NAME)_libretro.$(EXT)
 	CC = gcc
-	SHARED := -shared -static-libgcc -static-libstdc++ -s -Wl,--version-script=libretro/link.T
+	SHARED := -shared -static-libgcc -static-libstdc++ -s -Wl,--version-script=build/link.T
 	CFLAGS += -D__WIN32__ -D__WIN32_LIBRETRO__
 
 endif
