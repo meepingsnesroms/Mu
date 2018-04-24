@@ -3,6 +3,8 @@
 
 #include <QString>
 
+#include "fileaccess.h"
+
 extern "C" {
 #include "src/m68k/m68k.h"
 #include "src/hardwareRegisters.h"
@@ -13,7 +15,7 @@ extern "C" {
 #define INVALID_NUMBER (int64_t)0x8000000000000000//the biggest negative 64bit number
 
 
-uint32_t getEmulatorMemorySafe(uint32_t address, uint8_t size){
+int64_t getEmulatorMemorySafe(uint32_t address, uint8_t size){
    //until SPI and UART destructive reads are implemented all reads to mapped addresses are safe
    if(bankType[START_BANK(address)] != CHIP_NONE){
       uint16_t m68kSr = m68k_get_reg(NULL, M68K_REG_SR);
@@ -31,7 +33,7 @@ uint32_t getEmulatorMemorySafe(uint32_t address, uint8_t size){
       }
       m68k_set_reg(M68K_REG_SR, m68kSr);
    }
-   return 0x00000000;
+   return INVALID_NUMBER;
 }
 
 
@@ -116,10 +118,14 @@ void HexViewer::on_hexUpdate_clicked(){
 
    if(address != INVALID_NUMBER && length != INVALID_NUMBER && length != 0 && address + bits / 8 * length - 1 <= 0xFFFFFFFF){
       for(int64_t count = 0; count < length; count++){
+         int64_t data = getEmulatorMemorySafe(address, bits);
          QString value;
          value += stringFromNumber(address, true, 8);
          value += ":";
-         value += stringFromNumber(getEmulatorMemorySafe(address, bits), true, bits / 8 * 2);
+         if(data != INVALID_NUMBER)
+            value += stringFromNumber(data, true, bits / 8 * 2);
+         else
+            value += "Unsafe Access";
          ui->hexValueList->addItem(value);
          address += bits / 8;
       }
@@ -142,4 +148,20 @@ void HexViewer::on_hex16Bit_clicked(){
 void HexViewer::on_hex32Bit_clicked(){
    bitsPerEntry = 32;
    hexRadioButtonHandler();
+}
+
+void HexViewer::on_hexDump_clicked()
+{
+   int64_t address = numberFromString(ui->hexAddress->text(), false/*negative allowed*/);
+   int64_t length = numberFromString(ui->hexLength->text(), false/*negative allowed*/);
+   uint8_t bits = bitsPerEntry;
+   std::string filePath = ui->hexFilePath->text().toStdString();
+   if(validFilePath(filePath) && address != INVALID_NUMBER && length != INVALID_NUMBER && length != 0 && address + bits / 8 * length - 1 <= 0xFFFFFFFF){
+      length *= bits / 8;
+      uint8_t* dumpBuffer = new uint8_t[length];
+      for(int64_t count = 0; count < length; count++)
+         dumpBuffer[count] = getEmulatorMemorySafe(address + count, 8);
+      setFileBuffer(filePath, dumpBuffer, length);
+      delete[] dumpBuffer;
+   }
 }

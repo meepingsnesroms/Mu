@@ -629,11 +629,13 @@ void setHwRegister16(unsigned int address, unsigned int value){
          //this is a 32 bit register but Palm OS writes it as 16 bit chunks
          registerArrayWrite16(IPR, registerArrayRead16(IPR) & ~(value & 0x001F/*external hardware int mask*/));
          registerArrayWrite16(ISR, registerArrayRead16(ISR) & ~(value & 0x001F/*external hardware int mask*/));
+         checkInterrupts();
          break;
       case ISR + 2:
          //this is a 32 bit register but Palm OS writes it as 16 bit chunks
          registerArrayWrite16(IPR + 2, registerArrayRead16(IPR + 2) & ~(value & 0x0F00/*external hardware int mask*/));
          registerArrayWrite16(ISR + 2, registerArrayRead16(ISR + 2) & ~(value & 0x0F00/*external hardware int mask*/));
+         checkInterrupts();
          break;
          
       case TCTL1:
@@ -652,6 +654,7 @@ void setHwRegister16(unsigned int address, unsigned int value){
             clearIprIsrBit(INT_RTI);
          if(!(registerArrayRead16(RTCISR) & 0x003F))
             clearIprIsrBit(INT_RTC);
+         checkInterrupts();
          break;
          
       case PLLFSR:

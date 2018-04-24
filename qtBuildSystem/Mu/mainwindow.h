@@ -7,17 +7,6 @@
 extern uint32_t screenWidth;
 extern uint32_t screenHeight;
 
-enum{
-   FRONTEND_ERR_NONE,
-   FRONTEND_FILE_DOESNT_EXIST,
-   FRONTEND_FILE_EMPTY_PATH,
-   FRONTEND_FILE_UNFINISHED,
-   FRONTEND_FILE_MODIFYED,
-   FRONTEND_FILE_INVALID_TYPE,
-   FRONTEND_FILE_PROTECTED,
-   FRONTEND_OUT_OF_MEMORY
-};
-
 namespace Ui {
 class MainWindow;
 }

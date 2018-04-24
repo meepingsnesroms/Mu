@@ -70,6 +70,39 @@ static inline uint32_t getBufferStartAddress(){
    return screenStartAddress;
 }
 
+static inline uint32_t getPipStartAddress(){
+   uint32_t pipStartAddress = sed1376Registers[PIP_ADDR_2] << 16 | sed1376Registers[PIP_ADDR_1] << 8 | sed1376Registers[PIP_ADDR_0];
+   switch((sed1376Registers[SPECIAL_EFFECT] & 0x03) * 90){
+
+      case 0:
+         //desired byte address / 4.
+         pipStartAddress *= 4;
+         break;
+
+      case 90:
+         //((desired byte address + (panel height * bpp / 8)) / 4) - 1.
+         pipStartAddress += 1;
+         pipStartAddress *= 4;
+         //pipStartAddress - (panelHeight * bpp / 8);
+         break;
+
+      case 180:
+         //((desired byte address + (panel width * panel height * bpp / 8)) / 4) - 1.
+         pipStartAddress += 1;
+         pipStartAddress *= 4;
+         //pipStartAddress - (panelWidth * panelHeight * bpp / 8);
+         break;
+
+      case 270:
+         //(desired byte address + ((panel width - 1) * panel height * bpp / 8)) / 4.
+         pipStartAddress *= 4;
+         //pipStartAddress -= ((panelWidth - 1) * panelHeight * bpp / 8);
+         break;
+   }
+
+   return pipStartAddress;
+}
+
 static inline void updateLcdStatus(){
    palmMisc.lcdOn = CAST_TO_BOOL(sed1376Registers[GPIO_CONT_0] & sed1376Registers[GPIO_CONF_0] & 0x20);
    palmMisc.backlightOn = CAST_TO_BOOL(sed1376Registers[GPIO_CONT_0] & sed1376Registers[GPIO_CONF_0] & 0x10);
@@ -87,10 +120,19 @@ uint8_t sed1376GetRegister(uint8_t address){
 #endif
    switch(address){
 
-      case PWR_SAVE_CFG://may need to attach "Vertical Non- Display Period Status" to RNG
-         debugLog("Read SED1376 power save config, PC 0x%08X.\n", m68k_get_reg(NULL, M68K_REG_PC));
-         return sed1376Registers[address] | 0x80;//pretend where in a non dispaly period
+      case LUT_READ_LOC:
+      case LUT_WRITE_LOC:
+      case LUT_R_WRITE:
+      case LUT_G_WRITE:
+      case LUT_B_WRITE:
+         //write only
+         return 0x00;
 
+      case PWR_SAVE_CFG:
+      case SPECIAL_EFFECT:
+      case PIP_ADDR_0:
+      case PIP_ADDR_1:
+      case PIP_ADDR_2:
       case SCRATCH_0:
       case SCRATCH_1:
       case GPIO_CONF_0:
@@ -116,11 +158,16 @@ void sed1376SetRegister(uint8_t address, uint8_t value){
    switch(address){
 
       case PWR_SAVE_CFG:
-         sed1376Registers[address] = value & 0x8E;
+         //bit 7 must always be set, timing hack
+         sed1376Registers[address] = (value & 0x01) | 0x80;
          break;
 
       case DISP_MODE:
          sed1376Registers[address] = value & 0xF7;
+         break;
+
+      case PANEL_TYPE:
+         sed1376Registers[address] = value & 0xFB;
          break;
 
       case SPECIAL_EFFECT:
@@ -128,10 +175,16 @@ void sed1376SetRegister(uint8_t address, uint8_t value){
          break;
 
       case DISP_ADDR_2:
+      case PIP_ADDR_2:
          sed1376Registers[address] = value & 0x01;
          break;
 
       case LINE_SIZE_1:
+      case PIP_LINE_SZ_1:
+      case PIP_X_START_1:
+      case PIP_X_END_1:
+      case PIP_Y_START_1:
+      case PIP_Y_END_1:
          sed1376Registers[address] = value & 0x03;
          break;
 
@@ -139,7 +192,10 @@ void sed1376SetRegister(uint8_t address, uint8_t value){
          sed1376RLut[value] = sed1376Registers[LUT_R_WRITE];
          sed1376GLut[value] = sed1376Registers[LUT_G_WRITE];
          sed1376BLut[value] = sed1376Registers[LUT_B_WRITE];
-         sed1376OutputLut[value] = makeRgb16FromRgb666(sed1376Registers[LUT_R_WRITE], sed1376Registers[LUT_G_WRITE], sed1376Registers[LUT_B_WRITE]);
+         sed1376Registers[LUT_R_READ] = sed1376RLut[value];
+         sed1376Registers[LUT_G_READ] = sed1376GLut[value];
+         sed1376Registers[LUT_B_READ] = sed1376BLut[value];
+         sed1376OutputLut[value] = makeRgb16FromRgb666(sed1376RLut[value], sed1376GLut[value], sed1376BLut[value]);
          break;
 
       case LUT_READ_LOC:
@@ -171,7 +227,14 @@ void sed1376SetRegister(uint8_t address, uint8_t value){
       case SCRATCH_1:
       case DISP_ADDR_0:
       case DISP_ADDR_1:
+      case PIP_ADDR_0:
+      case PIP_ADDR_1:
       case LINE_SIZE_0:
+      case PIP_LINE_SZ_0:
+      case PIP_X_START_0:
+      case PIP_X_END_0:
+      case PIP_Y_START_0:
+      case PIP_Y_END_0:
       case LUT_R_WRITE:
       case LUT_G_WRITE:
       case LUT_B_WRITE:
@@ -202,6 +265,9 @@ void sed1376Reset(){
    
    sed1376Registers[REV_CODE] = 0x28;
    sed1376Registers[DISP_BUFF_SIZE] = 0x14;
+
+   //timing hack
+   sed1376Registers[PWR_SAVE_CFG] = 0x80;
 }
 
 void sed1376RefreshLut(){
@@ -226,15 +292,25 @@ void sed1376Render(){
             for(uint16_t pixelX = 0; pixelX < 160; pixelX++)
                palmFramebuffer[pixelY * 160 + pixelX] = renderPixel(pixelX, pixelY);
 
-         debugLog("Screen start address:0x%08X, buffer width:%d, swivel view:%d degrees\n", screenStartAddress, lineSize, rotation);
+         //debugLog("Screen start address:0x%08X, buffer width:%d, swivel view:%d degrees\n", screenStartAddress, lineSize, rotation);
+         //debugLog("Screen format, monochrome:%s, BPP:%d\n", monochrome ? "true" : "false", bitDepth);
 
-         /*
          if(pictureInPictureEnabled){
-            screenStartAddress = getBufferStartAddress();
-            lineSize = (sed1376Registers[PIP_LINE_SZ_1] << 8 | sed1376Registers[PIP_LINE_SZ_0]) * 4;
-            //not done yet
+            uint16_t pipStartX = sed1376Registers[PIP_X_START_1] << 8 | sed1376Registers[PIP_X_START_0];
+            uint16_t pipStartY = sed1376Registers[PIP_Y_START_1] << 8 | sed1376Registers[PIP_Y_START_0];
+            uint16_t pipEndX = sed1376Registers[PIP_X_END_1] << 8 | sed1376Registers[PIP_X_END_0];
+            uint16_t pipEndY = sed1376Registers[PIP_Y_END_1] << 8 | sed1376Registers[PIP_Y_END_0];
+            debugLog("PIP state, start x:%d, end x:%d, start y:%d, end y:%d\n", pipStartX, pipEndX, pipStartY, pipEndY);
+            if(pipStartX < 160 && pipStartY < 160){
+               pipEndX = pipEndX < 160 ? pipEndX : 160;
+               pipEndY = pipEndY < 160 ? pipEndY : 160;
+               screenStartAddress = getPipStartAddress();
+               lineSize = (sed1376Registers[PIP_LINE_SZ_1] << 8 | sed1376Registers[PIP_LINE_SZ_0]) * 4;
+               for(uint16_t pixelY = pipStartY; pixelY < pipEndY; pixelY++)
+                  for(uint16_t pixelX = pipStartX; pixelX < pipEndX; pixelX++)
+                     palmFramebuffer[pixelY * 160 + pixelX] = renderPixel(pixelX, pixelY);
+            }
          }
-         */
 
          //rotation
          //later

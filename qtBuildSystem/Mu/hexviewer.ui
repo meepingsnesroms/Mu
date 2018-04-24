@@ -174,6 +174,42 @@
         </rect>
        </property>
       </widget>
+      <widget class="QPushButton" name="hexDump">
+       <property name="geometry">
+        <rect>
+         <x>272</x>
+         <y>180</y>
+         <width>161</width>
+         <height>32</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>Dump</string>
+       </property>
+      </widget>
+      <widget class="QLineEdit" name="hexFilePath">
+       <property name="geometry">
+        <rect>
+         <x>272</x>
+         <y>160</y>
+         <width>161</width>
+         <height>21</height>
+        </rect>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_7">
+       <property name="geometry">
+        <rect>
+         <x>270</x>
+         <y>140</y>
+         <width>60</width>
+         <height>16</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>File Path</string>
+       </property>
+      </widget>
      </widget>
      <widget class="QWidget" name="graphics">
       <property name="sizePolicy">
@@ -295,7 +331,7 @@
         </rect>
        </property>
       </widget>
-      <widget class="QCheckBox" name="checkBox">
+      <widget class="QCheckBox" name="gfxColor">
        <property name="geometry">
         <rect>
          <x>110</x>

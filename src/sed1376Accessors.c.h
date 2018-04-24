@@ -13,7 +13,7 @@ static inline uint32_t handlePanelDataSwaps(uint32_t address){
 static inline uint16_t makeRgb16FromRgb666(uint8_t r, uint8_t g, uint8_t b){
    uint16_t color = r << 10 & 0xF800;
    color |= g << 5 & 0x07E0;
-   color |= b >> 1 & 0x008F;
+   color |= b >> 1 & 0x001F;
    return color;
 }
 static inline void makeRgb666FromRgb16(uint16_t color, uint8_t* r, uint8_t* g, uint8_t* b){

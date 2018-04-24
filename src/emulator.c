@@ -530,10 +530,6 @@ void emulateFrame(){
    palmCycleCounter -= CPU_FREQUENCY / EMU_FPS;
 
    sed1376Render();
-
-   //memcpy(palmFramebuffer, sed1376Framebuffer, 160 * 160 * sizeof(uint16_t));
-
-   //debugLog("Ran frame, executed %f cycles.\n", palmCycleCounter + CPU_FREQUENCY / EMU_FPS);
 }
 
 bool emulateUntilDebugEventOrFrameEnd(){

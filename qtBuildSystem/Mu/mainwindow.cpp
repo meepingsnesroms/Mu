@@ -10,16 +10,14 @@
 #include <QFont>
 #include <QKeyEvent>
 
-#include <new>
 #include <atomic>
 #include <mutex>
-#include <cstdint>
-#include <unistd.h>
-#include <sys/stat.h>
+#include <stdint.h>
 
 #include "hexviewer.h"
-
+#include "fileaccess.h"
 #include "src/emulator.h"
+
 
 uint32_t screenWidth;
 uint32_t screenHeight;
@@ -32,53 +30,6 @@ std::mutex emuMutex;
 static std::atomic<bool> emuOn;
 static std::atomic<bool> emuInited;
 static uint8_t romBuffer[ROM_SIZE];
-
-
-uint8_t* getFileBuffer(std::string filePath, size_t& size, uint32_t& error){
-   uint8_t* rawData = NULL;
-   if(filePath != ""){
-      struct stat st;
-      int doesntExist = stat(filePath.c_str(), &st);
-      if(doesntExist == 0 && st.st_size){
-         FILE* dataFile = fopen(filePath.c_str(), "rb");
-         if(dataFile != NULL){
-            rawData = new (std::nothrow) uint8_t[st.st_size];
-            if(rawData){
-               size_t bytesRead = fread(rawData, 1, st.st_size, dataFile);
-               if(bytesRead == (size_t)st.st_size){
-                  size = bytesRead;
-                  error = FRONTEND_ERR_NONE;
-               }
-               else{
-                  error = FRONTEND_FILE_UNFINISHED;
-               }
-            }
-            else{
-               error = FRONTEND_OUT_OF_MEMORY;
-            }
-            fclose(dataFile);
-         }
-         else{
-            error = FRONTEND_FILE_PROTECTED;
-         }
-      }
-      else{
-         error = FRONTEND_FILE_DOESNT_EXIST;
-      }
-   }
-   else{
-      error = FRONTEND_FILE_EMPTY_PATH;
-   }
-
-   if(error != FRONTEND_ERR_NONE){
-      if(rawData)
-         delete[] rawData;
-      rawData = NULL;
-      size = 0;
-   }
-
-   return rawData;
-}
 
 
 MainWindow::MainWindow(QWidget* parent) :

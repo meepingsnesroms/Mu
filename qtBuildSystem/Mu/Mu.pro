@@ -48,7 +48,8 @@ SOURCES += \
     src/sed1376.c \
     src/silkscreen.c \
     src/trapNumToName.c \
-    hexviewer.cpp
+    hexviewer.cpp \
+    fileaccess.cpp
 
 HEADERS += \
     qt-common/include/boolean.h \
@@ -77,7 +78,8 @@ HEADERS += \
     hexviewer.h \
     src/hardwareRegistersTiming.c.h \
     src/sed1376Accessors.c.h \
-    src/hardwareRegistersAccessors.c.h
+    src/hardwareRegistersAccessors.c.h \
+    fileaccess.h
 
 FORMS += \
         mainwindow.ui \
