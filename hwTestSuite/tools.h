@@ -9,4 +9,5 @@ var hexRamBrowser();
 var getTrapAddress();
 var manualLssa();
 var dumpBootloaderToFile();
+
 #endif

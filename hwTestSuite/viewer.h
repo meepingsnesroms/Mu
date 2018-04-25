@@ -7,4 +7,5 @@ var valueViewer();
 var hexViewer();
 var functionPicker();
 void resetFunctionViewer();
+
 #endif

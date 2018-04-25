@@ -132,49 +132,40 @@ static void resetListHandler(){
 }
 
 static var listModeFrame(){
+   Boolean forceListRefreshOnNextRun = false;
    
    setDebugTag("List Mode Running");
    
-   if(getButtonPressed(buttonUp)){
+   if(getButtonPressed(buttonUp))
       if(selectedEntry > 0)
          selectedEntry--;
-   }
    
-   if(getButtonPressed(buttonDown)){
+   if(getButtonPressed(buttonDown))
       if(selectedEntry + 1 < listLength)
          selectedEntry++;
-   }
    
-   if(getButtonPressed(buttonLeft) && listLength > ITEM_LIST_ENTRYS){
+   if(getButtonPressed(buttonLeft) && listLength > ITEM_LIST_ENTRYS)
       if(selectedEntry - ITEM_LIST_ENTRYS >= 0)
          selectedEntry -= ITEM_LIST_ENTRYS;/*flip the page*/
       else
          selectedEntry = 0;
-   }
    
-   if(getButtonPressed(buttonRight) && listLength > ITEM_LIST_ENTRYS){
+   if(getButtonPressed(buttonRight) && listLength > ITEM_LIST_ENTRYS)
       if(selectedEntry + ITEM_LIST_ENTRYS < listLength)
          selectedEntry += ITEM_LIST_ENTRYS;/*flip the page*/
       else
          selectedEntry = listLength - 1;
-   }
    
    if(getButtonPressed(buttonSelect)){
-      /*select*/
+      forceListRefreshOnNextRun = true;
       listHandler(LIST_ITEM_SELECTED);
    }
    
-   if(getButtonPressed(buttonBack)){
-      /*go back*/
+   if(getButtonPressed(buttonBack))
       exitSubprogram();
-   }
    
    if(selectedEntry != lastSelectedEntry || forceListRefresh){
       listHandler(LIST_REFRESH);
-   }
-   
-   if(selectedEntry != lastSelectedEntry || forceListRefresh){
-      /*update item colors*/
       renderListFrame();
    }
    
@@ -182,6 +173,9 @@ static var listModeFrame(){
    
    if(forceListRefresh)
       forceListRefresh = false;
+   
+   if(forceListRefreshOnNextRun)
+      forceListRefresh = true;
    
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
@@ -192,7 +186,6 @@ var valueViewer(){
    uint64_t varData = getVarValue(value);
    
    if(getButtonPressed(buttonBack)){
-      /*go back*/
       clearNeeded = true;
       exitSubprogram();
    }
@@ -217,18 +210,16 @@ var valueViewer(){
             UG_PutString(0, 0, sharedDataBuffer);
             break;
             
-            /*
          case TYPE_FLOAT:
-            StrPrintF(sharedDataBuffer, "float:%f", *(float*)(&varData + 4));
+            StrPrintF(sharedDataBuffer, "float:%f", *(float*)&varData);
             UG_PutString(0, 0, sharedDataBuffer);
             break;
-            */
             
          case TYPE_BOOL:
             if(varData)
-               UG_PutString(0, 0, "Bool:true");
+               UG_PutString(0, 0, "Boolean:true");
             else
-               UG_PutString(0, 0, "Bool:false");
+               UG_PutString(0, 0, "Boolean:false");
             break;
             
          default:
@@ -254,7 +245,7 @@ var hexViewer(){
       /*free roam ram access*/
       selectedEntry = (uint32_t)getVarPointer(where);
       bufferAddress = 0;
-      listLength = UINT64_C(0x100000000);
+      listLength = 0x100000000;
    }
    listHandler = hexHandler;
    execSubprogram(listModeFrame);
@@ -294,6 +285,10 @@ void resetFunctionViewer(){
       hwTests[totalHwTests].testFunction = dumpBootloaderToFile;
       totalHwTests++;
       
+      StrNCopy(hwTests[totalHwTests].name, "List P*DATA Registers", TEST_NAME_LENGTH);
+      hwTests[totalHwTests].testFunction = listDataRegisters;
+      totalHwTests++;
+      
       if(unsafeMode){
          StrNCopy(hwTests[totalHwTests].name, "Manual LSSA", TEST_NAME_LENGTH);
          hwTests[totalHwTests].testFunction = manualLssa;
@@ -310,10 +305,4 @@ void resetFunctionViewer(){
          totalHwTests++;
       }
    }
-   
-   /*
-   StrNCopy(hwTests[totalHwTests].name, "File Access Test", TEST_NAME_LENGTH);
-   hwTests[totalHwTests].testFunction = testFileAccessWorks;
-   totalHwTests++;
-   */
 }

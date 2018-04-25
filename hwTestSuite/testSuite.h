@@ -5,7 +5,6 @@
 #include <stdint.h>
 #include "testSuiteConfig.h"
 
-
 /*defines*/
 #define SHARED_DATA_BUFFER_SIZE 1000
 
@@ -35,7 +34,6 @@
 #define LENGTH_ANY   0x70/*for pointers with a user defined end or no end*/
 #define LENGTH_STR   0xF0/*for pointers to string*/
 
-
 /*types*/
 typedef struct{
    uint8_t  type;
@@ -48,7 +46,6 @@ typedef struct{
    char       name[TEST_NAME_LENGTH];
    activity_t testFunction;
 }test_t;
-
 
 /*variables*/
 extern uint16_t palmButtons;

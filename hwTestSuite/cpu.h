@@ -4,7 +4,6 @@
 #include <PalmOS.h>
 #include <stdint.h>
 
-
 #define CPU_NONE  0x00/*only if in emulator with special features enabled, returned for physical cpu in emulator*/
 #define CPU_M68K  0x01
 #define CPU_ARM   0x02
@@ -17,9 +16,9 @@
 #define CPU_M68K_SZ    0x80
 #define CPU_M68K_TYPES 0xF0
 
-
 uint8_t getPhysicalCpuType();
 uint8_t getSupportedInstructionSets();
 char*   getCpuString();
 var     enterUnsafeMode();
+
 #endif

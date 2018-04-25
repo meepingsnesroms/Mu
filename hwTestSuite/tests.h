@@ -3,6 +3,7 @@
 
 #include "testSuite.h"
 
-var testFileAccessWorks();
 var testButtonInput();
+var listDataRegisters();
+
 #endif

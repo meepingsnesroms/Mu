@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include "testSuite.h"
 #include "emuFunctions.h"
+#include "hardwareRegisterNames.h"
 #include "viewer.h"
 #include "cpu.h"
 
@@ -18,14 +19,14 @@ uint8_t getPhysicalCpuType(){
    else if(osVer >= PalmOS50)
       return CPU_ARM;
    
-   /*get dragonball cpu sub type*/
+   /*get dragonball CPU subtype*/
    
    return CPU_M68K;
 }
 
 uint8_t getSupportedInstructionSets(){
    if((getPhysicalCpuType() & CPU_ARM) || isEmulator()){
-      /*emulated m68k on physical arm or running both cpus from emulator*/
+      /*emulated m68k on physical ARM or running both CPUs from emulator*/
       return CPU_BOTH;
    }
    return CPU_M68K;
@@ -74,7 +75,11 @@ var enterUnsafeMode(){
    exitSubprogram();/*only run once/for one frame*/
    
    if((getPhysicalCpuType() & CPU_M68K) || isEmulator()){
-      /*here all ram banks must be set to read/write and all memory access execptions must be turned off, along with most interrupts*/
+      /*here all RAM banks must be set to read/write and all memory access execptions must be turned off, along with most interrupts*/
+      
+      /*disable interrupt on invalid memory access*/
+      writeArbitraryMemory8(HW_REG_ADDR(SCR), readArbitraryMemory8(HW_REG_ADDR(SCR)) & 0xEF);
+      
       unsafeMode = true;
       resetFunctionViewer();
       return makeVar(LENGTH_1, TYPE_BOOL, true);/*now in unsafe mode*/

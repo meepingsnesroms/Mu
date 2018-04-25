@@ -1,4 +1,5 @@
 #include <PalmOS.h>
+#include "hardwareRegisterNames.h"
 #include "testSuite.h"
 #include "viewer.h"
 #include "debug.h"
@@ -24,8 +25,11 @@ Err makeFile(uint8_t* data, uint32_t size, char* fileName){
          sharedDataBuffer[i] = data[i + size - count];
       }
       bytesWritten = FileWrite(file, sharedDataBuffer, 1, chunkSize, &error);
-      if(bytesWritten != chunkSize || error)
+      if(bytesWritten != chunkSize || error){
+         FileClose(file);
          return error;
+      }
+      
       count -= chunkSize;
    }
    
@@ -40,28 +44,24 @@ var hexRamBrowser(){
    
    if(firstRun){
       debugSafeScreenClear(C_WHITE);
-      nibble = UINT32_C(0x10000000);
-      pointerValue = UINT32_C(0x77777777);/*in the middle of the address space*/
+      nibble = 0x10000000;
+      pointerValue = 0x77777777;/*in the middle of the address space*/
       firstRun = false;
    }
    
-   if(getButtonPressed(buttonUp)){
+   if(getButtonPressed(buttonUp))
       pointerValue += nibble;
-   }
    
-   if(getButtonPressed(buttonDown)){
+   if(getButtonPressed(buttonDown))
       pointerValue -= nibble;
-   }
    
-   if(getButtonPressed(buttonRight)){
-      if(nibble > UINT32_C(0x00000001))
+   if(getButtonPressed(buttonRight))
+      if(nibble > 0x00000001)
          nibble >>= 4;
-   }
    
-   if(getButtonPressed(buttonLeft)){
-      if(nibble < UINT32_C(0x10000000))
+   if(getButtonPressed(buttonLeft))
+      if(nibble < 0x10000000)
          nibble <<= 4;
-   }
    
    if(getButtonPressed(buttonSelect)){
       /*open hex viewer*/
@@ -93,23 +93,19 @@ var getTrapAddress(){
       firstRun = false;
    }
    
-   if(getButtonPressed(buttonUp)){
+   if(getButtonPressed(buttonUp))
       trapNum = (trapNum + nibble & 0xFFF) | 0xA000;
-   }
    
-   if(getButtonPressed(buttonDown)){
+   if(getButtonPressed(buttonDown))
       trapNum = (trapNum - nibble & 0xFFF) | 0xA000;
-   }
    
-   if(getButtonPressed(buttonRight)){
+   if(getButtonPressed(buttonRight))
       if(nibble > 0x001)
          nibble >>= 4;
-   }
    
-   if(getButtonPressed(buttonLeft)){
+   if(getButtonPressed(buttonLeft))
       if(nibble < 0x100)
          nibble <<= 4;
-   }
    
    if(getButtonPressed(buttonSelect)){
       /*open hex viewer*/
@@ -137,42 +133,37 @@ var manualLssa(){
    static Boolean  firstRun = true;
    
    if(firstRun){
-      nibble = UINT32_C(0x10000000);
-      hexValue = UINT32_C(0x77777777);
-      originalLssa = readArbitraryMemory32(0xFFFFFA00);
+      nibble = 0x10000000;
+      hexValue = 0x77777777;
+      originalLssa = readArbitraryMemory32(HW_REG_ADDR(LSSA));
       customEnabled = false;
       debugSafeScreenClear(C_WHITE);
       firstRun = false;
    }
    
-   if(getButtonPressed(buttonUp)){
+   if(getButtonPressed(buttonUp))
       hexValue += nibble;
-   }
    
-   if(getButtonPressed(buttonDown)){
+   if(getButtonPressed(buttonDown))
       hexValue -= nibble;
-   }
    
-   if(getButtonPressed(buttonRight)){
-      if(nibble > UINT32_C(0x00000001))
+   if(getButtonPressed(buttonRight))
+      if(nibble > 0x00000001)
          nibble >>= 4;
-   }
    
-   if(getButtonPressed(buttonLeft)){
-      if(nibble < UINT32_C(0x10000000))
+   if(getButtonPressed(buttonLeft))
+      if(nibble < 0x10000000)
          nibble <<= 4;
-   }
    
-   if(getButtonPressed(buttonSelect)){
+   if(getButtonPressed(buttonSelect))
       if(customEnabled){
-         writeArbitraryMemory32(0xFFFFFA00, originalLssa);
+         writeArbitraryMemory32(HW_REG_ADDR(LSSA), originalLssa);
          customEnabled = false;
       }
       else{
-         writeArbitraryMemory32(0xFFFFFA00, hexValue);
+         writeArbitraryMemory32(HW_REG_ADDR(LSSA), hexValue);
          customEnabled = true;
       }
-   }
    
    if(getButtonPressed(buttonBack)){
       firstRun = true;
@@ -186,7 +177,7 @@ var manualLssa(){
 }
 
 var dumpBootloaderToFile(){
-   makeFile((uint8_t*)UINT32_C(0xFFFFFE00), 0x200, "BOOTLOADER.BIN");
+   makeFile((uint8_t*)0xFFFFFE00, 0x200, "BOOTLOADER.BIN");
    exitSubprogram();
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }

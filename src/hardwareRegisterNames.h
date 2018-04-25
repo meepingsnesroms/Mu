@@ -1,5 +1,5 @@
-#ifndef DRAGONBALL_VZ_REGISTER_H
-#define DRAGONBALL_VZ_REGISTER_H
+#ifndef HARDWARE_REGISTER_NAMES_H
+#define HARDWARE_REGISTER_NAMES_H
 
 /*Dragonball VZ Hardware Register Definitions*/
 #define HW_REG_ADDR(x) (0xFFFFF000 | (x))
