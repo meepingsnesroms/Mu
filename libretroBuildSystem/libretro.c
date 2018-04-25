@@ -227,6 +227,7 @@ bool retro_load_game(const struct retro_game_info *info)
 
 void retro_unload_game(void)
 {
+   emulatorExit();
 }
 
 unsigned retro_get_region(void)
