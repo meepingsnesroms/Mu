@@ -1,5 +1,6 @@
 #ifndef EMU_FEATURE_REGISTERS_SPEC_HEADER
 #define EMU_FEATURE_REGISTERS_SPEC_HEADER
+
 /*
 All emu feature registers are 32 bit accessing them in any other way will be undefined behavior.
 These registers will do nothing it there corresponding feature bit is not set on launch.
@@ -46,7 +47,7 @@ These registers will do nothing it there corresponding feature bit is not set on
 
 /*new system cmds go here*/
 
-
+#define CMD_IDLE_X_CLK32   0xFFFC/*used to remove idle loops*/
 #define CMD_RUN_AS_M68K    0xFFFD/*emulStateP is ignored, EMU_SRC = argsOnStackP, EMU_SIZE = argsSizeAndwantA0, EMU_VALUE = trapOrFunction, on exit EMU_VALUE = Call68KFuncType() return value*/
 #define CMD_RUN_AS_ARM     0xFFFE/*EMU_SRC = nativeFuncP, EMU_DST = userDataP, on exit EMU_VALUE = PceNativeCall() return value*/
 #define CMD_SET_CYCLE_COST 0xFFFF/*EMU_DST = HLE API number, EMU_VALUE = how many cycles it takes*/
@@ -58,4 +59,5 @@ These registers will do nothing it there corresponding feature bit is not set on
 #define EXT_BUTTON_LEFT   0x01000000
 #define EXT_BUTTON_RIGHT  0x02000000
 #define EXT_BUTTON_SELECT 0x04000000
+
 #endif
