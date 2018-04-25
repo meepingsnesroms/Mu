@@ -19,6 +19,14 @@
 //other systems will just be optimize this out
 #define CAST_TO_BOOL(x) ((x) != 0)
 
+static inline int64_t min(int64_t x, int64_t y){
+   return x < y ? x : y;
+}
+
+static inline int64_t max(int64_t x, int64_t y){
+   return x > y ? x : y;
+}
+
 
 static inline uint64_t getUint64FromDouble(double data){
    //32.32 fixed point
