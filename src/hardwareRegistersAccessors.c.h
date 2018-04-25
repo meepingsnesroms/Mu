@@ -184,30 +184,66 @@ static inline void setIlcr(uint16_t value){
    uint16_t oldIlcr = registerArrayRead16(ILCR);
    uint16_t newIlcr = 0;
 
-   //SPI1
+   //SPI1, interrupt level 0 an 7 are invalid values that cause the register not to update
    if((value & 0x7000) != 0x0000 && (value & 0x7000) != 0x7000)
       newIlcr |= value & 0x7000;
    else
       newIlcr |= oldIlcr & 0x7000;
 
-   //UART2
+   //UART2, interrupt level 0 an 7 are invalid values that cause the register not to update
    if((value & 0x0700) != 0x0000 && (value & 0x0700) != 0x0700)
       newIlcr |= value & 0x0700;
    else
       newIlcr |= oldIlcr & 0x0700;
 
-   //PWM2
+   //PWM2, interrupt level 0 an 7 are invalid values that cause the register not to update
    if((value & 0x0070) != 0x0000 && (value & 0x0070) != 0x0070)
       newIlcr |= value & 0x0070;
    else
       newIlcr |= oldIlcr & 0x0070;
 
-   //TMR2
+   //TMR2, interrupt level 0 an 7 are invalid values that cause the register not to update
    if((value & 0x0007) != 0x0000 && (value & 0x0007) != 0x0007)
       newIlcr |= value & 0x0007;
    else
       newIlcr |= oldIlcr & 0x0007;
 }
+
+/*
+static inline void setSpiData2(uint16_t value){
+   //some sort of commands are sent from this register, most likly touchscreen
+
+}
+
+static inline void setSpiCont2(uint16_t value){
+   //unsure if ENABLE can be set at the exact moment of write or must be set before write, currently allow both
+   //important bits are ENABLE, XCH, IRQ, IRQEN and BITCOUNT
+   //uint16_t oldSpiCont2 = registerArrayRead16(SPICONT2);
+
+   if(value & 0x0200 && value & 0x0200){
+      //enabled and exchange set
+      uint8_t bitCount = (value & 0x000F) + 1;
+      uint16_t spi2Data = registerArrayRead16(SPIDATA2);
+      uint16_t swap;
+
+      swap = spi2ExternalData << (16 - bitCount);
+      spi2ExternalData >>= bitCount;
+      spi2ExternalData |= spi2Data << (16 - bitCount);
+      spi2Data |= swap;
+      spi2ExchangedBits += bitCount;
+      registerArrayWrite16(SPIDATA2, spi2Data);
+
+      //IRQEN set, send an interrupt after transfer
+      if(value & 0x0040)
+         setIprIsrBit(INT_SPI2);
+
+      //acknowledge transfer finished, transfers are instant since timing is not emulated
+      value |= 0x0080;
+   }
+
+   registerArrayWrite16(SPICONT2, value & 0xE3FF);
+}
+*/
 
 //register getters
 static inline uint8_t getPortDValue(){

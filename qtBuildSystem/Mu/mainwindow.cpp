@@ -141,23 +141,21 @@ void MainWindow::on_install_pressed(){
 
 //display
 void MainWindow::updateDisplay(){
-   if(emuOn){
-      if(emuMutex.try_lock()){
+   if(emuOn && emuMutex.try_lock()){
 #if defined(FRONTEND_DEBUG) && defined(EMU_DEBUG)
-         if(emulateUntilDebugEventOrFrameEnd()){
-            //debug event occured
-            emuOn = false;
-            ui->ctrlBtn->setText("Resume");
-         }
+      if(emulateUntilDebugEventOrFrameEnd()){
+         //debug event occured
+         emuOn = false;
+         ui->ctrlBtn->setText("Resume");
+      }
 #else
-         emulateFrame();
+      emulateFrame();
 #endif
 
-         video = QImage((unsigned char*)palmFramebuffer, screenWidth, screenHeight, QImage::Format_RGB16);//16 bit
-         ui->display->setPixmap(QPixmap::fromImage(video).scaled(ui->display->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
-         ui->display->update();
-         emuMutex.unlock();
-      }
+      video = QImage((unsigned char*)palmFramebuffer, screenWidth, screenHeight, QImage::Format_RGB16);//16 bit
+      ui->display->setPixmap(QPixmap::fromImage(video).scaled(ui->display->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
+      ui->display->update();
+      emuMutex.unlock();
    }
 }
 

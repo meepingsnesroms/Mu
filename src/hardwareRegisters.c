@@ -106,10 +106,9 @@ static void recalculateCpuSpeed(){
 }
 
 static inline void pllWakeCpuIfOff(){
-   uint16_t pllcr = registerArrayRead16(PLLCR);
    if(!pllIsOn() && pllWakeWait == -1){
       //PLL is off and not already in the process of waking up
-      switch(pllcr & 0x0003){
+      switch(registerArrayRead16(PLLCR) & 0x0003){
 
          case 0x0000:
             pllWakeWait = 32;

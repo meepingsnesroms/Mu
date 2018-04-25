@@ -16,11 +16,9 @@ static inline double dmaclksPerClk32(){
 }
 
 static inline double sysclksPerClk32(){
-   uint16_t pllcr = registerArrayRead16(PLLCR);
-   double   sysclks = dmaclksPerClk32();
-   uint16_t sysclkSelect = (pllcr >> 8) & 0x0003;
+   double sysclks = dmaclksPerClk32();
 
-   switch(sysclkSelect){
+   switch(registerArrayRead16(PLLCR) >> 8 & 0x0003){
 
       case 0x0000:
          sysclks /= 2.0;
@@ -93,16 +91,16 @@ static inline void rtiInterruptClk32(){
 static inline void timer12Clk32(){
    //this function is part of clk32();
    uint16_t timer1Control = registerArrayRead16(TCTL1);
-   uint16_t timer1Prescaler = registerArrayRead16(TPRER1) & 0x00FF;
    uint16_t timer1Compare = registerArrayRead16(TCMP1);
    uint16_t timer1OldCount = registerArrayRead16(TCN1);
    uint16_t timer1Count = timer1OldCount;
+   double timer1Prescaler = (registerArrayRead16(TPRER1) & 0x00FF) + 1;
 
    uint16_t timer2Control = registerArrayRead16(TCTL2);
-   uint16_t timer2Prescaler = registerArrayRead16(TPRER2) & 0x00FF;
    uint16_t timer2Compare = registerArrayRead16(TCMP2);
    uint16_t timer2OldCount = registerArrayRead16(TCN2);
    uint16_t timer2Count = timer2OldCount;
+   double timer2Prescaler = (registerArrayRead16(TPRER2) & 0x00FF) + 1;
 
    //timer 1
    if(timer1Control & 0x0001){
@@ -116,16 +114,16 @@ static inline void timer12Clk32(){
 
          case 0x0001://SYSCLK / timer prescaler
             if(pllIsOn())
-               timer1CycleCounter += sysclksPerClk32() / (double)timer1Prescaler;
+               timer1CycleCounter += sysclksPerClk32() / timer1Prescaler;
             break;
 
          case 0x0002://SYSCLK / 16 / timer prescaler
             if(pllIsOn())
-               timer1CycleCounter += sysclksPerClk32() / 16.0 / (double)timer1Prescaler;
+               timer1CycleCounter += sysclksPerClk32() / 16.0 / timer1Prescaler;
             break;
 
          default://CLK32 / timer prescaler
-            timer1CycleCounter += 1.0 / (double)timer1Prescaler;
+            timer1CycleCounter += 1.0 / timer1Prescaler;
             break;
       }
 
@@ -162,16 +160,16 @@ static inline void timer12Clk32(){
 
          case 0x0001://SYSCLK / timer prescaler
             if(pllIsOn())
-               timer2CycleCounter += sysclksPerClk32() / (double)timer2Prescaler;
+               timer2CycleCounter += sysclksPerClk32() / timer2Prescaler;
             break;
 
          case 0x0002://SYSCLK / 16 / timer prescaler
             if(pllIsOn())
-               timer2CycleCounter += sysclksPerClk32() / 16.0 / (double)timer2Prescaler;
+               timer2CycleCounter += sysclksPerClk32() / 16.0 / timer2Prescaler;
             break;
 
          default://CLK32 / timer prescaler
-            timer2CycleCounter += 1.0 / (double)timer2Prescaler;
+            timer2CycleCounter += 1.0 / timer2Prescaler;
             break;
       }
 
