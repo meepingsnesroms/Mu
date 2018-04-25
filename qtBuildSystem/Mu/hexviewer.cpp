@@ -161,10 +161,6 @@ void HexViewer::on_hexDump_clicked()
    QString filePath = settings.value("resourceDirectory", "").toString() + "/hexDumps";
    QDir location = filePath;
 
-   if(filePath.startsWith("~/"))
-      filePath.replace(0, 1, QDir::homePath());
-
-   location = filePath;
    if(!location.exists())
       location.mkpath(".");
 

@@ -43,6 +43,6 @@ CORE_DIR := ..
 include $(CORE_DIR)/build/Makefile.common
 
 LOCAL_SRC_FILES    += $(SOURCES_C)
-LOCAL_CFLAGS += -O3 -std=gnu99 -ffast-math -funroll-loops -DINLINE="static inline" -D__LIBRETRO__ -DFRONTEND_SUPPORTS_RGB565 -DGIT_VERSION=\"$(GIT_VERSION)\" $(INCFLAGS)
+LOCAL_CFLAGS += -O3 -std=gnu99 -ffast-math -funroll-loops -D__LIBRETRO__ -DFRONTEND_SUPPORTS_RGB565 -DGIT_VERSION=\"$(GIT_VERSION)\" $(INCFLAGS)
 
 include $(BUILD_SHARED_LIBRARY)

@@ -24,12 +24,11 @@ private slots:
    void popupErrorDialog(QString error);
    bool eventFilter(QObject *object, QEvent *event);
    void loadRom();
-   void selectRom();
+   void selectHomePath();
    void on_install_pressed();
 
    //display
    void updateDisplay();
-   void on_display_destroyed();
 
    //palm buttons
    void on_power_pressed();

@@ -22,10 +22,21 @@ DEFINES += QT_DEPRECATED_WARNINGS
 # You can also select to disable deprecated APIs only up to a certain version of Qt.
 DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
+# ios {
+#     QMAKE_INFO_PLIST = ios-resources/Info.plist
+# }
+
+macx {
+    QMAKE_INFO_PLIST = macos-resources/Info.plist
+}
+
 CONFIG(debug, debug|release){
     DEFINES += FRONTEND_DEBUG EMU_DEBUG EMU_OPCODE_LEVEL_DEBUG EMU_LOG_REGISTER_ACCESS_UNKNOWN
 # EMU_LOG_APIS
 }
+
+QMAKE_CFLAGS += -std=c99
+QMAKE_CXXFLAGS += -std=c++11
 
 INCLUDEPATH += $$PWD/qt-common/include
 
@@ -83,10 +94,10 @@ HEADERS += \
     fileaccess.h
 
 FORMS += \
-        mainwindow.ui \
+    mainwindow.ui \
     hexviewer.ui
 
-CONFIG += mobility c++11
+CONFIG += mobility
 MOBILITY = 
 
 DISTFILES += \
@@ -99,7 +110,8 @@ DISTFILES += \
     images/power.png \
     images/right.png \
     images/up.png \
-    images/todo.png
+    images/todo.png \
+    android-resources/AndroidManifest.xml
 
 RESOURCES += \
     mainwindow.qrc

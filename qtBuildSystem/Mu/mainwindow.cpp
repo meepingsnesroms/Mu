@@ -55,8 +55,16 @@ MainWindow::MainWindow(QWidget* parent) :
 
    ui->ctrlBtn->setText("Start");
 
+#if defined(Q_OS_ANDROID)
    if(settings.value("resourceDirectory", "").toString() == "")
-      settings.setValue("resourceDirectory", "~/Mu");
+      settings.setValue("resourceDirectory", "/sdcard/Mu");
+#elif defined(Q_OS_IOS)
+   if(settings.value("resourceDirectory", "").toString() == "")
+      settings.setValue("resourceDirectory", "/var/mobile/Media");
+#else
+   if(settings.value("resourceDirectory", "").toString() == "")
+      settings.setValue("resourceDirectory", QDir::homePath() + "/Mu");
+#endif
 
    emuOn = false;
    emuInited = false;
@@ -75,7 +83,8 @@ MainWindow::MainWindow(QWidget* parent) :
 
 MainWindow::~MainWindow(){
    emuMutex.lock();
-   emulatorExit();
+   if(emuInited)
+      emulatorExit();
    emuMutex.unlock();
    delete ui;
 }
@@ -94,13 +103,7 @@ bool MainWindow::eventFilter(QObject *object, QEvent *event){
 }
 
 void MainWindow::loadRom(){
-   QString rom = settings.value("romPath", "").toString();
-   if(rom == ""){
-      //keep the selector open until a valid file is picked
-      while(settings.value("romPath", "").toString() == "")
-         selectRom();
-   }
-
+   QString rom = settings.value("resourceDirectory", "").toString() + "/palmos41-en-m515.rom";
    uint32_t error;
    size_t size;
    uint8_t* romData = getFileBuffer(rom, size, error);
@@ -112,26 +115,14 @@ void MainWindow::loadRom(){
       delete[] romData;
    }
 
-   if(error != FRONTEND_ERR_NONE){
+   if(error != FRONTEND_ERR_NONE)
       popupErrorDialog("Could not open ROM file");
-   }
+   ui->ctrlBtn->setEnabled(error == FRONTEND_ERR_NONE);
 }
 
-void MainWindow::selectRom(){
-   QString rom = QFileDialog::getOpenFileName(this, "Palm OS ROM (palmos41-en-m515.rom)", QDir::root().path(), 0);
-   uint32_t error;
-   size_t size;
-   uint8_t* romData = getFileBuffer(rom, size, error);
-   if(romData){
-      //valid file
-      settings.setValue("romPath", rom);
-      delete[] romData;
-   }
-
-
-   if(error != FRONTEND_ERR_NONE){
-      popupErrorDialog("Could not open ROM file");
-   }
+void MainWindow::selectHomePath(){
+   QString dir = QFileDialog::getOpenFileName(this, "New Home Directory \"~/Mu\" is default", QDir::root().path(), 0);
+   settings.setValue("resourceDirectory", dir);
 }
 
 void MainWindow::on_install_pressed(){
@@ -168,10 +159,6 @@ void MainWindow::updateDisplay(){
          emuMutex.unlock();
       }
    }
-}
-
-void MainWindow::on_display_destroyed(){
-   //do nothing
 }
 
 //palm buttons
@@ -267,7 +254,10 @@ void MainWindow::on_ctrlBtn_clicked(){
 
 void MainWindow::on_hexViewer_clicked(){
    emuMutex.lock();
-   emuOn = false;
+   if(emuOn){
+      emuOn = false;
+      ui->ctrlBtn->setText("Resume");
+   }
 
    emuStateBrowser->exec();
 
@@ -277,12 +267,8 @@ void MainWindow::on_hexViewer_clicked(){
 void MainWindow::on_screenshot_clicked(){
    uint64_t screenshotNumber = settings.value("screenshotNum", 0).toLongLong();
    QString path = settings.value("resourceDirectory", "").toString();
-   QDir location;
+   QDir location = path + "/screenshots";
 
-   if(path.startsWith("~/"))
-      path.replace(0, 1, QDir::homePath());
-
-   location = path + "/screenshots";
    if(!location.exists())
       location.mkpath(".");
 

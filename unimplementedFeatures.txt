@@ -31,6 +31,9 @@ picture in picture SED1376 registers
 swivelview register
 byte and word swap bits
 
+Other:
+Had to modify musashi because the damn NDK isn't C compatible, m68kcpu.h, line 565
+
 
 Fixed:
 PCTLR, can divide CPU speed by 1<->31

@@ -7,4 +7,6 @@
 /hwTestSuite/*.grc
 /hwTestSuite/*.prc
 /hwTestSuite/TstSuite
+/libretroBuildSystem/obj
+/libretroBuildSystem/libs
 /qtBuildSystem/build-Mu-*
