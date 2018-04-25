@@ -201,10 +201,14 @@ bool retro_load_game(const struct retro_game_info *info)
    bytesRead = fread(palmRom, 1, ROM_SIZE, romFile);
    fclose(romFile);
 
-   if(bytesRead == ROM_SIZE)
-      emulatorInit(palmRom, NULL/*bootloader*/, ACCURATE);
-   else
+   if(bytesRead == ROM_SIZE){
+      uint32_t error = emulatorInit(palmRom, NULL/*bootloader*/, FEATURE_ACCURATE);
+      if(error != EMU_ERROR_NONE)
+         return false;
+   }
+   else{
       return false;
+   }
    
    time_t rawTime;
    struct tm* timeInfo;

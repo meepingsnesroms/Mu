@@ -209,12 +209,6 @@ static inline void setIlcr(uint16_t value){
       newIlcr |= oldIlcr & 0x0007;
 }
 
-/*
-static inline void setSpiData2(uint16_t value){
-   //some sort of commands are sent from this register, most likly touchscreen
-
-}
-
 static inline void setSpiCont2(uint16_t value){
    //unsure if ENABLE can be set at the exact moment of write or must be set before write, currently allow both
    //important bits are ENABLE, XCH, IRQ, IRQEN and BITCOUNT
@@ -243,7 +237,6 @@ static inline void setSpiCont2(uint16_t value){
 
    registerArrayWrite16(SPICONT2, value & 0xE3FF);
 }
-*/
 
 //register getters
 static inline uint8_t getPortDValue(){

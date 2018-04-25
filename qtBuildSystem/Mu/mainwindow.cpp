@@ -234,10 +234,15 @@ void MainWindow::on_ctrlBtn_clicked(){
    emuMutex.lock();
    if(!emuOn && !emuInited){
       //start emu
-      emulatorInit(romBuffer, NULL/*bootloader*/, ACCURATE);
-      emuInited = true;
-      emuOn = true;
-      ui->ctrlBtn->setText("Pause");
+      uint32_t error = emulatorInit(romBuffer, NULL/*bootloader*/, FEATURE_ACCURATE);
+      if(error == EMU_ERROR_NONE){
+         emuInited = true;
+         emuOn = true;
+         ui->ctrlBtn->setText("Pause");
+      }
+      else{
+         popupErrorDialog("Emu error:" + QString::number(error) + ", cant run!");
+      }
    }
    else if(emuOn){
       emuOn = false;

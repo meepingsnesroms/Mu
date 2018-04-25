@@ -98,14 +98,14 @@ typedef struct{
 #define SAVE_STATE_VERSION 1
 
 //emulator data
-extern uint8_t   palmRam[];
-extern uint8_t   palmRom[];
-extern uint8_t   palmReg[];
+extern uint8_t*  palmRam;
+extern uint8_t*  palmRom;
+extern uint8_t*  palmReg;
 extern input_t   palmInput;
 extern sdcard_t  palmSdCard;
 extern misc_hw_t palmMisc;
-extern uint16_t  palmFramebuffer[];
-extern uint16_t  palmExtendedFramebuffer[];
+extern uint16_t* palmFramebuffer;
+extern uint16_t* palmExtendedFramebuffer;
 extern uint32_t  palmSpecialFeatures;
 extern double    palmCrystalCycles;
 extern double    palmCycleCounter;
@@ -119,7 +119,7 @@ extern uint8_t* (*emulatorGetSdCardChunk)(uint64_t sessionId, uint64_t chunkId);
 extern void (*emulatorSetSdCardChunk)(uint64_t sessionId, uint64_t chunkId, uint8_t* data, uint64_t size);
 
 //functions
-void emulatorInit(uint8_t* palmRomDump, uint8_t* palmBootDump, uint32_t specialFeatures);
+uint32_t emulatorInit(uint8_t* palmRomDump, uint8_t* palmBootDump, uint32_t specialFeatures);//calling any emulator functions before emulatorInit results in undefined behavior
 void emulatorExit();
 void emulatorReset();
 void emulatorSetRtc(uint32_t days, uint32_t hours, uint32_t minutes, uint32_t seconds);

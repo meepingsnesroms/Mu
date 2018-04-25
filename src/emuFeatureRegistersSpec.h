@@ -9,7 +9,7 @@ These registers will do nothing it there corresponding feature bit is not set on
 #define EMU_REGISTER_SIZE 0x1000
 
 /*features*/
-#define ACCURATE             0x00000000/*no hacks/addons*/
+#define FEATURE_ACCURATE     0x00000000/*no hacks/addons*/
 #define FEATURE_RAM_HUGE     0x00000001/*128mb RAM*/
 #define FEATURE_FAST_CPU     0x00000002/*doubles CPU speed*/
 #define FEATURE_HYBRID_CPU   0x00000004/*allows running ARM opcodes in an OS 4 enviroment*/

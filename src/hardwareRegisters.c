@@ -16,6 +16,8 @@ int32_t  pllWakeWait;
 uint32_t clk32Counter;
 double   timer1CycleCounter;
 double   timer2CycleCounter;
+uint16_t spi2ExternalData;
+uint32_t spi2ExchangedBits;
 
 
 bool pllIsOn();
@@ -781,6 +783,15 @@ void setHwRegister16(unsigned int address, unsigned int value){
          setCsctrl1(value);
          resetAddressSpace();
          break;
+
+      case SPICONT2:
+         setSpiCont2(value);
+         break;
+
+      case SPIDATA2:
+         //simple write, no actions needed
+         registerArrayWrite16(address, value);
+         break;
          
       default:
 #if defined(EMU_DEBUG) && defined(EMU_LOG_REGISTER_ACCESS_UNKNOWN) && !defined(EMU_LOG_REGISTER_ACCESS_ALL)
@@ -845,6 +856,8 @@ void resetHwRegisters(){
    pllWakeWait = -1;
    timer1CycleCounter = 0.0;
    timer2CycleCounter = 0.0;
+   spi2ExternalData = 0x0000;
+   spi2ExchangedBits = 0;
    for(uint8_t chip = CHIP_BEGIN; chip < CHIP_END; chip++){
       chips[chip].enable = false;
       chips[chip].start = 0x00000000;

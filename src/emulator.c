@@ -25,14 +25,16 @@
 //0xFFFFFF00-0xFFFFFFFF Bootloader, only reads from UART into RAM and jumps to it, never executed in consumer Palms
 
 
-uint8_t   palmRam[RAM_SIZE];
-uint8_t   palmRom[ROM_SIZE];
-uint8_t   palmReg[REG_SIZE];
+static bool emulatorInitialized = false;
+
+uint8_t*  palmRam;
+uint8_t*  palmRom;
+uint8_t*  palmReg;
 input_t   palmInput;
 sdcard_t  palmSdCard;
 misc_hw_t palmMisc;
-uint16_t  palmFramebuffer[160 * (160 + 60)];//really 160*160, the extra pixels are the silkscreened digitizer area
-uint16_t  palmExtendedFramebuffer[320 * (320 + 120)];//really 320*320, the extra pixels are the silkscreened digitizer area
+uint16_t* palmFramebuffer;
+uint16_t* palmExtendedFramebuffer;
 uint32_t  palmSpecialFeatures;
 double    palmCrystalCycles;//how many cycles before toggling the 32.768 kHz crystal
 double    palmCycleCounter;//can be greater then 0 if too many cycles where run
@@ -173,7 +175,33 @@ static void invalidBehaviorCheck(){
 #endif
 
 
-void emulatorInit(uint8_t* palmRomDump, uint8_t* palmBootDump, uint32_t specialFeatures){
+uint32_t emulatorInit(uint8_t* palmRomDump, uint8_t* palmBootDump, uint32_t specialFeatures){
+   if(emulatorInitialized)
+      return EMU_ERROR_NONE;
+
+   //allocate the buffers
+   palmRam = malloc((specialFeatures & FEATURE_RAM_HUGE) ? SUPERMASSIVE_RAM_SIZE : RAM_SIZE);
+   palmRom = malloc(ROM_SIZE);
+   palmReg = malloc(REG_SIZE);
+   palmFramebuffer = malloc(160 * (160 + 60) * sizeof(uint16_t));//really 160*160, the extra pixels are the silkscreened digitizer area
+   if(specialFeatures & FEATURE_320x320)
+      palmExtendedFramebuffer = malloc(320 * (320 + 120) * sizeof(uint16_t));//really 320*320, the extra pixels are the silkscreened digitizer area
+   else
+      palmExtendedFramebuffer = NULL;
+   if(palmRam == NULL || palmRom == NULL || palmReg == NULL || palmFramebuffer == NULL || (palmExtendedFramebuffer == NULL && (specialFeatures & FEATURE_320x320))){
+      if(palmRam != NULL)
+         free(palmRam);
+      if(palmRom != NULL)
+         free(palmRom);
+      if(palmReg != NULL)
+         free(palmReg);
+      if(palmFramebuffer != NULL)
+         free(palmFramebuffer);
+      if(palmExtendedFramebuffer != NULL)
+         free(palmExtendedFramebuffer);
+      return EMU_ERROR_OUT_OF_MEMORY;
+   }
+
    //CPU
    m68k_init();
    m68k_set_cpu_type(M68K_CPU_TYPE_68000);
@@ -190,7 +218,7 @@ void emulatorInit(uint8_t* palmRomDump, uint8_t* palmBootDump, uint32_t specialF
    palmCycleCounter = 0.0;
    
    //memory
-   memset(palmRam, 0x00, RAM_SIZE);
+   memset(palmRam, 0x00, (specialFeatures & FEATURE_RAM_HUGE) ? SUPERMASSIVE_RAM_SIZE : RAM_SIZE);
    memcpy(palmRom, palmRomDump, ROM_SIZE);
    if(palmBootDump)
        memcpy(palmReg + REG_SIZE - 1 - BOOTLOADER_SIZE, palmBootDump, BOOTLOADER_SIZE);
@@ -238,10 +266,22 @@ void emulatorInit(uint8_t* palmRomDump, uint8_t* palmBootDump, uint32_t specialF
    
    //start running
    m68k_pulse_reset();
+
+   emulatorInitialized = true;
+   return EMU_ERROR_NONE;
 }
 
 void emulatorExit(){
-   sdCardExit();
+   if(emulatorInitialized){
+      free(palmRam);
+      free(palmRom);
+      free(palmReg);
+      free(palmFramebuffer);
+      if(palmSpecialFeatures & FEATURE_320x320)
+         free(palmExtendedFramebuffer);
+      sdCardExit();
+      emulatorInitialized = false;
+   }
 }
 
 void emulatorReset(){
@@ -274,9 +314,13 @@ uint32_t emulatorGetStateSize(){
    uint32_t size = 0;
    
    size += sizeof(uint32_t);//save state version
+   size += sizeof(uint32_t);//palmSpecialFeatures
    size += sizeof(uint32_t) * (M68K_REG_CAAR + 1);//CPU registers
    size += sizeof(uint8_t);//lowPowerStopActive
-   size += RAM_SIZE;//system RAM buffer
+   if(palmSpecialFeatures & FEATURE_RAM_HUGE)
+      size += SUPERMASSIVE_RAM_SIZE;//system RAM buffer
+   else
+      size += RAM_SIZE;//system RAM buffer
    size += REG_SIZE;//hardware registers
    size += SED1376_FB_SIZE;//SED1376
    size += SED1376_LUT_SIZE * 3;//SED1376 r, g and b luts
@@ -289,8 +333,9 @@ uint32_t emulatorGetStateSize(){
    size += sizeof(uint64_t) * 4;//32.32 fixed point double, timerXCycleCounter and CPU cycle timers
    size += sizeof(int32_t);//pllWakeWait
    size += sizeof(uint32_t);//clk32Counter
+   size += sizeof(uint16_t);//spi2ExternalData
+   size += sizeof(uint32_t);//spi2ExchangedBits
    size += sizeof(uint8_t) * 7;//palmMisc
-   size += sizeof(uint32_t);//palmSpecialFeatures
    
    return size;
 }
@@ -300,6 +345,10 @@ void emulatorSaveState(uint8_t* data){
    
    //state validation, wont load states that are not from the same state version
    writeStateValueUint32(data + offset, SAVE_STATE_VERSION);
+   offset += sizeof(uint32_t);
+
+   //features
+   writeStateValueUint32(data + offset, palmSpecialFeatures);
    offset += sizeof(uint32_t);
    
    //CPU
@@ -311,8 +360,14 @@ void emulatorSaveState(uint8_t* data){
    offset += sizeof(uint8_t);
    
    //memory
-   memcpy(data + offset, palmRam, RAM_SIZE);
-   offset += RAM_SIZE;
+   if(palmSpecialFeatures & FEATURE_RAM_HUGE){
+      memcpy(data + offset, palmRam, SUPERMASSIVE_RAM_SIZE);
+      offset += SUPERMASSIVE_RAM_SIZE;
+   }
+   else{
+      memcpy(data + offset, palmRam, RAM_SIZE);
+      offset += RAM_SIZE;
+   }
    memcpy(data + offset, palmReg, REG_SIZE);
    offset += REG_SIZE;
    memcpy(data + offset, bankType, TOTAL_MEMORY_BANKS);
@@ -381,6 +436,12 @@ void emulatorSaveState(uint8_t* data){
    offset += sizeof(uint64_t);
    writeStateValueDouble(data + offset, timer2CycleCounter);
    offset += sizeof(uint64_t);
+
+   //SPI
+   writeStateValueUint16(data + offset, spi2ExternalData);
+   offset += sizeof(uint16_t);
+   writeStateValueUint32(data + offset, spi2ExchangedBits);
+   offset += sizeof(uint32_t);
    
    //misc
    writeStateValueBool(data + offset, palmMisc.alarmLed);
@@ -397,10 +458,6 @@ void emulatorSaveState(uint8_t* data){
    offset += sizeof(uint8_t);
    writeStateValueUint8(data + offset, palmMisc.inDock);
    offset += sizeof(uint8_t);
-
-   //features
-   writeStateValueUint32(data + offset, palmSpecialFeatures);
-   offset += sizeof(uint32_t);
 }
 
 void emulatorLoadState(uint8_t* data){
@@ -409,6 +466,10 @@ void emulatorLoadState(uint8_t* data){
    //state validation, wont load states that are not from the same state version
    if(readStateValueUint32(data + offset) != SAVE_STATE_VERSION)
       return;
+   offset += sizeof(uint32_t);
+
+   //features
+   palmSpecialFeatures = readStateValueUint32(data + offset);
    offset += sizeof(uint32_t);
 
    //CPU
@@ -420,8 +481,14 @@ void emulatorLoadState(uint8_t* data){
    offset += 1;
    
    //memory
-   memcpy(palmRam, data + offset, RAM_SIZE);
-   offset += RAM_SIZE;
+   if(palmSpecialFeatures & FEATURE_RAM_HUGE){
+      memcpy(palmRam, data + offset, SUPERMASSIVE_RAM_SIZE);
+      offset += SUPERMASSIVE_RAM_SIZE;
+   }
+   else{
+      memcpy(palmRam, data + offset, RAM_SIZE);
+      offset += RAM_SIZE;
+   }
    memcpy(palmReg, data + offset, REG_SIZE);
    offset += REG_SIZE;
    memcpy(bankType, data + offset, TOTAL_MEMORY_BANKS);
@@ -472,9 +539,8 @@ void emulatorLoadState(uint8_t* data){
    palmSdCard.inserted = readStateValueBool(data + offset);
    offset += sizeof(uint8_t);
    //update sdcard data from sdcard struct
-   if(allSdCardCallbacksPresent() && palmSdCard.type != CARD_NONE){
+   if(allSdCardCallbacksPresent() && palmSdCard.type != CARD_NONE)
       sdCardLoadState(palmSdCard.sessionId, palmSdCard.stateId);
-   }
 
    //timing
    palmCrystalCycles = readStateValueDouble(data + offset);
@@ -489,6 +555,12 @@ void emulatorLoadState(uint8_t* data){
    offset += sizeof(uint64_t);
    timer2CycleCounter = readStateValueDouble(data + offset);
    offset += sizeof(uint64_t);
+
+   //SPI
+   spi2ExternalData = readStateValueUint16(data + offset);
+   offset += sizeof(uint16_t);
+   spi2ExchangedBits = readStateValueUint32(data + offset);
+   offset += sizeof(uint32_t);
    
    //misc
    palmMisc.alarmLed = readStateValueBool(data + offset);
@@ -505,10 +577,6 @@ void emulatorLoadState(uint8_t* data){
    offset += sizeof(uint8_t);
    palmMisc.inDock = readStateValueUint8(data + offset);
    offset += sizeof(uint8_t);
-
-   //features
-   palmSpecialFeatures = readStateValueUint32(data + offset);
-   offset += sizeof(uint32_t);
 }
 
 uint32_t emulatorInstallPrcPdb(uint8_t* data, uint32_t size){
