@@ -29,11 +29,11 @@ static bool emulatorInitialized = false;
 
 uint8_t*  palmRam;
 uint8_t*  palmRom;
-uint8_t*  palmReg;
+uint8_t   palmReg[REG_SIZE];
 input_t   palmInput;
 sdcard_t  palmSdCard;
 misc_hw_t palmMisc;
-uint16_t* palmFramebuffer;
+uint16_t  palmFramebuffer[160 * (160 + 60)];//really 160*160, the extra pixels are the silkscreened digitizer area
 uint16_t* palmExtendedFramebuffer;
 uint32_t  palmSpecialFeatures;
 double    palmCrystalCycles;//how many cycles before toggling the 32.768 kHz crystal
@@ -182,21 +182,15 @@ uint32_t emulatorInit(uint8_t* palmRomDump, uint8_t* palmBootDump, uint32_t spec
    //allocate the buffers
    palmRam = malloc((specialFeatures & FEATURE_RAM_HUGE) ? SUPERMASSIVE_RAM_SIZE : RAM_SIZE);
    palmRom = malloc(ROM_SIZE);
-   palmReg = malloc(REG_SIZE);
-   palmFramebuffer = malloc(160 * (160 + 60) * sizeof(uint16_t));//really 160*160, the extra pixels are the silkscreened digitizer area
    if(specialFeatures & FEATURE_320x320)
       palmExtendedFramebuffer = malloc(320 * (320 + 120) * sizeof(uint16_t));//really 320*320, the extra pixels are the silkscreened digitizer area
    else
       palmExtendedFramebuffer = NULL;
-   if(palmRam == NULL || palmRom == NULL || palmReg == NULL || palmFramebuffer == NULL || (palmExtendedFramebuffer == NULL && (specialFeatures & FEATURE_320x320))){
+   if(palmRam == NULL || palmRom == NULL || (palmExtendedFramebuffer == NULL && (specialFeatures & FEATURE_320x320))){
       if(palmRam != NULL)
          free(palmRam);
       if(palmRom != NULL)
          free(palmRom);
-      if(palmReg != NULL)
-         free(palmReg);
-      if(palmFramebuffer != NULL)
-         free(palmFramebuffer);
       if(palmExtendedFramebuffer != NULL)
          free(palmExtendedFramebuffer);
       return EMU_ERROR_OUT_OF_MEMORY;
@@ -275,8 +269,6 @@ void emulatorExit(){
    if(emulatorInitialized){
       free(palmRam);
       free(palmRom);
-      free(palmReg);
-      free(palmFramebuffer);
       if(palmSpecialFeatures & FEATURE_320x320)
          free(palmExtendedFramebuffer);
       sdCardExit();

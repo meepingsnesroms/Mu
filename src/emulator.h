@@ -100,11 +100,11 @@ typedef struct{
 //emulator data
 extern uint8_t*  palmRam;
 extern uint8_t*  palmRom;
-extern uint8_t*  palmReg;
+extern uint8_t   palmReg[];
 extern input_t   palmInput;
 extern sdcard_t  palmSdCard;
 extern misc_hw_t palmMisc;
-extern uint16_t* palmFramebuffer;
+extern uint16_t  palmFramebuffer[];
 extern uint16_t* palmExtendedFramebuffer;
 extern uint32_t  palmSpecialFeatures;
 extern double    palmCrystalCycles;

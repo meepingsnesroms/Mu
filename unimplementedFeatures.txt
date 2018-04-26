@@ -26,8 +26,6 @@ storage RAM protect(likely already done from fixing chip select bits)
 USB chip address range
 
 SED1376:
-register access
-picture in picture SED1376 registers
 swivelview register
 byte and word swap bits
 
@@ -36,6 +34,8 @@ Had to modify musashi because the damn NDK isn't C compatible, m68kcpu.h, line 5
 
 
 Fixed:
+SED1376 register access
+SED1376 picture in picture registers
 PCTLR, can divide CPU speed by 1<->31
 Palm OS usage of the "rte" instruction is incompatible with the 68020, switch to 68000 core
 System Control Register, 0xXXFFF000 all upper banks are registers mode
