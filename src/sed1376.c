@@ -346,6 +346,6 @@ void sed1376Render(){
    else{
       //black screen
       memset(palmFramebuffer, 0x00, 160 * 160 * sizeof(uint16_t));
-      debugLog("Cant draw screen, LCD on:%s, PLL on:%s, power save on:%s, forced blank on:%s\n", boolString(palmMisc.lcdOn), boolString(pllIsOn()), boolString(sed1376PowerSaveEnabled()), boolString(sed1376Registers[DISP_MODE] & 0x80));
+      //debugLog("Cant draw screen, LCD on:%s, PLL on:%s, power save on:%s, forced blank on:%s\n", boolString(palmMisc.lcdOn), boolString(pllIsOn()), boolString(sed1376PowerSaveEnabled()), boolString(sed1376Registers[DISP_MODE] & 0x80));
    }
 }

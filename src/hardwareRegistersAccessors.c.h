@@ -213,9 +213,6 @@ static inline void setSpiCont2(uint16_t value){
    //unsure if ENABLE can be set at the exact moment of write or must be set before write, currently allow both
    //important bits are ENABLE, XCH, IRQ, IRQEN and BITCOUNT
    //uint16_t oldSpiCont2 = registerArrayRead16(SPICONT2);
-
-   debugLog("SPI2 transfer, ENABLE:%s, XCH:%s, IRQ:%s, IRQEN:%s, BITCOUNT:%d\n", boolString(value & 0x0200), boolString(value & 0x0100), boolString(value & 0x0080), boolString(value & 0x0400), value & 0x000F);
-
    if(value & 0x0200 && value & 0x0100){
       //enabled and exchange set
       uint8_t bitCount = (value & 0x000F) + 1;
@@ -232,6 +229,9 @@ static inline void setSpiCont2(uint16_t value){
       //IRQEN set, send an interrupt after transfer
       if(value & 0x0040)
          setIprIsrBit(INT_SPI2);
+
+      debugLog("SPI2 transfer, ENABLE:%s, XCH:%s, IRQ:%s, IRQEN:%s, BITCOUNT:%d\n", boolString(value & 0x0200), boolString(value & 0x0100), boolString(value & 0x0080), boolString(value & 0x0400), (value & 0x000F) + 1);
+      debugLog("SPI2 transfer, shifted in:0x%04X, shifted out:0x%04X\n", spi2Data >> (16 - bitCount), spi2ExternalData >> (16 - bitCount));
 
       //unset XCH, transfers are instant since timing is not emulated
       value &= 0xFEFF;

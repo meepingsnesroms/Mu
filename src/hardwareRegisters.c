@@ -443,6 +443,8 @@ unsigned int getHwRegister16(unsigned int address){
       case RTCCTL:
       case RTCIENR:
       case ILCR:
+      case SPICONT2:
+      case SPIDATA2:
          //simple read, no actions needed
          return registerArrayRead16(address);
          

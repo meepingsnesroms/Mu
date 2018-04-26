@@ -1,5 +1,23 @@
 Don't know where touch input is read
 
+CPU read 8 bits from register 0x0431, PC 0x100815B2.
+CPU read 8 bits from register 0x0420, PC 0x100815B8.
+CPU read 8 bits from register 0x0421, PC 0x100815BE.
+SPI2 transfer, ENABLE:true, XCH:false, IRQ:false, IRQEN:false, BITCOUNT:12
+SPI2 transfer, ENABLE:true, XCH:true, IRQ:false, IRQEN:false, BITCOUNT:12
+SPI2 transfer, ENABLE:true, XCH:false, IRQ:false, IRQEN:false, BITCOUNT:5
+SPI2 transfer, ENABLE:true, XCH:true, IRQ:false, IRQEN:false, BITCOUNT:5
+SPI2 transfer, ENABLE:true, XCH:false, IRQ:false, IRQEN:false, BITCOUNT:16
+SPI2 transfer, ENABLE:true, XCH:true, IRQ:false, IRQEN:false, BITCOUNT:16
+SPI2 transfer, ENABLE:true, XCH:true, IRQ:false, IRQEN:false, BITCOUNT:3
+SPI2 transfer, ENABLE:false, XCH:false, IRQ:false, IRQEN:false, BITCOUNT:1
+CPU read 8 bits from register 0x0431, PC 0x10081A04.
+
+CPU read 8 bits from register 0x0431, PC 0x100815B2.
+CPU read 8 bits from register 0x0420, PC 0x100815B8.
+CPU read 8 bits from register 0x0421, PC 0x100815BE.
+
+
 //copilots SPI touch code
 	case SPIMCONT:
 		db_SPIMCONT.x = value;
