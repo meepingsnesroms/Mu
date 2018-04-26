@@ -132,8 +132,6 @@ static void resetListHandler(){
 }
 
 static var listModeFrame(){
-   Boolean forceListRefreshOnNextRun = false;
-   
    setDebugTag("List Mode Running");
    
    if(getButtonPressed(buttonUp))
@@ -156,10 +154,8 @@ static var listModeFrame(){
       else
          selectedEntry = listLength - 1;
    
-   if(getButtonPressed(buttonSelect)){
-      forceListRefreshOnNextRun = true;
+   if(getButtonPressed(buttonSelect))
       listHandler(LIST_ITEM_SELECTED);
-   }
    
    if(getButtonPressed(buttonBack))
       exitSubprogram();
@@ -173,9 +169,6 @@ static var listModeFrame(){
    
    if(forceListRefresh)
       forceListRefresh = false;
-   
-   if(forceListRefreshOnNextRun)
-      forceListRefresh = true;
    
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
@@ -287,6 +280,10 @@ void resetFunctionViewer(){
       
       StrNCopy(hwTests[totalHwTests].name, "List P*DATA Registers", TEST_NAME_LENGTH);
       hwTests[totalHwTests].testFunction = listDataRegisters;
+      totalHwTests++;
+      
+      StrNCopy(hwTests[totalHwTests].name, "Interrogate SPI2", TEST_NAME_LENGTH);
+      hwTests[totalHwTests].testFunction = interrogateSpi2;
       totalHwTests++;
       
       if(unsafeMode){

@@ -101,3 +101,8 @@ var listDataRegisters(){
    
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
+
+var interrogateSpi2(){
+   
+   return makeVar(LENGTH_0, TYPE_NULL, 0);
+}

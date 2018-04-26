@@ -137,9 +137,11 @@ void exitSubprogram(){
       setDebugTag("Subprogram Exited");
    }
    else{
-      /*last subprogram is complete, exit application*/
-      applicationRunning = false;
-      setDebugTag("Application Exiting");
+      /*last subprogram is complete, exit application if possible*/
+      if(!unsafeMode){
+         setDebugTag("Application Exiting");
+         applicationRunning = false;
+      }
    }
 }
 
@@ -147,7 +149,6 @@ void execSubprogram(activity_t activity){
    if(!subprogramArgsSet)
       subprogramArgs = makeVar(LENGTH_0, TYPE_NULL, 0);
    subprogramArgsSet = false;/*clear to prevent next subprogram called from inheriting the args*/
-   parentSubprograms[subprogramIndex] = activity;
    currentSubprogram = activity;
    setDebugTag("Subprogram Swapped Out");
 }
@@ -218,6 +219,7 @@ static Boolean testerInit(){
    lastSubprogramReturnValue = makeVar(LENGTH_0, TYPE_NULL, 0);
    subprogramArgs = makeVar(LENGTH_0, TYPE_NULL, 0);
    currentSubprogram = functionPicker;
+   parentSubprograms[0] = functionPicker;
    
    return true;
 }

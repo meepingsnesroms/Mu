@@ -5,5 +5,6 @@
 
 var testButtonInput();
 var listDataRegisters();
+var interrogateSpi2();
 
 #endif
