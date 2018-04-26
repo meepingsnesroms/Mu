@@ -64,9 +64,6 @@ SOURCES += \
     fileaccess.cpp
 
 HEADERS += \
-    qt-common/include/boolean.h \
-    qt-common/include/retro_endianness.h \
-    qt-common/include/retro_inline.h \
     src/bps/crc32.h \
     src/bps/global.h \
     src/bps/libbps.h \
@@ -91,7 +88,8 @@ HEADERS += \
     src/hardwareRegistersTiming.c.h \
     src/sed1376Accessors.c.h \
     src/hardwareRegistersAccessors.c.h \
-    fileaccess.h
+    fileaccess.h \
+    src/endianness.h
 
 FORMS += \
     mainwindow.ui \

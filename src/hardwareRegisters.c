@@ -1,6 +1,6 @@
+#include <stdint.h>
+#include <stdbool.h>
 #include <string.h>
-
-#include <boolean.h>
 
 #include "emulator.h"
 #include "hardwareRegisterNames.h"
@@ -29,16 +29,16 @@ static void recalculateCpuSpeed();
 #include "hardwareRegistersTiming.c.h"
 
 bool pllIsOn(){
-   return !CAST_TO_BOOL(registerArrayRead16(PLLCR) & 0x0008);
+   return !(registerArrayRead16(PLLCR) & 0x0008);
 }
 
 bool registersAreXXFFMapped(){
-   return CAST_TO_BOOL(registerArrayRead8(SCR) & 0x04);
+   return registerArrayRead8(SCR) & 0x04;
 }
 
 bool sed1376ClockConnected(){
    //this is the clock output pin for the SED1376, if its disabled so is the LCD controller
-   return !CAST_TO_BOOL(registerArrayRead8(PFSEL) & 0x04);
+   return !(registerArrayRead8(PFSEL) & 0x04);
 }
 
 void refreshButtonState(){
@@ -543,7 +543,7 @@ void setHwRegister8(unsigned int address, unsigned int value){
          
       case PFSEL:
          //this is the clock output pin for the SED1376, if its disabled so is the LCD controller
-         setSed1376Attached(!CAST_TO_BOOL(value & 0x04));
+         setSed1376Attached(!(value & 0x04));
          registerArrayWrite8(PFSEL, value);
          break;
          

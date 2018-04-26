@@ -1,7 +1,7 @@
 #include <stdint.h>
+#include <stdbool.h>
+#include <stdlib.h>
 #include <string.h>
-
-#include <boolean.h>
 
 #include "m68k/m68k.h"
 #include "68328Functions.h"

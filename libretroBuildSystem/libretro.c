@@ -7,10 +7,17 @@
 #include <stdint.h>
 #include <time.h>
 
-#include <retro_miscellaneous.h>
-
 #include "../src/emulator.h"
 
+#ifndef PATH_MAX_LENGTH
+#if defined(__CELLOS_LV2__)
+#define PATH_MAX_LENGTH CELL_FS_MAX_FS_PATH_LENGTH
+#elif defined(_XBOX1) || defined(_3DS) || defined(PSP) || defined(GEKKO)|| defined(WIIU)
+#define PATH_MAX_LENGTH 512
+#else
+#define PATH_MAX_LENGTH 4096
+#endif
+#endif
 
 #ifdef _WIN32
 #define path_default_slash() "\\"

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <boolean.h>
+#include <stdbool.h>
 
 extern bool lowPowerStopActive;
 

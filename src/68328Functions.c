@@ -1,6 +1,5 @@
 #include <stdint.h>
-
-#include <boolean.h>
+#include <stdbool.h>
 
 #include "emulator.h"
 #include "m68k/m68kcpu.h"

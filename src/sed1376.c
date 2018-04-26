@@ -104,13 +104,13 @@ static inline uint32_t getPipStartAddress(){
 }
 
 static inline void updateLcdStatus(){
-   palmMisc.lcdOn = CAST_TO_BOOL(sed1376Registers[GPIO_CONT_0] & sed1376Registers[GPIO_CONF_0] & 0x20);
-   palmMisc.backlightOn = CAST_TO_BOOL(sed1376Registers[GPIO_CONT_0] & sed1376Registers[GPIO_CONF_0] & 0x10);
+   palmMisc.lcdOn = sed1376Registers[GPIO_CONT_0] & sed1376Registers[GPIO_CONF_0] & 0x20;
+   palmMisc.backlightOn = sed1376Registers[GPIO_CONT_0] & sed1376Registers[GPIO_CONF_0] & 0x10;
 }
 
 
 bool sed1376PowerSaveEnabled(){
-   return CAST_TO_BOOL(sed1376Registers[PWR_SAVE_CFG] & 0x01);
+   return sed1376Registers[PWR_SAVE_CFG] & 0x01;
 }
 
 uint8_t sed1376GetRegister(uint8_t address){
@@ -282,8 +282,8 @@ void sed1376RefreshLut(){
 void sed1376Render(){
    if(palmMisc.lcdOn && pllIsOn() && !sed1376PowerSaveEnabled() && !(sed1376Registers[DISP_MODE] & 0x80)){
       //only render if LCD on, PLL on, power save off, and force blank off, SED1376 clock is provided by the CPU, if its off so is the SED
-      bool color = CAST_TO_BOOL(sed1376Registers[PANEL_TYPE] & 0x40);
-      bool pictureInPictureEnabled = CAST_TO_BOOL(sed1376Registers[SPECIAL_EFFECT] & 0x10);
+      bool color = sed1376Registers[PANEL_TYPE] & 0x40;
+      bool pictureInPictureEnabled = sed1376Registers[SPECIAL_EFFECT] & 0x10;
       uint8_t bitDepth = 1 << (sed1376Registers[DISP_MODE] & 0x07);
       uint16_t rotation = 90 * (sed1376Registers[SPECIAL_EFFECT] & 0x03);
 
@@ -297,7 +297,7 @@ void sed1376Render(){
                palmFramebuffer[pixelY * 160 + pixelX] = renderPixel(pixelX, pixelY);
 
          debugLog("Screen start address:0x%08X, buffer width:%d, swivel view:%d degrees\n", screenStartAddress, lineSize, rotation);
-         debugLog("Screen format, color:%s, BPP:%d\n", color ? "true" : "false", bitDepth);
+         debugLog("Screen format, color:%s, BPP:%d\n", boolString(color), bitDepth);
 
          if(pictureInPictureEnabled){
             uint16_t pipStartX = sed1376Registers[PIP_X_START_1] << 8 | sed1376Registers[PIP_X_START_0];
@@ -340,12 +340,12 @@ void sed1376Render(){
             }
       }
       else{
-         debugLog("Invalid screen format, color:%s, BPP:%d, rotation:%d\n", color ? "true" : "false", bitDepth, rotation);
+         debugLog("Invalid screen format, color:%s, BPP:%d, rotation:%d\n", boolString(color), bitDepth, rotation);
       }
    }
    else{
       //black screen
       memset(palmFramebuffer, 0x00, 160 * 160 * sizeof(uint16_t));
-      //debugLog("Cant draw screen, LCD on:%s, PLL on:%s, power save on:%s, forced blank on:%s\n", palmMisc.lcdOn ? "true" : "false", pllIsOn() ? "true" : "false", sed1376PowerSaveEnabled() ? "true" : "false", (sed1376Registers[DISP_MODE] & 0x80) ? "true" : "false");
+      debugLog("Cant draw screen, LCD on:%s, PLL on:%s, power save on:%s, forced blank on:%s\n", boolString(palmMisc.lcdOn), boolString(pllIsOn()), boolString(sed1376PowerSaveEnabled()), boolString(sed1376Registers[DISP_MODE] & 0x80));
    }
 }

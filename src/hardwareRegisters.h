@@ -1,8 +1,7 @@
 #pragma once
 
 #include <stdint.h>
-
-#include <boolean.h>
+#include <stdbool.h>
 
 //interrupt names
 #define INT_EMIQ   0x00800000 //level 7

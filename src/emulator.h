@@ -6,10 +6,9 @@ extern "C" {
 #endif
 
 #include <stdint.h>
+#include <stdbool.h>
 #include <stdarg.h>
 #include <stdio.h>
-
-#include <boolean.h>
 
 #include "memoryAccess.h"//for size macros
 #include "emuFeatureRegistersSpec.h"

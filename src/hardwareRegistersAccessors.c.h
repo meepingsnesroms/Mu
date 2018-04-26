@@ -19,8 +19,8 @@ static inline void clearIprIsrBit(uint32_t interruptBit){
 }
 
 static inline void setCsa(uint16_t value){
-   chips[CHIP_A_ROM].enable = CAST_TO_BOOL(value & 0x0001);
-   chips[CHIP_A_ROM].readOnly = CAST_TO_BOOL(value & 0x8000);
+   chips[CHIP_A_ROM].enable = value & 0x0001;
+   chips[CHIP_A_ROM].readOnly = value & 0x8000;
    chips[CHIP_A_ROM].size = 0x20000/*128kb*/ << (value >> 1 & 0x0007);
 
    //CSA is now just a normal chipselect
@@ -33,13 +33,13 @@ static inline void setCsa(uint16_t value){
 static inline void setCsb(uint16_t value){
    uint16_t csControl1 = registerArrayRead16(CSCTRL1);
 
-   chips[CHIP_B_SED].enable = CAST_TO_BOOL(value & 0x0001);
-   chips[CHIP_B_SED].readOnly = CAST_TO_BOOL(value & 0x8000);
+   chips[CHIP_B_SED].enable = value & 0x0001;
+   chips[CHIP_B_SED].readOnly = value & 0x8000;
    chips[CHIP_B_SED].size = 0x20000/*128kb*/ << (value >> 1 & 0x0007);
 
    //attributes
-   chips[CHIP_B_SED].supervisorOnlyProtectedMemory = CAST_TO_BOOL(value & 0x4000);
-   chips[CHIP_B_SED].readOnlyForProtectedMemory = CAST_TO_BOOL(value & 0x2000);
+   chips[CHIP_B_SED].supervisorOnlyProtectedMemory = value & 0x4000;
+   chips[CHIP_B_SED].readOnlyForProtectedMemory = value & 0x2000;
    if(csControl1 & 0x4000 && csControl1 & 0x0001)
       chips[CHIP_B_SED].unprotectedSize = 0x8000/*32kb*/ << ((value >> 11 & 0x0003) | 0x0004);
    else
@@ -51,13 +51,13 @@ static inline void setCsb(uint16_t value){
 static inline void setCsc(uint16_t value){
    uint16_t csControl1 = registerArrayRead16(CSCTRL1);
 
-   chips[CHIP_C_USB].enable = CAST_TO_BOOL(value & 0x0001);
-   chips[CHIP_C_USB].readOnly = CAST_TO_BOOL(value & 0x8000);
+   chips[CHIP_C_USB].enable = value & 0x0001;
+   chips[CHIP_C_USB].readOnly = value & 0x8000;
    chips[CHIP_C_USB].size = 0x8000/*32kb*/ << (value >> 1 & 0x0007);
 
    //attributes
-   chips[CHIP_C_USB].supervisorOnlyProtectedMemory = CAST_TO_BOOL(value & 0x4000);
-   chips[CHIP_C_USB].readOnlyForProtectedMemory = CAST_TO_BOOL(value & 0x2000);
+   chips[CHIP_C_USB].supervisorOnlyProtectedMemory = value & 0x4000;
+   chips[CHIP_C_USB].readOnlyForProtectedMemory = value & 0x2000;
    if(csControl1 & 0x4000 && csControl1 & 0x0004)
       chips[CHIP_C_USB].unprotectedSize = 0x8000/*32kb*/ << ((value >> 11 & 0x0003) | 0x0004);
    else
@@ -69,16 +69,16 @@ static inline void setCsc(uint16_t value){
 static inline void setCsd(uint16_t value){
    uint16_t csControl1 = registerArrayRead16(CSCTRL1);
 
-   chips[CHIP_D_RAM].enable = CAST_TO_BOOL(value & 0x0001);
-   chips[CHIP_D_RAM].readOnly = CAST_TO_BOOL(value & 0x8000);
+   chips[CHIP_D_RAM].enable = value & 0x0001;
+   chips[CHIP_D_RAM].readOnly = value & 0x8000;
    if(csControl1 & 0x0040 && value & 0x0200)
       chips[CHIP_D_RAM].size = 0x800000/*8mb*/ << (value >> 1 & 0x0001);
    else
       chips[CHIP_D_RAM].size = 0x8000/*32kb*/ << (value >> 1 & 0x0007);
 
    //attributes
-   chips[CHIP_D_RAM].supervisorOnlyProtectedMemory = CAST_TO_BOOL(value & 0x4000);
-   chips[CHIP_D_RAM].readOnlyForProtectedMemory = CAST_TO_BOOL(value & 0x2000);
+   chips[CHIP_D_RAM].supervisorOnlyProtectedMemory = value & 0x4000;
+   chips[CHIP_D_RAM].readOnlyForProtectedMemory = value & 0x2000;
    if(csControl1 & 0x4000 && csControl1 & 0x0010)
       chips[CHIP_D_RAM].unprotectedSize = 0x8000/*32kb*/ << ((value >> 11 & 0x0003) | 0x0004);
    else
@@ -169,7 +169,7 @@ static inline void setScr(uint8_t value){
    //clear violations on writing 1 to them
    newScr &= ~(oldScr & value & 0xE0);
 
-   chips[CHIP_REGISTERS].supervisorOnlyProtectedMemory = CAST_TO_BOOL(value & 0x08);
+   chips[CHIP_REGISTERS].supervisorOnlyProtectedMemory = value & 0x08;
 
    registerArrayWrite8(SCR, newScr);//must be written before calling setRegisterFFFFAccessMode
    if((newScr & 0x04) != (oldScr & 0x04)){
@@ -214,7 +214,9 @@ static inline void setSpiCont2(uint16_t value){
    //important bits are ENABLE, XCH, IRQ, IRQEN and BITCOUNT
    //uint16_t oldSpiCont2 = registerArrayRead16(SPICONT2);
 
-   if(value & 0x0200 && value & 0x0200){
+   debugLog("SPI2 transfer, ENABLE:%s, XCH:%s, IRQ:%s, IRQEN:%s, BITCOUNT:%d\n", boolString(value & 0x0200), boolString(value & 0x0100), boolString(value & 0x0080), boolString(value & 0x0400), value & 0x000F);
+
+   if(value & 0x0200 && value & 0x0100){
       //enabled and exchange set
       uint8_t bitCount = (value & 0x000F) + 1;
       uint16_t spi2Data = registerArrayRead16(SPIDATA2);
@@ -230,6 +232,9 @@ static inline void setSpiCont2(uint16_t value){
       //IRQEN set, send an interrupt after transfer
       if(value & 0x0040)
          setIprIsrBit(INT_SPI2);
+
+      //unset XCH, transfers are instant since timing is not emulated
+      value &= 0xFEFF;
 
       //acknowledge transfer finished, transfers are instant since timing is not emulated
       value |= 0x0080;
