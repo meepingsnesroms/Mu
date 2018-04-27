@@ -12,8 +12,9 @@
 #include <QGraphicsScene>
 #include <QPixmap>
 
+#include <chrono>
+#include <thread>
 #include <atomic>
-#include <mutex>
 #include <stdint.h>
 
 #include "hexviewer.h"
@@ -29,10 +30,43 @@ static bool extendedScreen;
 static QImage video;
 static QTimer* refreshDisplay;
 static HexViewer* emuStateBrowser;
-std::mutex emuMutex;
+static std::thread emuThread;
+static std::atomic<bool> emuThreadJoin;
 static std::atomic<bool> emuOn;
+static std::atomic<bool> emuPaused;
 static std::atomic<bool> emuInited;
+static std::atomic<bool> emuDebugEvent;
 static uint8_t romBuffer[ROM_SIZE];
+
+
+void emuThreadRun(){
+   while(!emuThreadJoin){
+      if(emuOn){
+         emuPaused = false;
+#if defined(FRONTEND_DEBUG) && defined(EMU_DEBUG)
+         if(emulateUntilDebugEventOrFrameEnd()){
+            //debug event occured
+            emuOn = false;
+            emuPaused = true;
+            emuDebugEvent = true;
+         }
+#else
+         emulateFrame();
+#endif
+      }
+      else{
+         emuPaused = true;
+      }
+
+      std::this_thread::sleep_for(std::chrono::microseconds(16666));
+   }
+}
+
+void waitForEmuPaused(){
+   while(!emuPaused){
+      std::this_thread::sleep_for(std::chrono::milliseconds(1));
+   }
+}
 
 
 MainWindow::MainWindow(QWidget* parent) :
@@ -69,14 +103,11 @@ MainWindow::MainWindow(QWidget* parent) :
       settings.setValue("resourceDirectory", QDir::homePath() + "/Mu");
 #endif
 
+   emuThreadJoin = false;
    emuOn = false;
+   emuPaused = false;
    emuInited = false;
-
-   /*
-   screenWidth = 160;
-   screenHeight = 160 + 60;
-   extendedScreen = false;
-   */
+   emuDebugEvent = false;
 
    loadRom();
 
@@ -89,10 +120,12 @@ MainWindow::MainWindow(QWidget* parent) :
 }
 
 MainWindow::~MainWindow(){
-   emuMutex.lock();
+   emuThreadJoin = true;
+   emuOn = false;
+   if(emuThread.joinable())
+      emuThread.join();
    if(emuInited)
       emulatorExit();
-   emuMutex.unlock();
    delete ui;
 }
 
@@ -148,21 +181,16 @@ void MainWindow::on_install_pressed(){
 
 //display
 void MainWindow::updateDisplay(){
-   if(emuOn && emuMutex.try_lock()){
-#if defined(FRONTEND_DEBUG) && defined(EMU_DEBUG)
-      if(emulateUntilDebugEventOrFrameEnd()){
-         //debug event occured
-         emuOn = false;
-         ui->ctrlBtn->setText("Resume");
-      }
-#else
-      emulateFrame();
-#endif
-
+   if(emuOn){
       video = QImage(extendedScreen ? (uchar*)palmExtendedFramebuffer : (uchar*)palmFramebuffer, screenWidth, screenHeight, QImage::Format_RGB16);
       ui->display->setPixmap(QPixmap::fromImage(video).scaled(QSize(ui->display->size().width() * 0.95, ui->display->size().height() * 0.95), Qt::KeepAspectRatio, Qt::SmoothTransformation));
       ui->display->update();
-      emuMutex.unlock();
+   }
+
+   if(emuDebugEvent){
+      //emuThread cant set GUI parameters on its own because its not part of the class
+      ui->ctrlBtn->setText("Resume");
+      emuDebugEvent = false;
    }
 }
 
@@ -210,7 +238,6 @@ void MainWindow::on_notes_released(){
 
 //emu control
 void MainWindow::on_ctrlBtn_clicked(){
-   emuMutex.lock();
    if(!emuOn && !emuInited){
       //start emu
       uint32_t error = emulatorInit(romBuffer, NULL/*bootloader*/, FEATURE_ACCURATE);
@@ -226,8 +253,13 @@ void MainWindow::on_ctrlBtn_clicked(){
             extendedScreen = false;
          }
 
+         emuThreadJoin = false;
          emuInited = true;
          emuOn = true;
+         emuPaused = false;
+
+         emuThread = std::thread(emuThreadRun);
+
          ui->ctrlBtn->setText("Pause");
       }
       else{
@@ -242,19 +274,17 @@ void MainWindow::on_ctrlBtn_clicked(){
       emuOn = true;
       ui->ctrlBtn->setText("Pause");
    }
-   emuMutex.unlock();
 }
 
 void MainWindow::on_hexViewer_clicked(){
-   emuMutex.lock();
    if(emuOn){
       emuOn = false;
       ui->ctrlBtn->setText("Resume");
    }
 
-   emuStateBrowser->exec();
+   waitForEmuPaused();
 
-   emuMutex.unlock();
+   emuStateBrowser->exec();
 }
 
 void MainWindow::on_screenshot_clicked(){
