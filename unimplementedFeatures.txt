@@ -1,3 +1,6 @@
+Emulator wrapper:
+add 320*320 frame buffer silkscreen, 2xBRZ should be able to make 320*320 version of the 160*160 silkscreen
+
 CPU:
 sysTrapPceNativeCall, ARM Emulator
 CPU32 table lookup opcodes

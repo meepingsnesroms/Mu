@@ -109,7 +109,18 @@ DISTFILES += \
     images/right.png \
     images/up.png \
     images/todo.png \
-    android-resources/AndroidManifest.xml
+    android/AndroidManifest.xml \
+    android/gradle/wrapper/gradle-wrapper.jar \
+    android/gradlew \
+    android/res/values/libs.xml \
+    android/build.gradle \
+    android/gradle/wrapper/gradle-wrapper.properties \
+    android/gradlew.bat \
+    android/res/drawable-hdpi/icon.png \
+    android/res/drawable-ldpi/icon.png \
+    android/res/drawable-mdpi/icon.png
 
 RESOURCES += \
     mainwindow.qrc
+
+ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android

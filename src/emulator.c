@@ -218,7 +218,12 @@ uint32_t emulatorInit(uint8_t* palmRomDump, uint8_t* palmBootDump, uint32_t spec
        memcpy(palmReg + REG_SIZE - 1 - BOOTLOADER_SIZE, palmBootDump, BOOTLOADER_SIZE);
    else
        memset(palmReg + REG_SIZE - 1 - BOOTLOADER_SIZE, 0x00, BOOTLOADER_SIZE);
+   memset(palmFramebuffer, 0x00, 160 * 160 * sizeof(uint16_t));
    memcpy(&palmFramebuffer[160 * 160], silkscreenData, SILKSCREEN_WIDTH * SILKSCREEN_HEIGHT * (SILKSCREEN_BPP / 8));
+   if(palmExtendedFramebuffer != NULL){
+      memset(palmExtendedFramebuffer, 0x00, 320 * 320 * sizeof(uint16_t));
+      //add 320*320 silkscreen image later, 2xBRZ should be able to make 320*320 version of the 160*160 silkscreen
+   }
    resetAddressSpace();
    sed1376Reset();
    sdCardInit();

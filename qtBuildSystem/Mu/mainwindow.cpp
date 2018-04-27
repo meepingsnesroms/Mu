@@ -9,6 +9,8 @@
 #include <QSettings>
 #include <QFont>
 #include <QKeyEvent>
+#include <QGraphicsScene>
+#include <QPixmap>
 
 #include <atomic>
 #include <mutex>
@@ -23,6 +25,7 @@ uint32_t screenWidth;
 uint32_t screenHeight;
 QSettings settings;
 
+static bool extendedScreen;
 static QImage video;
 static QTimer* refreshDisplay;
 static HexViewer* emuStateBrowser;
@@ -68,8 +71,12 @@ MainWindow::MainWindow(QWidget* parent) :
 
    emuOn = false;
    emuInited = false;
+
+   /*
    screenWidth = 160;
    screenHeight = 160 + 60;
+   extendedScreen = false;
+   */
 
    loadRom();
 
@@ -152,8 +159,8 @@ void MainWindow::updateDisplay(){
       emulateFrame();
 #endif
 
-      video = QImage((unsigned char*)palmFramebuffer, screenWidth, screenHeight, QImage::Format_RGB16);//16 bit
-      ui->display->setPixmap(QPixmap::fromImage(video).scaled(ui->display->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
+      video = QImage(extendedScreen ? (uchar*)palmExtendedFramebuffer : (uchar*)palmFramebuffer, screenWidth, screenHeight, QImage::Format_RGB16);
+      ui->display->setPixmap(QPixmap::fromImage(video).scaled(QSize(ui->display->size().width() * 0.95, ui->display->size().height() * 0.95), Qt::KeepAspectRatio, Qt::SmoothTransformation));
       ui->display->update();
       emuMutex.unlock();
    }
@@ -200,34 +207,6 @@ void MainWindow::on_notes_released(){
    palmInput.buttonNotes = false;
 }
 
-//ui buttons
-void MainWindow::on_mainLeft_clicked(){
-   ui->controlPanel->setCurrentWidget(ui->controlPanel->widget(2));
-}
-
-void MainWindow::on_mainRight_clicked(){
-   ui->controlPanel->setCurrentWidget(ui->controlPanel->widget(1));
-}
-
-void MainWindow::on_settingsLeft_clicked(){
-   ui->controlPanel->setCurrentWidget(ui->controlPanel->widget(0));
-}
-
-void MainWindow::on_settingsRight_clicked(){
-   ui->controlPanel->setCurrentWidget(ui->controlPanel->widget(2));
-}
-
-void MainWindow::on_joyLeft_clicked(){
-   ui->controlPanel->setCurrentWidget(ui->controlPanel->widget(1));
-}
-
-void MainWindow::on_joyRight_clicked(){
-   ui->controlPanel->setCurrentWidget(ui->controlPanel->widget(0));
-}
-
-void MainWindow::on_settings_clicked(){
-   //setprocess(SETUP);
-}
 
 //emu control
 void MainWindow::on_ctrlBtn_clicked(){
@@ -236,6 +215,17 @@ void MainWindow::on_ctrlBtn_clicked(){
       //start emu
       uint32_t error = emulatorInit(romBuffer, NULL/*bootloader*/, FEATURE_ACCURATE);
       if(error == EMU_ERROR_NONE){
+         if(palmExtendedFramebuffer != NULL){
+            screenWidth = 320;
+            screenHeight = 320 + 120;
+            extendedScreen = true;
+         }
+         else{
+            screenWidth = 160;
+            screenHeight = 160 + 60;
+            extendedScreen = false;
+         }
+
          emuInited = true;
          emuOn = true;
          ui->ctrlBtn->setText("Pause");

@@ -2,7 +2,7 @@
 #include "mainwindow.h"
 #include "src/emulator.h"
 
-float rangeSwap(float newRange, float oldRange, float value){
+static inline float rangeSwap(float newRange, float oldRange, float value){
    return value / oldRange * newRange;
 }
 

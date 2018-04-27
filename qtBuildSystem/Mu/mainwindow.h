@@ -42,15 +42,6 @@ private slots:
    void on_notes_pressed();
    void on_notes_released();
 
-   //ui buttons
-   void on_mainLeft_clicked();
-   void on_mainRight_clicked();
-   void on_settingsLeft_clicked();
-   void on_settingsRight_clicked();
-   void on_joyLeft_clicked();
-   void on_joyRight_clicked();
-   void on_settings_clicked();
-
    void on_ctrlBtn_clicked();
 
    void on_hexViewer_clicked();
