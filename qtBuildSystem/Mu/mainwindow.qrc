@@ -15,5 +15,6 @@
         <file>images/saveLoad.png</file>
         <file>images/screenshot.png</file>
         <file>images/stop.png</file>
+        <file>images/hexViewer.png</file>
     </qresource>
 </RCC>

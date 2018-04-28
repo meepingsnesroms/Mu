@@ -40,10 +40,6 @@ static std::atomic<bool> emuDebugEvent;
 static std::atomic<bool> emuNewFrameReady;
 static uint16_t* emuDoubleBuffer;
 
-static QIcon playIcon(":/buttons/images/play.png");
-static QIcon pauseIcon(":/buttons/images/pause.png");
-static QIcon stopIcon(":/buttons/images/stop.png");
-
 
 void emuThreadRun(){
    while(!emuThreadJoin){
@@ -102,8 +98,9 @@ MainWindow::MainWindow(QWidget* parent) :
 
    ui->screenshot->installEventFilter(this);
    ui->ctrlBtn->installEventFilter(this);
+   ui->hexViewer->installEventFilter(this);
 
-   ui->ctrlBtn->setIcon(playIcon);
+   ui->ctrlBtn->setIcon(QIcon(":/buttons/images/play.png"));
 
 #if defined(Q_OS_ANDROID)
    if(settings.value("resourceDirectory", "").toString() == "")
@@ -181,6 +178,7 @@ void MainWindow::loadRom(){
 void MainWindow::selectHomePath(){
    QString dir = QFileDialog::getOpenFileName(this, "New Home Directory \"~/Mu\" is default", QDir::root().path(), 0);
    settings.setValue("resourceDirectory", dir);
+   loadRom();//refresh target ROM
 }
 
 void MainWindow::on_install_pressed(){
@@ -208,7 +206,7 @@ void MainWindow::updateDisplay(){
 
    if(emuDebugEvent){
       //emuThread cant set GUI parameters on its own because its not part of the class
-      ui->ctrlBtn->setIcon(playIcon);
+      ui->ctrlBtn->setIcon(QIcon(":/buttons/images/play.png"));
       emuDebugEvent = false;
    }
 }
@@ -295,7 +293,7 @@ void MainWindow::on_ctrlBtn_clicked(){
          ui->center->setEnabled(true);
          */
 
-         ui->ctrlBtn->setIcon(pauseIcon);
+         ui->ctrlBtn->setIcon(QIcon(":/buttons/images/pause.png"));
       }
       else{
          popupErrorDialog("Emu error:" + QString::number(error) + ", cant run!");
@@ -303,18 +301,18 @@ void MainWindow::on_ctrlBtn_clicked(){
    }
    else if(emuOn){
       emuOn = false;
-      ui->ctrlBtn->setIcon(playIcon);
+      ui->ctrlBtn->setIcon(QIcon(":/buttons/images/play.png"));
    }
    else if(!emuOn){
       emuOn = true;
-      ui->ctrlBtn->setIcon(pauseIcon);
+      ui->ctrlBtn->setIcon(QIcon(":/buttons/images/pause.png"));
    }
 }
 
 void MainWindow::on_hexViewer_clicked(){
    if(emuOn){
       emuOn = false;
-      ui->ctrlBtn->setIcon(playIcon);
+      ui->ctrlBtn->setIcon(QIcon(":/buttons/images/play.png"));
    }
 
    waitForEmuPaused();
