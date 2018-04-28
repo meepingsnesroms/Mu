@@ -10,5 +10,10 @@
         <file>images/right.png</file>
         <file>images/toDo.png</file>
         <file>images/up.png</file>
+        <file>images/pause.png</file>
+        <file>images/play.png</file>
+        <file>images/saveLoad.png</file>
+        <file>images/screenshot.png</file>
+        <file>images/stop.png</file>
     </qresource>
 </RCC>

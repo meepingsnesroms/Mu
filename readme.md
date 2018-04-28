@@ -49,7 +49,8 @@ The lack of ARM CPU will be fixed in my emulator see "OS improvements".
 ## Credits
 Musashi v3.4(last version that builds outside of mame) (68k core)  
 http://www.iconarchive.com/show/clean-3d-icons-by-mysitemyway.html (Qt Button Icons)  
-http://www.iconarchive.com/show/crystal-clear-icons-by-everaldo/App-palm-icon.html (Desktop Icon)
+http://www.iconarchive.com/show/crystal-clear-icons-by-everaldo/App-palm-icon.html (Desktop Icon)  
+http://tango.freedesktop.org/Tango_Icon_Library (Screenshot, Save and Run icons)
 
 ## Building
 #### For RetroArch

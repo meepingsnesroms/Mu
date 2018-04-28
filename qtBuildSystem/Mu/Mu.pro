@@ -118,7 +118,12 @@ DISTFILES += \
     android/gradlew.bat \
     android/res/drawable-hdpi/icon.png \
     android/res/drawable-ldpi/icon.png \
-    android/res/drawable-mdpi/icon.png
+    android/res/drawable-mdpi/icon.png \
+    images/pause.png \
+    images/play.png \
+    images/saveLoad.png \
+    images/screenshot.png \
+    images/stop.png
 
 RESOURCES += \
     mainwindow.qrc

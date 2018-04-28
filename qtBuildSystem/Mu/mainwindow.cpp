@@ -8,6 +8,7 @@
 #include <QMessageBox>
 #include <QSettings>
 #include <QFont>
+#include <QIcon>
 #include <QKeyEvent>
 #include <QGraphicsScene>
 #include <QPixmap>
@@ -29,6 +30,7 @@ QSettings settings;
 static bool extendedScreen;
 static QImage video;
 static QTimer* refreshDisplay;
+static uint8_t romBuffer[ROM_SIZE];
 static HexViewer* emuStateBrowser;
 static std::thread emuThread;
 static std::atomic<bool> emuThreadJoin;
@@ -36,7 +38,10 @@ static std::atomic<bool> emuOn;
 static std::atomic<bool> emuPaused;
 static std::atomic<bool> emuInited;
 static std::atomic<bool> emuDebugEvent;
-static uint8_t romBuffer[ROM_SIZE];
+
+static QIcon playIcon(":/buttons/images/play.png");
+static QIcon pauseIcon(":/buttons/images/pause.png");
+static QIcon stopIcon(":/buttons/images/stop.png");
 
 
 void emuThreadRun(){
@@ -62,7 +67,7 @@ void emuThreadRun(){
    }
 }
 
-void waitForEmuPaused(){
+static inline void waitForEmuPaused(){
    while(!emuPaused){
       std::this_thread::sleep_for(std::chrono::milliseconds(1));
    }
@@ -90,7 +95,10 @@ MainWindow::MainWindow(QWidget* parent) :
 
    ui->power->installEventFilter(this);
 
-   ui->ctrlBtn->setText("Start");
+   ui->screenshot->installEventFilter(this);
+   ui->ctrlBtn->installEventFilter(this);
+
+   ui->ctrlBtn->setIcon(playIcon);
 
 #if defined(Q_OS_ANDROID)
    if(settings.value("resourceDirectory", "").toString() == "")
@@ -111,7 +119,7 @@ MainWindow::MainWindow(QWidget* parent) :
 
    loadRom();
 
-#if !defined(FRONTEND_DEBUG)
+#if !defined(FRONTEND_DEBUG) || defined(Q_OS_ANDROID) || defined(Q_OS_IOS)
    ui->hexViewer->hide();
 #endif
 
@@ -147,6 +155,7 @@ void MainWindow::loadRom(){
    uint32_t error;
    size_t size;
    uint8_t* romData = getFileBuffer(rom, size, error);
+
    if(romData){
       size_t romSize = size < ROM_SIZE ? size : ROM_SIZE;
       memcpy(romBuffer, romData, romSize);
@@ -189,7 +198,7 @@ void MainWindow::updateDisplay(){
 
    if(emuDebugEvent){
       //emuThread cant set GUI parameters on its own because its not part of the class
-      ui->ctrlBtn->setText("Resume");
+      ui->ctrlBtn->setIcon(playIcon);
       emuDebugEvent = false;
    }
 }
@@ -257,10 +266,26 @@ void MainWindow::on_ctrlBtn_clicked(){
          emuInited = true;
          emuOn = true;
          emuPaused = false;
-
          emuThread = std::thread(emuThreadRun);
 
-         ui->ctrlBtn->setText("Pause");
+         ui->calender->setEnabled(true);
+         ui->addressBook->setEnabled(true);
+         ui->todo->setEnabled(true);
+         ui->notes->setEnabled(true);
+
+         ui->up->setEnabled(true);
+         ui->down->setEnabled(true);
+
+         ui->power->setEnabled(true);
+
+         /*
+         //if FEATURE_EMU_EXT_KEYS enabled add OS 5 buttons
+         ui->left->setEnabled(true);
+         ui->right->setEnabled(true);
+         ui->center->setEnabled(true);
+         */
+
+         ui->ctrlBtn->setIcon(pauseIcon);
       }
       else{
          popupErrorDialog("Emu error:" + QString::number(error) + ", cant run!");
@@ -268,18 +293,18 @@ void MainWindow::on_ctrlBtn_clicked(){
    }
    else if(emuOn){
       emuOn = false;
-      ui->ctrlBtn->setText("Resume");
+      ui->ctrlBtn->setIcon(playIcon);
    }
    else if(!emuOn){
       emuOn = true;
-      ui->ctrlBtn->setText("Pause");
+      ui->ctrlBtn->setIcon(pauseIcon);
    }
 }
 
 void MainWindow::on_hexViewer_clicked(){
    if(emuOn){
       emuOn = false;
-      ui->ctrlBtn->setText("Resume");
+      ui->ctrlBtn->setIcon(playIcon);
    }
 
    waitForEmuPaused();

@@ -1,5 +1,6 @@
 Emulator wrapper:
 add 320*320 frame buffer silkscreen, 2xBRZ should be able to make 320*320 version of the 160*160 silkscreen
+qt play pause icon not working for emu control button
 
 CPU:
 sysTrapPceNativeCall, ARM Emulator

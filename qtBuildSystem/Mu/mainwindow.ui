@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>438</width>
-    <height>393</height>
+    <width>383</width>
+    <height>433</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -48,6 +48,9 @@
       <layout class="QGridLayout" name="gridLayout">
        <item row="6" column="0">
         <widget class="QPushButton" name="calender">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
          <property name="sizePolicy">
           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
            <horstretch>0</horstretch>
@@ -65,6 +68,9 @@
        </item>
        <item row="6" column="4">
         <widget class="QPushButton" name="down">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
          <property name="sizePolicy">
           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
            <horstretch>0</horstretch>
@@ -82,6 +88,9 @@
        </item>
        <item row="1" column="4">
         <widget class="QPushButton" name="up">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
          <property name="sizePolicy">
           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
            <horstretch>0</horstretch>
@@ -99,6 +108,9 @@
        </item>
        <item row="6" column="1">
         <widget class="QPushButton" name="addressBook">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
          <property name="sizePolicy">
           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
            <horstretch>0</horstretch>
@@ -116,6 +128,9 @@
        </item>
        <item row="3" column="5">
         <widget class="QPushButton" name="right">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
          <property name="sizePolicy">
           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
            <horstretch>0</horstretch>
@@ -133,6 +148,9 @@
        </item>
        <item row="3" column="4">
         <widget class="QPushButton" name="center">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
          <property name="sizePolicy">
           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
            <horstretch>0</horstretch>
@@ -150,6 +168,9 @@
        </item>
        <item row="6" column="5">
         <widget class="QPushButton" name="todo">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
          <property name="sizePolicy">
           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
            <horstretch>0</horstretch>
@@ -188,6 +209,9 @@
        </item>
        <item row="1" column="0">
         <widget class="QPushButton" name="power">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
          <property name="sizePolicy">
           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
            <horstretch>0</horstretch>
@@ -205,6 +229,9 @@
        </item>
        <item row="6" column="7">
         <widget class="QPushButton" name="notes">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
          <property name="sizePolicy">
           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
            <horstretch>0</horstretch>
@@ -222,6 +249,9 @@
        </item>
        <item row="3" column="1">
         <widget class="QPushButton" name="left">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
          <property name="sizePolicy">
           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
            <horstretch>0</horstretch>
@@ -249,7 +279,11 @@
           </sizepolicy>
          </property>
          <property name="text">
-          <string>ctrl_btn</string>
+          <string/>
+         </property>
+         <property name="icon">
+          <iconset resource="mainwindow.qrc">
+           <normaloff>:/buttons/images/play.png</normaloff>:/buttons/images/play.png</iconset>
          </property>
         </widget>
        </item>
@@ -262,7 +296,11 @@
           </sizepolicy>
          </property>
          <property name="text">
-          <string>Screenshot</string>
+          <string/>
+         </property>
+         <property name="icon">
+          <iconset resource="mainwindow.qrc">
+           <normaloff>:/buttons/images/screenshot.png</normaloff>:/buttons/images/screenshot.png</iconset>
          </property>
         </widget>
        </item>
