@@ -27,7 +27,6 @@ uint32_t screenWidth;
 uint32_t screenHeight;
 QSettings settings;
 
-static bool extendedScreen;
 static QImage video;
 static QTimer* refreshDisplay;
 static uint8_t romBuffer[ROM_SIZE];
@@ -38,6 +37,8 @@ static std::atomic<bool> emuOn;
 static std::atomic<bool> emuPaused;
 static std::atomic<bool> emuInited;
 static std::atomic<bool> emuDebugEvent;
+static std::atomic<bool> emuNewFrameReady;
+static uint16_t* emuDoubleBuffer;
 
 static QIcon playIcon(":/buttons/images/play.png");
 static QIcon pauseIcon(":/buttons/images/pause.png");
@@ -58,6 +59,10 @@ void emuThreadRun(){
 #else
          emulateFrame();
 #endif
+         if(!emuNewFrameReady){
+            memcpy(emuDoubleBuffer, screenWidth == 320 ? palmExtendedFramebuffer : palmFramebuffer, screenWidth * screenHeight * sizeof(uint16_t));
+            emuNewFrameReady = true;
+         }
       }
       else{
          emuPaused = true;
@@ -116,6 +121,8 @@ MainWindow::MainWindow(QWidget* parent) :
    emuPaused = false;
    emuInited = false;
    emuDebugEvent = false;
+   emuNewFrameReady = false;
+   emuDoubleBuffer = NULL;
 
    loadRom();
 
@@ -132,8 +139,10 @@ MainWindow::~MainWindow(){
    emuOn = false;
    if(emuThread.joinable())
       emuThread.join();
-   if(emuInited)
+   if(emuInited){
       emulatorExit();
+      delete[] emuDoubleBuffer;
+   }
    delete ui;
 }
 
@@ -190,10 +199,11 @@ void MainWindow::on_install_pressed(){
 
 //display
 void MainWindow::updateDisplay(){
-   if(emuOn){
-      video = QImage(extendedScreen ? (uchar*)palmExtendedFramebuffer : (uchar*)palmFramebuffer, screenWidth, screenHeight, QImage::Format_RGB16);
+   if(emuOn && emuNewFrameReady){
+      video = QImage((uchar*)emuDoubleBuffer, screenWidth, screenHeight, QImage::Format_RGB16);
       ui->display->setPixmap(QPixmap::fromImage(video).scaled(QSize(ui->display->size().width() * 0.95, ui->display->size().height() * 0.95), Qt::KeepAspectRatio, Qt::SmoothTransformation));
       ui->display->update();
+      emuNewFrameReady = false;
    }
 
    if(emuDebugEvent){
@@ -254,18 +264,18 @@ void MainWindow::on_ctrlBtn_clicked(){
          if(palmExtendedFramebuffer != NULL){
             screenWidth = 320;
             screenHeight = 320 + 120;
-            extendedScreen = true;
          }
          else{
             screenWidth = 160;
             screenHeight = 160 + 60;
-            extendedScreen = false;
          }
 
          emuThreadJoin = false;
          emuInited = true;
          emuOn = true;
          emuPaused = false;
+         emuNewFrameReady = false;
+         emuDoubleBuffer = new uint16_t[screenWidth * screenHeight];
          emuThread = std::thread(emuThreadRun);
 
          ui->calender->setEnabled(true);
