@@ -325,10 +325,10 @@ static inline void updateVibratorStatus(){
 
 void printUnknownHwAccess(unsigned int address, unsigned int value, unsigned int size, bool isWrite){
    if(isWrite){
-      debugLog("CPU wrote %d bits of 0x%08X to register 0x%04X, PC 0x%08X.\n", size, value, address, m68k_get_reg(NULL, M68K_REG_PC));
+      debugLog("CPU wrote %d bits of 0x%08X to register 0x%03X, PC 0x%08X.\n", size, value, address, m68k_get_reg(NULL, M68K_REG_PC));
    }
    else{
-      debugLog("CPU read %d bits from register 0x%04X, PC 0x%08X.\n", size, address, m68k_get_reg(NULL, M68K_REG_PC));
+      debugLog("CPU read %d bits from register 0x%03X, PC 0x%08X.\n", size, address, m68k_get_reg(NULL, M68K_REG_PC));
    }
 }
 
@@ -462,6 +462,10 @@ unsigned int getHwRegister16(unsigned int address){
       case RTCIENR:
       case ILCR:
       case ICR:
+      case TCMP1:
+      case TCMP2:
+      case TPRER1:
+      case TPRER2:
       case SPICONT2:
       case SPIDATA2:
          //simple read, no actions needed
@@ -813,6 +817,10 @@ void setHwRegister16(unsigned int address, unsigned int value){
          setSpiCont2(value);
          break;
 
+      case TCMP1:
+      case TCMP2:
+      case TPRER1:
+      case TPRER2:
       case SPIDATA2:
          //simple write, no actions needed
          registerArrayWrite16(address, value);
