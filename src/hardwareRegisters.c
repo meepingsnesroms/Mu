@@ -277,22 +277,22 @@ static void checkPortDInterrupts(){
       setIprIsrBit(INT_INT3);
    }
    
-   if(portDIrqPins & ~portDDir & 0x10 && ((portDValue & 0x10) != 0) == ((interruptControlRegister & 0x8000) != 0)){
+   if(portDIrqPins & ~portDDir & 0x10 && (bool)(portDValue & 0x10) == (bool)(interruptControlRegister & 0x8000)){
       //irq 1, polarity set in ICR
       setIprIsrBit(INT_IRQ1);
    }
    
-   if(portDIrqPins & ~portDDir & 0x20 && ((portDValue & 0x20) != 0) == ((interruptControlRegister & 0x4000) != 0)){
+   if(portDIrqPins & ~portDDir & 0x20 && (bool)(portDValue & 0x20) == (bool)(interruptControlRegister & 0x4000)){
       //irq 2, polarity set in ICR
       setIprIsrBit(INT_IRQ2);
    }
    
-   if(portDIrqPins & ~portDDir & 0x40 && ((portDValue & 0x40) != 0) == ((interruptControlRegister & 0x2000) != 0)){
+   if(portDIrqPins & ~portDDir & 0x40 && (bool)(portDValue & 0x40) == (bool)(interruptControlRegister & 0x2000)){
       //irq 3, polarity set in ICR
       setIprIsrBit(INT_IRQ3);
    }
    
-   if(portDIrqPins & ~portDDir & 0x80 && ((portDValue & 0x80) != 0) == ((interruptControlRegister & 0x1000) != 0)){
+   if(portDIrqPins & ~portDDir & 0x80 && (bool)(portDValue & 0x80) == (bool)(interruptControlRegister & 0x1000)){
       //irq 6, polarity set in ICR
       setIprIsrBit(INT_IRQ6);
    }
@@ -792,6 +792,7 @@ void setHwRegister16(unsigned int address, unsigned int value){
 
       case SPIDATA2:
          //simple write, no actions needed
+         debugLog("SPIDATA2 write: 0x%04X\n", value);
          registerArrayWrite16(address, value);
          break;
          

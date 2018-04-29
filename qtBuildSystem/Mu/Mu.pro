@@ -61,7 +61,8 @@ SOURCES += \
     src/silkscreen.c \
     src/trapNumToName.c \
     hexviewer.cpp \
-    fileaccess.cpp
+    fileaccess.cpp \
+    src/ads7846.c
 
 HEADERS += \
     src/bps/crc32.h \
@@ -89,7 +90,8 @@ HEADERS += \
     src/sed1376Accessors.c.h \
     src/hardwareRegistersAccessors.c.h \
     fileaccess.h \
-    src/endianness.h
+    src/endianness.h \
+    src/ads7846.h
 
 FORMS += \
     mainwindow.ui \

@@ -195,7 +195,7 @@ void sed1376SetRegister(uint8_t address, uint8_t value){
          sed1376Registers[LUT_R_READ] = sed1376RLut[value];
          sed1376Registers[LUT_G_READ] = sed1376GLut[value];
          sed1376Registers[LUT_B_READ] = sed1376BLut[value];
-         debugLog("Writing R:0x%02X, G:0x%02X, B:0x%02X to LUT:0x%02X\n", sed1376RLut[value], sed1376GLut[value], sed1376BLut[value], value);
+         //debugLog("Writing R:0x%02X, G:0x%02X, B:0x%02X to LUT:0x%02X\n", sed1376RLut[value], sed1376GLut[value], sed1376BLut[value], value);
          sed1376OutputLut[value] = makeRgb16FromSed666(sed1376RLut[value], sed1376GLut[value], sed1376BLut[value]);
          break;
 
@@ -296,8 +296,8 @@ void sed1376Render(){
             for(uint16_t pixelX = 0; pixelX < 160; pixelX++)
                palmFramebuffer[pixelY * 160 + pixelX] = renderPixel(pixelX, pixelY);
 
-         debugLog("Screen start address:0x%08X, buffer width:%d, swivel view:%d degrees\n", screenStartAddress, lineSize, rotation);
-         debugLog("Screen format, color:%s, BPP:%d\n", boolString(color), bitDepth);
+         //debugLog("Screen start address:0x%08X, buffer width:%d, swivel view:%d degrees\n", screenStartAddress, lineSize, rotation);
+         //debugLog("Screen format, color:%s, BPP:%d\n", boolString(color), bitDepth);
 
          if(pictureInPictureEnabled){
             uint16_t pipStartX = sed1376Registers[PIP_X_START_1] << 8 | sed1376Registers[PIP_X_START_0];
@@ -312,7 +312,7 @@ void sed1376Render(){
                pipStartY *= 32 / bitDepth;
                pipEndY *= 32 / bitDepth;
             }
-            debugLog("PIP state, start x:%d, end x:%d, start y:%d, end y:%d\n", pipStartX, pipEndX, pipStartY, pipEndY);
+            //debugLog("PIP state, start x:%d, end x:%d, start y:%d, end y:%d\n", pipStartX, pipEndX, pipStartY, pipEndY);
             if(pipStartX < 160 && pipStartY < 160){
                pipEndX = min(pipEndX, 160);
                pipEndY = min(pipEndX, 160);
