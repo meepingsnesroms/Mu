@@ -9,6 +9,7 @@
 #include "hardwareRegisters.h"
 #include "memoryAccess.h"
 #include "sed1376.h"
+#include "ads7846.h"
 #include "sdcard.h"
 #include "silkscreen.h"
 #include "portability.h"
@@ -226,6 +227,7 @@ uint32_t emulatorInit(uint8_t* palmRomDump, uint8_t* palmBootDump, uint32_t spec
    }
    resetAddressSpace();
    sed1376Reset();
+   ads7846Reset();
    sdCardInit();
    
    //input
@@ -287,6 +289,7 @@ void emulatorReset(){
    resetHwRegisters();
    resetAddressSpace();//address space must be reset after hardware registers because it is dependant on them
    sed1376Reset();
+   ads7846Reset();
    m68k_pulse_reset();
 }
 
@@ -330,8 +333,8 @@ uint32_t emulatorGetStateSize(){
    size += sizeof(uint64_t) * 4;//32.32 fixed point double, timerXCycleCounter and CPU cycle timers
    size += sizeof(int32_t);//pllWakeWait
    size += sizeof(uint32_t);//clk32Counter
-   size += sizeof(uint16_t);//spi2ExternalData
-   size += sizeof(uint32_t);//spi2ExchangedBits
+   size += sizeof(uint8_t) * 2;//ads7846
+   size += sizeof(uint16_t);//ads7846
    size += sizeof(uint8_t) * 7;//palmMisc
    
    return size;
@@ -434,11 +437,13 @@ void emulatorSaveState(uint8_t* data){
    writeStateValueDouble(data + offset, timer2CycleCounter);
    offset += sizeof(uint64_t);
 
-   //SPI
-   writeStateValueUint16(data + offset, spi2ExternalData);
+   //ADS7846
+   writeStateValueUint8(data + offset, ads7846InputBitsLeft);
+   offset += sizeof(uint8_t);
+   writeStateValueUint8(data + offset, ads7846ControlByte);
+   offset += sizeof(uint8_t);
+   writeStateValueUint16(data + offset, ads7846OutputValue);
    offset += sizeof(uint16_t);
-   writeStateValueUint32(data + offset, spi2ExchangedBits);
-   offset += sizeof(uint32_t);
    
    //misc
    writeStateValueBool(data + offset, palmMisc.alarmLed);
@@ -553,11 +558,13 @@ void emulatorLoadState(uint8_t* data){
    timer2CycleCounter = readStateValueDouble(data + offset);
    offset += sizeof(uint64_t);
 
-   //SPI
-   spi2ExternalData = readStateValueUint16(data + offset);
+   //ADS7846
+   ads7846InputBitsLeft = readStateValueUint8(data + offset);
+   offset += sizeof(uint8_t);
+   ads7846ControlByte = readStateValueUint8(data + offset);
+   offset += sizeof(uint8_t);
+   ads7846OutputValue = readStateValueUint16(data + offset);
    offset += sizeof(uint16_t);
-   spi2ExchangedBits = readStateValueUint32(data + offset);
-   offset += sizeof(uint32_t);
    
    //misc
    palmMisc.alarmLed = readStateValueBool(data + offset);

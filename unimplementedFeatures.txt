@@ -1,6 +1,6 @@
 Emulator wrapper:
 add 320*320 frame buffer silkscreen, 2xBRZ should be able to make 320*320 version of the 160*160 silkscreen
-qt play pause icon not working for emu control button
+Tango icons don't grow enough with a big window
 
 CPU:
 sysTrapPceNativeCall, ARM Emulator
@@ -33,13 +33,14 @@ USB chip address range
 
 SED1376:
 swivelview register
-byte and word swap bits
 
 Other:
 Had to modify musashi because the damn NDK isn't C compatible, m68kcpu.h, line 565
 
 
 Fixed:
+SED1376 byte and word swap bits
+qt play pause icon not working for emu control button
 SED1376 register access
 SED1376 picture in picture registers
 PCTLR, can divide CPU speed by 1<->31
