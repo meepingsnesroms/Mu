@@ -198,9 +198,9 @@ static inline void timer12Clk32(){
 static inline void rtcAddSecondClk32(){
    //this function is part of clk32();
 
-   //rtc
+   //RTC
    if(registerArrayRead16(RTCCTL) & 0x0080){
-      //rtc enable bit set
+      //RTC enable bit set
       uint16_t rtcInterruptEvents;
       uint32_t newRtcTime;
       uint32_t oldRtcTime = registerArrayRead32(RTCTIME);

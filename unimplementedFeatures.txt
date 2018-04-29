@@ -20,6 +20,7 @@ Port M Infrared shutdown (PMDATA 0x20)
 interrupt control register (ICR), POL5 and edge trigger selects
 ADC7846 temperature sensors
 ADC7846 dock sensor
+some undocumented I/O might be on port e and port j
 
 Debug tools:
 missing icons

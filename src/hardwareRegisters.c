@@ -101,8 +101,13 @@ static void recalculateCpuSpeed(){
    if(pctlr & 0x80)
       newCpuSpeed *= (double)(pctlr & 0x1F) / 31.0;
 
-   debugLog("New CPU frequency of:%f cycles per second.\n", newCpuSpeed * CRYSTAL_FREQUENCY);
-   debugLog("New CLK32 cycle count of:%f.\n", newCpuSpeed);
+   if(newCpuSpeed != palmCrystalCycles){
+      debugLog("New CPU frequency of:%f cycles per second.\n", newCpuSpeed * CRYSTAL_FREQUENCY);
+      debugLog("New CLK32 cycle count of:%f.\n", newCpuSpeed);
+      if(newCpuSpeed == 0.0)
+         debugLog("CPU turned off with PCTLR.\n");
+   }
+
    palmCrystalCycles = newCpuSpeed;
 }
 
@@ -346,9 +351,21 @@ unsigned int getHwRegister8(unsigned int address){
       case PDDATA:
          return getPortDValue();
 
+      case PEDATA:
+         //read outputs as is and inputs as true, floating pins are high
+         return (registerArrayRead8(PEDATA) & registerArrayRead8(PEDIR)) | ~registerArrayRead8(PEDIR);
+
       case PFDATA:
          //read outputs as is and inputs as true, floating pins are high
          return (registerArrayRead8(PFDATA) & registerArrayRead8(PFDIR)) | ~registerArrayRead8(PFDIR);
+
+      case PGDATA:
+         //read outputs as is and inputs as true, floating pins are high
+         return (registerArrayRead8(PGDATA) & registerArrayRead8(PGDIR)) | ~registerArrayRead8(PGDIR);
+
+      case PJDATA:
+         //read outputs as is and inputs as true, floating pins are high
+         return (registerArrayRead8(PJDATA) & registerArrayRead8(PJDIR)) | ~registerArrayRead8(PJDIR);
 
       case PKDATA:
          return getPortKValue();
@@ -365,7 +382,9 @@ unsigned int getHwRegister8(unsigned int address){
       //I/O direction
       case PBDIR:
       case PDDIR:
+      case PEDIR:
       case PFDIR:
+      case PJDIR:
       case PKDIR:
 
       //select between GPIO or special function
@@ -442,6 +461,7 @@ unsigned int getHwRegister16(unsigned int address){
       case RTCCTL:
       case RTCIENR:
       case ILCR:
+      case ICR:
       case SPICONT2:
       case SPIDATA2:
          //simple read, no actions needed
@@ -640,6 +660,10 @@ void setHwRegister16(unsigned int address, unsigned int value){
       case RTCIENR:
          //missing bits 6 and 7
          registerArrayWrite16(address, value & 0xFF3F);
+         break;
+
+      case RTCCTL:
+         registerArrayWrite16(address, value & 0x000A);
          break;
          
       case IMR:

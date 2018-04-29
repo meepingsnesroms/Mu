@@ -43,7 +43,8 @@ void ads7846SendBit(bool bit){
 
          case 0x02:
             //battery
-            value = palmMisc.batteryLevel;
+            //value = palmMisc.batteryLevel;
+            value = 100;
             rangeMax = 100;
             break;
 
