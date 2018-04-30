@@ -114,22 +114,22 @@ static inline void timer12Clk32(){
 
          case 0x0001://SYSCLK / timer prescaler
             if(pllIsOn())
-               timer1CycleCounter += sysclksPerClk32() / timer1Prescaler;
+               timerCycleCounter[0] += sysclksPerClk32() / timer1Prescaler;
             break;
 
          case 0x0002://SYSCLK / 16 / timer prescaler
             if(pllIsOn())
-               timer1CycleCounter += sysclksPerClk32() / 16.0 / timer1Prescaler;
+               timerCycleCounter[0] += sysclksPerClk32() / 16.0 / timer1Prescaler;
             break;
 
          default://CLK32 / timer prescaler
-            timer1CycleCounter += 1.0 / timer1Prescaler;
+            timerCycleCounter[0] += 1.0 / timer1Prescaler;
             break;
       }
 
-      if(timer1CycleCounter >= 1.0){
-         timer1Count += (uint16_t)timer1CycleCounter;
-         timer1CycleCounter -= (uint16_t)timer1CycleCounter;
+      if(timerCycleCounter[0] >= 1.0){
+         timer1Count += (uint16_t)timerCycleCounter[0];
+         timerCycleCounter[0] -= (uint16_t)timerCycleCounter[0];
       }
 
       if(timer1OldCount < timer1Compare && timer1Count >= timer1Compare){
@@ -141,6 +141,7 @@ static inline void timer12Clk32(){
 
          //set timer triggered bit
          registerArrayWrite16(TSTAT1, registerArrayRead16(TSTAT1) | 0x0001);
+         timerStatusReadAcknowledge[0] &= 0xFFFE;//lock bit until next read
 
          if(!(timer1Control & 0x0100)){
             //not free running, reset to 0, to prevent loss of ticks after compare event just subtract timerXCompare
@@ -163,22 +164,22 @@ static inline void timer12Clk32(){
 
          case 0x0001://SYSCLK / timer prescaler
             if(pllIsOn())
-               timer2CycleCounter += sysclksPerClk32() / timer2Prescaler;
+               timerCycleCounter[1] += sysclksPerClk32() / timer2Prescaler;
             break;
 
          case 0x0002://SYSCLK / 16 / timer prescaler
             if(pllIsOn())
-               timer2CycleCounter += sysclksPerClk32() / 16.0 / timer2Prescaler;
+               timerCycleCounter[1] += sysclksPerClk32() / 16.0 / timer2Prescaler;
             break;
 
          default://CLK32 / timer prescaler
-            timer2CycleCounter += 1.0 / timer2Prescaler;
+            timerCycleCounter[1] += 1.0 / timer2Prescaler;
             break;
       }
 
-      if(timer2CycleCounter >= 1.0){
-         timer2Count += (uint16_t)timer2CycleCounter;
-         timer2CycleCounter -= (uint16_t)timer2CycleCounter;
+      if(timerCycleCounter[1] >= 1.0){
+         timer2Count += (uint16_t)timerCycleCounter[1];
+         timerCycleCounter[1] -= (uint16_t)timerCycleCounter[1];
       }
 
       if(timer2OldCount < timer2Compare && timer2Count >= timer2Compare){
@@ -190,6 +191,7 @@ static inline void timer12Clk32(){
 
          //set timer triggered bit
          registerArrayWrite16(TSTAT2, registerArrayRead16(TSTAT2) | 0x0001);
+         timerStatusReadAcknowledge[1] &= 0xFFFE;//lock bit until next read
 
          if(!(timer2Control & 0x0100)){
             //not free running, reset to 0, to prevent loss of ticks after compare event just subtract timerXCompare

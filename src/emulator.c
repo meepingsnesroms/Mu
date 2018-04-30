@@ -333,6 +333,7 @@ uint32_t emulatorGetStateSize(){
    size += sizeof(uint64_t) * 4;//32.32 fixed point double, timerXCycleCounter and CPU cycle timers
    size += sizeof(int32_t);//pllWakeWait
    size += sizeof(uint32_t);//clk32Counter
+   size += sizeof(uint16_t) * 2;//timerStatusReadAcknowledge
    size += sizeof(uint8_t) * 2;//ads7846
    size += sizeof(uint16_t);//ads7846
    size += sizeof(uint8_t) * 7;//palmMisc
@@ -432,10 +433,14 @@ void emulatorSaveState(uint8_t* data){
    offset += sizeof(int32_t);
    writeStateValueUint32(data + offset, clk32Counter);
    offset += sizeof(uint32_t);
-   writeStateValueDouble(data + offset, timer1CycleCounter);
+   writeStateValueDouble(data + offset, timerCycleCounter[0]);
    offset += sizeof(uint64_t);
-   writeStateValueDouble(data + offset, timer2CycleCounter);
+   writeStateValueDouble(data + offset, timerCycleCounter[1]);
    offset += sizeof(uint64_t);
+   writeStateValueUint16(data + offset, timerStatusReadAcknowledge[0]);
+   offset += sizeof(uint16_t);
+   writeStateValueUint16(data + offset, timerStatusReadAcknowledge[1]);
+   offset += sizeof(uint16_t);
 
    //ADS7846
    writeStateValueUint8(data + offset, ads7846InputBitsLeft);
@@ -553,10 +558,14 @@ void emulatorLoadState(uint8_t* data){
    offset += sizeof(int32_t);
    clk32Counter = readStateValueUint32(data + offset);
    offset += sizeof(uint32_t);
-   timer1CycleCounter = readStateValueDouble(data + offset);
+   timerCycleCounter[0] = readStateValueDouble(data + offset);
    offset += sizeof(uint64_t);
-   timer2CycleCounter = readStateValueDouble(data + offset);
+   timerCycleCounter[1] = readStateValueDouble(data + offset);
    offset += sizeof(uint64_t);
+   timerStatusReadAcknowledge[0] = readStateValueUint16(data + offset);
+   offset += sizeof(uint16_t);
+   timerStatusReadAcknowledge[1] = readStateValueUint16(data + offset);
+   offset += sizeof(uint16_t);
 
    //ADS7846
    ads7846InputBitsLeft = readStateValueUint8(data + offset);

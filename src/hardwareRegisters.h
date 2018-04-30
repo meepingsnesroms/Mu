@@ -58,8 +58,8 @@ typedef struct{
 extern chip_t   chips[];
 extern int32_t  pllWakeWait;
 extern uint32_t clk32Counter;
-extern double   timer1CycleCounter;
-extern double   timer2CycleCounter;
+extern double   timerCycleCounter[];
+extern uint16_t timerStatusReadAcknowledge[];
 
 //memory accessors
 unsigned int getHwRegister8(unsigned int address);

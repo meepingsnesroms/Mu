@@ -15,8 +15,8 @@
 chip_t   chips[CHIP_END];
 int32_t  pllWakeWait;
 uint32_t clk32Counter;
-double   timer1CycleCounter;
-double   timer2CycleCounter;
+double   timerCycleCounter[2];
+uint16_t timerStatusReadAcknowledge[2];
 
 
 bool pllIsOn();
@@ -435,6 +435,14 @@ unsigned int getHwRegister16(unsigned int address){
    printUnknownHwAccess(address, 0, 16, false);
 #endif
    switch(address){
+
+      case TSTAT1:
+         timerStatusReadAcknowledge[0] = registerArrayRead16(TSTAT1);//active bits acknowledged
+         return registerArrayRead16(TSTAT1);
+
+      case TSTAT2:
+         timerStatusReadAcknowledge[1] = registerArrayRead16(TSTAT2);//active bits acknowledged
+         return registerArrayRead16(TSTAT2);
          
       //32 bit registers accessed as 16 bit
       case IMR:
@@ -466,8 +474,6 @@ unsigned int getHwRegister16(unsigned int address){
       case TCMP2:
       case TPRER1:
       case TPRER2:
-      case TSTAT1:
-      case TSTAT2:
       case SPICONT2:
       case SPIDATA2:
          //simple read, no actions needed
@@ -819,12 +825,20 @@ void setHwRegister16(unsigned int address, unsigned int value){
          setSpiCont2(value);
          break;
 
+      case TSTAT1:
+         //preserve any unread bits
+         registerArrayWrite16(TSTAT1, (value & timerStatusReadAcknowledge[0]) | (registerArrayRead16(TSTAT1) & ~timerStatusReadAcknowledge[0]));
+         break;
+
+      case TSTAT2:
+         //preserve any unread bits
+         registerArrayWrite16(TSTAT2, (value & timerStatusReadAcknowledge[1]) | (registerArrayRead16(TSTAT2) & ~timerStatusReadAcknowledge[1]));
+         break;
+
       case TCMP1:
       case TCMP2:
       case TPRER1:
       case TPRER2:
-      case TSTAT1:
-      case TSTAT2:
       case SPIDATA2:
          //simple write, no actions needed
          registerArrayWrite16(address, value);
@@ -891,8 +905,10 @@ void resetHwRegisters(){
    memset(palmReg, 0x00, REG_SIZE - BOOTLOADER_SIZE);
    clk32Counter = 0;
    pllWakeWait = -1;
-   timer1CycleCounter = 0.0;
-   timer2CycleCounter = 0.0;
+   timerCycleCounter[0] = 0.0;
+   timerCycleCounter[1] = 0.0;
+   timerStatusReadAcknowledge[0] = 0x0000;
+   timerStatusReadAcknowledge[1] = 0x0000;
    for(uint8_t chip = CHIP_BEGIN; chip < CHIP_END; chip++){
       chips[chip].enable = false;
       chips[chip].start = 0x00000000;
