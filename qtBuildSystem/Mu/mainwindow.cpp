@@ -185,10 +185,12 @@ void MainWindow::on_install_pressed(){
    QString app = QFileDialog::getOpenFileName(this, "Open Prc/Pdb/Pqa", QDir::root().path(), 0);
    uint32_t error;
    size_t size;
-   uint8_t* appData = getFileBuffer(app, size, error);
-   if(appData){
-      error = emulatorInstallPrcPdb(appData, size);
-      delete[] appData;
+   buffer_t appData;
+   appData.data = getFileBuffer(app, size, error);
+   if(appData.data){
+      appData.size = size;
+      error = emulatorInstallPrcPdb(appData);
+      delete[] appData.data;
    }
 
    if(error != FRONTEND_ERR_NONE)
@@ -257,7 +259,13 @@ void MainWindow::on_notes_released(){
 void MainWindow::on_ctrlBtn_clicked(){
    if(!emuOn && !emuInited){
       //start emu
-      uint32_t error = emulatorInit(romBuffer, NULL/*bootloader*/, FEATURE_ACCURATE);
+      buffer_t romBuff;
+      buffer_t bootBuff;
+      romBuff.data = romBuffer;
+      romBuff.size = ROM_SIZE;
+      bootBuff.data = NULL;
+      bootBuff.size = 0;
+      uint32_t error = emulatorInit(romBuff, bootBuff, FEATURE_ACCURATE);
       if(error == EMU_ERROR_NONE){
          if(palmExtendedFramebuffer != NULL){
             screenWidth = 320;

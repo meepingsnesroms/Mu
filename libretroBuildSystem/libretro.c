@@ -209,7 +209,13 @@ bool retro_load_game(const struct retro_game_info *info)
    fclose(romFile);
 
    if(bytesRead == ROM_SIZE){
-      uint32_t error = emulatorInit(palmRom, NULL/*bootloader*/, FEATURE_ACCURATE);
+      buffer_t rom;
+      buffer_t bootloader;
+      rom.data = palmRom;
+      rom.size = ROM_SIZE;
+      bootloader.data = NULL;
+      bootloader.size = 0;
+      uint32_t error = emulatorInit(rom, bootloader, FEATURE_ACCURATE);
       if(error != EMU_ERROR_NONE)
          return false;
    }
@@ -224,7 +230,10 @@ bool retro_load_game(const struct retro_game_info *info)
    emulatorSetRtc(timeInfo->tm_yday, timeInfo->tm_hour, timeInfo->tm_min, timeInfo->tm_sec);
    
    if(info != NULL){
-      uint32_t prcSuccess = emulatorInstallPrcPdb((uint8_t*)info->data, info->size);
+      buffer_t prc;
+      prc.data = (uint8_t*)info->data;
+      prc.size = info->size;
+      uint32_t prcSuccess = emulatorInstallPrcPdb(prc);
       if(prcSuccess != EMU_ERROR_NONE)
          return false;
    }
@@ -257,12 +266,18 @@ size_t retro_serialize_size(void)
 
 bool retro_serialize(void *data, size_t size)
 {
+   if(size < emulatorGetStateSize())
+      return false;
+   
    emulatorSaveState((uint8_t*)data);
    return true;
 }
 
 bool retro_unserialize(const void *data, size_t size)
 {
+   if(size < emulatorGetStateSize())
+      return false;
+   
    emulatorLoadState((uint8_t*)data);
    return true;
 }

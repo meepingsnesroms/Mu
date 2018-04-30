@@ -45,8 +45,8 @@ double    palmClockMultiplier;//used by the emulator to overclock the emulated P
 uint64_t (*emulatorGetSysTime)();
 uint64_t* (*emulatorGetSdCardStateChunkList)(uint64_t sessionId, uint64_t stateId);//returns the bps chunkIds for a stateId in the order they need to be applied
 void (*emulatorSetSdCardStateChunkList)(uint64_t sessionId, uint64_t stateId, uint64_t* data);//sets the bps chunkIds for a stateId in the order they need to be applied
-uint8_t* (*emulatorGetSdCardChunk)(uint64_t sessionId, uint64_t chunkId);
-void (*emulatorSetSdCardChunk)(uint64_t sessionId, uint64_t chunkId, uint8_t* data, uint64_t size);
+buffer_t (*emulatorGetSdCardChunk)(uint64_t sessionId, uint64_t chunkId);
+void (*emulatorSetSdCardChunk)(uint64_t sessionId, uint64_t chunkId, buffer_t chunk);
 
 static inline bool allSdCardCallbacksPresent(){
    if(emulatorGetSysTime && emulatorGetSdCardStateChunkList && emulatorSetSdCardStateChunkList && emulatorGetSdCardChunk && emulatorSetSdCardChunk)
@@ -176,7 +176,7 @@ static void invalidBehaviorCheck(){
 #endif
 
 
-uint32_t emulatorInit(uint8_t* palmRomDump, uint8_t* palmBootDump, uint32_t specialFeatures){
+uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t specialFeatures){
    if(emulatorInitialized)
       return EMU_ERROR_NONE;
 
@@ -214,11 +214,17 @@ uint32_t emulatorInit(uint8_t* palmRomDump, uint8_t* palmBootDump, uint32_t spec
    
    //memory
    memset(palmRam, 0x00, (specialFeatures & FEATURE_RAM_HUGE) ? SUPERMASSIVE_RAM_SIZE : RAM_SIZE);
-   memcpy(palmRom, palmRomDump, ROM_SIZE);
-   if(palmBootDump)
-       memcpy(palmReg + REG_SIZE - 1 - BOOTLOADER_SIZE, palmBootDump, BOOTLOADER_SIZE);
-   else
-       memset(palmReg + REG_SIZE - 1 - BOOTLOADER_SIZE, 0x00, BOOTLOADER_SIZE);
+   memcpy(palmRom, palmRomDump.data, uMin(palmRomDump.size, ROM_SIZE));
+   if(palmRomDump.size < ROM_SIZE)
+      memset(palmRom + palmRomDump.size, 0x00, ROM_SIZE - palmRomDump.size);
+   if(palmBootDump.data){
+      memcpy(palmReg + REG_SIZE - 1 - BOOTLOADER_SIZE, palmBootDump.data, uMin(palmBootDump.size, BOOTLOADER_SIZE));
+      if(palmBootDump.size < BOOTLOADER_SIZE)
+         memset(palmReg + REG_SIZE - 1 - BOOTLOADER_SIZE + palmBootDump.size, 0x00, BOOTLOADER_SIZE - palmBootDump.size);
+   }
+   else{
+      memset(palmReg + REG_SIZE - 1 - BOOTLOADER_SIZE, 0x00, BOOTLOADER_SIZE);
+   }
    memset(palmFramebuffer, 0x00, 160 * 160 * sizeof(uint16_t));
    memcpy(&palmFramebuffer[160 * 160], silkscreenData, SILKSCREEN_WIDTH * SILKSCREEN_HEIGHT * (SILKSCREEN_BPP / 8));
    if(palmExtendedFramebuffer){
@@ -302,7 +308,7 @@ uint32_t emulatorSetNewSdCard(uint64_t size, uint8_t type){
    if(!allSdCardCallbacksPresent())
       return EMU_ERROR_CALLBACKS_NOT_SET;
 
-   //more than 2gb, too large for FAT16 or not a card type
+   //more than 2gb/too large for FAT16 or not a card type
    if(size > 0x80000000 || type >= CARD_END)
       return EMU_ERROR_INVALID_PARAMETER;
 
@@ -324,27 +330,31 @@ uint32_t emulatorSetNewSdCard(uint64_t size, uint8_t type){
    return EMU_ERROR_NONE;
 }
 
-uint32_t emulatorSetSdCardFromImage(uint8_t* data, uint64_t size, uint8_t type){
+buffer_t emulatorGetSdCardImage(){
+   return sdCardGetImage();
+}
+
+uint32_t emulatorSetSdCardFromImage(buffer_t image, uint8_t type){
    if(!allSdCardCallbacksPresent())
       return EMU_ERROR_CALLBACKS_NOT_SET;
 
-   //invalid pointer, more than 2gb, too large for FAT16 or not a card type
-   if(!data || size > 0x80000000 || type == CARD_NONE)
+   //invalid pointer, more than 2gb/too large for FAT16 or not a card type
+   if(!image.data || image.size > 0x80000000 || type == CARD_NONE || type >= CARD_END)
       return EMU_ERROR_INVALID_PARAMETER;
 
-   sdCardSetFromImage(data, size);
+   sdCardSetFromImage(image);
 
    palmSdCard.sessionId = emulatorGetSysTime();//completely new sdcard, reset delta state chain
    palmSdCard.stateId = 0x0000000000000000;//set when saving state
-   palmSdCard.size = size;
+   palmSdCard.size = image.size;
    palmSdCard.type = type;
    palmSdCard.inserted = true;
 
    return EMU_ERROR_NONE;
 }
 
-uint32_t emulatorGetStateSize(){
-   uint32_t size = 0;
+uint64_t emulatorGetStateSize(){
+   uint64_t size = 0;
    
    size += sizeof(uint32_t);//save state version
    size += sizeof(uint32_t);//palmSpecialFeatures
@@ -378,7 +388,7 @@ uint32_t emulatorGetStateSize(){
 }
 
 void emulatorSaveState(uint8_t* data){
-   uint32_t offset = 0;
+   uint64_t offset = 0;
    
    //state validation, wont load states that are not from the same state version
    writeStateValueUint32(data + offset, SAVE_STATE_VERSION);
@@ -517,7 +527,7 @@ void emulatorSaveState(uint8_t* data){
 }
 
 void emulatorLoadState(uint8_t* data){
-   uint32_t offset = 0;
+   uint64_t offset = 0;
    
    //state validation, wont load states that are not from the same state version
    if(readStateValueUint32(data + offset) != SAVE_STATE_VERSION)
@@ -655,7 +665,7 @@ void emulatorLoadState(uint8_t* data){
    offset += sizeof(uint8_t);
 }
 
-uint32_t emulatorInstallPrcPdb(uint8_t* data, uint32_t size){
+uint32_t emulatorInstallPrcPdb(buffer_t file){
    //pretend to pass for now
    //return EMU_ERROR_NOT_IMPLEMENTED;
    return EMU_ERROR_NONE;

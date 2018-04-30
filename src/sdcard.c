@@ -79,13 +79,21 @@ uint32_t sdCardReconfigure(uint64_t size){
    return EMU_ERROR_NONE;
 }
 
-uint32_t sdCardSetFromImage(uint8_t* data, uint64_t size){
-   uint32_t error = sdCardReconfigure(size);
+buffer_t sdCardGetImage(){
+   buffer_t image;
+   image.data = sdCardData;
+   image.size = sdCardSize;
+
+   return image;
+}
+
+uint32_t sdCardSetFromImage(buffer_t image){
+   uint32_t error = sdCardReconfigure(image.size);
 
    if(error != EMU_ERROR_NONE)
       return error;
 
-   memcpy(sdCardData, data, size);
+   memcpy(sdCardData, image.data, image.size);
 
    return EMU_ERROR_NONE;
 }
@@ -97,6 +105,7 @@ void sdCardSaveState(uint64_t sessionId, uint64_t stateId){
       struct mem target;
       struct mem metadata;
       struct mem patch;
+      buffer_t chunk;
       
       source.ptr = sdCardOldData;
       source.len = sdCardSize;
@@ -108,7 +117,9 @@ void sdCardSaveState(uint64_t sessionId, uint64_t stateId){
       metadata.len = 0;
       
       bps_create_linear(source, target, metadata, &patch);
-      emulatorSetSdCardChunk(sessionId, stateId, patch.ptr, patch.len);
+      chunk.data = patch.ptr;
+      chunk.size = patch.len;
+      emulatorSetSdCardChunk(sessionId, stateId, chunk);
       bps_free(patch);
       
       if(sdCardChunkIndex + 2 >= sdCardChunkMaxIndex){
@@ -137,9 +148,10 @@ void sdCardLoadState(uint64_t sessionId, uint64_t stateId){
       struct mem patch;
       struct mem input;
       struct mem output;
+      buffer_t chunk = emulatorGetSdCardChunk(sessionId, sdCardChunks[index]);
       
-      patch.ptr = emulatorGetSdCardChunk(sessionId, sdCardChunks[index]);
-      patch.len = sdCardSize;
+      patch.ptr = chunk.data;
+      patch.len = chunk.size;
       
       input.ptr = sdCardData;
       input.len = sdCardSize;

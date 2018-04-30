@@ -314,8 +314,8 @@ void sed1376Render(){
             }
             //debugLog("PIP state, start x:%d, end x:%d, start y:%d, end y:%d\n", pipStartX, pipEndX, pipStartY, pipEndY);
             if(pipStartX < 160 && pipStartY < 160){
-               pipEndX = min(pipEndX, 160);
-               pipEndY = min(pipEndX, 160);
+               pipEndX = uMin(pipEndX, 160);
+               pipEndY = uMin(pipEndX, 160);
                screenStartAddress = getPipStartAddress();
                lineSize = (sed1376Registers[PIP_LINE_SZ_1] << 8 | sed1376Registers[PIP_LINE_SZ_0]) * 4;
                for(uint16_t pixelY = pipStartY; pixelY < pipEndY; pixelY++)

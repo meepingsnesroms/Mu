@@ -37,13 +37,19 @@ enum{
 
 //sdcard types
 enum{
-   CARD_NONE = 0,
-   CARD_SD,
+   CARD_BEGIN = 0,
+   CARD_SD = 0,
    CARD_MMC,
+   CARD_NONE,
    CARD_END
 };
 
 //types
+typedef struct{
+   uint8_t* data;
+   uint64_t size;
+}buffer_t;
+
 typedef struct{
    bool     buttonUp;
    bool     buttonDown;
@@ -115,20 +121,21 @@ extern double    palmClockMultiplier;
 extern uint64_t (*emulatorGetSysTime)();
 extern uint64_t* (*emulatorGetSdCardStateChunkList)(uint64_t sessionId, uint64_t stateId);//returns the bps chunkIds for a stateId in the order they need to be applied
 extern void (*emulatorSetSdCardStateChunkList)(uint64_t sessionId, uint64_t stateId, uint64_t* data);//sets the bps chunkIds for a stateId in the order they need to be applied
-extern uint8_t* (*emulatorGetSdCardChunk)(uint64_t sessionId, uint64_t chunkId);
-extern void (*emulatorSetSdCardChunk)(uint64_t sessionId, uint64_t chunkId, uint8_t* data, uint64_t size);
+extern buffer_t (*emulatorGetSdCardChunk)(uint64_t sessionId, uint64_t chunkId);
+extern void (*emulatorSetSdCardChunk)(uint64_t sessionId, uint64_t chunkId, buffer_t chunk);
 
 //functions
-uint32_t emulatorInit(uint8_t* palmRomDump, uint8_t* palmBootDump, uint32_t specialFeatures);//calling any emulator functions before emulatorInit results in undefined behavior
+uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t specialFeatures);//calling any emulator functions before emulatorInit results in undefined behavior
 void emulatorExit();
 void emulatorReset();
 void emulatorSetRtc(uint32_t days, uint32_t hours, uint32_t minutes, uint32_t seconds);
 uint32_t emulatorSetNewSdCard(uint64_t size, uint8_t type);
-uint32_t emulatorSetSdCardFromImage(uint8_t* data, uint64_t size, uint8_t type);
-uint32_t emulatorGetStateSize();
+buffer_t emulatorGetSdCardImage();//doing anything with the emulator will alter this, do not free it, it is a direct pointer to the sdcard data
+uint32_t emulatorSetSdCardFromImage(buffer_t image, uint8_t type);
+uint64_t emulatorGetStateSize();
 void emulatorSaveState(uint8_t* data);
 void emulatorLoadState(uint8_t* data);
-uint32_t emulatorInstallPrcPdb(uint8_t* data, uint32_t size);
+uint32_t emulatorInstallPrcPdb(buffer_t file);
 void emulateFrame();
 bool emulateUntilDebugEventOrFrameEnd();//false for frame end, true for debug event
    
