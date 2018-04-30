@@ -29,7 +29,6 @@ QSettings settings;
 
 static QImage video;
 static QTimer* refreshDisplay;
-static uint8_t romBuffer[ROM_SIZE];
 static HexViewer* emuStateBrowser;
 static std::thread emuThread;
 static std::atomic<bool> emuThreadJoin;
@@ -121,8 +120,6 @@ MainWindow::MainWindow(QWidget* parent) :
    emuNewFrameReady = false;
    emuDoubleBuffer = NULL;
 
-   loadRom();
-
 #if !defined(FRONTEND_DEBUG) || defined(Q_OS_ANDROID) || defined(Q_OS_IOS)
    ui->hexViewer->hide();
 #endif
@@ -156,39 +153,17 @@ bool MainWindow::eventFilter(QObject *object, QEvent *event){
    return QMainWindow::eventFilter(object, event);
 }
 
-void MainWindow::loadRom(){
-   QString rom = settings.value("resourceDirectory", "").toString() + "/palmos41-en-m515.rom";
-   uint32_t error;
-   size_t size;
-   uint8_t* romData = getFileBuffer(rom, size, error);
-
-   if(romData){
-      size_t romSize = size < ROM_SIZE ? size : ROM_SIZE;
-      memcpy(romBuffer, romData, romSize);
-      if(romSize < ROM_SIZE)
-         memset(romBuffer + romSize, 0x00, ROM_SIZE - romSize);
-      delete[] romData;
-   }
-
-   if(error != FRONTEND_ERR_NONE)
-      popupErrorDialog("Could not open ROM file");
-   ui->ctrlBtn->setEnabled(error == FRONTEND_ERR_NONE);
-}
-
 void MainWindow::selectHomePath(){
    QString dir = QFileDialog::getOpenFileName(this, "New Home Directory \"~/Mu\" is default", QDir::root().path(), 0);
    settings.setValue("resourceDirectory", dir);
-   loadRom();//refresh target ROM
 }
 
 void MainWindow::on_install_pressed(){
    QString app = QFileDialog::getOpenFileName(this, "Open Prc/Pdb/Pqa", QDir::root().path(), 0);
    uint32_t error;
-   size_t size;
    buffer_t appData;
-   appData.data = getFileBuffer(app, size, error);
+   appData.data = getFileBuffer(app, appData.size, error);
    if(appData.data){
-      appData.size = size;
       error = emulatorInstallPrcPdb(appData);
       delete[] appData.data;
    }
@@ -259,13 +234,26 @@ void MainWindow::on_notes_released(){
 void MainWindow::on_ctrlBtn_clicked(){
    if(!emuOn && !emuInited){
       //start emu
+      uint32_t error;
       buffer_t romBuff;
       buffer_t bootBuff;
-      romBuff.data = romBuffer;
-      romBuff.size = ROM_SIZE;
-      bootBuff.data = NULL;
-      bootBuff.size = 0;
-      uint32_t error = emulatorInit(romBuff, bootBuff, FEATURE_ACCURATE);
+      romBuff.data = getFileBuffer(settings.value("resourceDirectory", "").toString() + "/palmos41-en-m515.rom", romBuff.size, error);
+      if(error != FRONTEND_ERR_NONE){
+         popupErrorDialog("Cant load ROM file, error:" + QString::number(error) + ", cant run!");
+         return;
+      }
+      bootBuff.data = getFileBuffer(settings.value("resourceDirectory", "").toString() + "/bootloader-en-m515.rom", bootBuff.size, error);
+      if(error != FRONTEND_ERR_NONE){
+         //its ok if the bootloader gives an error, the emu doesnt actually need it
+         bootBuff.data = NULL;
+         bootBuff.size = 0;
+      }
+
+      error = emulatorInit(romBuff, bootBuff, FEATURE_ACCURATE);
+      delete[] romBuff.data;
+      if(bootBuff.data)
+         delete[] bootBuff.data;
+
       if(error == EMU_ERROR_NONE){
          if(palmExtendedFramebuffer != NULL){
             screenWidth = 320;

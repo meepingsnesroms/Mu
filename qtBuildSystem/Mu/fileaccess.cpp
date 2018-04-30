@@ -7,7 +7,7 @@
 
 #include "fileaccess.h"
 
-uint8_t* getFileBuffer(QString filePath, size_t& size, uint32_t& error){
+uint8_t* getFileBuffer(QString filePath, uint64_t& size, uint32_t& error){
    QFile file(filePath);
    QByteArray tempArray;
    uint8_t* rawData = NULL;

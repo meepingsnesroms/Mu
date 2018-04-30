@@ -23,7 +23,6 @@ public:
 private slots:
    void popupErrorDialog(QString error);
    bool eventFilter(QObject *object, QEvent *event);
-   void loadRom();
    void selectHomePath();
    void on_install_pressed();
 

@@ -14,6 +14,6 @@ enum{
    FRONTEND_OUT_OF_MEMORY
 };
 
-uint8_t* getFileBuffer(QString filePath, size_t& size, uint32_t& error);
+uint8_t* getFileBuffer(QString filePath, uint64_t& size, uint32_t& error);
 uint32_t setFileBuffer(QString filePath, uint8_t* data, size_t size);
 bool validFilePath(QString path);
