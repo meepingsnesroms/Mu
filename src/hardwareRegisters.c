@@ -704,6 +704,22 @@ void setHwRegister16(unsigned int address, unsigned int value){
       case TCTL2:
          registerArrayWrite16(address, value & 0x01FF);
          break;
+
+      case TSTAT1:
+         //preserve any unread bits
+         registerArrayWrite16(TSTAT1, (value & timerStatusReadAcknowledge[0]) | (registerArrayRead16(TSTAT1) & ~timerStatusReadAcknowledge[0]));
+         timerStatusReadAcknowledge[0] = 0x0000;//clear acknowledged reads
+         if(!(registerArrayRead16(TSTAT1) & 0x0001))
+            clearIprIsrBit(INT_TMR1);
+         break;
+
+      case TSTAT2:
+         //preserve any unread bits
+         registerArrayWrite16(TSTAT2, (value & timerStatusReadAcknowledge[1]) | (registerArrayRead16(TSTAT2) & ~timerStatusReadAcknowledge[1]));
+         timerStatusReadAcknowledge[1] = 0x0000;//clear acknowledged reads
+         if(!(registerArrayRead16(TSTAT2) & 0x0001))
+            clearIprIsrBit(INT_TMR2);
+         break;
          
       case WATCHDOG:
          //writing to the watchdog resets the counter bits(8 and 9) to 0
@@ -825,16 +841,6 @@ void setHwRegister16(unsigned int address, unsigned int value){
          setSpiCont2(value);
          break;
 
-      case TSTAT1:
-         //preserve any unread bits
-         registerArrayWrite16(TSTAT1, (value & timerStatusReadAcknowledge[0]) | (registerArrayRead16(TSTAT1) & ~timerStatusReadAcknowledge[0]));
-         break;
-
-      case TSTAT2:
-         //preserve any unread bits
-         registerArrayWrite16(TSTAT2, (value & timerStatusReadAcknowledge[1]) | (registerArrayRead16(TSTAT2) & ~timerStatusReadAcknowledge[1]));
-         break;
-
       case TCMP1:
       case TCMP2:
       case TPRER1:
@@ -903,6 +909,7 @@ void setHwRegister32(unsigned int address, unsigned int value){
 
 void resetHwRegisters(){
    memset(palmReg, 0x00, REG_SIZE - BOOTLOADER_SIZE);
+   palmCrystalCycles = 0.0;
    clk32Counter = 0;
    pllWakeWait = -1;
    timerCycleCounter[0] = 0.0;

@@ -9,7 +9,7 @@ RAM wait states
 
 CPU I/O:
 Timer capture events, I don't think there possible though with the Palms hardware
-Peripheral Control Register, audio ppm mixing selection
+Peripheral Control Register, audio ppm mixing selection and timer cascade mode
 All edge triggered interrupts(currently always level triggered)
 Port G SPI stuff
 Setting the battery dead bit(PDDATA 0x80) if the emulated battery percent gets too low
