@@ -12,7 +12,7 @@ Timer capture events, I don't think there possible though with the Palms hardwar
 Peripheral Control Register, audio ppm mixing selection and timer cascade mode
 All edge triggered interrupts(currently always level triggered)
 Port G SPI stuff
-Setting the battery dead bit(PDDATA 0x80) if the emulated battery percent gets too low
+Setting the battery dead bit(PDDATA 0x80) if the emulated battery percent gets too low(don't know how low this is)
 DRAMC write enable
 All of DRAMMC
 pen input
@@ -21,6 +21,9 @@ interrupt control register (ICR), POL5 and edge trigger selects
 ADC7846 temperature sensors
 ADC7846 dock sensor
 some undocumented I/O might be on port e and port j
+if a timer triggers more than once per CLK32 it will lose any triggers after the first and get out of sync
+SPI1, probably the sdcard since sdcards use SPI for data transfer
+SPITEST SSTATUS is undocumented and therefore unemulated
 
 Debug tools:
 missing icons

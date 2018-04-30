@@ -3,8 +3,8 @@
 #include "emulator.h"
 
 
-uint8_t ads7846InputBitsLeft;
-uint8_t ads7846ControlByte;
+uint8_t  ads7846InputBitsLeft;
+uint8_t  ads7846ControlByte;
 uint16_t ads7846OutputValue;
 
 

@@ -264,6 +264,7 @@ uint32_t emulatorInit(uint8_t* palmRomDump, uint8_t* palmBootDump, uint32_t spec
    //config
    palmClockMultiplier = (specialFeatures & FEATURE_FAST_CPU) ? 2.0 : 1.0;//overclock
    palmSpecialFeatures = specialFeatures;
+   setRtc(0, 0, 0, 0);
    
    //start running
    m68k_pulse_reset();
@@ -334,6 +335,9 @@ uint32_t emulatorGetStateSize(){
    size += sizeof(int32_t);//pllWakeWait
    size += sizeof(uint32_t);//clk32Counter
    size += sizeof(uint16_t) * 2;//timerStatusReadAcknowledge
+   size += sizeof(uint16_t) * 8;//RX 8 * 16 SPI1 FIFO
+   size += sizeof(uint16_t) * 8;//TX 8 * 16 SPI1 FIFO
+   size += sizeof(uint8_t) * 2;//spi1(R/T)xPosition
    size += sizeof(uint8_t) * 2;//ads7846
    size += sizeof(uint16_t);//ads7846
    size += sizeof(uint8_t) * 7;//palmMisc
@@ -441,6 +445,20 @@ void emulatorSaveState(uint8_t* data){
    offset += sizeof(uint16_t);
    writeStateValueUint16(data + offset, timerStatusReadAcknowledge[1]);
    offset += sizeof(uint16_t);
+
+   //SPI1
+   for(uint8_t fifoPosition = 0; fifoPosition < 8; fifoPosition++){
+      writeStateValueUint16(data + offset, spi1RxFifo[fifoPosition]);
+      offset += sizeof(uint16_t);
+   }
+   for(uint8_t fifoPosition = 0; fifoPosition < 8; fifoPosition++){
+      writeStateValueUint16(data + offset, spi1TxFifo[fifoPosition]);
+      offset += sizeof(uint16_t);
+   }
+   writeStateValueUint8(data + offset, spi1RxPosition);
+   offset += sizeof(uint8_t);
+   writeStateValueUint8(data + offset, spi1TxPosition);
+   offset += sizeof(uint8_t);
 
    //ADS7846
    writeStateValueUint8(data + offset, ads7846InputBitsLeft);
@@ -566,6 +584,20 @@ void emulatorLoadState(uint8_t* data){
    offset += sizeof(uint16_t);
    timerStatusReadAcknowledge[1] = readStateValueUint16(data + offset);
    offset += sizeof(uint16_t);
+
+   //SPI1
+   for(uint8_t fifoPosition = 0; fifoPosition < 8; fifoPosition++){
+      spi1RxFifo[fifoPosition] = readStateValueUint16(data + offset);
+      offset += sizeof(uint16_t);
+   }
+   for(uint8_t fifoPosition = 0; fifoPosition < 8; fifoPosition++){
+      spi1TxFifo[fifoPosition] = readStateValueUint16(data + offset);
+      offset += sizeof(uint16_t);
+   }
+   spi1RxPosition = readStateValueUint8(data + offset);
+   offset += sizeof(uint8_t);
+   spi1TxPosition = readStateValueUint8(data + offset);
+   offset += sizeof(uint8_t);
 
    //ADS7846
    ads7846InputBitsLeft = readStateValueUint8(data + offset);

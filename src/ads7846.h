@@ -2,8 +2,8 @@
 
 #include <stdbool.h>
 
-extern uint8_t ads7846InputBitsLeft;
-extern uint8_t ads7846ControlByte;
+extern uint8_t  ads7846InputBitsLeft;
+extern uint8_t  ads7846ControlByte;
 extern uint16_t ads7846OutputValue;
 
 void ads7846SendBit(bool bit);

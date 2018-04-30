@@ -60,6 +60,10 @@ extern int32_t  pllWakeWait;
 extern uint32_t clk32Counter;
 extern double   timerCycleCounter[];
 extern uint16_t timerStatusReadAcknowledge[];
+extern uint16_t spi1RxFifo[8];
+extern uint16_t spi1TxFifo[8];
+extern uint8_t  spi1RxPosition;
+extern uint8_t  spi1TxPosition;
 
 //memory accessors
 unsigned int getHwRegister8(unsigned int address);

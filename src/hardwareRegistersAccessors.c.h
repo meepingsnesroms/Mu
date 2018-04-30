@@ -71,10 +71,15 @@ static inline void setCsd(uint16_t value){
 
    chips[CHIP_D_RAM].enable = value & 0x0001;
    chips[CHIP_D_RAM].readOnly = value & 0x8000;
-   if(csControl1 & 0x0040 && value & 0x0200)
-      chips[CHIP_D_RAM].size = 0x800000/*8mb*/ << (value >> 1 & 0x0001);
-   else
+   if(csControl1 & 0x0040 && value & 0x0200){
+      if(palmSpecialFeatures && FEATURE_RAM_HUGE)
+         chips[CHIP_D_RAM].size = 0x4000000/*64mb*/ << (value >> 1 & 0x0001);
+      else
+         chips[CHIP_D_RAM].size = 0x800000/*8mb*/ << (value >> 1 & 0x0001);
+   }
+   else{
       chips[CHIP_D_RAM].size = 0x8000/*32kb*/ << (value >> 1 & 0x0007);
+   }
 
    //attributes
    chips[CHIP_D_RAM].supervisorOnlyProtectedMemory = value & 0x4000;
@@ -209,6 +214,26 @@ static inline void setIlcr(uint16_t value){
       newIlcr |= oldIlcr & 0x0007;
 }
 
+static inline void setSpiCont1(uint16_t value){
+   //unsure if ENABLE can be set at the exact moment of write or must be set before write, currently allow both
+   //important bits are ENABLE, XCH, IRQ, IRQEN and BITCOUNT
+   //uint16_t oldSpiCont1 = registerArrayRead16(SPICONT1);
+   if(value & 0x0400 && value & 0x0200 && value & 0x0100){
+      //master mode, enabled and exchange set
+      uint8_t bitCount = (value & 0x000F) + 1;
+
+      //dont know what to transfer here yet
+
+      //debugLog("SPI2 transfer, ENABLE:%s, XCH:%s, IRQ:%s, IRQEN:%s, BITCOUNT:%d\n", boolString(value & 0x0200), boolString(value & 0x0100), boolString(value & 0x0080), boolString(value & 0x0400), (value & 0x000F) + 1);
+      //debugLog("SPI2 transfer, shifted in:0x%04X, shifted out:0x%04X\n", spi2Data << (16 - bitCount) >> bitCount, oldSpiCont2 >> (16 - bitCount));
+
+      //unset XCH, transfers are instant since timing is not emulated
+      value &= 0xFEFF;
+   }
+
+   registerArrayWrite16(SPICONT1, value);
+}
+
 static inline void setSpiCont2(uint16_t value){
    //unsure if ENABLE can be set at the exact moment of write or must be set before write, currently allow both
    //important bits are ENABLE, XCH, IRQ, IRQEN and BITCOUNT
@@ -240,6 +265,28 @@ static inline void setSpiCont2(uint16_t value){
    }
 
    registerArrayWrite16(SPICONT2, value & 0xE3FF);
+}
+
+static inline void setTstat1(uint16_t value){
+   uint16_t oldTstat1 = registerArrayRead16(TSTAT1);
+   //preserve any unread bits
+   registerArrayWrite16(TSTAT1, (value & timerStatusReadAcknowledge[0]) | (oldTstat1 & ~timerStatusReadAcknowledge[0]));
+   if(!(value & 0x0001) && (oldTstat1 & timerStatusReadAcknowledge[0] & 0x0001)){
+      clearIprIsrBit(INT_TMR1);
+      checkInterrupts();
+   }
+   timerStatusReadAcknowledge[0] = 0x0000;//clear acknowledged reads
+}
+
+static inline void setTstat2(uint16_t value){
+   uint16_t oldTstat2 = registerArrayRead16(TSTAT2);
+   //preserve any unread bits
+   registerArrayWrite16(TSTAT2, (value & timerStatusReadAcknowledge[1]) | (oldTstat2 & ~timerStatusReadAcknowledge[1]));
+   if(!(value & 0x0001) && (oldTstat2 & timerStatusReadAcknowledge[1] & 0x0001)){
+      clearIprIsrBit(INT_TMR2);
+      checkInterrupts();
+   }
+   timerStatusReadAcknowledge[1] = 0x0000;//clear acknowledged reads
 }
 
 //register getters
@@ -291,4 +338,9 @@ static inline uint8_t getPortKValue(){
    portKValue |= portKData & portKDir & portKSel;
 
    return portKValue;
+}
+
+static inline uint16_t getSpiTest(){
+   //SSTATUS is unemulated because the datasheet has no descrption of how it works
+   return spi1RxPosition << 4 | spi1TxPosition;
 }

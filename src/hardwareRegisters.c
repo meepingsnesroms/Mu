@@ -17,6 +17,11 @@ int32_t  pllWakeWait;
 uint32_t clk32Counter;
 double   timerCycleCounter[2];
 uint16_t timerStatusReadAcknowledge[2];
+uint16_t spi1RxFifo[8];
+uint16_t spi1TxFifo[8];
+uint8_t  spi1RxPosition;
+uint8_t  spi1TxPosition;
+//bool     spi1RxFifoOverflow;//may not be needed, just dont send any data unless FIFO has a slot
 
 
 bool pllIsOn();
@@ -138,59 +143,49 @@ static inline void pllWakeCpuIfOff(){
 static void checkInterrupts(){
    uint32_t activeInterrupts = registerArrayRead32(ISR);
    uint16_t interruptLevelControlRegister = registerArrayRead16(ILCR);
-   uint16_t portDEdgeSelect = registerArrayRead16(PDIRQEG);
    uint8_t intLevel = 0;
-   bool reenablePllIfOff = false;
 
    if(activeInterrupts & INT_EMIQ){
       //EMIQ - Emulator IRQ, has nothing to do with emulation, used for debugging on a dev board
       intLevel = 7;
-      reenablePllIfOff = true;
    }
 
    if(activeInterrupts & INT_SPI1){
       uint8_t spi1IrqLevel = interruptLevelControlRegister >> 12;
       if(intLevel < spi1IrqLevel)
          intLevel = spi1IrqLevel;
-      reenablePllIfOff = true;
    }
 
    if(activeInterrupts & INT_IRQ5){
       if(intLevel < 5)
          intLevel = 5;
-      reenablePllIfOff = true;
    }
 
    if(activeInterrupts & INT_IRQ3){
       if(intLevel < 3)
          intLevel = 3;
-      reenablePllIfOff = true;
    }
 
    if(activeInterrupts & INT_IRQ2){
       if(intLevel < 2)
          intLevel = 2;
-      reenablePllIfOff = true;
    }
 
    if(activeInterrupts & INT_IRQ1){
       if(intLevel < 1)
          intLevel = 1;
-      reenablePllIfOff = true;
    }
 
    if(activeInterrupts & INT_PWM2){
       uint8_t pwm2IrqLevel = (interruptLevelControlRegister >> 4) & 0x0007;
       if(intLevel < pwm2IrqLevel)
          intLevel = pwm2IrqLevel;
-      reenablePllIfOff = true;
    }
 
    if(activeInterrupts & INT_UART2){
       uint8_t uart2IrqLevel = (interruptLevelControlRegister >> 8) & 0x0007;
       if(intLevel < uart2IrqLevel)
          intLevel = uart2IrqLevel;
-      reenablePllIfOff = true;
    }
 
    if(activeInterrupts & INT_TMR2){
@@ -198,58 +193,47 @@ static void checkInterrupts(){
       uint8_t timer2IrqLevel = interruptLevelControlRegister & 0x0007;
       if(intLevel < timer2IrqLevel)
          intLevel = timer2IrqLevel;
-      reenablePllIfOff = true;
    }
 
    if(activeInterrupts & (INT_TMR1 | INT_PWM1 | INT_IRQ6)){
       //All Fixed Level 6 Interrupts
       if(intLevel < 6)
          intLevel = 6;
-      reenablePllIfOff = true;
    }
 
    if(activeInterrupts & (INT_SPI2 | INT_UART1 | INT_WDT | INT_RTC | INT_KB | INT_RTI)){
       //All Fixed Level 4 Interrupts
       if(intLevel < 4)
          intLevel = 4;
-      reenablePllIfOff = true;
    }
 
    if(activeInterrupts & INT_INT0){
       //INTx, only reenable the PLL if interrupt is set to level sensitive
       if(intLevel < 4)
          intLevel = 4;
-      if(!(portDEdgeSelect & 0x01))
-         reenablePllIfOff = true;
    }
 
    if(activeInterrupts & INT_INT1){
       //INTx, only reenable the PLL if interrupt is set to level sensitive
       if(intLevel < 4)
          intLevel = 4;
-      if(!(portDEdgeSelect & 0x02))
-         reenablePllIfOff = true;
    }
 
    if(activeInterrupts & INT_INT2){
       //INTx, only reenable the PLL if interrupt is set to level sensitive
       if(intLevel < 4)
          intLevel = 4;
-      if(!(portDEdgeSelect & 0x04))
-         reenablePllIfOff = true;
    }
 
    if(activeInterrupts & INT_INT3){
       //INTx, only reenable the PLL if interrupt is set to level sensitive
       if(intLevel < 4)
          intLevel = 4;
-      if(!(portDEdgeSelect & 0x08))
-         reenablePllIfOff = true;
    }
 
-   if(reenablePllIfOff)
-      pllWakeCpuIfOff();
+   //some interrupts should probably be auto cleared after being run once, RTI, RTC, WATCHDOG and SPI1/2 seem like they should be cleared this way
 
+   pllWakeCpuIfOff();
    m68k_set_irq(intLevel);//should be called even if intLevel is 0, that is how the interrupt state gets cleared
 }
 
@@ -259,26 +243,31 @@ static void checkPortDInterrupts(){
    uint8_t portDIntEnable = registerArrayRead8(PDIRQEN);
    uint8_t portDKeyboardEnable = registerArrayRead8(PDKBEN);
    uint8_t portDIrqPins = ~registerArrayRead8(PDSEL);
+   uint16_t portDEdgeSelect = registerArrayRead16(PDIRQEG);
    uint16_t interruptControlRegister = registerArrayRead16(ICR);
 
    if(portDIntEnable & portDValue & ~portDDir & 0x01){
       //int 0, polarity set with PDPOL
-      setIprIsrBit(INT_INT0);
+      if(!(portDEdgeSelect & 0x01) || pllIsOn())
+         setIprIsrBit(INT_INT0);
    }
    
    if(portDIntEnable & portDValue & ~portDDir & 0x02){
       //int 1, polarity set with PDPOL
-      setIprIsrBit(INT_INT1);
+      if(!(portDEdgeSelect & 0x02) || pllIsOn())
+         setIprIsrBit(INT_INT1);
    }
    
    if(portDIntEnable & portDValue & ~portDDir & 0x04){
       //int 2, polarity set with PDPOL
-      setIprIsrBit(INT_INT2);
+      if(!(portDEdgeSelect & 0x04) || pllIsOn())
+         setIprIsrBit(INT_INT2);
    }
    
    if(portDIntEnable & portDValue & ~portDDir & 0x08){
       //int 3, polarity set with PDPOL
-      setIprIsrBit(INT_INT3);
+      if(!(portDEdgeSelect & 0x08) || pllIsOn())
+         setIprIsrBit(INT_INT3);
    }
    
    if(portDIrqPins & ~portDDir & 0x10 && (bool)(portDValue & 0x10) == (bool)(interruptControlRegister & 0x8000)){
@@ -474,6 +463,8 @@ unsigned int getHwRegister16(unsigned int address){
       case TCMP2:
       case TPRER1:
       case TPRER2:
+      case TCTL1:
+      case TCTL2:
       case SPICONT2:
       case SPIDATA2:
          //simple read, no actions needed
@@ -706,19 +697,11 @@ void setHwRegister16(unsigned int address, unsigned int value){
          break;
 
       case TSTAT1:
-         //preserve any unread bits
-         registerArrayWrite16(TSTAT1, (value & timerStatusReadAcknowledge[0]) | (registerArrayRead16(TSTAT1) & ~timerStatusReadAcknowledge[0]));
-         timerStatusReadAcknowledge[0] = 0x0000;//clear acknowledged reads
-         if(!(registerArrayRead16(TSTAT1) & 0x0001))
-            clearIprIsrBit(INT_TMR1);
+         setTstat1(value);
          break;
 
       case TSTAT2:
-         //preserve any unread bits
-         registerArrayWrite16(TSTAT2, (value & timerStatusReadAcknowledge[1]) | (registerArrayRead16(TSTAT2) & ~timerStatusReadAcknowledge[1]));
-         timerStatusReadAcknowledge[1] = 0x0000;//clear acknowledged reads
-         if(!(registerArrayRead16(TSTAT2) & 0x0001))
-            clearIprIsrBit(INT_TMR2);
+         setTstat2(value);
          break;
          
       case WATCHDOG:
@@ -841,6 +824,9 @@ void setHwRegister16(unsigned int address, unsigned int value){
          setSpiCont2(value);
          break;
 
+      case SPISPC:
+         //SPI1 timing, unemulated for now
+
       case TCMP1:
       case TCMP2:
       case TPRER1:
@@ -916,6 +902,11 @@ void resetHwRegisters(){
    timerCycleCounter[1] = 0.0;
    timerStatusReadAcknowledge[0] = 0x0000;
    timerStatusReadAcknowledge[1] = 0x0000;
+   memset(spi1RxFifo, 0x00, 8 * sizeof(uint16_t));
+   memset(spi1TxFifo, 0x00, 8 * sizeof(uint16_t));
+   spi1RxPosition = 0;
+   spi1TxPosition = 0;
+
    for(uint8_t chip = CHIP_BEGIN; chip < CHIP_END; chip++){
       chips[chip].enable = false;
       chips[chip].start = 0x00000000;
