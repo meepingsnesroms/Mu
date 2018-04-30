@@ -79,6 +79,17 @@ uint32_t sdCardReconfigure(uint64_t size){
    return EMU_ERROR_NONE;
 }
 
+uint32_t sdCardSetFromImage(uint8_t* data, uint64_t size){
+   uint32_t error = sdCardReconfigure(size);
+
+   if(error != EMU_ERROR_NONE)
+      return error;
+
+   memcpy(sdCardData, data, size);
+
+   return EMU_ERROR_NONE;
+}
+
 void sdCardSaveState(uint64_t sessionId, uint64_t stateId){
    //make single bps if sdcard data has changed
    if(memcmp(sdCardOldData, sdCardData, sdCardSize) != 0){

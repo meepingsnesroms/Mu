@@ -291,7 +291,7 @@ void sed1376Render(){
       lineSize = (sed1376Registers[LINE_SIZE_1] << 8 | sed1376Registers[LINE_SIZE_0]) * 4;
       selectRenderer(color, bitDepth);
 
-      if(renderPixel != NULL){
+      if(renderPixel){
          for(uint16_t pixelY = 0; pixelY < 160; pixelY++)
             for(uint16_t pixelX = 0; pixelX < 160; pixelX++)
                palmFramebuffer[pixelY * 160 + pixelX] = renderPixel(pixelX, pixelY);

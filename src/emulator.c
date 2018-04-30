@@ -187,12 +187,12 @@ uint32_t emulatorInit(uint8_t* palmRomDump, uint8_t* palmBootDump, uint32_t spec
       palmExtendedFramebuffer = malloc(320 * (320 + 120) * sizeof(uint16_t));//really 320*320, the extra pixels are the silkscreened digitizer area
    else
       palmExtendedFramebuffer = NULL;
-   if(palmRam == NULL || palmRom == NULL || (palmExtendedFramebuffer == NULL && (specialFeatures & FEATURE_320x320))){
-      if(palmRam != NULL)
+   if(!palmRam || !palmRom || (!palmExtendedFramebuffer && (specialFeatures & FEATURE_320x320))){
+      if(palmRam)
          free(palmRam);
-      if(palmRom != NULL)
+      if(palmRom)
          free(palmRom);
-      if(palmExtendedFramebuffer != NULL)
+      if(palmExtendedFramebuffer)
          free(palmExtendedFramebuffer);
       return EMU_ERROR_OUT_OF_MEMORY;
    }
@@ -221,7 +221,7 @@ uint32_t emulatorInit(uint8_t* palmRomDump, uint8_t* palmBootDump, uint32_t spec
        memset(palmReg + REG_SIZE - 1 - BOOTLOADER_SIZE, 0x00, BOOTLOADER_SIZE);
    memset(palmFramebuffer, 0x00, 160 * 160 * sizeof(uint16_t));
    memcpy(&palmFramebuffer[160 * 160], silkscreenData, SILKSCREEN_WIDTH * SILKSCREEN_HEIGHT * (SILKSCREEN_BPP / 8));
-   if(palmExtendedFramebuffer != NULL){
+   if(palmExtendedFramebuffer){
       memset(palmExtendedFramebuffer, 0x00, 320 * 320 * sizeof(uint16_t));
       //add 320*320 silkscreen image later, 2xBRZ should be able to make 320*320 version of the 160*160 silkscreen
    }
@@ -298,16 +298,48 @@ void emulatorSetRtc(uint32_t days, uint32_t hours, uint32_t minutes, uint32_t se
    setRtc(days, hours, minutes, seconds);
 }
 
-uint32_t emulatorSetSdCard(uint64_t size, uint8_t type){
+uint32_t emulatorSetNewSdCard(uint64_t size, uint8_t type){
    if(!allSdCardCallbacksPresent())
       return EMU_ERROR_CALLBACKS_NOT_SET;
+
+   //more than 2gb, too large for FAT16 or not a card type
+   if(size > 0x80000000 || type >= CARD_END)
+      return EMU_ERROR_INVALID_PARAMETER;
+
+   if(type != CARD_NONE){
+      palmSdCard.sessionId = emulatorGetSysTime();//completely new sdcard, reset delta state chain
+      palmSdCard.stateId = 0x0000000000000000;//set when saving state
+      palmSdCard.size = size;
+      palmSdCard.type = type;
+      palmSdCard.inserted = true;
+   }
+   else{
+      palmSdCard.sessionId = 0x0000000000000000;
+      palmSdCard.stateId = 0x0000000000000000;
+      palmSdCard.size = 0;
+      palmSdCard.type = CARD_NONE;
+      palmSdCard.inserted = false;
+   }
    
-   palmSdCard.sessionId = emulatorGetSysTime();
+   return EMU_ERROR_NONE;
+}
+
+uint32_t emulatorSetSdCardFromImage(uint8_t* data, uint64_t size, uint8_t type){
+   if(!allSdCardCallbacksPresent())
+      return EMU_ERROR_CALLBACKS_NOT_SET;
+
+   //invalid pointer, more than 2gb, too large for FAT16 or not a card type
+   if(!data || size > 0x80000000 || type == CARD_NONE)
+      return EMU_ERROR_INVALID_PARAMETER;
+
+   sdCardSetFromImage(data, size);
+
+   palmSdCard.sessionId = emulatorGetSysTime();//completely new sdcard, reset delta state chain
    palmSdCard.stateId = 0x0000000000000000;//set when saving state
    palmSdCard.size = size;
    palmSdCard.type = type;
    palmSdCard.inserted = true;
-   
+
    return EMU_ERROR_NONE;
 }
 
@@ -413,9 +445,8 @@ void emulatorSaveState(uint8_t* data){
    //sdcard
    //update sdcard struct and save sdcard data
    if(allSdCardCallbacksPresent() && palmSdCard.type != CARD_NONE){
-      uint64_t stateId = emulatorGetSysTime();
-      sdCardSaveState(palmSdCard.sessionId, stateId);
-      palmSdCard.stateId = stateId;
+      palmSdCard.stateId = emulatorGetSysTime();
+      sdCardSaveState(palmSdCard.sessionId, palmSdCard.stateId);
    }
    writeStateValueUint64(data + offset, palmSdCard.sessionId);
    offset += sizeof(uint64_t);

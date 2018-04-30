@@ -32,14 +32,15 @@ enum{
    EMU_ERROR_NOT_IMPLEMENTED,
    EMU_ERROR_CALLBACKS_NOT_SET,
    EMU_ERROR_OUT_OF_MEMORY,
-   EMU_ERROR_NOT_DOCUMENTED
+   EMU_ERROR_INVALID_PARAMETER
 };
 
 //sdcard types
 enum{
    CARD_NONE = 0,
    CARD_SD,
-   CARD_MMC
+   CARD_MMC,
+   CARD_END
 };
 
 //types
@@ -122,7 +123,8 @@ uint32_t emulatorInit(uint8_t* palmRomDump, uint8_t* palmBootDump, uint32_t spec
 void emulatorExit();
 void emulatorReset();
 void emulatorSetRtc(uint32_t days, uint32_t hours, uint32_t minutes, uint32_t seconds);
-uint32_t emulatorSetSdCard(uint64_t size, uint8_t type);
+uint32_t emulatorSetNewSdCard(uint64_t size, uint8_t type);
+uint32_t emulatorSetSdCardFromImage(uint8_t* data, uint64_t size, uint8_t type);
 uint32_t emulatorGetStateSize();
 void emulatorSaveState(uint8_t* data);
 void emulatorLoadState(uint8_t* data);
