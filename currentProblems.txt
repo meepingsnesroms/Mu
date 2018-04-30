@@ -1,3 +1,5 @@
+//stuck on timer wait, inside interrupt level 6 handler
+CPU wrote 16 bits of 0x00000000 to register 0x60A, PC 0x10083BF0.
 
 #define kChannelSet1		\
 	kChannelTemp0,			\

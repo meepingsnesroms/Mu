@@ -466,6 +466,8 @@ unsigned int getHwRegister16(unsigned int address){
       case TCMP2:
       case TPRER1:
       case TPRER2:
+      case TSTAT1:
+      case TSTAT2:
       case SPICONT2:
       case SPIDATA2:
          //simple read, no actions needed
@@ -821,6 +823,8 @@ void setHwRegister16(unsigned int address, unsigned int value){
       case TCMP2:
       case TPRER1:
       case TPRER2:
+      case TSTAT1:
+      case TSTAT2:
       case SPIDATA2:
          //simple write, no actions needed
          registerArrayWrite16(address, value);

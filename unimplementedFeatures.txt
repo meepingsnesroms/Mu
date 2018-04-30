@@ -21,6 +21,7 @@ interrupt control register (ICR), POL5 and edge trigger selects
 ADC7846 temperature sensors
 ADC7846 dock sensor
 some undocumented I/O might be on port e and port j
+timers shouldn't allow comp bits to be cleared until read with a 1 in them and should remain in interrupt state until they are cleared(this is unverified)
 
 Debug tools:
 missing icons

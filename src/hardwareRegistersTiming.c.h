@@ -139,6 +139,9 @@ static inline void timer12Clk32(){
             setIprIsrBit(INT_TMR1);
          }
 
+         //set timer triggered bit
+         registerArrayWrite16(TSTAT1, registerArrayRead16(TSTAT1) | 0x0001);
+
          if(!(timer1Control & 0x0100)){
             //not free running, reset to 0, to prevent loss of ticks after compare event just subtract timerXCompare
             timer1Count -= timer1Compare;
@@ -184,6 +187,9 @@ static inline void timer12Clk32(){
             //interrupt enabled
             setIprIsrBit(INT_TMR2);
          }
+
+         //set timer triggered bit
+         registerArrayWrite16(TSTAT2, registerArrayRead16(TSTAT2) | 0x0001);
 
          if(!(timer2Control & 0x0100)){
             //not free running, reset to 0, to prevent loss of ticks after compare event just subtract timerXCompare
