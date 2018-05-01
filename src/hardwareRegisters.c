@@ -17,6 +17,7 @@ int32_t  pllWakeWait;
 uint32_t clk32Counter;
 double   timerCycleCounter[2];
 uint16_t timerStatusReadAcknowledge[2];
+uint32_t edgeTriggeredInterruptLastValue;
 uint16_t spi1RxFifo[8];
 uint16_t spi1TxFifo[8];
 uint8_t  spi1RxPosition;
@@ -45,8 +46,14 @@ bool sed1376ClockConnected(){
    return !(registerArrayRead8(PFSEL) & 0x04);
 }
 
-void refreshButtonState(){
+void refreshInputState(){
    checkPortDInterrupts();
+
+   /*
+   if(ads7846PenIrqEnabled){
+      edgeTriggeredInterruptLastValue;
+   }
+   */
 }
 
 int interruptAcknowledge(int intLevel){
@@ -245,11 +252,24 @@ static void checkPortDInterrupts(){
    uint8_t portDIrqPins = ~registerArrayRead8(PDSEL);
    uint16_t portDEdgeSelect = registerArrayRead16(PDIRQEG);
    uint16_t interruptControlRegister = registerArrayRead16(ICR);
+   bool currentPllState = pllIsOn();
 
    if(portDIntEnable & portDValue & ~portDDir & 0x01){
       //int 0, polarity set with PDPOL
-      if(!(portDEdgeSelect & 0x01) || pllIsOn())
+      if(!(portDEdgeSelect & 0x01)){
+         //edge triggered
+         if(!(edgeTriggeredInterruptLastValue & INT_INT0) && currentPllState)
+            setIprIsrBit(INT_INT0);
+      }
+      else{
+         //level triggered
          setIprIsrBit(INT_INT0);
+      }
+
+      edgeTriggeredInterruptLastValue |= INT_INT0;
+   }
+   else{
+      edgeTriggeredInterruptLastValue &= ~INT_INT0;
    }
    
    if(portDIntEnable & portDValue & ~portDDir & 0x02){
@@ -902,6 +922,7 @@ void resetHwRegisters(){
    timerCycleCounter[1] = 0.0;
    timerStatusReadAcknowledge[0] = 0x0000;
    timerStatusReadAcknowledge[1] = 0x0000;
+   edgeTriggeredInterruptLastValue = 0x00000000;
    memset(spi1RxFifo, 0x00, 8 * sizeof(uint16_t));
    memset(spi1TxFifo, 0x00, 8 * sizeof(uint16_t));
    spi1RxPosition = 0;

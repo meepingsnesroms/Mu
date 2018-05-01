@@ -377,10 +377,12 @@ uint64_t emulatorGetStateSize(){
    size += sizeof(int32_t);//pllWakeWait
    size += sizeof(uint32_t);//clk32Counter
    size += sizeof(uint16_t) * 2;//timerStatusReadAcknowledge
+   size += sizeof(uint32_t);//edgeTriggeredInterruptLastValue
    size += sizeof(uint16_t) * 8;//RX 8 * 16 SPI1 FIFO
    size += sizeof(uint16_t) * 8;//TX 8 * 16 SPI1 FIFO
    size += sizeof(uint8_t) * 2;//spi1(R/T)xPosition
-   size += sizeof(uint8_t) * 2;//ads7846
+   size += sizeof(uint8_t) * 2;//ads7846InputBitsLeft, ads7846ControlByte
+   size += sizeof(uint8_t);//ads7846PenIrqEnabled
    size += sizeof(uint16_t);//ads7846
    size += sizeof(uint8_t) * 7;//palmMisc
    
@@ -486,6 +488,8 @@ void emulatorSaveState(uint8_t* data){
    offset += sizeof(uint16_t);
    writeStateValueUint16(data + offset, timerStatusReadAcknowledge[1]);
    offset += sizeof(uint16_t);
+   writeStateValueUint32(data + offset, edgeTriggeredInterruptLastValue);
+   offset += sizeof(uint32_t);
 
    //SPI1
    for(uint8_t fifoPosition = 0; fifoPosition < 8; fifoPosition++){
@@ -505,6 +509,8 @@ void emulatorSaveState(uint8_t* data){
    writeStateValueUint8(data + offset, ads7846InputBitsLeft);
    offset += sizeof(uint8_t);
    writeStateValueUint8(data + offset, ads7846ControlByte);
+   offset += sizeof(uint8_t);
+   writeStateValueBool(data + offset, ads7846PenIrqEnabled);
    offset += sizeof(uint8_t);
    writeStateValueUint16(data + offset, ads7846OutputValue);
    offset += sizeof(uint16_t);
@@ -625,6 +631,8 @@ void emulatorLoadState(uint8_t* data){
    offset += sizeof(uint16_t);
    timerStatusReadAcknowledge[1] = readStateValueUint16(data + offset);
    offset += sizeof(uint16_t);
+   edgeTriggeredInterruptLastValue = readStateValueUint32(data + offset);
+   offset += sizeof(uint32_t);
 
    //SPI1
    for(uint8_t fifoPosition = 0; fifoPosition < 8; fifoPosition++){
@@ -644,6 +652,8 @@ void emulatorLoadState(uint8_t* data){
    ads7846InputBitsLeft = readStateValueUint8(data + offset);
    offset += sizeof(uint8_t);
    ads7846ControlByte = readStateValueUint8(data + offset);
+   offset += sizeof(uint8_t);
+   ads7846PenIrqEnabled = readStateValueBool(data + offset);
    offset += sizeof(uint8_t);
    ads7846OutputValue = readStateValueUint16(data + offset);
    offset += sizeof(uint16_t);
@@ -672,7 +682,7 @@ uint32_t emulatorInstallPrcPdb(buffer_t file){
 }
 
 void emulateFrame(){
-   refreshButtonState();
+   refreshInputState();
    while(palmCycleCounter < CPU_FREQUENCY / EMU_FPS){
       if(pllIsOn() && !lowPowerStopActive)
          palmCycleCounter += m68k_execute(palmCrystalCycles * palmClockMultiplier) / palmClockMultiplier;//normaly 33mhz / 60fps
@@ -689,7 +699,7 @@ bool emulateUntilDebugEventOrFrameEnd(){
 #if defined(EMU_DEBUG) && defined(EMU_OPCODE_LEVEL_DEBUG)
    invalidBehaviorAbort = false;
 
-   refreshButtonState();
+   refreshInputState();
    while(palmCycleCounter < CPU_FREQUENCY / EMU_FPS){
       if(pllIsOn() && !lowPowerStopActive)
          palmCycleCounter += m68k_execute(palmCrystalCycles * palmClockMultiplier) / palmClockMultiplier;//normaly 33mhz / 60fps

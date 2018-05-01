@@ -5,6 +5,7 @@
 
 uint8_t  ads7846InputBitsLeft;
 uint8_t  ads7846ControlByte;
+bool     ads7846PenIrqEnabled;
 uint16_t ads7846OutputValue;
 
 
@@ -26,6 +27,8 @@ void ads7846SendBit(bool bit){
       double rangeMax;
       bool mode = ads7846ControlByte & 0x08;
       uint8_t powerSave = ads7846ControlByte & 0x03;
+
+      ads7846PenIrqEnabled = !(ads7846ControlByte & 0x01);
 
       switch(ads7846ControlByte & 0x70){
 
@@ -95,5 +98,6 @@ bool ads7846RecieveBit(){
 void ads7846Reset(){
    ads7846OutputValue = 0x0000;
    ads7846ControlByte = 0x00;
+   ads7846PenIrqEnabled = false;
    ads7846InputBitsLeft = 0;
 }

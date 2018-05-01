@@ -60,6 +60,7 @@ extern int32_t  pllWakeWait;
 extern uint32_t clk32Counter;
 extern double   timerCycleCounter[];
 extern uint16_t timerStatusReadAcknowledge[];
+extern uint32_t edgeTriggeredInterruptLastValue;
 extern uint16_t spi1RxFifo[8];
 extern uint16_t spi1TxFifo[8];
 extern uint8_t  spi1RxPosition;
@@ -80,7 +81,7 @@ void clk32();//also checks all interrupts
 bool pllIsOn();
 bool registersAreXXFFMapped();
 bool sed1376ClockConnected();
-void refreshButtonState();
+void refreshInputState();
 int  interruptAcknowledge(int intLevel);
 
 //memory errors
