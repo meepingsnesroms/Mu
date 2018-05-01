@@ -47,13 +47,14 @@ bool sed1376ClockConnected(){
 }
 
 void refreshInputState(){
-   checkPortDInterrupts();
+   uint16_t icr = registerArrayRead16(ICR);
+   bool penIrqPin = !(ads7846PenIrqEnabled && palmInput.touchscreenTouched);//penIrqPin pulled low on touch
 
-   /*
-   if(ads7846PenIrqEnabled){
-      edgeTriggeredInterruptLastValue;
-   }
-   */
+   //IRQ set as pin function and triggered
+   if(!(registerArrayRead8(PFSEL) & 0x02) && penIrqPin == (bool)(icr & 0x0080))
+      setIprIsrBit(INT_IRQ5);
+
+   checkPortDInterrupts();//this calls checkInterrupts() so it doesnt need to be called above
 }
 
 int interruptAcknowledge(int intLevel){
