@@ -132,11 +132,10 @@ unsigned int m68k_read_memory_8(unsigned int address){
       case CHIP_NONE:
          setBusErrorTimeOut();
          return 0x00;
-#ifdef EMU_DEBUG
+
       default:
          debugLog("Unknown bank type:%d\n", bankType[START_BANK(address)]);
          break;
-#endif
    }
 
    return 0x00;
@@ -168,11 +167,10 @@ unsigned int m68k_read_memory_16(unsigned int address){
       case CHIP_NONE:
          setBusErrorTimeOut();
          return 0x0000;
-#ifdef EMU_DEBUG
+
       default:
          debugLog("Unknown bank type:%d\n", bankType[START_BANK(address)]);
          break;
-#endif
    }
 
    return 0x0000;
@@ -204,11 +202,10 @@ unsigned int m68k_read_memory_32(unsigned int address){
       case CHIP_NONE:
          setBusErrorTimeOut();
          return 0x00000000;
-#ifdef EMU_DEBUG
+
       default:
          debugLog("Unknown bank type:%d\n", bankType[START_BANK(address)]);
          break;
-#endif
    }
 
    return 0x00000000;
@@ -244,11 +241,10 @@ void m68k_write_memory_8(unsigned int address, unsigned int value){
       case CHIP_NONE:
          setBusErrorTimeOut();
          break;
-#ifdef EMU_DEBUG
+
       default:
          debugLog("Unknown bank type:%d\n", bankType[START_BANK(address)]);
          break;
-#endif
    }
 
    return;
@@ -283,11 +279,10 @@ void m68k_write_memory_16(unsigned int address, unsigned int value){
       case CHIP_NONE:
          setBusErrorTimeOut();
          break;
-#ifdef EMU_DEBUG
+
       default:
          debugLog("Unknown bank type:%d\n", bankType[START_BANK(address)]);
          break;
-#endif
    }
 
    return;
@@ -322,11 +317,10 @@ void m68k_write_memory_32(unsigned int address, unsigned int value){
       case CHIP_NONE:
          setBusErrorTimeOut();
          break;
-#ifdef EMU_DEBUG
+
       default:
          debugLog("Unknown bank type:%d\n", bankType[START_BANK(address)]);
          break;
-#endif
    }
 
    return;

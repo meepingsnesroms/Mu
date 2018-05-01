@@ -61,6 +61,7 @@ static inline bool allSdCardCallbacksPresent(){
 static bool invalidBehaviorAbort;
 static char disassemblyBuffer[LOGGED_OPCODES][100];//store the opcode and program counter for the last 10 opcodes
 
+
 #if defined(EMU_LOG_APIS)
 const char* lookupTrap(uint16_t trap);
 #endif
@@ -154,24 +155,14 @@ static void invalidBehaviorCheck(){
    }
 
 #if defined(EMU_LOG_APIS)
-   /*
-   static uint32_t trapDumpWait = 300;
-   static bool trapsNotDumped = true;
-
-   if(trapsNotDumped && trapDumpWait == 0){
-      debugLog("Trap dispatch controller is at:0x%08X, table addr:0x%08X\n", programCounter, m68k_read_memory_32(0x00000122));
-      for(uint32_t count = 0xA000; count < 0xA475; count++)
-         printTrapInfo(count);
-      trapsNotDumped = false;
-   }
-   */
-
    if(instruction == 0x4E4F){
       //Trap F/api call
       uint16_t trap = m68k_read_memory_16(lastProgramCounter + 2);
       if(!spammingTrap(trap)){
          debugLog("Trap F API:%s, API number:0x%04X, PC:0x%08X\n", lookupTrap(trap), trap, lastProgramCounter);
       }
+
+      //custom debug operations
       switch(trap){
          case 0xA09A://sysTrapSysTimerWrite
             printTrapInfo(trap);
@@ -180,7 +171,6 @@ static void invalidBehaviorCheck(){
          default:
             break;
       }
-      //trapDumpWait--;
    }
 #endif
 }

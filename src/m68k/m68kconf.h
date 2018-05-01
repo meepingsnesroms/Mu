@@ -130,7 +130,7 @@
 /* If ON, CPU will call the instruction hook callback before every
  * instruction.
  */
-#ifdef EMU_OPCODE_LEVEL_DEBUG
+#if defined(EMU_DEBUG) && defined(EMU_OPCODE_LEVEL_DEBUG)
 #define M68K_INSTRUCTION_HOOK       OPT_ON
 #else
 #define M68K_INSTRUCTION_HOOK       OPT_OFF

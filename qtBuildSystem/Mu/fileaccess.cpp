@@ -61,7 +61,7 @@ uint32_t setFileBuffer(QString filePath, uint8_t* data, size_t size){
 }
 
 bool validFilePath(QString path){
-#ifdef Q_OS_WIN
+#if defined(Q_OS_WIN)
    if(path.length() < 3 || !path[0].isLetter() || path[1] != ':' || (path[2] != '/' && path[2] != '\\'))
       return false;
 #else

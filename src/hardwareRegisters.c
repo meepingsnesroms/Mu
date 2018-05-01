@@ -54,6 +54,17 @@ void refreshInputState(){
    if(!(registerArrayRead8(PFSEL) & 0x02) && penIrqPin == (bool)(icr & 0x0080))
       setIprIsrBit(INT_IRQ5);
 
+   /*
+   //IRQ set as pin function and triggered, the pen IRQ triggers when going low to high or high to low
+   if(!(registerArrayRead8(PFSEL) & 0x02) && (penIrqPin == (bool)(icr & 0x0080)) != (bool)(edgeTriggeredInterruptLastValue & INT_IRQ5))
+      setIprIsrBit(INT_IRQ5);
+
+   if(penIrqPin == (bool)(icr & 0x0080))
+      edgeTriggeredInterruptLastValue |= INT_IRQ5;
+   else
+      edgeTriggeredInterruptLastValue &= ~INT_IRQ5;
+   */
+
    checkPortDInterrupts();//this calls checkInterrupts() so it doesnt need to be called above
 }
 

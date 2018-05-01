@@ -21,7 +21,14 @@ extern "C" {
 
 //debug
 #if defined(EMU_DEBUG)
+#if defined(EMU_CUSTOM_DEBUG_LOG_HANDLER)
+extern uint32_t frontendDebugStringSize;
+extern char*    frontendDebugString;
+void frontendHandleDebugPrint();
+#define debugLog(...) {snprintf(frontendDebugString, frontendDebugStringSize, __VA_ARGS__);frontendHandleDebugPrint();}
+#else
 #define debugLog(...) printf(__VA_ARGS__)
+#endif
 #else
 #define debugLog(...)
 #endif
