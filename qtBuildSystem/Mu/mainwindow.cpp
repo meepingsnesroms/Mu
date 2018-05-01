@@ -23,29 +23,31 @@
 #include "src/emulator.h"
 
 
-uint32_t screenWidth;
-uint32_t screenHeight;
+uint32_t  screenWidth;
+uint32_t  screenHeight;
+input_t   frontendInput;
 QSettings settings;
 
-static QImage video;
-static QTimer* refreshDisplay;
-static HexViewer* emuStateBrowser;
-static std::thread emuThread;
+static QImage            video;
+static QTimer*           refreshDisplay;
+static HexViewer*        emuStateBrowser;
+static std::thread       emuThread;
 static std::atomic<bool> emuThreadJoin;
 static std::atomic<bool> emuOn;
 static std::atomic<bool> emuPaused;
 static std::atomic<bool> emuInited;
 static std::atomic<bool> emuDebugEvent;
 static std::atomic<bool> emuNewFrameReady;
-static uint16_t* emuDoubleBuffer;
+static uint16_t*         emuDoubleBuffer;
 
 
 void emuThreadRun(){
    while(!emuThreadJoin){
       if(emuOn){
          emuPaused = false;
+         palmInput = frontendInput;
 #if defined(FRONTEND_DEBUG) && defined(EMU_DEBUG)
-         if(emulateUntilDebugEventOrFrameEnd()){
+         if(emulateUntilDebugEventOrFrameEnd() || emulateUntilDebugEventOrFrameEnd() || emulateUntilDebugEventOrFrameEnd() || emulateUntilDebugEventOrFrameEnd() || emulateUntilDebugEventOrFrameEnd() || emulateUntilDebugEventOrFrameEnd()){
             //debug event occured
             emuOn = false;
             emuPaused = true;
@@ -194,43 +196,43 @@ void MainWindow::updateDisplay(){
 
 //palm buttons
 void MainWindow::on_power_pressed(){
-   palmInput.buttonPower = true;
+   frontendInput.buttonPower = true;
 }
 
 void MainWindow::on_power_released(){
-   palmInput.buttonPower = false;
+   frontendInput.buttonPower = false;
 }
 
 void MainWindow::on_calender_pressed(){
-   palmInput.buttonCalender = true;
+   frontendInput.buttonCalender = true;
 }
 
 void MainWindow::on_calender_released(){
-   palmInput.buttonCalender = false;
+   frontendInput.buttonCalender = false;
 }
 
 void MainWindow::on_addressBook_pressed(){
-   palmInput.buttonAddress = true;
+   frontendInput.buttonAddress = true;
 }
 
 void MainWindow::on_addressBook_released(){
-   palmInput.buttonAddress = false;
+   frontendInput.buttonAddress = false;
 }
 
 void MainWindow::on_todo_pressed(){
-   palmInput.buttonTodo = true;
+   frontendInput.buttonTodo = true;
 }
 
 void MainWindow::on_todo_released(){
-   palmInput.buttonTodo = false;
+   frontendInput.buttonTodo = false;
 }
 
 void MainWindow::on_notes_pressed(){
-   palmInput.buttonNotes = true;
+   frontendInput.buttonNotes = true;
 }
 
 void MainWindow::on_notes_released(){
-   palmInput.buttonNotes = false;
+   frontendInput.buttonNotes = false;
 }
 
 
@@ -267,6 +269,8 @@ void MainWindow::on_ctrlBtn_clicked(){
             screenWidth = 160;
             screenHeight = 160 + 60;
          }
+
+         frontendInput = palmInput;
 
          emuThreadJoin = false;
          emuInited = true;

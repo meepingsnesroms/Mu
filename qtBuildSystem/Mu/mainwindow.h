@@ -4,8 +4,11 @@
 #include <QSettings>
 #include <stdint.h>
 
-extern uint32_t screenWidth;
-extern uint32_t screenHeight;
+#include "src/emulator.h"
+
+extern uint32_t  screenWidth;
+extern uint32_t  screenHeight;
+extern input_t   frontendInput;
 extern QSettings settings;
 
 namespace Ui {

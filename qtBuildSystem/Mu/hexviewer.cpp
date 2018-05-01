@@ -147,8 +147,7 @@ void HexViewer::on_hex32Bit_clicked(){
    hexRadioButtonHandler();
 }
 
-void HexViewer::on_hexDump_clicked()
-{
+void HexViewer::on_hexDump_clicked(){
    int64_t address = numberFromString(ui->hexAddress->text(), false/*negative allowed*/);
    int64_t length = numberFromString(ui->hexLength->text(), false/*negative allowed*/);
    uint8_t bits = bitsPerEntry;
@@ -167,4 +166,15 @@ void HexViewer::on_hexDump_clicked()
       setFileBuffer(filePath + "/" + fileName, dumpBuffer, length);
       delete[] dumpBuffer;
    }
+}
+
+void HexViewer::on_hexShowRegisters_clicked(){
+   ui->hexValueList->clear();
+   for(uint8_t aRegs = M68K_REG_A0; aRegs <= M68K_REG_A7; aRegs++)
+      ui->hexValueList->addItem("A" + stringFromNumber(aRegs - M68K_REG_A0, false, 0) + ":" + stringFromNumber(m68k_get_reg(NULL, (m68k_register_t)aRegs), true, 8));
+   for(uint8_t dRegs = M68K_REG_D0; dRegs <= M68K_REG_D7; dRegs++)
+      ui->hexValueList->addItem("D" + stringFromNumber(dRegs - M68K_REG_D0, false, 0) + ":" + stringFromNumber(m68k_get_reg(NULL, (m68k_register_t)dRegs), true, 8));
+   ui->hexValueList->addItem("SP:" + stringFromNumber(m68k_get_reg(NULL, M68K_REG_SP), true, 8));
+   ui->hexValueList->addItem("PC:" + stringFromNumber(m68k_get_reg(NULL, M68K_REG_PC), true, 8));
+   ui->hexValueList->addItem("SR:" + stringFromNumber(m68k_get_reg(NULL, M68K_REG_SR), true, 4));
 }

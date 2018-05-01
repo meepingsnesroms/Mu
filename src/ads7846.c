@@ -11,9 +11,11 @@ uint16_t ads7846OutputValue;
 
 void ads7846SendBit(bool bit){
    //check for control bit
-   if(bit && ads7846InputBitsLeft == 0){
-      ads7846ControlByte = 0x01;
-      ads7846InputBitsLeft = 7;
+   if(ads7846InputBitsLeft == 0){
+      if(bit){
+         ads7846ControlByte = 0x01;
+         ads7846InputBitsLeft = 7;
+      }
       return;
    }
 
@@ -38,39 +40,39 @@ void ads7846SendBit(bool bit){
             rangeMax = 1;
             break;
 
-         case 0x01:
+         case 0x10:
             //touchscreen y
             value = palmInput.touchscreenY;
             rangeMax = 160;
             break;
 
-         case 0x02:
+         case 0x20:
             //battery
             //value = palmMisc.batteryLevel;
             value = 100;
             rangeMax = 100;
             break;
 
-         case 0x03:
-         case 0x04:
+         case 0x30:
+         case 0x40:
             //empty slots
             value = 1;
             rangeMax = 1;
             break;
 
-         case 0x05:
+         case 0x50:
             //touchscreen x
             value = palmInput.touchscreenX;
             rangeMax = 160;
             break;
 
-         case 0x06:
+         case 0x60:
             //dock, unemulated for now
             value = 1;
             rangeMax = 1;
             break;
 
-         case 0x07:
+         case 0x70:
             //temperature 2, unemulated for now
             value = 1;
             rangeMax = 1;

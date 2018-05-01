@@ -24,12 +24,12 @@ private slots:
    void on_hexUpdate_clicked();
 
    void on_hex8Bit_clicked();
-
    void on_hex16Bit_clicked();
-
    void on_hex32Bit_clicked();
 
    void on_hexDump_clicked();
+
+   void on_hexShowRegisters_clicked();
 
 private:
    uint8_t bitsPerEntry;
