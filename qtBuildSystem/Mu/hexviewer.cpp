@@ -44,11 +44,6 @@ HexViewer::HexViewer(QWidget *parent) :
    ui(new Ui::HexViewer){
    ui->setupUi(this);
 
-   ui->tabWidget->setCurrentIndex(0);
-
-   ui->tabWidget->setTabText(0, "Hex");
-   ui->tabWidget->setTabText(1, "Graphics");
-
    bitsPerEntry = 8;
    hexRadioButtonHandler();
 }

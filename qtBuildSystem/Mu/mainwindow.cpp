@@ -68,7 +68,7 @@ void emuThreadRun(){
 }
 
 static inline void waitForEmuPaused(){
-   while(!emuPaused){
+   while(!emuPaused && emuInited){
       std::this_thread::sleep_for(std::chrono::milliseconds(1));
    }
 }
@@ -141,7 +141,11 @@ MainWindow::~MainWindow(){
 }
 
 void MainWindow::popupErrorDialog(QString error){
-   QMessageBox::information(this, "Mu", error, QMessageBox::Ok);
+   QMessageBox::critical(this, "Mu", error, QMessageBox::Ok);
+}
+
+void MainWindow::popupInformationDialog(QString info){
+   QMessageBox::information(this, "Mu", info, QMessageBox::Ok);
 }
 
 bool MainWindow::eventFilter(QObject *object, QEvent *event){
@@ -306,14 +310,19 @@ void MainWindow::on_ctrlBtn_clicked(){
 }
 
 void MainWindow::on_hexViewer_clicked(){
-   if(emuOn){
-      emuOn = false;
-      ui->ctrlBtn->setIcon(QIcon(":/buttons/images/play.png"));
+   if(emuInited){
+      if(emuOn){
+         emuOn = false;
+         ui->ctrlBtn->setIcon(QIcon(":/buttons/images/play.png"));
+      }
+
+      waitForEmuPaused();
+
+      emuStateBrowser->exec();
    }
-
-   waitForEmuPaused();
-
-   emuStateBrowser->exec();
+   else{
+      popupInformationDialog("Cant open hex viewer, emulator not running.");
+   }
 }
 
 void MainWindow::on_screenshot_clicked(){

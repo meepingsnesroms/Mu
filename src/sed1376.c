@@ -130,6 +130,9 @@ uint8_t sed1376GetRegister(uint8_t address){
 
       case PWR_SAVE_CFG:
       case SPECIAL_EFFECT:
+      case DISP_MODE:
+      case LINE_SIZE_0:
+      case LINE_SIZE_1:
       case PIP_ADDR_0:
       case PIP_ADDR_1:
       case PIP_ADDR_2:
@@ -325,7 +328,7 @@ void sed1376Render(){
          }
 
          //rotation
-         //later
+         //later, unemulated
 
          //software display inversion
          if((sed1376Registers[DISP_MODE] & 0x30) == 0x10)

@@ -201,7 +201,6 @@ bool retro_load_game(const struct retro_game_info *info)
    strncat(palmRomPath, "palmos41-en-m515.rom", PATH_MAX_LENGTH - strlen(palmRomPath));
    
    romFile = fopen(palmRomPath, "rb");
-   
    if(romFile == NULL)
       return false;
    
