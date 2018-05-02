@@ -41,13 +41,54 @@ static std::atomic<bool> emuNewFrameReady;
 static uint16_t*         emuDoubleBuffer;
 
 
+#if defined(EMU_DEBUG) && defined(EMU_CUSTOM_DEBUG_LOG_HANDLER)
+#include <vector>
+#include <string>
+
+
+std::vector<std::string> debugStrings;
+std::vector<uint64_t>    duplicateCallCount;
+uint32_t                 frontendDebugStringSize;
+char*                    frontendDebugString;
+
+
+void frontendHandleDebugPrint(){
+   std::string newDebugString = frontendDebugString;
+
+   //this debug handler doesnt need the \n
+   if(newDebugString.back() == '\n')
+      newDebugString.pop_back();
+
+   if(!debugStrings.empty() && newDebugString == debugStrings.back()){
+      duplicateCallCount.back()++;
+   }
+   else{
+      debugStrings.push_back(newDebugString);
+      duplicateCallCount.push_back(1);
+   }
+}
+
+void frontendInitDebugPrintHandler(){
+   frontendDebugString = new char[200];
+   frontendDebugStringSize = 200;
+}
+
+void frontendFreeDebugPrintHandler(){
+   delete[] frontendDebugString;
+   frontendDebugStringSize = 0;
+   debugStrings.clear();
+   duplicateCallCount.clear();
+}
+#endif
+
+
 void emuThreadRun(){
    while(!emuThreadJoin){
       if(emuOn){
          emuPaused = false;
          palmInput = frontendInput;
-#if defined(FRONTEND_DEBUG) && defined(EMU_DEBUG)
-         if(emulateUntilDebugEventOrFrameEnd() || emulateUntilDebugEventOrFrameEnd() || emulateUntilDebugEventOrFrameEnd() || emulateUntilDebugEventOrFrameEnd() || emulateUntilDebugEventOrFrameEnd() || emulateUntilDebugEventOrFrameEnd()){
+#if defined(EMU_DEBUG)
+         if(emulateUntilDebugEventOrFrameEnd()){
             //debug event occured
             emuOn = false;
             emuPaused = true;
@@ -70,9 +111,8 @@ void emuThreadRun(){
 }
 
 static inline void waitForEmuPaused(){
-   while(!emuPaused && emuInited){
+   while(!emuPaused && emuInited)
       std::this_thread::sleep_for(std::chrono::milliseconds(1));
-   }
 }
 
 
@@ -122,8 +162,12 @@ MainWindow::MainWindow(QWidget* parent) :
    emuNewFrameReady = false;
    emuDoubleBuffer = NULL;
 
-#if !defined(FRONTEND_DEBUG) || defined(Q_OS_ANDROID) || defined(Q_OS_IOS)
+#if defined(Q_OS_ANDROID) || defined(Q_OS_IOS)
    ui->hexViewer->hide();
+#endif
+
+#if defined(EMU_DEBUG) && defined(EMU_CUSTOM_DEBUG_LOG_HANDLER)
+   frontendInitDebugPrintHandler();
 #endif
 
    connect(refreshDisplay, SIGNAL(timeout()), this, SLOT(updateDisplay()));
@@ -131,6 +175,9 @@ MainWindow::MainWindow(QWidget* parent) :
 }
 
 MainWindow::~MainWindow(){
+#if defined(EMU_DEBUG) && defined(EMU_CUSTOM_DEBUG_LOG_HANDLER)
+   frontendFreeDebugPrintHandler();
+#endif
    emuThreadJoin = true;
    emuOn = false;
    if(emuThread.joinable())

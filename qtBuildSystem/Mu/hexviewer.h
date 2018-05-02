@@ -28,8 +28,9 @@ private slots:
    void on_hex32Bit_clicked();
 
    void on_hexDump_clicked();
-
    void on_hexShowRegisters_clicked();
+   void on_hexPrintDebugLogs_clicked();
+   void on_hexEraseDebugLogs_clicked();
 
 private:
    uint8_t bitsPerEntry;

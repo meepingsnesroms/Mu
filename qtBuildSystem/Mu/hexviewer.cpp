@@ -46,6 +46,11 @@ HexViewer::HexViewer(QWidget *parent) :
 
    bitsPerEntry = 8;
    hexRadioButtonHandler();
+
+#if !defined(EMU_DEBUG) || !defined(EMU_CUSTOM_DEBUG_LOG_HANDLER)
+   ui->hexPrintDebugLogs->hide();
+   ui->hexEraseDebugLogs->hide();
+#endif
 }
 
 HexViewer::~HexViewer(){
@@ -177,4 +182,33 @@ void HexViewer::on_hexShowRegisters_clicked(){
    ui->hexValueList->addItem("SP:" + stringFromNumber(m68k_get_reg(NULL, M68K_REG_SP), true, 8));
    ui->hexValueList->addItem("PC:" + stringFromNumber(m68k_get_reg(NULL, M68K_REG_PC), true, 8));
    ui->hexValueList->addItem("SR:" + stringFromNumber(m68k_get_reg(NULL, M68K_REG_SR), true, 4));
+}
+
+void HexViewer::on_hexPrintDebugLogs_clicked(){
+#if defined(EMU_DEBUG) && defined(EMU_CUSTOM_DEBUG_LOG_HANDLER)
+   int64_t length = numberFromString(ui->hexLength->text(), true/*negative allowed*/);
+
+   ui->hexValueList->clear();
+   if(length != INVALID_NUMBER && qAbs(length) < debugStrings.size()){
+      if(length < 0){
+         for(uint64_t stringNum = debugStrings.size() + length; stringNum < debugStrings.size(); stringNum++)
+            ui->hexValueList->addItem(QString::fromStdString(debugStrings[stringNum] + "(printed " + std::to_string(duplicateCallCount[stringNum]) + " times)"));
+      }
+      else{
+         for(uint64_t stringNum = 0; stringNum < length; stringNum++)
+            ui->hexValueList->addItem(QString::fromStdString(debugStrings[stringNum] + "(printed " + std::to_string(duplicateCallCount[stringNum]) + " times)"));
+      }
+   }
+   else{
+      for(uint64_t stringNum = 0; stringNum < debugStrings.size(); stringNum++)
+         ui->hexValueList->addItem(QString::fromStdString(debugStrings[stringNum] + "(printed " + std::to_string(duplicateCallCount[stringNum]) + " times)"));
+   }
+#endif
+}
+
+void HexViewer::on_hexEraseDebugLogs_clicked(){
+#if defined(EMU_DEBUG) && defined(EMU_CUSTOM_DEBUG_LOG_HANDLER)
+   debugStrings.clear();
+   duplicateCallCount.clear();
+#endif
 }

@@ -11,6 +11,15 @@ extern uint32_t  screenHeight;
 extern input_t   frontendInput;
 extern QSettings settings;
 
+#if defined(EMU_DEBUG) && defined(EMU_CUSTOM_DEBUG_LOG_HANDLER)
+#include <vector>
+#include <string>
+
+
+extern std::vector<std::string> debugStrings;
+extern std::vector<uint64_t>    duplicateCallCount;
+#endif
+
 namespace Ui {
 class MainWindow;
 }
