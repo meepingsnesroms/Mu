@@ -43,18 +43,20 @@ bool registersAreXXFFMapped(){
 
 bool sed1376ClockConnected(){
    //this is the clock output pin for the SED1376, if its disabled so is the LCD controller
-   return !(registerArrayRead8(PFSEL) & 0x04);
+   //port f pin 2 is not GPIO and PLLCR CLKEN is false enabling clock output on port f pin 2
+   return !(registerArrayRead8(PFSEL) & 0x04) && !(registerArrayRead16(PLLCR) & 0x0010);
 }
 
 void refreshInputState(){
    uint16_t icr = registerArrayRead16(ICR);
    bool penIrqPin = !(ads7846PenIrqEnabled && palmInput.touchscreenTouched);//penIrqPin pulled low on touch
 
+   /*
    //IRQ set as pin function and triggered
    if(!(registerArrayRead8(PFSEL) & 0x02) && penIrqPin == (bool)(icr & 0x0080))
       setIprIsrBit(INT_IRQ5);
+   */
 
-   /*
    //IRQ set as pin function and triggered, the pen IRQ triggers when going low to high or high to low
    if(!(registerArrayRead8(PFSEL) & 0x02) && (penIrqPin == (bool)(icr & 0x0080)) != (bool)(edgeTriggeredInterruptLastValue & INT_IRQ5))
       setIprIsrBit(INT_IRQ5);
@@ -63,7 +65,6 @@ void refreshInputState(){
       edgeTriggeredInterruptLastValue |= INT_IRQ5;
    else
       edgeTriggeredInterruptLastValue &= ~INT_IRQ5;
-   */
 
    checkPortDInterrupts();//this calls checkInterrupts() so it doesnt need to be called above
 }
@@ -115,21 +116,36 @@ void setPrivilegeViolation(){
 }
 
 static void recalculateCpuSpeed(){
-   uint16_t pllfsr = registerArrayRead16(PLLFSR);
-   uint8_t pctlr = registerArrayRead8(PCTLR);
-   double prescaler1 = (registerArrayRead16(PLLCR) & 0x0080) ? 2.0 : 1.0;
-   double p = pllfsr & 0x00FF;
-   double q = (pllfsr & 0x0F00) >> 8;
-   double newCpuSpeed = 2.0 * (14.0 * (p + 1.0) + q + 1.0) / prescaler1;
+   double newCpuSpeed;
 
-   if(pctlr & 0x80)
-      newCpuSpeed *= (double)(pctlr & 0x1F) / 31.0;
+   if(pllIsOn()){
+      uint16_t pllfsr = registerArrayRead16(PLLFSR);
+      uint8_t pctlr = registerArrayRead8(PCTLR);
+      double p = pllfsr & 0x00FF;
+      double q = (pllfsr & 0x0F00) >> 8;
+      newCpuSpeed = 2.0 * (14.0 * (p + 1.0) + q + 1.0);
+
+      //prescaler 1
+      if(registerArrayRead16(PLLCR) & 0x0080)
+         newCpuSpeed /= 2.0;
+
+      //power control burst mode
+      if(pctlr & 0x80)
+         newCpuSpeed *= (double)(pctlr & 0x1F) / 31.0;
+   }
+   else{
+      newCpuSpeed = 0.0;
+   }
 
    if(newCpuSpeed != palmCrystalCycles){
       debugLog("New CPU frequency of:%f cycles per second.\n", newCpuSpeed * CRYSTAL_FREQUENCY);
       debugLog("New CLK32 cycle count of:%f.\n", newCpuSpeed);
-      if(newCpuSpeed == 0.0)
-         debugLog("CPU turned off with PCTLR.\n");
+      if(newCpuSpeed == 0.0){
+         if(pllIsOn())
+            debugLog("CPU turned off with PCTLR.\n");
+         else
+            debugLog("CPU turned off with DISPLL bit.\n");
+      }
    }
 
    palmCrystalCycles = newCpuSpeed;
@@ -196,13 +212,13 @@ static void checkInterrupts(){
    }
 
    if(activeInterrupts & INT_PWM2){
-      uint8_t pwm2IrqLevel = (interruptLevelControlRegister >> 4) & 0x0007;
+      uint8_t pwm2IrqLevel = interruptLevelControlRegister >> 4 & 0x0007;
       if(intLevel < pwm2IrqLevel)
          intLevel = pwm2IrqLevel;
    }
 
    if(activeInterrupts & INT_UART2){
-      uint8_t uart2IrqLevel = (interruptLevelControlRegister >> 8) & 0x0007;
+      uint8_t uart2IrqLevel = interruptLevelControlRegister >> 8 & 0x0007;
       if(intLevel < uart2IrqLevel)
          intLevel = uart2IrqLevel;
    }
@@ -251,6 +267,16 @@ static void checkInterrupts(){
    }
 
    //some interrupts should probably be auto cleared after being run once, RTI, RTC, WATCHDOG and SPI1/2 seem like they should be cleared this way
+
+   //auto clear timer interrupts for now, I dont know exactly how they are cleared in hardware
+   if(activeInterrupts & INT_TMR1 && intLevel == 6){
+      clearIprIsrBit(INT_TMR1);
+   }
+
+   if(activeInterrupts & INT_TMR2){
+      if(intLevel == (interruptLevelControlRegister & 0x0007))
+         clearIprIsrBit(INT_TMR2);
+   }
 
    pllWakeCpuIfOff();
    m68k_set_irq(intLevel);//should be called even if intLevel is 0, that is how the interrupt state gets cleared
@@ -755,7 +781,10 @@ void setHwRegister16(unsigned int address, unsigned int value){
          break;
          
       case PLLCR:
-         //values that matter are disable PLL, prescaler 1 and wakeselect
+         //CLKEN is required for SED1376 operation
+         if((value & 0x0010) != (registerArrayRead16(PLLCR) & 0x0010))
+            setSed1376Attached(!(value & 0x0010));
+
          registerArrayWrite16(PLLCR, value & 0x3FBB);
          recalculateCpuSpeed();
 

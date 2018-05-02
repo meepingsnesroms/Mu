@@ -270,6 +270,7 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t spec
    
    //config
    palmClockMultiplier = (specialFeatures & FEATURE_FAST_CPU) ? 2.0 : 1.0;//overclock
+   palmClockMultiplier *= 0.80;//run at 80% speed, 20% is likely memory waitstates
    palmSpecialFeatures = specialFeatures;
    setRtc(0, 0, 0, 0);
    
@@ -684,14 +685,26 @@ uint32_t emulatorInstallPrcPdb(buffer_t file){
 
 void emulateFrame(){
    refreshInputState();
-   while(palmCycleCounter < CPU_FREQUENCY / EMU_FPS){
-      if(pllIsOn() && !lowPowerStopActive)
-         palmCycleCounter += m68k_execute(palmCrystalCycles * palmClockMultiplier) / palmClockMultiplier;//normaly 33mhz / 60fps
-      else
-         palmCycleCounter += palmCrystalCycles;
+
+   while(palmCycleCounter < CRYSTAL_FREQUENCY / EMU_FPS){
+      if(palmCrystalCycles != 0.0 && !lowPowerStopActive){
+         //the frequency can change mid frame and get stuck in an infinite loop because of a divide by 0.0
+         //+= m68k_execute(palmCrystalCycles{old value} * palmClockMultiplier) / (palmCrystalCycles{new value of 0.0} * palmClockMultiplier) == infinity
+         double currentFrequency = palmCrystalCycles;
+         palmCycleCounter += m68k_execute(currentFrequency * palmClockMultiplier) / (currentFrequency * palmClockMultiplier);
+      }
+      else{
+         palmCycleCounter += 1.0;
+      }
       clk32();
    }
-   palmCycleCounter -= CPU_FREQUENCY / EMU_FPS;
+   palmCycleCounter -= CRYSTAL_FREQUENCY / EMU_FPS;
+
+   //CPU can run more then the requested clock cycles, add missed CLK32 pulses from those cycles
+   while(palmCycleCounter >= 1.0){
+      clk32();
+      palmCycleCounter -= 1.0;
+   }
 
    sed1376Render();
 }
@@ -699,18 +712,29 @@ void emulateFrame(){
 bool emulateUntilDebugEventOrFrameEnd(){
 #if defined(EMU_DEBUG) && defined(EMU_OPCODE_LEVEL_DEBUG)
    invalidBehaviorAbort = false;
-
    refreshInputState();
-   while(palmCycleCounter < CPU_FREQUENCY / EMU_FPS){
-      if(pllIsOn() && !lowPowerStopActive)
-         palmCycleCounter += m68k_execute(palmCrystalCycles * palmClockMultiplier) / palmClockMultiplier;//normaly 33mhz / 60fps
-      else
-         palmCycleCounter += palmCrystalCycles;
+
+   while(palmCycleCounter < CRYSTAL_FREQUENCY / EMU_FPS){
+      if(palmCrystalCycles != 0.0 && !lowPowerStopActive){
+         //the frequency can change mid frame and get stuck in an infinite loop because of a divide by 0.0
+         //+= m68k_execute(palmCrystalCycles{old value} * palmClockMultiplier) / (palmCrystalCycles{new value of 0.0} * palmClockMultiplier) == infinity
+         double currentFrequency = palmCrystalCycles;
+         palmCycleCounter += m68k_execute(currentFrequency * palmClockMultiplier) / (currentFrequency * palmClockMultiplier);
+      }
+      else{
+         palmCycleCounter += 1.0;
+      }
       clk32();
       if(invalidBehaviorAbort)
          break;
    }
-   palmCycleCounter -= CPU_FREQUENCY / EMU_FPS;
+   palmCycleCounter -= CRYSTAL_FREQUENCY / EMU_FPS;
+
+   //add missed CLK32 pulses
+   while(palmCycleCounter >= 1.0){
+      clk32();
+      palmCycleCounter -= 1.0;
+   }
 
    sed1376Render();
 

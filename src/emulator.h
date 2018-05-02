@@ -25,7 +25,7 @@ extern "C" {
 extern uint32_t frontendDebugStringSize;
 extern char*    frontendDebugString;
 void frontendHandleDebugPrint();
-#define debugLog(...) {snprintf(frontendDebugString, frontendDebugStringSize, __VA_ARGS__);frontendHandleDebugPrint();}
+#define debugLog(...) (snprintf(frontendDebugString, frontendDebugStringSize, __VA_ARGS__), frontendHandleDebugPrint())
 #else
 #define debugLog(...) printf(__VA_ARGS__)
 #endif

@@ -1,55 +1,42 @@
 static inline double dmaclksPerClk32(){
-   uint16_t pllcr = registerArrayRead16(PLLCR);
-   double   dmaclks = palmCrystalCycles;
+   double dmaclks;
 
-   //prescaler 1 divide is implemented when the PLL clock is set
-   /*
-   if(pllcr & 0x0080){
+   if(pllIsOn()){
+      uint16_t pllcr = registerArrayRead16(PLLCR);
+      uint16_t pllfsr = registerArrayRead16(PLLFSR);
+      double p = pllfsr & 0x00FF;
+      double q = (pllfsr & 0x0F00) >> 8;
+      dmaclks = 2.0 * (14.0 * (p + 1.0) + q + 1.0);
+
       //prescaler 1 enabled, divide by 2
-      dmaclks /= 2.0;
-   }
-   */
+      if(pllcr & 0x0080)
+         dmaclks /= 2.0;
 
-   if(pllcr & 0x0020){
       //prescaler 2 enabled, divides value from prescaler 1 by 2
-      dmaclks /= 2.0;
+      if(pllcr & 0x0020)
+         dmaclks /= 2.0;
+   }
+   else{
+      dmaclks = 0;
    }
 
    return dmaclks;
 }
 
 static inline double sysclksPerClk32(){
-   double sysclks = dmaclksPerClk32();
+   uint8_t sysclkSelect = registerArrayRead16(PLLCR) >> 8 & 0x0003;
 
-   switch(registerArrayRead16(PLLCR) >> 8 & 0x0003){
+   //> 4 means run at full speed, no divider
+   if(sysclkSelect > 4)
+      return dmaclksPerClk32();
 
-      case 0x0000:
-         sysclks /= 2.0;
-         break;
-
-      case 0x0001:
-         sysclks /= 4.0;
-         break;
-
-      case 0x0002:
-         sysclks /= 8.0;
-         break;
-
-      case 0x0003:
-         sysclks /= 16.0;
-         break;
-
-      default:
-         //no divide for 0x0004, 0x0005, 0x0006 or 0x0007
-         break;
-   }
-
-   return sysclks;
+   //divide DMACLK by 2 to the power of PLLCR SYSCLKSEL
+   return dmaclksPerClk32() / (2 << sysclkSelect);
 }
 
 static inline void rtiInterruptClk32(){
    //this function is part of clk32();
-   uint16_t triggeredRtiInterrupts = 0;
+   uint16_t triggeredRtiInterrupts = 0x0000;
 
    if(clk32Counter % ((uint32_t)CRYSTAL_FREQUENCY / 512) == 0){
       //RIS7 - 512HZ
@@ -98,12 +85,12 @@ static inline void timer12Clk32(){
    uint16_t timer1OldCount = registerArrayRead16(TCN1);
    uint16_t timer1Count = timer1OldCount;
    double timer1Prescaler = (registerArrayRead16(TPRER1) & 0x00FF) + 1;
-
    uint16_t timer2Control = registerArrayRead16(TCTL2);
    uint16_t timer2Compare = registerArrayRead16(TCMP2);
    uint16_t timer2OldCount = registerArrayRead16(TCN2);
    uint16_t timer2Count = timer2OldCount;
    double timer2Prescaler = (registerArrayRead16(TPRER2) & 0x00FF) + 1;
+   double sysclks = sysclksPerClk32();
 
    //timer 1
    if(timer1Control & 0x0001){
@@ -116,13 +103,11 @@ static inline void timer12Clk32(){
             break;
 
          case 0x0001://SYSCLK / timer prescaler
-            if(pllIsOn())
-               timerCycleCounter[0] += sysclksPerClk32() / timer1Prescaler;
+            timerCycleCounter[0] += sysclks / timer1Prescaler;
             break;
 
          case 0x0002://SYSCLK / 16 / timer prescaler
-            if(pllIsOn())
-               timerCycleCounter[0] += sysclksPerClk32() / 16.0 / timer1Prescaler;
+            timerCycleCounter[0] += sysclks / 16.0 / timer1Prescaler;
             break;
 
          default://CLK32 / timer prescaler
@@ -166,13 +151,11 @@ static inline void timer12Clk32(){
             break;
 
          case 0x0001://SYSCLK / timer prescaler
-            if(pllIsOn())
-               timerCycleCounter[1] += sysclksPerClk32() / timer2Prescaler;
+            timerCycleCounter[1] += sysclks / timer2Prescaler;
             break;
 
          case 0x0002://SYSCLK / 16 / timer prescaler
-            if(pllIsOn())
-               timerCycleCounter[1] += sysclksPerClk32() / 16.0 / timer2Prescaler;
+            timerCycleCounter[1] += sysclks / 16.0 / timer2Prescaler;
             break;
 
          default://CLK32 / timer prescaler
