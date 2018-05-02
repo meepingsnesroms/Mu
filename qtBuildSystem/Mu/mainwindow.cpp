@@ -18,7 +18,7 @@
 #include <atomic>
 #include <stdint.h>
 
-#include "hexviewer.h"
+#include "debugviewer.h"
 #include "fileaccess.h"
 #include "src/emulator.h"
 
@@ -30,7 +30,7 @@ QSettings settings;
 
 static QImage            video;
 static QTimer*           refreshDisplay;
-static HexViewer*        emuStateBrowser;
+static DebugViewer*      emuDebugger;
 static std::thread       emuThread;
 static std::atomic<bool> emuThreadJoin;
 static std::atomic<bool> emuOn;
@@ -121,7 +121,7 @@ MainWindow::MainWindow(QWidget* parent) :
    ui(new Ui::MainWindow){
    ui->setupUi(this);
 
-   emuStateBrowser = new HexViewer(this);
+   emuDebugger = new DebugViewer(this);
    refreshDisplay = new QTimer(this);
 
    ui->calender->installEventFilter(this);
@@ -139,7 +139,7 @@ MainWindow::MainWindow(QWidget* parent) :
 
    ui->screenshot->installEventFilter(this);
    ui->ctrlBtn->installEventFilter(this);
-   ui->hexViewer->installEventFilter(this);
+   ui->debugger->installEventFilter(this);
 
    ui->ctrlBtn->setIcon(QIcon(":/buttons/images/play.png"));
 
@@ -163,7 +163,7 @@ MainWindow::MainWindow(QWidget* parent) :
    emuDoubleBuffer = NULL;
 
 #if defined(Q_OS_ANDROID) || defined(Q_OS_IOS)
-   ui->hexViewer->hide();
+   ui->debugger->hide();
 #endif
 
 #if defined(EMU_DEBUG) && defined(EMU_CUSTOM_DEBUG_LOG_HANDLER)
@@ -360,7 +360,7 @@ void MainWindow::on_ctrlBtn_clicked(){
    }
 }
 
-void MainWindow::on_hexViewer_clicked(){
+void MainWindow::on_debugger_clicked(){
    if(emuInited){
       if(emuOn){
          emuOn = false;
@@ -369,10 +369,10 @@ void MainWindow::on_hexViewer_clicked(){
 
       waitForEmuPaused();
 
-      emuStateBrowser->exec();
+      emuDebugger->exec();
    }
    else{
-      popupInformationDialog("Cant open hex viewer, emulator not running.");
+      popupInformationDialog("Cant open debugger, emulator not running.");
    }
 }
 

@@ -60,9 +60,9 @@ SOURCES += \
     src/sed1376.c \
     src/silkscreen.c \
     src/trapNumToName.c \
-    hexviewer.cpp \
     fileaccess.cpp \
-    src/ads7846.c
+    src/ads7846.c \
+    debugviewer.cpp
 
 HEADERS += \
     src/bps/crc32.h \
@@ -85,17 +85,17 @@ HEADERS += \
     mainwindow.h \
     touchscreen.h \
     src/sed1376RegisterNames.h \
-    hexviewer.h \
     src/hardwareRegistersTiming.c.h \
     src/sed1376Accessors.c.h \
     src/hardwareRegistersAccessors.c.h \
     fileaccess.h \
     src/endianness.h \
-    src/ads7846.h
+    src/ads7846.h \
+    debugviewer.h
 
 FORMS += \
     mainwindow.ui \
-    hexviewer.ui
+    debugviewer.ui
 
 CONFIG += mobility
 MOBILITY = 

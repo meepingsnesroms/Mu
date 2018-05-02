@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>HexViewer</class>
- <widget class="QDialog" name="HexViewer">
+ <class>DebugViewer</class>
+ <widget class="QDialog" name="DebugViewer">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -17,7 +17,7 @@
    </sizepolicy>
   </property>
   <property name="windowTitle">
-   <string>Hex Viewer</string>
+   <string>Debugger</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
    <item row="2" column="0">
@@ -47,7 +47,7 @@
        <verstretch>0</verstretch>
       </sizepolicy>
      </property>
-     <widget class="QPushButton" name="hexUpdate">
+     <widget class="QPushButton" name="debugGetHexValues">
       <property name="geometry">
        <rect>
         <x>420</x>
@@ -57,10 +57,10 @@
        </rect>
       </property>
       <property name="text">
-       <string>Update</string>
+       <string>Get Hex Values</string>
       </property>
      </widget>
-     <widget class="QLineEdit" name="hexAddress">
+     <widget class="QLineEdit" name="debugAddress">
       <property name="geometry">
        <rect>
         <x>430</x>
@@ -83,7 +83,7 @@
        <string>Address</string>
       </property>
      </widget>
-     <widget class="QRadioButton" name="hex8Bit">
+     <widget class="QRadioButton" name="debug8Bit">
       <property name="geometry">
        <rect>
         <x>420</x>
@@ -96,7 +96,7 @@
        <string>8bit</string>
       </property>
      </widget>
-     <widget class="QRadioButton" name="hex16Bit">
+     <widget class="QRadioButton" name="debug16Bit">
       <property name="geometry">
        <rect>
         <x>480</x>
@@ -109,7 +109,7 @@
        <string>16bit</string>
       </property>
      </widget>
-     <widget class="QRadioButton" name="hex32Bit">
+     <widget class="QRadioButton" name="debug32Bit">
       <property name="geometry">
        <rect>
         <x>540</x>
@@ -122,7 +122,7 @@
        <string>32bit</string>
       </property>
      </widget>
-     <widget class="QLineEdit" name="hexLength">
+     <widget class="QLineEdit" name="debugLength">
       <property name="geometry">
        <rect>
         <x>430</x>
@@ -145,7 +145,7 @@
        <string>Length</string>
       </property>
      </widget>
-     <widget class="QListWidget" name="hexValueList">
+     <widget class="QListWidget" name="debugValueList">
       <property name="geometry">
        <rect>
         <x>10</x>
@@ -155,20 +155,20 @@
        </rect>
       </property>
      </widget>
-     <widget class="QPushButton" name="hexDump">
+     <widget class="QPushButton" name="debugDump">
       <property name="geometry">
        <rect>
         <x>420</x>
-        <y>190</y>
+        <y>310</y>
         <width>201</width>
         <height>32</height>
        </rect>
       </property>
       <property name="text">
-       <string>Dump</string>
+       <string>Dump To File</string>
       </property>
      </widget>
-     <widget class="QLineEdit" name="hexFilePath">
+     <widget class="QLineEdit" name="debugFilePath">
       <property name="geometry">
        <rect>
         <x>432</x>
@@ -191,7 +191,7 @@
        <string>File Path</string>
       </property>
      </widget>
-     <widget class="QPushButton" name="hexShowRegisters">
+     <widget class="QPushButton" name="debugShowRegisters">
       <property name="geometry">
        <rect>
         <x>420</x>
@@ -204,7 +204,7 @@
        <string>Show Registers</string>
       </property>
      </widget>
-     <widget class="QPushButton" name="hexPrintDebugLogs">
+     <widget class="QPushButton" name="debugPrintDebugLogs">
       <property name="geometry">
        <rect>
         <x>420</x>
@@ -217,7 +217,7 @@
        <string>Print Debug Logs</string>
       </property>
      </widget>
-     <widget class="QPushButton" name="hexEraseDebugLogs">
+     <widget class="QPushButton" name="debugEraseDebugLogs">
       <property name="geometry">
        <rect>
         <x>420</x>
@@ -239,7 +239,7 @@
   <connection>
    <sender>buttonBox</sender>
    <signal>accepted()</signal>
-   <receiver>HexViewer</receiver>
+   <receiver>DebugViewer</receiver>
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
@@ -255,7 +255,7 @@
   <connection>
    <sender>buttonBox</sender>
    <signal>rejected()</signal>
-   <receiver>HexViewer</receiver>
+   <receiver>DebugViewer</receiver>
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">

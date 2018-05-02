@@ -56,7 +56,7 @@ private slots:
 
    void on_ctrlBtn_clicked();
 
-   void on_hexViewer_clicked();
+   void on_debugger_clicked();
 
    void on_screenshot_clicked();
 
