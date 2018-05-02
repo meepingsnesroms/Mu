@@ -24,6 +24,7 @@ some undocumented I/O might be on port e and port j
 if a timer triggers more than once per CLK32 it will lose any triggers after the first and get out of sync
 SPI1, probably the sdcard since sdcards use SPI for data transfer
 SPITEST SSTATUS is undocumented and therefore unemulated
+PCTLR should not divide palmCrystalCycles or dmaclksPerClk32 can't use it
 
 Debug tools:
 missing icons
@@ -43,6 +44,7 @@ Had to modify musashi because the damn NDK isn't C compatible, m68kcpu.h, line 5
 
 
 Fixed:
+if PCTLR divides the PLL it may also affect DMACLK, SYSCLK and the timers(it doesnt)
 timers shouldn't allow comp bits to be cleared until read with a 1 in them and should remain in interrupt state until they are cleared(the interrupt state part is unverified)
 SED1376 byte and word swap bits
 qt play pause icon not working for emu control button

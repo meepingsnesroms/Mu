@@ -2,10 +2,13 @@ static inline double dmaclksPerClk32(){
    uint16_t pllcr = registerArrayRead16(PLLCR);
    double   dmaclks = palmCrystalCycles;
 
+   //prescaler 1 divide is implemented when the PLL clock is set
+   /*
    if(pllcr & 0x0080){
       //prescaler 1 enabled, divide by 2
       dmaclks /= 2.0;
    }
+   */
 
    if(pllcr & 0x0020){
       //prescaler 2 enabled, divides value from prescaler 1 by 2
