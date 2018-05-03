@@ -269,24 +269,26 @@ static inline void setSpiCont2(uint16_t value){
 
 static inline void setTstat1(uint16_t value){
    uint16_t oldTstat1 = registerArrayRead16(TSTAT1);
-   //preserve any unread bits
-   registerArrayWrite16(TSTAT1, (value & timerStatusReadAcknowledge[0]) | (oldTstat1 & ~timerStatusReadAcknowledge[0]));
-   if(!(value & 0x0001) && (oldTstat1 & timerStatusReadAcknowledge[0] & 0x0001)){
+   uint16_t newTstat1 = (value & timerStatusReadAcknowledge[0]) | (oldTstat1 & ~timerStatusReadAcknowledge[0]);
+
+   if(!(newTstat1 & 0x0001) && (oldTstat1 & 0x0001)){
       clearIprIsrBit(INT_TMR1);
       checkInterrupts();
    }
-   timerStatusReadAcknowledge[0] = 0x0000;//clear acknowledged reads
+   timerStatusReadAcknowledge[0] &= newTstat1;//clear acknowledged reads cleared bits
+   registerArrayWrite16(TSTAT1, newTstat1);
 }
 
 static inline void setTstat2(uint16_t value){
    uint16_t oldTstat2 = registerArrayRead16(TSTAT2);
-   //preserve any unread bits
-   registerArrayWrite16(TSTAT2, (value & timerStatusReadAcknowledge[1]) | (oldTstat2 & ~timerStatusReadAcknowledge[1]));
-   if(!(value & 0x0001) && (oldTstat2 & timerStatusReadAcknowledge[1] & 0x0001)){
+   uint16_t newTstat2 = (value & timerStatusReadAcknowledge[1]) | (oldTstat2 & ~timerStatusReadAcknowledge[1]);
+
+   if(!(newTstat2 & 0x0001) && (oldTstat2 & 0x0001)){
       clearIprIsrBit(INT_TMR2);
       checkInterrupts();
    }
-   timerStatusReadAcknowledge[1] = 0x0000;//clear acknowledged reads
+   timerStatusReadAcknowledge[1] &= newTstat2;//clear acknowledged reads for cleared bits
+   registerArrayWrite16(TSTAT2, newTstat2);
 }
 
 //register getters

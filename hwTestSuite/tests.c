@@ -153,3 +153,39 @@ var interrogateSpi2(){
    
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
+
+var tstat1GetSemaphoreLockOrder(){
+   static Boolean firstRun = true;
+   uint16_t testWriteValue = 0xF0F1;
+   uint32_t y = 0;
+   
+   if(firstRun){
+      firstRun = false;
+      debugSafeScreenClear(C_WHITE);
+   }
+   
+   StrPrintF(sharedDataBuffer, "TSTAT1:0x%02X", readArbitraryMemory16(HW_REG_ADDR(TSTAT1)));
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   writeArbitraryMemory16(HW_REG_ADDR(TSTAT1), testWriteValue);
+   StrPrintF(sharedDataBuffer, "Write TSTAT1:0x%02X", testWriteValue);
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   StrPrintF(sharedDataBuffer, "New TSTAT1:0x%02X", readArbitraryMemory16(HW_REG_ADDR(TSTAT1)));
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   writeArbitraryMemory16(HW_REG_ADDR(TSTAT1), 0xFFFF);
+   StrPrintF(sharedDataBuffer, "Clear Semaphore");
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   StrPrintF(sharedDataBuffer, "New TSTAT1:0x%02X", readArbitraryMemory16(HW_REG_ADDR(TSTAT1)));
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   
+   if(getButtonPressed(buttonBack)){
+      firstRun = true;
+      exitSubprogram();
+   }
+   
+   return makeVar(LENGTH_0, TYPE_NULL, 0);
+}

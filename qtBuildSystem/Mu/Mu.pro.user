@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 4.6.0, 2018-05-02T12:02:40. -->
+<!-- Written by QtCreator 4.6.0, 2018-05-02T12:05:46. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -623,7 +623,7 @@
     <valuelist type="QVariantList" key="Android.AmStartArgsKey"/>
     <valuelist type="QVariantList" key="Android.PostFinishShellCmdListKey"/>
     <valuelist type="QVariantList" key="Android.PreStartShellCmdListKey"/>
-    <value type="QString" key="ProjectExplorer.ProjectConfiguration.DefaultDisplayName"></value>
+    <value type="QString" key="ProjectExplorer.ProjectConfiguration.DefaultDisplayName">Mu</value>
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.DisplayName"></value>
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">Qt4ProjectManager.AndroidRunConfiguration:/Users/Hoppy/Desktop/projects/PalmEmuRedo/libretro-palmm515emu/qtBuildSystem/Mu/Mu.pro</value>
     <value type="QString" key="QMakeProjectManager.QmakeAndroidRunConfiguration.ProFile">Mu.pro</value>

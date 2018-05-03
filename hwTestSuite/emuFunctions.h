@@ -7,5 +7,6 @@
 
 Boolean isEmulator();
 Boolean isEmulatorFeatureEnabled(uint32_t feature);
+
 #endif
 

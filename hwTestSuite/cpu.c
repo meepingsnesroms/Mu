@@ -75,7 +75,13 @@ var enterUnsafeMode(){
    exitSubprogram();/*only run once/for one frame*/
    
    if((getPhysicalCpuType() & CPU_M68K) || isEmulator()){
-      /*here all RAM banks must be set to read/write and all memory access execptions must be turned off, along with most interrupts*/
+      /*all memory banks set to read/write and unprotected*/
+      /*
+      writeArbitraryMemory16(HW_REG_ADDR(CSA), readArbitraryMemory16(HW_REG_ADDR(CSA)) & 0x7FFF);
+      writeArbitraryMemory16(HW_REG_ADDR(CSB), readArbitraryMemory16(HW_REG_ADDR(CSB)) & 0x7FFF);
+      writeArbitraryMemory16(HW_REG_ADDR(CSC), readArbitraryMemory16(HW_REG_ADDR(CSC)) & 0x7FFF);
+      writeArbitraryMemory16(HW_REG_ADDR(CSD), readArbitraryMemory16(HW_REG_ADDR(CSD)) & 0x7FFF);
+      */
       
       /*disable interrupt on invalid memory access*/
       writeArbitraryMemory8(HW_REG_ADDR(SCR), readArbitraryMemory8(HW_REG_ADDR(SCR)) & 0xEF);

@@ -137,11 +137,9 @@ void exitSubprogram(){
       setDebugTag("Subprogram Exited");
    }
    else{
-      /*last subprogram is complete, exit application if possible*/
-      if(!unsafeMode){
-         setDebugTag("Application Exiting");
-         applicationRunning = false;
-      }
+      /*last subprogram is complete*/
+      setDebugTag("Application Exiting");
+      applicationRunning = false;
    }
 }
 
@@ -270,15 +268,7 @@ DWord PilotMain(Word cmd, Ptr cmdBPB, Word launchFlags){
       testerExit();
    }
    else if(cmd == sysAppLaunchCmdSystemReset){
- #ifdef DEBUG
-      /*app crashed, to ease development just self delete from internal storage*/
-      /*
-      LocalID whatToDelete;
-      whatToDelete = DmFindDatabase(0, "HWTests");
-      DmDeleteDatabase(0, whatToDelete);
-      SysReset();
-      */
- #endif
+     /*eventualy boot time tests may go here*/
    }
    return(0);
 }

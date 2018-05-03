@@ -6,5 +6,6 @@
 var testButtonInput();
 var listDataRegisters();
 var interrogateSpi2();
+var tstat1GetSemaphoreLockOrder();
 
 #endif

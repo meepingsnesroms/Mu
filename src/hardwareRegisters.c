@@ -268,16 +268,6 @@ static void checkInterrupts(){
 
    //some interrupts should probably be auto cleared after being run once, RTI, RTC, WATCHDOG and SPI1/2 seem like they should be cleared this way
 
-   //auto clear timer interrupts for now, I dont know exactly how they are cleared in hardware
-   if(activeInterrupts & INT_TMR1 && intLevel == 6){
-      clearIprIsrBit(INT_TMR1);
-   }
-
-   if(activeInterrupts & INT_TMR2){
-      if(intLevel == (interruptLevelControlRegister & 0x0007))
-         clearIprIsrBit(INT_TMR2);
-   }
-
    pllWakeCpuIfOff();
    m68k_set_irq(intLevel);//should be called even if intLevel is 0, that is how the interrupt state gets cleared
 }
@@ -484,11 +474,11 @@ unsigned int getHwRegister16(unsigned int address){
    switch(address){
 
       case TSTAT1:
-         timerStatusReadAcknowledge[0] = registerArrayRead16(TSTAT1);//active bits acknowledged
+         timerStatusReadAcknowledge[0] |= registerArrayRead16(TSTAT1);//active bits acknowledged
          return registerArrayRead16(TSTAT1);
 
       case TSTAT2:
-         timerStatusReadAcknowledge[1] = registerArrayRead16(TSTAT2);//active bits acknowledged
+         timerStatusReadAcknowledge[1] |= registerArrayRead16(TSTAT2);//active bits acknowledged
          return registerArrayRead16(TSTAT2);
          
       //32 bit registers accessed as 16 bit
