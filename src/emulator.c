@@ -101,7 +101,6 @@ static void printTrapInfo(uint16_t trap){
 
 static void invalidBehaviorCheck(){
    char opcodeName[100];
-   //uint32_t lastProgramCounter = m68k_get_reg(NULL, M68K_REG_PPC);
    uint32_t programCounter = m68k_get_reg(NULL, M68K_REG_PPC);
    uint16_t instruction = m68k_get_reg(NULL, M68K_REG_IR);
    bool invalidInstruction = !m68k_is_valid_instruction(instruction, M68K_CPU_TYPE_68000);
@@ -156,7 +155,7 @@ static void invalidBehaviorCheck(){
 
 #if defined(EMU_LOG_APIS)
    if(instruction == 0x4E4F){
-      //Trap F/api call
+      //Trap F/API call
       uint16_t trap = m68k_read_memory_16(programCounter + 2);
       if(!spammingTrap(trap)){
          debugLog("Trap F API:%s, API number:0x%04X, PC:0x%08X\n", lookupTrap(trap), trap, programCounter);

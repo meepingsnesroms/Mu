@@ -1,0 +1,1 @@
+All register tests in this directory have a program counter that is slightly off, if you go to that location in a disassembler it will be the opcode before the PC stated, this issue has been resolved but these logs may still be useful in the future so they can't be deleted.
