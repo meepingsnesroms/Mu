@@ -101,8 +101,8 @@ static void printTrapInfo(uint16_t trap){
 
 static void invalidBehaviorCheck(){
    char opcodeName[100];
-   uint32_t lastProgramCounter = m68k_get_reg(NULL, M68K_REG_PPC);
-   uint32_t programCounter = m68k_get_reg(NULL, M68K_REG_PC);
+   //uint32_t lastProgramCounter = m68k_get_reg(NULL, M68K_REG_PPC);
+   uint32_t programCounter = m68k_get_reg(NULL, M68K_REG_PPC);
    uint16_t instruction = m68k_get_reg(NULL, M68K_REG_IR);
    bool invalidInstruction = !m68k_is_valid_instruction(instruction, M68K_CPU_TYPE_68000);
    bool invalidBank = (bankType[START_BANK(programCounter)] == CHIP_NONE);
@@ -110,12 +110,12 @@ static void invalidBehaviorCheck(){
    //get current opcode
    if(!invalidBank){
       //must dissasemble as 68020 to prevent address masking, is also more descriptive for invalid opcodes
-      m68k_disassemble(opcodeName, lastProgramCounter, M68K_CPU_TYPE_68020);
+      m68k_disassemble(opcodeName, programCounter, M68K_CPU_TYPE_68020);
    }
    else{
       strcpy(opcodeName, "Invalid bank, cant read");
    }
-   sprintf(opcodeName + strlen(opcodeName), " at PC:0x%08X", lastProgramCounter);
+   sprintf(opcodeName + strlen(opcodeName), " at PC:0x%08X", programCounter);
 
    //shift opcode buffer
    for(uint32_t i = 0; i < LOGGED_OPCODES - 1; i++)
@@ -124,7 +124,7 @@ static void invalidBehaviorCheck(){
    //add to opcode buffer
    strcpy(disassemblyBuffer[LOGGED_OPCODES - 1], opcodeName);
 
-   if(invalidInstruction || invalidBank/* || (instruction == 0x0000 && lastProgramCounter != 0x00000000)*/){
+   if(invalidInstruction || invalidBank/* || (instruction == 0x0000 && programCounter != 0x00000000)*/){
       //0x0000 is "ori.b #$IMM, D0", effectivly NOP if the post op byte is 0x00 but still a valid opcode
       //usualy never encountered unless executing empty address space, so it still triggers debug abort
       m68k_end_timeslice();
@@ -133,7 +133,7 @@ static void invalidBehaviorCheck(){
       for(uint32_t i = 0; i < LOGGED_OPCODES; i++)
          debugLog("%s\n", disassemblyBuffer[i]);
       //currently CPU32 opcodes will be listed as "unknown", I cant change that properly unless I directly edit musashi source, something I want to avoid doing
-      debugLog("Instruction:\"%s\", instruction value:0x%04X, bank type:%d\n", invalidInstruction ? "unknown" : opcodeName, instruction, bankType[START_BANK(lastProgramCounter)]);
+      debugLog("Instruction:\"%s\", instruction value:0x%04X, bank type:%d\n", invalidInstruction ? "unknown" : opcodeName, instruction, bankType[START_BANK(programCounter)]);
    }
 
    //custom debug operations
@@ -157,9 +157,9 @@ static void invalidBehaviorCheck(){
 #if defined(EMU_LOG_APIS)
    if(instruction == 0x4E4F){
       //Trap F/api call
-      uint16_t trap = m68k_read_memory_16(lastProgramCounter + 2);
+      uint16_t trap = m68k_read_memory_16(programCounter + 2);
       if(!spammingTrap(trap)){
-         debugLog("Trap F API:%s, API number:0x%04X, PC:0x%08X\n", lookupTrap(trap), trap, lastProgramCounter);
+         debugLog("Trap F API:%s, API number:0x%04X, PC:0x%08X\n", lookupTrap(trap), trap, programCounter);
       }
 
       //custom debug operations
@@ -294,7 +294,7 @@ void emulatorExit(){
 
 void emulatorReset(){
    //reset doesnt clear RAM or sdcard, all programs are stored in RAM or on sdcard
-   debugLog("Reset triggered, PC:0x%08X\n", m68k_get_reg(NULL, M68K_REG_PC));
+   debugLog("Reset triggered, PC:0x%08X\n", m68k_get_reg(NULL, M68K_REG_PPC));
    resetHwRegisters();
    resetAddressSpace();//address space must be reset after hardware registers because it is dependant on them
    sed1376Reset();

@@ -116,7 +116,7 @@ bool sed1376PowerSaveEnabled(){
 uint8_t sed1376GetRegister(uint8_t address){
    //returning 0x00 on power save mode is done in the sed1376ReadXX functions
 #if defined(EMU_DEBUG) && defined(EMU_LOG_REGISTER_ACCESS_ALL)
-   debugLog("SED1376 register read from 0x%02X, PC 0x%08X.\n", address, m68k_get_reg(NULL, M68K_REG_PC));
+   debugLog("SED1376 register read from 0x%02X, PC 0x%08X.\n", address, m68k_get_reg(NULL, M68K_REG_PPC));
 #endif
    switch(address){
 
@@ -147,7 +147,7 @@ uint8_t sed1376GetRegister(uint8_t address){
 
       default:
 #if defined(EMU_DEBUG) && defined(EMU_LOG_REGISTER_ACCESS_UNKNOWN) && !defined(EMU_LOG_REGISTER_ACCESS_ALL)
-         debugLog("SED1376 register read from 0x%02X, PC 0x%08X.\n", address, m68k_get_reg(NULL, M68K_REG_PC));
+         debugLog("SED1376 register read from 0x%02X, PC 0x%08X.\n", address, m68k_get_reg(NULL, M68K_REG_PPC));
 #endif
          return 0x00;
    }
@@ -156,7 +156,7 @@ uint8_t sed1376GetRegister(uint8_t address){
 
 void sed1376SetRegister(uint8_t address, uint8_t value){
 #if defined(EMU_DEBUG) && defined(EMU_LOG_REGISTER_ACCESS_ALL)
-   debugLog("SED1376 register write 0x%02X to 0x%02X, PC 0x%08X.\n", value, address, m68k_get_reg(NULL, M68K_REG_PC));
+   debugLog("SED1376 register write 0x%02X to 0x%02X, PC 0x%08X.\n", value, address, m68k_get_reg(NULL, M68K_REG_PPC));
 #endif
    switch(address){
 
@@ -251,7 +251,7 @@ void sed1376SetRegister(uint8_t address, uint8_t value){
 
       default:
 #if defined(EMU_DEBUG) && defined(EMU_LOG_REGISTER_ACCESS_UNKNOWN) && !defined(EMU_LOG_REGISTER_ACCESS_ALL)
-         debugLog("SED1376 register write 0x%02X to 0x%02X, PC 0x%08X.\n", value, address, m68k_get_reg(NULL, M68K_REG_PC));
+         debugLog("SED1376 register write 0x%02X to 0x%02X, PC 0x%08X.\n", value, address, m68k_get_reg(NULL, M68K_REG_PPC));
 #endif
          break;
    }

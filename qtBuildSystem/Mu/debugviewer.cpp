@@ -156,7 +156,7 @@ void DebugViewer::on_debugDump_clicked(){
    QString fileOut;
    std::string fileData;//if a QString is used a '\0' will be appended to every character
    QString fileName = ui->debugFilePath->text();
-   QString filePath = settings.value("resourceDirectory", "").toString() + "/hexDumps";
+   QString filePath = settings.value("resourceDirectory", "").toString() + "/debugDumps";
    QDir location = filePath;
 
    if(!location.exists())

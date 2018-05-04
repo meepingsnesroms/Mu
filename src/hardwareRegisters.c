@@ -90,7 +90,7 @@ int interruptAcknowledge(int intLevel){
 
 void setBusErrorTimeOut(){
    uint8_t scr = registerArrayRead8(SCR);
-   debugLog("Bus error timeout, PC:0x%08X\n", m68k_get_reg(NULL, M68K_REG_PC));
+   debugLog("Bus error timeout, PC:0x%08X\n", m68k_get_reg(NULL, M68K_REG_PPC));
    if(scr & 0x10){
       //trigger bus error interrupt
    }
@@ -99,7 +99,7 @@ void setBusErrorTimeOut(){
 
 void setWriteProtectViolation(){
    uint8_t scr = registerArrayRead8(SCR);
-   debugLog("Write protect violation, PC:0x%08X\n", m68k_get_reg(NULL, M68K_REG_PC));
+   debugLog("Write protect violation, PC:0x%08X\n", m68k_get_reg(NULL, M68K_REG_PPC));
    if(scr & 0x10){
       //trigger bus error interrupt
    }
@@ -108,7 +108,7 @@ void setWriteProtectViolation(){
 
 void setPrivilegeViolation(){
    uint8_t scr = registerArrayRead8(SCR);
-   debugLog("Privilege violation, PC:0x%08X\n", m68k_get_reg(NULL, M68K_REG_PC));
+   debugLog("Privilege violation, PC:0x%08X\n", m68k_get_reg(NULL, M68K_REG_PPC));
    if(scr & 0x10){
       //trigger bus error interrupt
    }
@@ -362,10 +362,10 @@ static inline void updateVibratorStatus(){
 
 void printUnknownHwAccess(unsigned int address, unsigned int value, unsigned int size, bool isWrite){
    if(isWrite){
-      debugLog("CPU wrote %d bits of 0x%08X to register 0x%03X, PC 0x%08X.\n", size, value, address, m68k_get_reg(NULL, M68K_REG_PC));
+      debugLog("CPU wrote %d bits of 0x%08X to register 0x%03X, PC 0x%08X.\n", size, value, address, m68k_get_reg(NULL, M68K_REG_PPC));
    }
    else{
-      debugLog("CPU read %d bits from register 0x%03X, PC 0x%08X.\n", size, address, m68k_get_reg(NULL, M68K_REG_PC));
+      debugLog("CPU read %d bits from register 0x%03X, PC 0x%08X.\n", size, address, m68k_get_reg(NULL, M68K_REG_PPC));
    }
 }
 
@@ -983,8 +983,8 @@ void resetHwRegisters(){
    //system control
    registerArrayWrite8(SCR, 0x1C);
    
-   //CPU id
-   registerArrayWrite32(IDR, 0x56000000);
+   //CPU ID
+   registerArrayWrite32(IDR, 0x56010000);//value of IDR in POSE
    
    //I/O drive control //probably unused
    registerArrayWrite16(IODCR, 0x1FFF);
