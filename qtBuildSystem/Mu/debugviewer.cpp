@@ -154,6 +154,7 @@ void DebugViewer::on_debug32Bit_clicked(){
 
 void DebugViewer::on_debugDump_clicked(){
    QString fileOut;
+   std::string fileData;//if a QString is used a '\0' will be appended to every character
    QString fileName = ui->debugFilePath->text();
    QString filePath = settings.value("resourceDirectory", "").toString() + "/hexDumps";
    QDir location = filePath;
@@ -166,7 +167,8 @@ void DebugViewer::on_debugDump_clicked(){
       fileOut += '\n';
    }
 
-   setFileBuffer(filePath + "/" + fileName, (uint8_t*)fileOut.data(), fileOut.length() * sizeof(QChar));
+   fileData = fileOut.toStdString();
+   setFileBuffer(filePath + "/" + fileName, (uint8_t*)fileData.c_str(), fileData.length());
 }
 
 void DebugViewer::on_debugShowRegisters_clicked(){
