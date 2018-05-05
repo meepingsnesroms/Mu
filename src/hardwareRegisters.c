@@ -51,12 +51,11 @@ void refreshInputState(){
    uint16_t icr = registerArrayRead16(ICR);
    bool penIrqPin = !(ads7846PenIrqEnabled && palmInput.touchscreenTouched);//penIrqPin pulled low on touch
 
-   /*
    //IRQ set as pin function and triggered
    if(!(registerArrayRead8(PFSEL) & 0x02) && penIrqPin == (bool)(icr & 0x0080))
       setIprIsrBit(INT_IRQ5);
-   */
 
+   /*
    //IRQ set as pin function and triggered, the pen IRQ triggers when going low to high or high to low
    if(!(registerArrayRead8(PFSEL) & 0x02) && (penIrqPin == (bool)(icr & 0x0080)) != (bool)(edgeTriggeredInterruptLastValue & INT_IRQ5))
       setIprIsrBit(INT_IRQ5);
@@ -65,6 +64,7 @@ void refreshInputState(){
       edgeTriggeredInterruptLastValue |= INT_IRQ5;
    else
       edgeTriggeredInterruptLastValue &= ~INT_IRQ5;
+   */
 
    checkPortDInterrupts();//this calls checkInterrupts() so it doesnt need to be called above
 }
@@ -236,32 +236,8 @@ static void checkInterrupts(){
          intLevel = 6;
    }
 
-   if(activeInterrupts & (INT_SPI2 | INT_UART1 | INT_WDT | INT_RTC | INT_KB | INT_RTI)){
+   if(activeInterrupts & (INT_SPI2 | INT_UART1 | INT_WDT | INT_RTC | INT_KB | INT_RTI | INT_INT0 | INT_INT1 | INT_INT2 | INT_INT3)){
       //All Fixed Level 4 Interrupts
-      if(intLevel < 4)
-         intLevel = 4;
-   }
-
-   if(activeInterrupts & INT_INT0){
-      //INTx, only reenable the PLL if interrupt is set to level sensitive
-      if(intLevel < 4)
-         intLevel = 4;
-   }
-
-   if(activeInterrupts & INT_INT1){
-      //INTx, only reenable the PLL if interrupt is set to level sensitive
-      if(intLevel < 4)
-         intLevel = 4;
-   }
-
-   if(activeInterrupts & INT_INT2){
-      //INTx, only reenable the PLL if interrupt is set to level sensitive
-      if(intLevel < 4)
-         intLevel = 4;
-   }
-
-   if(activeInterrupts & INT_INT3){
-      //INTx, only reenable the PLL if interrupt is set to level sensitive
       if(intLevel < 4)
          intLevel = 4;
    }
@@ -922,8 +898,8 @@ void setHwRegister32(unsigned int address, unsigned int value){
          
       case ISR:
          //clear ISR and IPR for external hardware whereever there is a 1 bit in value
-         registerArrayWrite32(IPR, registerArrayRead32(IPR) & ~(value & 0x000F0F00/*external hardware int mask*/));
-         registerArrayWrite32(ISR, registerArrayRead32(ISR) & ~(value & 0x000F0F00/*external hardware int mask*/));
+         registerArrayWrite32(IPR, registerArrayRead32(IPR) & ~(value & 0x001F0F00/*external hardware int mask*/));
+         registerArrayWrite32(ISR, registerArrayRead32(ISR) & ~(value & 0x001F0F00/*external hardware int mask*/));
          break;
          
       case IMR:
