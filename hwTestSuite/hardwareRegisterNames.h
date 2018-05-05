@@ -94,10 +94,10 @@
 #define PMSEL     0x44B/*Port M Select Register*/
 
 /*PWM - Pulse Width Modulator*/
-#define PWMC1      0x500/*PWM Unit 1 Control Register*/
-#define PWMS1      0x502/*PWM Unit 1 Sample Register*/
-#define PWMP1      0x504/*PWM Unit 1 Period Register*/
-#define PWMCNT1    0x505/*PWM Unit 1 Counter Register*/
+#define PWMC1     0x500/*PWM Unit 1 Control Register*/
+#define PWMS1     0x502/*PWM Unit 1 Sample Register*/
+#define PWMP1     0x504/*PWM Unit 1 Period Register*/
+#define PWMCNT1   0x505/*PWM Unit 1 Counter Register*/
 
 /*Timer*/
 #define TCTL1     0x600/*Timer Unit 1 Control Register*/
@@ -112,7 +112,7 @@
 #define TSTAT2    0x61A/*Timer Unit 2 Status Register*/
 
 /*WD - Watchdog*/
-#define WATCHDOG    0xB0A/*Watchdog Timer Register*/
+#define WATCHDOG  0xB0A/*Watchdog Timer Register*/
 
 /*SPI - Serial Peripheral Interface*/
 #define SPIRXD    0x700/*SPI 1 Receive Data Register*/
@@ -125,19 +125,19 @@
 #define SPICONT2  0x802/*SPI 2 Control/Status Register*/
 
 /*UART - Universal Asynchronous Receiver/Transmitter*/
-#define USTCNT1    0x900/*UART Unit 1 Status/Control Register*/
-#define UBAUD1     0x902/*UART Unit 1 Baud Control Register*/
-#define URX1       0x904/*UART Unit 1 RX Register*/
-#define UTX1       0x906/*UART Unit 1 TX Register*/
-#define UMISC1     0x908/*UART Unit 1 Misc Register*/
+#define USTCNT1   0x900/*UART Unit 1 Status/Control Register*/
+#define UBAUD1    0x902/*UART Unit 1 Baud Control Register*/
+#define URX1      0x904/*UART Unit 1 RX Register*/
+#define UTX1      0x906/*UART Unit 1 TX Register*/
+#define UMISC1    0x908/*UART Unit 1 Misc Register*/
 
-#define USTCNT2    0x910/*UART Unit 2 Status/Control Register*/
-#define UBAUD2     0x912/*UART Unit 2 Baud Control Register*/
-#define URX2       0x914/*UART Unit 2 RX Register*/
-#define UTX2       0x916/*UART Unit 2 TX Register*/
-#define UMISC2     0x918/*UART Unit 2 Misc Register*/
-#define NIPR2      0x91A/*UART Unit 2 Non-Integer Prescaler Register*/
-#define HMARK      0x91C/*UART Unit 2 FIFO Half Mark Register*/
+#define USTCNT2   0x910/*UART Unit 2 Status/Control Register*/
+#define UBAUD2    0x912/*UART Unit 2 Baud Control Register*/
+#define URX2      0x914/*UART Unit 2 RX Register*/
+#define UTX2      0x916/*UART Unit 2 TX Register*/
+#define UMISC2    0x918/*UART Unit 2 Misc Register*/
+#define NIPR2     0x91A/*UART Unit 2 Non-Integer Prescaler Register*/
+#define HMARK     0x91C/*UART Unit 2 FIFO Half Mark Register*/
 
 /*LCDC - LCD Controller*/
 #define LSSA      0xA00/*Screen Starting Address Register*/
