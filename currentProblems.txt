@@ -1,4 +1,11 @@
 //stuck on timer wait, inside interrupt level 6 handler
+
+PCR
+TYPE RESET
+Peripheral Control Register 0x(FF)FFF003
+
+PCR T field could be set to use timer chaining
+
 CPU wrote 16 bits of 0x00000000 to register 0x60A, PC 0x10083BF0.
 
 #define kChannelSet1		\

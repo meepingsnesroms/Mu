@@ -82,23 +82,22 @@ static inline void timer12Clk32(){
    //this function is part of clk32();
    uint16_t timer1Control = registerArrayRead16(TCTL1);
    uint16_t timer1Compare = registerArrayRead16(TCMP1);
-   uint16_t timer1OldCount = registerArrayRead16(TCN1);
-   uint16_t timer1Count = timer1OldCount;
+   double timer1OldCount = timerCycleCounter[0];
    double timer1Prescaler = (registerArrayRead16(TPRER1) & 0x00FF) + 1;
+   bool timer1Enabled = timer1Control & 0x0001;
    uint16_t timer2Control = registerArrayRead16(TCTL2);
    uint16_t timer2Compare = registerArrayRead16(TCMP2);
-   uint16_t timer2OldCount = registerArrayRead16(TCN2);
-   uint16_t timer2Count = timer2OldCount;
+   double timer2OldCount = timerCycleCounter[0];
    double timer2Prescaler = (registerArrayRead16(TPRER2) & 0x00FF) + 1;
+   bool timer2Enabled = timer2Control & 0x0001;
+   uint8_t pcrTinToutConfig = registerArrayRead8(PCR) & 0x03;//TIN/TOUT seems not to be physicaly connected but cascaded timers still need to be supported
    double sysclks = sysclksPerClk32();
 
-   //timer 1
-   if(timer1Control & 0x0001){
-      //enabled
+   if(timer1Enabled && pcrTinToutConfig != 0x02){
       switch((timer1Control & 0x000E) >> 1){
 
          case 0x0000://stop counter
-         case 0x0003://TIN pin / timer prescaler, nothing is attached to TIN
+         case 0x0003://TIN/TOUT pin / timer prescaler, nothing is attached to TIN/TOUT
             //do nothing
             break;
 
@@ -114,39 +113,13 @@ static inline void timer12Clk32(){
             timerCycleCounter[0] += 1.0 / timer1Prescaler;
             break;
       }
-
-      if(timerCycleCounter[0] >= 1.0){
-         timer1Count += (uint16_t)timerCycleCounter[0];
-         timerCycleCounter[0] -= (uint16_t)timerCycleCounter[0];
-      }
-
-      if(timer1OldCount < timer1Compare && timer1Count >= timer1Compare){
-         //the timer is not cycle accurate and may not hit the value in the compare register perfectly so check if it would have during in the emulated time
-         if(timer1Control & 0x0010){
-            //interrupt enabled
-            setIprIsrBit(INT_TMR1);
-         }
-
-         //set timer triggered bit
-         registerArrayWrite16(TSTAT1, registerArrayRead16(TSTAT1) | 0x0001);
-         timerStatusReadAcknowledge[0] &= 0xFFFE;//lock bit until next read
-
-         if(!(timer1Control & 0x0100)){
-            //not free running, reset to 0, to prevent loss of ticks after compare event just subtract timerXCompare
-            timer1Count -= timer1Compare;
-         }
-      }
-
-      registerArrayWrite16(TCN1, timer1Count);
    }
 
-   //timer 2
-   if(timer2Control & 0x0001){
-      //enabled
+   if(timer2Enabled && pcrTinToutConfig != 0x03){
       switch((timer2Control & 0x000E) >> 1){
 
          case 0x0000://stop counter
-         case 0x0003://TIN pin / timer prescaler, nothing is attached to TIN
+         case 0x0003://TIN/TOUT pin / timer prescaler, nothing is attached to TIN/TOUT
             //do nothing
             break;
 
@@ -162,30 +135,74 @@ static inline void timer12Clk32(){
             timerCycleCounter[1] += 1.0 / timer2Prescaler;
             break;
       }
+   }
 
-      if(timerCycleCounter[1] >= 1.0){
-         timer2Count += (uint16_t)timerCycleCounter[1];
-         timerCycleCounter[1] -= (uint16_t)timerCycleCounter[1];
+   if(timer1Enabled && timer1OldCount <= timer1Compare && timerCycleCounter[0] >= timer1Compare){
+      //the comparison against the old value is to prevent an interrupt on every increment in free running mode
+      //the timer is not cycle accurate and may not hit the value in the compare register perfectly so check if it would have during in the emulated time
+
+      //interrupt enabled
+      if(timer1Control & 0x0010)
+         setIprIsrBit(INT_TMR1);
+
+      //set timer triggered bit
+      registerArrayWrite16(TSTAT1, registerArrayRead16(TSTAT1) | 0x0001);
+      timerStatusReadAcknowledge[0] &= 0xFFFE;//lock bit until next read
+
+      //not free running, reset to 0, to prevent loss of ticks after compare event just subtract timerXCompare
+      if(!(timer1Control & 0x0100))
+         timerCycleCounter[0] -= timer1Compare;
+   }
+
+   if(timer2Enabled && timer2OldCount <= timer2Compare && timerCycleCounter[1] >= timer2Compare){
+      //the comparison against the old value is to prevent an interrupt on every increment in free running mode
+      //the timer is not cycle accurate and may not hit the value in the compare register perfectly so check if it would have during in the emulated time
+
+      //interrupt enabled
+      if(timer2Control & 0x0010)
+         setIprIsrBit(INT_TMR2);
+
+      //set timer triggered bit
+      registerArrayWrite16(TSTAT2, registerArrayRead16(TSTAT2) | 0x0001);
+      timerStatusReadAcknowledge[1] &= 0xFFFE;//lock bit until next read
+
+      //not free running, reset to 0, to prevent loss of ticks after compare event just subtract timerXCompare
+      if(!(timer2Control & 0x0100))
+         timerCycleCounter[1] -= timer2Compare;
+   }
+
+   if(timer1Enabled && timer2Enabled){
+      switch(pcrTinToutConfig){
+
+         case 0x00:
+         case 0x01:
+            //do nothing
+            break;
+
+         case 0x02:
+            //PCR T field, 0x02 = Timer 2 OUT -> Timer 1 IN; TIN -> Timer 2 (DIR6 = 0), or TOUT -> Timer 1 (DIR6 = 1).
+            if(timerCycleCounter[1] > 0xFFFF)
+               timerCycleCounter[0] += 1.0;
+            break;
+
+         case 0x03:
+            //PCR T field, 0x03 = Timer 1 OUT -> Timer 2 IN; TIN -> Timer 1 (DIR6 = 0), or TOUT -> Timer 2 (DIR6 = 1)
+            if(timerCycleCounter[0] > 0xFFFF)
+               timerCycleCounter[1] += 1.0;
+            break;
       }
+   }
 
-      if(timer2OldCount < timer2Compare && timer2Count >= timer2Compare){
-         //the timer is not cycle accurate and may not hit the value in the compare register perfectly so check if it would have during in the emulated time
-         if(timer2Control & 0x0010){
-            //interrupt enabled
-            setIprIsrBit(INT_TMR2);
-         }
+   if(timer1Enabled){
+      if(timerCycleCounter[0] > 0xFFFF)
+         timerCycleCounter[0] -= 0xFFFF;
+      registerArrayWrite16(TCN1, (uint16_t)timerCycleCounter[0]);
+   }
 
-         //set timer triggered bit
-         registerArrayWrite16(TSTAT2, registerArrayRead16(TSTAT2) | 0x0001);
-         timerStatusReadAcknowledge[1] &= 0xFFFE;//lock bit until next read
-
-         if(!(timer2Control & 0x0100)){
-            //not free running, reset to 0, to prevent loss of ticks after compare event just subtract timerXCompare
-            timer2Count -= timer2Compare;
-         }
-      }
-
-      registerArrayWrite16(TCN2, timer2Count);
+   if(timer2Enabled){
+      if(timerCycleCounter[1] > 0xFFFF)
+         timerCycleCounter[1] -= 0xFFFF;
+      registerArrayWrite16(TCN2, (uint16_t)timerCycleCounter[1]);
    }
 }
 
