@@ -301,6 +301,25 @@ static inline void setTstat2(uint16_t value){
    registerArrayWrite16(TSTAT2, newTstat2);
 }
 
+static inline void setPwmc1(uint16_t value){
+   if((value & 0x00D0) == 0x00D0){
+      //enabled, interrupt enabled and interrupt set
+      //this register allows forcing an interrupt by writing a 1 to its IRQ bit
+      setIprIsrBit(INT_PWM1);
+      checkInterrupts();
+   }
+
+   if(!(value & 0x0010)){
+      //PWM1 set to disabled
+
+      value &= 0x80FF;//clear prescaler value
+
+      //unemulated, also need to flush PWM1 FIFO
+   }
+
+   registerArrayWrite16(PWMC1, value);
+}
+
 //register getters
 static inline uint8_t getPortDValue(){
    uint8_t requestedRow = registerArrayRead8(PKDIR) & registerArrayRead8(PKDATA);//keys are requested on port k and read on port d
@@ -355,4 +374,20 @@ static inline uint8_t getPortKValue(){
 static inline uint16_t getSpiTest(){
    //SSTATUS is unemulated because the datasheet has no descrption of how it works
    return spi1RxPosition << 4 | spi1TxPosition;
+}
+
+static inline uint16_t getPwmc1(){
+   uint16_t returnValue = registerArrayRead16(PWMC1);
+
+   //clear INT_PWM1 if active
+   if(returnValue & 0x0080){
+      clearIprIsrBit(INT_PWM1);
+      checkInterrupts();
+      registerArrayWrite16(PWMC1, returnValue & 0xFF7F);
+   }
+
+   //the REPEAT field is write only
+   returnValue &= 0xFFF3;
+
+   return returnValue;
 }

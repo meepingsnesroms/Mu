@@ -456,6 +456,9 @@ unsigned int getHwRegister16(unsigned int address){
       case TSTAT2:
          timerStatusReadAcknowledge[1] |= registerArrayRead16(TSTAT2);//active bits acknowledged
          return registerArrayRead16(TSTAT2);
+
+      case PWMC1:
+         return getPwmc1();
          
       //32 bit registers accessed as 16 bit
       case IMR:
@@ -849,6 +852,10 @@ void setHwRegister16(unsigned int address, unsigned int value){
 
       case SPICONT2:
          setSpiCont2(value);
+         break;
+
+      case PWMC1:
+         setPwmc1(value);
          break;
 
       case SPISPC:
