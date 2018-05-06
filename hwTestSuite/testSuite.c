@@ -138,8 +138,10 @@ void exitSubprogram(){
    }
    else{
       /*last subprogram is complete*/
-      setDebugTag("Application Exiting");
-      applicationRunning = false;
+      if(!unsafeMode){
+         setDebugTag("Application Exiting");
+         applicationRunning = false;
+      }
    }
 }
 

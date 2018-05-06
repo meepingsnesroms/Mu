@@ -82,7 +82,7 @@ bool pllIsOn();
 bool registersAreXXFFMapped();
 bool sed1376ClockConnected();
 void refreshInputState();
-int  interruptAcknowledge(int intLevel);
+int interruptAcknowledge(int intLevel);
 
 //memory errors
 void setBusErrorTimeOut();

@@ -286,6 +286,10 @@ void resetFunctionViewer(){
       hwTests[totalHwTests].testFunction = interrogateSpi2;
       totalHwTests++;
       
+      StrNCopy(hwTests[totalHwTests].name, "Button Test", TEST_NAME_LENGTH);
+      hwTests[totalHwTests].testFunction = testButtonInput;
+      totalHwTests++;
+      
       if(unsafeMode){
          StrNCopy(hwTests[totalHwTests].name, "Manual LSSA", TEST_NAME_LENGTH);
          hwTests[totalHwTests].testFunction = manualLssa;
@@ -298,13 +302,12 @@ void resetFunctionViewer(){
          StrNCopy(hwTests[totalHwTests].name, "ADS7846 Read", TEST_NAME_LENGTH);
          hwTests[totalHwTests].testFunction = ads7846Read;
          totalHwTests++;
+         
+         StrNCopy(hwTests[totalHwTests].name, "Exit Unsafe Mode", TEST_NAME_LENGTH);
+         hwTests[totalHwTests].testFunction = exitUnsafeMode;
+         totalHwTests++;
       }
-      
-      StrNCopy(hwTests[totalHwTests].name, "Button Test", TEST_NAME_LENGTH);
-      hwTests[totalHwTests].testFunction = testButtonInput;
-      totalHwTests++;
-      
-      if(!unsafeMode){
+      else{
          StrNCopy(hwTests[totalHwTests].name, "Enter Unsafe Mode", TEST_NAME_LENGTH);
          hwTests[totalHwTests].testFunction = enterUnsafeMode;
          totalHwTests++;

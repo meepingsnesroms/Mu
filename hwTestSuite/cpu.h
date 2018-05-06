@@ -18,7 +18,8 @@
 
 uint8_t getPhysicalCpuType();
 uint8_t getSupportedInstructionSets();
-char*   getCpuString();
-var     enterUnsafeMode();
+char* getCpuString();
+var enterUnsafeMode();
+var exitUnsafeMode();
 
 #endif

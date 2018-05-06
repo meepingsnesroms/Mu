@@ -8,6 +8,8 @@
 
 
 static char cpuStringBuffer[100];
+static uint32_t oldImr;
+static uint8_t oldScr;
 
 
 uint8_t getPhysicalCpuType(){
@@ -75,6 +77,9 @@ var enterUnsafeMode(){
    exitSubprogram();/*only run once/for one frame*/
    
    if((getPhysicalCpuType() & CPU_M68K) || isEmulator()){
+      oldImr = readArbitraryMemory32(HW_REG_ADDR(IMR));
+      oldScr = readArbitraryMemory8(HW_REG_ADDR(SCR));
+      
       /*all memory banks set to read/write and unprotected*/
       /*
       writeArbitraryMemory16(HW_REG_ADDR(CSA), readArbitraryMemory16(HW_REG_ADDR(CSA)) & 0x7FFF);
@@ -84,12 +89,26 @@ var enterUnsafeMode(){
       */
       
       /*disable interrupt on invalid memory access*/
-      writeArbitraryMemory8(HW_REG_ADDR(SCR), readArbitraryMemory8(HW_REG_ADDR(SCR)) & 0xEF);
+      writeArbitraryMemory8(HW_REG_ADDR(SCR), oldScr & 0xEF);
       
       unsafeMode = true;
       resetFunctionViewer();
       return makeVar(LENGTH_1, TYPE_BOOL, true);/*now in unsafe mode*/
    }
 
+   return makeVar(LENGTH_1, TYPE_BOOL, false);
+}
+
+var exitUnsafeMode(){
+   exitSubprogram();/*only run once/for one frame*/
+   
+   if(unsafeMode){
+      writeArbitraryMemory32(HW_REG_ADDR(IMR), oldImr);
+      writeArbitraryMemory8(HW_REG_ADDR(SCR), oldScr);
+      unsafeMode = false;
+      resetFunctionViewer();
+      return makeVar(LENGTH_1, TYPE_BOOL, true);
+   }
+   
    return makeVar(LENGTH_1, TYPE_BOOL, false);
 }

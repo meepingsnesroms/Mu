@@ -77,12 +77,12 @@ c89 also doesnt support them
 var     makeVar(uint8_t length, uint8_t type, uint64_t value);
 
 /*kernel memory access*/
-uint8_t  readArbitraryMemory8(uint32_t address);
+uint8_t readArbitraryMemory8(uint32_t address);
 uint16_t readArbitraryMemory16(uint32_t address);
 uint32_t readArbitraryMemory32(uint32_t address);
-void     writeArbitraryMemory8(uint32_t address, uint8_t value);
-void     writeArbitraryMemory16(uint32_t address, uint16_t value);
-void     writeArbitraryMemory32(uint32_t address, uint32_t value);
+void writeArbitraryMemory8(uint32_t address, uint8_t value);
+void writeArbitraryMemory16(uint32_t address, uint16_t value);
+void writeArbitraryMemory32(uint32_t address, uint32_t value);
 
 /*graphics*/
 void forceFrameRedraw();
@@ -91,10 +91,10 @@ void forceFrameRedraw();
 void callSubprogram(activity_t activity);
 void exitSubprogram();
 void execSubprogram(activity_t activity);/*replace current subprogram with a new one*/
-var  getSubprogramReturnValue();
-var  getSubprogramArgs();
+var getSubprogramReturnValue();
+var getSubprogramArgs();
 void setSubprogramArgs(var args);
-var  subprogramGetData();/*for subprograms to get data they stored*/
+var subprogramGetData();/*for subprograms to get data they stored*/
 void subprogramSetData(var data);/*for subprograms to save data when calling a new subprogram*/
 
 /*special subprograms*/
