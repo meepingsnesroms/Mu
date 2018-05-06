@@ -165,6 +165,7 @@
 #define RTCIENR   0xB10/*RTC Interrupt Enable Register*/
 #define STPWCH    0xB12/*Stopwatch Minutes Register*/
 #define DAYR      0xB1A/*RTC Day Count Register*/
+#define DAYALRM   0xB1C/*RTC Day Alarm Register*/
 
 /*RAM - (S)DRAM Control*/
 #define DRAMMC    0xC00/*DRAM Memory Configuration Register*/

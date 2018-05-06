@@ -888,6 +888,7 @@ void setHwRegister32(unsigned int address, unsigned int value){
    switch(address){
          
       case RTCTIME:
+      case RTCALRM:
          registerArrayWrite32(address, value & 0x1F3F003F);
          break;
          

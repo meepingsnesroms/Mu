@@ -271,7 +271,10 @@ static inline void setTstat1(uint16_t value){
    uint16_t oldTstat1 = registerArrayRead16(TSTAT1);
    uint16_t newTstat1 = (value & timerStatusReadAcknowledge[0]) | (oldTstat1 & ~timerStatusReadAcknowledge[0]);
 
+   debugLog("TSTAT1 write, old value:0x%04X, new value:0x%04X\n", oldTstat1, newTstat1);
+
    if(!(newTstat1 & 0x0001) && (oldTstat1 & 0x0001)){
+      debugLog("Timer 1 interrupt cleared.\n");
       clearIprIsrBit(INT_TMR1);
       checkInterrupts();
    }
@@ -283,7 +286,10 @@ static inline void setTstat2(uint16_t value){
    uint16_t oldTstat2 = registerArrayRead16(TSTAT2);
    uint16_t newTstat2 = (value & timerStatusReadAcknowledge[1]) | (oldTstat2 & ~timerStatusReadAcknowledge[1]);
 
+   debugLog("TSTAT2 write, old value:0x%04X, new value:0x%04X\n", oldTstat2, newTstat2);
+
    if(!(newTstat2 & 0x0001) && (oldTstat2 & 0x0001)){
+      debugLog("Timer 2 interrupt cleared.\n");
       clearIprIsrBit(INT_TMR2);
       checkInterrupts();
    }

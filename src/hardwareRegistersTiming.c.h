@@ -97,7 +97,6 @@ static inline void timer12Clk32(){
       switch((timer1Control & 0x000E) >> 1){
 
          case 0x0000://stop counter
-         case 0x0003://TIN/TOUT pin / timer prescaler, nothing is attached to TIN/TOUT
             //do nothing
             break;
 
@@ -107,6 +106,10 @@ static inline void timer12Clk32(){
 
          case 0x0002://SYSCLK / 16 / timer prescaler
             timerCycleCounter[0] += sysclks / 16.0 / timer1Prescaler;
+            break;
+
+         case 0x0003://TIN/TOUT pin / timer prescaler, nothing is attached to TIN/TOUT
+            //do nothing
             break;
 
          default://CLK32 / timer prescaler
@@ -119,7 +122,6 @@ static inline void timer12Clk32(){
       switch((timer2Control & 0x000E) >> 1){
 
          case 0x0000://stop counter
-         case 0x0003://TIN/TOUT pin / timer prescaler, nothing is attached to TIN/TOUT
             //do nothing
             break;
 
@@ -129,6 +131,10 @@ static inline void timer12Clk32(){
 
          case 0x0002://SYSCLK / 16 / timer prescaler
             timerCycleCounter[1] += sysclks / 16.0 / timer2Prescaler;
+            break;
+
+         case 0x0003://TIN/TOUT pin / timer prescaler, nothing is attached to TIN/TOUT
+            //do nothing
             break;
 
          default://CLK32 / timer prescaler
@@ -212,32 +218,52 @@ static inline void rtcAddSecondClk32(){
    //RTC
    if(registerArrayRead16(RTCCTL) & 0x0080){
       //RTC enable bit set
-      uint16_t rtcInterruptEvents;
+      uint16_t rtcInterruptEvents = 0x0000;
       uint32_t newRtcTime;
       uint32_t oldRtcTime = registerArrayRead32(RTCTIME);
-      uint32_t hours = oldRtcTime >> 24;
-      uint32_t minutes = (oldRtcTime >> 16) & 0x0000003F;
-      uint32_t seconds = oldRtcTime & 0x0000003F;
+      uint32_t rtcAlrm = registerArrayRead32(RTCALRM);
+      uint16_t dayAlrm = registerArrayRead16(DAYALRM);
+      uint16_t days = registerArrayRead16(DAYR);
+      uint8_t hours = oldRtcTime >> 24;
+      uint8_t minutes = oldRtcTime >> 16 & 0x0000003F;
+      uint8_t seconds = oldRtcTime & 0x0000003F;
 
       seconds++;
-      rtcInterruptEvents = 0x0010;//1 second interrupt
+      rtcInterruptEvents |= 0x0010;
       if(seconds >= 60){
+         uint16_t stopwatch = registerArrayRead16(STPWCH);
+
+         if(stopwatch != 0x003F){
+            if(stopwatch == 0x0000){
+               stopwatch = 0x003F;
+               rtcInterruptEvents |= 0x0001;
+            }
+            else{
+               stopwatch--;
+            }
+            registerArrayWrite16(STPWCH, stopwatch);
+         }
          minutes++;
          seconds = 0;
-         rtcInterruptEvents |= 0x0002;//1 minute interrupt
+         rtcInterruptEvents |= 0x0002;
          if(minutes >= 60){
             hours++;
             minutes = 0;
-            rtcInterruptEvents |= 0x0020;//1 hour interrupt
+            rtcInterruptEvents |= 0x0020;
             if(hours >= 24){
                hours = 0;
-               uint16_t days = registerArrayRead16(DAYR);
                days++;
-               registerArrayWrite16(DAYR, days & 0x01FF);
-               rtcInterruptEvents |= 0x0008;//1 day interrupt
+               rtcInterruptEvents |= 0x0008;
             }
          }
       }
+
+      newRtcTime = seconds;
+      newRtcTime |= minutes << 16;
+      newRtcTime |= hours << 24;
+
+      if(newRtcTime == rtcAlrm && days == dayAlrm)
+         rtcInterruptEvents |= 0x0040;
 
       rtcInterruptEvents &= registerArrayRead16(RTCIENR);
       if(rtcInterruptEvents){
@@ -245,10 +271,8 @@ static inline void rtcAddSecondClk32(){
          setIprIsrBit(INT_RTC);
       }
 
-      newRtcTime = seconds & 0x0000003F;
-      newRtcTime |= minutes << 16;
-      newRtcTime |= hours << 24;
       registerArrayWrite32(RTCTIME, newRtcTime);
+      registerArrayWrite16(DAYR, days & 0x01FF);
    }
 
    //watchdog
