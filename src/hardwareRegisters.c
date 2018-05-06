@@ -1070,11 +1070,11 @@ void resetHwRegisters(){
    recalculateCpuSpeed();
 }
 
-void setRtc(uint32_t days, uint32_t hours, uint32_t minutes, uint32_t seconds){
+void setRtc(uint16_t days, uint8_t hours, uint8_t minutes, uint8_t seconds){
    uint32_t rtcTime;
    rtcTime = seconds & 0x0000003F;
-   rtcTime |= (minutes << 16) & 0x003F0000;
-   rtcTime |= (hours << 24) & 0x1F000000;
+   rtcTime |= minutes << 16 & 0x003F0000;
+   rtcTime |= hours << 24 & 0x1F000000;
    registerArrayWrite32(RTCTIME, rtcTime);
    registerArrayWrite16(DAYR, days & 0x01FF);
 }

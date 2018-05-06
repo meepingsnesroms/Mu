@@ -42,14 +42,16 @@ void ads7846SendBit(bool bit){
 
          case 0x10:
             //touchscreen y
-            value = palmInput.touchscreenY;
+            if(palmInput.touchscreenTouched)
+               value = palmInput.touchscreenY;
+            else
+               value = 0;
             rangeMax = 160;
             break;
 
          case 0x20:
             //battery
-            //value = palmMisc.batteryLevel;
-            value = 100;
+            value = palmMisc.batteryLevel;
             rangeMax = 100;
             break;
 
@@ -62,7 +64,10 @@ void ads7846SendBit(bool bit){
 
          case 0x50:
             //touchscreen x
-            value = palmInput.touchscreenX;
+            if(palmInput.touchscreenTouched)
+               value = palmInput.touchscreenX;
+            else
+               value = 0;
             rangeMax = 160;
             break;
 

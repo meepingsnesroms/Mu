@@ -135,7 +135,7 @@ extern void (*emulatorSetSdCardChunk)(uint64_t sessionId, uint64_t chunkId, buff
 uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t specialFeatures);//calling any emulator functions before emulatorInit results in undefined behavior
 void emulatorExit();
 void emulatorReset();
-void emulatorSetRtc(uint32_t days, uint32_t hours, uint32_t minutes, uint32_t seconds);
+void emulatorSetRtc(uint16_t days, uint8_t hours, uint8_t minutes, uint8_t seconds);
 uint32_t emulatorSetNewSdCard(uint64_t size, uint8_t type);
 buffer_t emulatorGetSdCardImage();//doing anything with the emulator will alter this, do not free it, it is a direct pointer to the sdcard data
 uint32_t emulatorSetSdCardFromImage(buffer_t image, uint8_t type);

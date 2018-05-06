@@ -91,4 +91,4 @@ void setWriteProtectViolation();
 
 //config
 void resetHwRegisters();
-void setRtc(uint32_t days, uint32_t hours, uint32_t minutes, uint32_t seconds);
+void setRtc(uint16_t days, uint8_t hours, uint8_t minutes, uint8_t seconds);

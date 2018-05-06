@@ -29,7 +29,7 @@ static inline int64_t sMax(int64_t x, int64_t y){
 
 static inline uint64_t getUint64FromDouble(double data){
    //32.32 fixed point
-   uint64_t fixedPointDouble = ((uint64_t)data) << 32;
+   uint64_t fixedPointDouble = (uint64_t)data << 32;
    data -= (uint64_t)data;
    data *= 100000000.0;
    fixedPointDouble |= (uint64_t)data;

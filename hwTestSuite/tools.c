@@ -37,6 +37,44 @@ Err makeFile(uint8_t* data, uint32_t size, char* fileName){
    return error;
 }
 
+uint16_t ads7846GetValue(uint8_t channel, Boolean referenceMode, Boolean mode8bit){
+   uint16_t spi2Control = readArbitraryMemory16(HW_REG_ADDR(SPICONT2)) & 0xE230;
+   uint8_t config = 0x80;
+   uint16_t value;
+   
+   if(mode8bit)
+      config |= 0x08;
+   
+   if(referenceMode)
+      config |= 0x04;
+   
+   config |= channel << 4 & 0x70;
+   
+   /*wait until SPI2 is free*/
+   while(readArbitraryMemory16(HW_REG_ADDR(SPICONT2)) & 0x0100);
+   
+   /*set data to send*/
+   writeArbitraryMemory16(HW_REG_ADDR(SPIDATA2), config << 8);
+   
+   /*enable SPI 2 if disabled*/
+   if(!(spi2Control & 0x0200))
+      writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), spi2Control | 0x0200);
+   
+   /*send data*/
+   writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), spi2Control | 0x0007);
+   while(readArbitraryMemory16(HW_REG_ADDR(SPICONT2)) & 0x0100);
+   
+   /*receive data, mode = 1(8 bits) or mode = 0(12 bits)*/
+   writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), spi2Control | (mode8bit ? 0x0007 : 0x000B));
+   while(readArbitraryMemory16(HW_REG_ADDR(SPICONT2)) & 0x0100);
+   
+   value = readArbitraryMemory16(HW_REG_ADDR(SPIDATA2));
+   
+   /*may need to alter value some*/
+   
+   return value;
+}
+
 var hexRamBrowser(){
    static Boolean  firstRun = true;
    static uint32_t nibble;

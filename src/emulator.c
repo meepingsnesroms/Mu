@@ -301,7 +301,7 @@ void emulatorReset(){
    m68k_pulse_reset();
 }
 
-void emulatorSetRtc(uint32_t days, uint32_t hours, uint32_t minutes, uint32_t seconds){
+void emulatorSetRtc(uint16_t days, uint8_t hours, uint8_t minutes, uint8_t seconds){
    setRtc(days, hours, minutes, seconds);
 }
 

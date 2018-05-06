@@ -294,6 +294,10 @@ void resetFunctionViewer(){
          StrNCopy(hwTests[totalHwTests].name, "TSTAT1 Semaphore Info", TEST_NAME_LENGTH);
          hwTests[totalHwTests].testFunction = tstat1GetSemaphoreLockOrder;
          totalHwTests++;
+         
+         StrNCopy(hwTests[totalHwTests].name, "ADS7846 Read", TEST_NAME_LENGTH);
+         hwTests[totalHwTests].testFunction = ads7846Read;
+         totalHwTests++;
       }
       
       StrNCopy(hwTests[totalHwTests].name, "Button Test", TEST_NAME_LENGTH);
