@@ -212,8 +212,11 @@ static inline void setIlcr(uint16_t value){
       newIlcr |= value & 0x0007;
    else
       newIlcr |= oldIlcr & 0x0007;
+
+   registerArrayWrite16(ILCR, newIlcr);
 }
 
+/*
 static inline void setSpiCont1(uint16_t value){
    //unsure if ENABLE can be set at the exact moment of write or must be set before write, currently allow both
    //important bits are ENABLE, XCH, IRQ, IRQEN and BITCOUNT
@@ -233,6 +236,7 @@ static inline void setSpiCont1(uint16_t value){
 
    registerArrayWrite16(SPICONT1, value);
 }
+*/
 
 static inline void setSpiCont2(uint16_t value){
    //unsure if ENABLE can be set at the exact moment of write or must be set before write, currently allow both
@@ -271,10 +275,10 @@ static inline void setTstat1(uint16_t value){
    uint16_t oldTstat1 = registerArrayRead16(TSTAT1);
    uint16_t newTstat1 = (value & timerStatusReadAcknowledge[0]) | (oldTstat1 & ~timerStatusReadAcknowledge[0]);
 
-   debugLog("TSTAT1 write, old value:0x%04X, new value:0x%04X\n", oldTstat1, newTstat1);
+   //debugLog("TSTAT1 write, old value:0x%04X, new value:0x%04X, write value:0x%04X\n", oldTstat1, newTstat1, value);
 
    if(!(newTstat1 & 0x0001) && (oldTstat1 & 0x0001)){
-      debugLog("Timer 1 interrupt cleared.\n");
+      //debugLog("Timer 1 interrupt cleared.\n");
       clearIprIsrBit(INT_TMR1);
       checkInterrupts();
    }
@@ -286,10 +290,10 @@ static inline void setTstat2(uint16_t value){
    uint16_t oldTstat2 = registerArrayRead16(TSTAT2);
    uint16_t newTstat2 = (value & timerStatusReadAcknowledge[1]) | (oldTstat2 & ~timerStatusReadAcknowledge[1]);
 
-   debugLog("TSTAT2 write, old value:0x%04X, new value:0x%04X\n", oldTstat2, newTstat2);
+   //debugLog("TSTAT2 write, old value:0x%04X, new value:0x%04X, write value:0x%04X\n", oldTstat2, newTstat2, value);
 
    if(!(newTstat2 & 0x0001) && (oldTstat2 & 0x0001)){
-      debugLog("Timer 2 interrupt cleared.\n");
+      //debugLog("Timer 2 interrupt cleared.\n");
       clearIprIsrBit(INT_TMR2);
       checkInterrupts();
    }
