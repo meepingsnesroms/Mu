@@ -323,7 +323,7 @@ static inline void setPwmc1(uint16_t value){
 //register getters
 static inline uint8_t getPortDValue(){
    uint8_t requestedRow = registerArrayRead8(PKDIR) & registerArrayRead8(PKDATA);//keys are requested on port k and read on port d
-   uint8_t portDValue = 0x00;//ports always read the chip pins even if they are set to output
+   uint8_t portDValue = 0x00;
    uint8_t portDData = registerArrayRead8(PDDATA);
    uint8_t portDDir = registerArrayRead8(PDDIR);
    uint8_t portDPolarity = registerArrayRead8(PDPOL);
@@ -358,7 +358,7 @@ static inline uint8_t getPortDValue(){
 }
 
 static inline uint8_t getPortKValue(){
-   uint8_t portKValue = 0x00;//ports always read the chip pins even if they are set to output
+   uint8_t portKValue = 0x00;
    uint8_t portKData = registerArrayRead8(PKDATA);
    uint8_t portKDir = registerArrayRead8(PKDIR);
    uint8_t portKSel = registerArrayRead8(PKSEL);

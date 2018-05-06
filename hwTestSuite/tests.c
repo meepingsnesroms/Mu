@@ -9,9 +9,9 @@
 var testButtonInput(){
    static Boolean  firstRun = true;
    static Boolean  polaritySwap;
-   static uint32_t frameCount;
+   static uint8_t frameCount;
    static uint8_t  portDOriginalPolarity;
-   uint32_t y = 0;
+   uint16_t y = 0;
    
    if(firstRun){
       debugSafeScreenClear(C_WHITE);
@@ -56,11 +56,16 @@ var testButtonInput(){
 
 var listDataRegisters(){
    static Boolean firstRun = true;
-   uint32_t y = 0;
+   uint16_t y = 0;
    
    if(firstRun){
       firstRun = false;
       debugSafeScreenClear(C_WHITE);
+   }
+   
+   if(getButtonPressed(buttonBack)){
+      firstRun = true;
+      exitSubprogram();
    }
    
    StrPrintF(sharedDataBuffer, "PADATA:0x%02X", readArbitraryMemory8(HW_REG_ADDR(PADATA)));
@@ -94,21 +99,21 @@ var listDataRegisters(){
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
    
-   if(getButtonPressed(buttonBack)){
-      firstRun = true;
-      exitSubprogram();
-   }
-   
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
 
 var interrogateSpi2(){
    static Boolean firstRun = true;
-   uint32_t y = 0;
+   uint16_t y = 0;
    
    if(firstRun){
       firstRun = false;
       debugSafeScreenClear(C_WHITE);
+   }
+   
+   if(getButtonPressed(buttonBack)){
+      firstRun = true;
+      exitSubprogram();
    }
    
    StrPrintF(sharedDataBuffer, "PADATA:0x%02X", readArbitraryMemory8(HW_REG_ADDR(PADATA)));
@@ -146,22 +151,22 @@ var interrogateSpi2(){
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
    
-   if(getButtonPressed(buttonBack)){
-      firstRun = true;
-      exitSubprogram();
-   }
-   
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
 
 var tstat1GetSemaphoreLockOrder(){
    static Boolean firstRun = true;
    uint16_t testWriteValue = 0xF0F1;
-   uint32_t y = 0;
+   uint16_t y = 0;
    
    if(firstRun){
       firstRun = false;
       debugSafeScreenClear(C_WHITE);
+   }
+   
+   if(getButtonPressed(buttonBack)){
+      firstRun = true;
+      exitSubprogram();
    }
    
    StrPrintF(sharedDataBuffer, "TSTAT1:0x%02X", readArbitraryMemory16(HW_REG_ADDR(TSTAT1)));
@@ -181,46 +186,54 @@ var tstat1GetSemaphoreLockOrder(){
    StrPrintF(sharedDataBuffer, "New TSTAT1:0x%02X", readArbitraryMemory16(HW_REG_ADDR(TSTAT1)));
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
-   
-   if(getButtonPressed(buttonBack)){
-      firstRun = true;
-      exitSubprogram();
-   }
    
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
 
 var ads7846Read(){
    static Boolean firstRun = true;
-   uint16_t testWriteValue = 0xF0F1;
-   uint32_t y = 0;
+   static Boolean referenceMode;
+   static Boolean mode8Bit;
+   uint8_t ads7846Channel;
+   uint16_t y = 0;
    
    if(firstRun){
       firstRun = false;
+      referenceMode = false;
+      mode8Bit = false;
       debugSafeScreenClear(C_WHITE);
    }
    
-   StrPrintF(sharedDataBuffer, "TSTAT1:0x%02X", readArbitraryMemory16(HW_REG_ADDR(TSTAT1)));
-   UG_PutString(0, y, sharedDataBuffer);
-   y += FONT_HEIGHT + 1;
-   writeArbitraryMemory16(HW_REG_ADDR(TSTAT1), testWriteValue);
-   StrPrintF(sharedDataBuffer, "Write TSTAT1:0x%02X", testWriteValue);
-   UG_PutString(0, y, sharedDataBuffer);
-   y += FONT_HEIGHT + 1;
-   StrPrintF(sharedDataBuffer, "New TSTAT1:0x%02X", readArbitraryMemory16(HW_REG_ADDR(TSTAT1)));
-   UG_PutString(0, y, sharedDataBuffer);
-   y += FONT_HEIGHT + 1;
-   writeArbitraryMemory16(HW_REG_ADDR(TSTAT1), 0xFFFF);
-   StrPrintF(sharedDataBuffer, "Clear Semaphore");
-   UG_PutString(0, y, sharedDataBuffer);
-   y += FONT_HEIGHT + 1;
-   StrPrintF(sharedDataBuffer, "New TSTAT1:0x%02X", readArbitraryMemory16(HW_REG_ADDR(TSTAT1)));
-   UG_PutString(0, y, sharedDataBuffer);
-   y += FONT_HEIGHT + 1;
+   if(getButtonPressed(buttonSelect)){
+      if(!referenceMode && !mode8Bit){
+         referenceMode = true;
+      }
+      else if(referenceMode && !mode8Bit){
+         referenceMode = false;
+         mode8Bit = true;
+      }
+      else if(!referenceMode && mode8Bit){
+         referenceMode = true;
+      }
+      else{
+         referenceMode = false;
+         mode8Bit = false;
+      }
+   }
    
    if(getButtonPressed(buttonBack)){
       firstRun = true;
       exitSubprogram();
+   }
+   
+   StrPrintF(sharedDataBuffer, "Ref Mode:%d, 8bit:%d", referenceMode, mode8Bit);
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   
+   for(ads7846Channel = 0; ads7846Channel < 8; ads7846Channel++){
+      StrPrintF(sharedDataBuffer, "Ch:%d Value:0x%04X", ads7846Channel, ads7846GetValue(ads7846Channel, referenceMode, mode8Bit));
+      UG_PutString(0, y, sharedDataBuffer);
+      y += FONT_HEIGHT + 1;
    }
    
    return makeVar(LENGTH_0, TYPE_NULL, 0);
