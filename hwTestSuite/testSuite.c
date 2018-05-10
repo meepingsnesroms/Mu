@@ -20,22 +20,22 @@ var makeVar(uint8_t length, uint8_t type, uint64_t value){
 }
 
 uint8_t readArbitraryMemory8(uint32_t address){
-   return *((uint8_t*)address);
+   return *((volatile uint8_t*)address);
 }
 uint16_t readArbitraryMemory16(uint32_t address){
-   return *((uint16_t*)address);
+   return *((volatile uint16_t*)address);
 }
 uint32_t readArbitraryMemory32(uint32_t address){
-   return *((uint32_t*)address);
+   return *((volatile uint32_t*)address);
 }
 void writeArbitraryMemory8(uint32_t address, uint8_t value){
-   *((uint8_t*)address) = value;
+   *((volatile uint8_t*)address) = value;
 }
 void writeArbitraryMemory16(uint32_t address, uint16_t value){
-   *((uint16_t*)address) = value;
+   *((volatile uint16_t*)address) = value;
 }
 void writeArbitraryMemory32(uint32_t address, uint32_t value){
-   *((uint32_t*)address) = value;
+   *((volatile uint32_t*)address) = value;
 }
 
 

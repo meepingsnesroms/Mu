@@ -144,6 +144,12 @@ var interrogateSpi2(){
    StrPrintF(sharedDataBuffer, "PMDATA:0x%02X", readArbitraryMemory8(HW_REG_ADDR(PMDATA)));
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
+   StrPrintF(sharedDataBuffer, "PESEL:0x%02X", readArbitraryMemory8(HW_REG_ADDR(PESEL)));
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   StrPrintF(sharedDataBuffer, "PEDIR:0x%02X", readArbitraryMemory8(HW_REG_ADDR(PEDIR)));
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
    StrPrintF(sharedDataBuffer, "SPICONT2:0x%02X", readArbitraryMemory8(HW_REG_ADDR(SPICONT2)));
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;

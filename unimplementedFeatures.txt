@@ -26,6 +26,7 @@ SPI1, probably the sdcard since sdcards use SPI for data transfer
 SPITEST SSTATUS is undocumented and therefore unemulated
 may need to trigger an interrupt if a IMR masked interrupt becomes unmasked and its bit is still set in IPR
 touch interrupt seems to not use IRQ5
+When SPICLK2 on port e bit 2 is disabled ADS7846 functions should do nothing
 
 Debug tools:
 missing icons

@@ -80,13 +80,8 @@ var enterUnsafeMode(){
       oldImr = readArbitraryMemory32(HW_REG_ADDR(IMR));
       oldScr = readArbitraryMemory8(HW_REG_ADDR(SCR));
       
-      /*all memory banks set to read/write and unprotected*/
-      /*
-      writeArbitraryMemory16(HW_REG_ADDR(CSA), readArbitraryMemory16(HW_REG_ADDR(CSA)) & 0x7FFF);
-      writeArbitraryMemory16(HW_REG_ADDR(CSB), readArbitraryMemory16(HW_REG_ADDR(CSB)) & 0x7FFF);
-      writeArbitraryMemory16(HW_REG_ADDR(CSC), readArbitraryMemory16(HW_REG_ADDR(CSC)) & 0x7FFF);
-      writeArbitraryMemory16(HW_REG_ADDR(CSD), readArbitraryMemory16(HW_REG_ADDR(CSD)) & 0x7FFF);
-      */
+      /*disable unwanted interrupt handlers*/
+      writeArbitraryMemory32(HW_REG_ADDR(IMR), oldImr & 0x006F3FFE);
       
       /*disable interrupt on invalid memory access*/
       writeArbitraryMemory8(HW_REG_ADDR(SCR), oldScr & 0xEF);
