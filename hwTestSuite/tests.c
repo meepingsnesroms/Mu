@@ -150,10 +150,10 @@ var interrogateSpi2(){
    StrPrintF(sharedDataBuffer, "PEDIR:0x%02X", readArbitraryMemory8(HW_REG_ADDR(PEDIR)));
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
-   StrPrintF(sharedDataBuffer, "SPICONT2:0x%02X", readArbitraryMemory8(HW_REG_ADDR(SPICONT2)));
+   StrPrintF(sharedDataBuffer, "SPICONT2:0x%04X", readArbitraryMemory16(HW_REG_ADDR(SPICONT2)));
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
-   StrPrintF(sharedDataBuffer, "SPIDATA2:0x%02X", readArbitraryMemory8(HW_REG_ADDR(SPIDATA2)));
+   StrPrintF(sharedDataBuffer, "SPIDATA2:0x%04X", readArbitraryMemory16(HW_REG_ADDR(SPIDATA2)));
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
    
@@ -175,21 +175,21 @@ var tstat1GetSemaphoreLockOrder(){
       exitSubprogram();
    }
    
-   StrPrintF(sharedDataBuffer, "TSTAT1:0x%02X", readArbitraryMemory16(HW_REG_ADDR(TSTAT1)));
+   StrPrintF(sharedDataBuffer, "TSTAT1:0x%04X", readArbitraryMemory16(HW_REG_ADDR(TSTAT1)));
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
    writeArbitraryMemory16(HW_REG_ADDR(TSTAT1), testWriteValue);
-   StrPrintF(sharedDataBuffer, "Write TSTAT1:0x%02X", testWriteValue);
+   StrPrintF(sharedDataBuffer, "Write TSTAT1:0x%04X", testWriteValue);
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
-   StrPrintF(sharedDataBuffer, "New TSTAT1:0x%02X", readArbitraryMemory16(HW_REG_ADDR(TSTAT1)));
+   StrPrintF(sharedDataBuffer, "New TSTAT1:0x%04X", readArbitraryMemory16(HW_REG_ADDR(TSTAT1)));
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
    writeArbitraryMemory16(HW_REG_ADDR(TSTAT1), 0xFFFF);
    StrPrintF(sharedDataBuffer, "Clear Semaphore");
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
-   StrPrintF(sharedDataBuffer, "New TSTAT1:0x%02X", readArbitraryMemory16(HW_REG_ADDR(TSTAT1)));
+   StrPrintF(sharedDataBuffer, "New TSTAT1:0x%04X", readArbitraryMemory16(HW_REG_ADDR(TSTAT1)));
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
    

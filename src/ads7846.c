@@ -84,21 +84,33 @@ void ads7846SendBit(bool bit){
             break;
       }
 
-      //check if ADC is on, if not just leave the old value in the register
-      if(powerSave != 2)
-         ads7846OutputValue = value / rangeMax * (mode ? 0x00FF : 0x0FFF);
+      //check if ADC is on, if not do nothing
+      if(powerSave != 0x02){
+         if(mode){
+            //8 bit conversion
+            ads7846OutputValue = value / rangeMax * 0x00FF;
+            ads7846OutputValue <<= 8;//move to output position
+         }
+         else{
+            //12 bit conversion
+            ads7846OutputValue = value / rangeMax * 0x0FFF;
+            ads7846OutputValue <<= 4;//move to output position
+         }
+
+         //theres a 1 bit delay after the control byte before the data
+         ads7846OutputValue >>= 1;
+      }
    }
 }
 
 bool ads7846RecieveBit(){
    bool bit;
 
-   //CPU still sending command, do nothing
-   if(ads7846InputBitsLeft != 0)
-      return false;
+   //a new control byte can be sent while receiving data
+   //this is valid behavior as long as there is only 5 clock cycles/bits of data of the previous transfer remaining
 
-   bit = ads7846OutputValue & 1;
-   ads7846OutputValue >>= 1;
+   bit = ads7846OutputValue & 0x8000;
+   ads7846OutputValue <<= 1;
    return bit;
 }
 

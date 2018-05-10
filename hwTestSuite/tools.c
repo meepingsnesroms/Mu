@@ -53,8 +53,8 @@ uint16_t ads7846GetValue(uint8_t channel, Boolean referenceMode, Boolean mode8bi
    
    config |= channel << 4 & 0x70;
    
-   /*attach SPICLK2 if disconnected*/
-   writeArbitraryMemory8(HW_REG_ADDR(PESEL), osPesel & 0xFB);
+   /*attach SPICLK2, SPITXD and SPIRXD if disconnected*/
+   writeArbitraryMemory8(HW_REG_ADDR(PESEL), osPesel & 0xF8);
    
    /*the chip select line seems to be here, pull it low*/
    writeArbitraryMemory8(HW_REG_ADDR(PGDATA), osPgdata & 0xFB);
