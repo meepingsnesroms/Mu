@@ -45,7 +45,7 @@ void ads7846SendBit(bool bit){
             if(palmInput.touchscreenTouched)
                value = palmInput.touchscreenY;
             else
-               value = 0;
+               value = 160;
             rangeMax = 160;
             break;
 
@@ -67,7 +67,7 @@ void ads7846SendBit(bool bit){
             if(palmInput.touchscreenTouched)
                value = palmInput.touchscreenX;
             else
-               value = 0;
+               value = 160;
             rangeMax = 160;
             break;
 

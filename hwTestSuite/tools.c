@@ -62,35 +62,25 @@ uint16_t ads7846GetValue(uint8_t channel, Boolean referenceMode, Boolean mode8bi
    /*wait until SPI2 is free*/
    while(readArbitraryMemory16(HW_REG_ADDR(SPICONT2)) & 0x0100);
    
-   /*set data to send*/
-   writeArbitraryMemory16(HW_REG_ADDR(SPIDATA2), config << 8);
-   
    /*enable SPI 2 if disabled*/
    if(!(spi2Control & 0x0200)){
       spi2Control |= 0x0200;
       writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), spi2Control);
    }
    
-#if 1
+   /*set data to send*/
+   writeArbitraryMemory16(HW_REG_ADDR(SPIDATA2), config << 8);
+   
    /*send data*/
-   /*writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), spi2Control | 0x0007);*/
-   writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), spi2Control | 0x0008);/*there is a 1 bit delay after the config byte before data is sent*/
+   writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), spi2Control | 0x0100/*exchange*/ | 0x0008);/*there is a 1 bit delay after the config byte before data is sent*/
    while(readArbitraryMemory16(HW_REG_ADDR(SPICONT2)) & 0x0100);
    
    /*clear any data received in SPIDATA2 during the previous send*/
    writeArbitraryMemory16(HW_REG_ADDR(SPIDATA2), 0x0000);
    
    /*receive data, mode = 1(8 bits) or mode = 0(12 bits)*/
-   writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), spi2Control | (mode8bit ? 0x0007 : 0x000B));
-   /*writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), spi2Control | 0x000B);*/
+   writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), spi2Control | 0x0100/*exchange*/ | (mode8bit ? 0x0007 : 0x000B));
    while(readArbitraryMemory16(HW_REG_ADDR(SPICONT2)) & 0x0100);
-#endif
-   
-#if 0
-   /*send and receive at the same time, should be 7 bits in SPIDATA2*/
-   writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), spi2Control | 0x000F);
-   while(readArbitraryMemory16(HW_REG_ADDR(SPICONT2)) & 0x0100);
-#endif
    
    /*get value returned, should have*/
    value = readArbitraryMemory16(HW_REG_ADDR(SPIDATA2));
