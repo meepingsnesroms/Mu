@@ -71,6 +71,7 @@ uint16_t ads7846GetValue(uint8_t channel, Boolean referenceMode, Boolean mode8bi
    /*set data to send*/
    writeArbitraryMemory16(HW_REG_ADDR(SPIDATA2), config << 8);
    
+#if 0
    /*send data*/
    writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), spi2Control | 0x0100/*exchange*/ | 0x0008);/*there is a 1 bit delay after the config byte before data is sent*/
    while(readArbitraryMemory16(HW_REG_ADDR(SPICONT2)) & 0x0100);
@@ -81,6 +82,12 @@ uint16_t ads7846GetValue(uint8_t channel, Boolean referenceMode, Boolean mode8bi
    /*receive data, mode = 1(8 bits) or mode = 0(12 bits)*/
    writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), spi2Control | 0x0100/*exchange*/ | (mode8bit ? 0x0007 : 0x000B));
    while(readArbitraryMemory16(HW_REG_ADDR(SPICONT2)) & 0x0100);
+#endif
+#if 1
+   /*send and receive at the same time, should be 7 bits in SPIDATA2*/
+   writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), spi2Control | 0x0100/*exchange*/ | 0x000F);
+   while(readArbitraryMemory16(HW_REG_ADDR(SPICONT2)) & 0x0100);
+#endif
    
    /*get value returned, should have*/
    value = readArbitraryMemory16(HW_REG_ADDR(SPIDATA2));

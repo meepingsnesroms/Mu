@@ -286,6 +286,10 @@ void resetFunctionViewer(){
       hwTests[totalHwTests].testFunction = interrogateSpi2;
       totalHwTests++;
       
+      StrNCopy(hwTests[totalHwTests].name, "Self Probe SPI2", TEST_NAME_LENGTH);
+      hwTests[totalHwTests].testFunction = selfProbeSpi2;
+      totalHwTests++;
+      
       StrNCopy(hwTests[totalHwTests].name, "Button Test", TEST_NAME_LENGTH);
       hwTests[totalHwTests].testFunction = testButtonInput;
       totalHwTests++;

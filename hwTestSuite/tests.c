@@ -244,3 +244,42 @@ var ads7846Read(){
    
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
+
+var selfProbeSpi2(){
+   static Boolean firstRun = true;
+   uint16_t testWriteValue = 0xF0F1;
+   uint16_t y = 0;
+   uint8_t scootTest = 0x0F;
+   
+   if(firstRun){
+      firstRun = false;
+      debugSafeScreenClear(C_WHITE);
+   }
+   
+   if(getButtonPressed(buttonBack)){
+      firstRun = true;
+      exitSubprogram();
+   }
+   
+   writeArbitraryMemory16(HW_REG_ADDR(SPIDATA2), 0x0001);
+   
+   StrPrintF(sharedDataBuffer, "SPIDATA2:0x%04X", readArbitraryMemory16(HW_REG_ADDR(SPIDATA2)));
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), 0x0200);/*enable SPI2*/
+   writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), 0x0300);/*shift in 1 bit*/
+   StrPrintF(sharedDataBuffer, "Shift left 1");
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   StrPrintF(sharedDataBuffer, "New SPIDATA2:0x%04X", readArbitraryMemory16(HW_REG_ADDR(SPIDATA2)));
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   StrPrintF(sharedDataBuffer, "Scoot Test:0x%04X", scootTest << 8);
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   StrPrintF(sharedDataBuffer, "Scoot Test 2:0x%04X", (uint16_t)scootTest << 8);
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   
+   return makeVar(LENGTH_0, TYPE_NULL, 0);
+}
