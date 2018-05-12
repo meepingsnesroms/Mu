@@ -44,21 +44,6 @@
 
 
 /* ======================================================================== */
-/* ============================== MAME STUFF ============================== */
-/* ======================================================================== */
-
-/* If you're compiling this for MAME, only change M68K_COMPILE_FOR_MAME
- * to OPT_ON and use m68kmame.h to configure the 68k core.
- */
-#ifndef M68K_COMPILE_FOR_MAME
-#define M68K_COMPILE_FOR_MAME      OPT_OFF
-#endif /* M68K_COMPILE_FOR_MAME */
-
-
-#if M68K_COMPILE_FOR_MAME == OPT_OFF
-
-
-/* ======================================================================== */
 /* ============================= CONFIGURATION ============================ */
 /* ======================================================================== */
 
@@ -181,8 +166,6 @@
 #ifndef INLINE
 #define INLINE static inline
 #endif /* INLINE */
-
-#endif /* M68K_COMPILE_FOR_MAME */
 
 
 /* ======================================================================== */

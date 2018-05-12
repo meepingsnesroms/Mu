@@ -336,7 +336,7 @@ static inline void updateVibratorStatus(){
       palmMisc.vibratorOn = false;
 }
 
-void printUnknownHwAccess(unsigned int address, unsigned int value, unsigned int size, bool isWrite){
+void printUnknownHwAccess(uint32_t address, uint32_t value, uint32_t size, bool isWrite){
    if(isWrite){
       debugLog("CPU wrote %d bits of 0x%08X to register 0x%03X, PC 0x%08X.\n", size, value, address, m68k_get_reg(NULL, M68K_REG_PPC));
    }
@@ -345,7 +345,7 @@ void printUnknownHwAccess(unsigned int address, unsigned int value, unsigned int
    }
 }
 
-unsigned int getHwRegister8(unsigned int address){
+uint8_t getHwRegister8(uint32_t address){
    if((address & 0x0000F000) != 0x0000F000){
       //not emu or hardware register, invalid access
       return 0x00;
@@ -437,7 +437,7 @@ unsigned int getHwRegister8(unsigned int address){
    return 0x00;//silence warnings
 }
 
-unsigned int getHwRegister16(unsigned int address){
+uint16_t getHwRegister16(uint32_t address){
    if((address & 0x0000F000) != 0x0000F000){
       //not emu or hardware register, invalid access
       return 0x0000;
@@ -507,7 +507,7 @@ unsigned int getHwRegister16(unsigned int address){
    return 0x0000;//silence warnings
 }
 
-unsigned int getHwRegister32(unsigned int address){
+uint32_t getHwRegister32(uint32_t address){
    if((address & 0x0000F000) == 0x0000E000){
       //32 bit emu register read, valid
       return 0x00000000;
@@ -545,7 +545,7 @@ unsigned int getHwRegister32(unsigned int address){
 }
 
 
-void setHwRegister8(unsigned int address, unsigned int value){
+void setHwRegister8(uint32_t address, uint8_t value){
    if((address & 0x0000F000) != 0x0000F000){
       //not emu or hardware register, invalid access
       return;
@@ -675,7 +675,7 @@ void setHwRegister8(unsigned int address, unsigned int value){
    }
 }
 
-void setHwRegister16(unsigned int address, unsigned int value){
+void setHwRegister16(uint32_t address, uint16_t value){
    if((address & 0x0000F000) != 0x0000F000){
       //not emu or hardware register, invalid access
       return;
@@ -878,7 +878,7 @@ void setHwRegister16(unsigned int address, unsigned int value){
    }
 }
 
-void setHwRegister32(unsigned int address, unsigned int value){
+void setHwRegister32(uint32_t address, uint32_t value){
    if((address & 0x0000F000) == 0x0000E000){
       //32 bit emu register write, valid
       return;

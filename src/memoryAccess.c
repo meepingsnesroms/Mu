@@ -11,20 +11,20 @@ uint8_t bankType[TOTAL_MEMORY_BANKS];
 
 
 //RAM accesses
-static inline unsigned int ramRead8(unsigned int address){return BUFFER_READ_8(palmRam, address, chips[CHIP_D_RAM].start, chips[CHIP_D_RAM].mask);}
-static inline unsigned int ramRead16(unsigned int address){return BUFFER_READ_16(palmRam, address, chips[CHIP_D_RAM].start, chips[CHIP_D_RAM].mask);}
-static inline unsigned int ramRead32(unsigned int address){return BUFFER_READ_32(palmRam, address, chips[CHIP_D_RAM].start, chips[CHIP_D_RAM].mask);}
-static inline void ramWrite8(unsigned int address, unsigned int value){BUFFER_WRITE_8(palmRam, address, chips[CHIP_D_RAM].start, chips[CHIP_D_RAM].mask, value);}
-static inline void ramWrite16(unsigned int address, unsigned int value){BUFFER_WRITE_16(palmRam, address, chips[CHIP_D_RAM].start, chips[CHIP_D_RAM].mask, value);}
-static inline void ramWrite32(unsigned int address, unsigned int value){BUFFER_WRITE_32(palmRam, address, chips[CHIP_D_RAM].start, chips[CHIP_D_RAM].mask, value);}
+static inline uint8_t ramRead8(uint32_t address){return BUFFER_READ_8(palmRam, address, chips[CHIP_D_RAM].start, chips[CHIP_D_RAM].mask);}
+static inline uint16_t ramRead16(uint32_t address){return BUFFER_READ_16(palmRam, address, chips[CHIP_D_RAM].start, chips[CHIP_D_RAM].mask);}
+static inline uint32_t ramRead32(uint32_t address){return BUFFER_READ_32(palmRam, address, chips[CHIP_D_RAM].start, chips[CHIP_D_RAM].mask);}
+static inline void ramWrite8(uint32_t address, uint8_t value){BUFFER_WRITE_8(palmRam, address, chips[CHIP_D_RAM].start, chips[CHIP_D_RAM].mask, value);}
+static inline void ramWrite16(uint32_t address, uint16_t value){BUFFER_WRITE_16(palmRam, address, chips[CHIP_D_RAM].start, chips[CHIP_D_RAM].mask, value);}
+static inline void ramWrite32(uint32_t address, uint32_t value){BUFFER_WRITE_32(palmRam, address, chips[CHIP_D_RAM].start, chips[CHIP_D_RAM].mask, value);}
 
 //ROM accesses
-static inline unsigned int romRead8(unsigned int address){return BUFFER_READ_8(palmRom, address, chips[CHIP_A_ROM].start, chips[CHIP_A_ROM].mask);}
-static inline unsigned int romRead16(unsigned int address){return BUFFER_READ_16(palmRom, address, chips[CHIP_A_ROM].start, chips[CHIP_A_ROM].mask);}
-static inline unsigned int romRead32(unsigned int address){return BUFFER_READ_32(palmRom, address, chips[CHIP_A_ROM].start, chips[CHIP_A_ROM].mask);}
+static inline uint8_t romRead8(uint32_t address){return BUFFER_READ_8(palmRom, address, chips[CHIP_A_ROM].start, chips[CHIP_A_ROM].mask);}
+static inline uint16_t romRead16(uint32_t address){return BUFFER_READ_16(palmRom, address, chips[CHIP_A_ROM].start, chips[CHIP_A_ROM].mask);}
+static inline uint32_t romRead32(uint32_t address){return BUFFER_READ_32(palmRom, address, chips[CHIP_A_ROM].start, chips[CHIP_A_ROM].mask);}
 
 //SED1376 accesses
-static inline unsigned int sed1376Read8(unsigned int address){
+static inline uint8_t sed1376Read8(uint32_t address){
    if(sed1376PowerSaveEnabled())
       return 0x00;
    address -= chips[CHIP_B_SED].start;
@@ -34,7 +34,7 @@ static inline unsigned int sed1376Read8(unsigned int address){
    else
       return BUFFER_READ_8(sed1376Framebuffer, address, SED1376_FB_OFFSET, 0xFFFFFFFF);
 }
-static inline unsigned int sed1376Read16(unsigned int address){
+static inline uint16_t sed1376Read16(uint32_t address){
    if(sed1376PowerSaveEnabled())
       return 0x0000;
    address -= chips[CHIP_B_SED].start;
@@ -44,7 +44,7 @@ static inline unsigned int sed1376Read16(unsigned int address){
    else
       return BUFFER_READ_16(sed1376Framebuffer, address, SED1376_FB_OFFSET, 0xFFFFFFFF);
 }
-static inline unsigned int sed1376Read32(unsigned int address){
+static inline uint32_t sed1376Read32(uint32_t address){
    if(sed1376PowerSaveEnabled())
       return 0x00000000;
    address -= chips[CHIP_B_SED].start;
@@ -54,7 +54,7 @@ static inline unsigned int sed1376Read32(unsigned int address){
    else
       return BUFFER_READ_32(sed1376Framebuffer, address, SED1376_FB_OFFSET, 0xFFFFFFFF);
 }
-static inline void sed1376Write8(unsigned int address, unsigned int value){
+static inline void sed1376Write8(uint32_t address, uint8_t value){
    address -= chips[CHIP_B_SED].start;
    address &= chips[CHIP_B_SED].mask;
    if(address < SED1376_FB_OFFSET)
@@ -62,7 +62,7 @@ static inline void sed1376Write8(unsigned int address, unsigned int value){
    else
       BUFFER_WRITE_8(sed1376Framebuffer, address, SED1376_FB_OFFSET, 0xFFFFFFFF, value);
 }
-static inline void sed1376Write16(unsigned int address, unsigned int value){
+static inline void sed1376Write16(uint32_t address, uint16_t value){
    address -= chips[CHIP_B_SED].start;
    address &= chips[CHIP_B_SED].mask;
    if(address < SED1376_FB_OFFSET)
@@ -70,7 +70,7 @@ static inline void sed1376Write16(unsigned int address, unsigned int value){
    else
       BUFFER_WRITE_16(sed1376Framebuffer, address, SED1376_FB_OFFSET, 0xFFFFFFFF, value);
 }
-static inline void sed1376Write32(unsigned int address, unsigned int value){
+static inline void sed1376Write32(uint32_t address, uint32_t value){
    address -= chips[CHIP_B_SED].start;
    address &= chips[CHIP_B_SED].mask;
    if(address < SED1376_FB_OFFSET)
@@ -79,7 +79,7 @@ static inline void sed1376Write32(unsigned int address, unsigned int value){
       BUFFER_WRITE_32(sed1376Framebuffer, address, SED1376_FB_OFFSET, 0xFFFFFFFF, value);
 }
 
-static inline bool probeRead(uint8_t bank, unsigned int address){
+static inline bool probeRead(uint8_t bank, uint32_t address){
    if(chips[bank].supervisorOnlyProtectedMemory && address >= chips[bank].unprotectedSize && !(m68k_get_reg(NULL, M68K_REG_SR) & 0x2000)){
       setPrivilegeViolation();
       return false;
@@ -87,7 +87,7 @@ static inline bool probeRead(uint8_t bank, unsigned int address){
    return true;
 }
 
-static inline bool probeWrite(uint8_t bank, unsigned int address){
+static inline bool probeWrite(uint8_t bank, uint32_t address){
    if(chips[bank].readOnly){
       setWriteProtectViolation();
       return false;
@@ -106,7 +106,7 @@ static inline bool probeWrite(uint8_t bank, unsigned int address){
 }
 
 /* Read from anywhere */
-unsigned int m68k_read_memory_8(unsigned int address){
+uint8_t m68k_read_memory_8(uint32_t address){
    uint8_t addressType = bankType[START_BANK(address)];
 
    if(!probeRead(addressType, address))
@@ -141,7 +141,7 @@ unsigned int m68k_read_memory_8(unsigned int address){
    return 0x00;
 }
 
-unsigned int m68k_read_memory_16(unsigned int address){
+uint16_t m68k_read_memory_16(uint32_t address){
    uint8_t addressType = bankType[START_BANK(address)];
 
    if(!probeRead(addressType, address))
@@ -176,7 +176,7 @@ unsigned int m68k_read_memory_16(unsigned int address){
    return 0x0000;
 }
 
-unsigned int m68k_read_memory_32(unsigned int address){
+uint32_t m68k_read_memory_32(uint32_t address){
    uint8_t addressType = bankType[START_BANK(address)];
 
    if(!probeRead(addressType, address))
@@ -212,7 +212,7 @@ unsigned int m68k_read_memory_32(unsigned int address){
 }
 
 /* Write to anywhere */
-void m68k_write_memory_8(unsigned int address, unsigned int value){
+void m68k_write_memory_8(uint32_t address, uint8_t value){
    uint8_t addressType = bankType[START_BANK(address)];
 
    if(!probeWrite(addressType, address))
@@ -250,7 +250,7 @@ void m68k_write_memory_8(unsigned int address, unsigned int value){
    return;
 }
 
-void m68k_write_memory_16(unsigned int address, unsigned int value){
+void m68k_write_memory_16(uint32_t address, uint16_t value){
    uint8_t addressType = bankType[START_BANK(address)];
 
    if(!probeWrite(addressType, address))
@@ -288,7 +288,7 @@ void m68k_write_memory_16(unsigned int address, unsigned int value){
    return;
 }
 
-void m68k_write_memory_32(unsigned int address, unsigned int value){
+void m68k_write_memory_32(uint32_t address, uint32_t value){
    uint8_t addressType = bankType[START_BANK(address)];
 
    if(!probeWrite(addressType, address))
@@ -326,16 +326,16 @@ void m68k_write_memory_32(unsigned int address, unsigned int value){
    return;
 }
 
-void m68k_write_memory_32_pd(unsigned int address, unsigned int value){
+void m68k_write_memory_32_pd(uint32_t address, uint32_t value){
    //musashi says to write 2 16 bit words, but for now I am just writing as 32bit long
    //normal 68k has 16 bit bus but Dragonball VZ has 32 bit bus, so just write all at once(unverified, may not be accurate)
    m68k_write_memory_32(address, value >> 16 | value << 16);
 }
 
 /* Memory access for the disassembler */
-unsigned int m68k_read_disassembler_8(unsigned int address){return m68k_read_memory_8(address);}
-unsigned int m68k_read_disassembler_16(unsigned int address){return m68k_read_memory_16(address);}
-unsigned int m68k_read_disassembler_32(unsigned int address){return m68k_read_memory_32(address);}
+uint8_t m68k_read_disassembler_8(uint32_t address){return m68k_read_memory_8(address);}
+uint16_t m68k_read_disassembler_16(uint32_t address){return m68k_read_memory_16(address);}
+uint32_t m68k_read_disassembler_32(uint32_t address){return m68k_read_memory_32(address);}
 
 
 static uint8_t getProperBankType(uint32_t bank){

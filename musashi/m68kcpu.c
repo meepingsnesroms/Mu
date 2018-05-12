@@ -45,8 +45,8 @@
 /* ================================= DATA ================================= */
 /* ======================================================================== */
 
-int  m68ki_initial_cycles;
-int  m68ki_remaining_cycles = 0;                     /* Number of clocks remaining */
+sint m68ki_initial_cycles;
+sint m68ki_remaining_cycles = 0;                     /* Number of clocks remaining */
 uint m68ki_tracing = 0;
 uint m68ki_address_space;
 
@@ -370,8 +370,8 @@ uint8 m68ki_ea_idx_cycle_table[64] =
  */
 
 /* Interrupt acknowledge */
-static int default_int_ack_callback_data;
-static int default_int_ack_callback(int int_level)
+static int32_t default_int_ack_callback_data;
+static int32_t default_int_ack_callback(int32_t int_level)
 {
 	default_int_ack_callback_data = int_level;
 	CPU_INT_LEVEL = 0;
@@ -379,8 +379,8 @@ static int default_int_ack_callback(int int_level)
 }
 
 /* Breakpoint acknowledge */
-static unsigned int default_bkpt_ack_callback_data;
-static void default_bkpt_ack_callback(unsigned int data)
+static uint32_t default_bkpt_ack_callback_data;
+static void default_bkpt_ack_callback(uint32_t data)
 {
 	default_bkpt_ack_callback_data = data;
 }
@@ -391,15 +391,15 @@ static void default_reset_instr_callback(void)
 }
 
 /* Called when the program counter changed by a large value */
-static unsigned int default_pc_changed_callback_data;
-static void default_pc_changed_callback(unsigned int new_pc)
+static uint32_t default_pc_changed_callback_data;
+static void default_pc_changed_callback(uint32_t new_pc)
 {
 	default_pc_changed_callback_data = new_pc;
 }
 
 /* Called every time there's bus activity (read/write to/from memory */
-static unsigned int default_set_fc_callback_data;
-static void default_set_fc_callback(unsigned int new_fc)
+static uint32_t default_set_fc_callback_data;
+static void default_set_fc_callback(uint32_t new_fc)
 {
 	default_set_fc_callback_data = new_fc;
 }
@@ -421,7 +421,7 @@ static void default_instr_hook_callback(void)
 /* ======================================================================== */
 
 /* Access the internals of the CPU */
-unsigned int m68k_get_reg(void* context, m68k_register_t regnum)
+uint32_t m68k_get_reg(void* context, m68k_register_t regnum)
 {
 	m68ki_cpu_core* cpu = context != NULL ?(m68ki_cpu_core*)context : &m68ki_cpu;
 
@@ -470,10 +470,10 @@ unsigned int m68k_get_reg(void* context, m68k_register_t regnum)
 		case M68K_REG_CPU_TYPE:
 			switch(cpu->cpu_type)
 			{
-				case CPU_TYPE_000:		return (unsigned int)M68K_CPU_TYPE_68000;
-				case CPU_TYPE_010:		return (unsigned int)M68K_CPU_TYPE_68010;
-				case CPU_TYPE_EC020:	return (unsigned int)M68K_CPU_TYPE_68EC020;
-				case CPU_TYPE_020:		return (unsigned int)M68K_CPU_TYPE_68020;
+				case CPU_TYPE_000:		return (uint32_t)M68K_CPU_TYPE_68000;
+				case CPU_TYPE_010:		return (uint32_t)M68K_CPU_TYPE_68010;
+				case CPU_TYPE_EC020:	return (uint32_t)M68K_CPU_TYPE_68EC020;
+				case CPU_TYPE_020:		return (uint32_t)M68K_CPU_TYPE_68020;
 			}
 			return M68K_CPU_TYPE_INVALID;
 		default:			return 0;
@@ -481,7 +481,7 @@ unsigned int m68k_get_reg(void* context, m68k_register_t regnum)
 	return 0;
 }
 
-void m68k_set_reg(m68k_register_t regnum, unsigned int value)
+void m68k_set_reg(m68k_register_t regnum, uint32_t value)
 {
 	switch(regnum)
 	{
@@ -532,12 +532,12 @@ void m68k_set_reg(m68k_register_t regnum, unsigned int value)
 }
 
 /* Set the callbacks */
-void m68k_set_int_ack_callback(int  (*callback)(int int_level))
+void m68k_set_int_ack_callback(int32_t  (*callback)(int32_t int_level))
 {
 	CALLBACK_INT_ACK = callback ? callback : default_int_ack_callback;
 }
 
-void m68k_set_bkpt_ack_callback(void  (*callback)(unsigned int data))
+void m68k_set_bkpt_ack_callback(void  (*callback)(uint32_t data))
 {
 	CALLBACK_BKPT_ACK = callback ? callback : default_bkpt_ack_callback;
 }
@@ -547,12 +547,12 @@ void m68k_set_reset_instr_callback(void  (*callback)(void))
 	CALLBACK_RESET_INSTR = callback ? callback : default_reset_instr_callback;
 }
 
-void m68k_set_pc_changed_callback(void  (*callback)(unsigned int new_pc))
+void m68k_set_pc_changed_callback(void  (*callback)(uint32_t new_pc))
 {
 	CALLBACK_PC_CHANGED = callback ? callback : default_pc_changed_callback;
 }
 
-void m68k_set_fc_callback(void  (*callback)(unsigned int new_fc))
+void m68k_set_fc_callback(void  (*callback)(uint32_t new_fc))
 {
 	CALLBACK_SET_FC = callback ? callback : default_set_fc_callback;
 }
@@ -562,9 +562,8 @@ void m68k_set_instr_hook_callback(void  (*callback)(void))
 	CALLBACK_INSTR_HOOK = callback ? callback : default_instr_hook_callback;
 }
 
-//#include <stdio.h>
 /* Set the CPU type. */
-void m68k_set_cpu_type(unsigned int cpu_type)
+void m68k_set_cpu_type(uint32_t cpu_type)
 {
 	switch(cpu_type)
 	{
@@ -637,7 +636,7 @@ void m68k_set_cpu_type(unsigned int cpu_type)
 
 /* Execute some instructions until we use up num_cycles clock cycles */
 /* ASG: removed per-instruction interrupt checks */
-int m68k_execute(int num_cycles)
+int32_t m68k_execute(int32_t num_cycles)
 {
 	/* Make sure we're not stopped */
 	if(!CPU_STOPPED)
@@ -696,18 +695,18 @@ int m68k_execute(int num_cycles)
 }
 
 
-int m68k_cycles_run(void)
+int32_t m68k_cycles_run(void)
 {
 	return m68ki_initial_cycles - GET_CYCLES();
 }
 
-int m68k_cycles_remaining(void)
+int32_t m68k_cycles_remaining(void)
 {
 	return GET_CYCLES();
 }
 
 /* Change the timeslice */
-void m68k_modify_timeslice(int cycles)
+void m68k_modify_timeslice(int32_t cycles)
 {
 	m68ki_initial_cycles += cycles;
 	ADD_CYCLES(cycles);
@@ -725,7 +724,7 @@ void m68k_end_timeslice(void)
 /* KS: Modified so that IPL* bits match with mask positions in the SR
  *     and cleaned out remenants of the interrupt controller.
  */
-void m68k_set_irq(unsigned int int_level)
+void m68k_set_irq(uint32_t int_level)
 {
 	uint old_level = CPU_INT_LEVEL;
 	CPU_INT_LEVEL = int_level << 8;
@@ -801,12 +800,12 @@ void m68k_pulse_halt(void)
 
 /* Get and set the current CPU context */
 /* This is to allow for multiple CPUs */
-unsigned int m68k_context_size()
+uint32_t m68k_context_size()
 {
 	return sizeof(m68ki_cpu_core);
 }
 
-unsigned int m68k_get_context(void* dst)
+uint32_t m68k_get_context(void* dst)
 {
 	if(dst) *(m68ki_cpu_core*)dst = m68ki_cpu;
 	return sizeof(m68ki_cpu_core);
@@ -816,66 +815,6 @@ void m68k_set_context(void* src)
 {
 	if(src) m68ki_cpu = *(m68ki_cpu_core*)src;
 }
-
-
-
-/* ======================================================================== */
-/* ============================== MAME STUFF ============================== */
-/* ======================================================================== */
-
-#if M68K_COMPILE_FOR_MAME == OPT_ON
-
-#include "state.h"
-
-static struct {
-	UINT16 sr;
-	int stopped;
-	int halted;
-} m68k_substate;
-
-static void m68k_prepare_substate(void)
-{
-	m68k_substate.sr = m68ki_get_sr();
-	m68k_substate.stopped = (CPU_STOPPED & STOP_LEVEL_STOP) != 0;
-	m68k_substate.halted  = (CPU_STOPPED & STOP_LEVEL_HALT) != 0;
-}
-
-static void m68k_post_load(void)
-{
-	m68ki_set_sr_noint_nosp(m68k_substate.sr);
-	CPU_STOPPED = m68k_substate.stopped ? STOP_LEVEL_STOP : 0
-		        | m68k_substate.halted  ? STOP_LEVEL_HALT : 0;
-	m68ki_jump(REG_PC);
-}
-
-void m68k_state_register(const char *type)
-{
-	int cpu = cpu_getactivecpu();
-
-	state_save_register_UINT32(type, cpu, "D"         , REG_D, 8);
-	state_save_register_UINT32(type, cpu, "A"         , REG_A, 8);
-	state_save_register_UINT32(type, cpu, "PPC"       , &REG_PPC, 1);
-	state_save_register_UINT32(type, cpu, "PC"        , &REG_PC, 1);
-	state_save_register_UINT32(type, cpu, "USP"       , &REG_USP, 1);
-	state_save_register_UINT32(type, cpu, "ISP"       , &REG_ISP, 1);
-	state_save_register_UINT32(type, cpu, "MSP"       , &REG_MSP, 1);
-	state_save_register_UINT32(type, cpu, "VBR"       , &REG_VBR, 1);
-	state_save_register_UINT32(type, cpu, "SFC"       , &REG_SFC, 1);
-	state_save_register_UINT32(type, cpu, "DFC"       , &REG_DFC, 1);
-	state_save_register_UINT32(type, cpu, "CACR"      , &REG_CACR, 1);
-	state_save_register_UINT32(type, cpu, "CAAR"      , &REG_CAAR, 1);
-	state_save_register_UINT16(type, cpu, "SR"        , &m68k_substate.sr, 1);
-	state_save_register_UINT32(type, cpu, "INT_LEVEL" , &CPU_INT_LEVEL, 1);
-	state_save_register_UINT32(type, cpu, "INT_CYCLES", &CPU_INT_CYCLES, 1);
-	state_save_register_int   (type, cpu, "STOPPED"   , &m68k_substate.stopped);
-	state_save_register_int   (type, cpu, "HALTED"    , &m68k_substate.halted);
-	state_save_register_UINT32(type, cpu, "PREF_ADDR" , &CPU_PREF_ADDR, 1);
-	state_save_register_UINT32(type, cpu, "PREF_DATA" , &CPU_PREF_DATA, 1);
-	state_save_register_func_presave(m68k_prepare_substate);
-	state_save_register_func_postload(m68k_post_load);
-}
-
-#endif /* M68K_COMPILE_FOR_MAME */
 
 /* ======================================================================== */
 /* ============================== END OF FILE ============================= */

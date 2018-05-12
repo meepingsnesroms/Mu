@@ -14,7 +14,7 @@
 bool lowPowerStopActive;
 
 
-static inline void patchOpcode(uint16_t opcode, void (*handler)(void), unsigned char cycles){
+static inline void patchOpcode(uint16_t opcode, void (*handler)(void), uint8_t cycles){
       m68ki_instruction_jump_table[opcode] = handler;
       m68ki_cycles[0][opcode] = cycles;
       m68ki_cycles[1][opcode] = cycles;

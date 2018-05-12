@@ -33,6 +33,7 @@
 /* ================================ INCLUDES ============================== */
 /* ======================================================================== */
 
+#include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -48,7 +49,7 @@
 
 /* unsigned int and int must be at least 32 bits wide */
 #undef uint
-#define uint unsigned int
+#define uint uint32_t
 
 /* Bit Isolation Functions */
 #define BIT_0(A)  ((A) & 0x00000001)
@@ -145,8 +146,8 @@ uint  peek_imm_16(void);
 uint  peek_imm_32(void);
 
 /* make signed integers 100% portably */
-static int make_int_8(int value);
-static int make_int_16(int value);
+static int32_t make_int_8(int32_t value);
+static int32_t make_int_16(int32_t value);
 
 /* make a string of a hex value */
 static char* make_signed_hex_str_8(uint val);
@@ -191,10 +192,10 @@ typedef struct
 /* Opcode handler jump table */
 static void (*g_instruction_table[0x10000])(void);
 /* Flag if disassembler initialized */
-static int  g_initialized = 0;
+static int32_t  g_initialized = 0;
 
 /* Address mask to simulate address lines */
-static unsigned int g_address_mask = 0xffffffff;
+static uint32_t g_address_mask = 0xffffffff;
 
 static char g_dasm_str[100]; /* string to hold disassembly */
 static char g_helper_str[100]; /* string to hold helpful info */
@@ -261,12 +262,12 @@ static char* g_cpcc[64] =
 
 
 /* 100% portable signed int generators */
-static int make_int_8(int value)
+static int32_t make_int_8(int32_t value)
 {
 	return (value & 0x80) ? value | ~0xff : value & 0xff;
 }
 
-static int make_int_16(int value)
+static int32_t make_int_16(int32_t value)
 {
 	return (value & 0x8000) ? value | ~0xffff : value & 0xffff;
 }
@@ -3132,7 +3133,7 @@ static opcode_struct g_opcode_info[] =
 };
 
 /* Check if opcode is using a valid ea mode */
-static int valid_ea(uint opcode, uint mask)
+static int32_t valid_ea(uint opcode, uint mask)
 {
 	if(mask == 0)
 		return 1;
@@ -3176,7 +3177,7 @@ static int valid_ea(uint opcode, uint mask)
 }
 
 /* Used by qsort */
-static int DECL_SPEC compare_nof_true_bits(const void *aptr, const void *bptr)
+static int32_t DECL_SPEC compare_nof_true_bits(const void *aptr, const void *bptr)
 {
 	uint a = ((const opcode_struct*)aptr)->mask;
 	uint b = ((const opcode_struct*)bptr)->mask;
@@ -3240,7 +3241,7 @@ static void build_opcode_table(void)
 /* ======================================================================== */
 
 /* Disasemble one instruction at pc and store in str_buff */
-unsigned int m68k_disassemble(char* str_buff, unsigned int pc, unsigned int cpu_type)
+uint32_t m68k_disassemble(char* str_buff, uint32_t pc, uint32_t cpu_type)
 {
 	if(!g_initialized)
 	{
@@ -3285,7 +3286,7 @@ unsigned int m68k_disassemble(char* str_buff, unsigned int pc, unsigned int cpu_
 	return g_cpu_pc - pc;
 }
 
-char* m68ki_disassemble_quick(unsigned int pc, unsigned int cpu_type)
+char* m68ki_disassemble_quick(uint32_t pc, uint32_t cpu_type)
 {
 	static char buff[100];
 	buff[0] = 0;
@@ -3294,7 +3295,7 @@ char* m68ki_disassemble_quick(unsigned int pc, unsigned int cpu_type)
 }
 
 /* Check if the instruction is a valid one */
-unsigned int m68k_is_valid_instruction(unsigned int instruction, unsigned int cpu_type)
+uint32_t m68k_is_valid_instruction(uint32_t instruction, uint32_t cpu_type)
 {
 	if(!g_initialized)
 	{

@@ -34,7 +34,7 @@
 #define M68KCPU__HEADER
 
 #include "m68k.h"
-#include <limits.h>
+#include <stdint.h>
 
 #if M68K_EMULATE_ADDRESS_ERROR
 #include <setjmp.h>
@@ -44,12 +44,7 @@
 /* ==================== ARCHITECTURE-DEPENDANT DEFINES ==================== */
 /* ======================================================================== */
 
-/* Check for > 32bit sizes */
-#if UINT_MAX > 0xffffffff
-	#define M68K_INT_GT_32_BIT  1
-#else
-	#define M68K_INT_GT_32_BIT  0
-#endif
+#define M68K_INT_GT_32_BIT  0
 
 /* Data types used in this emulation core */
 #undef sint8
@@ -63,71 +58,30 @@
 #undef sint
 #undef uint
 
-#define sint8  signed   char			/* ASG: changed from char to signed char */
-#define sint16 signed   short
-#define sint32 signed   long
-#define uint8  unsigned char
-#define uint16 unsigned short
-#define uint32 unsigned long
+#define sint8  int8_t
+#define sint16 int16_t
+#define sint32 int32_t
+#define uint8  uint8_t
+#define uint16 uint16_t
+#define uint32 uint32_t
 
 /* signed and unsigned int must be at least 32 bits wide */
-#define sint   signed   int
-#define uint   unsigned int
+#define sint   int32_t
+#define uint   uint32_t
 
 
 #if M68K_USE_64_BIT
-#define sint64 signed   long long
-#define uint64 unsigned long long
+#define sint64 int64_t
+#define uint64 uint64_t
 #else
 #define sint64 sint32
 #define uint64 uint32
 #endif /* M68K_USE_64_BIT */
 
 
-
-/* Allow for architectures that don't have 8-bit sizes */
-#if UCHAR_MAX == 0xff
-	#define MAKE_INT_8(A) (sint8)(A)
-#else
-	#undef  sint8
-	#define sint8  signed   int
-	#undef  uint8
-	#define uint8  unsigned int
-	INLINE sint MAKE_INT_8(uint value)
-	{
-		return (value & 0x80) ? value | ~0xff : value & 0xff;
-	}
-#endif /* UCHAR_MAX == 0xff */
-
-
-/* Allow for architectures that don't have 16-bit sizes */
-#if USHRT_MAX == 0xffff
-	#define MAKE_INT_16(A) (sint16)(A)
-#else
-	#undef  sint16
-	#define sint16 signed   int
-	#undef  uint16
-	#define uint16 unsigned int
-	INLINE sint MAKE_INT_16(uint value)
-	{
-		return (value & 0x8000) ? value | ~0xffff : value & 0xffff;
-	}
-#endif /* USHRT_MAX == 0xffff */
-
-
-/* Allow for architectures that don't have 32-bit sizes */
-#if ULONG_MAX == 0xffffffff
-	#define MAKE_INT_32(A) (sint32)(A)
-#else
-	#undef  sint32
-	#define sint32  signed   int
-	#undef  uint32
-	#define uint32  unsigned int
-	INLINE sint MAKE_INT_32(uint value)
-	{
-		return (value & 0x80000000) ? value | ~0xffffffff : value & 0xffffffff;
-	}
-#endif /* ULONG_MAX == 0xffffffff */
+#define MAKE_INT_8(A) (sint8)(A)
+#define MAKE_INT_16(A) (sint16)(A)
+#define MAKE_INT_32(A) (sint32)(A)
 
 
 
@@ -845,11 +799,11 @@ typedef struct
 	uint8* cyc_exception;
 
 	/* Callbacks to host */
-	int  (*int_ack_callback)(int int_line);           /* Interrupt Acknowledge */
-	void (*bkpt_ack_callback)(unsigned int data);     /* Breakpoint Acknowledge */
+	int32_t  (*int_ack_callback)(int32_t int_line);           /* Interrupt Acknowledge */
+	void (*bkpt_ack_callback)(uint32_t data);     /* Breakpoint Acknowledge */
 	void (*reset_instr_callback)(void);               /* Called when a RESET instruction is encountered */
-	void (*pc_changed_callback)(unsigned int new_pc); /* Called when the PC changes by a large amount */
-	void (*set_fc_callback)(unsigned int new_fc);     /* Called when the CPU function code changes */
+	void (*pc_changed_callback)(uint32_t new_pc); /* Called when the PC changes by a large amount */
+	void (*set_fc_callback)(uint32_t new_fc);     /* Called when the CPU function code changes */
 	void (*instr_hook_callback)(void);                /* Called every instruction cycle prior to execution */
 
 } m68ki_cpu_core;
@@ -986,7 +940,7 @@ INLINE void m68ki_exception_interrupt(uint int_level);
 INLINE void m68ki_check_interrupts(void);            /* ASG: check for interrupts */
 
 /* quick disassembly (used for logging) */
-char* m68ki_disassemble_quick(unsigned int pc, unsigned int cpu_type);
+char* m68ki_disassemble_quick(uint32_t pc, uint32_t cpu_type);
 
 
 /* ======================================================================== */

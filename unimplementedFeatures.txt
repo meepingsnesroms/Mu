@@ -6,6 +6,7 @@ CPU:
 sysTrapPceNativeCall, ARM Emulator
 CPU32 table lookup opcodes
 RAM wait states
+Trace T1 bit, should be unused by the OS and applications anyway
 
 CPU I/O:
 Timer capture events, I don't think there possible though with the Palms hardware
@@ -41,9 +42,6 @@ USB chip address range
 
 SED1376:
 swivelview register
-
-Other:
-Had to modify musashi because the damn NDK isn't C compatible, m68kcpu.h, line 565
 
 
 Fixed:

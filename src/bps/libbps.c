@@ -39,7 +39,7 @@ static bool try_shift(size_t* a, size_t b)
 static bool decodenum(const uint8_t* ptr, size_t* out)
 {
 	*out=0;
-	unsigned int shift=0;
+   uint32_t shift=0;
 	while (true)
 	{
 		uint8_t next=*ptr++;

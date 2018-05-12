@@ -2,20 +2,21 @@
 /* ========================= OPCODE TABLE BUILDER ========================= */
 /* ======================================================================== */
 
+#include <stdint.h>
 #include "m68kops.h"
 
 #define NUM_CPU_TYPES 3
 
 void  (*m68ki_instruction_jump_table[0x10000])(void); /* opcode handler jump table */
-unsigned char m68ki_cycles[NUM_CPU_TYPES][0x10000]; /* Cycles used by CPU type */
+uint8_t m68ki_cycles[NUM_CPU_TYPES][0x10000]; /* Cycles used by CPU type */
 
 /* This is used to generate the opcode handler jump table */
 typedef struct
 {
 	void (*opcode_handler)(void);        /* handler function */
-	unsigned int  mask;                  /* mask on opcode */
-	unsigned int  match;                 /* what to match after masking */
-	unsigned char cycles[NUM_CPU_TYPES]; /* cycles each cpu type takes */
+	uint32_t  mask;                  /* mask on opcode */
+	uint32_t  match;                 /* what to match after masking */
+	uint8_t cycles[NUM_CPU_TYPES]; /* cycles each cpu type takes */
 } opcode_handler_struct;
 
 
@@ -1993,11 +1994,11 @@ static opcode_handler_struct m68k_opcode_handler_table[] =
 void m68ki_build_opcode_table(void)
 {
 	opcode_handler_struct *ostruct;
-	int cycle_cost;
-	int instr;
-	int i;
-	int j;
-	int k;
+	int32_t cycle_cost;
+	int32_t instr;
+	int32_t i;
+	int32_t j;
+	int32_t k;
 
 	for(i = 0; i < 0x10000; i++)
 	{
