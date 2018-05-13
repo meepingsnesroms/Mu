@@ -1,5 +1,5 @@
-#ifndef TESTSUITE_HEADER
-#define TESTSUITE_HEADER
+#ifndef TEST_SUITE_HEADER
+#define TEST_SUITE_HEADER
 
 #include <PalmOS.h>
 #include <stdint.h>
@@ -61,11 +61,11 @@ inside the function and outside can result in the outside variable being written
 c89 also doesnt support them
 */
 /*hardware buttons*/
-#define getButton(x) ((palmButtons & x) != 0)
-#define getButtonLastFrame(x) ((palmButtonsLastFrame & x) != 0)
-#define getButtonChanged(x) ((palmButtons & x) != (palmButtonsLastFrame & x))
-#define getButtonPressed(x) ((palmButtons & x) && !(palmButtonsLastFrame & x))
-#define getButtonReleased(x) (!(palmButtons & x) && (palmButtonsLastFrame & x))
+#define getButton(button) ((palmButtons & button) != 0)
+#define getButtonLastFrame(button) ((palmButtonsLastFrame & button) != 0)
+#define getButtonChanged(button) ((palmButtons & button) != (palmButtonsLastFrame & button))
+#define getButtonPressed(button) ((palmButtons & button) && !(palmButtonsLastFrame & button))
+#define getButtonReleased(button) (!(palmButtons & button) && (palmButtonsLastFrame & button))
 
 /*var type operators*/
 #define getVarType(x) (x.type & 0x0F)
@@ -77,12 +77,12 @@ c89 also doesnt support them
 var     makeVar(uint8_t length, uint8_t type, uint64_t value);
 
 /*kernel memory access*/
-uint8_t readArbitraryMemory8(uint32_t address);
-uint16_t readArbitraryMemory16(uint32_t address);
-uint32_t readArbitraryMemory32(uint32_t address);
-void writeArbitraryMemory8(uint32_t address, uint8_t value);
-void writeArbitraryMemory16(uint32_t address, uint16_t value);
-void writeArbitraryMemory32(uint32_t address, uint32_t value);
+#define readArbitraryMemory8(address) *((volatile uint8_t*)(address))
+#define readArbitraryMemory16(address) *((volatile uint16_t*)(address))
+#define readArbitraryMemory32(address) *((volatile uint32_t*)(address))
+#define writeArbitraryMemory8(address, value) *((volatile uint8_t*)(address)) = (value)
+#define writeArbitraryMemory16(address, value) *((volatile uint16_t*)(address)) = (value)
+#define writeArbitraryMemory32(address, value) *((volatile uint32_t*)(address)) = (value)
 
 /*graphics*/
 void forceFrameRedraw();

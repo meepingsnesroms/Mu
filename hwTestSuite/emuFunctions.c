@@ -1,6 +1,7 @@
 #include <PalmOS.h>
 #include <stdint.h>
-#include "emuFeatureRegistersSpec.h"
+#include "testSuite.h"
+#include "specs/emuFeatureRegistersSpec.h"
 
 Boolean isEmulator(){
    /*return (readArbitraryMemory32(EMU_REG_ADDR(EMU_INFO)) & FEATURE_EMU_HONEST) != 0;*/

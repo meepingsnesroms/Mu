@@ -16,7 +16,7 @@ if [ "$1" = "clean" ]; then
    exit
 fi
 
-SRCS="testSuite.c viewer.c tools.c tests.c cpu.c emuFunctions.c ugui.c"
+SRCS="testSuite.c viewer.c tools.c tests.c cpu.c irda.c emuFunctions.c ugui.c"
 DEFINES="-DHW_TEST"
 
 if [ "$1" = "debug" ]; then

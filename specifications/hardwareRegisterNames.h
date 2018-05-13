@@ -1,5 +1,5 @@
-#ifndef HARDWARE_REGISTER_NAMES_H
-#define HARDWARE_REGISTER_NAMES_H
+#ifndef HARDWARE_REGISTER_NAMES_HEADER
+#define HARDWARE_REGISTER_NAMES_HEADER
 
 /*Dragonball VZ Hardware Register Definitions*/
 #define HW_REG_ADDR(x) (0xFFFFF000 | (x))

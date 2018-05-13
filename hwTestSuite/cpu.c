@@ -2,7 +2,7 @@
 #include <stdint.h>
 #include "testSuite.h"
 #include "emuFunctions.h"
-#include "hardwareRegisterNames.h"
+#include "specs/hardwareRegisterNames.h"
 #include "viewer.h"
 #include "cpu.h"
 

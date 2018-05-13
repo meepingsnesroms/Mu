@@ -32,7 +32,7 @@ macx {
 
 CONFIG(debug, debug|release){
     DEFINES += EMU_DEBUG EMU_CUSTOM_DEBUG_LOG_HANDLER EMU_LOG_REGISTER_ACCESS_UNKNOWN
-# EMU_LOG_REGISTER_ACCESS_ALL EMU_OPCODE_LEVEL_DEBUG EMU_LOG_APIS
+# EMU_OPCODE_LEVEL_DEBUG EMU_LOG_APIS
 }
 
 QMAKE_CFLAGS += -std=c99
@@ -73,9 +73,7 @@ HEADERS += \
     src/m68k/m68kcpu.h \
     src/m68k/m68kops.h \
     src/68328Functions.h \
-    src/emuFeatureRegistersSpec.h \
     src/emulator.h \
-    src/hardwareRegisterNames.h \
     src/hardwareRegisters.h \
     src/memoryAccess.h \
     src/portability.h \
@@ -84,14 +82,17 @@ HEADERS += \
     src/silkscreen.h \
     mainwindow.h \
     touchscreen.h \
-    src/sed1376RegisterNames.h \
     src/hardwareRegistersTiming.c.h \
     src/sed1376Accessors.c.h \
     src/hardwareRegistersAccessors.c.h \
     fileaccess.h \
     src/endianness.h \
     src/ads7846.h \
-    debugviewer.h
+    debugviewer.h \
+    src/specs/emuFeatureRegistersSpec.h \
+    src/specs/hardwareRegisterNames.h \
+    src/specs/irdaCommands.h \
+    src/specs/sed1376RegisterNames.h
 
 FORMS += \
     mainwindow.ui \

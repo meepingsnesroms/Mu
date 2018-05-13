@@ -282,7 +282,6 @@ void MainWindow::on_notes_released(){
    frontendInput.buttonNotes = false;
 }
 
-
 //emu control
 void MainWindow::on_ctrlBtn_clicked(){
    if(!emuOn && !emuInited){

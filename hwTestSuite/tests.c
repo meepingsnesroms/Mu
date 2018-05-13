@@ -1,6 +1,6 @@
 #include "testSuite.h"
 #include "testSuiteConfig.h"
-#include "hardwareRegisterNames.h"
+#include "specs/hardwareRegisterNames.h"
 #include "debug.h"
 #include "tools.h"
 #include "ugui.h"

@@ -1,16 +1,17 @@
-#pragma once
-//SED1376 Register Definitions
+#ifndef SED1376_REGISTER_NAMES_HEADER
+#define SED1376_REGISTER_NAMES_HEADER
+/*SED1376 Register Definitions*/
 
-//Read-Only Configuration Registers
+/*Read-Only Configuration Registers*/
 #define REV_CODE       0x00
 #define DISP_BUFF_SIZE 0x01
 #define CFG_READBACK   0x02
 
-//Clock Configuration Registers
+/*Clock Configuration Registers*/
 #define MEM_CLK        0x04
 #define PIXEL_CLK      0x05
 
-//Look Up Table Registers
+/*Look Up Table Registers*/
 #define LUT_R_WRITE    0x08
 #define LUT_G_WRITE    0x09
 #define LUT_B_WRITE    0x0A
@@ -20,12 +21,12 @@
 #define LUT_B_READ     0x0E
 #define LUT_READ_LOC   0x0F
 
-//Panel Configuration Registers
+/*Panel Configuration Registers*/
 #define PANEL_TYPE     0x10
 #define MOD_RATE       0x11
 //unfinished
 
-//Display Mode Registers
+/*Display Mode Registers*/
 #define DISP_MODE      0x70
 #define SPECIAL_EFFECT 0x71
 #define DISP_ADDR_0    0x74
@@ -34,7 +35,7 @@
 #define LINE_SIZE_0    0x78
 #define LINE_SIZE_1    0x79
 
-//Picture-in-Picture Plus (PIP+) Registers
+/*Picture-in-Picture Plus (PIP+) Registers*/
 #define PIP_ADDR_0     0x7C
 #define PIP_ADDR_1     0x7D
 #define PIP_ADDR_2     0x7E
@@ -49,15 +50,17 @@
 #define PIP_Y_END_0    0x90
 #define PIP_Y_END_1    0x91
 
-//Miscellaneous Registers
+/*Miscellaneous Registers*/
 #define PWR_SAVE_CFG   0xA0
 #define SCRATCH_0      0xA4
 #define SCRATCH_1      0xA5
 
-//General Purpose IO Pins Registers
+/*General Purpose IO Pins Registers*/
 #define GPIO_CONF_0    0xA8
 #define GPIO_CONF_1    0xA9
 #define GPIO_CONT_0    0xAC
 #define GPIO_CONT_1    0xAD
 
-//PWM Clock and CV Pulse Configuration Registers
+/*PWM Clock and CV Pulse Configuration Registers*/
+
+#endif

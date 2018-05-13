@@ -11,7 +11,7 @@ extern "C" {
 #include <stdio.h>
 
 #include "memoryAccess.h"//for size macros
-#include "emuFeatureRegistersSpec.h"
+#include "specs/emuFeatureRegistersSpec.h"
 
 //to enable degguging define EMU_DEBUG, all options below do nothing unless EMU_DEBUG is defined
 //to enable opcode level debugging define EMU_OPCODE_LEVEL_DEBUG

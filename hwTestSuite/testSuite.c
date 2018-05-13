@@ -12,30 +12,12 @@
 #include "TstSuiteRsc.h"
 
 
+/*exported function, cant be converted into a macro*/
 var makeVar(uint8_t length, uint8_t type, uint64_t value){
    var newVar;
    newVar.type = (length & 0xF0) | (type & 0x0F);
    newVar.value = value;
    return newVar;
-}
-
-uint8_t readArbitraryMemory8(uint32_t address){
-   return *((volatile uint8_t*)address);
-}
-uint16_t readArbitraryMemory16(uint32_t address){
-   return *((volatile uint16_t*)address);
-}
-uint32_t readArbitraryMemory32(uint32_t address){
-   return *((volatile uint32_t*)address);
-}
-void writeArbitraryMemory8(uint32_t address, uint8_t value){
-   *((volatile uint8_t*)address) = value;
-}
-void writeArbitraryMemory16(uint32_t address, uint16_t value){
-   *((volatile uint16_t*)address) = value;
-}
-void writeArbitraryMemory32(uint32_t address, uint32_t value){
-   *((volatile uint32_t*)address) = value;
 }
 
 
@@ -45,8 +27,7 @@ uint16_t palmButtonsLastFrame;
 Boolean  unsafeMode;
 uint8_t* sharedDataBuffer;
 
-
-/*video stuff*/
+/*video*/
 static UG_GUI      uguiStruct;
 static BitmapType* offscreenBitmap;
 static uint8_t*    framebuffer;
@@ -89,7 +70,6 @@ var memoryAllocationError(){
    }
    /*do nothing, this is a safe crash*/
 }
-
 
 static void uguiDrawPixel(UG_S16 x, UG_S16 y, UG_COLOR color){
    /*using 1bit grayscale*/

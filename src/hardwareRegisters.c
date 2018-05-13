@@ -3,7 +3,7 @@
 #include <string.h>
 
 #include "emulator.h"
-#include "hardwareRegisterNames.h"
+#include "specs/hardwareRegisterNames.h"
 #include "hardwareRegisters.h"
 #include "memoryAccess.h"
 #include "68328Functions.h"

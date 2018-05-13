@@ -5,7 +5,7 @@
 #include "portability.h"
 #include "hardwareRegisters.h"
 #include "memoryAccess.h"
-#include "sed1376RegisterNames.h"
+#include "specs/sed1376RegisterNames.h"
 #include "m68k/m68k.h"
 
 

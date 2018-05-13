@@ -4,6 +4,7 @@
 #include "tests.h"
 #include "debug.h"
 #include "cpu.h"
+#include "irda.h"
 #include "ugui.h"
 
 
@@ -270,6 +271,10 @@ void resetFunctionViewer(){
    
    StrNCopy(hwTests[totalHwTests].name, "Get Trap Address", TEST_NAME_LENGTH);
    hwTests[totalHwTests].testFunction = getTrapAddress;
+   totalHwTests++;
+   
+   StrNCopy(hwTests[totalHwTests].name, "IrDa telnet/VNC", TEST_NAME_LENGTH);
+   hwTests[totalHwTests].testFunction = irdaCommandLoop;
    totalHwTests++;
    
    if(getPhysicalCpuType() & CPU_M68K){

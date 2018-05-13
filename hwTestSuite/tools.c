@@ -1,5 +1,5 @@
 #include <PalmOS.h>
-#include "hardwareRegisterNames.h"
+#include "specs/hardwareRegisterNames.h"
 #include "testSuite.h"
 #include "viewer.h"
 #include "debug.h"

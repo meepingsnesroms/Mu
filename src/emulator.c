@@ -13,7 +13,7 @@
 #include "sdcard.h"
 #include "silkscreen.h"
 #include "portability.h"
-#include "emuFeatureRegistersSpec.h"
+#include "specs/emuFeatureRegistersSpec.h"
 
 
 //Memory Map of Palm m515
@@ -163,7 +163,12 @@ static void invalidBehaviorCheck(){
 
       //custom debug operations
       switch(trap){
+         /*
          case 0xA09A://sysTrapSysTimerWrite
+            printTrapInfo(trap);
+            break;
+         */
+         case 0xA255://sysTrapHwrIRQ5Handler
             printTrapInfo(trap);
             break;
 
