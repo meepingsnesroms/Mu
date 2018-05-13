@@ -3,13 +3,13 @@
 
 #include <stdint.h>
 
-/*commands are 64 bits, 32 command/32 data, the data is usualy a pointer*/
+/*commands are 64 bit big endian, 32 command/32 data, the data is usualy a pointer*/
 /*all access require 2 transfers, a request and an acknowledge, each device must take turns sending and receiving*/
 
-typedef struct{
-   uint32_t command;
-   uint32_t data;
-}irda_command_t;
+#define IRDA_COMMAND_SIZE 8
+
+/*the uint64_t casts are required since int is 16 bit on m68k and bit shifting is always performed at int length unless specified otherwise*/
+#define IRDA_GET_COMMAND(ptr) ((uint64_t)ptr[0] << 56 | (uint64_t)ptr[1] << 48 | (uint64_t)ptr[2] << 40 | (uint64_t)ptr[3] << 32 | (uint64_t)ptr[4] << 24 | (uint64_t)ptr[5] << 16 | (uint64_t)ptr[6] << 8 | (uint64_t)ptr[7])
 
 enum{
    IRDA_COMMAND_NONE = 0,

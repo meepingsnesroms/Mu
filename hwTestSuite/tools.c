@@ -7,25 +7,25 @@
 
 
 Err makeFile(uint8_t* data, uint32_t size, char* fileName){
-   FileHand        file;
-   Err             error;
-   uint32_t        count;
+   FileHand file;
+   Err error;
+   uint32_t count;
    
    file = FileOpen(0 /*cardNo*/, fileName, (uint32_t)'DATA', (uint32_t)'GuiC', fileModeReadWrite, &error);
-   if(file == fileNullHandle || error)
+   if(file == fileNullHandle || error != errNone)
       return error;
    
    /*the copy is used to anonymize the data source*/
    count = size;
    while(count != 0){
-      uint32_t chunkSize = count > SHARED_DATA_BUFFER_SIZE ? SHARED_DATA_BUFFER_SIZE : count;
-      int32_t  bytesWritten;
+      uint32_t chunkSize = min(count, SHARED_DATA_BUFFER_SIZE);
+      int32_t bytesWritten;
       uint32_t i;
       for(i = 0; i < chunkSize; i++){
          sharedDataBuffer[i] = data[i + size - count];
       }
       bytesWritten = FileWrite(file, sharedDataBuffer, 1, chunkSize, &error);
-      if(bytesWritten != chunkSize || error){
+      if(bytesWritten != chunkSize || error != errNone){
          FileClose(file);
          return error;
       }
@@ -103,7 +103,7 @@ uint16_t ads7846GetValue(uint8_t channel, Boolean referenceMode, Boolean mode8bi
 }
 
 var hexRamBrowser(){
-   static Boolean  firstRun = true;
+   static Boolean firstRun = true;
    static uint32_t nibble;
    static uint32_t pointerValue;
    
@@ -191,11 +191,11 @@ var getTrapAddress(){
 }
 
 var manualLssa(){
-   static Boolean  firstRun = true;
+   static Boolean firstRun = true;
    static uint32_t nibble;
    static uint32_t hexValue;
    static uint32_t originalLssa;
-   static Boolean  customEnabled;
+   static Boolean customEnabled;
    
    if(firstRun){
       nibble = 0x10000000;

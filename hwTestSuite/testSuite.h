@@ -84,6 +84,10 @@ var     makeVar(uint8_t length, uint8_t type, uint64_t value);
 #define writeArbitraryMemory16(address, value) *((volatile uint16_t*)(address)) = (value)
 #define writeArbitraryMemory32(address, value) *((volatile uint32_t*)(address)) = (value)
 
+/*convenience*/
+#define min(x, y) ((x) < (y) ? (x) : (y))
+#define max(x, y) ((x) > (y) ? (x) : (y))
+
 /*graphics*/
 void forceFrameRedraw();
 

@@ -155,8 +155,8 @@ void subprogramSetData(var data){
 }
 
 static Boolean testerInit(){
-   long     osVer;
-   Err      error;
+   int32_t osVer;
+   Err error;
    
    FtrGet(sysFtrCreator, sysFtrNumROMVersion, &osVer);
    if (osVer < PalmOS35) {
@@ -171,7 +171,7 @@ static Boolean testerInit(){
    }
    
    offscreenBitmap = BmpCreate(SCREEN_WIDTH, SCREEN_HEIGHT, 1, NULL, &error);
-   if(error){
+   if(error != errNone){
       FrmCustomAlert(alt_err, "Cant create bitmap", 0, 0);
       return false;
    }
@@ -209,6 +209,8 @@ static void testerExit(){
 }
 
 static void testerFrameLoop(){
+   static uint32_t lastResetTime = 0;
+   
    palmButtons = KeyCurrentState();
    
    if(!unsafeMode){
@@ -225,6 +227,12 @@ static void testerFrameLoop(){
       while(event.eType != nilEvent);
    }
    
+   /*disable auto off timer*/
+   if(TimGetSeconds() - lastResetTime > 50){
+      EvtResetAutoOffTimer();
+      lastResetTime = TimGetSeconds();
+   }
+   
    lastSubprogramReturnValue = currentSubprogram();
    
    WinDrawBitmap(offscreenBitmap, 0, 0);
@@ -238,7 +246,7 @@ DWord PilotMain(Word cmd, Ptr cmdBPB, Word launchFlags){
       initSuccess = testerInit();
       
       if(!initSuccess){
-         return(0);
+         return 0;
       }
       
       applicationRunning = true;
@@ -252,6 +260,7 @@ DWord PilotMain(Word cmd, Ptr cmdBPB, Word launchFlags){
    else if(cmd == sysAppLaunchCmdSystemReset){
      /*eventualy boot time tests may go here*/
    }
-   return(0);
+   
+   return 0;
 }
 
