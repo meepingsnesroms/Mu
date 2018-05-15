@@ -46,7 +46,7 @@ static uint32_t bufferAddress;/*used to put the hex viewer in buffer mode instea
 
 
 /*functions*/
-static void renderListFrame(){
+CODE_SECTION("viewer") static void renderListFrame(){
    int textBoxes;
    int y = 0;
    
@@ -75,7 +75,7 @@ static void renderListFrame(){
    }
 }
 
-static void hexHandler(uint32_t command){
+CODE_SECTION("viewer") static void hexHandler(uint32_t command){
    if(command == LIST_REFRESH){
       int i;
       uint32_t hexViewOffset = bufferAddress + PAGE * ITEM_LIST_ENTRYS;
@@ -96,7 +96,7 @@ static void hexHandler(uint32_t command){
    }
 }
 
-static void testPickerHandler(uint32_t command){
+CODE_SECTION("viewer") static void testPickerHandler(uint32_t command){
    if(command == LIST_REFRESH){
       int i;
       
@@ -118,7 +118,7 @@ static void testPickerHandler(uint32_t command){
    }
 }
 
-static void resetListHandler(){
+CODE_SECTION("viewer") static void resetListHandler(){
    int i;
    
    listLength = 0;
@@ -132,7 +132,7 @@ static void resetListHandler(){
    setDebugTag("List Handler Reset");
 }
 
-static var listModeFrame(){
+CODE_SECTION("viewer") static var listModeFrame(){
    setDebugTag("List Mode Running");
    
    if(getButtonPressed(buttonUp))
