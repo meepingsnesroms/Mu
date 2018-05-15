@@ -6,6 +6,7 @@
 #include "testSuiteConfig.h"
 
 /*defines*/
+#define CODE_SECTION(codeSection)  __attribute__((section(codeSection)))
 #define SHARED_DATA_BUFFER_SIZE 1000
 
 #define PalmOS35 sysMakeROMVersion(3,5,0,sysROMStageRelease,0)
@@ -83,10 +84,6 @@ var     makeVar(uint8_t length, uint8_t type, uint64_t value);
 #define writeArbitraryMemory8(address, value) *((volatile uint8_t*)(address)) = (value)
 #define writeArbitraryMemory16(address, value) *((volatile uint16_t*)(address)) = (value)
 #define writeArbitraryMemory32(address, value) *((volatile uint32_t*)(address)) = (value)
-
-/*convenience*/
-#define min(x, y) ((x) < (y) ? (x) : (y))
-#define max(x, y) ((x) > (y) ? (x) : (y))
 
 /*graphics*/
 void forceFrameRedraw();

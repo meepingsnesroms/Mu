@@ -7,7 +7,7 @@ cd $DIR
 APPNAME="TstSuite"
 ICONTEXT="HWTests"
 APPID="TstS"
-CREATORID="guiC"
+CREATORID="GuiC"
 RESFILE=$APPNAME.rcp
 PRC=$APPNAME.prc
 
@@ -16,17 +16,26 @@ if [ "$1" = "clean" ]; then
    exit
 fi
 
-SRCS="testSuite.c viewer.c tools.c tests.c cpu.c irda.c emuFunctions.c ugui.c"
+declare -a FILES=("testSuite" "viewer" "tools" "tests" "cpu" "irda" "emuFunctions" "ugui")
+# SRCS="testSuite.c viewer.c tools.c tests.c cpu.c irda.c emuFunctions.c ugui.c"
 DEFINES="-DHW_TEST"
+CFLAGS="-O3 $DEFINES"
 
 if [ "$1" = "debug" ]; then
    DEFINES="$DEFINES -DDEBUG"
-   SRCS="$SRCS debug.c"
+#SRCS="$SRCS debug.c"
+   CFLAGS="$CFLAGS -g"
 fi
 
-CFLAGS="-O2 -g $DEFINES"
+m68k-palmos-multigen $APPNAME.def
+for I in "${FILES[@]}"; do
+   m68k-palmos-gcc -palmos3.5 $CFLAGS -c $I.c -o $I.o
+done
+m68k-palmos-gcc -o $APPNAME *.o $APPNAME-sections.ld
 
-m68k-palmos-gcc -palmos3.5 $CFLAGS $SRCS -o $APPNAME
-m68k-palmos-obj-res $APPNAME
+# m68k-palmos-gcc -O3 $SRCS -o $APPNAME $APPNAME-sections.ld
+# m68k-palmos-obj-res $APPNAME
 pilrc $RESFILE
-build-prc $PRC $ICONTEXT $CREATORID *.grc *.bin
+build-prc $PRC $APPNAME.def $APPNAME *.bin
+# $ICONTEXT $CREATORID
+# build-prc $PRC $ICONTEXT $CREATORID *.grc *.bin

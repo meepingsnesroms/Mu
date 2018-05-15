@@ -1,0 +1,3 @@
+application { "TstSuite" GuiC }
+
+multiple code { irda }

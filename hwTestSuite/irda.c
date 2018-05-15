@@ -10,9 +10,9 @@
 /*this is mainly because running any sort of test takes 3 minutes to compile it, get it on a memory card, load it then find out it doesnt work*/
 
 
-static bool irdaRunning;
-static bool irdaError;
-static bool irdaOutOfSync;
+static Boolean irdaRunning;
+static Boolean irdaError;
+static Boolean irdaOutOfSync;
 static uint16_t irdaPortId;
 static uint32_t irdaCommandBufferLength;
 static uint8_t irdaCommandInOffset;
@@ -20,12 +20,12 @@ static uint8_t irdaCommandInBytes[IRDA_COMMAND_SIZE];
 static uint8_t irdaCommandOutBytes[IRDA_COMMAND_SIZE];
 
 
-static void irdaSendCommand(uint64_t command){
+CODE_SECTION("irda") static void irdaSendCommand(uint64_t command){
    if(irdaRunning){
       uint32_t bytes;
       Err error;
       
-      bytes = SrmSend(irdaPortId, &irdaCommandOut, IRDA_COMMAND_SIZE/*bytes*/, &error);
+      bytes = SrmSend(irdaPortId, &irdaCommandOutBytes, IRDA_COMMAND_SIZE/*bytes*/, &error);
       if(error != errNone)
          irdaError = true;
       if(bytes != IRDA_COMMAND_SIZE)
@@ -33,7 +33,7 @@ static void irdaSendCommand(uint64_t command){
    }
 }
 
-static uint64_t irdaGetCommand(){
+CODE_SECTION("irda") static uint64_t irdaGetCommand(){
    if(irdaRunning){
       uint32_t requestBytes;
       uint32_t bytes;
@@ -45,7 +45,7 @@ static uint64_t irdaGetCommand(){
       
       requestBytes = min(requestBytes, IRDA_COMMAND_SIZE - irdaCommandInOffset + 1);
       
-      bytes = SrmReceive(irdaPortId, ((uint8_t*)&irdaCommandInBytes)[irdaCommandInOffset], requestBytes, 0, &error);
+      bytes = SrmReceive(irdaPortId, &irdaCommandInBytes[irdaCommandInOffset], requestBytes, 0, &error);
       if(error != errNone)
          irdaError = true;
       irdaCommandInOffset += bytes;
@@ -55,17 +55,27 @@ static uint64_t irdaGetCommand(){
          return IRDA_GET_COMMAND(irdaCommandInBytes);
       }
       
-      return (uint64_t)IRDA_COMMAND_NONE << 32 | 0x00000000;
+      return IRDA_MAKE_COMMAND(IRDA_COMMAND_NONE, 0);
    }
 }
 
-static void irdaHandleCommands(){
+CODE_SECTION("irda") static void irdaHandleCommands(){
    if(irdaRunning){
-      
+      uint64_t irdaCommand = irdaGetCommand();
+      while(irdaCommand != IRDA_MAKE_COMMAND(IRDA_COMMAND_NONE, 0)){
+         switch(IRDA_GET_COMMAND_OPERATION(irdaCommand)){
+            case IRDA_COMMAND_NONE:
+               break;
+               
+            default:
+               /*todo: print error and terminate*/
+               break;
+         }
+      }
    }
 }
 
-static bool irdaStart(){
+CODE_SECTION("irda") static Boolean irdaStart(){
    if(!irdaRunning){
       uint32_t value;
       Err error;
@@ -78,6 +88,9 @@ static bool irdaStart(){
       if(error != errNone)
          return false;
       
+      irdaCommandInOffset = 0;
+      memset(irdaCommandInBytes, 0x00, IRDA_COMMAND_SIZE);
+      memset(irdaCommandOutBytes, 0x00, IRDA_COMMAND_SIZE);
       irdaRunning = true;
       
       return true;
@@ -86,9 +99,12 @@ static bool irdaStart(){
    return true;/*its already running, return success*/
 }
 
-static void irdaClose(){
+CODE_SECTION("irda") static void irdaClose(){
    if(irdaRunning){
+      irdaSendCommand((uint64_t)IRDA_COMMAND_CLOSE_CONNECTION << 32);
       SrmSendWait(irdaPortId);
+      SrmReceiveFlush(irdaPortId, 1);
+      SrmSendFlush(irdaPortId);
       SrmClose(irdaPortId);
    }
 }
