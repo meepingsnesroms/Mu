@@ -43,17 +43,19 @@ static void     (*listHandler)(uint32_t command);
 #define LAST_PAGE (lastSelectedEntry / ITEM_LIST_ENTRYS)
 #define LAST_INDEX (lastSelectedEntry % ITEM_LIST_ENTRYS)
 
-
 /*specific handler variables*/
 static uint32_t bufferAddress;/*used to put the hex viewer in buffer mode instead of free roam*/
 
 
 /*functions*/
 CODE_SECTION("viewer") static void renderListFrame(){
-   int textBoxes;
-   int y = 0;
+   uint16_t textBoxes;
+   uint16_t y = 0;
    
    setDebugTag("Rendering List Frame");
+   
+   if(forceListRefresh || PAGE != LAST_PAGE)
+      debugSafeScreenClear(C_WHITE);
    
    for(textBoxes = 0; textBoxes < ITEM_LIST_ENTRYS; textBoxes++){
       if(textBoxes == INDEX){
@@ -80,7 +82,7 @@ CODE_SECTION("viewer") static void renderListFrame(){
 
 CODE_SECTION("viewer") static void hexHandler(uint32_t command){
    if(command == LIST_REFRESH){
-      int i;
+      uint16_t i;
       uint32_t hexViewOffset = bufferAddress + PAGE * ITEM_LIST_ENTRYS;
       
       setDebugTag("Hex Handler Refresh");
@@ -88,6 +90,7 @@ CODE_SECTION("viewer") static void hexHandler(uint32_t command){
       /*fill strings*/
       for(i = 0; i < ITEM_LIST_ENTRYS; i++){
          uint32_t displayAddress = hexViewOffset - bufferAddress;
+         
          if(displayAddress + i < listLength){
             StrPrintF(itemStrings[i], "0x%08lX:0x%02X", displayAddress, readArbitraryMemory8(hexViewOffset));
             hexViewOffset++;
@@ -101,14 +104,16 @@ CODE_SECTION("viewer") static void hexHandler(uint32_t command){
 
 CODE_SECTION("viewer") static void testPickerHandler(uint32_t command){
    if(command == LIST_REFRESH){
-      int i;
+      uint16_t i;
       
       setDebugTag("Test Picker Handler Refresh");
       
       /*fill strings*/
       for(i = 0; i < ITEM_LIST_ENTRYS; i++){
-         if(i < totalHwTests){
-            StrNCopy(itemStrings[i], hwTests[i].name, ITEM_STRING_SIZE);
+         uint16_t item = i + PAGE * ITEM_LIST_ENTRYS;
+         
+         if(item < totalHwTests){
+            StrNCopy(itemStrings[i], hwTests[item].name, ITEM_STRING_SIZE);
          }
          else{
             itemStrings[i][0] = '\0';
@@ -122,7 +127,7 @@ CODE_SECTION("viewer") static void testPickerHandler(uint32_t command){
 }
 
 CODE_SECTION("viewer") static void resetListHandler(){
-   int i;
+   uint16_t i;
    
    listLength = 0;
    selectedEntry = 0;
@@ -130,7 +135,6 @@ CODE_SECTION("viewer") static void resetListHandler(){
    for(i = 0; i < ITEM_LIST_ENTRYS; i++)
       itemStrings[i][0] = '\0';
    forceListRefresh = true;
-   debugSafeScreenClear(C_WHITE);
    
    setDebugTag("List Handler Reset");
 }

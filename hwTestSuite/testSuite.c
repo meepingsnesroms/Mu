@@ -91,6 +91,7 @@ static void uguiDrawPixel(UG_S16 x, UG_S16 y, UG_COLOR color){
    }
 }
 
+/*needed to redraw after every call to setDebugTag(char*)*/
 void forceFrameRedraw(){
    WinDrawBitmap(offscreenBitmap, 0, 0);
 }

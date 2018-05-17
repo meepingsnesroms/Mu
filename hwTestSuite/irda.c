@@ -60,14 +60,13 @@ void irdaHandleCommands(){
 static Boolean irdaInit(Boolean useThreadedVnc){
    if(!irdaRunning){
       uint32_t value;
-      Err error;
       
-      error = FtrGet(sysFileCSerialMgr, sysFtrNewSerialPresent, &value);
-      if(error != errNone)
+      irdaError = FtrGet(sysFileCSerialMgr, sysFtrNewSerialPresent, &value);
+      if(irdaError != errNone || value == false)
          return false;
       
-      error = SrmOpen(serPortIrPort, 9600, &irdaPortId);
-      if(error != errNone)
+      irdaError = SrmOpen(serPortIrPort, 9600, &irdaPortId);
+      if(irdaError != errNone)
          return false;
       
       if(useThreadedVnc){
