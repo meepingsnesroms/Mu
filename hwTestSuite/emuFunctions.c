@@ -1,5 +1,6 @@
 #include <PalmOS.h>
 #include <stdint.h>
+
 #include "testSuite.h"
 #include "specs/emuFeatureRegistersSpec.h"
 

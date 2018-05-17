@@ -1,3 +1,6 @@
+#include <PalmOS.h>
+#include <stdint.h>
+
 #include "testSuite.h"
 #include "testSuiteConfig.h"
 #include "specs/hardwareRegisterNames.h"

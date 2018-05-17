@@ -6,15 +6,13 @@ cd $DIR
 
 APPNAME="TstSuite"
 ICONTEXT="HWTests"
-#APPID="TstS"
-#CREATORID="GuiC"
 
 if [ "$1" = "clean" ]; then
    rm -rf *.o *.a $APPNAME $APPNAME-sections.s $APPNAME-sections.ld $APPNAME.prc *.bin
    exit
 fi
 
-declare -a FILES=("testSuite" "viewer" "tools" "tests" "cpu" "irda" "emuFunctions" "ugui")
+declare -a FILES=("testSuite" "viewer" "tools" "tests" "cpu" "irda" "vnc" "emuFunctions" "ugui")
 DEFINES="-DHW_TEST"
 CFLAGS="-palmos3.5 -O3 $DEFINES"
 
@@ -33,5 +31,3 @@ m68k-palmos-gcc -o $APPNAME *.o $APPNAME-sections.ld
 
 pilrc $APPNAME.rcp
 build-prc $APPNAME.def $APPNAME *.bin
-# $ICONTEXT $CREATORID
-# build-prc $PRC $ICONTEXT $CREATORID *.grc *.bin

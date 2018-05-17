@@ -3,6 +3,7 @@
 
 #include <PalmOS.h>
 #include <stdint.h>
+
 #include "testSuiteConfig.h"
 
 /*defines*/

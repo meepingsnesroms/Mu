@@ -3,7 +3,8 @@
 
 #include "testSuite.h"
 
-var irdaCommandLoop();
+void irdaHandleCommands();
+var irdaRun();
 
 #endif
 

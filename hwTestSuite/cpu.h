@@ -1,8 +1,9 @@
 #ifndef CPU_HEADER
 #define CPU_HEADER
 
-#include <PalmOS.h>
 #include <stdint.h>
+
+#include "testSuite.h"
 
 #define CPU_NONE  0x00/*only if in emulator with special features enabled, returned for physical cpu in emulator*/
 #define CPU_M68K  0x01
@@ -16,6 +17,8 @@
 #define CPU_M68K_SZ    0x80
 #define CPU_M68K_TYPES 0xF0
 
+void turnInterruptsOff();
+void turnInterruptsOn();
 uint8_t getPhysicalCpuType();
 uint8_t getSupportedInstructionSets();
 char* getCpuString();

@@ -1,6 +1,7 @@
 #include <PalmOS.h>
 #include <PalmCompatibility.h>
 #include <stdint.h>
+
 #include "ugui.h"
 #include "testSuiteConfig.h"
 #include "testSuite.h"
@@ -15,7 +16,7 @@
 /*exported function, cant be converted into a macro*/
 var makeVar(uint8_t length, uint8_t type, uint64_t value){
    var newVar;
-   newVar.type = (length & 0xF0) | (type & 0x0F);
+   newVar.type = length & 0xF0 | type & 0x0F;
    newVar.value = value;
    return newVar;
 }

@@ -1,3 +1,6 @@
+#include <PalmOS.h>
+#include <stdint.h>
+
 #include "testSuiteConfig.h"
 #include "testSuite.h"
 #include "tools.h"
@@ -274,7 +277,7 @@ void resetFunctionViewer(){
    totalHwTests++;
    
    StrNCopy(hwTests[totalHwTests].name, "IrDa telnet/VNC", TEST_NAME_LENGTH);
-   hwTests[totalHwTests].testFunction = irdaCommandLoop;
+   hwTests[totalHwTests].testFunction = irdaRun;
    totalHwTests++;
    
    if(getPhysicalCpuType() & CPU_M68K){

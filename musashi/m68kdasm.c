@@ -171,8 +171,8 @@ char* get_imm_str_s32(void);
 
 /* Stuff to build the opcode handler jump table */
 static void  build_opcode_table(void);
-static int   valid_ea(uint opcode, uint mask);
-static int DECL_SPEC compare_nof_true_bits(const void *aptr, const void *bptr);
+static int32_t   valid_ea(uint opcode, uint mask);
+static int32_t DECL_SPEC compare_nof_true_bits(const void *aptr, const void *bptr);
 
 /* used to build opcode handler jump table */
 typedef struct

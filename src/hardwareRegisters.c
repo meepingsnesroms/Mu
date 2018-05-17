@@ -69,13 +69,13 @@ void refreshInputState(){
    checkPortDInterrupts();//this calls checkInterrupts() so it doesnt need to be called above
 }
 
-int interruptAcknowledge(int intLevel){
-   int vectorOffset = registerArrayRead8(IVR);
-   int vector;
+int32_t interruptAcknowledge(int32_t intLevel){
+   uint8_t vectorOffset = registerArrayRead8(IVR);
+   int32_t vector;
 
-   //If an interrupt occurs before the IVR has been programmed, the interrupt vector number 0x0F is returned to the CPU as an uninitialized interrupt.
+   //If an interrupt occurs before the IVR has been programmed, interrupt vector 15 is returned to the CPU as an uninitialized interrupt.
    if(!vectorOffset)
-      vector = 0x0F;//EXCEPTION_UNINITIALIZED_INTERRUPT
+      vector = 15;//EXCEPTION_UNINITIALIZED_INTERRUPT
    else
       vector = vectorOffset | intLevel;
 

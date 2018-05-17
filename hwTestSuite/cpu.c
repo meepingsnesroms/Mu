@@ -1,5 +1,6 @@
 #include <PalmOS.h>
 #include <stdint.h>
+
 #include "testSuite.h"
 #include "emuFunctions.h"
 #include "specs/hardwareRegisterNames.h"
@@ -8,9 +9,25 @@
 
 
 static char cpuStringBuffer[100];
+static Boolean interruptsEnabled = true;
 static uint32_t oldImr;
 static uint8_t oldScr;
 
+
+void turnInterruptsOff(){
+   if(interruptsEnabled){
+      oldImr = readArbitraryMemory32(HW_REG_ADDR(IMR));
+      writeArbitraryMemory32(HW_REG_ADDR(IMR), 0xFFFFFFFF);
+      interruptsEnabled = false;
+   }
+}
+
+void turnInterruptsOn(){
+   if(!interruptsEnabled){
+      writeArbitraryMemory32(HW_REG_ADDR(IMR), oldImr);
+      interruptsEnabled = true;
+   }
+}
 
 uint8_t getPhysicalCpuType(){
    long     osVer;
@@ -77,11 +94,7 @@ var enterUnsafeMode(){
    exitSubprogram();/*only run once/for one frame*/
    
    if((getPhysicalCpuType() & CPU_M68K) || isEmulator()){
-      oldImr = readArbitraryMemory32(HW_REG_ADDR(IMR));
       oldScr = readArbitraryMemory8(HW_REG_ADDR(SCR));
-      
-      /*disable unwanted interrupt handlers*/
-      writeArbitraryMemory32(HW_REG_ADDR(IMR), oldImr & 0x006F3FFE);
       
       /*disable interrupt on invalid memory access*/
       writeArbitraryMemory8(HW_REG_ADDR(SCR), oldScr & 0xEF);
@@ -98,12 +111,11 @@ var exitUnsafeMode(){
    exitSubprogram();/*only run once/for one frame*/
    
    if(unsafeMode){
-      writeArbitraryMemory32(HW_REG_ADDR(IMR), oldImr);
+      turnInterruptsOn();
       writeArbitraryMemory8(HW_REG_ADDR(SCR), oldScr);
       unsafeMode = false;
       resetFunctionViewer();
-      return makeVar(LENGTH_1, TYPE_BOOL, true);
    }
    
-   return makeVar(LENGTH_1, TYPE_BOOL, false);
+   return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
