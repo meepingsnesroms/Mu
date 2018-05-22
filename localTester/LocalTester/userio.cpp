@@ -4,6 +4,10 @@ UserIO::UserIO(QObject* parent) : QObject(parent){
 
 }
 
+void UserIO::setRefreshHandler(void (*newRefreshHandler)()){
+   refreshHandler = newRefreshHandler;
+}
+
 bool UserIO::stringAvailableJs(){
    return !cxxStrings.empty();
 }
@@ -20,6 +24,8 @@ QString UserIO::readStringJs(){
 
 void UserIO::writeStringJs(QString data){
    jsStrings.push_back(data);
+   if(refreshHandler != nullptr)
+      refreshHandler();
 }
 
 bool UserIO::stringAvailableCxx(){

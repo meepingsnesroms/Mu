@@ -6,7 +6,7 @@
 #include "serialportio.h"
 
 
-SerialPortIO::SerialPortIO(QString serialDeviceFilePath){
+SerialPortIO::SerialPortIO(QString serialDeviceFilePath) : QObject(nullptr){
    deviceFilePath = serialDeviceFilePath;
    deviceFile = open(serialDeviceFilePath.toStdString().c_str(), O_RDWR | O_NOCTTY | O_NONBLOCK);
    if(deviceFile < 0)

@@ -12,9 +12,11 @@ class UserIO : public QObject
 private:
    std::vector<QString> jsStrings;
    std::vector<QString> cxxStrings;
+   void (*refreshHandler)() = nullptr;
 
 public:
    explicit UserIO(QObject* parent = nullptr);
+   void setRefreshHandler(void (*newRefreshHandler)());
 
    Q_INVOKABLE bool stringAvailableJs();
    Q_INVOKABLE QString readStringJs();
