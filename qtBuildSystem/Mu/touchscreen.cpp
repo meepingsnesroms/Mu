@@ -1,5 +1,8 @@
+#include <stdint.h>
+
 #include "touchscreen.h"
 #include "mainwindow.h"
+
 
 static inline float rangeSwap(float newRange, float oldRange, float value){
    return value / oldRange * newRange;

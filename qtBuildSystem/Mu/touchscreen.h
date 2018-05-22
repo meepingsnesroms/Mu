@@ -6,10 +6,12 @@
 
 class TouchScreen : public QLabel
 {
-Q_OBJECT
+   Q_OBJECT
+   
 public:
    explicit TouchScreen(QWidget* parent=0 );
    ~TouchScreen();
+   
 protected:
    void mousePressEvent(QMouseEvent* ev);
    void mouseMoveEvent(QMouseEvent* ev);

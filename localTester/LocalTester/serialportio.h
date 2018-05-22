@@ -14,7 +14,6 @@ public:
    SerialPortIO(QString serialDeviceFilePath);
    ~SerialPortIO();
 
-   Q_INVOKABLE void testJsAttachment();
    Q_INVOKABLE void transmitUint8(uint8_t data);
    Q_INVOKABLE uint8_t receiveUint8();
 

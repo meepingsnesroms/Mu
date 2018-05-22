@@ -1,4 +1,4 @@
-//"serialPort", "system" and "userIo" are defined by the C++ program as either a local or remote serial port and are exported to JS automaticly
+//"serialPort", "jsSystem" and "userIo" are defined by the C++ program as either a local or remote serial port and are exported to JS automaticly
 //the predefined classes can be added to by this file but should never have any preexisting members overwritten
 //this file contains the functions and constants required by all tests
 

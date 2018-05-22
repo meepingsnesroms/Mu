@@ -29,13 +29,13 @@ class MainWindow : public QMainWindow
    Q_OBJECT
 
 public:
-   explicit MainWindow(QWidget *parent = 0);
+   explicit MainWindow(QWidget* parent = 0);
    ~MainWindow();
 
 private slots:
    void popupErrorDialog(QString error);
    void popupInformationDialog(QString info);
-   bool eventFilter(QObject *object, QEvent *event);
+   bool eventFilter(QObject* object, QEvent* event);
    void selectHomePath();
    void on_install_pressed();
 
@@ -61,5 +61,5 @@ private slots:
    void on_screenshot_clicked();
 
 private:
-   Ui::MainWindow *ui;
+   Ui::MainWindow* ui;
 };

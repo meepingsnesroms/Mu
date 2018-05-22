@@ -1,3 +1,5 @@
+#include <QObject>
+
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdint.h>
@@ -16,10 +18,6 @@ SerialPortIO::SerialPortIO(QString serialDeviceFilePath) : QObject(nullptr){
 SerialPortIO::~SerialPortIO(){
    deviceFilePath.clear();
    close(deviceFile);
-}
-
-void SerialPortIO::testJsAttachment(){
-   printf("C++ executed through javascript!\n");
 }
 
 void SerialPortIO::transmitUint8(uint8_t data){

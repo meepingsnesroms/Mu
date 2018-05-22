@@ -4,6 +4,8 @@
 #include <QString>
 #include <QDir>
 
+#include <stdint.h>
+
 #include "mainwindow.h"
 #include "fileaccess.h"
 
@@ -39,7 +41,7 @@ int64_t getEmulatorMemorySafe(uint32_t address, uint8_t size){
 }
 
 
-DebugViewer::DebugViewer(QWidget *parent) :
+DebugViewer::DebugViewer(QWidget* parent) :
    QDialog(parent),
    ui(new Ui::DebugViewer){
    ui->setupUi(this);

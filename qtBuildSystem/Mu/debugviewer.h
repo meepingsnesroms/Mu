@@ -12,7 +12,7 @@ class DebugViewer : public QDialog
    Q_OBJECT
 
 public:
-   explicit DebugViewer(QWidget *parent = 0);
+   explicit DebugViewer(QWidget* parent = 0);
    ~DebugViewer();
 
 private slots:
@@ -34,5 +34,5 @@ private slots:
 
 private:
    uint8_t bitsPerEntry;
-   Ui::DebugViewer *ui;
+   Ui::DebugViewer* ui;
 };

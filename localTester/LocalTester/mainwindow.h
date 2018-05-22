@@ -4,6 +4,12 @@
 #include <QSslSocket>
 #include <QString>
 
+#include <atomic>
+#include <thread>
+
+#include "serialportio.h"
+#include "userio.h"
+#include "jssystem.h"
 #include "testexecutionenviroment.h"
 
 namespace Ui {
@@ -19,6 +25,10 @@ public:
    ~MainWindow();
 
 private slots:
+   void jsThreadFunction(QString currentDependencyBlob, QString currentTestProgram, QString args);
+   void launchJsThread(bool serialOverWifi);
+   void waitForJsThread(bool desiredState);
+
    bool wifiValidate(QString location);
 
    void on_pickTestProgram_clicked();
@@ -29,10 +39,16 @@ private slots:
    void on_pickSslCertificate_clicked();
 
 private:
+   std::thread jsThread;
+   std::atomic<bool> jsThreadRunning;
+   SerialPortIO* serialOut;
+   UserIO* userTerminal;
+   JSSystem* systemInterface;
+   TestExecutionEnviroment testEnv;
+
    QString testProgram;
    QString dependencyBlob;
    QString sslCertPath;
    QSslSocket wifiConnection;
-   TestExecutionEnviroment testEnv;
    Ui::MainWindow* ui;
 };

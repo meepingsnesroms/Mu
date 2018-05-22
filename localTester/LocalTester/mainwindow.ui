@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>400</width>
-    <height>487</height>
+    <height>492</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -62,6 +62,26 @@
      <widget class="QTextEdit" name="receiveText">
       <property name="readOnly">
        <bool>true</bool>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QLabel" name="label_5">
+      <property name="text">
+       <string>Screen:</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QLabel" name="framebuffer">
+      <property name="frameShape">
+       <enum>QFrame::WinPanel</enum>
+      </property>
+      <property name="frameShadow">
+       <enum>QFrame::Raised</enum>
+      </property>
+      <property name="text">
+       <string/>
       </property>
      </widget>
     </item>
