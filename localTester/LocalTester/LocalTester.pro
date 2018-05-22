@@ -28,13 +28,15 @@ SOURCES += \
     mainwindow.cpp \
     testexecutionenviroment.cpp \
     fileaccess.cpp \
-    serialportio.cpp
+    serialportio.cpp \
+    userio.cpp
 
 HEADERS += \
     mainwindow.h \
     fileaccess.h \
     testexecutionenviroment.h \
-    serialportio.h
+    serialportio.h \
+    userio.h
 
 FORMS += \
     mainwindow.ui

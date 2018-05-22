@@ -1,17 +1,40 @@
-#include "emulator.h"//for EMU_* flags
+//"serialPort", "system" and "userIo" are defined by the C++ program as either a local or remote serial port and are exported to JS automaticly
+//the predefined classes can be added to by this file but should never have any preexisting members overwritten
+//this file contains the functions and constants required by all tests
 
-#if defined(EMU_DEBUG) && defined(EMU_OPCODE_LEVEL_DEBUG) && defined(EMU_LOG_APIS)
+var __BlobVersion = 1.0;
+var irdaCommands;
+var trapNames;
 
-#include <stdint.h>
-#include <string.h>//for NULL
 
-//from mame used for printing apicalls
-typedef struct{
-	const char* name;
-	uint16_t trap;
-}mameList;
+//constructors and converters
+function Enum(constantsList) {
+   for(var i in constantsList){
+      this[constantsList[i]] = i;
+   }
+}
 
-mameList traps[] = {
+//data defines
+irdaCommands = new Enum(
+   'IRDA_COMMAND_NONE',
+   'IRDA_COMMAND_GET_BYTE',
+   'IRDA_COMMAND_GET_WORD',
+   'IRDA_COMMAND_GET_LONG',
+   'IRDA_COMMAND_SET_BYTE',/*(uint32_t)pointer << 8 | (uint8_t)value*/
+   'IRDA_COMMAND_SET_WORD',/*(uint32_t)pointer << 16 | (uint16_t)value*/
+   'IRDA_COMMAND_SET_LONG',/*(uint32_t)pointer << 32 | (uint32_t)value*/
+   'IRDA_COMMAND_CALL_TRAP',/*(uint16_t)trapNum*/
+   'IRDA_COMMAND_GET_REGISTER',
+   'IRDA_COMMAND_SET_REGISTER',/*data is (uint8_t)regNum << 32 | (uint32_t)regValue */
+   'IRDA_COMMAND_RETURN',/*used to acknowledge the end of a command, returns a value if the command returns data*/
+   'IRDA_COMMAND_ALLOCATE_BUFFER',/*returns a pointer to the buffer or NULL on failure*/
+   'IRDA_COMMAND_SET_BUFFER',/*(uint32_t)pointer << 32 | (uint32_t)size then raw data*/
+   'IRDA_COMMAND_GET_BUFFER',/*(uint32_t)pointer << 32 | (uint32_t)size*/
+   'IRDA_COMMAND_GET_FRAMEBUFFER',/*all execution is halted until this is finished, returns (uint16_t)width << 24 | (uint16_t)height << 8 | (uint8_t)bpp then raw data*/
+   'IRDA_COMMAND_CLOSE_CONNECTION'
+);
+
+var __trapNameBuffer = [
    {"sysTrapMemInit", 0xA000},
    {"sysTrapMemInitHeapTable", 0xA001},
    {"sysTrapMemStoreInit", 0xA002},
@@ -1154,13 +1177,16 @@ mameList traps[] = {
    {"sysTrapSysReservedTrap3", 0xA473},
    {"sysTrapSysReservedTrap4", 0xA474},
    {"sysTrapLastTrapNumber", 0xA475}
-};
+];
 
-const char* lookupTrap(uint16_t trap){
-   for(uint32_t i = 0; i < sizeof(traps) / sizeof(traps[0]); i++)
-      if(traps[i].trap == trap)
-         return traps[i].name;
-   return "Trap function ID unknown";
+for(var i in __trapNameBuffer){
+   trapNames[this[0]] = this[1];
 }
 
-#endif
+
+//functions
+system.validDependencyBlob = function (version){
+   if(version === __BlobVersion)
+      return true;
+   return false;
+}

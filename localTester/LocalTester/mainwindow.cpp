@@ -9,10 +9,11 @@
 
 #include "fileaccess.h"
 #include "serialportio.h"
+#include "userio.h"
 #include "testexecutionenviroment.h"
 
 
-MainWindow::MainWindow(QWidget *parent) :
+MainWindow::MainWindow(QWidget* parent) :
    QMainWindow(parent),
    ui(new Ui::MainWindow){
    ui->setupUi(this);
@@ -49,10 +50,15 @@ void MainWindow::on_startLocalTesting_clicked(){
    //only run if serial port available
    if(ui->serialPort->currentText() != ""){
       js_class_t serialClass;
+      js_class_t userIoClass;
       serialClass.name = "serialPort";
       serialClass.jsClass = new SerialPortIO(ui->serialPort->currentText());
+      serialClass.name = "userIo";
+      serialClass.jsClass = new UserIO();
+
       testEnv.clearExecutionEnviroment();
       testEnv.installClass(serialClass);
+      testEnv.installClass(userIoClass);
       testEnv.executeString(dependencyBlob);
       testEnv.executeProgram(testProgram, ui->sendText->text());
       ui->sendText->clear();
