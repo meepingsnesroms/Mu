@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>URL</key>
+	<string>https://forum.qt.io/topic/90923/how-can-i-expose-a-c-function-to-a-qjsengine-javascript-enviroment</string>
+</dict>
+</plist>

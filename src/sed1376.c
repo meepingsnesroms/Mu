@@ -151,7 +151,8 @@ uint8_t sed1376GetRegister(uint8_t address){
 #endif
          return 0x00;
    }
-   return 0x00;//for compiler warnings
+   
+   return 0x00;//silence warnings
 }
 
 void sed1376SetRegister(uint8_t address, uint8_t value){

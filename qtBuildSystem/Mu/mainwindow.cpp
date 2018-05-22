@@ -221,7 +221,7 @@ void MainWindow::on_install_pressed(){
       delete[] appData.data;
    }
 
-   if(error != FRONTEND_ERR_NONE)
+   if(error != FILE_ERR_NONE)
       popupErrorDialog("Could not install app");
 }
 
@@ -290,12 +290,12 @@ void MainWindow::on_ctrlBtn_clicked(){
       buffer_t romBuff;
       buffer_t bootBuff;
       romBuff.data = getFileBuffer(settings.value("resourceDirectory", "").toString() + "/palmos41-en-m515.rom", romBuff.size, error);
-      if(error != FRONTEND_ERR_NONE){
+      if(error != FILE_ERR_NONE){
          popupErrorDialog("Cant load ROM file, error:" + QString::number(error) + ", cant run!");
          return;
       }
       bootBuff.data = getFileBuffer(settings.value("resourceDirectory", "").toString() + "/bootloader-en-m515.rom", bootBuff.size, error);
-      if(error != FRONTEND_ERR_NONE){
+      if(error != FILE_ERR_NONE){
          //its ok if the bootloader gives an error, the emu doesnt actually need it
          bootBuff.data = NULL;
          bootBuff.size = 0;

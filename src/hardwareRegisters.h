@@ -66,14 +66,6 @@ extern uint16_t spi1TxFifo[8];
 extern uint8_t  spi1RxPosition;
 extern uint8_t  spi1TxPosition;
 
-//memory accessors
-uint8_t getHwRegister8(uint32_t address);
-uint16_t getHwRegister16(uint32_t address);
-uint32_t getHwRegister32(uint32_t address);
-void setHwRegister8(uint32_t address, uint8_t value);
-void setHwRegister16(uint32_t address, uint16_t value);
-void setHwRegister32(uint32_t address, uint32_t value);
-
 //timing
 void clk32();//also checks all interrupts
 
@@ -88,6 +80,14 @@ int32_t interruptAcknowledge(int32_t intLevel);
 void setBusErrorTimeOut();
 void setPrivilegeViolation();
 void setWriteProtectViolation();
+
+//memory accessors
+uint8_t getHwRegister8(uint32_t address);
+uint16_t getHwRegister16(uint32_t address);
+uint32_t getHwRegister32(uint32_t address);
+void setHwRegister8(uint32_t address, uint8_t value);
+void setHwRegister16(uint32_t address, uint16_t value);
+void setHwRegister32(uint32_t address, uint32_t value);
 
 //config
 void resetHwRegisters();
