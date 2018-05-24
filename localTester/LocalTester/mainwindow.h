@@ -3,6 +3,7 @@
 #include <QMainWindow>
 #include <QSslSocket>
 #include <QString>
+#include <QTimer>
 
 #include <atomic>
 #include <thread>
@@ -25,9 +26,8 @@ public:
    ~MainWindow();
 
 private slots:
-   void jsThreadFunction(QString currentDependencyBlob, QString currentTestProgram, QString args);
-   void launchJsThread(bool serialOverWifi);
-   void waitForJsThread(bool desiredState);
+   void updateWindow();
+   void launchJs(bool serialOverWifi);
 
    bool wifiValidate(QString location);
 
@@ -39,8 +39,6 @@ private slots:
    void on_pickSslCertificate_clicked();
 
 private:
-   std::thread jsThread;
-   std::atomic<bool> jsThreadRunning;
    SerialPortIO* serialOut;
    UserIO* userTerminal;
    JSSystem* systemInterface;
@@ -50,5 +48,6 @@ private:
    QString dependencyBlob;
    QString sslCertPath;
    QSslSocket wifiConnection;
+   QTimer* refreshWindow;
    Ui::MainWindow* ui;
 };

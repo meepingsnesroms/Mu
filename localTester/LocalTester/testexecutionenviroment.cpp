@@ -1,44 +1,61 @@
 #include <QJSEngine>
 #include <QString>
 
-#include <vector>
+#include <thread>
+#include <chrono>
 #include <stdint.h>
 
 #include "testexecutionenviroment.h"
 
 
 TestExecutionEnviroment::TestExecutionEnviroment(){
+   jsRunning = false;
+   lastProgramReturnValue = "";
    engine = new QJSEngine();
 }
 
 TestExecutionEnviroment::~TestExecutionEnviroment(){
    engine->collectGarbage();
    delete engine;//deleting the engine frees all QObject classes passed to it automaticly
-   customClasses.clear();
+}
+
+void TestExecutionEnviroment::jsThreadFunction(QString program, QString args, bool callMain){
+   if(callMain){
+      QJSValue jsGlobal = engine->globalObject();
+      jsGlobal.setProperty("__programArgs", QJSValue(args));
+      engine->evaluate(program);
+
+      lastProgramReturnValue = engine->evaluate("main(__programArgs);").toString();
+   }
+   else{
+      engine->evaluate(program);
+   }
+   jsRunning = false;
 }
 
 void TestExecutionEnviroment::clearExecutionEnviroment(){
    engine->collectGarbage();
    delete engine;//deleting the engine frees all QObject classes passed to it automaticly
    engine = new QJSEngine();
-   customClasses.clear();
 }
 
-void TestExecutionEnviroment::installClass(js_class_t jsClass){
+void TestExecutionEnviroment::installClass(QString name, QObject* jsClass){
    QJSValue jsGlobal = engine->globalObject();
-   QJSValue convertedClass = engine->newQObject(jsClass.jsClass);
-   jsGlobal.setProperty(jsClass.name, convertedClass);
-   customClasses.push_back(jsClass);
+   jsGlobal.setProperty(name, engine->newQObject(jsClass));
 }
 
-QString TestExecutionEnviroment::executeProgram(QString code, QString args){
-   QJSValue jsGlobal = engine->globalObject();
-   jsGlobal.setProperty("__programArgs", QJSValue(args));
-   engine->evaluate(code);
-
-   return engine->evaluate("main(__programArgs);").toString();
+void TestExecutionEnviroment::execute(QString program, QString args, bool callMain){
+   if(!jsRunning){
+      jsRunning = true;
+      jsThread = std::thread(&TestExecutionEnviroment::jsThreadFunction, this, program, args, callMain);
+   }
 }
 
-QString TestExecutionEnviroment::executeString(QString code){
-   return engine->evaluate(code).toString();
+QString TestExecutionEnviroment::finish(){
+   while(jsRunning)
+      std::this_thread::sleep_for(std::chrono::milliseconds(1));
+   if(jsThread.joinable())
+      jsThread.join();
+
+   return lastProgramReturnValue;
 }

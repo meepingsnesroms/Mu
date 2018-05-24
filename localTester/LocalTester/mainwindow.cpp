@@ -2,13 +2,12 @@
 #include "ui_mainwindow.h"
 
 #include <QDir>
+#include <QTimer>
 #include <QFileDialog>
 #include <QSslCertificate>
 #include <QSslSocket>
 #include <QNetworkConfiguration>
 
-#include <chrono>
-#include <thread>
 #include <stdint.h>
 
 #include "fileaccess.h"
@@ -23,32 +22,29 @@ MainWindow::MainWindow(QWidget* parent) :
    ui(new Ui::MainWindow){
    ui->setupUi(this);
 
-   jsThreadRunning = false;
-
    serialOut = nullptr;
    userTerminal = nullptr;
    systemInterface = nullptr;
+
+   refreshWindow = new QTimer(this);
+   connect(refreshWindow, SIGNAL(timeout()), this, SLOT(updateWindow()));
+   refreshWindow->start(16);//update the window every 16.67miliseconds = 60 * second
 }
 
 MainWindow::~MainWindow(){
-   if(jsThread.joinable())
-      jsThread.join();
-
    delete ui;
 }
 
-void MainWindow::jsThreadFunction(QString currentDependencyBlob, QString currentTestProgram, QString args){
-   jsThreadRunning = true;
-   testEnv.executeString(currentDependencyBlob);
-   testEnv.executeProgram(currentTestProgram, args);
-   jsThreadRunning = false;
+void MainWindow::updateWindow(){
+   /*
+   if(ui->framebuffer->text() == "")
+      ui->framebuffer->setText("0");
+   else
+      ui->framebuffer->setText(QString::number(ui->framebuffer->text().toULongLong() + 1));
+   */
 }
 
-void MainWindow::launchJsThread(bool serialOverWifi){
-   js_class_t serialClass;
-   js_class_t userIoClass;
-   js_class_t systemClass;
-
+void MainWindow::launchJs(bool serialOverWifi){
    testEnv.clearExecutionEnviroment();
 
    if(serialOverWifi)
@@ -58,23 +54,16 @@ void MainWindow::launchJsThread(bool serialOverWifi){
    userTerminal = new UserIO();
    systemInterface = new JSSystem();
 
-   serialClass.name = "serialPort";
-   serialClass.jsClass = serialOut;
-   userIoClass.name = "userIo";
-   userIoClass.jsClass = userTerminal;
-   systemClass.name = "jsSystem";
-   systemClass.jsClass = systemInterface;
+   testEnv.installClass("serialPort", serialOut);
+   testEnv.installClass("userIo", userTerminal);
+   testEnv.installClass("jsSystem", systemInterface);
 
-   testEnv.installClass(serialClass);
-   testEnv.installClass(userIoClass);
-   testEnv.installClass(systemClass);
-   jsThread = std::thread(&MainWindow::jsThreadFunction, this, dependencyBlob, testProgram, ui->serialPort->currentText());
+   testEnv.execute(dependencyBlob, "", false);
+   testEnv.finish();
+
+   testEnv.execute(testProgram, ui->sendText->text(), true);
    ui->sendText->clear();
-}
-
-void MainWindow::waitForJsThread(bool desiredState){
-   while(jsThreadRunning != desiredState)
-      std::this_thread::sleep_for(std::chrono::milliseconds(1));
+   testEnv.finish();
 }
 
 bool MainWindow::wifiValidate(QString location){
@@ -101,51 +90,18 @@ void MainWindow::on_pickTestProgram_clicked(){
 }
 
 void MainWindow::on_startLocalTesting_clicked(){
-   /*
-   if(!testProgramAlreadyRunning){
-      //only run if serial port available
-      if(ui->serialPort->currentText() != ""){
-         js_class_t serialClass;
-         js_class_t userIoClass;
-         js_class_t systemClass;
-         serialClass.name = "serialPort";
-         serialClass.jsClass = new SerialPortIO(ui->serialPort->currentText());
-         userIoClass.name = "userIo";
-         userIoClass.jsClass = new UserIO();
-         systemClass.name = "jsSystem";
-         systemClass.jsClass = new JSSystem();
-         serialOut = serialClass.jsClass;
-         userTerminal = userIoClass.jsClass;
-         systemInterface = systemClass.jsClass;
-
-         testEnv.clearExecutionEnviroment();
-         testEnv.installClass(serialClass);
-         testEnv.installClass(userIoClass);
-         testEnv.executeString(dependencyBlob);
-         testEnv.executeProgram(testProgram, ui->sendText->text());
-         ui->sendText->clear();
-
-         //these objects get destroyed properly when javascript exits, trying to free them will cause a use after free execption
-         serialOut = nullptr;
-         userTerminal = nullptr;
-         systemInterface = nullptr;
-      }
-   }
-   */
-   if(!jsThreadRunning && ui->serialPort->currentText() != "")
-      launchJsThread(false);
+   if(!testEnv.running() /*&& ui->serialPort->currentText() != ""*/)
+      launchJs(false);
 }
 
 void MainWindow::on_startRemoteTesting_clicked(){
    //only run if WiFi available and IP address/website URL exists
-   if(!jsThreadRunning && wifiValidate(ui->relayIp->text()))
-      launchJsThread(true);
+   if(!testEnv.running() && wifiValidate(ui->relayIp->text()))
+      launchJs(true);
 }
 
 void MainWindow::on_startTestProxy_clicked(){
-   if(!jsThreadRunning){
 
-   }
 }
 
 void MainWindow::on_pickDependencyBlob_clicked(){

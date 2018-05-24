@@ -10,24 +10,24 @@
 uint8_t* getFileBuffer(QString filePath, uint64_t& size, uint32_t& error){
    QFile file(filePath);
    QByteArray tempArray;
-   uint8_t* rawData = NULL;
+   uint8_t* rawData = nullptr;
 
    if(filePath == ""){
       size = 0;
       error = FILE_EMPTY_PATH;
-      return NULL;
+      return nullptr;
    }
 
    if(!file.exists()){
       size = 0;
       error = FILE_DOESNT_EXIST;
-      return NULL;
+      return nullptr;
    }
 
    if(!file.open(QIODevice::ReadOnly)){
       size = 0;
       error = FILE_PROTECTED;
-      return NULL;
+      return nullptr;
    }
 
    tempArray = file.readAll();

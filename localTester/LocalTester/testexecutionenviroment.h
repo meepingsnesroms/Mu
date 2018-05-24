@@ -4,26 +4,29 @@
 #include <QString>
 #include <QObject>
 
-typedef struct{
-   QString name;
-   QObject* jsClass;
-}js_class_t;
+#include <thread>
+#include <atomic>
 
 class TestExecutionEnviroment
 {
 private:
    QJSEngine* engine;
-   std::vector<js_class_t> customClasses;
+   std::thread jsThread;
+   std::atomic<bool> jsRunning;
+   QString lastProgramReturnValue;
+
+   void jsThreadFunction(QString program, QString args, bool callMain);
 
 public:
    TestExecutionEnviroment();
    ~TestExecutionEnviroment();
 
    void clearExecutionEnviroment();
-   void installClass(js_class_t jsClass);
+   void installClass(QString name, QObject* jsClass);
 
-   QString executeProgram(QString code, QString args);
-   QString executeString(QString code);
+   void execute(QString program, QString args, bool callMain);
+   bool running() const{return jsRunning;}
+   QString finish();
 };
 
 

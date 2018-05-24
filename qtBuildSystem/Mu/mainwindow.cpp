@@ -213,7 +213,7 @@ void MainWindow::on_screenshot_clicked(){
    if(!location.exists())
       location.mkpath(".");
 
-   ui->display->pixmap()->save(path + "/screenshots/" + "screenshot" + QString::number(screenshotNumber, 10) + ".png", NULL, 100);
+   ui->display->pixmap()->save(path + "/screenshots/" + "screenshot" + QString::number(screenshotNumber, 10) + ".png", nullptr, 100);
    screenshotNumber++;
    settings.setValue("screenshotNum", screenshotNumber);
 }
