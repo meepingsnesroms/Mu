@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>400</width>
-    <height>492</height>
+    <height>546</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -74,6 +74,12 @@
     </item>
     <item>
      <widget class="QLabel" name="framebuffer">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
       <property name="frameShape">
        <enum>QFrame::WinPanel</enum>
       </property>

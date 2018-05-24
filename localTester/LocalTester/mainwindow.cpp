@@ -28,9 +28,11 @@ MainWindow::MainWindow(QWidget* parent) :
    userTerminal = nullptr;
    systemInterface = nullptr;
 
+   dependencyBlob = "";
+   testProgram = "";
+
    refreshWindow = new QTimer(this);
    connect(refreshWindow, SIGNAL(timeout()), this, SLOT(updateWindow()));
-   refreshWindow->start(16);//update the window every 16.67miliseconds = 60 * second
 }
 
 MainWindow::~MainWindow(){
@@ -42,17 +44,13 @@ void MainWindow::updateWindow(){
       ui->receiveText->setText(ui->receiveText->toPlainText() + userTerminal->readStringCxx() + '\n');
 
    systemInterface->systemData.lock();
-   if(systemInterface->framebufferRender){
-      ui->framebuffer->setPixmap(QPixmap::fromImage());
-   }
-   systemInterface->systemData.lock();
+   if(systemInterface->framebufferRender)
+      ui->framebuffer->setPixmap(QPixmap::fromImage(QImage((uchar*)systemInterface->framebufferPixels.data(), systemInterface->framebufferWidth, systemInterface->framebufferHeight, systemInterface->framebufferWidth * sizeof(uint16_t), QImage::Format_RGB16)));
+   systemInterface->systemData.unlock();
 
-   /*
-   if(ui->framebuffer->text() == "")
-      ui->framebuffer->setText("0");
-   else
-      ui->framebuffer->setText(QString::number(ui->framebuffer->text().toULongLong() + 1));
-   */
+   //javascript program has stopped, window updating service no longer needed
+   if(!testEnv.running())
+      refreshWindow->stop();
 }
 
 void MainWindow::launchJs(bool serialOverWifi){
@@ -69,9 +67,11 @@ void MainWindow::launchJs(bool serialOverWifi){
    testEnv.installClass("userIo", userTerminal);
    testEnv.installClass("jsSystem", systemInterface);
 
+   //start window updating service
+   refreshWindow->start(16);//update the window every 16.67miliseconds = 60 * second
+
    testEnv.execute(dependencyBlob, "", false);
    testEnv.finish();
-
    testEnv.execute(testProgram, ui->sendText->text(), true);
    ui->sendText->clear();
    testEnv.finish();
@@ -101,6 +101,8 @@ void MainWindow::on_pickTestProgram_clicked(){
 }
 
 void MainWindow::on_startLocalTesting_clicked(){
+   //ui->serialPort->setCurrentText("/dev/tty.Bluetooth-Incoming-Port");
+   //testProgram = "userIo.writeStringJs(\"Wrote to terminal from js!\")";
    if(!testEnv.running() /*&& ui->serialPort->currentText() != ""*/)
       launchJs(false);
 }

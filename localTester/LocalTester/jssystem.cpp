@@ -34,7 +34,7 @@ void JSSystem::setFramebuffer(QJSValue framebuffer){
    systemData.lock();
    for(uint16_t y = 0; y < framebufferHeight; y++)
       for(uint16_t x = 0; x < framebufferWidth; x++)
-         framebufferPixels[y * framebufferWidth + x] = framebuffer.property(y * framebufferWidth + x);
+         framebufferPixels[y * framebufferWidth + x] = framebuffer.property(y * framebufferWidth + x).toUInt();
    framebufferRender = true;
    systemData.unlock();
 }

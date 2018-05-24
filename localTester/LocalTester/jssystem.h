@@ -12,14 +12,13 @@ class JSSystem : public QObject
 {
    Q_OBJECT
 
-private:
+public:
    std::mutex            systemData;
    bool                  framebufferRender;
    uint16_t              framebufferWidth;
    uint16_t              framebufferHeight;
    std::vector<uint16_t> framebufferPixels;
 
-public:
    explicit JSSystem(QObject* parent = nullptr);
 
    Q_INVOKABLE void testJsAttachment(QString str);
