@@ -9,37 +9,6 @@
 #include "mainwindow.h"
 #include "fileaccess.h"
 
-extern "C" {
-#include "src/m68k/m68k.h"
-#include "src/hardwareRegisters.h"
-#include "src/memoryAccess.h"
-}
-
-
-#define INVALID_NUMBER (int64_t)0x8000000000000000//the biggest negative 64bit number
-
-
-int64_t getEmulatorMemorySafe(uint32_t address, uint8_t size){
-   //until SPI and UART destructive reads are implemented all reads to mapped addresses are safe
-   if(bankType[START_BANK(address)] != CHIP_NONE){
-      uint16_t m68kSr = m68k_get_reg(NULL, M68K_REG_SR);
-      m68k_set_reg(M68K_REG_SR, 0x2000);//prevent privilege violations
-      switch(size){
-
-         case 8:
-            return m68k_read_memory_8(address);
-
-         case 16:
-            return m68k_read_memory_16(address);
-
-         case 32:
-            return m68k_read_memory_32(address);
-      }
-      m68k_set_reg(M68K_REG_SR, m68kSr);
-   }
-   return INVALID_NUMBER;
-}
-
 
 DebugViewer::DebugViewer(QWidget* parent) :
    QDialog(parent),
@@ -48,11 +17,6 @@ DebugViewer::DebugViewer(QWidget* parent) :
 
    bitsPerEntry = 8;
    debugRadioButtonHandler();
-
-#if !defined(EMU_DEBUG) || !defined(EMU_CUSTOM_DEBUG_LOG_HANDLER)
-   ui->debugPrintDebugLogs->hide();
-   ui->debugEraseDebugLogs->hide();
-#endif
 }
 
 DebugViewer::~DebugViewer(){
@@ -74,7 +38,7 @@ int64_t DebugViewer::numberFromString(QString str, bool negativeAllowed){
    }
 
    if(!validNumber || (!negativeAllowed && value < 0))
-      return INVALID_NUMBER;
+      return INT64_MIN;
    return value;
 }
 
@@ -114,19 +78,20 @@ void DebugViewer::debugRadioButtonHandler(){
 }
 
 void DebugViewer::on_debugGetHexValues_clicked(){
+   EmuWrapper& emu = ((MainWindow*)parentWidget())->emu;
    int64_t address = numberFromString(ui->debugAddress->text(), false/*negative allowed*/);
    int64_t length = numberFromString(ui->debugLength->text(), false/*negative allowed*/);
    uint8_t bits = bitsPerEntry;
 
    ui->debugValueList->clear();
 
-   if(address != INVALID_NUMBER && length != INVALID_NUMBER && length != 0 && address + bits / 8 * length - 1 <= 0xFFFFFFFF){
+   if(address != INT64_MIN && length != INT64_MIN && length != 0 && address + bits / 8 * length - 1 <= 0xFFFFFFFF){
       for(int64_t count = 0; count < length; count++){
-         int64_t data = getEmulatorMemorySafe(address, bits);
+         uint64_t data = emu.getEmulatorMemory(address, bits);
          QString value;
          value += stringFromNumber(address, true, 8);
          value += ":";
-         if(data != INVALID_NUMBER)
+         if(data != UINT64_MAX)
             value += stringFromNumber(data, true, bits / 8 * 2);
          else
             value += "Unsafe Access";
@@ -155,6 +120,7 @@ void DebugViewer::on_debug32Bit_clicked(){
 }
 
 void DebugViewer::on_debugDump_clicked(){
+   QSettings& settings = ((MainWindow*)parentWidget())->settings;
    QString fileOut;
    std::string fileData;//if a QString is used a '\0' will be appended to every character
    QString fileName = ui->debugFilePath->text();
@@ -174,41 +140,43 @@ void DebugViewer::on_debugDump_clicked(){
 }
 
 void DebugViewer::on_debugShowRegisters_clicked(){
+   std::vector<uint32_t> registers = ((MainWindow*)parentWidget())->emu.getCpuRegisters();
+
    ui->debugValueList->clear();
-   for(uint8_t aRegs = M68K_REG_A0; aRegs <= M68K_REG_A7; aRegs++)
-      ui->debugValueList->addItem("A" + stringFromNumber(aRegs - M68K_REG_A0, false, 0) + ":" + stringFromNumber(m68k_get_reg(NULL, (m68k_register_t)aRegs), true, 8));
-   for(uint8_t dRegs = M68K_REG_D0; dRegs <= M68K_REG_D7; dRegs++)
-      ui->debugValueList->addItem("D" + stringFromNumber(dRegs - M68K_REG_D0, false, 0) + ":" + stringFromNumber(m68k_get_reg(NULL, (m68k_register_t)dRegs), true, 8));
-   ui->debugValueList->addItem("SP:" + stringFromNumber(m68k_get_reg(NULL, M68K_REG_SP), true, 8));
-   ui->debugValueList->addItem("PC:" + stringFromNumber(m68k_get_reg(NULL, M68K_REG_PC), true, 8));
-   ui->debugValueList->addItem("SR:" + stringFromNumber(m68k_get_reg(NULL, M68K_REG_SR), true, 4));
+   for(uint8_t dRegs = 0; dRegs <= 7; dRegs++)
+      ui->debugValueList->addItem("D" + stringFromNumber(dRegs, false, 0) + ":" + stringFromNumber(registers[dRegs], true, 8));
+   for(uint8_t aRegs = 0; aRegs <= 7; aRegs++)
+      ui->debugValueList->addItem("A" + stringFromNumber(aRegs, false, 0) + ":" + stringFromNumber(registers[8 + aRegs], true, 8));
+   ui->debugValueList->addItem("SP:" + stringFromNumber(registers[15], true, 8));
+   ui->debugValueList->addItem("PC:" + stringFromNumber(registers[16], true, 8));
+   ui->debugValueList->addItem("SR:" + stringFromNumber(registers[17], true, 4));
 }
 
 void DebugViewer::on_debugPrintDebugLogs_clicked(){
-#if defined(EMU_DEBUG) && defined(EMU_CUSTOM_DEBUG_LOG_HANDLER)
+   EmuWrapper& emu = ((MainWindow*)parentWidget())->emu;
+   std::vector<QString>& debugStrings = emu.getDebugStrings();
+   std::vector<uint64_t>& duplicateCallCount = emu.getDuplicateCallCount();
    int64_t length = numberFromString(ui->debugLength->text(), true/*negative allowed*/);
 
    ui->debugValueList->clear();
-   if(length != INVALID_NUMBER && qAbs(length) < debugStrings.size()){
+   if(length != INT64_MIN && qAbs(length) < debugStrings.size()){
       if(length < 0){
          for(uint64_t stringNum = debugStrings.size() + length; stringNum < debugStrings.size(); stringNum++)
-            ui->debugValueList->addItem(QString::fromStdString(debugStrings[stringNum] + "(printed " + std::to_string(duplicateCallCount[stringNum]) + " times)"));
+            ui->debugValueList->addItem(debugStrings[stringNum] + "(printed " + QString::number(duplicateCallCount[stringNum]) + " times)");
       }
       else{
          for(uint64_t stringNum = 0; stringNum < length; stringNum++)
-            ui->debugValueList->addItem(QString::fromStdString(debugStrings[stringNum] + "(printed " + std::to_string(duplicateCallCount[stringNum]) + " times)"));
+            ui->debugValueList->addItem(debugStrings[stringNum] + "(printed " + QString::number(duplicateCallCount[stringNum]) + " times)");
       }
    }
    else{
       for(uint64_t stringNum = 0; stringNum < debugStrings.size(); stringNum++)
-         ui->debugValueList->addItem(QString::fromStdString(debugStrings[stringNum] + "(printed " + std::to_string(duplicateCallCount[stringNum]) + " times)"));
+         ui->debugValueList->addItem(debugStrings[stringNum] + "(printed " + QString::number(duplicateCallCount[stringNum]) + " times)");
    }
-#endif
 }
 
 void DebugViewer::on_debugEraseDebugLogs_clicked(){
-#if defined(EMU_DEBUG) && defined(EMU_CUSTOM_DEBUG_LOG_HANDLER)
-   debugStrings.clear();
-   duplicateCallCount.clear();
-#endif
+   EmuWrapper& emu = ((MainWindow*)parentWidget())->emu;
+   emu.getDebugStrings().clear();
+   emu.getDuplicateCallCount().clear();
 }

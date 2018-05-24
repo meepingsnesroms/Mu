@@ -62,7 +62,8 @@ SOURCES += \
     src/trapNumToName.c \
     fileaccess.cpp \
     src/ads7846.c \
-    debugviewer.cpp
+    debugviewer.cpp \
+    emuwrapper.cpp
 
 HEADERS += \
     src/bps/crc32.h \
@@ -92,7 +93,8 @@ HEADERS += \
     src/specs/emuFeatureRegistersSpec.h \
     src/specs/hardwareRegisterNames.h \
     src/specs/irdaCommands.h \
-    src/specs/sed1376RegisterNames.h
+    src/specs/sed1376RegisterNames.h \
+    emuwrapper.h
 
 FORMS += \
     mainwindow.ui \

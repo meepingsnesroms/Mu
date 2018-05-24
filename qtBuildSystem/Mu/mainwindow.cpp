@@ -20,100 +20,6 @@
 
 #include "debugviewer.h"
 #include "fileaccess.h"
-#include "src/emulator.h"
-
-
-uint32_t  screenWidth;
-uint32_t  screenHeight;
-input_t   frontendInput;
-QSettings settings;
-
-static QImage            video;
-static QTimer*           refreshDisplay;
-static DebugViewer*      emuDebugger;
-static std::thread       emuThread;
-static std::atomic<bool> emuThreadJoin;
-static std::atomic<bool> emuOn;
-static std::atomic<bool> emuPaused;
-static std::atomic<bool> emuInited;
-static std::atomic<bool> emuDebugEvent;
-static std::atomic<bool> emuNewFrameReady;
-static uint16_t*         emuDoubleBuffer;
-
-
-#if defined(EMU_DEBUG) && defined(EMU_CUSTOM_DEBUG_LOG_HANDLER)
-#include <vector>
-#include <string>
-
-
-std::vector<std::string> debugStrings;
-std::vector<uint64_t>    duplicateCallCount;
-uint32_t                 frontendDebugStringSize;
-char*                    frontendDebugString;
-
-
-void frontendHandleDebugPrint(){
-   std::string newDebugString = frontendDebugString;
-
-   //this debug handler doesnt need the \n
-   if(newDebugString.back() == '\n')
-      newDebugString.pop_back();
-
-   if(!debugStrings.empty() && newDebugString == debugStrings.back()){
-      duplicateCallCount.back()++;
-   }
-   else{
-      debugStrings.push_back(newDebugString);
-      duplicateCallCount.push_back(1);
-   }
-}
-
-void frontendInitDebugPrintHandler(){
-   frontendDebugString = new char[200];
-   frontendDebugStringSize = 200;
-}
-
-void frontendFreeDebugPrintHandler(){
-   delete[] frontendDebugString;
-   frontendDebugStringSize = 0;
-   debugStrings.clear();
-   duplicateCallCount.clear();
-}
-#endif
-
-
-void emuThreadRun(){
-   while(!emuThreadJoin){
-      if(emuOn){
-         emuPaused = false;
-         palmInput = frontendInput;
-#if defined(EMU_DEBUG)
-         if(emulateUntilDebugEventOrFrameEnd()){
-            //debug event occured
-            emuOn = false;
-            emuPaused = true;
-            emuDebugEvent = true;
-         }
-#else
-         emulateFrame();
-#endif
-         if(!emuNewFrameReady){
-            memcpy(emuDoubleBuffer, screenWidth == 320 ? palmExtendedFramebuffer : palmFramebuffer, screenWidth * screenHeight * sizeof(uint16_t));
-            emuNewFrameReady = true;
-         }
-      }
-      else{
-         emuPaused = true;
-      }
-
-      std::this_thread::sleep_for(std::chrono::microseconds(16666));
-   }
-}
-
-static inline void waitForEmuPaused(){
-   while(!emuPaused && emuInited)
-      std::this_thread::sleep_for(std::chrono::milliseconds(1));
-}
 
 
 MainWindow::MainWindow(QWidget* parent) :
@@ -154,20 +60,8 @@ MainWindow::MainWindow(QWidget* parent) :
       settings.setValue("resourceDirectory", QDir::homePath() + "/Mu");
 #endif
 
-   emuThreadJoin = false;
-   emuOn = false;
-   emuPaused = false;
-   emuInited = false;
-   emuDebugEvent = false;
-   emuNewFrameReady = false;
-   emuDoubleBuffer = NULL;
-
 #if defined(Q_OS_ANDROID) || defined(Q_OS_IOS)
    ui->debugger->hide();
-#endif
-
-#if defined(EMU_DEBUG) && defined(EMU_CUSTOM_DEBUG_LOG_HANDLER)
-   frontendInitDebugPrintHandler();
 #endif
 
    connect(refreshDisplay, SIGNAL(timeout()), this, SLOT(updateDisplay()));
@@ -175,17 +69,6 @@ MainWindow::MainWindow(QWidget* parent) :
 }
 
 MainWindow::~MainWindow(){
-#if defined(EMU_DEBUG) && defined(EMU_CUSTOM_DEBUG_LOG_HANDLER)
-   frontendFreeDebugPrintHandler();
-#endif
-   emuThreadJoin = true;
-   emuOn = false;
-   if(emuThread.joinable())
-      emuThread.join();
-   if(emuInited){
-      emulatorExit();
-      delete[] emuDoubleBuffer;
-   }
    delete ui;
 }
 
@@ -213,119 +96,71 @@ void MainWindow::selectHomePath(){
 
 void MainWindow::on_install_pressed(){
    QString app = QFileDialog::getOpenFileName(this, "Open Prc/Pdb/Pqa", QDir::root().path(), 0);
-   uint32_t error;
-   buffer_t appData;
-   appData.data = getFileBuffer(app, appData.size, error);
-   if(appData.data){
-      error = emulatorInstallPrcPdb(appData);
-      delete[] appData.data;
-   }
-
+   uint32_t error = emu.installApplication(app);
    if(error != FILE_ERR_NONE)
       popupErrorDialog("Could not install app");
 }
 
 //display
 void MainWindow::updateDisplay(){
-   if(emuOn && emuNewFrameReady){
-      video = QImage((uchar*)emuDoubleBuffer, screenWidth, screenHeight, QImage::Format_RGB16);
-      ui->display->setPixmap(QPixmap::fromImage(video).scaled(QSize(ui->display->size().width() * 0.95, ui->display->size().height() * 0.95), Qt::KeepAspectRatio, Qt::SmoothTransformation));
+   if(emu.newFrameReady()){
+      ui->display->setPixmap(emu.getFramebuffer().scaled(QSize(ui->display->size().width() * 0.95, ui->display->size().height() * 0.95), Qt::KeepAspectRatio, Qt::SmoothTransformation));
       ui->display->update();
-      emuNewFrameReady = false;
    }
 
-   if(emuDebugEvent){
-      //emuThread cant set GUI parameters on its own because its not part of the class
+   if(emu.debugEventOccured()){
+      emu.clearDebugEvent();
       ui->ctrlBtn->setIcon(QIcon(":/buttons/images/play.png"));
-      emuDebugEvent = false;
+      emuDebugger->exec();
    }
 }
 
 //palm buttons
 void MainWindow::on_power_pressed(){
-   frontendInput.buttonPower = true;
+   emu.emuInput.buttonPower = true;
 }
 
 void MainWindow::on_power_released(){
-   frontendInput.buttonPower = false;
+   emu.emuInput.buttonPower = false;
 }
 
 void MainWindow::on_calender_pressed(){
-   frontendInput.buttonCalender = true;
+   emu.emuInput.buttonCalender = true;
 }
 
 void MainWindow::on_calender_released(){
-   frontendInput.buttonCalender = false;
+   emu.emuInput.buttonCalender = false;
 }
 
 void MainWindow::on_addressBook_pressed(){
-   frontendInput.buttonAddress = true;
+   emu.emuInput.buttonAddress = true;
 }
 
 void MainWindow::on_addressBook_released(){
-   frontendInput.buttonAddress = false;
+   emu.emuInput.buttonAddress = false;
 }
 
 void MainWindow::on_todo_pressed(){
-   frontendInput.buttonTodo = true;
+   emu.emuInput.buttonTodo = true;
 }
 
 void MainWindow::on_todo_released(){
-   frontendInput.buttonTodo = false;
+   emu.emuInput.buttonTodo = false;
 }
 
 void MainWindow::on_notes_pressed(){
-   frontendInput.buttonNotes = true;
+   emu.emuInput.buttonNotes = true;
 }
 
 void MainWindow::on_notes_released(){
-   frontendInput.buttonNotes = false;
+   emu.emuInput.buttonNotes = false;
 }
 
 //emu control
 void MainWindow::on_ctrlBtn_clicked(){
-   if(!emuOn && !emuInited){
-      //start emu
-      uint32_t error;
-      buffer_t romBuff;
-      buffer_t bootBuff;
-      romBuff.data = getFileBuffer(settings.value("resourceDirectory", "").toString() + "/palmos41-en-m515.rom", romBuff.size, error);
-      if(error != FILE_ERR_NONE){
-         popupErrorDialog("Cant load ROM file, error:" + QString::number(error) + ", cant run!");
-         return;
-      }
-      bootBuff.data = getFileBuffer(settings.value("resourceDirectory", "").toString() + "/bootloader-en-m515.rom", bootBuff.size, error);
-      if(error != FILE_ERR_NONE){
-         //its ok if the bootloader gives an error, the emu doesnt actually need it
-         bootBuff.data = NULL;
-         bootBuff.size = 0;
-      }
-
-      error = emulatorInit(romBuff, bootBuff, FEATURE_ACCURATE);
-      delete[] romBuff.data;
-      if(bootBuff.data)
-         delete[] bootBuff.data;
-
+   if(!emu.isInited()){
+      uint32_t error = emu.init(settings.value("resourceDirectory", "").toString() + "/palmos41-en-m515.rom", settings.value("resourceDirectory", "").toString() + "/bootloader-en-m515.rom", FEATURE_ACCURATE);
       if(error == EMU_ERROR_NONE){
-         if(palmExtendedFramebuffer != NULL){
-            screenWidth = 320;
-            screenHeight = 320 + 120;
-         }
-         else{
-            screenWidth = 160;
-            screenHeight = 160 + 60;
-         }
-
-         frontendInput = palmInput;
-
-         emuThreadJoin = false;
-         emuInited = true;
-         emuOn = true;
-         emuPaused = false;
-         emuNewFrameReady = false;
-         emuDoubleBuffer = new uint16_t[screenWidth * screenHeight];
-         emuThread = std::thread(emuThreadRun);
-
          ui->calender->setEnabled(true);
          ui->addressBook->setEnabled(true);
          ui->todo->setEnabled(true);
@@ -349,25 +184,20 @@ void MainWindow::on_ctrlBtn_clicked(){
          popupErrorDialog("Emu error:" + QString::number(error) + ", cant run!");
       }
    }
-   else if(emuOn){
-      emuOn = false;
+   else if(emu.isRunning()){
+      emu.pause();
       ui->ctrlBtn->setIcon(QIcon(":/buttons/images/play.png"));
    }
-   else if(!emuOn){
-      emuOn = true;
+   else if(emu.isPaused()){
+      emu.resume();
       ui->ctrlBtn->setIcon(QIcon(":/buttons/images/pause.png"));
    }
 }
 
 void MainWindow::on_debugger_clicked(){
-   if(emuInited){
-      if(emuOn){
-         emuOn = false;
-         ui->ctrlBtn->setIcon(QIcon(":/buttons/images/play.png"));
-      }
-
-      waitForEmuPaused();
-
+   if(emu.isRunning()){
+      emu.pause();
+      ui->ctrlBtn->setIcon(QIcon(":/buttons/images/play.png"));
       emuDebugger->exec();
    }
    else{
@@ -383,7 +213,7 @@ void MainWindow::on_screenshot_clicked(){
    if(!location.exists())
       location.mkpath(".");
 
-   video.save(path + "/screenshots/" + "screenshot" + QString::number(screenshotNumber, 10) + ".png", NULL, 100);
+   ui->display->pixmap()->save(path + "/screenshots/" + "screenshot" + QString::number(screenshotNumber, 10) + ".png", NULL, 100);
    screenshotNumber++;
    settings.setValue("screenshotNum", screenshotNumber);
 }

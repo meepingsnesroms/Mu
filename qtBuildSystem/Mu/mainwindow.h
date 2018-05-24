@@ -1,24 +1,11 @@
 #pragma once
 
 #include <QMainWindow>
+#include <QTimer>
 #include <QSettings>
-#include <stdint.h>
 
-#include "src/emulator.h"
-
-extern uint32_t  screenWidth;
-extern uint32_t  screenHeight;
-extern input_t   frontendInput;
-extern QSettings settings;
-
-#if defined(EMU_DEBUG) && defined(EMU_CUSTOM_DEBUG_LOG_HANDLER)
-#include <vector>
-#include <string>
-
-
-extern std::vector<std::string> debugStrings;
-extern std::vector<uint64_t>    duplicateCallCount;
-#endif
+#include "emuwrapper.h"
+#include "debugviewer.h"
 
 namespace Ui {
 class MainWindow;
@@ -29,6 +16,9 @@ class MainWindow : public QMainWindow
    Q_OBJECT
 
 public:
+   EmuWrapper emu;
+   QSettings settings;
+
    explicit MainWindow(QWidget* parent = 0);
    ~MainWindow();
 
@@ -61,5 +51,7 @@ private slots:
    void on_screenshot_clicked();
 
 private:
+   DebugViewer* emuDebugger;
+   QTimer* refreshDisplay;
    Ui::MainWindow* ui;
 };
