@@ -3,6 +3,7 @@
 #include <QObject>
 #include <QString>
 
+#include <mutex>
 #include <vector>
 
 class UserIO : public QObject
@@ -10,13 +11,12 @@ class UserIO : public QObject
    Q_OBJECT
 
 private:
+   std::mutex           userData;
    std::vector<QString> jsStrings;
    std::vector<QString> cxxStrings;
-   void (*refreshHandler)() = nullptr;
 
 public:
    explicit UserIO(QObject* parent = nullptr);
-   void setRefreshHandler(void (*newRefreshHandler)());
 
    Q_INVOKABLE bool stringAvailableJs();
    Q_INVOKABLE QString readStringJs();

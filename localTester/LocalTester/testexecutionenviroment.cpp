@@ -1,4 +1,5 @@
 #include <QJSEngine>
+#include <QJSValue>
 #include <QString>
 
 #include <thread>

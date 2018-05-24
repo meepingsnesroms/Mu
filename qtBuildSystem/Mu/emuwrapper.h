@@ -1,7 +1,6 @@
 #pragma once
 
 #include <QPixmap>
-#include <QImage>
 #include <QString>
 
 #include <thread>

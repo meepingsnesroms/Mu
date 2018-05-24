@@ -8,7 +8,7 @@ class SerialPortIO : public QObject
 
 private:
    QString deviceFilePath;
-   int deviceFile;
+   int     deviceFile;
 
 public:
    SerialPortIO(QString serialDeviceFilePath);

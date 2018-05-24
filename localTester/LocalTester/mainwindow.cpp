@@ -3,6 +3,8 @@
 
 #include <QDir>
 #include <QTimer>
+#include <QImage>
+#include <QPixmap>
 #include <QFileDialog>
 #include <QSslCertificate>
 #include <QSslSocket>
@@ -36,6 +38,15 @@ MainWindow::~MainWindow(){
 }
 
 void MainWindow::updateWindow(){
+   while(userTerminal->stringAvailableCxx())
+      ui->receiveText->setText(ui->receiveText->toPlainText() + userTerminal->readStringCxx() + '\n');
+
+   systemInterface->systemData.lock();
+   if(systemInterface->framebufferRender){
+      ui->framebuffer->setPixmap(QPixmap::fromImage());
+   }
+   systemInterface->systemData.lock();
+
    /*
    if(ui->framebuffer->text() == "")
       ui->framebuffer->setText("0");

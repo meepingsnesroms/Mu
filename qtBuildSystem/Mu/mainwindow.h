@@ -17,7 +17,7 @@ class MainWindow : public QMainWindow
 
 public:
    EmuWrapper emu;
-   QSettings settings;
+   QSettings  settings;
 
    explicit MainWindow(QWidget* parent = 0);
    ~MainWindow();
@@ -51,7 +51,7 @@ private slots:
    void on_screenshot_clicked();
 
 private:
-   DebugViewer* emuDebugger;
-   QTimer* refreshDisplay;
+   DebugViewer*    emuDebugger;
+   QTimer*         refreshDisplay;
    Ui::MainWindow* ui;
 };

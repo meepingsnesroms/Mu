@@ -4,46 +4,55 @@ UserIO::UserIO(QObject* parent) : QObject(parent){
 
 }
 
-void UserIO::setRefreshHandler(void (*newRefreshHandler)()){
-   refreshHandler = newRefreshHandler;
-}
-
 bool UserIO::stringAvailableJs(){
-   return !cxxStrings.empty();
+   bool empty;
+   userData.lock();
+   empty = cxxStrings.empty();
+   userData.unlock();
+   return !empty;
 }
 
 QString UserIO::readStringJs(){
+   QString str = "";
+   userData.lock();
    if(!cxxStrings.empty()){
-      QString currentString  = cxxStrings[0];
+      str = cxxStrings[0];
       cxxStrings.erase(cxxStrings.begin() + 0);
-      return currentString;
    }
-
-   return "";
+   userData.unlock();
+   return str;
 }
 
 void UserIO::writeStringJs(QString data){
+   userData.lock();
    jsStrings.push_back(data);
-   if(refreshHandler != nullptr)
-      refreshHandler();
+   userData.unlock();
 }
 
 bool UserIO::stringAvailableCxx(){
-   return !jsStrings.empty();
+   bool empty;
+   userData.lock();
+   empty = jsStrings.empty();
+   userData.unlock();
+   return !empty;
 }
 
 QString UserIO::readStringCxx(){
+   QString str = "";
+   userData.lock();
    if(!jsStrings.empty()){
-      QString currentString  = jsStrings[0];
+      str = jsStrings[0];
       jsStrings.erase(jsStrings.begin() + 0);
-      return currentString;
    }
+   userData.unlock();
 
-   return "";
+   return str;
 }
 
 void UserIO::writeStringCxx(QString data){
+   userData.lock();
    cxxStrings.push_back(data);
+   userData.unlock();
 }
 
 void UserIO::resetStrings(){

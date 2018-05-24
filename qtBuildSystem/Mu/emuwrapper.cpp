@@ -1,4 +1,6 @@
 #include <QString>
+#include <QPixmap>
+#include <QImage>
 
 #include <new>
 #include <chrono>
@@ -22,8 +24,8 @@ static bool alreadyExists = false;//there can only be one of this class since it
 
 static std::vector<QString>  debugStrings;
 static std::vector<uint64_t> duplicateCallCount;
-uint32_t              frontendDebugStringSize;
-char*                 frontendDebugString;
+uint32_t                     frontendDebugStringSize;
+char*                        frontendDebugString;
 
 
 void frontendHandleDebugPrint(){
@@ -207,7 +209,7 @@ std::vector<uint32_t> EmuWrapper::getCpuRegisters(){
 
 QPixmap EmuWrapper::getFramebuffer(){
    emuNewFrameReady = false;
-   return QPixmap::fromImage(QImage((uchar*)emuDoubleBuffer, emuVideoWidth, emuVideoHeight, QImage::Format_RGB16));
+   return QPixmap::fromImage(QImage((uchar*)emuDoubleBuffer, emuVideoWidth, emuVideoHeight, emuVideoWidth * sizeof(uint16_t), QImage::Format_RGB16));
 }
 
 uint64_t EmuWrapper::getEmulatorMemory(uint32_t address, uint8_t size){

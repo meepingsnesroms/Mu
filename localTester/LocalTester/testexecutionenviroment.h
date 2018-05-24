@@ -10,10 +10,10 @@
 class TestExecutionEnviroment
 {
 private:
-   QJSEngine* engine;
-   std::thread jsThread;
+   QJSEngine*        engine;
+   std::thread       jsThread;
    std::atomic<bool> jsRunning;
-   QString lastProgramReturnValue;
+   QString           lastProgramReturnValue;
 
    void jsThreadFunction(QString program, QString args, bool callMain);
 

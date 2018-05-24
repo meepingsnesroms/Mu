@@ -39,15 +39,14 @@ private slots:
    void on_pickSslCertificate_clicked();
 
 private:
-   SerialPortIO* serialOut;
-   UserIO* userTerminal;
-   JSSystem* systemInterface;
+   SerialPortIO*           serialOut;
+   UserIO*                 userTerminal;
+   JSSystem*               systemInterface;
    TestExecutionEnviroment testEnv;
-
-   QString testProgram;
-   QString dependencyBlob;
-   QString sslCertPath;
-   QSslSocket wifiConnection;
-   QTimer* refreshWindow;
-   Ui::MainWindow* ui;
+   QString                 testProgram;
+   QString                 dependencyBlob;
+   QString                 sslCertPath;
+   QSslSocket              wifiConnection;
+   QTimer*                 refreshWindow;
+   Ui::MainWindow*         ui;
 };

@@ -1,3 +1,6 @@
+#include <QObject>
+#include <QJSValue>
+
 #include <chrono>
 #include <thread>
 #include <stdint.h>
@@ -8,6 +11,7 @@
 JSSystem::JSSystem(QObject* parent) : QObject(parent){
    framebufferWidth = 0;
    framebufferHeight = 0;
+   framebufferRender = false;
 }
 
 void JSSystem::testJsAttachment(QString str){
@@ -19,17 +23,18 @@ void JSSystem::uSleep(uint32_t uSeconds){
 }
 
 void JSSystem::setFramebufferSize(uint32_t w, uint32_t h){
+   systemData.lock();
    framebufferPixels.resize(w * h);
    framebufferWidth = w;
    framebufferHeight = h;
+   systemData.unlock();
 }
 
-void JSSystem::setFramebufferPixel(uint32_t x, uint32_t y, uint32_t color){
-   framebufferPixels[y * framebufferWidth + x] = color;
+void JSSystem::setFramebuffer(QJSValue framebuffer){
+   systemData.lock();
+   for(uint16_t y = 0; y < framebufferHeight; y++)
+      for(uint16_t x = 0; x < framebufferWidth; x++)
+         framebufferPixels[y * framebufferWidth + x] = framebuffer.property(y * framebufferWidth + x);
+   framebufferRender = true;
+   systemData.unlock();
 }
-
-/*
-void JSSystem::renderFramebuffer(){
-
-}
-*/
