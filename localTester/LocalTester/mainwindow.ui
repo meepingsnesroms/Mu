@@ -26,6 +26,13 @@
      <widget class="QComboBox" name="serialPort"/>
     </item>
     <item>
+     <widget class="QPushButton" name="refreshSerialPorts">
+      <property name="text">
+       <string>Refresh Serial Ports</string>
+      </property>
+     </widget>
+    </item>
+    <item>
      <widget class="QLabel" name="label">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Preferred" vsizetype="Fixed">

@@ -2,6 +2,7 @@
 #include "ui_mainwindow.h"
 
 #include <QDir>
+#include <QStringList>
 #include <QTimer>
 #include <QImage>
 #include <QPixmap>
@@ -103,7 +104,7 @@ void MainWindow::on_pickTestProgram_clicked(){
 void MainWindow::on_startLocalTesting_clicked(){
    //ui->serialPort->setCurrentText("/dev/tty.Bluetooth-Incoming-Port");
    //testProgram = "userIo.writeStringJs(\"Wrote to terminal from js!\")";
-   if(!testEnv.running() /*&& ui->serialPort->currentText() != ""*/)
+   if(!testEnv.running() && ui->serialPort->currentText() != "")
       launchJs(false);
 }
 
@@ -131,4 +132,20 @@ void MainWindow::on_pickDependencyBlob_clicked(){
 
 void MainWindow::on_pickSslCertificate_clicked(){
    sslCertPath = QFileDialog::getOpenFileName(this, "Select SSL Certificate", QDir::root().path(), 0);
+}
+
+void MainWindow::on_refreshSerialPorts_clicked(){
+   QDir dev("/dev");
+   QStringList filters;
+   QStringList serialPorts;
+
+   filters.append("tty.*");//Mac OS serial ports
+   filters.append("ttyS*");//Linux serial ports
+   dev.setNameFilters(filters);
+
+   serialPorts = dev.entryList(QDir::System | QDir::Files, QDir::Name);
+
+   ui->serialPort->clear();
+   for(uint32_t port = 0; port < serialPorts.length(); port++)
+      ui->serialPort->addItem("/dev/" + serialPorts[port]);
 }

@@ -28,7 +28,6 @@ public:
 private slots:
    void updateWindow();
    void launchJs(bool serialOverWifi);
-
    bool wifiValidate(QString location);
 
    void on_pickTestProgram_clicked();
@@ -37,6 +36,7 @@ private slots:
    void on_startTestProxy_clicked();
    void on_pickDependencyBlob_clicked();
    void on_pickSslCertificate_clicked();
+   void on_refreshSerialPorts_clicked();
 
 private:
    SerialPortIO*           serialOut;
