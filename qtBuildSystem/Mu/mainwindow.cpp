@@ -64,6 +64,10 @@ MainWindow::MainWindow(QWidget* parent) :
    ui->debugger->hide();
 #endif
 
+#if !defined(EMU_DEBUG)
+   ui->touchscreenState->hide();
+#endif
+
    connect(refreshDisplay, SIGNAL(timeout()), this, SLOT(updateDisplay()));
    refreshDisplay->start(16);//update display every 16.67miliseconds = 60 * second
 }
@@ -113,6 +117,11 @@ void MainWindow::updateDisplay(){
       ui->ctrlBtn->setIcon(QIcon(":/buttons/images/play.png"));
       emuDebugger->exec();
    }
+
+#if defined(EMU_DEBUG)
+   if(emu.isRunning())
+      ui->touchscreenState->setText("X:" + QString::number(emu.emuInput.touchscreenX) + ", Y:" + QString::number(emu.emuInput.touchscreenY) + ", Touched:" + (emu.emuInput.touchscreenTouched ? "true" : "false"));
+#endif
 }
 
 //palm buttons
