@@ -204,7 +204,7 @@ void MainWindow::on_ctrlBtn_clicked(){
 }
 
 void MainWindow::on_debugger_clicked(){
-   if(emu.isRunning()){
+   if(emu.isInited()){
       emu.pause();
       ui->ctrlBtn->setIcon(QIcon(":/buttons/images/play.png"));
       emuDebugger->exec();

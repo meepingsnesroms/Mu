@@ -33,7 +33,7 @@ void frontendHandleDebugPrint(){
 
    //this debug handler doesnt need the \n
    if(newDebugString.back() == '\n')
-      newDebugString.remove(newDebugString.length() - 1);
+      newDebugString.remove(newDebugString.length() - 1, 1);
 
    if(!debugStrings.empty() && newDebugString == debugStrings.back()){
       duplicateCallCount.back()++;
