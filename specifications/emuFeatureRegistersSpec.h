@@ -11,15 +11,15 @@ These registers will do nothing it there corresponding feature bit is not set on
 #define EMU_REG_ADDR(x) (EMU_REGISTER_BASE | x)
 
 /*features*/
-#define FEATURE_ACCURATE     0x00000000/*no hacks/addons*/
-#define FEATURE_RAM_HUGE     0x00000001/*128mb RAM*/
-#define FEATURE_FAST_CPU     0x00000002/*doubles CPU speed*/
-#define FEATURE_HYBRID_CPU   0x00000004/*allows running ARM opcodes in an OS 4 enviroment*/
-#define FEATURE_320x320      0x00000008/*creates a 320x320 framebuffer for hires mode, the 160x160 framebuffer is a transparent overlay over the 320x320 framebuffer*/
-#define FEATURE_SYNCED_RTC   0x00000010/*RTC always equals host system time*/
-#define FEATURE_HLE_APIS     0x00000020/*memcpy, memcmp, wait on timer will be replaced with the hosts function*/
-#define FEATURE_EMU_HONEST   0x00000040/*tell the OS that its running in an emu, does nothing else*/
-#define FEATURE_EMU_EXT_KEYS 0x00000080/*enables the OS 5 buttons, left, right and select*/
+#define FEATURE_ACCURATE   0x00000000/*no hacks/addons*/
+#define FEATURE_RAM_HUGE   0x00000001/*128mb RAM*/
+#define FEATURE_FAST_CPU   0x00000002/*doubles CPU speed*/
+#define FEATURE_HYBRID_CPU 0x00000004/*allows running ARM opcodes in an OS 4 enviroment*/
+#define FEATURE_320x320    0x00000008/*creates a 320x320 framebuffer for hires mode, the 160x160 framebuffer is a transparent overlay over the 320x320 framebuffer*/
+#define FEATURE_SYNCED_RTC 0x00000010/*RTC always equals host system time*/
+#define FEATURE_HLE_APIS   0x00000020/*memcpy, memcmp, wait on timer will be replaced with the hosts function*/
+#define FEATURE_EMU_HONEST 0x00000040/*tell the OS that its running in an emu, does nothing else*/
+#define FEATURE_EXT_KEYS   0x00000080/*enables the OS 5 buttons, left, right and select*/
 /*new features go here*/
 
 /*registers*/

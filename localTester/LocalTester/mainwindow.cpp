@@ -75,7 +75,7 @@ void MainWindow::launchJs(bool serialOverWifi){
    testEnv.finish();
    testEnv.execute(testProgram, ui->sendText->text(), true);
    ui->sendText->clear();
-   testEnv.finish();
+   //testEnv.finish();
 }
 
 bool MainWindow::wifiValidate(QString location){
@@ -93,7 +93,10 @@ void MainWindow::on_pickTestProgram_clicked(){
    uint64_t size;
    uint32_t error;
    uint8_t* data;
-   QString programPath = QFileDialog::getOpenFileName(this, "Select Test Program", QDir::root().path(), 0);
+   QString lastTestProgramPath = appSettings.value("lastTestProgramPath", QDir::root().path()).toString();
+   QString programPath = QFileDialog::getOpenFileName(this, "Select Test Program", lastTestProgramPath, 0);
+
+   appSettings.setValue("lastTestProgramPath", programPath);
    data = getFileBuffer(programPath, size, error);
    if(error == FILE_ERR_NONE)
       testProgram = QString::fromLatin1((const char*)data, size);
@@ -102,8 +105,6 @@ void MainWindow::on_pickTestProgram_clicked(){
 }
 
 void MainWindow::on_startLocalTesting_clicked(){
-   //ui->serialPort->setCurrentText("/dev/tty.Bluetooth-Incoming-Port");
-   //testProgram = "userIo.writeStringJs(\"Wrote to terminal from js!\")";
    if(!testEnv.running() && ui->serialPort->currentText() != "")
       launchJs(false);
 }
@@ -122,7 +123,10 @@ void MainWindow::on_pickDependencyBlob_clicked(){
    uint64_t size;
    uint32_t error;
    uint8_t* data;
-   QString blobPath = QFileDialog::getOpenFileName(this, "Select Dependency Blob", QDir::root().path(), 0);
+   QString lastDependencyBlobPath = appSettings.value("lastDependencyBlobPath", QDir::root().path()).toString();
+   QString blobPath = QFileDialog::getOpenFileName(this, "Select Dependency Blob", lastDependencyBlobPath, 0);
+
+   appSettings.setValue("lastDependencyBlobPath", blobPath);
    data = getFileBuffer(blobPath, size, error);
    if(error == FILE_ERR_NONE)
       dependencyBlob = QString::fromLatin1((const char*)data, size);
@@ -131,7 +135,10 @@ void MainWindow::on_pickDependencyBlob_clicked(){
 }
 
 void MainWindow::on_pickSslCertificate_clicked(){
-   sslCertPath = QFileDialog::getOpenFileName(this, "Select SSL Certificate", QDir::root().path(), 0);
+   QString lastSslCertPath = appSettings.value("lastSslCertPath", QDir::root().path()).toString();
+
+   sslCertPath = QFileDialog::getOpenFileName(this, "Select SSL Certificate", lastSslCertPath, 0);
+   appSettings.setValue("lastSslCertPath", sslCertPath);
 }
 
 void MainWindow::on_refreshSerialPorts_clicked(){
@@ -148,4 +155,11 @@ void MainWindow::on_refreshSerialPorts_clicked(){
    ui->serialPort->clear();
    for(uint32_t port = 0; port < serialPorts.length(); port++)
       ui->serialPort->addItem("/dev/" + serialPorts[port]);
+}
+
+void MainWindow::on_sendText_returnPressed(){
+   if(testEnv.running()){
+      userTerminal->writeStringCxx(ui->sendText->text());
+      ui->sendText->clear();
+   }
 }

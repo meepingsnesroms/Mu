@@ -2,6 +2,7 @@
 
 #include <QMainWindow>
 #include <QSslSocket>
+#include <QSettings>
 #include <QString>
 #include <QTimer>
 
@@ -38,11 +39,14 @@ private slots:
    void on_pickSslCertificate_clicked();
    void on_refreshSerialPorts_clicked();
 
+   void on_sendText_returnPressed();
+
 private:
    SerialPortIO*           serialOut;
    UserIO*                 userTerminal;
    JSSystem*               systemInterface;
    TestExecutionEnviroment testEnv;
+   QSettings               appSettings;
    QString                 testProgram;
    QString                 dependencyBlob;
    QString                 sslCertPath;

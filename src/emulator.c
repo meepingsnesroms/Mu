@@ -184,6 +184,9 @@ static void invalidBehaviorCheck(){
 uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t specialFeatures){
    if(emulatorInitialized)
       return EMU_ERROR_NONE;
+   
+   if(palmRomDump.data == NULL)
+      return EMU_ERROR_INVALID_PARAMETER;
 
    //allocate the buffers
    palmRam = malloc((specialFeatures & FEATURE_RAM_HUGE) ? SUPERMASSIVE_RAM_SIZE : RAM_SIZE);
