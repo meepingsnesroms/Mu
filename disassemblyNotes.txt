@@ -1,0 +1,12 @@
+IVR = 0x18
+interrupt vector start = 0x60
+
+vectors starting at level 0(no interrupt) to level 7
+0x00000060:0x00000000 (no interrupt, never called)
+0x00000064:0x101904BE
+0x00000068:0x101904EC
+0x0000006C:0x1019051A
+0x00000070:0x10190548 (level 4, hardware buttons)
+0x00000074:0x10190576 (level 5, seems to be touchscreen)
+0x00000078:0x101905A4
+0x0000007C:0x10015F34 (level 7, debugging IRQ, not used)

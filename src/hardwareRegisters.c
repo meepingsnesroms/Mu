@@ -386,6 +386,9 @@ uint8_t getHwRegister8(uint32_t address){
       //LCD functions
       case LCKCON:
 
+      //interrupt vector start address
+      case IVR:
+
       //port d special functions
       case PDPOL:
       case PDIRQEN:

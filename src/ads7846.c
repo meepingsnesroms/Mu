@@ -1,6 +1,7 @@
 #include <stdbool.h>
 
 #include "emulator.h"
+#include "portability.h"
 
 
 uint8_t  ads7846InputBitsLeft;
@@ -36,51 +37,51 @@ void ads7846SendBit(bool bit){
 
          case 0x00:
             //temperature 1, unemulated for now
-            value = 1;
             rangeMax = 1;
+            value = 1;
             break;
 
          case 0x10:
             //touchscreen y
+            rangeMax = 160;
             if(palmInput.touchscreenTouched)
                value = palmInput.touchscreenY;
             else
                value = 160;
-            rangeMax = 160;
             break;
 
          case 0x20:
             //battery
-            value = palmMisc.batteryLevel;
             rangeMax = 100;
+            value = palmMisc.batteryLevel;
             break;
 
          case 0x30:
          case 0x40:
             //empty slots
-            value = 1;
             rangeMax = 1;
+            value = 1;
             break;
 
          case 0x50:
             //touchscreen x
+            rangeMax = 160;
             if(palmInput.touchscreenTouched)
                value = palmInput.touchscreenX;
             else
                value = 160;
-            rangeMax = 160;
             break;
 
          case 0x60:
             //dock, unemulated for now
-            value = 1;
             rangeMax = 1;
+            value = 1;
             break;
 
          case 0x70:
             //temperature 2, unemulated for now
-            value = 1;
             rangeMax = 1;
+            value = 1;
             break;
       }
 

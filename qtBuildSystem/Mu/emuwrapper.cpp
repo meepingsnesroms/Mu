@@ -213,6 +213,7 @@ QPixmap EmuWrapper::getFramebuffer(){
 }
 
 uint64_t EmuWrapper::getEmulatorMemory(uint32_t address, uint8_t size){
+   uint64_t data = UINT64_MAX;//invalid access
    //until SPI and UART destructive reads are implemented all reads to mapped addresses are safe, SPI is now implemented, this needs to be fixed
    if(bankType[START_BANK(address)] != CHIP_NONE){
       uint16_t m68kSr = m68k_get_reg(NULL, M68K_REG_SR);
@@ -220,16 +221,19 @@ uint64_t EmuWrapper::getEmulatorMemory(uint32_t address, uint8_t size){
       switch(size){
 
          case 8:
-            return m68k_read_memory_8(address);
+            data = m68k_read_memory_8(address);
+            break;
 
          case 16:
-            return m68k_read_memory_16(address);
+            data = m68k_read_memory_16(address);
+            break;
 
          case 32:
-            return m68k_read_memory_32(address);
+            data = m68k_read_memory_32(address);
+            break;
       }
       m68k_set_reg(M68K_REG_SR, m68kSr);
    }
 
-   return UINT64_MAX;//unsafe access
+   return data;
 }
