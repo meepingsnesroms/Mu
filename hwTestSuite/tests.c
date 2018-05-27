@@ -107,10 +107,12 @@ var listDataRegisters(){
 
 var interrogateSpi2(){
    static Boolean firstRun = true;
+   static double spiclk2PercentAs1;
    uint16_t y = 0;
    
    if(firstRun){
       firstRun = false;
+      spiclk2PercentAs1 = percentageOfTimeAs1(HW_REG_ADDR(PEDATA), 8, 2, 20000, 1);
       debugSafeScreenClear(C_WHITE);
    }
    
@@ -157,6 +159,9 @@ var interrogateSpi2(){
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
    StrPrintF(sharedDataBuffer, "SPIDATA2:0x%04X", readArbitraryMemory16(HW_REG_ADDR(SPIDATA2)));
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   StrPrintF(sharedDataBuffer, "SPICLK2:%f", spiclk2PercentAs1);
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
    
@@ -283,6 +288,24 @@ var selfProbeSpi2(){
    StrPrintF(sharedDataBuffer, "Scoot Test 2:0x%04X", (uint16_t)scootTest << 8);
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
+   
+   return makeVar(LENGTH_0, TYPE_NULL, 0);
+}
+
+var getClk32Frequency(){
+   static Boolean firstRun = true;
+   
+   if(firstRun){
+      firstRun = false;
+      debugSafeScreenClear(C_WHITE);
+      StrPrintF(sharedDataBuffer, "CLK32 Freq:%s", (readArbitraryMemory16(HW_REG_ADDR(RTCCTL)) & 0x0020) ? "38.4khz" : "32.7khz");
+      UG_PutString(0, 0, sharedDataBuffer);
+   }
+   
+   if(getButtonPressed(buttonBack)){
+      firstRun = true;
+      exitSubprogram();
+   }
    
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }

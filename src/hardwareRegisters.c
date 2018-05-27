@@ -383,10 +383,8 @@ uint8_t getHwRegister8(uint32_t address){
       case PKDATA:
          return getPortKValue();
 
-      //LCD functions
+      //basic non GPIO functions
       case LCKCON:
-
-      //interrupt vector start address
       case IVR:
 
       //port d special functions

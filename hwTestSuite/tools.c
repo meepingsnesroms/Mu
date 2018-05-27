@@ -104,6 +104,46 @@ uint16_t ads7846GetValue(uint8_t channel, Boolean referenceMode, Boolean mode8bi
    return value;
 }
 
+double percentageOfTimeAs1(uint32_t address, uint8_t readSize, uint8_t bitNumber, uint32_t samples, uint32_t delay){
+   /*gets the percentage of time a bit spends as a 1, for example a clock line should be exactly 50%, delay is in CLK32 pulses*/
+   uint32_t sampleCount;
+   uint32_t timesAs1 = 0;
+   
+   for(sampleCount = 0; sampleCount < samples; sampleCount++){
+      uint32_t value;
+      uint32_t wait;
+      Boolean lastClk32;
+      
+      switch(readSize){
+            
+         case 8:
+            value = readArbitraryMemory8(address);
+            break;
+            
+         case 16:
+            value = readArbitraryMemory16(address);
+            break;
+            
+         case 32:
+            value = readArbitraryMemory32(address);
+            break;
+      }
+      
+      if(value >> bitNumber & 1)
+         timesAs1++;
+      
+      lastClk32 = readArbitraryMemory16(HW_REG_ADDR(PLLFSR)) >> 15;
+      while(wait < delay){
+         if(readArbitraryMemory16(HW_REG_ADDR(PLLFSR)) >> 15 != lastClk32){
+            lastClk32 = !lastClk32;
+            wait++;
+         }
+      }
+   }
+   
+   return (double)timesAs1 / (double)samples * 100.0;
+}
+
 var hexRamBrowser(){
    static Boolean firstRun = true;
    static uint32_t nibble;

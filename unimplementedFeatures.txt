@@ -45,6 +45,7 @@ swivelview register
 
 
 Fixed:
+need to check REFREQ clock frequency in RTCCTL
 PLLCR CLKEN being off should also disable the SED1376 but this would require a bank refresh on writing to PLLCR
 proper clearing of timer interrupts
 PCTLR should not divide palmCrystalCycles or dmaclksPerClk32 can't use it(removed palmCrystalCycles from dmaclksPerClk32)

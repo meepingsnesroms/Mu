@@ -306,6 +306,10 @@ void resetFunctionViewer(){
       hwTests[totalHwTests].testFunction = testButtonInput;
       totalHwTests++;
       
+      StrNCopy(hwTests[totalHwTests].name, "Get CLK32 Freq", TEST_NAME_LENGTH);
+      hwTests[totalHwTests].testFunction = getClk32Frequency;
+      totalHwTests++;
+      
       if(unsafeMode){
          StrNCopy(hwTests[totalHwTests].name, "Manual LSSA", TEST_NAME_LENGTH);
          hwTests[totalHwTests].testFunction = manualLssa;
