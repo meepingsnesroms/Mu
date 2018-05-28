@@ -246,6 +246,7 @@ static inline void setSpiCont2(uint16_t value){
       //enabled and exchange set
       uint8_t bitCount = (value & 0x000F) + 1;
       uint16_t spi2Data = registerArrayRead16(SPIDATA2);
+      uint16_t oldSpi2Data = spi2Data;
 
       for(uint8_t bits = 0; bits < bitCount; bits++){
          ads7846SendBit(spi2Data & 0x8000);
@@ -254,8 +255,8 @@ static inline void setSpiCont2(uint16_t value){
       }
       registerArrayWrite16(SPIDATA2, spi2Data);
 
-      //debugLog("SPI2 transfer, ENABLE:%s, XCH:%s, IRQ:%s, IRQEN:%s, BITCOUNT:%d\n", boolString(value & 0x0200), boolString(value & 0x0100), boolString(value & 0x0080), boolString(value & 0x0400), (value & 0x000F) + 1);
-      //debugLog("SPI2 transfer, shifted in:0x%04X, shifted out:0x%04X\n", spi2Data << (16 - bitCount) >> bitCount, oldSpiCont2 >> (16 - bitCount));
+      debugLog("SPI2 transfer, ENABLE:%s, XCH:%s, IRQ:%s, IRQEN:%s, BITCOUNT:%d\n", boolString(value & 0x0200), boolString(value & 0x0100), boolString(value & 0x0080), boolString(value & 0x0400), (value & 0x000F) + 1);
+      debugLog("SPI2 transfer, before:0x%04X, after:0x%04X, PC:0x%08X\n", oldSpi2Data, spi2Data, m68k_get_reg(NULL, M68K_REG_PPC));
 
       //unset XCH, transfers are instant since timing is not emulated
       value &= 0xFEFF;

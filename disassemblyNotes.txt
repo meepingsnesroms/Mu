@@ -10,3 +10,20 @@ vectors starting at level 0(no interrupt) to level 7
 0x00000074:0x10190576 (level 5, seems to be touchscreen)
 0x00000078:0x101905A4
 0x0000007C:0x10015F34 (level 7, debugging IRQ, not used)
+
+SPI Routine Location:
+PrvSetBB7846ChanRef or PrvReadnBB7846PwrDn
+0x10081518
+
+SPI Start Chunk(sent once on boot):
+12 4 bit delay, 8 bit check battery command, 0x0AE0
+5  5 bit receive, continued from last command, 0x0014
+
+Palm OS reads from the touchscreen SPI in 5 accesses:
+resync event?{
+   16 0xE01B
+   3 only sends 0s, delay or receive, 0x0004
+   5 only sends 0s, delay or receive, 0x001D
+}
+12 4 bit delay, 8 bit send command, 0x0E1C
+16 0xE01C

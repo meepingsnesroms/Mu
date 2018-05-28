@@ -99,7 +99,7 @@ void ads7846SendBit(bool bit){
          }
 
          //theres a 1 bit delay after the control byte before the data
-         ads7846OutputValue >>= 1;
+         //ads7846OutputValue >>= 1;
       }
    }
 }

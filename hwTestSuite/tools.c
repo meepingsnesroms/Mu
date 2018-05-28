@@ -79,7 +79,9 @@ uint16_t ads7846GetValue(uint8_t channel, Boolean referenceMode, Boolean mode8bi
    while(readArbitraryMemory16(HW_REG_ADDR(SPICONT2)) & 0x0100);
    
    /*clear any data received in SPIDATA2 during the previous send*/
-   writeArbitraryMemory16(HW_REG_ADDR(SPIDATA2), 0x0000);
+   //writeArbitraryMemory16(HW_REG_ADDR(SPIDATA2), 0x0000);
+   /*trigger a busy event*/
+   writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), spi2Control | 0x0100/*exchange*/);
    
    /*receive data, mode = 1(8 bits) or mode = 0(12 bits)*/
    writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), spi2Control | 0x0100/*exchange*/ | (mode8bit ? 0x0007 : 0x000B));

@@ -113,7 +113,7 @@ var interrogateSpi2(){
    
    if(firstRun){
       firstRun = false;
-      spiclk2PercentAs1 = percentageOfTimeAs1(HW_REG_ADDR(PEDATA), 8, 2, 20000, 1);
+      spiclk2PercentAs1 = percentageOfTimeAs1(HW_REG_ADDR(PEDATA), 8, 2, 20000, 3);
       debugSafeScreenClear(C_WHITE);
    }
    

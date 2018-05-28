@@ -52,7 +52,7 @@ char* floatToString(float data){
       StrCat(floatString, convertBuffer);
       StrCat(floatString, ".");
       data -= (int32_t)data;
-      data *= 100000;
+      data *= 1000000000;
       StrIToA(convertBuffer, (int32_t)data);
       StrCat(floatString, convertBuffer);
    }
