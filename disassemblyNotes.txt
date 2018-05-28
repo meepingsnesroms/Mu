@@ -20,6 +20,22 @@ SPI Start Chunk(sent once on boot):
 5  5 bit receive, continued from last command, 0x0014
 
 Palm OS reads from the touchscreen SPI in 5 accesses:
+SPI2 transfer, ENABLE:true, XCH:true, IRQ:false, IRQEN:false, BITCOUNT:16(printed 1 times)
+SPI2 transfer, before:0xE01B, after:0x00FF(printed 1 times)
+
+SPI2 transfer, ENABLE:true, XCH:true, IRQ:false, IRQEN:false, BITCOUNT:3(printed 1 times)
+SPI2 transfer, before:0x0004, after:0x0026(printed 1 times)
+
+SPI2 transfer, ENABLE:true, XCH:true, IRQ:false, IRQEN:false, BITCOUNT:5(printed 1 times)
+SPI2 transfer, before:0x001D, after:0x03BF(printed 1 times)
+
+SPI2 transfer, ENABLE:true, XCH:true, IRQ:false, IRQEN:false, BITCOUNT:12(printed 1 times)
+SPI2 transfer, before:0x0E1C, after:0xCE00(printed 1 times)
+
+SPI2 transfer, ENABLE:true, XCH:true, IRQ:false, IRQEN:false, BITCOUNT:16(printed 1 times)
+SPI2 transfer, before:0xE01C, after:0xFEFF(printed 1 times)
+
+
 resync event?{
    16 0xE01B
    3 only sends 0s, delay or receive, 0x0004

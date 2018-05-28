@@ -357,13 +357,16 @@ uint8_t getHwRegister8(uint32_t address){
 #endif
    switch(address){
 
+         /*
       case PBDATA:
          //read outputs as is and inputs as true, floating pins are high
          return (registerArrayRead8(PBDATA) & registerArrayRead8(PBDIR)) | ~registerArrayRead8(PBDIR);
-         
+         */
+
       case PDDATA:
          return getPortDValue();
 
+         /*
       case PEDATA:
          //read outputs as is and inputs as true, floating pins are high
          return (registerArrayRead8(PEDATA) & registerArrayRead8(PEDIR)) | ~registerArrayRead8(PEDIR);
@@ -379,6 +382,7 @@ uint8_t getHwRegister8(uint32_t address){
       case PJDATA:
          //read outputs as is and inputs as true, floating pins are high
          return (registerArrayRead8(PJDATA) & registerArrayRead8(PJDIR)) | ~registerArrayRead8(PJDIR);
+         */
 
       case PKDATA:
          return getPortKValue();
@@ -653,11 +657,13 @@ void setHwRegister8(uint32_t address, uint8_t value){
       case PKPUEN:
          
       //port data value, nothing attached to port
+         /*
       case PCDATA:
       case PDDATA:
       case PEDATA:
       case PFDATA:
       case PJDATA:
+         */
          
       //misc port config
       case PDKBEN:

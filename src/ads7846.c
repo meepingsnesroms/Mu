@@ -4,27 +4,30 @@
 #include "portability.h"
 
 
-uint8_t  ads7846InputBitsLeft;
+uint8_t  ads7846BitsToNextControl;//bits before starting a new control byte
 uint8_t  ads7846ControlByte;
 bool     ads7846PenIrqEnabled;
 uint16_t ads7846OutputValue;
 
 
 void ads7846SendBit(bool bit){
-   //check for control bit
-   if(ads7846InputBitsLeft == 0){
+   if(ads7846BitsToNextControl > 0)
+      ads7846BitsToNextControl--;
+
+   if(ads7846BitsToNextControl == 0){
+      //check for control bit
       if(bit){
          ads7846ControlByte = 0x01;
-         ads7846InputBitsLeft = 7;
+         ads7846BitsToNextControl = 16;
       }
       return;
    }
+   else if(ads7846BitsToNextControl < 8){
+      ads7846ControlByte <<= 1;
+      ads7846ControlByte |= bit;
+   }
 
-   ads7846ControlByte <<= 1;
-   ads7846ControlByte |= bit;
-   ads7846InputBitsLeft--;
-
-   if(ads7846InputBitsLeft == 0){
+   if(ads7846BitsToNextControl == 7){
       //control byte finished, get output value
       double value;
       double rangeMax;
@@ -48,6 +51,7 @@ void ads7846SendBit(bool bit){
                value = palmInput.touchscreenY;
             else
                value = 160;
+            debugLog("Accessed ADS7846 Touchscreen y.\n");
             break;
 
          case 0x20:
@@ -70,6 +74,7 @@ void ads7846SendBit(bool bit){
                value = palmInput.touchscreenX;
             else
                value = 160;
+            debugLog("Accessed ADS7846 Touchscreen x.\n");
             break;
 
          case 0x60:
@@ -85,7 +90,7 @@ void ads7846SendBit(bool bit){
             break;
       }
 
-      //check if ADC is on, if not do nothing
+      //check if ADC is on, if not do nothing, PENIRQ is handled in refreshInputState() in hardwareRegisters.c
       if(powerSave != 0x02){
          if(mode){
             //8 bit conversion
@@ -97,9 +102,6 @@ void ads7846SendBit(bool bit){
             ads7846OutputValue = value / rangeMax * 0x0FFF;
             ads7846OutputValue <<= 4;//move to output position
          }
-
-         //theres a 1 bit delay after the control byte before the data
-         //ads7846OutputValue >>= 1;
       }
    }
 }
@@ -108,7 +110,7 @@ bool ads7846RecieveBit(){
    bool bit;
 
    //a new control byte can be sent while receiving data
-   //this is valid behavior as long as there is only 5 clock cycles/bits of data of the previous transfer remaining
+   //this is valid behavior as long as there has been 16 clock cycles since the start of the last control byte
 
    bit = ads7846OutputValue & 0x8000;
    ads7846OutputValue <<= 1;
@@ -118,6 +120,6 @@ bool ads7846RecieveBit(){
 void ads7846Reset(){
    ads7846OutputValue = 0x0000;
    ads7846ControlByte = 0x00;
-   ads7846PenIrqEnabled = false;
-   ads7846InputBitsLeft = 0;
+   ads7846PenIrqEnabled = true;
+   ads7846BitsToNextControl = 0;
 }

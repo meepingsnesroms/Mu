@@ -524,7 +524,7 @@ void emulatorSaveState(uint8_t* data){
    offset += sizeof(uint8_t);
 
    //ADS7846
-   writeStateValueUint8(data + offset, ads7846InputBitsLeft);
+   writeStateValueUint8(data + offset, ads7846BitsToNextControl);
    offset += sizeof(uint8_t);
    writeStateValueUint8(data + offset, ads7846ControlByte);
    offset += sizeof(uint8_t);
@@ -667,7 +667,7 @@ void emulatorLoadState(uint8_t* data){
    offset += sizeof(uint8_t);
 
    //ADS7846
-   ads7846InputBitsLeft = readStateValueUint8(data + offset);
+   ads7846BitsToNextControl = readStateValueUint8(data + offset);
    offset += sizeof(uint8_t);
    ads7846ControlByte = readStateValueUint8(data + offset);
    offset += sizeof(uint8_t);

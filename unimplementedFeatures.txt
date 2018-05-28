@@ -29,6 +29,7 @@ may need to trigger an interrupt if a IMR masked interrupt becomes unmasked and 
 touch interrupt seems to not use IRQ5
 When SPICLK2, SPITXD or SPIRXD on port e is disabled ADS7846 functions should respond approptatly(not transmitting or receiving or blocking both for the clock)
 port g data bit 2 may need to be 0 to access ADS7846
+REFREQ clock frequency in RTCCTL should slow down the RTC when enabled
 
 Debug tools:
 missing icons
