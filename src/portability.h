@@ -28,20 +28,31 @@ static inline int64_t sMax(int64_t x, int64_t y){
 
 
 static inline uint64_t getUint64FromDouble(double data){
-   //32.32 fixed point
-   uint64_t fixedPointDouble = (uint64_t)data << 32;
+   //1.32.31 fixed point
+   uint64_t fixedPointDouble = 0x0000000000000000;
+
+   if(data < 0.0){
+      data = -data;
+      fixedPointDouble |= 0x8000000000000000;
+   }
+
+   fixedPointDouble |= (uint64_t)data << 31;
    data -= (uint64_t)data;
-   data *= 100000000.0;
+   data *= 1000000000.0;
    fixedPointDouble |= (uint64_t)data;
    
    return fixedPointDouble;
 }
 
 static inline double getDoubleFromUint64(uint64_t data){
-   //32.32 fixed point
-   double floatingPointDouble = (double)(data & 0x00000000FFFFFFFF);
-   floatingPointDouble /= 100000000.0;
-   floatingPointDouble += (double)(data >> 32);
+   //1.32.31 fixed point
+   double floatingPointDouble;
+
+   floatingPointDouble = (double)(data & 0x000000007FFFFFFF);
+   floatingPointDouble /= 1000000000.0;
+   floatingPointDouble += (double)(data >> 31 & 0xFFFFFFFF);
+   if(data & 0x8000000000000000)
+      floatingPointDouble = -floatingPointDouble;
    
    return floatingPointDouble;
 }

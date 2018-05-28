@@ -284,6 +284,15 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t spec
    //start running
    m68k_pulse_reset();
 
+   /*
+   double correct = 123456789.123456789;
+   uint64_t swap = getUint64FromDouble(correct);
+   double test = getDoubleFromUint64(swap);
+   debugLog("Original double is:%lf\n", correct);
+   debugLog("swap is:0x%016lX\n", swap);
+   debugLog("Final double is:%lf\n", test);
+   */
+
    emulatorInitialized = true;
    return EMU_ERROR_NONE;
 }

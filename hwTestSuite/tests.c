@@ -1,5 +1,6 @@
 #include <PalmOS.h>
 #include <stdint.h>
+#include <stdio.h>
 
 #include "testSuite.h"
 #include "testSuiteConfig.h"
@@ -107,7 +108,7 @@ var listDataRegisters(){
 
 var interrogateSpi2(){
    static Boolean firstRun = true;
-   static double spiclk2PercentAs1;
+   static float spiclk2PercentAs1;
    uint16_t y = 0;
    
    if(firstRun){
@@ -161,7 +162,7 @@ var interrogateSpi2(){
    StrPrintF(sharedDataBuffer, "SPIDATA2:0x%04X", readArbitraryMemory16(HW_REG_ADDR(SPIDATA2)));
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
-   StrPrintF(sharedDataBuffer, "SPICLK2:%f", spiclk2PercentAs1);
+   StrPrintF(sharedDataBuffer, "SPICLK2:%s", floatToString(spiclk2PercentAs1));
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
    

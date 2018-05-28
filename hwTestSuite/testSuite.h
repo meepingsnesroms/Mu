@@ -89,6 +89,9 @@ var     makeVar(uint8_t length, uint8_t type, uint64_t value);
 /*graphics*/
 void forceFrameRedraw();
 
+/*Palm OS library patches*/
+char* floatToString(float data);
+
 /*execution state*/
 void callSubprogram(activity_t activity);
 void exitSubprogram();

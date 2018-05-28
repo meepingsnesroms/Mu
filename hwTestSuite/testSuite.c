@@ -13,7 +13,7 @@
 #include "TstSuiteRsc.h"
 
 
-/*exported function, cant be converted into a macro*/
+/*exported functions, cant be converted into macros*/
 var makeVar(uint8_t length, uint8_t type, uint64_t value){
    var newVar;
    newVar.type = length & 0xF0 | type & 0x0F;
@@ -21,6 +21,44 @@ var makeVar(uint8_t length, uint8_t type, uint64_t value){
    return newVar;
 }
 
+static char floatString[maxStrIToALen * 2 + 3];/*2 ints and "-.\0"*/
+char* floatToString(float data){
+   if(data == 1.0 / 0.0){
+      StrCopy(floatString, "+INF");
+   }
+   else if(data == -(1.0 / 0.0)){
+      StrCopy(floatString, "-INF");
+   }
+   else if(data == 0.0){
+      StrCopy(floatString, "0.0");
+   }
+   else{
+      char convertBuffer[maxStrIToALen];
+      Boolean negative;
+      
+      if(data < 0.0){
+         negative = true;
+         data = -data;
+      }
+      else{
+         negative = false;
+      }
+      
+      floatString[0] = '\0';
+      data = abs(data);
+      StrIToA(convertBuffer, (int32_t)data);
+      if(negative)
+         StrCat(floatString, "-");
+      StrCat(floatString, convertBuffer);
+      StrCat(floatString, ".");
+      data -= (int32_t)data;
+      data *= 100000;
+      StrIToA(convertBuffer, (int32_t)data);
+      StrCat(floatString, convertBuffer);
+   }
+   
+   return floatString;
+}
 
 /*exports*/
 uint16_t palmButtons;
