@@ -15,6 +15,7 @@ public:
    ~SerialPortIO();
 
    Q_INVOKABLE unsigned int bytesAvailable();
+   Q_INVOKABLE void flushFifo();
    Q_INVOKABLE void transmitUint8(unsigned int data);
    Q_INVOKABLE unsigned int receiveUint8();
 

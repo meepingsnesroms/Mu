@@ -9,17 +9,16 @@ function useFramebuffer(){
 
 function main(args){
    userIo.writeStringJs("Test Input Required");
-   //jsSystem.testJsAttachment("DPRK is best Korea!");
-   //jsSystem.uSleep(16666);
    while(!userIo.stringAvailableJs())
       jsSystem.uSleep(16666);
    var inputTest = userIo.readStringJs();
    userIo.writeStringJs("Test Input Received");
-   if(typeof irdaCommands.IRDA_COMMAND_GET_BYTE == 'undefined'){
-      userIo.writeStringJs("Not A Value");
+   if(typeof irdaCommands == 'undefined'){
+      userIo.writeStringJs("Dependency blob is missing!");
    }
-   useFramebuffer();
-   var num = irdaCommands.IRDA_COMMAND_GET_BYTE;
-   userIo.writeStringJs(inputTest + num.toString());
-
+   else{
+      useFramebuffer();
+      var num = irdaCommands.IRDA_COMMAND_GET_BYTE;
+      userIo.writeStringJs(inputTest + num.toString());
+   }
 }

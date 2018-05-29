@@ -1197,6 +1197,7 @@ jsSystem.validDependencyBlob = function (version){
    return false;
 }
 
+/*
 serialPort.receiveBuffer = function (size){
    var array = [0];
 
@@ -1205,14 +1206,7 @@ serialPort.receiveBuffer = function (size){
 
    return array;
 }
-
-serialPort.flushFifo = function (){
-   var buffer = [0];
-   var size = serialPort.bytesAvailable();
-   userIo.writeStringJs("Type of size:" + typeof size);
-   jsSystem.uSleep(16666 * 2);
-   serialPort.receiveBuffer(buffer, size);
-}
+*/
 
 function isAlphanumeric(char){
    if(typeof char === 'string')
