@@ -1,4 +1,5 @@
 #include <QObject>
+#include <QString>
 
 #include <fcntl.h>
 #include <unistd.h>

@@ -1,7 +1,6 @@
 #pragma once
 
 #include <QMainWindow>
-#include <QSslSocket>
 #include <QSettings>
 #include <QString>
 #include <QTimer>
@@ -10,6 +9,7 @@
 #include <thread>
 
 #include "serialportio.h"
+#include "serialoverwifi.h"
 #include "userio.h"
 #include "jssystem.h"
 #include "testexecutionenviroment.h"
@@ -29,7 +29,7 @@ public:
 private slots:
    void updateWindow();
    void launchJs(bool serialOverWifi);
-   bool wifiValidate(QString location);
+   bool wifiValidate();
 
    void on_pickTestProgram_clicked();
    void on_startLocalTesting_clicked();
@@ -45,6 +45,7 @@ private slots:
 
 private:
    SerialPortIO*           serialOut;
+   SerialOverWifi*         wifiSerialOut;
    UserIO*                 userTerminal;
    JSSystem*               systemInterface;
    TestExecutionEnviroment testEnv;
@@ -52,7 +53,6 @@ private:
    QString                 testProgram;
    QString                 dependencyBlob;
    QString                 sslCertPath;
-   QSslSocket              wifiConnection;
    QTimer*                 refreshWindow;
    Ui::MainWindow*         ui;
 };

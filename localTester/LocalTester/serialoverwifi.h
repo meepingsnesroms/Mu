@@ -2,18 +2,18 @@
 
 #include <QObject>
 #include <QString>
+#include <QByteArray>
 
-class SerialPortIO : public QObject
+class SerialOverWifi : public QObject
 {
    Q_OBJECT
 
 private:
-   QString deviceFilePath;
-   int     deviceFile;
+   //fdf
 
 public:
-   SerialPortIO(QString serialDeviceFilePath);
-   ~SerialPortIO();
+   SerialOverWifi(QString location, uint16_t port, QByteArray certificate);
+   ~SerialOverWifi();
 
    Q_INVOKABLE unsigned int bytesAvailable();
    Q_INVOKABLE void flushFifo();

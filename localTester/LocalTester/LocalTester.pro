@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui qml
+QT       += core gui qml network
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -28,18 +28,18 @@ SOURCES += \
     main.cpp \
     mainwindow.cpp \
     testexecutionenviroment.cpp \
-    fileaccess.cpp \
     serialportio.cpp \
     userio.cpp \
-    jssystem.cpp
+    jssystem.cpp \
+    serialoverwifi.cpp
 
 HEADERS += \
     mainwindow.h \
-    fileaccess.h \
     testexecutionenviroment.h \
     serialportio.h \
     userio.h \
-    jssystem.h
+    jssystem.h \
+    serialoverwifi.h
 
 FORMS += \
     mainwindow.ui
