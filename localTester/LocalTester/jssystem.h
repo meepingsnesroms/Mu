@@ -22,8 +22,8 @@ public:
    explicit JSSystem(QObject* parent = nullptr);
 
    Q_INVOKABLE void testJsAttachment(QString str);
-   Q_INVOKABLE void uSleep(uint32_t uSeconds);
-   Q_INVOKABLE void setFramebufferSize(uint32_t w, uint32_t h);
+   Q_INVOKABLE void uSleep(unsigned int uSeconds);
+   Q_INVOKABLE void setFramebufferSize(unsigned int w, unsigned int h);
    Q_INVOKABLE void setFramebuffer(QJSValue framebuffer);
 
 signals:

@@ -16,6 +16,7 @@ TestExecutionEnviroment::TestExecutionEnviroment(){
 }
 
 TestExecutionEnviroment::~TestExecutionEnviroment(){
+   finish();
    engine->collectGarbage();
    delete engine;//deleting the engine frees all QObject classes passed to it automaticly
 }
@@ -25,7 +26,6 @@ void TestExecutionEnviroment::jsThreadFunction(QString program, QString args, bo
       QJSValue jsGlobal = engine->globalObject();
       jsGlobal.setProperty("__programArgs", QJSValue(args));
       engine->evaluate(program);
-
       lastProgramReturnValue = engine->evaluate("main(__programArgs);").toString();
    }
    else{
@@ -35,6 +35,7 @@ void TestExecutionEnviroment::jsThreadFunction(QString program, QString args, bo
 }
 
 void TestExecutionEnviroment::clearExecutionEnviroment(){
+   finish();
    engine->collectGarbage();
    delete engine;//deleting the engine frees all QObject classes passed to it automaticly
    engine = new QJSEngine();

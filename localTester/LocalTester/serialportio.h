@@ -14,8 +14,9 @@ public:
    SerialPortIO(QString serialDeviceFilePath);
    ~SerialPortIO();
 
-   Q_INVOKABLE void transmitUint8(uint8_t data);
-   Q_INVOKABLE uint8_t receiveUint8();
+   Q_INVOKABLE unsigned int bytesAvailable();
+   Q_INVOKABLE void transmitUint8(unsigned int data);
+   Q_INVOKABLE unsigned int receiveUint8();
 
 signals:
 

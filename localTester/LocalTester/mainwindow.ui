@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>400</width>
-    <height>546</height>
+    <height>584</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -73,6 +73,13 @@
      </widget>
     </item>
     <item>
+     <widget class="QPushButton" name="clearTerminal">
+      <property name="text">
+       <string>Clear Terminal</string>
+      </property>
+     </widget>
+    </item>
+    <item>
      <widget class="QLabel" name="label_5">
       <property name="text">
        <string>Screen:</string>
@@ -95,6 +102,9 @@
       </property>
       <property name="text">
        <string/>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
       </property>
      </widget>
     </item>

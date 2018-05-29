@@ -41,6 +41,8 @@ private slots:
 
    void on_sendText_returnPressed();
 
+   void on_clearTerminal_clicked();
+
 private:
    SerialPortIO*           serialOut;
    UserIO*                 userTerminal;

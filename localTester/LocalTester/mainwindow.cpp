@@ -50,12 +50,16 @@ void MainWindow::updateWindow(){
    systemInterface->systemData.unlock();
 
    //javascript program has stopped, window updating service no longer needed
-   if(!testEnv.running())
+   if(!testEnv.running()){
+      ui->receiveText->setText(ui->receiveText->toPlainText() + "PROGRAM FINISHED!" + '\n');
       refreshWindow->stop();
+   }
 }
 
 void MainWindow::launchJs(bool serialOverWifi){
+   testEnv.finish();
    testEnv.clearExecutionEnviroment();
+   ui->framebuffer->clear();
 
    if(serialOverWifi)
       /*wifi handler not done yet*/;
@@ -68,14 +72,11 @@ void MainWindow::launchJs(bool serialOverWifi){
    testEnv.installClass("userIo", userTerminal);
    testEnv.installClass("jsSystem", systemInterface);
 
-   //start window updating service
-   refreshWindow->start(16);//update the window every 16.67miliseconds = 60 * second
-
    testEnv.execute(dependencyBlob, "", false);
    testEnv.finish();
    testEnv.execute(testProgram, ui->sendText->text(), true);
    ui->sendText->clear();
-   //testEnv.finish();
+   refreshWindow->start(16);//update the window every 16.67miliseconds = 60 * second
 }
 
 bool MainWindow::wifiValidate(QString location){
@@ -162,4 +163,8 @@ void MainWindow::on_sendText_returnPressed(){
       userTerminal->writeStringCxx(ui->sendText->text());
       ui->sendText->clear();
    }
+}
+
+void MainWindow::on_clearTerminal_clicked(){
+   ui->receiveText->clear();
 }

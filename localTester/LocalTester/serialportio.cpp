@@ -2,6 +2,7 @@
 
 #include <fcntl.h>
 #include <unistd.h>
+#include <sys/ioctl.h>
 #include <stdint.h>
 #include <stdexcept>
 
@@ -20,11 +21,18 @@ SerialPortIO::~SerialPortIO(){
    close(deviceFile);
 }
 
-void SerialPortIO::transmitUint8(uint8_t data){
-   write(deviceFile, &data, 1);
+unsigned int SerialPortIO::bytesAvailable(){
+   int bytes;
+   ioctl(deviceFile, FIONREAD, &bytes);
+   return bytes;
 }
 
-uint8_t SerialPortIO::receiveUint8(){
+void SerialPortIO::transmitUint8(unsigned int data){
+   uint8_t realData = data;
+   write(deviceFile, &realData, 1);
+}
+
+unsigned int SerialPortIO::receiveUint8(){
    uint8_t data = 0x00;
    read(deviceFile, &data, 1);
    return data;

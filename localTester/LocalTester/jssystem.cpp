@@ -18,11 +18,11 @@ void JSSystem::testJsAttachment(QString str){
    printf("C++ executed through javascript!, str:%s\n", str.toStdString().c_str());
 }
 
-void JSSystem::uSleep(uint32_t uSeconds){
+void JSSystem::uSleep(unsigned int uSeconds){
    std::this_thread::sleep_for(std::chrono::microseconds(uSeconds));
 }
 
-void JSSystem::setFramebufferSize(uint32_t w, uint32_t h){
+void JSSystem::setFramebufferSize(unsigned int w, unsigned int h){
    systemData.lock();
    framebufferPixels.resize(w * h);
    framebufferWidth = w;
