@@ -11,6 +11,7 @@
 
 TestExecutionEnviroment::TestExecutionEnviroment(){
    jsRunning = false;
+   errorFilePath = "";
    lastProgramReturnValue = "";
    engine = new QJSEngine();
 }
@@ -25,13 +26,17 @@ void TestExecutionEnviroment::jsThreadFunction(QString program, QString args, bo
    if(callMain){
       QJSValue jsGlobal = engine->globalObject();
       jsGlobal.setProperty("__programArgs", QJSValue(args));
-      engine->evaluate(program);
-      lastProgramReturnValue = engine->evaluate("main(__programArgs);").toString();
+      engine->evaluate(program, errorFilePath);
+      lastProgramReturnValue = engine->evaluate("main(__programArgs);", errorFilePath).toString();
    }
    else{
-      engine->evaluate(program);
+      engine->evaluate(program, errorFilePath);
    }
    jsRunning = false;
+}
+
+void TestExecutionEnviroment::setErrorPath(QString path){
+   errorFilePath = path;
 }
 
 void TestExecutionEnviroment::clearExecutionEnviroment(){

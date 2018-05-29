@@ -1,16 +1,27 @@
 function main(args){
    //copy 100 chars from the serial port to user output
    userIo.writeStringJs("Started, wating on serial port");
-   var string;
-   for(var count = 0; count < 100; count++){
-      if(serialPort.bytesAvailable() > 0){
-         var letter = serialPort.receiveUint8();
+   var string = "";
+   //userIo.writeStringJs("Type of serialPort:" + typeof serialPort);
+   //userIo.writeStringJs(trapNameFromNumber[0xA474].toString());
+   //userIo.writeStringJs("Type of serialPort.flushFifo:" + typeof serialPort.flushFifo);
+   //serialPort.flushFifo = 2;
+   //userIo.writeStringJs("Type of serialPort.flushFifo:" + typeof serialPort.flushFifo);
+   userIo.writeStringJs("Blob is valid:" + jsSystem.validDependencyBlob(1.0).toString());
+   userIo.writeStringJs("Bytes in FIFO before flush:" + serialPort.bytesAvailable().toString());
+   serialPort.flushFifo();
+   userIo.writeStringJs("Bytes in FIFO after flush:" + serialPort.bytesAvailable().toString());
+   for(var count = 0; count < 10000; count++){
+      //if(serialPort.bytesAvailable() > 0){
+         var letter = String.fromCharCode(serialPort.receiveUint8());
          if(isAlphanumeric(letter))
-            string += String.fromCharCode(letter);
-      }
-      else{
-         jsSystem.uSleep(16666);
-      }
+            string += letter;
+         else
+            string += " ";
+      //}
+      //else{
+      //   jsSystem.uSleep(16666);
+      //}
    }
    userIo.writeStringJs(string);
    userIo.writeStringJs("Ended");

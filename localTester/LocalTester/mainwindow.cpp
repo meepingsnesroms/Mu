@@ -32,6 +32,9 @@ MainWindow::MainWindow(QWidget* parent) :
    dependencyBlob = "";
    testProgram = "";
 
+   //temporary
+   testEnv.setErrorPath("/Users/Hoppy/Desktop/projects/PalmEmuRedo/libretro-palmm515emu/localTester/jsError.log");
+
    refreshWindow = new QTimer(this);
    connect(refreshWindow, SIGNAL(timeout()), this, SLOT(updateWindow()));
 }

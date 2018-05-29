@@ -4,8 +4,8 @@
 
 var __BlobVersion = 1.0;
 var irdaCommands;
-var trapNames;
-var trapNumbers;
+var trapNameFromNumber;
+var trapNumberFromName;
 
 
 //constructors and converters
@@ -1180,11 +1180,14 @@ var __trapList = [
    ["sysTrapLastTrapNumber", 0xA475]
 ];
 
-for(var i in __trapList){
-   trapNames[this[0]] = this[1];
-   trapNumbers[this[1]] = this[0];
+/*
+//currently causing crasing, just disable for now
+for(var i = 0; i < __trapList.length; i++){
+   trapNameFromNumber[__trapList[i][1]] = __trapList[i][0];
+   trapNumberFromName[__trapList[i][0]] = __trapList[i][1];
 }
-__trapList = undefined;//free the memory
+*/
+//__trapList = undefined;//free the memory
 
 
 //functions
@@ -1194,7 +1197,27 @@ jsSystem.validDependencyBlob = function (version){
    return false;
 }
 
+serialPort.receiveBuffer = function (size){
+   var array = [0];
+
+   for(var index = 0; index < size; index++)
+      array[index] = serialPort.receiveUint8();
+
+   return array;
+}
+
+serialPort.flushFifo = function (){
+   var buffer = [0];
+   var size = serialPort.bytesAvailable();
+   userIo.writeStringJs("Type of size:" + typeof size);
+   jsSystem.uSleep(16666 * 2);
+   serialPort.receiveBuffer(buffer, size);
+}
+
 function isAlphanumeric(char){
+   if(typeof char === 'string')
+      char = char.charCodeAt(0);
+
    if(!(char > 47 && char < 58)/*numeric (0-9)*/ && !(char > 64 && char < 91)/*upper alpha (A-Z)*/ && !(char > 96 && char < 123)/*lower alpha (a-z)*/)
      return false;
    return true;

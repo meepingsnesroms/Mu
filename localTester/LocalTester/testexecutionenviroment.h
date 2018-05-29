@@ -13,6 +13,7 @@ private:
    QJSEngine*        engine;
    std::thread       jsThread;
    std::atomic<bool> jsRunning;
+   QString           errorFilePath;
    QString           lastProgramReturnValue;
 
    void jsThreadFunction(QString program, QString args, bool callMain);
@@ -21,6 +22,7 @@ public:
    TestExecutionEnviroment();
    ~TestExecutionEnviroment();
 
+   void setErrorPath(QString path);
    void clearExecutionEnviroment();
    void installClass(QString name, QObject* jsClass);
 

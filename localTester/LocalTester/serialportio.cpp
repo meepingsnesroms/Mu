@@ -2,6 +2,7 @@
 
 #include <fcntl.h>
 #include <unistd.h>
+#include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <stdint.h>
 #include <stdexcept>
@@ -11,7 +12,7 @@
 
 SerialPortIO::SerialPortIO(QString serialDeviceFilePath) : QObject(nullptr){
    deviceFilePath = serialDeviceFilePath;
-   deviceFile = open(serialDeviceFilePath.toStdString().c_str(), O_RDWR | O_NOCTTY | O_NONBLOCK);
+   deviceFile = open(serialDeviceFilePath.toStdString().c_str(), O_RDWR | O_NOCTTY);
    if(deviceFile < 0)
       throw std::invalid_argument("Cant open file!");
 }
@@ -29,11 +30,11 @@ unsigned int SerialPortIO::bytesAvailable(){
 
 void SerialPortIO::transmitUint8(unsigned int data){
    uint8_t realData = data;
-   write(deviceFile, &realData, 1);
+   send(deviceFile, &realData, 1, MSG_DONTWAIT);
 }
 
 unsigned int SerialPortIO::receiveUint8(){
    uint8_t data = 0x00;
-   read(deviceFile, &data, 1);
+   recv(deviceFile, &data, 1, MSG_DONTWAIT);
    return data;
 }
