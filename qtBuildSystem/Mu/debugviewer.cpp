@@ -2,12 +2,15 @@
 #include "ui_debugviewer.h"
 
 #include <QString>
+#include <QSettings>
+#include <QFile>
 #include <QDir>
 
+#include <vector>
 #include <stdint.h>
 
 #include "mainwindow.h"
-#include "fileaccess.h"
+#include "emuwrapper.h"
 
 
 DebugViewer::DebugViewer(QWidget* parent) :
@@ -121,22 +124,25 @@ void DebugViewer::on_debug32Bit_clicked(){
 
 void DebugViewer::on_debugDump_clicked(){
    QSettings& settings = ((MainWindow*)parentWidget())->settings;
-   QString fileOut;
-   std::string fileData;//if a QString is used a '\0' will be appended to every character
+   QString fileBuffer;
    QString fileName = ui->debugFilePath->text();
    QString filePath = settings.value("resourceDirectory", "").toString() + "/debugDumps";
    QDir location = filePath;
+   QFile fileOut(filePath + "/" + fileName);
 
    if(!location.exists())
       location.mkpath(".");
 
    for(uint64_t index = 0; index < ui->debugValueList->count(); index++){
-      fileOut += ui->debugValueList->item(index)->text();
-      fileOut += '\n';
+      fileBuffer += ui->debugValueList->item(index)->text();
+      fileBuffer += '\n';
    }
 
-   fileData = fileOut.toStdString();
-   setFileBuffer(filePath + "/" + fileName, (uint8_t*)fileData.c_str(), fileData.length());
+   if(fileOut.open(QFile::ReadWrite)){
+      //if a QString is used for output a '\0' will be appended to every character
+      fileOut.write(fileBuffer.toStdString().c_str());
+      fileOut.close();
+   }
 }
 
 void DebugViewer::on_debugShowRegisters_clicked(){

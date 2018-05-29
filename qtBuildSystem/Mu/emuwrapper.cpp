@@ -1,6 +1,8 @@
 #include <QString>
 #include <QPixmap>
 #include <QImage>
+#include <QFile>
+#include <QByteArray>
 
 #include <new>
 #include <chrono>
@@ -10,7 +12,6 @@
 #include <stdint.h>
 
 #include "emuwrapper.h"
-#include "fileaccess.h"
 #include "src/emulator.h"
 
 extern "C"{
@@ -105,24 +106,38 @@ uint32_t EmuWrapper::init(QString romPath, QString bootloaderPath, uint32_t feat
    if(!emuRunning && !emuInited){
       //start emu
       uint32_t error;
+      QFile romFile(romPath);
+      QFile bootloaderFile(bootloaderPath);
+      QByteArray romData;
+      QByteArray bootloaderData;
       buffer_t romBuff;
-      buffer_t bootBuff;
+      buffer_t bootloaderBuff;
 
-      romBuff.data = getFileBuffer(romPath, romBuff.size, error);
-      if(error != FILE_ERR_NONE)
-         return error;
-      bootBuff.data = getFileBuffer(bootloaderPath, bootBuff.size, error);
-      if(error != FILE_ERR_NONE){
-         //its ok if the bootloader gives an error, the emu doesnt actually need it
-         bootBuff.data = NULL;
-         bootBuff.size = 0;
+      if(romFile.open(QFile::ReadOnly)){
+         romData = romFile.readAll();
+         romFile.close();
+
+         romBuff.data = (uint8_t*)romData.data();
+         romBuff.size = romData.size();
+      }
+      else{
+         return EMU_ERROR_INVALID_PARAMETER;
       }
 
-      error = emulatorInit(romBuff, bootBuff, features);
-      delete[] romBuff.data;
-      if(bootBuff.data)
-         delete[] bootBuff.data;
+      if(bootloaderPath != ""){
+         if(bootloaderFile.open(QFile::ReadOnly)){
+            bootloaderData = bootloaderFile.readAll();
+            bootloaderFile.close();
 
+            bootloaderBuff.data = (uint8_t*)bootloaderData.data();
+            bootloaderBuff.size = bootloaderData.size();
+         }
+         else{
+            return EMU_ERROR_INVALID_PARAMETER;
+         }
+      }
+
+      error = emulatorInit(romBuff, bootloaderBuff, features);
       if(error == EMU_ERROR_NONE){
          if(features & FEATURE_320x320){
             emuVideoWidth = 320;

@@ -3,6 +3,8 @@
 #include <QDialog>
 #include <QString>
 
+#include <stdint.h>
+
 namespace Ui {
 class DebugViewer;
 }

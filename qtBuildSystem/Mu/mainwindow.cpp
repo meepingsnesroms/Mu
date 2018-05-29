@@ -19,7 +19,6 @@
 #include <stdint.h>
 
 #include "debugviewer.h"
-#include "fileaccess.h"
 
 
 MainWindow::MainWindow(QWidget* parent) :
@@ -101,7 +100,7 @@ void MainWindow::selectHomePath(){
 void MainWindow::on_install_pressed(){
    QString app = QFileDialog::getOpenFileName(this, "Open *.prc/pdb/pqa", QDir::root().path(), 0);
    uint32_t error = emu.installApplication(app);
-   if(error != FILE_ERR_NONE)
+   if(error != EMU_ERROR_NONE)
       popupErrorDialog("Could not install app");
 }
 
@@ -168,7 +167,8 @@ void MainWindow::on_notes_released(){
 //emu control
 void MainWindow::on_ctrlBtn_clicked(){
    if(!emu.isInited()){
-      uint32_t error = emu.init(settings.value("resourceDirectory", "").toString() + "/palmos41-en-m515.rom", settings.value("resourceDirectory", "").toString() + "/bootloader-en-m515.rom", FEATURE_ACCURATE);
+      //uint32_t error = emu.init(settings.value("resourceDirectory", "").toString() + "/palmos41-en-m515.rom", settings.value("resourceDirectory", "").toString() + "/bootloader-en-m515.rom", FEATURE_ACCURATE);
+      uint32_t error = emu.init(settings.value("resourceDirectory", "").toString() + "/palmos41-en-m515.rom", ""/*no bootloader for now*/, FEATURE_ACCURATE);
       if(error == EMU_ERROR_NONE){
          ui->calender->setEnabled(true);
          ui->addressBook->setEnabled(true);

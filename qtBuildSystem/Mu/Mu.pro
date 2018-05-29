@@ -60,7 +60,6 @@ SOURCES += \
     src/sed1376.c \
     src/silkscreen.c \
     src/trapNumToName.c \
-    fileaccess.cpp \
     src/ads7846.c \
     debugviewer.cpp \
     emuwrapper.cpp
@@ -86,7 +85,6 @@ HEADERS += \
     src/hardwareRegistersTiming.c.h \
     src/sed1376Accessors.c.h \
     src/hardwareRegistersAccessors.c.h \
-    fileaccess.h \
     src/endianness.h \
     src/ads7846.h \
     debugviewer.h \
