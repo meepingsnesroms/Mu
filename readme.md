@@ -51,6 +51,7 @@ Musashi v3.4(last version that builds outside of mame) (68k core)
 http://www.iconarchive.com/show/clean-3d-icons-by-mysitemyway.html (Palm Action Buttons , clean3d-blue.zip)  
 http://www.iconarchive.com/show/crystal-clear-icons-by-everaldo/App-palm-icon.html (Desktop Icon)  
 http://tango.freedesktop.org/Tango_Icon_Library (All UI buttons)  
+https://www.iconexperience.com/v_collection/icons/?icon=led_red (3dsIrForwarder icon)
 Some main board photos by Reddit /u/KHRoN
 
 ## Building
