@@ -6,4 +6,4 @@
 androidBuildToolsVersion=26.0.2
 androidCompileSdkVersion=26
 buildDir=.build
-qt5AndroidDir=/Users/Hoppy/Qt/5.10.1/android_armv7/src/android/java
+qt5AndroidDir=/Users/Hoppy/Qt/5.11.0/android_armv7/src/android/java
