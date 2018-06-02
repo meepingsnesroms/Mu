@@ -1,10 +1,15 @@
 #include <3ds.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <string.h>
+#include <fcntl.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+
+#include "main.h"
+#include "relay.h"
 
 
 #define SOC_ALIGN       0x1000
@@ -80,15 +85,14 @@ static void cleanup(){
       free(socketBuffer);
 }
 
-bool relayInit(uint32_t irBaud){
+uint32_t relayInit(uint32_t irBaud){
    if(!relayInited){
-      uint8_t commandBuffer[sizeof(loginAnswer)];
       int8_t irBaudCode = makeCodeFromBaud(irBaud);
       Result systemCallValue;
       int ret;
       
       if(irBaudCode == -1)
-         return false;
+         return RELAY_ERROR_INVALID_PARAM;
       
       irInited = false;
       socketInited = false;
@@ -97,33 +101,33 @@ bool relayInit(uint32_t irBaud){
       irBuffer = (u32*)memalign(SOC_ALIGN, SOC_BUFFERSIZE);
       if(!irBuffer || !socketBuffer){
          cleanup();
-         return false;
+         return RELAY_ERROR_OUT_OF_MEMORY;
       }
       
       systemCallValue = iruInit(irBuffer, SOC_BUFFERSIZE);
       if(systemCallValue != RL_SUCCESS){
          cleanup();
-         return false;
+         return RELAY_ERROR_IR_DRIVER;
       }
       irInited = true;
       
       systemCallValue = IRU_SetBitRate((uint8_t)irBaudCode);
       if(systemCallValue != RL_SUCCESS){
          cleanup();
-         return false;
+         return RELAY_ERROR_IR_DRIVER;
       }
       
-      systemCallValue = socInit(socketBuffer, SOC_BUFFERSIZE)
+      systemCallValue = socInit(socketBuffer, SOC_BUFFERSIZE);
       if(systemCallValue != RL_SUCCESS){
          cleanup();
-         return false;
+         return RELAY_ERROR_WIFI_DRIVER;
       }
       socketInited = true;
       
       sock = socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
       if(sock < 0){
          cleanup();
-         return false;
+         return RELAY_ERROR_CANT_OPEN_SOCKET;
       }
       
       memset(&server, 0, sizeof(server));
@@ -133,10 +137,10 @@ bool relayInit(uint32_t irBaud){
       server.sin_port = htons(80);
       server.sin_addr.s_addr = gethostid();
       
-      ret = bind(sock, (struct sockaddr*)&server, sizeof(server)));
+      ret = bind(sock, (struct sockaddr*)&server, sizeof(server));
       if(ret != 0){
          cleanup();
-         return false;
+         return RELAY_ERROR_CANT_BIND_SOCKET;
       }
       
       fcntl(sock, F_SETFL, fcntl(sock, F_GETFL, 0) | O_NONBLOCK);
@@ -144,13 +148,13 @@ bool relayInit(uint32_t irBaud){
       ret = listen(sock, 5);
       if(ret != 0){
          cleanup();
-         return false;
+         return RELAY_ERROR_CANT_LISTEN_SOCKET;
       }
       
       relayInited = true;
    }
    
-   return true;//already inited returns success
+   return RELAY_ERROR_NONE;//already inited returns success
 }
 
 void relayExit(){
@@ -158,31 +162,57 @@ void relayExit(){
       cleanup();
 }
 
-bool relayAttemptConnection(){
+uint32_t relayAttemptConnection(){
    if(relayInited){
+      uint8_t commandBuffer[sizeof(loginAnswer)] = {0};
+      uint32_t bytes;
+      
       if(csock)
          close(csock);
       
       csock = accept(sock, (struct sockaddr*)&client, &clientLen);
+      if(csock < 0)
+         return RELAY_ERROR_NO_CLIENTS;
       
       //check if this is an internet scanner bot or a login
       send(csock, loginQuery, strlen(loginQuery), 0);
       
       //check if responce matches
-      sleep(3);
-      ret = recv(csock, commandBuffer, sizeof(loginAnswer), 0);
-      if(ret < 0){
+      safeSleep(3);
+      bytes = recv(csock, commandBuffer, sizeof(loginAnswer), 0);
+      if(bytes != sizeof(loginAnswer)){
          cleanup();
-         return false;
+         return RELAY_ERROR_TIMEOUT;
       }
       
-      return true;
+      if(memcmp(commandBuffer, loginAnswer, sizeof(loginAnswer)) != 0){
+         //responce is wrong, this is a scanner, DDOS(very unlikely) or clueless web user(most likely, they tried to open the forwarder as a web page)
+         close(csock);
+         return RELAY_ERROR_INVALID_PARAM;
+      }
+      
+      return RELAY_ERROR_NONE;
    }
 
-   return false;
+   return RELAY_ERROR_NOT_INITED;
+}
+
+uint32_t relayGetMyIp(){
+   return gethostid();
 }
 
 void relayRun(){
    //simply copys all data from WIFI to IR and IR to WIFI
+   uint8_t swapBuffer[1024];
+   uint32_t bytes;
    
+   //read from WIFI
+   bytes = recv(csock, swapBuffer, sizeof(swapBuffer), 0);
+   //forward to IR
+   iruSendData(swapBuffer, bytes, false/*wait*/);
+   
+   //read from IR
+   iruRecvData(swapBuffer, sizeof(swapBuffer), 0/*flag*/, &bytes, false/*wait*/);
+   //forward to WIFI
+   send(csock, swapBuffer, bytes, 0);
 }

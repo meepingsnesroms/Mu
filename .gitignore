@@ -13,3 +13,4 @@
 /libretroBuildSystem/libs
 /qtBuildSystem/build-Mu-*
 /localTester/build-LocalTester-*
+/localTester/3dsIrForwarder/build
