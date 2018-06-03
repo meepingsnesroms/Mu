@@ -14,3 +14,6 @@
 /qtBuildSystem/build-Mu-*
 /localTester/build-LocalTester-*
 /localTester/3dsIrForwarder/build
+/localTester/3dsIrForwarder/3dsIrForwarder.elf
+/localTester/3dsIrForwarder/3dsIrForwarder.3dsx
+/localTester/3dsIrForwarder/3dsIrForwarder.smdh
