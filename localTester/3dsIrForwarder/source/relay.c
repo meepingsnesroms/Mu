@@ -1,7 +1,10 @@
 #include <3ds.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdlib.h>
 #include <string.h>
+#include <malloc.h>
+#include <stdio.h>
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -19,31 +22,30 @@
 
 #define SOC_ALIGN       0x1000
 #define SOC_BUFFERSIZE  0x100000
-#define WIFI_PORT       1869
+#define WIFI_PORT       11869
 
 
-bool                      relayInited = false;
-bool                      clientBound;
-bool                      irInited;
-bool                      socketInited;
-static u32*               irBuffer;
-static u32*               socketBuffer;
-//static s32                sock;
-//static s32                csock;
-//static struct sockaddr_in client;
-//static struct sockaddr_in server;
-//static u32                clientLen = sizeof(client);
+bool        relayInited = false;
+bool        clientBound;
+bool        irInited;
+bool        socketInited;
+static u32* irBuffer;
+static u32* socketBuffer;
 
-static bool mbedTlsInited = false;
-static mbedtls_net_context bindFd;
-static mbedtls_net_context clientFd;
-static mbedtls_entropy_context entropy;
+static bool                     mbedTlsInited = false;
+static mbedtls_net_context      bindFd;
+static mbedtls_net_context      clientFd;
+static mbedtls_entropy_context  entropy;
 static mbedtls_ctr_drbg_context ctrDrbg;
-static mbedtls_ssl_context ssl;
-static mbedtls_ssl_config conf;
-const char* sendCertFile = "sdmc:/3dsIrForwarder/send.pem";
-const char* receiveCertFile = "sdmc:/3dsIrForwarder/receive.pem";
+static mbedtls_pk_context       pkey;
+static mbedtls_x509_crt         cacert;
+static mbedtls_ssl_context      ssl;
+static mbedtls_ssl_config       conf;
 
+static const char rawEntropy[] = "Fleas are small flightless insects that form the order Siphonaptera. As external parasites of mammals and birds, they live by consuming the blood of their hosts. Adults are up to about long and usually brown. Bodies flattened sideways enable them to move through their host's fur or feathers; strong claws prevent them from being dislodged.";
+static const char sendCertFile[] = "sdmc:/3dsIrForwarder/send.pem";
+static const char receiveCertFile[] = "sdmc:/3dsIrForwarder/receive.pem";
+static const char passwordFile[] = "sdmc:/3dsIrForwarder/password.txt";
 static const char loginQuery[] = "I am a Palm OS command transmitter.";
 static const char loginAnswer[] = "I want to login to a Palm OS Device!";
 
@@ -92,7 +94,9 @@ static void cleanup(){
       mbedtls_net_free(&server_fd);
       mbedtls_ssl_free(&ssl);
       mbedtls_ssl_config_free(&conf);
+      mbedtls_x509_crt_free(&cacert);
       mbedtls_ctr_drbg_free(&ctr_drbg);
+      mbedtls_pk_free(&pkey);
       mbedtls_entropy_free(&entropy);
       mbedTlsInited = false;
    }
@@ -106,15 +110,15 @@ static void cleanup(){
       free(socketBuffer);
 }
 
-static void mbedTlsCustomDebug(void *ctx, int level, const char *file, int line, const char *str){
-   //((void) level);
-   //fprintf( (FILE *) ctx, "%s:%04d: %s", file, line, str );
-   //fflush(  (FILE *) ctx  );
+static void mbedTlsCustomDebug(void* ctx, int level, const char* file, int line, const char* str){
    printf("%s:%04d: %s", file, line, str);
 }
 
 uint32_t relayInit(uint32_t irBaud){
    if(!relayInited){
+      uint32_t ipAsNumber = gethostid();
+      char ip[16];
+      char port[6];
       int8_t irBaudCode = makeCodeFromBaud(irBaud);
       Result systemCallValue;
       int ret;
@@ -132,14 +136,14 @@ uint32_t relayInit(uint32_t irBaud){
       mbedtls_ssl_config_init(&conf);
       mbedtls_x509_crt_init(&cacert);
       mbedtls_ctr_drbg_init(&ctrDrbg);
+      mbedtls_pk_init(&pkey);
       mbedtls_entropy_init(&entropy);
       mbedTlsInited = true;
       
-      ret = mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy, (const unsigned char *) pers, strlen(pers));
+      ret = mbedtls_ctr_drbg_seed(&ctrDrbg, mbedtls_entropy_func, &entropy, rawEntropy, sizeof(rawEntropy));
       if(ret != 0){
-         printf( " failed\n  ! mbedtls_ctr_drbg_seed returned %d\n", ret );
+         printf("failed\n  ! mbedtls_ctr_drbg_seed returned %d\n", ret );
          return false;
-         //goto exit;
       }
       
       ret = mbedtls_ssl_config_defaults(&conf, MBEDTLS_SSL_IS_SERVER, MBEDTLS_SSL_TRANSPORT_STREAM, MBEDTLS_SSL_PRESET_DEFAULT);
@@ -150,9 +154,7 @@ uint32_t relayInit(uint32_t irBaud){
       //mbedtls_ssl_conf_authmode(&conf, MBEDTLS_SSL_VERIFY_NONE);
       
       mbedtls_ssl_conf_rng(&conf, mbedtls_ctr_drbg_random, &ctrDrbg);
-      //mbedtls_ssl_conf_dbg(&conf, my_debug, stdout);
-      mbedtls_ssl_conf_dbg(&conf, mbedTlsCustomDebug);
-      mbedtls_ssl_set_bio(&ssl, &clientFd, mbedtls_net_send, mbedtls_net_recv, NULL);
+      mbedtls_ssl_conf_dbg(&conf, mbedTlsCustomDebug, NULL);
       
       socketBuffer = (u32*)memalign(SOC_ALIGN, SOC_BUFFERSIZE);
       irBuffer = (u32*)memalign(SOC_ALIGN, SOC_BUFFERSIZE);
@@ -181,29 +183,9 @@ uint32_t relayInit(uint32_t irBaud){
       }
       socketInited = true;
       
-      /*
-      sock = socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
-      if(sock < 0){
-         cleanup();
-         return RELAY_ERROR_CANT_OPEN_SOCKET;
-      }
-      
-      memset(&server, 0, sizeof(server));
-      memset(&client, 0, sizeof(client));
-      
-      server.sin_family = AF_INET;
-      server.sin_port = htons(80);
-      server.sin_addr.s_addr = gethostid();
-      
-      ret = bind(sock, (struct sockaddr*)&server, sizeof(server));
-      if(ret != 0){
-         cleanup();
-         return RELAY_ERROR_CANT_BIND_SOCKET;
-      }
-      */
-      
-      //need to convert this devices ip to a string
-      ret = mbedtls_net_bind(&bindFd, const char *bind_ip, const char *port, MBEDTLS_NET_PROTO_TCP);
+      sprintf(ip, "%d.%d.%d.%d", ipAsNumber >> 24, ipAsNumber >> 16 & 0xFF, ipAsNumber >> 8 & 0xFF, ipAsNumber & 0xFF);
+      sprintf(port, "%d", (uint16_t)WIFI_PORT);
+      ret = mbedtls_net_bind(&bindFd, ip, port, MBEDTLS_NET_PROTO_TCP);
       if(ret != 0){
          cleanup();
          return RELAY_ERROR_CANT_BIND_SOCKET;
@@ -235,6 +217,8 @@ void relayExit(){
 uint32_t relayAttemptConnection(){
    if(relayInited){
       uint8_t commandBuffer[sizeof(loginAnswer)] = {0};
+      char clientIpBuffer[100];
+      size_t clientIpSize;
       uint32_t bytes;
       int ret;
       
@@ -243,7 +227,7 @@ uint32_t relayAttemptConnection(){
          clientBound = false;
       }
 
-      ret = mbedtls_net_accept( mbedtls_net_context *bind_ctx, mbedtls_net_context *client_ctx, void *client_ip, size_t buf_size, size_t *ip_len );
+      ret = mbedtls_net_accept(&bindFd, &clientFd, (void*)clientIpBuffer, sizeof(clientIpBuffer), &clientIpSize);
       if(ret != 0)
          return RELAY_ERROR_NO_CLIENTS;
       clientBound = true;
@@ -252,12 +236,26 @@ uint32_t relayAttemptConnection(){
       if(ret != 0)
          return RELAY_ERROR_CANT_SET_NONBLOCKING;
       
+      mbedtls_ssl_set_bio(&ssl, &clientFd, mbedtls_net_send, mbedtls_net_recv, NULL);
+      
+      //try to establish a secure connection
+      while(true){
+         ret = mbedtls_ssl_handshake(&ssl);
+         if(ret == 0){
+            break;
+         }
+         else if(ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE){
+            printf("failed\n  ! mbedtls_ssl_handshake returned %d\n\n", ret);
+            return RELAY_ERROR_NO_SSL_HANDSHAKE;
+         }
+      }
+      
       //check if this is an internet scanner bot or a login
-      mbedtls_ssl_write(&ssl, loginQuery, strlen(loginQuery), 0);
+      mbedtls_ssl_write(&ssl, loginQuery, sizeof(loginQuery));
       
       //check if responce matches
       safeSleep(3);
-      bytes = mbedtls_ssl_read(&ssl, commandBuffer, sizeof(loginAnswer), 0);
+      bytes = mbedtls_ssl_read(&ssl, commandBuffer, sizeof(loginAnswer));
       if(bytes != sizeof(loginAnswer)){
          cleanup();
          return RELAY_ERROR_TIMEOUT;
@@ -285,12 +283,18 @@ void relayRun(){
    uint32_t bytes;
    
    //read from WIFI
-   bytes = mbedtls_ssl_read(&ssl, swapBuffer, sizeof(swapBuffer), 0);
+   bytes = mbedtls_ssl_get_bytes_avail(&ssl);
+   bytes = min(bytes, sizeof(swapBuffer));
+   bytes = mbedtls_ssl_read(&ssl, swapBuffer, bytes);
+   if(bytes < 0)
+      exit(1);
    //forward to IR
    iruSendData(swapBuffer, bytes, false/*wait*/);
    
    //read from IR
    iruRecvData(swapBuffer, sizeof(swapBuffer), 0/*flag*/, &bytes, false/*wait*/);
    //forward to WIFI
-   mbedtls_ssl_write(&ssl, swapBuffer, bytes, 0);
+   mbedtls_ssl_write(&ssl, swapBuffer, bytes);
+   if(bytes < 0 /* && bytes != MBEDTLS_ERR_SSL_WANT_WRITE*/)//write must always work or data was lost
+      exit(1);
 }
