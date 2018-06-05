@@ -194,17 +194,21 @@ void EmuWrapper::resume(){
 }
 
 uint32_t EmuWrapper::installApplication(QString path){
-   return EMU_ERROR_NONE;
-   /*
-   uint32_t error;
-   buffer_t appData;
-   appData.data = getFileBuffer(path, appData.size, error);
-   if(appData.data){
-      error = emulatorInstallPrcPdb(appData);
-      delete[] appData.data;
+   QFile appFile(path);
+
+   if(appFile.open(QFile::ReadOnly)){
+      QByteArray appDataBuffer;
+      buffer_t appData;
+
+      appDataBuffer = appFile.readAll();
+      appFile.close();
+      appData.data = (uint8_t*)appDataBuffer.data();
+      appData.size = appDataBuffer.size();
+      if(appData.size != 0)
+         return emulatorInstallPrcPdb(appData);
    }
-   return error;
-   */
+
+   return EMU_ERROR_OUT_OF_MEMORY;
 }
 
 std::vector<QString>& EmuWrapper::getDebugStrings(){

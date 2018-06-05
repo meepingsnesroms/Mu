@@ -191,7 +191,7 @@ typedef struct{
 
 
 bool executionFinished;
-uint8_t touchCalibrateScreen[160 * 160] = {0};//add proper image
+#include "../../postBootProof.png.c"//contains finishedBooting.pixel_data
 
 
 uint16_t reverseLookupTrap(const char* name);//in trapNumToName.c
@@ -199,25 +199,26 @@ uint16_t reverseLookupTrap(const char* name);//in trapNumToName.c
 uint32_t callTrap(const char* name, const char* prototype, ...){
    //prototype is a java style function signature describing values passed and returned "v(wllp)"
    //is return void and pass a uint16_t(word), 2 uint32_t(long) and 1 pointer
-   //valid types are b(yte), w(ord), l(ong), p(ointer) and v(oid), a capital letter means its a return pointer
+   //valid types are b(yte), w(ord), l(ong), p(ointer), s(tring) and v(oid), a capital letter means its a return pointer
    //EvtGetPen v(WWB) returns nothing but writes back to tha calling function with 3 pointers,
    //these are allocated in the bootloader area and interpreted to host pointers on return
    va_list args;
    const char* params = prototype + 2;
    uint16_t trap = reverseLookupTrap(name);
-   uint32_t stackAddr = m68k_get_reg(NULL, M68K_REG_SP);
+   uint32_t stackFrameStart = m68k_get_reg(NULL, M68K_REG_SP);
+   uint32_t stackAddr = stackFrameStart;
    uint32_t oldPc = m68k_get_reg(NULL, M68K_REG_PC);
    uint32_t oldA0 = m68k_get_reg(NULL, M68K_REG_A0);
    uint32_t oldD0 = m68k_get_reg(NULL, M68K_REG_D0);
    uint32_t trapReturn;
-   return_pointer_t trapReturnPointers[10] = {0};
+   return_pointer_t trapReturnPointers[10];
    uint8_t trapReturnPointerIndex = 0;
+   uint32_t freeOnReturn[10];
+   uint8_t heldPointers = 0;
    uint32_t callWriteOut = 0xFFFFFFE0;
 
    va_start(args, prototype);
    while(*params != ')'){
-      uint32_t value = va_arg(args, uint32_t);
-
       switch(*params){
          case 'v':
          case 'V':
@@ -228,13 +229,40 @@ uint32_t callTrap(const char* name, const char* prototype, ...){
             //bytes are 16 bits long on the stack due to memory alignment restrictions
          case 'w':
             stackAddr -= 2;
-            m68k_write_memory_16(stackAddr, value);
+            m68k_write_memory_16(stackAddr, va_arg(args, uint32_t));
             break;
 
          case 'l':
          case 'p':
             stackAddr -= 4;
-            m68k_write_memory_32(stackAddr, value);
+            m68k_write_memory_32(stackAddr, va_arg(args, uint32_t));
+            break;
+
+         case 's':
+            //have to allocate emu memory and copy string in
+            {
+               const char* str = va_arg(args, const char*);
+               uint32_t strLength = strlen(str) + 1;
+               uint32_t strHolder;
+
+               //current stack location must be set before calling another trap
+               m68k_set_reg(M68K_REG_SP, stackAddr);
+
+               strHolder = callTrap("sysTrapMemPtrNew", "p(l)", strLength);
+               if(strHolder != 0){
+                  for(uint32_t count = 0; count < strLength; count++)
+                     m68k_write_memory_8(strHolder + count, str[count]);
+
+                  stackAddr -= 4;
+                  m68k_write_memory_32(stackAddr, strHolder);
+
+                  freeOnReturn[heldPointers] = strHolder;
+                  heldPointers++;
+               }
+               else{
+                  exit(1);//were too deep, just quit
+               }
+            }
             break;
 
          //return pointer values
@@ -274,6 +302,7 @@ uint32_t callTrap(const char* name, const char* prototype, ...){
    callWriteOut += 2;
 
    executionFinished = false;
+   m68k_set_reg(M68K_REG_SP, stackAddr);
    m68k_set_reg(M68K_REG_PC, callWriteOut - 4);
    while(!executionFinished)
       m68k_execute(1);//m68k_execute() always runs requested cycles + extra cycles of the final opcode, this executes 1 opcode
@@ -284,6 +313,7 @@ uint32_t callTrap(const char* name, const char* prototype, ...){
    else
       trapReturn = 0x00000000;
    m68k_set_reg(M68K_REG_PC, oldPc);
+   m68k_set_reg(M68K_REG_SP, stackFrameStart);
    m68k_set_reg(M68K_REG_A0, oldA0);
    m68k_set_reg(M68K_REG_D0, oldD0);
 
@@ -304,6 +334,10 @@ uint32_t callTrap(const char* name, const char* prototype, ...){
       }
    }
 
+   //free any memory allocated for strings
+   for(uint8_t count = 0; count < heldPointers; count++)
+      callTrap("sysTrapMemChunkFree", "v(p)", freeOnReturn[count]);
+
    va_end(args);
    return trapReturn;
 }
@@ -313,13 +347,14 @@ void sinfulExecution(){
    static bool alreadyRun = false;
 
    if(!alreadyRun){
-      bool hasBooted = !memcmp(palmFramebuffer, touchCalibrateScreen, 160 * (160 + 60) * 2);
+      bool hasBooted = !memcmp(palmFramebuffer, finishedBooting.pixel_data, 160 * 160 * 2);
       if(hasBooted){
          /*proto:  Err SysAppLaunch(UInt16 cardNo, LocalID dbID, UInt16 launchFlags,
                      UInt16 cmd, MemPtr cmdPBP, UInt32 *resultP)
                      SYS_TRAP(sysTrapSysAppLaunch);
          */
-         callTrap("sysTrapSysAppLaunch", "w(wlwwpp)", 0, 'calc', 0, 0, NULL, NULL);
+         uint32_t localId = callTrap("sysTrapDmFindDatabase", "w(wlwwpp)", 0, "Calculator");
+         callTrap("sysTrapSysAppLaunch", "w(wlwwpp)", 0, localId, 0, 0, NULL, NULL);
 
          alreadyRun = true;
       }
@@ -863,11 +898,15 @@ bool emulateUntilDebugEventOrFrameEnd(){
    sed1376Render();
 
    //launch app when framebuffer == touchscreen calibrate
-   //sinfulExecution();
+   sinfulExecution();
 
    return invalidBehaviorAbort;
 #else
    emulateFrame();
+
+   //launch app when framebuffer == touchscreen calibrate
+   sinfulExecution();
+
    return false;
 #endif
 }

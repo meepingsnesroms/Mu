@@ -218,14 +218,17 @@ void MainWindow::on_debugger_clicked(){
 }
 
 void MainWindow::on_screenshot_clicked(){
-   uint64_t screenshotNumber = settings.value("screenshotNum", 0).toLongLong();
-   QString path = settings.value("resourceDirectory", "").toString();
-   QDir location = path + "/screenshots";
+   const QPixmap* currentScreenPixmap = ui->display->pixmap();
+   if(currentScreenPixmap != nullptr && !currentScreenPixmap->isNull()){
+      uint64_t screenshotNumber = settings.value("screenshotNum", 0).toLongLong();
+      QString path = settings.value("resourceDirectory", "").toString();
+      QDir location = path + "/screenshots";
 
-   if(!location.exists())
-      location.mkpath(".");
+      if(!location.exists())
+         location.mkpath(".");
 
-   ui->display->pixmap()->save(path + "/screenshots/" + "screenshot" + QString::number(screenshotNumber, 10) + ".png", nullptr, 100);
-   screenshotNumber++;
-   settings.setValue("screenshotNum", screenshotNumber);
+      currentScreenPixmap->save(path + "/screenshots/" + "screenshot" + QString::number(screenshotNumber, 10) + ".png", nullptr, 100);
+      screenshotNumber++;
+      settings.setValue("screenshotNum", screenshotNumber);
+   }
 }
