@@ -282,7 +282,7 @@ uint32_t callTrap(bool fallthrough, const char* name, const char* prototype, ...
          m68k_execute(1);//m68k_execute() always runs requested cycles + extra cycles of the final opcode, this executes 1 opcode
       if(prototype[0] == 'p')
          trapReturn = m68k_get_reg(NULL, M68K_REG_A0);
-      else if(prototype[0] == 'b' || prototype[0] == 'w' || prototype[0] == 'l' )
+      else if(prototype[0] == 'b' || prototype[0] == 'w' || prototype[0] == 'l')
          trapReturn = m68k_get_reg(NULL, M68K_REG_D0);
       m68k_set_reg(M68K_REG_PC, oldPc);
       m68k_set_reg(M68K_REG_SP, stackFrameStart);

@@ -466,8 +466,12 @@ uint8_t getHwRegister8(uint32_t address){
          return registerArrayRead8(address);
          
       default:
+         //bootloader
+         if(address >= 0xE00)
+            registerArrayRead8(address);
 #if defined(EMU_DEBUG) && defined(EMU_LOG_REGISTER_ACCESS_UNKNOWN) && !defined(EMU_LOG_REGISTER_ACCESS_ALL)
-         printUnknownHwAccess(address, 0, 8, false);
+         else
+            printUnknownHwAccess(address, 0, 8, false);
 #endif
          return 0x00;
    }
@@ -534,8 +538,12 @@ uint16_t getHwRegister16(uint32_t address){
          return registerArrayRead16(address);
          
       default:
+         //bootloader
+         if(address >= 0xE00)
+            registerArrayRead16(address);
 #if defined(EMU_DEBUG) && defined(EMU_LOG_REGISTER_ACCESS_UNKNOWN) && !defined(EMU_LOG_REGISTER_ACCESS_ALL)
-         printUnknownHwAccess(address, 0, 16, false);
+         else
+            printUnknownHwAccess(address, 0, 16, false);
 #endif
          return 0x0000;
    }
@@ -568,8 +576,12 @@ uint32_t getHwRegister32(uint32_t address){
          return registerArrayRead32(address);
          
       default:
+         //bootloader
+         if(address >= 0xE00)
+            registerArrayRead32(address);
 #if defined(EMU_DEBUG) && defined(EMU_LOG_REGISTER_ACCESS_UNKNOWN) && !defined(EMU_LOG_REGISTER_ACCESS_ALL)
-         printUnknownHwAccess(address, 0, 32, false);
+         else
+            printUnknownHwAccess(address, 0, 32, false);
 #endif
          return 0x00000000;
    }
@@ -701,8 +713,12 @@ void setHwRegister8(uint32_t address, uint8_t value){
          break;
          
       default:
+         //writeable bootloader region
+         if(address >= 0xFC0)
+            registerArrayWrite32(address, value);
 #if defined(EMU_DEBUG) && defined(EMU_LOG_REGISTER_ACCESS_UNKNOWN) && !defined(EMU_LOG_REGISTER_ACCESS_ALL)
-         printUnknownHwAccess(address, value, 8, true);
+         else
+            printUnknownHwAccess(address, value, 8, true);
 #endif
          break;
    }
@@ -902,8 +918,12 @@ void setHwRegister16(uint32_t address, uint16_t value){
          break;
          
       default:
+         //writeable bootloader region
+         if(address >= 0xFC0)
+            registerArrayWrite16(address, value);
 #if defined(EMU_DEBUG) && defined(EMU_LOG_REGISTER_ACCESS_UNKNOWN) && !defined(EMU_LOG_REGISTER_ACCESS_ALL)
-         printUnknownHwAccess(address, value, 16, true);
+         else
+            printUnknownHwAccess(address, value, 16, true);
 #endif
          break;
    }
@@ -948,8 +968,12 @@ void setHwRegister32(uint32_t address, uint32_t value){
          break;
       
       default:
+         //writeable bootloader region
+         if(address >= 0xFC0)
+            registerArrayWrite32(address, value);
 #if defined(EMU_DEBUG) && defined(EMU_LOG_REGISTER_ACCESS_UNKNOWN) && !defined(EMU_LOG_REGISTER_ACCESS_ALL)
-         printUnknownHwAccess(address, value, 32, true);
+         else
+            printUnknownHwAccess(address, value, 32, true);
 #endif
          break;
    }
