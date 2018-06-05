@@ -196,7 +196,7 @@ bool executionFinished;
 
 uint16_t reverseLookupTrap(const char* name);//in trapNumToName.c
 
-uint32_t callTrap(const char* name, const char* prototype, ...){
+uint32_t callTrap(bool fallthrough, const char* name, const char* prototype, ...){
    //prototype is a java style function signature describing values passed and returned "v(wllp)"
    //is return void and pass a uint16_t(word), 2 uint32_t(long) and 1 pointer
    //valid types are b(yte), w(ord), l(ong), p(ointer), s(tring) and v(oid), a capital letter means its a return pointer
@@ -210,11 +210,9 @@ uint32_t callTrap(const char* name, const char* prototype, ...){
    uint32_t oldPc = m68k_get_reg(NULL, M68K_REG_PC);
    uint32_t oldA0 = m68k_get_reg(NULL, M68K_REG_A0);
    uint32_t oldD0 = m68k_get_reg(NULL, M68K_REG_D0);
-   uint32_t trapReturn;
+   uint32_t trapReturn = 0x00000000;
    return_pointer_t trapReturnPointers[10];
    uint8_t trapReturnPointerIndex = 0;
-   uint32_t freeOnReturn[10];
-   uint8_t heldPointers = 0;
    uint32_t callWriteOut = 0xFFFFFFE0;
 
    va_start(args, prototype);
@@ -236,33 +234,6 @@ uint32_t callTrap(const char* name, const char* prototype, ...){
          case 'p':
             stackAddr -= 4;
             m68k_write_memory_32(stackAddr, va_arg(args, uint32_t));
-            break;
-
-         case 's':
-            //have to allocate emu memory and copy string in
-            {
-               const char* str = va_arg(args, const char*);
-               uint32_t strLength = strlen(str) + 1;
-               uint32_t strHolder;
-
-               //current stack location must be set before calling another trap
-               m68k_set_reg(M68K_REG_SP, stackAddr);
-
-               strHolder = callTrap("sysTrapMemPtrNew", "p(l)", strLength);
-               if(strHolder != 0){
-                  for(uint32_t count = 0; count < strLength; count++)
-                     m68k_write_memory_8(strHolder + count, str[count]);
-
-                  stackAddr -= 4;
-                  m68k_write_memory_32(stackAddr, strHolder);
-
-                  freeOnReturn[heldPointers] = strHolder;
-                  heldPointers++;
-               }
-               else{
-                  exit(1);//were too deep, just quit
-               }
-            }
             break;
 
          //return pointer values
@@ -304,42 +275,54 @@ uint32_t callTrap(const char* name, const char* prototype, ...){
    executionFinished = false;
    m68k_set_reg(M68K_REG_SP, stackAddr);
    m68k_set_reg(M68K_REG_PC, callWriteOut - 4);
-   while(!executionFinished)
-      m68k_execute(1);//m68k_execute() always runs requested cycles + extra cycles of the final opcode, this executes 1 opcode
-   if(prototype[0] == 'p')
-      trapReturn = m68k_get_reg(NULL, M68K_REG_A0);
-   else if(prototype[0] == 'b' || prototype[0] == 'w' || prototype[0] == 'l' )
-      trapReturn = m68k_get_reg(NULL, M68K_REG_D0);
-   else
-      trapReturn = 0x00000000;
-   m68k_set_reg(M68K_REG_PC, oldPc);
-   m68k_set_reg(M68K_REG_SP, stackFrameStart);
-   m68k_set_reg(M68K_REG_A0, oldA0);
-   m68k_set_reg(M68K_REG_D0, oldD0);
 
-   //remap all argument pointers
-   for(uint8_t count = 0; count < trapReturnPointerIndex; count++){
-      switch(trapReturnPointers[count].bytes){
-         case 1:
-            *(uint8_t*)trapReturnPointers[count].hostPointer = m68k_read_memory_8(trapReturnPointers[count].emuPointer);
-            break;
+   //only setup the trap then fallthrough to normal execution, may be needed on app switch since the trap may not return
+   if(!fallthrough){
+      while(!executionFinished)
+         m68k_execute(1);//m68k_execute() always runs requested cycles + extra cycles of the final opcode, this executes 1 opcode
+      if(prototype[0] == 'p')
+         trapReturn = m68k_get_reg(NULL, M68K_REG_A0);
+      else if(prototype[0] == 'b' || prototype[0] == 'w' || prototype[0] == 'l' )
+         trapReturn = m68k_get_reg(NULL, M68K_REG_D0);
+      m68k_set_reg(M68K_REG_PC, oldPc);
+      m68k_set_reg(M68K_REG_SP, stackFrameStart);
+      m68k_set_reg(M68K_REG_A0, oldA0);
+      m68k_set_reg(M68K_REG_D0, oldD0);
 
-         case 2:
-            *(uint16_t*)trapReturnPointers[count].hostPointer = m68k_read_memory_16(trapReturnPointers[count].emuPointer);
-            break;
+      //remap all argument pointers
+      for(uint8_t count = 0; count < trapReturnPointerIndex; count++){
+         switch(trapReturnPointers[count].bytes){
+            case 1:
+               *(uint8_t*)trapReturnPointers[count].hostPointer = m68k_read_memory_8(trapReturnPointers[count].emuPointer);
+               break;
 
-         case 4:
-            *(uint32_t*)trapReturnPointers[count].hostPointer = m68k_read_memory_32(trapReturnPointers[count].emuPointer);
-            break;
+            case 2:
+               *(uint16_t*)trapReturnPointers[count].hostPointer = m68k_read_memory_16(trapReturnPointers[count].emuPointer);
+               break;
+
+            case 4:
+               *(uint32_t*)trapReturnPointers[count].hostPointer = m68k_read_memory_32(trapReturnPointers[count].emuPointer);
+               break;
+         }
       }
    }
 
-   //free any memory allocated for strings
-   for(uint8_t count = 0; count < heldPointers; count++)
-      callTrap("sysTrapMemChunkFree", "v(p)", freeOnReturn[count]);
-
    va_end(args);
    return trapReturn;
+}
+
+uint32_t makePalmString(const char* str){
+   uint32_t strLength = strlen(str) + 1;
+   uint32_t strData = callTrap(false, "sysTrapMemPtrNew", "p(l)", strLength);
+
+   if(strData != 0)
+      for(uint32_t count = 0; count < strLength; count++)
+         m68k_write_memory_8(strData + count, str[count]);
+   return strData;
+}
+
+void freePalmString(uint32_t palmStr){
+   callTrap(false, "sysTrapMemChunkFree", "w(p)", palmStr);
 }
 
 void sinfulExecution(){
@@ -353,8 +336,13 @@ void sinfulExecution(){
                      UInt16 cmd, MemPtr cmdPBP, UInt32 *resultP)
                      SYS_TRAP(sysTrapSysAppLaunch);
          */
-         uint32_t localId = callTrap("sysTrapDmFindDatabase", "w(wlwwpp)", 0, "Calculator");
-         callTrap("sysTrapSysAppLaunch", "w(wlwwpp)", 0, localId, 0, 0, NULL, NULL);
+
+         uint32_t palmString = makePalmString("Calculator");
+         if(palmString != 0){
+            uint32_t localId = callTrap(false, "sysTrapDmFindDatabase", "l(wp)", 0, palmString);
+            callTrap(true, "sysTrapSysAppLaunch", "w(wlwwpp)", 0, localId, 0, 0, 0, 0);
+            //dont free palmString yet
+         }
 
          alreadyRun = true;
       }
