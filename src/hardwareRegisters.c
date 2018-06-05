@@ -972,20 +972,6 @@ void resetHwRegisters(){
    spi1TxPosition = 0;
 
    memset(chips, 0x00, sizeof(chips));
-   /*
-   for(uint8_t chip = CHIP_BEGIN; chip < CHIP_END; chip++){
-      chips[chip].enable = false;
-      chips[chip].start = 0x00000000;
-      chips[chip].size = 0x00000000;
-      chips[chip].mask = 0x00000000;
-
-      chips[chip].inBootMode = false;
-      chips[chip].readOnly = false;
-      chips[chip].readOnlyForProtectedMemory = false;
-      chips[chip].supervisorOnlyProtectedMemory = false;
-      chips[chip].unprotectedSize = 0x00000000;
-   }
-   */
    //all chipselects are disabled at boot and CSA is mapped to 0x00000000 and covers the entire address range until CSGBA set otherwise
    chips[CHIP_A_ROM].inBootMode = true;
 

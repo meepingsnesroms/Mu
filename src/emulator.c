@@ -391,38 +391,6 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t spec
    ads7846Reset();
    sdCardInit();
    
-   /*
-   //input
-   palmInput.buttonUp = false;
-   palmInput.buttonDown = false;
-   palmInput.buttonLeft = false;//only used in hybrid mode
-   palmInput.buttonRight = false;//only used in hybrid mode
-   palmInput.buttonSelect = false;//only used in hybrid mode
-   
-   palmInput.buttonCalendar = false;
-   palmInput.buttonAddress = false;
-   palmInput.buttonTodo = false;
-   palmInput.buttonNotes = false;
-   
-   palmInput.buttonPower = false;
-   palmInput.buttonContrast = false;
-   
-   palmInput.touchscreenX = 0;
-   palmInput.touchscreenY = 0;
-   palmInput.touchscreenTouched = false;
-   
-   //sdcard
-   palmSdCard.sessionId = 0x0000000000000000;
-   palmSdCard.stateId = 0x0000000000000000;
-   palmSdCard.size = 0;
-   palmSdCard.type = CARD_NONE;
-   palmSdCard.inserted = false;
-   
-   //misc settable attributes
-   palmMisc.batteryCharging = false;
-   palmMisc.batteryLevel = 100;
-   palmMisc.inDock = false;
-   */
    memset(&palmInput, 0x00, sizeof(palmInput));
    memset(&palmSdCard, 0x00, sizeof(palmSdCard));
    memset(&palmMisc, 0x00, sizeof(palmMisc));
@@ -483,13 +451,6 @@ uint32_t emulatorSetNewSdCard(uint64_t size, uint8_t type){
    }
    else{
       memset(&palmSdCard, 0x00, sizeof(palmSdCard));
-      /*
-      palmSdCard.sessionId = 0x0000000000000000;
-      palmSdCard.stateId = 0x0000000000000000;
-      palmSdCard.size = 0;
-      palmSdCard.type = CARD_NONE;
-      palmSdCard.inserted = false;
-      */
    }
    
    return EMU_ERROR_NONE;
