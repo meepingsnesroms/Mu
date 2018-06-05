@@ -65,7 +65,6 @@ static inline void selectRenderer(bool color, uint8_t bpp){
    renderPixel = NULL;
    if(color){
       switch(bpp){
-
          case 1:
             renderPixel = get1BppColor;
             break;
@@ -89,7 +88,6 @@ static inline void selectRenderer(bool color, uint8_t bpp){
    }
    else{
       switch(bpp){
-
          case 1:
             renderPixel = get1BppMonochrome;
             break;

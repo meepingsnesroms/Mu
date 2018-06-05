@@ -1,7 +1,6 @@
 <RCC>
     <qresource prefix="/buttons">
         <file>images/addressBook.png</file>
-        <file>images/calender.png</file>
         <file>images/center.png</file>
         <file>images/down.png</file>
         <file>images/left.png</file>
@@ -16,5 +15,6 @@
         <file>images/screenshot.png</file>
         <file>images/stop.png</file>
         <file>images/hexViewer.png</file>
+        <file>images/calendar.png</file>
     </qresource>
 </RCC>

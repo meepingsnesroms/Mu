@@ -31,7 +31,7 @@
       </property>
       <layout class="QGridLayout" name="gridLayout">
        <item row="6" column="0">
-        <widget class="QPushButton" name="calender">
+        <widget class="QPushButton" name="calendar">
          <property name="enabled">
           <bool>false</bool>
          </property>
@@ -43,7 +43,7 @@
          </property>
          <property name="icon">
           <iconset resource="mainwindow.qrc">
-           <normaloff>:/buttons/images/calender.png</normaloff>:/buttons/images/calender.png</iconset>
+           <normaloff>:/buttons/images/calendar.png</normaloff>:/buttons/images/calendar.png</iconset>
          </property>
         </widget>
        </item>

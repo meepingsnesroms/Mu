@@ -37,7 +37,6 @@ void ads7846SendBit(bool bit){
       ads7846PenIrqEnabled = !(ads7846ControlByte & 0x01);
 
       switch(ads7846ControlByte & 0x70){
-
          case 0x00:
             //temperature 1, unemulated for now
             rangeMax = 1;

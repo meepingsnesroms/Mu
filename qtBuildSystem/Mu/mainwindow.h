@@ -35,8 +35,8 @@ private slots:
    //palm buttons
    void on_power_pressed();
    void on_power_released();
-   void on_calender_pressed();
-   void on_calender_released();
+   void on_calendar_pressed();
+   void on_calendar_released();
    void on_addressBook_pressed();
    void on_addressBook_released();
    void on_todo_pressed();

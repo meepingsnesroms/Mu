@@ -21,6 +21,7 @@ extern "C" {
 
 //debug
 #if defined(EMU_DEBUG)
+extern bool executionFinished;
 #if defined(EMU_CUSTOM_DEBUG_LOG_HANDLER)
 extern uint32_t frontendDebugStringSize;
 extern char*    frontendDebugString;
@@ -45,9 +46,9 @@ enum{
 //sdcard types
 enum{
    CARD_BEGIN = 0,
-   CARD_SD = 0,
+   CARD_NONE = 0,
+   CARD_SD,
    CARD_MMC,
-   CARD_NONE,
    CARD_END
 };
 
@@ -64,7 +65,7 @@ typedef struct{
    bool     buttonRight;//only used in hybrid mode
    bool     buttonSelect;//only used in hybrid mode
    
-   bool     buttonCalender;//hw button 1
+   bool     buttonCalendar;//hw button 1
    bool     buttonAddress;//hw button 2
    bool     buttonTodo;//hw button 3
    bool     buttonNotes;//hw button 4

@@ -40,7 +40,6 @@ static uint16_t (*renderPixel)(uint16_t x, uint16_t y);
 static inline uint32_t getBufferStartAddress(){
    uint32_t screenStartAddress = sed1376Registers[DISP_ADDR_2] << 16 | sed1376Registers[DISP_ADDR_1] << 8 | sed1376Registers[DISP_ADDR_0];
    switch((sed1376Registers[SPECIAL_EFFECT] & 0x03) * 90){
-
       case 0:
          //desired byte address / 4.
          screenStartAddress *= 4;
@@ -73,7 +72,6 @@ static inline uint32_t getBufferStartAddress(){
 static inline uint32_t getPipStartAddress(){
    uint32_t pipStartAddress = sed1376Registers[PIP_ADDR_2] << 16 | sed1376Registers[PIP_ADDR_1] << 8 | sed1376Registers[PIP_ADDR_0];
    switch((sed1376Registers[SPECIAL_EFFECT] & 0x03) * 90){
-
       case 0:
          //desired byte address / 4.
          pipStartAddress *= 4;
@@ -119,7 +117,6 @@ uint8_t sed1376GetRegister(uint8_t address){
    debugLog("SED1376 register read from 0x%02X, PC 0x%08X.\n", address, m68k_get_reg(NULL, M68K_REG_PPC));
 #endif
    switch(address){
-
       case LUT_READ_LOC:
       case LUT_WRITE_LOC:
       case LUT_R_WRITE:
@@ -160,7 +157,6 @@ void sed1376SetRegister(uint8_t address, uint8_t value){
    debugLog("SED1376 register write 0x%02X to 0x%02X, PC 0x%08X.\n", value, address, m68k_get_reg(NULL, M68K_REG_PPC));
 #endif
    switch(address){
-
       case PWR_SAVE_CFG:
          //bit 7 must always be set, timing hack
          sed1376Registers[address] = (value & 0x01) | 0x80;

@@ -59,7 +59,6 @@ QString DebugViewer::stringFromNumber(int64_t number, bool hex, uint32_t forcedZ
 
 void DebugViewer::debugRadioButtonHandler(){
    switch(bitsPerEntry){
-
       case 8:
          ui->debug8Bit->setDown(true);
          ui->debug16Bit->setDown(false);

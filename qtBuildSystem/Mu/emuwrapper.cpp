@@ -234,7 +234,6 @@ uint64_t EmuWrapper::getEmulatorMemory(uint32_t address, uint8_t size){
       uint16_t m68kSr = m68k_get_reg(NULL, M68K_REG_SR);
       m68k_set_reg(M68K_REG_SR, 0x2000);//prevent privilege violations
       switch(size){
-
          case 8:
             data = m68k_read_memory_8(address);
             break;

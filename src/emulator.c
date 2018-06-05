@@ -84,7 +84,6 @@ static char* takeStackDump(uint32_t bytes){
 #if defined(EMU_LOG_APIS)
 static bool spammingTrap(uint16_t trap){
    switch(trap){
-
       case 0xA249://sysTrapHwrDelay
          return true;
 
@@ -180,6 +179,154 @@ static void invalidBehaviorCheck(){
 }
 #endif
 
+#if defined(EMU_DEBUG)
+#include <stdarg.h>
+
+
+typedef struct{
+   void* hostPointer;
+   uint32_t emuPointer;
+   uint64_t bytes;//may be used for strings or structs in the future
+}return_pointer_t;
+
+
+bool executionFinished;
+uint8_t touchCalibrateScreen[160 * 160] = {0};//add proper image
+
+
+uint16_t reverseLookupTrap(const char* name);//in trapNumToName.c
+
+uint32_t callTrap(const char* name, const char* prototype, ...){
+   //prototype is a java style function signature describing values passed and returned "v(wllp)"
+   //is return void and pass a uint16_t(word), 2 uint32_t(long) and 1 pointer
+   //valid types are b(yte), w(ord), l(ong), p(ointer) and v(oid), a capital letter means its a return pointer
+   //EvtGetPen v(WWB) returns nothing but writes back to tha calling function with 3 pointers,
+   //these are allocated in the bootloader area and interpreted to host pointers on return
+   va_list args;
+   const char* params = prototype + 2;
+   uint16_t trap = reverseLookupTrap(name);
+   uint32_t stackAddr = m68k_get_reg(NULL, M68K_REG_SP);
+   uint32_t oldPc = m68k_get_reg(NULL, M68K_REG_PC);
+   uint32_t oldA0 = m68k_get_reg(NULL, M68K_REG_A0);
+   uint32_t oldD0 = m68k_get_reg(NULL, M68K_REG_D0);
+   uint32_t trapReturn;
+   return_pointer_t trapReturnPointers[10] = {0};
+   uint8_t trapReturnPointerIndex = 0;
+   uint32_t callWriteOut = 0xFFFFFFE0;
+
+   va_start(args, prototype);
+   while(*params != ')'){
+      uint32_t value = va_arg(args, uint32_t);
+
+      switch(*params){
+         case 'v':
+         case 'V':
+            //do nothing
+            break;
+
+         case 'b':
+            //bytes are 16 bits long on the stack due to memory alignment restrictions
+         case 'w':
+            stackAddr -= 2;
+            m68k_write_memory_16(stackAddr, value);
+            break;
+
+         case 'l':
+         case 'p':
+            stackAddr -= 4;
+            m68k_write_memory_32(stackAddr, value);
+            break;
+
+         //return pointer values
+         case 'B':
+            trapReturnPointers[trapReturnPointerIndex].hostPointer = va_arg(args, void*);
+            trapReturnPointers[trapReturnPointerIndex].emuPointer = callWriteOut;
+            trapReturnPointers[trapReturnPointerIndex].bytes = 1;
+            callWriteOut += 2;
+            trapReturnPointerIndex++;
+            break;
+
+         case 'W':
+            trapReturnPointers[trapReturnPointerIndex].hostPointer = va_arg(args, void*);
+            trapReturnPointers[trapReturnPointerIndex].emuPointer = callWriteOut;
+            trapReturnPointers[trapReturnPointerIndex].bytes = 2;
+            callWriteOut += 2;
+            trapReturnPointerIndex++;
+            break;
+
+         case 'L':
+         case 'P':
+            trapReturnPointers[trapReturnPointerIndex].hostPointer = va_arg(args, void*);
+            trapReturnPointers[trapReturnPointerIndex].emuPointer = callWriteOut;
+            trapReturnPointers[trapReturnPointerIndex].bytes = 4;
+            callWriteOut += 4;
+            trapReturnPointerIndex++;
+            break;
+      }
+
+      params++;
+   }
+
+   //write to the bootloader memory, its not important when debugging
+   m68k_write_memory_16(callWriteOut, 0x4E4F);//trap f opcode
+   callWriteOut += 2;
+   m68k_write_memory_16(callWriteOut, trap);
+   callWriteOut += 2;
+
+   executionFinished = false;
+   m68k_set_reg(M68K_REG_PC, callWriteOut - 4);
+   while(!executionFinished)
+      m68k_execute(1);//m68k_execute() always runs requested cycles + extra cycles of the final opcode, this executes 1 opcode
+   if(prototype[0] == 'p')
+      trapReturn = m68k_get_reg(NULL, M68K_REG_A0);
+   else if(prototype[0] == 'b' || prototype[0] == 'w' || prototype[0] == 'l' )
+      trapReturn = m68k_get_reg(NULL, M68K_REG_D0);
+   else
+      trapReturn = 0x00000000;
+   m68k_set_reg(M68K_REG_PC, oldPc);
+   m68k_set_reg(M68K_REG_A0, oldA0);
+   m68k_set_reg(M68K_REG_D0, oldD0);
+
+   //remap all argument pointers
+   for(uint8_t count = 0; count < trapReturnPointerIndex; count++){
+      switch(trapReturnPointers[count].bytes){
+         case 1:
+            *(uint8_t*)trapReturnPointers[count].hostPointer = m68k_read_memory_8(trapReturnPointers[count].emuPointer);
+            break;
+
+         case 2:
+            *(uint16_t*)trapReturnPointers[count].hostPointer = m68k_read_memory_16(trapReturnPointers[count].emuPointer);
+            break;
+
+         case 4:
+            *(uint32_t*)trapReturnPointers[count].hostPointer = m68k_read_memory_32(trapReturnPointers[count].emuPointer);
+            break;
+      }
+   }
+
+   va_end(args);
+   return trapReturn;
+}
+
+void sinfulExecution(){
+   //jump directly to an application using sysTrapSysAppLaunch, very evil and inaccurate, will be removed before version 1.0
+   static bool alreadyRun = false;
+
+   if(!alreadyRun){
+      bool hasBooted = !memcmp(palmFramebuffer, touchCalibrateScreen, 160 * (160 + 60) * 2);
+      if(hasBooted){
+         /*proto:  Err SysAppLaunch(UInt16 cardNo, LocalID dbID, UInt16 launchFlags,
+                     UInt16 cmd, MemPtr cmdPBP, UInt32 *resultP)
+                     SYS_TRAP(sysTrapSysAppLaunch);
+         */
+         callTrap("sysTrapSysAppLaunch", "w(wlwwpp)", 0, 'calc', 0, 0, NULL, NULL);
+
+         alreadyRun = true;
+      }
+   }
+}
+#endif
+
 
 uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t specialFeatures){
    if(emulatorInitialized)
@@ -244,6 +391,7 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t spec
    ads7846Reset();
    sdCardInit();
    
+   /*
    //input
    palmInput.buttonUp = false;
    palmInput.buttonDown = false;
@@ -251,7 +399,7 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t spec
    palmInput.buttonRight = false;//only used in hybrid mode
    palmInput.buttonSelect = false;//only used in hybrid mode
    
-   palmInput.buttonCalender = false;
+   palmInput.buttonCalendar = false;
    palmInput.buttonAddress = false;
    palmInput.buttonTodo = false;
    palmInput.buttonNotes = false;
@@ -274,6 +422,11 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t spec
    palmMisc.batteryCharging = false;
    palmMisc.batteryLevel = 100;
    palmMisc.inDock = false;
+   */
+   memset(&palmInput, 0x00, sizeof(palmInput));
+   memset(&palmSdCard, 0x00, sizeof(palmSdCard));
+   memset(&palmMisc, 0x00, sizeof(palmMisc));
+   palmMisc.batteryLevel = 100;
    
    //config
    palmClockMultiplier = (specialFeatures & FEATURE_FAST_CPU) ? 2.0 : 1.0;//overclock
@@ -283,15 +436,6 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t spec
    
    //start running
    m68k_pulse_reset();
-
-   /*
-   double correct = 123456789.123456789;
-   uint64_t swap = getUint64FromDouble(correct);
-   double test = getDoubleFromUint64(swap);
-   debugLog("Original double is:%lf\n", correct);
-   debugLog("swap is:0x%016lX\n", swap);
-   debugLog("Final double is:%lf\n", test);
-   */
 
    emulatorInitialized = true;
    return EMU_ERROR_NONE;
@@ -338,11 +482,14 @@ uint32_t emulatorSetNewSdCard(uint64_t size, uint8_t type){
       palmSdCard.inserted = true;
    }
    else{
+      memset(&palmSdCard, 0x00, sizeof(palmSdCard));
+      /*
       palmSdCard.sessionId = 0x0000000000000000;
       palmSdCard.stateId = 0x0000000000000000;
       palmSdCard.size = 0;
       palmSdCard.type = CARD_NONE;
       palmSdCard.inserted = false;
+      */
    }
    
    return EMU_ERROR_NONE;
@@ -753,6 +900,9 @@ bool emulateUntilDebugEventOrFrameEnd(){
    }
 
    sed1376Render();
+
+   //launch app when framebuffer == touchscreen calibrate
+   //sinfulExecution();
 
    return invalidBehaviorAbort;
 #else

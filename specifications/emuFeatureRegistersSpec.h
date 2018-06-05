@@ -47,6 +47,7 @@ These registers will do nothing it there corresponding feature bit is not set on
 /*new HLE API cmds go here*/
 
 /*new system cmds go here*/
+#define CMD_EXECUTION_DONE 0xFFFB/*1 is written here at the end of a callback to indicate when execution is done*/
 #define CMD_IDLE_X_CLK32   0xFFFC/*used to remove idle loops*/
 #define CMD_RUN_AS_M68K    0xFFFD/*emulStateP is ignored, EMU_SRC = argsOnStackP, EMU_SIZE = argsSizeAndwantA0, EMU_VALUE = trapOrFunction, on exit EMU_VALUE = Call68KFuncType() return value*/
 #define CMD_RUN_AS_ARM     0xFFFE/*EMU_SRC = nativeFuncP, EMU_DST = userDataP, on exit EMU_VALUE = PceNativeCall() return value*/

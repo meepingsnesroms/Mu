@@ -95,7 +95,6 @@ static inline void timer12Clk32(){
 
    if(timer1Enabled && pcrTinToutConfig != 0x02){
       switch((timer1Control & 0x000E) >> 1){
-
          case 0x0000://stop counter
             //do nothing
             break;
@@ -120,7 +119,6 @@ static inline void timer12Clk32(){
 
    if(timer2Enabled && pcrTinToutConfig != 0x03){
       switch((timer2Control & 0x000E) >> 1){
-
          case 0x0000://stop counter
             //do nothing
             break;
@@ -179,7 +177,6 @@ static inline void timer12Clk32(){
 
    if(timer1Enabled && timer2Enabled){
       switch(pcrTinToutConfig){
-
          case 0x00:
          case 0x01:
             //do nothing
@@ -212,10 +209,32 @@ static inline void timer12Clk32(){
    }
 }
 
+static inline void watchdogSecondTickClk32(){
+   //this function is part of clk32();
+   uint16_t watchdogState = registerArrayRead16(WATCHDOG);
+
+   if(watchdogState & 0x0001){
+      //watchdog enabled
+      watchdogState += 0x0100;//add second to watchdog timer
+      watchdogState &= 0x0383;//cap overflow
+      if((watchdogState & 0x0200) == 0x0200){
+         //time expired
+         if(watchdogState & 0x0002){
+            //interrupt
+            setIprIsrBit(INT_WDT);
+         }
+         else{
+            //reset
+            emulatorReset();
+            return;
+         }
+      }
+      registerArrayWrite16(WATCHDOG, watchdogState);
+   }
+}
+
 static inline void rtcAddSecondClk32(){
    //this function is part of clk32();
-
-   //RTC
    if(registerArrayRead16(RTCCTL) & 0x0080){
       //RTC enable bit set
       uint16_t rtcInterruptEvents = 0x0000;
@@ -275,26 +294,7 @@ static inline void rtcAddSecondClk32(){
       registerArrayWrite16(DAYR, days & 0x01FF);
    }
 
-   //watchdog
-   uint16_t watchdogState = registerArrayRead16(WATCHDOG);
-   if(watchdogState & 0x0001){
-      //watchdog enabled
-      watchdogState += 0x0100;//add second to watchdog timer
-      watchdogState &= 0x0383;//cap overflow
-      if((watchdogState & 0x0200) == 0x0200){
-         //time expired
-         if(watchdogState & 0x0002){
-            //interrupt
-            setIprIsrBit(INT_WDT);
-         }
-         else{
-            //reset
-            emulatorReset();
-            return;
-         }
-      }
-      registerArrayWrite16(WATCHDOG, watchdogState);
-   }
+   watchdogSecondTickClk32();
 }
 
 void clk32(){

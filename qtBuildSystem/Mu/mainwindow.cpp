@@ -29,7 +29,7 @@ MainWindow::MainWindow(QWidget* parent) :
    emuDebugger = new DebugViewer(this);
    refreshDisplay = new QTimer(this);
 
-   ui->calender->installEventFilter(this);
+   ui->calendar->installEventFilter(this);
    ui->addressBook->installEventFilter(this);
    ui->todo->installEventFilter(this);
    ui->notes->installEventFilter(this);
@@ -132,12 +132,12 @@ void MainWindow::on_power_released(){
    emu.emuInput.buttonPower = false;
 }
 
-void MainWindow::on_calender_pressed(){
-   emu.emuInput.buttonCalender = true;
+void MainWindow::on_calendar_pressed(){
+   emu.emuInput.buttonCalendar = true;
 }
 
-void MainWindow::on_calender_released(){
-   emu.emuInput.buttonCalender = false;
+void MainWindow::on_calendar_released(){
+   emu.emuInput.buttonCalendar = false;
 }
 
 void MainWindow::on_addressBook_pressed(){
@@ -170,7 +170,7 @@ void MainWindow::on_ctrlBtn_clicked(){
       //uint32_t error = emu.init(settings.value("resourceDirectory", "").toString() + "/palmos41-en-m515.rom", settings.value("resourceDirectory", "").toString() + "/bootloader-en-m515.rom", FEATURE_ACCURATE);
       uint32_t error = emu.init(settings.value("resourceDirectory", "").toString() + "/palmos41-en-m515.rom", ""/*no bootloader for now*/, FEATURE_ACCURATE);
       if(error == EMU_ERROR_NONE){
-         ui->calender->setEnabled(true);
+         ui->calendar->setEnabled(true);
          ui->addressBook->setEnabled(true);
          ui->todo->setEnabled(true);
          ui->notes->setEnabled(true);
@@ -201,12 +201,15 @@ void MainWindow::on_ctrlBtn_clicked(){
       emu.resume();
       ui->ctrlBtn->setIcon(QIcon(":/buttons/images/pause.png"));
    }
+
+   ui->ctrlBtn->repaint();//Qt 5.11 broke icon changes on click, this is a patch
 }
 
 void MainWindow::on_debugger_clicked(){
    if(emu.isInited()){
       emu.pause();
       ui->ctrlBtn->setIcon(QIcon(":/buttons/images/play.png"));
+      ui->ctrlBtn->repaint();//Qt 5.11 broke icon changes on click, this is a patch
       emuDebugger->exec();
    }
    else{

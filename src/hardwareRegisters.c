@@ -155,7 +155,6 @@ static inline void pllWakeCpuIfOff(){
    if(!pllIsOn() && pllWakeWait == -1){
       //PLL is off and not already in the process of waking up
       switch(registerArrayRead16(PLLCR) & 0x0003){
-
          case 0x0000:
             pllWakeWait = 32;
             break;
@@ -337,26 +336,60 @@ static inline void updateVibratorStatus(){
 }
 
 void printUnknownHwAccess(uint32_t address, uint32_t value, uint32_t size, bool isWrite){
-   if(isWrite){
+   if(isWrite)
       debugLog("CPU wrote %d bits of 0x%08X to register 0x%03X, PC 0x%08X.\n", size, value, address, m68k_get_reg(NULL, M68K_REG_PPC));
-   }
-   else{
+   else
       debugLog("CPU read %d bits from register 0x%03X, PC 0x%08X.\n", size, address, m68k_get_reg(NULL, M68K_REG_PPC));
+}
+
+static uint32_t getEmuRegister(uint32_t address){
+   address &= 0xFFF;
+   switch(address){
+
+      default:
+         debugLog("Invalid read from emu register 0x%08X.\n", address);
+         break;
+   }
+
+   return 0x00000000;
+}
+
+static void setEmuRegister(uint32_t address, uint32_t value){
+   address &= 0xFFF;
+   switch(address){
+      case EMU_CMD:
+         if(value >> 16 == EMU_CMD_KEY){
+            value &= 0xFFFF;
+            switch(value){
+               case CMD_EXECUTION_DONE:
+#if defined(EMU_DEBUG)
+                  executionFinished = true;
+#endif
+                  break;
+
+               default:
+                  debugLog("Invalid emu command 0x%04X.\n", value);
+                  break;
+            }
+         }
+         break;
+
+      default:
+         debugLog("Invalid write 0x%08X to emu register 0x%08X.\n", value, address);
+         break;
    }
 }
 
 uint8_t getHwRegister8(uint32_t address){
-   if((address & 0x0000F000) != 0x0000F000){
-      //not emu or hardware register, invalid access
+   //not emu or hardware register, invalid access
+   if((address & 0x0000F000) != 0x0000F000)
       return 0x00;
-   }
    
    address &= 0x00000FFF;
 #if defined(EMU_DEBUG) && defined(EMU_LOG_REGISTER_ACCESS_ALL)
    printUnknownHwAccess(address, 0, 8, false);
 #endif
    switch(address){
-
          /*
       case PBDATA:
          //read outputs as is and inputs as true, floating pins are high
@@ -443,17 +476,15 @@ uint8_t getHwRegister8(uint32_t address){
 }
 
 uint16_t getHwRegister16(uint32_t address){
-   if((address & 0x0000F000) != 0x0000F000){
-      //not emu or hardware register, invalid access
+   //not emu or hardware register, invalid access
+   if((address & 0x0000F000) != 0x0000F000)
       return 0x0000;
-   }
    
    address &= 0x00000FFF;
 #if defined(EMU_DEBUG) && defined(EMU_LOG_REGISTER_ACCESS_ALL)
    printUnknownHwAccess(address, 0, 16, false);
 #endif
    switch(address){
-
       case TSTAT1:
          timerStatusReadAcknowledge[0] |= registerArrayRead16(TSTAT1);//active bits acknowledged
          return registerArrayRead16(TSTAT1);
@@ -513,12 +544,10 @@ uint16_t getHwRegister16(uint32_t address){
 }
 
 uint32_t getHwRegister32(uint32_t address){
-   if((address & 0x0000F000) == 0x0000E000){
-      //32 bit emu register read, valid
-      return 0x00000000;
-   }
-   else if((address & 0x0000F000) != 0x0000F000){
-      //not emu or hardware register, invalid access
+   //32 bit emu register read, valid
+   if((address & 0x0000F000) != 0x0000F000){
+      if((address & 0x0000F000) == 0x0000E000)
+         return getEmuRegister(address);
       return 0x00000000;
    }
    
@@ -527,7 +556,6 @@ uint32_t getHwRegister32(uint32_t address){
    printUnknownHwAccess(address, 0, 32, false);
 #endif
    switch(address){
-
       //16 bit registers being read as 32 bit
       case PLLFSR:
 
@@ -551,17 +579,15 @@ uint32_t getHwRegister32(uint32_t address){
 
 
 void setHwRegister8(uint32_t address, uint8_t value){
-   if((address & 0x0000F000) != 0x0000F000){
-      //not emu or hardware register, invalid access
+   //not emu or hardware register, invalid access
+   if((address & 0x0000F000) != 0x0000F000)
       return;
-   }
    
    address &= 0x00000FFF;
 #if defined(EMU_DEBUG) && defined(EMU_LOG_REGISTER_ACCESS_ALL)
    printUnknownHwAccess(address, value, 8, true);
 #endif
-   switch(address){
-         
+   switch(address){ 
       case SCR:
          setScr(value);
          break;
@@ -683,17 +709,15 @@ void setHwRegister8(uint32_t address, uint8_t value){
 }
 
 void setHwRegister16(uint32_t address, uint16_t value){
-   if((address & 0x0000F000) != 0x0000F000){
-      //not emu or hardware register, invalid access
+   //not emu or hardware register, invalid access
+   if((address & 0x0000F000) != 0x0000F000)
       return;
-   }
    
    address &= 0x00000FFF;
 #if defined(EMU_DEBUG) && defined(EMU_LOG_REGISTER_ACCESS_ALL)
    printUnknownHwAccess(address, value, 16, true);
 #endif
-   switch(address){
-         
+   switch(address){  
       case RTCIENR:
          //missing bits 6 and 7
          registerArrayWrite16(address, value & 0xFF3F);
@@ -886,12 +910,10 @@ void setHwRegister16(uint32_t address, uint16_t value){
 }
 
 void setHwRegister32(uint32_t address, uint32_t value){
-   if((address & 0x0000F000) == 0x0000E000){
-      //32 bit emu register write, valid
-      return;
-   }
-   else if((address & 0x0000F000) != 0x0000F000){
-      //not emu or hardware register, invalid access
+   //32 bit emu register write, valid
+   if((address & 0x0000F000) != 0x0000F000){
+      if((address & 0x0000F000) == 0x0000E000)
+         setEmuRegister(address, value);
       return;
    }
    
@@ -900,7 +922,6 @@ void setHwRegister32(uint32_t address, uint32_t value){
    printUnknownHwAccess(address, value, 32, true);
 #endif
    switch(address){
-         
       case RTCTIME:
       case RTCALRM:
          registerArrayWrite32(address, value & 0x1F3F003F);
@@ -950,6 +971,8 @@ void resetHwRegisters(){
    spi1RxPosition = 0;
    spi1TxPosition = 0;
 
+   memset(chips, 0x00, sizeof(chips));
+   /*
    for(uint8_t chip = CHIP_BEGIN; chip < CHIP_END; chip++){
       chips[chip].enable = false;
       chips[chip].start = 0x00000000;
@@ -962,6 +985,7 @@ void resetHwRegisters(){
       chips[chip].supervisorOnlyProtectedMemory = false;
       chips[chip].unprotectedSize = 0x00000000;
    }
+   */
    //all chipselects are disabled at boot and CSA is mapped to 0x00000000 and covers the entire address range until CSGBA set otherwise
    chips[CHIP_A_ROM].inBootMode = true;
 

@@ -103,7 +103,6 @@ MOBILITY =
 
 DISTFILES += \
     images/addressBook.png \
-    images/calender.png \
     images/center.png \
     images/down.png \
     images/left.png \
@@ -126,7 +125,8 @@ DISTFILES += \
     images/play.png \
     images/saveLoad.png \
     images/screenshot.png \
-    images/stop.png
+    images/stop.png \
+    images/calendar.png
 
 RESOURCES += \
     mainwindow.qrc

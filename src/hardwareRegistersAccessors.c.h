@@ -337,7 +337,7 @@ static inline uint8_t getPortDValue(){
 
    if((requestedRow & 0x20) == 0){
       //kbd row 0, pins are 0 when button pressed and 1 when released, Palm OS then uses PDPOL to swap back to pressed == 1
-      portDValue |= !palmInput.buttonCalender | !palmInput.buttonAddress << 1 | !palmInput.buttonTodo << 2 | !palmInput.buttonNotes << 3;
+      portDValue |= !palmInput.buttonCalendar | !palmInput.buttonAddress << 1 | !palmInput.buttonTodo << 2 | !palmInput.buttonNotes << 3;
    }
 
    if((requestedRow & 0x40) == 0){

@@ -105,7 +105,6 @@ static inline bool probeWrite(uint8_t bank, uint32_t address){
    return true;
 }
 
-/* Read from anywhere */
 uint8_t m68k_read_memory_8(uint32_t address){
    uint8_t addressType = bankType[START_BANK(address)];
 
@@ -113,7 +112,6 @@ uint8_t m68k_read_memory_8(uint32_t address){
       return 0x00;
 
    switch(addressType){
-
       case CHIP_A_ROM:
          return romRead8(address);
 
@@ -148,7 +146,6 @@ uint16_t m68k_read_memory_16(uint32_t address){
       return 0x0000;
 
    switch(addressType){
-
       case CHIP_A_ROM:
          return romRead16(address);
 
@@ -183,7 +180,6 @@ uint32_t m68k_read_memory_32(uint32_t address){
       return 0x00000000;
 
    switch(addressType){
-
       case CHIP_A_ROM:
          return romRead32(address);
 
@@ -211,7 +207,6 @@ uint32_t m68k_read_memory_32(uint32_t address){
    return 0x00000000;
 }
 
-/* Write to anywhere */
 void m68k_write_memory_8(uint32_t address, uint8_t value){
    uint8_t addressType = bankType[START_BANK(address)];
 
@@ -219,7 +214,6 @@ void m68k_write_memory_8(uint32_t address, uint8_t value){
       return;
 
    switch(addressType){
-
       case CHIP_A_ROM:
          break;
 
@@ -257,7 +251,6 @@ void m68k_write_memory_16(uint32_t address, uint16_t value){
       return;
 
    switch(addressType){
-
       case CHIP_A_ROM:
          break;
 
@@ -295,7 +288,6 @@ void m68k_write_memory_32(uint32_t address, uint32_t value){
       return;
 
    switch(addressType){
-
       case CHIP_A_ROM:
          break;
 
@@ -332,7 +324,7 @@ void m68k_write_memory_32_pd(uint32_t address, uint32_t value){
    m68k_write_memory_32(address, value >> 16 | value << 16);
 }
 
-/* Memory access for the disassembler */
+//memory access for the disassembler
 uint8_t m68k_read_disassembler_8(uint32_t address){return m68k_read_memory_8(address);}
 uint16_t m68k_read_disassembler_16(uint32_t address){return m68k_read_memory_16(address);}
 uint32_t m68k_read_disassembler_32(uint32_t address){return m68k_read_memory_32(address);}
@@ -381,17 +373,18 @@ void setRegisterFFFFAccessMode(){
 void setSed1376Attached(bool attached){
    if(chips[CHIP_B_SED].enable){
       if(attached){
-         for(uint32_t bank = START_BANK(chips[CHIP_B_SED].start); bank <= END_BANK(chips[CHIP_B_SED].start, chips[CHIP_B_SED].size); bank++)
+         for(uint16_t bank = START_BANK(chips[CHIP_B_SED].start); bank <= END_BANK(chips[CHIP_B_SED].start, chips[CHIP_B_SED].size); bank++)
              bankType[bank] = CHIP_B_SED;
       }
       else{
-         for(uint32_t bank = START_BANK(chips[CHIP_B_SED].start); bank <= END_BANK(chips[CHIP_B_SED].start, chips[CHIP_B_SED].size); bank++)
+         for(uint16_t bank = START_BANK(chips[CHIP_B_SED].start); bank <= END_BANK(chips[CHIP_B_SED].start, chips[CHIP_B_SED].size); bank++)
             bankType[bank] = CHIP_NONE;
       }
    }
 }
 
 void resetAddressSpace(){
+   //#pragma omp parallel for
    for(uint32_t bank = 0; bank < TOTAL_MEMORY_BANKS; bank++)
       bankType[bank] = getProperBankType(bank);
 }

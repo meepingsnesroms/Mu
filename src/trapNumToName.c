@@ -1,6 +1,6 @@
-#include "emulator.h"//for EMU_* flags
+#include "emulator.h"//for EMU_DEBUG flag
 
-#if defined(EMU_DEBUG) && defined(EMU_OPCODE_LEVEL_DEBUG) && defined(EMU_LOG_APIS)
+#if defined(EMU_DEBUG)
 
 #include <stdint.h>
 #include <string.h>//for NULL
@@ -1161,6 +1161,13 @@ const char* lookupTrap(uint16_t trap){
       if(traps[i].trap == trap)
          return traps[i].name;
    return "Trap function ID unknown";
+}
+
+uint16_t reverseLookupTrap(const char* name){
+   for(uint32_t i = 0; i < sizeof(traps) / sizeof(traps[0]); i++)
+      if(!strcmp(traps[i].name, name))
+         return traps[i].trap;
+   return 0x0000;
 }
 
 #endif
