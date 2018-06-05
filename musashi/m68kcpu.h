@@ -261,7 +261,7 @@
 #define REG_DA           m68ki_cpu.dar /* easy access to data and address regs */
 #define REG_D            m68ki_cpu.dar
 #define REG_A            (m68ki_cpu.dar+8)
-#define REG_PPC 		 m68ki_cpu.ppc
+#define REG_PPC          m68ki_cpu.ppc
 #define REG_PC           m68ki_cpu.pc
 #define REG_SP_BASE      m68ki_cpu.sp
 #define REG_USP          m68ki_cpu.sp[0]

@@ -363,7 +363,8 @@ static void setEmuRegister(uint32_t address, uint32_t value){
             switch(value){
                case CMD_EXECUTION_DONE:
 #if defined(EMU_DEBUG)
-                  executionFinished = true;
+                  if(palmSpecialFeatures & FEATURE_DEBUG)
+                     executionFinished = true;
 #endif
                   break;
 
@@ -468,7 +469,7 @@ uint8_t getHwRegister8(uint32_t address){
       default:
          //bootloader
          if(address >= 0xE00)
-            registerArrayRead8(address);
+            return registerArrayRead8(address);
 #if defined(EMU_DEBUG) && defined(EMU_LOG_REGISTER_ACCESS_UNKNOWN) && !defined(EMU_LOG_REGISTER_ACCESS_ALL)
          else
             printUnknownHwAccess(address, 0, 8, false);
@@ -540,7 +541,7 @@ uint16_t getHwRegister16(uint32_t address){
       default:
          //bootloader
          if(address >= 0xE00)
-            registerArrayRead16(address);
+            return registerArrayRead16(address);
 #if defined(EMU_DEBUG) && defined(EMU_LOG_REGISTER_ACCESS_UNKNOWN) && !defined(EMU_LOG_REGISTER_ACCESS_ALL)
          else
             printUnknownHwAccess(address, 0, 16, false);
@@ -578,7 +579,7 @@ uint32_t getHwRegister32(uint32_t address){
       default:
          //bootloader
          if(address >= 0xE00)
-            registerArrayRead32(address);
+            return registerArrayRead32(address);
 #if defined(EMU_DEBUG) && defined(EMU_LOG_REGISTER_ACCESS_UNKNOWN) && !defined(EMU_LOG_REGISTER_ACCESS_ALL)
          else
             printUnknownHwAccess(address, 0, 32, false);

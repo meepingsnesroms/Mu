@@ -214,6 +214,7 @@ uint32_t callTrap(bool fallthrough, const char* name, const char* prototype, ...
    return_pointer_t trapReturnPointers[10];
    uint8_t trapReturnPointerIndex = 0;
    uint32_t callWriteOut = 0xFFFFFFE0;
+   uint32_t callStart;
 
    va_start(args, prototype);
    while(*params != ')'){
@@ -241,6 +242,8 @@ uint32_t callTrap(bool fallthrough, const char* name, const char* prototype, ...
             trapReturnPointers[trapReturnPointerIndex].hostPointer = va_arg(args, void*);
             trapReturnPointers[trapReturnPointerIndex].emuPointer = callWriteOut;
             trapReturnPointers[trapReturnPointerIndex].bytes = 1;
+            stackAddr -= 4;
+            m68k_write_memory_32(stackAddr, trapReturnPointers[trapReturnPointerIndex].emuPointer);
             callWriteOut += 2;
             trapReturnPointerIndex++;
             break;
@@ -249,6 +252,8 @@ uint32_t callTrap(bool fallthrough, const char* name, const char* prototype, ...
             trapReturnPointers[trapReturnPointerIndex].hostPointer = va_arg(args, void*);
             trapReturnPointers[trapReturnPointerIndex].emuPointer = callWriteOut;
             trapReturnPointers[trapReturnPointerIndex].bytes = 2;
+            stackAddr -= 4;
+            m68k_write_memory_32(stackAddr, trapReturnPointers[trapReturnPointerIndex].emuPointer);
             callWriteOut += 2;
             trapReturnPointerIndex++;
             break;
@@ -258,6 +263,8 @@ uint32_t callTrap(bool fallthrough, const char* name, const char* prototype, ...
             trapReturnPointers[trapReturnPointerIndex].hostPointer = va_arg(args, void*);
             trapReturnPointers[trapReturnPointerIndex].emuPointer = callWriteOut;
             trapReturnPointers[trapReturnPointerIndex].bytes = 4;
+            stackAddr -= 4;
+            m68k_write_memory_32(stackAddr, trapReturnPointers[trapReturnPointerIndex].emuPointer);
             callWriteOut += 4;
             trapReturnPointerIndex++;
             break;
@@ -267,14 +274,34 @@ uint32_t callTrap(bool fallthrough, const char* name, const char* prototype, ...
    }
 
    //write to the bootloader memory, its not important when debugging
+   callStart = callWriteOut;
    m68k_write_memory_16(callWriteOut, 0x4E4F);//trap f opcode
    callWriteOut += 2;
    m68k_write_memory_16(callWriteOut, trap);
    callWriteOut += 2;
 
+   //end execution with CMD_EXECUTION_DONE
+   m68k_write_memory_16(callWriteOut, 0x23F9);//move.l imm imm opcode
+   callWriteOut += 2;
+   m68k_write_memory_32(callWriteOut, MAKE_EMU_CMD(CMD_EXECUTION_DONE));
+   callWriteOut += 4;
+   m68k_write_memory_32(callWriteOut, EMU_REG_ADDR(EMU_CMD));
+   callWriteOut += 4;
+   //23cf 00000000
+   /*
+   m68k_write_memory_16(callWriteOut, 0x239F);//move.l imm to SP opcode
+   callWriteOut += 2;
+   m68k_write_memory_32(callWriteOut, EMU_REG_ADDR(EMU_CMD));
+   callWriteOut += 4;
+   m68k_write_memory_16(callWriteOut, 0x2EB9);//move.l imm to address in SP opcode
+   callWriteOut += 2;
+   m68k_write_memory_32(callWriteOut, MAKE_EMU_CMD(CMD_EXECUTION_DONE));
+   callWriteOut += 4;
+   */
+
    executionFinished = false;
    m68k_set_reg(M68K_REG_SP, stackAddr);
-   m68k_set_reg(M68K_REG_PC, callWriteOut - 4);
+   m68k_set_reg(M68K_REG_PC, callStart);
 
    //only setup the trap then fallthrough to normal execution, may be needed on app switch since the trap may not return
    if(!fallthrough){

@@ -46,6 +46,7 @@ swivelview register
 
 
 Fixed:
+Bootloader memory access
 need to check REFREQ clock frequency in RTCCTL
 PLLCR CLKEN being off should also disable the SED1376 but this would require a bank refresh on writing to PLLCR
 proper clearing of timer interrupts

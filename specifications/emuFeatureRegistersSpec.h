@@ -20,6 +20,7 @@ These registers will do nothing it there corresponding feature bit is not set on
 #define FEATURE_HLE_APIS   0x00000020/*memcpy, memcmp, wait on timer will be replaced with the hosts function*/
 #define FEATURE_EMU_HONEST 0x00000040/*tell the OS that its running in an emu, does nothing else*/
 #define FEATURE_EXT_KEYS   0x00000080/*enables the OS 5 buttons, left, right and select*/
+#define FEATURE_DEBUG      0x00000100/*enables the debug commands, used to call Palm OS functions like native C functions*/
 /*new features go here*/
 
 /*registers*/
