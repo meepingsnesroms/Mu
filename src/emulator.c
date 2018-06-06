@@ -281,23 +281,12 @@ uint32_t callTrap(bool fallthrough, const char* name, const char* prototype, ...
    callWriteOut += 2;
 
    //end execution with CMD_EXECUTION_DONE
-   m68k_write_memory_16(callWriteOut, 0x23F9);//move.l imm imm opcode
+   m68k_write_memory_16(callWriteOut, 0x23FC);//move.l data imm to address at imm2 opcode
    callWriteOut += 2;
    m68k_write_memory_32(callWriteOut, MAKE_EMU_CMD(CMD_EXECUTION_DONE));
    callWriteOut += 4;
    m68k_write_memory_32(callWriteOut, EMU_REG_ADDR(EMU_CMD));
    callWriteOut += 4;
-   //23cf 00000000
-   /*
-   m68k_write_memory_16(callWriteOut, 0x239F);//move.l imm to SP opcode
-   callWriteOut += 2;
-   m68k_write_memory_32(callWriteOut, EMU_REG_ADDR(EMU_CMD));
-   callWriteOut += 4;
-   m68k_write_memory_16(callWriteOut, 0x2EB9);//move.l imm to address in SP opcode
-   callWriteOut += 2;
-   m68k_write_memory_32(callWriteOut, MAKE_EMU_CMD(CMD_EXECUTION_DONE));
-   callWriteOut += 4;
-   */
 
    executionFinished = false;
    m68k_set_reg(M68K_REG_SP, stackAddr);
