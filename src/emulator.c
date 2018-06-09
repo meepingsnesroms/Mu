@@ -244,7 +244,7 @@ uint32_t callTrap(bool fallthrough, const char* name, const char* prototype, ...
             trapReturnPointers[trapReturnPointerIndex].bytes = 1;
             stackAddr -= 4;
             m68k_write_memory_32(stackAddr, trapReturnPointers[trapReturnPointerIndex].emuPointer);
-            callWriteOut += 2;
+            callWriteOut += 4;
             trapReturnPointerIndex++;
             break;
 
@@ -254,7 +254,7 @@ uint32_t callTrap(bool fallthrough, const char* name, const char* prototype, ...
             trapReturnPointers[trapReturnPointerIndex].bytes = 2;
             stackAddr -= 4;
             m68k_write_memory_32(stackAddr, trapReturnPointers[trapReturnPointerIndex].emuPointer);
-            callWriteOut += 2;
+            callWriteOut += 4;
             trapReturnPointerIndex++;
             break;
 
@@ -353,12 +353,27 @@ void sinfulExecution(){
                      SYS_TRAP(sysTrapSysAppLaunch);
          */
 
+         /*
          uint32_t palmString = makePalmString("Calculator");
          if(palmString != 0){
             uint32_t localId = callTrap(false, "sysTrapDmFindDatabase", "l(wp)", 0, palmString);
             callTrap(true, "sysTrapSysAppLaunch", "w(wlwwpp)", 0, localId, 0, 0, 0, 0);
             //dont free palmString yet
          }
+         */
+
+         //capture a single touch read
+         debugClearLogs();
+         callTrap(false, "sysTrapHwrIRQ5Handler", "v()");
+         debugLog("Touch Capture Finished\n");
+
+         /*
+         int16_t xPos;
+         int16_t yPos;
+         uint8_t touched;
+         callTrap(false, "sysTrapEvtGetPen", "v(WWB)", &xPos, &yPos, &touched);
+         */
+         //debugLog("Touch Position:X:%d, Y:%d, Touched:%d\n", xPos, yPos, touched);
 
          alreadyRun = true;
       }
@@ -909,7 +924,7 @@ bool emulateUntilDebugEventOrFrameEnd(){
    emulateFrame();
 
    //launch app when framebuffer == touchscreen calibrate
-   sinfulExecution();
+   //sinfulExecution();
 
    return false;
 #endif

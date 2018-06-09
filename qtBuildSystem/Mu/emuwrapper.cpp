@@ -29,6 +29,11 @@ uint32_t                     frontendDebugStringSize;
 char*                        frontendDebugString;
 
 
+void frontendHandleDebugClearLogs(){
+   debugStrings.clear();
+   duplicateCallCount.clear();
+}
+
 void frontendHandleDebugPrint(){
    QString newDebugString = frontendDebugString;
 

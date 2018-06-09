@@ -26,8 +26,11 @@ extern bool executionFinished;
 extern uint32_t frontendDebugStringSize;
 extern char*    frontendDebugString;
 void frontendHandleDebugPrint();
+void frontendHandleDebugClearLogs();
+#define debugClearLogs() frontendHandleDebugClearLogs()
 #define debugLog(...) (snprintf(frontendDebugString, frontendDebugStringSize, __VA_ARGS__), frontendHandleDebugPrint())
 #else
+#define debugClearLogs()
 #define debugLog(...) printf(__VA_ARGS__)
 #endif
 #else

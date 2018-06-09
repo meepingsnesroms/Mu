@@ -17,7 +17,7 @@ static uint8_t oldScr;
 void turnInterruptsOff(){
    if(interruptsEnabled){
       oldImr = readArbitraryMemory32(HW_REG_ADDR(IMR));
-      writeArbitraryMemory32(HW_REG_ADDR(IMR), 0xFFFFFFFF);
+      writeArbitraryMemory32(HW_REG_ADDR(IMR), 0xFFFFF0FD);/*leave timer 1 and button interrupts enabled or program will freeze*/
       interruptsEnabled = false;
    }
 }
@@ -51,7 +51,7 @@ uint8_t getSupportedInstructionSets(){
    return CPU_M68K;
 }
 
-char* getCpuString(){
+const char* getCpuString(){
    uint8_t cpuType = getPhysicalCpuType() & CPU_TYPES;
    
    if(cpuType == CPU_NONE){
@@ -94,10 +94,11 @@ var enterUnsafeMode(){
    exitSubprogram();/*only run once/for one frame*/
    
    if((getPhysicalCpuType() & CPU_M68K) || isEmulator()){
-      oldScr = readArbitraryMemory8(HW_REG_ADDR(SCR));
-      
       /*disable interrupt on invalid memory access*/
+      oldScr = readArbitraryMemory8(HW_REG_ADDR(SCR));
       writeArbitraryMemory8(HW_REG_ADDR(SCR), oldScr & 0xEF);
+      
+      turnInterruptsOff();
       
       unsafeMode = true;
       resetFunctionViewer();

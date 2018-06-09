@@ -391,16 +391,21 @@ uint8_t getHwRegister8(uint32_t address){
    printUnknownHwAccess(address, 0, 8, false);
 #endif
    switch(address){
-         /*
+      case PADATA:
+         //read outputs as is and inputs as true, floating pins are high
+         return (registerArrayRead8(PADATA) & registerArrayRead8(PADIR)) | ~registerArrayRead8(PADIR);
+
       case PBDATA:
          //read outputs as is and inputs as true, floating pins are high
          return (registerArrayRead8(PBDATA) & registerArrayRead8(PBDIR)) | ~registerArrayRead8(PBDIR);
-         */
+
+      case PCDATA:
+         //read outputs as is and inputs as false, floating pins are low, port c has a pull down not up
+         return registerArrayRead8(PCDATA) & registerArrayRead8(PCDIR);
 
       case PDDATA:
          return getPortDValue();
 
-         /*
       case PEDATA:
          //read outputs as is and inputs as true, floating pins are high
          return (registerArrayRead8(PEDATA) & registerArrayRead8(PEDIR)) | ~registerArrayRead8(PEDIR);
@@ -416,10 +421,13 @@ uint8_t getHwRegister8(uint32_t address){
       case PJDATA:
          //read outputs as is and inputs as true, floating pins are high
          return (registerArrayRead8(PJDATA) & registerArrayRead8(PJDIR)) | ~registerArrayRead8(PJDIR);
-         */
 
       case PKDATA:
          return getPortKValue();
+
+      case PMDATA:
+         //read outputs as is and inputs as true, floating pins are high
+         return (registerArrayRead8(PMDATA) & registerArrayRead8(PMDIR)) | ~registerArrayRead8(PMDIR);
 
       //basic non GPIO functions
       case LCKCON:
@@ -695,14 +703,12 @@ void setHwRegister8(uint32_t address, uint8_t value){
       case PJPUEN:
       case PKPUEN:
          
-      //port data value, nothing attached to port
-         /*
+      //port data value, nothing known is attached to port
       case PCDATA:
       case PDDATA:
       case PEDATA:
       case PFDATA:
       case PJDATA:
-         */
          
       //misc port config
       case PDKBEN:

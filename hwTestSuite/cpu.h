@@ -21,7 +21,7 @@ void turnInterruptsOff();
 void turnInterruptsOn();
 uint8_t getPhysicalCpuType();
 uint8_t getSupportedInstructionSets();
-char* getCpuString();
+const char* getCpuString();
 var enterUnsafeMode();
 var exitUnsafeMode();
 

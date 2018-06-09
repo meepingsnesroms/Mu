@@ -227,7 +227,7 @@ void MainWindow::on_screenshot_clicked(){
       if(!location.exists())
          location.mkpath(".");
 
-      currentScreenPixmap->save(path + "/screenshots/" + "screenshot" + QString::number(screenshotNumber, 10) + ".png", nullptr, 100);
+      currentScreenPixmap->save(path + "/screenshots/" + "screenshot" + QString::number(screenshotNumber, 10) + ".png", "PNG", 100);
       screenshotNumber++;
       settings.setValue("screenshotNum", screenshotNumber);
    }
