@@ -139,6 +139,8 @@ uint8_t sed1376GetRegister(uint8_t address){
       case GPIO_CONT_0:
       case GPIO_CONF_1:
       case GPIO_CONT_1:
+      case MEM_CLK:
+      case PIXEL_CLK:
          //simple read, no actions needed
          return sed1376Registers[address];
 
@@ -302,8 +304,8 @@ void sed1376Render(){
          if(pictureInPictureEnabled){
             uint16_t pipStartX = sed1376Registers[PIP_X_START_1] << 8 | sed1376Registers[PIP_X_START_0];
             uint16_t pipStartY = sed1376Registers[PIP_Y_START_1] << 8 | sed1376Registers[PIP_Y_START_0];
-            uint16_t pipEndX = sed1376Registers[PIP_X_END_1] << 8 | sed1376Registers[PIP_X_END_0];
-            uint16_t pipEndY = sed1376Registers[PIP_Y_END_1] << 8 | sed1376Registers[PIP_Y_END_0];
+            uint16_t pipEndX = (sed1376Registers[PIP_X_END_1] << 8 | sed1376Registers[PIP_X_END_0]) + 1;
+            uint16_t pipEndY = (sed1376Registers[PIP_Y_END_1] << 8 | sed1376Registers[PIP_Y_END_0]) + 1;
             if(rotation == 0 || rotation == 180){
                pipStartX *= 32 / bitDepth;
                pipEndX *= 32 / bitDepth;

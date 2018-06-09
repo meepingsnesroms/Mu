@@ -48,12 +48,14 @@ bool sed1376ClockConnected(){
 }
 
 void refreshInputState(){
+   /*
    uint16_t icr = registerArrayRead16(ICR);
    bool penIrqPin = !(ads7846PenIrqEnabled && palmInput.touchscreenTouched);//penIrqPin pulled low on touch
 
    //IRQ set as pin function and triggered
    if(!(registerArrayRead8(PFSEL) & 0x02) && penIrqPin == (bool)(icr & 0x0080))
       setIprIsrBit(INT_IRQ5);
+   */
 
    /*
    //IRQ set as pin function and triggered, the pen IRQ triggers when going low to high or high to low

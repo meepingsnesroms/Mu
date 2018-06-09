@@ -327,6 +327,28 @@ uint32_t callTrap(bool fallthrough, const char* name, const char* prototype, ...
    return trapReturn;
 }
 
+void sendTouchEvents(){
+   static input_t lastFrameInput = {0};
+   bool locationChanged = lastFrameInput.touchscreenX != palmInput.touchscreenX || lastFrameInput.touchscreenY != palmInput.touchscreenY;
+   bool pressedChanged = lastFrameInput.touchscreenTouched != palmInput.touchscreenTouched;
+
+   //proto: Err EvtEnqueuePenPoint(PointType *ptP);
+   //PointType is int16, int16
+   if(locationChanged || pressedChanged){
+      if(palmInput.touchscreenTouched){
+         m68k_write_memory_16(0xFFFFFFE0 - 4, palmInput.touchscreenX);
+         m68k_write_memory_16(0xFFFFFFE0 - 2, palmInput.touchscreenY);
+      }
+      else{
+         m68k_write_memory_16(0xFFFFFFE0 - 4, (uint16_t)-1);
+         m68k_write_memory_16(0xFFFFFFE0 - 2, (uint16_t)-1);
+      }
+      callTrap(false, "sysTrapEvtEnqueuePenPoint", "w(p)", 0xFFFFFFE0 - 4);
+   }
+
+   lastFrameInput = palmInput;
+}
+
 uint32_t makePalmString(const char* str){
    uint32_t strLength = strlen(str) + 1;
    uint32_t strData = callTrap(false, "sysTrapMemPtrNew", "p(l)", strLength);
@@ -348,32 +370,16 @@ void sinfulExecution(){
    if(!alreadyRun){
       bool hasBooted = !memcmp(palmFramebuffer, finishedBooting.pixel_data, 160 * 160 * 2);
       if(hasBooted){
-         /*proto:  Err SysAppLaunch(UInt16 cardNo, LocalID dbID, UInt16 launchFlags,
-                     UInt16 cmd, MemPtr cmdPBP, UInt32 *resultP)
-                     SYS_TRAP(sysTrapSysAppLaunch);
+         /*proto:Err SysAppLaunch(UInt16 cardNo, LocalID dbID, UInt16 launchFlags,
+                     UInt16 cmd, MemPtr cmdPBP, UInt32 *resultP);
          */
 
-         /*
-         uint32_t palmString = makePalmString("Calculator");
+         uint32_t palmString = makePalmString("Memo Pad");
          if(palmString != 0){
             uint32_t localId = callTrap(false, "sysTrapDmFindDatabase", "l(wp)", 0, palmString);
             callTrap(true, "sysTrapSysAppLaunch", "w(wlwwpp)", 0, localId, 0, 0, 0, 0);
             //dont free palmString yet
          }
-         */
-
-         //capture a single touch read
-         debugClearLogs();
-         callTrap(false, "sysTrapHwrIRQ5Handler", "v()");
-         debugLog("Touch Capture Finished\n");
-
-         /*
-         int16_t xPos;
-         int16_t yPos;
-         uint8_t touched;
-         callTrap(false, "sysTrapEvtGetPen", "v(WWB)", &xPos, &yPos, &touched);
-         */
-         //debugLog("Touch Position:X:%d, Y:%d, Touched:%d\n", xPos, yPos, touched);
 
          alreadyRun = true;
       }
@@ -863,6 +869,7 @@ uint32_t emulatorInstallPrcPdb(buffer_t file){
 
 void emulateFrame(){
    refreshInputState();
+   sendTouchEvents();
 
    while(palmCycleCounter < CRYSTAL_FREQUENCY / EMU_FPS){
       if(palmCrystalCycles != 0.0 && !lowPowerStopActive){
@@ -891,6 +898,7 @@ bool emulateUntilDebugEventOrFrameEnd(){
 #if defined(EMU_DEBUG) && defined(EMU_OPCODE_LEVEL_DEBUG)
    invalidBehaviorAbort = false;
    refreshInputState();
+   sendTouchEvents();
 
    while(palmCycleCounter < CRYSTAL_FREQUENCY / EMU_FPS){
       if(palmCrystalCycles != 0.0 && !lowPowerStopActive){
@@ -916,15 +924,11 @@ bool emulateUntilDebugEventOrFrameEnd(){
 
    sed1376Render();
 
-   //launch app when framebuffer == touchscreen calibrate
-   sinfulExecution();
-
    return invalidBehaviorAbort;
 #else
    emulateFrame();
 
-   //launch app when framebuffer == touchscreen calibrate
-   //sinfulExecution();
+   sinfulExecution();
 
    return false;
 #endif
