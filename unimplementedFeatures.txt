@@ -32,6 +32,7 @@ port g data bit 2 may need to be 0 to access ADS7846
 REFREQ clock frequency in RTCCTL should slow down the RTC when enabled
 port d IRQ* bits edge triggered interrupt mode is not emulated
 port g backlight state readback
+port d seems to allow using special function pins as inputs while active unlike other ports, this needs to be verified
 
 Debug tools:
 missing icons

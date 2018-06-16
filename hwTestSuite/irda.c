@@ -29,7 +29,6 @@ void irdaHandleCommands(){
       uint8_t irdaCommand = irdaReceiveUint8();
       while(irdaCommand != IRDA_COMMAND_NONE){
          switch(irdaCommand){
-               
             case IRDA_COMMAND_NONE:
                break;
                

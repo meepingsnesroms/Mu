@@ -150,13 +150,13 @@ CODE_SECTION("viewer") static var listModeFrame(){
       if(selectedEntry + 1 < listLength)
          selectedEntry++;
    
-   if(getButtonPressed(buttonLeft) && listLength > ITEM_LIST_ENTRYS)
+   if(getButtonPressed(buttonLeft))
       if(selectedEntry - ITEM_LIST_ENTRYS >= 0)
          selectedEntry -= ITEM_LIST_ENTRYS;/*flip the page*/
       else
          selectedEntry = 0;
    
-   if(getButtonPressed(buttonRight) && listLength > ITEM_LIST_ENTRYS)
+   if(getButtonPressed(buttonRight))
       if(selectedEntry + ITEM_LIST_ENTRYS < listLength)
          selectedEntry += ITEM_LIST_ENTRYS;/*flip the page*/
       else
@@ -195,7 +195,6 @@ var valueViewer(){
       debugSafeScreenClear(C_WHITE);
       
       switch(getVarType(value)){
-            
          case TYPE_UINT:
             StrPrintF(sharedDataBuffer, "uint32_t:0x%08lX", (uint32_t)varData);
             UG_PutString(0, 0, sharedDataBuffer);
@@ -306,6 +305,10 @@ void resetFunctionViewer(){
       hwTests[totalHwTests].testFunction = getDeviceId;
       totalHwTests++;
       
+      StrNCopy(hwTests[totalHwTests].name, "Watch ICR", TEST_NAME_LENGTH);
+      hwTests[totalHwTests].testFunction = watchIcr;
+      totalHwTests++;
+      
       if(isM515){
          StrNCopy(hwTests[totalHwTests].name, "Toggle Backlight", TEST_NAME_LENGTH);
          hwTests[totalHwTests].testFunction = toggleBacklight;
@@ -313,6 +316,10 @@ void resetFunctionViewer(){
          
          StrNCopy(hwTests[totalHwTests].name, "Toggle Motor", TEST_NAME_LENGTH);
          hwTests[totalHwTests].testFunction = toggleMotor;
+         totalHwTests++;
+         
+         StrNCopy(hwTests[totalHwTests].name, "Watch PENIRQ", TEST_NAME_LENGTH);
+         hwTests[totalHwTests].testFunction = watchPenIrq;
          totalHwTests++;
       }
       

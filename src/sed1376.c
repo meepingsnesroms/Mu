@@ -294,7 +294,7 @@ void sed1376Render(){
       selectRenderer(color, bitDepth);
 
       if(renderPixel){
-         for(uint16_t pixelY = 0; pixelY < 160; pixelY++)
+         MULTITHREAD_DOUBLE_LOOP for(uint16_t pixelY = 0; pixelY < 160; pixelY++)
             for(uint16_t pixelX = 0; pixelX < 160; pixelX++)
                palmFramebuffer[pixelY * 160 + pixelX] = renderPixel(pixelX, pixelY);
 
@@ -321,7 +321,7 @@ void sed1376Render(){
                pipEndY = uMin(pipEndX, 160);
                screenStartAddress = getPipStartAddress();
                lineSize = (sed1376Registers[PIP_LINE_SZ_1] << 8 | sed1376Registers[PIP_LINE_SZ_0]) * 4;
-               for(uint16_t pixelY = pipStartY; pixelY < pipEndY; pixelY++)
+               MULTITHREAD_DOUBLE_LOOP for(uint16_t pixelY = pipStartY; pixelY < pipEndY; pixelY++)
                   for(uint16_t pixelX = pipStartX; pixelX < pipEndX; pixelX++)
                      palmFramebuffer[pixelY * 160 + pixelX] = renderPixel(pixelX, pixelY);
             }
@@ -332,12 +332,12 @@ void sed1376Render(){
 
          //software display inversion
          if((sed1376Registers[DISP_MODE] & 0x30) == 0x10)
-            for(uint32_t count = 0; count < 160 * 160; count++)
+            MULTITHREAD_LOOP for(uint32_t count = 0; count < 160 * 160; count++)
                palmFramebuffer[count] ^= 0xFFFF;
 
          //backlight off, half color intensity
          if(!palmMisc.backlightOn)
-            for(uint32_t count = 0; count < 160 * 160; count++){
+            MULTITHREAD_LOOP for(uint32_t count = 0; count < 160 * 160; count++){
                palmFramebuffer[count] >>= 1;
                palmFramebuffer[count] &= 0x7BEF;
             }

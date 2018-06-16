@@ -48,25 +48,50 @@ bool sed1376ClockConnected(){
 }
 
 void refreshInputState(){
-   /*
-   uint16_t icr = registerArrayRead16(ICR);
-   bool penIrqPin = !(ads7846PenIrqEnabled && palmInput.touchscreenTouched);//penIrqPin pulled low on touch
+   //uint16_t icr = registerArrayRead16(ICR);
+   //bool penIrqPin = !(ads7846PenIrqEnabled && palmInput.touchscreenTouched);//penIrqPin pulled low on touch
 
+   /*
    //IRQ set as pin function and triggered
    if(!(registerArrayRead8(PFSEL) & 0x02) && penIrqPin == (bool)(icr & 0x0080))
       setIprIsrBit(INT_IRQ5);
    */
 
-   /*
    //IRQ set as pin function and triggered, the pen IRQ triggers when going low to high or high to low
-   if(!(registerArrayRead8(PFSEL) & 0x02) && (penIrqPin == (bool)(icr & 0x0080)) != (bool)(edgeTriggeredInterruptLastValue & INT_IRQ5))
-      setIprIsrBit(INT_IRQ5);
+   //if(!(registerArrayRead8(PFSEL) & 0x02) && (penIrqPin == (bool)(icr & 0x0080)) != (bool)(edgeTriggeredInterruptLastValue & INT_IRQ5))
+   //   setIprIsrBit(INT_IRQ5);
 
-   if(penIrqPin == (bool)(icr & 0x0080))
-      edgeTriggeredInterruptLastValue |= INT_IRQ5;
-   else
-      edgeTriggeredInterruptLastValue &= ~INT_IRQ5;
+   /*
+   if(!(registerArrayRead8(PFSEL) & 0x02)){
+      if(penIrqPin == (bool)(icr & 0x0080)){
+         if(!(edgeTriggeredInterruptLastValue & INT_IRQ5)){
+            setIprIsrBit(INT_IRQ5);
+            edgeTriggeredInterruptLastValue |= INT_IRQ5;
+         }
+      }
+      else{
+         edgeTriggeredInterruptLastValue &= ~INT_IRQ5;
+      }
+   }
    */
+
+   if(!(registerArrayRead8(PFSEL) & 0x02)){
+      uint16_t icr = registerArrayRead16(ICR);
+      bool penIrqPin = !(ads7846PenIrqEnabled && palmInput.touchscreenTouched);//penIrqPin pulled low on touch
+
+      //switch polarity
+      if(icr & 0x0080)
+         penIrqPin = !penIrqPin;
+
+      //state changed trigger an interrupt
+      if(penIrqPin != (bool)(edgeTriggeredInterruptLastValue & INT_IRQ5))
+         setIprIsrBit(INT_IRQ5);
+
+      if(penIrqPin)
+         edgeTriggeredInterruptLastValue |= INT_IRQ5;
+      else
+         edgeTriggeredInterruptLastValue &= ~INT_IRQ5;
+   }
 
    checkPortDInterrupts();//this calls checkInterrupts() so it doesnt need to be called above
 }
@@ -446,8 +471,7 @@ uint8_t getHwRegister8(uint32_t address){
          return (registerArrayRead8(PEDATA) & registerArrayRead8(PEDIR)) | ~registerArrayRead8(PEDIR);
 
       case PFDATA:
-         //read outputs as is and inputs as true, floating pins are high
-         return (registerArrayRead8(PFDATA) & registerArrayRead8(PFDIR)) | ~registerArrayRead8(PFDIR);
+         return getPortFValue();
 
       case PGDATA:
          //read outputs as is and inputs as true, floating pins are high

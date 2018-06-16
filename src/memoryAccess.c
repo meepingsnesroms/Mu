@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <string.h>
 
 #include "emulator.h"
 #include "hardwareRegisters.h"
@@ -359,12 +360,12 @@ static uint8_t getProperBankType(uint32_t bank){
 }
 
 void setRegisterXXFFAccessMode(){
-   for(uint32_t topByte = 0; topByte < 0x100; topByte++)
+   MULTITHREAD_LOOP for(uint32_t topByte = 0; topByte < 0x100; topByte++)
       bankType[START_BANK(topByte << 24 | 0x00FFF000)] = CHIP_REGISTERS;
 }
 
 void setRegisterFFFFAccessMode(){
-   for(uint32_t topByte = 0; topByte < 0x100; topByte++){
+   MULTITHREAD_LOOP for(uint32_t topByte = 0; topByte < 0x100; topByte++){
       uint32_t bank = START_BANK(topByte << 24 | 0x00FFF000);
       bankType[bank] = getProperBankType(bank);
    }
@@ -372,19 +373,21 @@ void setRegisterFFFFAccessMode(){
 
 void setSed1376Attached(bool attached){
    if(chips[CHIP_B_SED].enable){
+      memset(&bankType[START_BANK(chips[CHIP_B_SED].start)], attached ? CHIP_B_SED : CHIP_NONE, END_BANK(chips[CHIP_B_SED].start, chips[CHIP_B_SED].size) - START_BANK(chips[CHIP_B_SED].start) + 1);
+      /*
       if(attached){
-         for(uint16_t bank = START_BANK(chips[CHIP_B_SED].start); bank <= END_BANK(chips[CHIP_B_SED].start, chips[CHIP_B_SED].size); bank++)
+         MULTITHREAD_LOOP for(uint16_t bank = START_BANK(chips[CHIP_B_SED].start); bank <= END_BANK(chips[CHIP_B_SED].start, chips[CHIP_B_SED].size); bank++)
              bankType[bank] = CHIP_B_SED;
       }
       else{
-         for(uint16_t bank = START_BANK(chips[CHIP_B_SED].start); bank <= END_BANK(chips[CHIP_B_SED].start, chips[CHIP_B_SED].size); bank++)
+         MULTITHREAD_LOOP for(uint16_t bank = START_BANK(chips[CHIP_B_SED].start); bank <= END_BANK(chips[CHIP_B_SED].start, chips[CHIP_B_SED].size); bank++)
             bankType[bank] = CHIP_NONE;
       }
+      */
    }
 }
 
 void resetAddressSpace(){
-   //#pragma omp parallel for
-   for(uint32_t bank = 0; bank < TOTAL_MEMORY_BANKS; bank++)
+   MULTITHREAD_LOOP for(uint32_t bank = 0; bank < TOTAL_MEMORY_BANKS; bank++)
       bankType[bank] = getProperBankType(bank);
 }

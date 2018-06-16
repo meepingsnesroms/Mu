@@ -394,10 +394,25 @@ static inline uint8_t getPortDValue(){
 
    portDValue |= 0x50;//floating pins are high
    portDValue ^= portDPolarity;//only input polarity is affected by PDPOL
-   portDValue &= ~portDDir;//only use above pin values for inputs
+   portDValue &= ~portDDir;//only use above pin values for inputs, port d allows using special function pins as inputs while active unlike other ports
    portDValue |= portDData & portDDir;//if a pin is an output and has its data bit set return that too
 
    return portDValue;
+}
+
+static inline uint8_t getPortFValue(){
+   uint8_t portFValue = 0x00;
+   uint8_t portFData = registerArrayRead8(PKDATA);
+   uint8_t portFDir = registerArrayRead8(PKDIR);
+   uint8_t portFSel = registerArrayRead8(PKSEL);
+   bool penIrqPin = !(ads7846PenIrqEnabled && palmInput.touchscreenTouched);//penIrqPin pulled low on touch
+
+   portFValue |= penIrqPin << 1;
+   portFValue |= 0xFD;//floating pins are high
+   portFValue &= ~portFDir & portFSel;
+   portFValue |= portFData & portFDir & portFSel;
+
+   return portFValue;
 }
 
 static inline uint8_t getPortKValue(){

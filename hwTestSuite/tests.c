@@ -132,7 +132,7 @@ var interrogateSpi2(){
    StrPrintF(sharedDataBuffer, "PCDATA:0x%02X", readArbitraryMemory8(HW_REG_ADDR(PCDATA)));
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
-   //PDDATA is buttons, not relevent to the SPI
+   /*PDDATA is buttons, not relevent to the SPI*/
    StrPrintF(sharedDataBuffer, "PEDATA:0x%02X", readArbitraryMemory8(HW_REG_ADDR(PEDATA)));
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
@@ -341,6 +341,12 @@ var toggleBacklight(){
    if(firstRun){
       firstRun = false;
       debugSafeScreenClear(C_WHITE);
+      StrPrintF(sharedDataBuffer, "Left = SED1376");
+      UG_PutString(0, y, sharedDataBuffer);
+      y += FONT_HEIGHT + 1;
+      StrPrintF(sharedDataBuffer, "Right = Port G");
+      UG_PutString(0, y, sharedDataBuffer);
+      y += FONT_HEIGHT + 1;
    }
    
    if(getButtonPressed(buttonBack)){
@@ -356,12 +362,7 @@ var toggleBacklight(){
       writeArbitraryMemory8(HW_REG_ADDR(PGDATA), readArbitraryMemory8(HW_REG_ADDR(PGDATA)) ^ 0x02);
    }
    
-   StrPrintF(sharedDataBuffer, "Left = SED1376");
-   UG_PutString(0, y, sharedDataBuffer);
-   y += FONT_HEIGHT + 1;
-   StrPrintF(sharedDataBuffer, "Right = Port G");
-   UG_PutString(0, y, sharedDataBuffer);
-   y += FONT_HEIGHT + 1;
+   y = (FONT_HEIGHT + 1) * 2;
    StrPrintF(sharedDataBuffer, "PGDATA:0x%02X", readArbitraryMemory8(HW_REG_ADDR(PGDATA)));
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
@@ -381,7 +382,7 @@ var toggleMotor(){
    if(firstRun){
       firstRun = false;
       debugSafeScreenClear(C_WHITE);
-      StrPrintF(sharedDataBuffer, "Press select to toggle motor(only works on m515)");
+      StrPrintF(sharedDataBuffer, "Select = Toggle Motor");
       UG_PutString(0, 0, sharedDataBuffer);
    }
    
@@ -397,4 +398,45 @@ var toggleMotor(){
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
 
+var watchPenIrq(){
+   static Boolean firstRun = true;
+   
+   if(firstRun){
+      firstRun = false;
+      writeArbitraryMemory8(HW_REG_ADDR(PFDIR), readArbitraryMemory8(HW_REG_ADDR(PFDIR)) & 0xFD);
+      writeArbitraryMemory8(HW_REG_ADDR(PFSEL), readArbitraryMemory8(HW_REG_ADDR(PFSEL)) | 0x02);
+      debugSafeScreenClear(C_WHITE);
+   }
+   
+   if(getButtonPressed(buttonBack)){
+      firstRun = true;
+      writeArbitraryMemory8(HW_REG_ADDR(PFSEL), readArbitraryMemory8(HW_REG_ADDR(PFSEL)) & 0xFD);
+      exitSubprogram();
+   }
+   
+   StrPrintF(sharedDataBuffer, "PENIRQ State:%s", (readArbitraryMemory8(HW_REG_ADDR(PFDATA)) & 0x02) ? "true " : "false");/*"true " needs the space to clear the e from "false"*/
+   UG_PutString(0, 0, sharedDataBuffer);
+   
+   return makeVar(LENGTH_0, TYPE_NULL, 0);
+}
+
+var watchIcr(){
+   static Boolean firstRun = true;
+   
+   if(firstRun){
+      firstRun = false;
+      debugSafeScreenClear(C_WHITE);
+   }
+   
+   if(getButtonPressed(buttonBack)){
+      firstRun = true;
+      writeArbitraryMemory8(HW_REG_ADDR(PFSEL), readArbitraryMemory8(HW_REG_ADDR(PFSEL)) & 0xFD);
+      exitSubprogram();
+   }
+
+   StrPrintF(sharedDataBuffer, "ICR:0x%02X", readArbitraryMemory16(HW_REG_ADDR(ICR)));
+   UG_PutString(0, 0, sharedDataBuffer);
+   
+   return makeVar(LENGTH_0, TYPE_NULL, 0);
+}
 

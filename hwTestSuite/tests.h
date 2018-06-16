@@ -13,5 +13,7 @@ var getClk32Frequency();
 var getDeviceId();
 var toggleBacklight();
 var toggleMotor();
+var watchPenIrq();
+var watchIcr();
 
 #endif

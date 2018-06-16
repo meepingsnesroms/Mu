@@ -37,6 +37,15 @@ void frontendHandleDebugClearLogs();
 #define debugLog(...)
 #endif
 
+//threads
+#if defined(EMU_MULTITHREADED)
+#define MULTITHREAD_LOOP _Pragma("omp parallel for")
+#define MULTITHREAD_DOUBLE_LOOP _Pragma("omp parallel for collapse(2)")
+#else
+#define MULTITHREAD_LOOP
+#define MULTITHREAD_DOUBLE_LOOP
+#endif
+
 //emu errors
 enum{
    EMU_ERROR_NONE = 0,
