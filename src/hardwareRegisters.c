@@ -90,31 +90,28 @@ int32_t interruptAcknowledge(int32_t intLevel){
    return vector;
 }
 
-void setBusErrorTimeOut(){
+void setBusErrorTimeOut(uint32_t address, bool isWrite){
    uint8_t scr = registerArrayRead8(SCR);
    debugLog("Bus error timeout, PC:0x%08X\n", m68k_get_reg(NULL, M68K_REG_PPC));
-   if(scr & 0x10){
-      //trigger bus error interrupt
-   }
+   if(scr & 0x10)
+      triggerBusError(address, isWrite);
    registerArrayWrite8(SCR, scr | 0x80);
 }
 
-void setWriteProtectViolation(){
-   uint8_t scr = registerArrayRead8(SCR);
-   debugLog("Write protect violation, PC:0x%08X\n", m68k_get_reg(NULL, M68K_REG_PPC));
-   if(scr & 0x10){
-      //trigger bus error interrupt
-   }
-   registerArrayWrite8(SCR, scr | 0x40);
-}
-
-void setPrivilegeViolation(){
+void setPrivilegeViolation(uint32_t address, bool isWrite){
    uint8_t scr = registerArrayRead8(SCR);
    debugLog("Privilege violation, PC:0x%08X\n", m68k_get_reg(NULL, M68K_REG_PPC));
-   if(scr & 0x10){
-      //trigger bus error interrupt
-   }
+   if(scr & 0x10)
+      triggerBusError(address, isWrite);
    registerArrayWrite8(SCR, scr | 0x20);
+}
+
+void setWriteProtectViolation(uint32_t address){
+   uint8_t scr = registerArrayRead8(SCR);
+   debugLog("Write protect violation, PC:0x%08X\n", m68k_get_reg(NULL, M68K_REG_PPC));
+   if(scr & 0x10)
+      triggerBusError(address, true);
+   registerArrayWrite8(SCR, scr | 0x40);
 }
 
 static void recalculateCpuSpeed(){
@@ -260,7 +257,7 @@ static void checkPortDInterrupts(){
    bool currentPllState = pllIsOn();
 
    if(portDIntEnable & portDValue & ~portDDir & 0x01){
-      //int 0, polarity set with PDPOL
+      //INT0, polarity set with PDPOL
       if(!(portDEdgeSelect & 0x01)){
          //edge triggered
          if(!(edgeTriggeredInterruptLastValue & INT_INT0) && currentPllState)
@@ -276,42 +273,78 @@ static void checkPortDInterrupts(){
    else{
       edgeTriggeredInterruptLastValue &= ~INT_INT0;
    }
-   
+
    if(portDIntEnable & portDValue & ~portDDir & 0x02){
-      //int 1, polarity set with PDPOL
-      if(!(portDEdgeSelect & 0x02) || pllIsOn())
+      //INT1, polarity set with PDPOL
+      if(!(portDEdgeSelect & 0x02)){
+         //edge triggered
+         if(!(edgeTriggeredInterruptLastValue & INT_INT1) && currentPllState)
+            setIprIsrBit(INT_INT1);
+      }
+      else{
+         //level triggered
          setIprIsrBit(INT_INT1);
+      }
+
+      edgeTriggeredInterruptLastValue |= INT_INT1;
    }
-   
+   else{
+      edgeTriggeredInterruptLastValue &= ~INT_INT1;
+   }
+
    if(portDIntEnable & portDValue & ~portDDir & 0x04){
-      //int 2, polarity set with PDPOL
-      if(!(portDEdgeSelect & 0x04) || pllIsOn())
+      //INT2, polarity set with PDPOL
+      if(!(portDEdgeSelect & 0x04)){
+         //edge triggered
+         if(!(edgeTriggeredInterruptLastValue & INT_INT2) && currentPllState)
+            setIprIsrBit(INT_INT2);
+      }
+      else{
+         //level triggered
          setIprIsrBit(INT_INT2);
+      }
+
+      edgeTriggeredInterruptLastValue |= INT_INT2;
    }
-   
+   else{
+      edgeTriggeredInterruptLastValue &= ~INT_INT2;
+   }
+
    if(portDIntEnable & portDValue & ~portDDir & 0x08){
-      //int 3, polarity set with PDPOL
-      if(!(portDEdgeSelect & 0x08) || pllIsOn())
+      //INT3, polarity set with PDPOL
+      if(!(portDEdgeSelect & 0x08)){
+         //edge triggered
+         if(!(edgeTriggeredInterruptLastValue & INT_INT3) && currentPllState)
+            setIprIsrBit(INT_INT3);
+      }
+      else{
+         //level triggered
          setIprIsrBit(INT_INT3);
+      }
+
+      edgeTriggeredInterruptLastValue |= INT_INT3;
+   }
+   else{
+      edgeTriggeredInterruptLastValue &= ~INT_INT3;
    }
    
    if(portDIrqPins & ~portDDir & 0x10 && (bool)(portDValue & 0x10) == (bool)(interruptControlRegister & 0x8000)){
-      //irq 1, polarity set in ICR
+      //IRQ1, polarity set in ICR
       setIprIsrBit(INT_IRQ1);
    }
    
    if(portDIrqPins & ~portDDir & 0x20 && (bool)(portDValue & 0x20) == (bool)(interruptControlRegister & 0x4000)){
-      //irq 2, polarity set in ICR
+      //IRQ2, polarity set in ICR
       setIprIsrBit(INT_IRQ2);
    }
    
    if(portDIrqPins & ~portDDir & 0x40 && (bool)(portDValue & 0x40) == (bool)(interruptControlRegister & 0x2000)){
-      //irq 3, polarity set in ICR
+      //IRQ3, polarity set in ICR
       setIprIsrBit(INT_IRQ3);
    }
    
    if(portDIrqPins & ~portDDir & 0x80 && (bool)(portDValue & 0x80) == (bool)(interruptControlRegister & 0x1000)){
-      //irq 6, polarity set in ICR
+      //IRQ6, polarity set in ICR
       setIprIsrBit(INT_IRQ6);
    }
    
@@ -762,16 +795,10 @@ void setHwRegister16(uint32_t address, uint16_t value){
          break;
 
       case ISR:
-         //this is a 32 bit register but Palm OS writes it as 16 bit chunks
-         registerArrayWrite16(IPR, registerArrayRead16(IPR) & ~(value & 0x001F/*external hardware int mask*/));
-         registerArrayWrite16(ISR, registerArrayRead16(ISR) & ~(value & 0x001F/*external hardware int mask*/));
-         checkInterrupts();
+         setIsr(value << 16, true, false);
          break;
       case ISR + 2:
-         //this is a 32 bit register but Palm OS writes it as 16 bit chunks
-         registerArrayWrite16(IPR + 2, registerArrayRead16(IPR + 2) & ~(value & 0x0F00/*external hardware int mask*/));
-         registerArrayWrite16(ISR + 2, registerArrayRead16(ISR + 2) & ~(value & 0x0F00/*external hardware int mask*/));
-         checkInterrupts();
+         setIsr(value, false, true);
          break;
          
       case TCTL1:
@@ -962,9 +989,7 @@ void setHwRegister32(uint32_t address, uint32_t value){
          break;
          
       case ISR:
-         //clear ISR and IPR for external hardware whereever there is a 1 bit in value
-         registerArrayWrite32(IPR, registerArrayRead32(IPR) & ~(value & 0x001F0F00/*external hardware int mask*/));
-         registerArrayWrite32(ISR, registerArrayRead32(ISR) & ~(value & 0x001F0F00/*external hardware int mask*/));
+         setIsr(value, true, true);
          break;
          
       case IMR:

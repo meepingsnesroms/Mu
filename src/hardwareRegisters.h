@@ -77,9 +77,9 @@ void refreshInputState();
 int32_t interruptAcknowledge(int32_t intLevel);
 
 //memory errors
-void setBusErrorTimeOut();
-void setPrivilegeViolation();
-void setWriteProtectViolation();
+void setBusErrorTimeOut(uint32_t address, bool isWrite);
+void setPrivilegeViolation(uint32_t address, bool isWrite);
+void setWriteProtectViolation(uint32_t address);
 
 //memory accessors
 uint8_t getHwRegister8(uint32_t address);

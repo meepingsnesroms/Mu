@@ -30,6 +30,8 @@ touch interrupt seems to not use IRQ5
 When SPICLK2, SPITXD or SPIRXD on port e is disabled ADS7846 functions should respond approptatly(not transmitting or receiving or blocking both for the clock)
 port g data bit 2 may need to be 0 to access ADS7846
 REFREQ clock frequency in RTCCTL should slow down the RTC when enabled
+port d IRQ* bits edge triggered interrupt mode is not emulated
+port g backlight state readback
 
 Debug tools:
 missing icons
@@ -46,6 +48,7 @@ swivelview register
 
 
 Fixed:
+CPU_RUN_MODE is not preserved on save state and could allow executing after an address error if a save and load are performed(CPU_RUN_MODE is not used when address error is disabled)
 Bootloader memory access
 need to check REFREQ clock frequency in RTCCTL
 PLLCR CLKEN being off should also disable the SED1376 but this would require a bank refresh on writing to PLLCR

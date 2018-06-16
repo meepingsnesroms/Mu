@@ -294,14 +294,6 @@ void resetFunctionViewer(){
       hwTests[totalHwTests].testFunction = listDataRegisters;
       totalHwTests++;
       
-      StrNCopy(hwTests[totalHwTests].name, "Interrogate SPI2", TEST_NAME_LENGTH);
-      hwTests[totalHwTests].testFunction = interrogateSpi2;
-      totalHwTests++;
-      
-      StrNCopy(hwTests[totalHwTests].name, "Self Probe SPI2", TEST_NAME_LENGTH);
-      hwTests[totalHwTests].testFunction = selfProbeSpi2;
-      totalHwTests++;
-      
       StrNCopy(hwTests[totalHwTests].name, "Button Test", TEST_NAME_LENGTH);
       hwTests[totalHwTests].testFunction = testButtonInput;
       totalHwTests++;
@@ -309,6 +301,20 @@ void resetFunctionViewer(){
       StrNCopy(hwTests[totalHwTests].name, "Get CLK32 Freq", TEST_NAME_LENGTH);
       hwTests[totalHwTests].testFunction = getClk32Frequency;
       totalHwTests++;
+      
+      StrNCopy(hwTests[totalHwTests].name, "Get Device ID", TEST_NAME_LENGTH);
+      hwTests[totalHwTests].testFunction = getDeviceId;
+      totalHwTests++;
+      
+      if(isM515){
+         StrNCopy(hwTests[totalHwTests].name, "Toggle Backlight", TEST_NAME_LENGTH);
+         hwTests[totalHwTests].testFunction = toggleBacklight;
+         totalHwTests++;
+         
+         StrNCopy(hwTests[totalHwTests].name, "Toggle Motor", TEST_NAME_LENGTH);
+         hwTests[totalHwTests].testFunction = toggleMotor;
+         totalHwTests++;
+      }
       
       if(unsafeMode){
          StrNCopy(hwTests[totalHwTests].name, "Manual LSSA", TEST_NAME_LENGTH);
@@ -321,6 +327,14 @@ void resetFunctionViewer(){
          
          StrNCopy(hwTests[totalHwTests].name, "ADS7846 Read", TEST_NAME_LENGTH);
          hwTests[totalHwTests].testFunction = ads7846Read;
+         totalHwTests++;
+         
+         StrNCopy(hwTests[totalHwTests].name, "Interrogate SPI2", TEST_NAME_LENGTH);
+         hwTests[totalHwTests].testFunction = interrogateSpi2;
+         totalHwTests++;
+         
+         StrNCopy(hwTests[totalHwTests].name, "Self Probe SPI2", TEST_NAME_LENGTH);
+         hwTests[totalHwTests].testFunction = selfProbeSpi2;
          totalHwTests++;
          
          StrNCopy(hwTests[totalHwTests].name, "Exit Unsafe Mode", TEST_NAME_LENGTH);

@@ -1,0 +1,10 @@
+Port A: Fixed 0x40, likely nothing attached, is used by the Dragonball VZ built in display controller on other models
+Port B: Fixed 0x3F, likely nothing attached, probably used for chip select
+Port C: Usually 0x7F or 0x3F(less common), needs to be investigated further
+Port D: Hardware buttons
+Port E: Always 0x5E or 0x5C, only bit 1 seems used, needs to be investigated further
+Port F: Always 0x9D or 0x9C, only bit 0 seems used, needs to be investigated further
+Port G: 0x15 when backlight is off, 0x17 when its on, bit 1 is a read back of SED1376 GPIO 0 pin 4
+Port J: Fixed 0xB0, needs to be investigated further
+Port K: Fixed 0x04 in testing, used to select Port Ds active matrix line
+Port M: Fixed 0x23, needs to be investigated further

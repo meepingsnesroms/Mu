@@ -10,5 +10,8 @@ var tstat1GetSemaphoreLockOrder();
 var ads7846Read();
 var selfProbeSpi2();
 var getClk32Frequency();
+var getDeviceId();
+var toggleBacklight();
+var toggleMotor();
 
 #endif

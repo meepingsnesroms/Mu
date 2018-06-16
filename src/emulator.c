@@ -379,6 +379,7 @@ void sinfulExecution(){
             uint32_t localId = callTrap(false, "sysTrapDmFindDatabase", "l(wp)", 0, palmString);
             callTrap(true, "sysTrapSysAppLaunch", "w(wlwwpp)", 0, localId, 0, 0, 0, 0);
             //dont free palmString yet
+            //SysUIAppSwitch
          }
 
          alreadyRun = true;
@@ -927,9 +928,6 @@ bool emulateUntilDebugEventOrFrameEnd(){
    return invalidBehaviorAbort;
 #else
    emulateFrame();
-
-   sinfulExecution();
-
    return false;
 #endif
 }

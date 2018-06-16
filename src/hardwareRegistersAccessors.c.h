@@ -321,6 +321,48 @@ static inline void setPwmc1(uint16_t value){
    registerArrayWrite16(PWMC1, value);
 }
 
+static inline void setIsr(uint32_t value, bool useTopWord, bool useBottomWord){
+   //Palm OS uses this 32 bit register as 2 16 bit registers
+
+   //prevent any internal hardware interrupts from being cleared
+   value &= 0x001F0F00;
+
+   if(useTopWord){
+      uint16_t interruptControlRegister = registerArrayRead16(ICR);
+
+      if(!(interruptControlRegister & 0x0800)){
+         //IRQ1 is not edge triggered
+         value &= ~INT_IRQ1;
+      }
+
+      if(!(interruptControlRegister & 0x0400)){
+         //IRQ2 is not edge triggered
+         value &= ~INT_IRQ2;
+      }
+
+      if(!(interruptControlRegister & 0x0200)){
+         //IRQ3 is not edge triggered
+         value &= ~INT_IRQ3;
+      }
+
+      if(!(interruptControlRegister & 0x0100)){
+         //IRQ6 is not edge triggered
+         value &= ~INT_IRQ6;
+      }
+
+      registerArrayWrite16(IPR, registerArrayRead16(IPR) & ~(value >> 16));
+      registerArrayWrite16(ISR, registerArrayRead16(ISR) & ~(value >> 16));
+   }
+   if(useBottomWord){
+      uint8_t portDEdgeSelect = registerArrayRead8(PDIRQEG);
+
+      registerArrayWrite16(IPR + 2, registerArrayRead16(IPR + 2) & ~(value & 0xFFFF & portDEdgeSelect << 8));
+      registerArrayWrite16(ISR + 2, registerArrayRead16(ISR + 2) & ~(value & 0xFFFF & portDEdgeSelect << 8));
+   }
+
+   checkInterrupts();
+}
+
 //register getters
 static inline uint8_t getPortDValue(){
    uint8_t requestedRow = registerArrayRead8(PKDIR) & registerArrayRead8(PKDATA);//keys are requested on port k and read on port d
@@ -335,17 +377,17 @@ static inline uint8_t getPortDValue(){
       portDValue |= 0x20;
    }
 
-   if((requestedRow & 0x20) == 0){
+   if(!(requestedRow & 0x20)){
       //kbd row 0, pins are 0 when button pressed and 1 when released, Palm OS then uses PDPOL to swap back to pressed == 1
       portDValue |= !palmInput.buttonCalendar | !palmInput.buttonAddress << 1 | !palmInput.buttonTodo << 2 | !palmInput.buttonNotes << 3;
    }
 
-   if((requestedRow & 0x40) == 0){
+   if(!(requestedRow & 0x40)){
       //kbd row 1, pins are 0 when button pressed and 1 when released, Palm OS then uses PDPOL to swap back to pressed == 1
       portDValue |= !palmInput.buttonUp | !palmInput.buttonDown << 1;
    }
 
-   if((requestedRow & 0x80) == 0){
+   if(!(requestedRow & 0x80)){
       //kbd row 2, pins are 0 when button pressed and 1 when released, Palm OS then uses PDPOL to swap back to pressed == 1
       portDValue |= !palmInput.buttonPower | !palmInput.buttonContrast << 1 | !palmInput.buttonAddress << 3;
    }

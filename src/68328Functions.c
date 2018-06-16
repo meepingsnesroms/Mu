@@ -100,3 +100,20 @@ void patchTo68328(){
 
    //68328 may actually use some 68020 opcodes, those will be patched in if and when Palm OS attempts to call one
 }
+
+void triggerBusError(uint32_t address, bool isWrite){
+   uint sr = m68ki_init_exception();
+
+   m68ki_push_32(REG_PC);
+   m68ki_push_16(sr);
+   m68ki_push_16(REG_IR);
+   m68ki_push_32(address);	/* access address */
+   /* 0 0 0 0 0 0 0 0 0 0 0 R/W I/N FC
+    * R/W  0 = write, 1 = read
+    * I/N  0 = instruction, 1 = not
+    * FC   3-bit function code
+    */
+   m68ki_push_16((isWrite ? MODE_WRITE : MODE_READ) | CPU_INSTR_MODE | FLAG_S | m68ki_get_address_space());
+
+   m68ki_jump_vector(EXCEPTION_BUS_ERROR);
+}

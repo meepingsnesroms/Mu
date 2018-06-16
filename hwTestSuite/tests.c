@@ -5,6 +5,7 @@
 #include "testSuite.h"
 #include "testSuiteConfig.h"
 #include "specs/hardwareRegisterNames.h"
+#include "specs/sed1376RegisterNames.h"
 #include "debug.h"
 #include "tools.h"
 #include "ugui.h"
@@ -310,3 +311,90 @@ var getClk32Frequency(){
    
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
+
+var getDeviceId(){
+   static Boolean firstRun = true;
+   
+   if(firstRun){
+      char deviceId[5];
+      
+      firstRun = false;
+      debugSafeScreenClear(C_WHITE);
+      FtrGet(sysFtrCreator, sysFtrNumOEMDeviceID, deviceId);
+      deviceId[4] = '\0';/*Palm OS sprintf doesnt support %.*s string length modifyers*/
+      StrPrintF(sharedDataBuffer, "Device ID:%s", &deviceId);
+      UG_PutString(0, 0, sharedDataBuffer);
+   }
+   
+   if(getButtonPressed(buttonBack)){
+      firstRun = true;
+      exitSubprogram();
+   }
+   
+   return makeVar(LENGTH_0, TYPE_NULL, 0);
+}
+
+var toggleBacklight(){
+   static Boolean firstRun = true;
+   uint16_t y = 0;
+   
+   if(firstRun){
+      firstRun = false;
+      debugSafeScreenClear(C_WHITE);
+   }
+   
+   if(getButtonPressed(buttonBack)){
+      firstRun = true;
+      exitSubprogram();
+   }
+   
+   if(getButtonPressed(buttonLeft)){
+      writeArbitraryMemory8(0x1FF80000 + GPIO_CONT_0, readArbitraryMemory8(0x1FF80000 + GPIO_CONT_0) ^ 0x10);
+   }
+   
+   if(getButtonPressed(buttonRight)){
+      writeArbitraryMemory8(HW_REG_ADDR(PGDATA), readArbitraryMemory8(HW_REG_ADDR(PGDATA)) ^ 0x02);
+   }
+   
+   StrPrintF(sharedDataBuffer, "Left = SED1376");
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   StrPrintF(sharedDataBuffer, "Right = Port G");
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   StrPrintF(sharedDataBuffer, "PGDATA:0x%02X", readArbitraryMemory8(HW_REG_ADDR(PGDATA)));
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   StrPrintF(sharedDataBuffer, "PGSEL:0x%02X", readArbitraryMemory8(HW_REG_ADDR(PGSEL)));
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   StrPrintF(sharedDataBuffer, "PGPUEN:0x%02X", readArbitraryMemory8(HW_REG_ADDR(PGPUEN)));
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   
+   return makeVar(LENGTH_0, TYPE_NULL, 0);
+}
+
+var toggleMotor(){
+   static Boolean firstRun = true;
+   
+   if(firstRun){
+      firstRun = false;
+      debugSafeScreenClear(C_WHITE);
+      StrPrintF(sharedDataBuffer, "Press select to toggle motor(only works on m515)");
+      UG_PutString(0, 0, sharedDataBuffer);
+   }
+   
+   if(getButtonPressed(buttonBack)){
+      firstRun = true;
+      exitSubprogram();
+   }
+   
+   if(getButtonPressed(buttonSelect)){
+      writeArbitraryMemory8(HW_REG_ADDR(PKDATA), readArbitraryMemory8(HW_REG_ADDR(PKDATA)) ^ 0x10);
+   }
+   
+   return makeVar(LENGTH_0, TYPE_NULL, 0);
+}
+
+

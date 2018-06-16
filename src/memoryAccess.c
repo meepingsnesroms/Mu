@@ -81,7 +81,7 @@ static inline void sed1376Write32(uint32_t address, uint32_t value){
 
 static inline bool probeRead(uint8_t bank, uint32_t address){
    if(chips[bank].supervisorOnlyProtectedMemory && address >= chips[bank].unprotectedSize && !(m68k_get_reg(NULL, M68K_REG_SR) & 0x2000)){
-      setPrivilegeViolation();
+      setPrivilegeViolation(address, false);
       return false;
    }
    return true;
@@ -89,16 +89,16 @@ static inline bool probeRead(uint8_t bank, uint32_t address){
 
 static inline bool probeWrite(uint8_t bank, uint32_t address){
    if(chips[bank].readOnly){
-      setWriteProtectViolation();
+      setWriteProtectViolation(address);
       return false;
    }
    else if(address >= chips[bank].unprotectedSize){
       if(chips[bank].supervisorOnlyProtectedMemory && !(m68k_get_reg(NULL, M68K_REG_SR) & 0x2000)){
-         setPrivilegeViolation();
+         setPrivilegeViolation(address, true);
          return false;
       }
       if(chips[bank].readOnlyForProtectedMemory){
-         setWriteProtectViolation();
+         setWriteProtectViolation(address);
          return false;
       }
    }
@@ -128,7 +128,7 @@ uint8_t m68k_read_memory_8(uint32_t address){
          return getHwRegister8(address);
 
       case CHIP_NONE:
-         setBusErrorTimeOut();
+         setBusErrorTimeOut(address, false);
          return 0x00;
 
       default:
@@ -162,7 +162,7 @@ uint16_t m68k_read_memory_16(uint32_t address){
          return getHwRegister16(address);
 
       case CHIP_NONE:
-         setBusErrorTimeOut();
+         setBusErrorTimeOut(address, false);
          return 0x0000;
 
       default:
@@ -196,7 +196,7 @@ uint32_t m68k_read_memory_32(uint32_t address){
          return getHwRegister32(address);
 
       case CHIP_NONE:
-         setBusErrorTimeOut();
+         setBusErrorTimeOut(address, false);
          return 0x00000000;
 
       default:
@@ -233,7 +233,7 @@ void m68k_write_memory_8(uint32_t address, uint8_t value){
          break;
 
       case CHIP_NONE:
-         setBusErrorTimeOut();
+         setBusErrorTimeOut(address, true);
          break;
 
       default:
@@ -270,7 +270,7 @@ void m68k_write_memory_16(uint32_t address, uint16_t value){
          break;
 
       case CHIP_NONE:
-         setBusErrorTimeOut();
+         setBusErrorTimeOut(address, true);
          break;
 
       default:
@@ -307,7 +307,7 @@ void m68k_write_memory_32(uint32_t address, uint32_t value){
          break;
 
       case CHIP_NONE:
-         setBusErrorTimeOut();
+         setBusErrorTimeOut(address, true);
          break;
 
       default:

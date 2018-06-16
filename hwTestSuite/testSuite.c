@@ -64,6 +64,7 @@ char* floatToString(float data){
 uint16_t palmButtons;
 uint16_t palmButtonsLastFrame;
 Boolean  unsafeMode;
+Boolean  isM515;
 uint8_t* sharedDataBuffer;
 
 /*video*/
@@ -196,6 +197,7 @@ void subprogramSetData(var data){
 
 static Boolean testerInit(){
    int32_t osVer;
+   uint32_t deviceId;
    Err error;
    
    FtrGet(sysFtrCreator, sysFtrNumROMVersion, &osVer);
@@ -229,10 +231,9 @@ static Boolean testerInit(){
    UG_ConsoleSetForecolor(C_BLACK);
    UG_FillScreen(C_WHITE);
    
-   /*make function list*/
-   resetFunctionViewer();
-   
-   /*load first subprogram*/
+   /*setup subprogram enviroment*/
+   FtrGet(sysFtrCreator, sysFtrNumOEMDeviceID, &deviceId);
+   isM515 = deviceId == (uint32_t)'lith';/*"lith" is the Palm m515 device code, likely because it is one of the first with a lithium ion battery*/
    unsafeMode = false;
    subprogramIndex = 0;
    subprogramArgsSet = false;
@@ -240,6 +241,9 @@ static Boolean testerInit(){
    subprogramArgs = makeVar(LENGTH_0, TYPE_NULL, 0);
    currentSubprogram = functionPicker;
    parentSubprograms[0] = functionPicker;
+   
+   /*make function list, needs to be after setting isM515 and unsafeMode*/
+   resetFunctionViewer();
    
    return true;
 }

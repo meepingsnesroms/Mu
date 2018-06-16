@@ -315,6 +315,7 @@ void sed1376Render(){
                pipEndY *= 32 / bitDepth;
             }
             //debugLog("PIP state, start x:%d, end x:%d, start y:%d, end y:%d\n", pipStartX, pipEndX, pipStartY, pipEndY);
+            //render PIP only if PIP window is onscreen
             if(pipStartX < 160 && pipStartY < 160){
                pipEndX = uMin(pipEndX, 160);
                pipEndY = uMin(pipEndX, 160);

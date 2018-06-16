@@ -5,7 +5,7 @@
 #define SCREEN_HEIGHT 160
 
 #define MAX_SUBPROGRAMS  20
-#define TESTS_AVAILABLE  20
+#define TESTS_AVAILABLE  30
 #define TEST_NAME_LENGTH 32
 
 #define FONT_WIDTH   6
