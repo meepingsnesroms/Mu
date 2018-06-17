@@ -29,6 +29,7 @@ bool pllIsOn();
 static void checkInterrupts();
 static void checkPortDInterrupts();
 static void recalculateCpuSpeed();
+static void pllWakeCpuIfOff();
 
 #include "hardwareRegistersAccessors.c.h"
 #include "hardwareRegistersTiming.c.h"
@@ -83,6 +84,10 @@ void refreshInputState(){
       if(icr & 0x0080)
          penIrqPin = !penIrqPin;
 
+      if(!penIrqPin)
+         setIprIsrBit(INT_IRQ5);
+
+      /*
       //state changed trigger an interrupt
       if(penIrqPin != (bool)(edgeTriggeredInterruptLastValue & INT_IRQ5))
          setIprIsrBit(INT_IRQ5);
@@ -91,6 +96,7 @@ void refreshInputState(){
          edgeTriggeredInterruptLastValue |= INT_IRQ5;
       else
          edgeTriggeredInterruptLastValue &= ~INT_IRQ5;
+      */
    }
 
    checkPortDInterrupts();//this calls checkInterrupts() so it doesnt need to be called above
@@ -108,6 +114,7 @@ int32_t interruptAcknowledge(int32_t intLevel){
 
    lowPowerStopActive = false;
    registerArrayWrite8(PCTLR, registerArrayRead8(PCTLR) & 0x1F);
+   pllWakeCpuIfOff();//only active interrupts should wake the CPU and this function is only be called when an interrupt is active in both IMR and the CPU int mask
    recalculateCpuSpeed();
 
    //the interrupt should only be cleared after its been handled
@@ -175,7 +182,7 @@ static void recalculateCpuSpeed(){
    palmCrystalCycles = newCpuSpeed;
 }
 
-static inline void pllWakeCpuIfOff(){
+static void pllWakeCpuIfOff(){
    if(!pllIsOn() && pllWakeWait == -1){
       //PLL is off and not already in the process of waking up
       switch(registerArrayRead16(PLLCR) & 0x0003){
@@ -267,8 +274,6 @@ static void checkInterrupts(){
 
    //some interrupts should probably be auto cleared after being run once, RTI, RTC, WATCHDOG and SPI1/2 seem like they should be cleared this way
 
-   if(intLevel > 0)//the interrupt might actually need to be greater than the interrupt mask in the status register
-      pllWakeCpuIfOff();
    m68k_set_irq(intLevel);//should be called even if intLevel is 0, that is how the interrupt state gets cleared
 }
 

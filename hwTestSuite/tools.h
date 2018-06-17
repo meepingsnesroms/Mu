@@ -12,5 +12,6 @@ var hexRamBrowser();
 var getTrapAddress();
 var manualLssa();
 var dumpBootloaderToFile();
+var listRomInfo();
 
 #endif

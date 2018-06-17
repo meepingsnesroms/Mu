@@ -10,6 +10,7 @@
 
 #define FONT_WIDTH   6
 #define FONT_HEIGHT  8
+#define FONT_SPACING 0
 #define SELECTED_FONT FONT_6X8
 
 #endif

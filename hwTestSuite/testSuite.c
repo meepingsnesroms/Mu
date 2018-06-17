@@ -201,7 +201,7 @@ static Boolean testerInit(){
    Err error;
    
    FtrGet(sysFtrCreator, sysFtrNumROMVersion, &osVer);
-   if (osVer < PalmOS35) {
+   if(osVer < PalmOS35){
       FrmCustomAlert(alt_err, "TestSuite requires at least PalmOS 3.5", 0, 0);
       return false;
    }

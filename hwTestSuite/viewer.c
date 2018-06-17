@@ -11,15 +11,11 @@
 #include "ugui.h"
 
 
-#define FONT_SPACING 0
-
-#define RESERVED_PIXELS_Y (SCREEN_HEIGHT / 4)/*save pixels at the bottom of the screen for other information on the current item*/
-
 #define TEXTBOX_PIXEL_MARGIN       1 /*add 1 pixel border around text*/
 #define TEXTBOX_PIXEL_WIDTH        SCREEN_WIDTH
 #define TEXTBOX_PIXEL_HEIGHT       (FONT_HEIGHT + (TEXTBOX_PIXEL_MARGIN * 2))
 
-#define ITEM_LIST_ENTRYS ((SCREEN_HEIGHT - RESERVED_PIXELS_Y) / TEXTBOX_PIXEL_HEIGHT - 1)
+#define ITEM_LIST_ENTRYS (SCREEN_HEIGHT / TEXTBOX_PIXEL_HEIGHT - 1)
 #define ITEM_STRING_SIZE (TEXTBOX_PIXEL_WIDTH / (FONT_WIDTH + FONT_SPACING))
 
 #define LIST_REFRESH       0
@@ -287,6 +283,10 @@ void resetFunctionViewer(){
       /*68k only functions*/
       StrNCopy(hwTests[totalHwTests].name, "Dump Bootloader", TEST_NAME_LENGTH);
       hwTests[totalHwTests].testFunction = dumpBootloaderToFile;
+      totalHwTests++;
+      
+      StrNCopy(hwTests[totalHwTests].name, "List ROM Info/Dump ROM", TEST_NAME_LENGTH);
+      hwTests[totalHwTests].testFunction = listRomInfo;
       totalHwTests++;
       
       StrNCopy(hwTests[totalHwTests].name, "List P*DATA Registers", TEST_NAME_LENGTH);

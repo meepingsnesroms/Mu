@@ -14,7 +14,7 @@ fi
 
 declare -a FILES=("testSuite" "viewer" "tools" "tests" "cpu" "irda" "vnc" "emuFunctions" "ugui")
 DEFINES="-DHW_TEST"
-CFLAGS="-palmos3.5 -O3 $DEFINES"
+CFLAGS="-palmos4 -O3 $DEFINES"
 
 if [ "$1" = "debug" ]; then
    DEFINES="$DEFINES -DDEBUG"

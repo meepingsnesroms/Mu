@@ -1,5 +1,7 @@
 #include <PalmOS.h>
+#include <PalmUtils.h>
 #include <stdint.h>
+#include <Extensions/ExpansionMgr/VFSMgr.h>
 
 #include "specs/hardwareRegisterNames.h"
 #include "testSuite.h"
@@ -7,7 +9,7 @@
 #include "debug.h"
 #include "ugui.h"
 
-
+#if 0
 Err makeFile(uint8_t* data, uint32_t size, char* fileName){
    FileHand file;
    Err error;
@@ -36,6 +38,48 @@ Err makeFile(uint8_t* data, uint32_t size, char* fileName){
    }
    
    error = FileClose(file);
+   return error;
+}
+#endif
+
+Err makeFile(uint8_t* data, uint32_t size, char* fileName){
+   uint16_t volRef = 0;
+   uint32_t volIter = vfsIteratorStart;
+   char fullPath[512];
+   FileRef file;
+   Err error;
+   uint32_t count;
+   
+   StrCopy(fullPath, "/");
+   StrCat(fullPath, fileName);
+   
+   error = VFSVolumeEnumerate(&volRef, &volIter);
+   if(error != errNone)
+      return error;
+   
+   error = VFSFileOpen(volRef, fullPath, vfsModeReadWrite | vfsModeCreate | vfsModeTruncate | vfsModeExclusive, &file);
+   if(error != errNone)
+      return error;
+   
+   /*the copy is used to anonymize the data source*/
+   count = size;
+   while(count != 0){
+      uint32_t chunkSize = min(count, SHARED_DATA_BUFFER_SIZE);
+      int32_t bytesWritten;
+      uint32_t i;
+      for(i = 0; i < chunkSize; i++){
+         sharedDataBuffer[i] = data[i + size - count];
+      }
+      error = VFSFileWrite(file, chunkSize, sharedDataBuffer, &bytesWritten);
+      if(bytesWritten != chunkSize || error != errNone){
+         VFSFileClose(file);
+         return error;
+      }
+      
+      count -= chunkSize;
+   }
+   
+   error = VFSFileClose(file);
    return error;
 }
 
@@ -292,5 +336,70 @@ var manualLssa(){
 var dumpBootloaderToFile(){
    makeFile((uint8_t*)0xFFFFFE00, 0x200, "BOOTLOADER.BIN");
    exitSubprogram();
+   return makeVar(LENGTH_0, TYPE_NULL, 0);
+}
+
+var listRomInfo(){
+   static Boolean firstRun = true;
+   uint16_t y = 0;
+   
+   if(firstRun){
+      uint16_t csa = readArbitraryMemory16(HW_REG_ADDR(CSA));
+      uint16_t csgba = readArbitraryMemory16(HW_REG_ADDR(CSGBA));
+      uint16_t csugba = readArbitraryMemory16(HW_REG_ADDR(CSUGBA));
+      uint32_t romAddress = 0x00000000;
+      uint32_t romSize = 0x00000000;
+      
+      firstRun = false;
+      
+      //get ROM info
+      if(csugba & 0x8000)
+         romAddress |= (uint32_t)csugba << 17 & 0xE0000000;
+      romAddress |= (uint32_t)csgba << 13;
+      romSize = 0x20000/*128k*/ << (csa >> 1 & 0x0007);
+      
+      debugSafeScreenClear(C_WHITE);
+      StrPrintF(sharedDataBuffer, "ROM Address:0x%08lX", romAddress);
+      UG_PutString(0, y, sharedDataBuffer);
+      y += FONT_HEIGHT + 1;
+      StrPrintF(sharedDataBuffer, "ROM Size:0x%08lX", romSize);
+      UG_PutString(0, y, sharedDataBuffer);
+      y += FONT_HEIGHT + 1;
+      StrPrintF(sharedDataBuffer, "Press select to dump");
+      UG_PutString(0, y, sharedDataBuffer);
+      y += FONT_HEIGHT + 1;
+   }
+   
+   if(getButtonPressed(buttonBack)){
+      firstRun = true;
+      exitSubprogram();
+   }
+   
+   if(getButtonPressed(buttonSelect)){
+      //ROM must be attached to CSA(chip select a) on Dragonball VZ as it controls the boot up process
+      //the only 2 restrictions to use this dumper are, you need a Dragonball VZ Palm and internal RAM must be bigger than ROM / 128k rounded up to the nearest power of 2 * 128k
+      uint16_t csa = readArbitraryMemory16(HW_REG_ADDR(CSA));
+      uint16_t csgba = readArbitraryMemory16(HW_REG_ADDR(CSGBA));
+      uint16_t csugba = readArbitraryMemory16(HW_REG_ADDR(CSUGBA));
+      uint32_t romAddress = 0x00000000;
+      uint32_t romSize = 0x00000000;
+      
+      //get ROM info
+      if(csugba & 0x8000)
+         romAddress |= (uint32_t)csugba << 17 & 0xE0000000;
+      romAddress |= (uint32_t)csgba << 13;
+      romSize = 0x20000/*128k*/ << (csa >> 1 & 0x0007);
+      
+      //CSA has no protected area, can read directly from address space without changing it
+      
+      debugSafeScreenClear(C_WHITE);
+      StrPrintF(sharedDataBuffer, "Dumping...", romAddress);
+      UG_PutString(0, 0, sharedDataBuffer);
+      forceFrameRedraw();
+      makeFile((uint8_t*)romAddress, romSize, "ROM.BIN");
+      
+      firstRun = true;
+   }
+   
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
