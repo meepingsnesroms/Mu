@@ -267,7 +267,8 @@ static void checkInterrupts(){
 
    //some interrupts should probably be auto cleared after being run once, RTI, RTC, WATCHDOG and SPI1/2 seem like they should be cleared this way
 
-   pllWakeCpuIfOff();
+   if(intLevel > 0)//the interrupt might actually need to be greater than the interrupt mask in the status register
+      pllWakeCpuIfOff();
    m68k_set_irq(intLevel);//should be called even if intLevel is 0, that is how the interrupt state gets cleared
 }
 
@@ -705,8 +706,8 @@ void setHwRegister8(uint32_t address, uint8_t value){
          
       case PFSEL:
          //this is the clock output pin for the SED1376, if its disabled so is the LCD controller
-         setSed1376Attached(!(value & 0x04));
          registerArrayWrite8(PFSEL, value);
+         setSed1376Attached(sed1376ClockConnected());
          break;
          
       case PGSEL:
@@ -858,11 +859,9 @@ void setHwRegister16(uint32_t address, uint16_t value){
          
       case PLLCR:
          //CLKEN is required for SED1376 operation
-         if((value & 0x0010) != (registerArrayRead16(PLLCR) & 0x0010))
-            setSed1376Attached(!(value & 0x0010));
-
          registerArrayWrite16(PLLCR, value & 0x3FBB);
          recalculateCpuSpeed();
+         setSed1376Attached(sed1376ClockConnected());
 
          if(value & 0x0008){
             //The PLL shuts down 30 clock cycles of SYSCLK after the DISPLL bit is set in the PLLCR

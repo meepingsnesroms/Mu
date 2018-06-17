@@ -372,19 +372,8 @@ void setRegisterFFFFAccessMode(){
 }
 
 void setSed1376Attached(bool attached){
-   if(chips[CHIP_B_SED].enable){
+   if(chips[CHIP_B_SED].enable && bankType[START_BANK(chips[CHIP_B_SED].start)] != (attached ? CHIP_B_SED : CHIP_NONE))
       memset(&bankType[START_BANK(chips[CHIP_B_SED].start)], attached ? CHIP_B_SED : CHIP_NONE, END_BANK(chips[CHIP_B_SED].start, chips[CHIP_B_SED].size) - START_BANK(chips[CHIP_B_SED].start) + 1);
-      /*
-      if(attached){
-         MULTITHREAD_LOOP for(uint16_t bank = START_BANK(chips[CHIP_B_SED].start); bank <= END_BANK(chips[CHIP_B_SED].start, chips[CHIP_B_SED].size); bank++)
-             bankType[bank] = CHIP_B_SED;
-      }
-      else{
-         MULTITHREAD_LOOP for(uint16_t bank = START_BANK(chips[CHIP_B_SED].start); bank <= END_BANK(chips[CHIP_B_SED].start, chips[CHIP_B_SED].size); bank++)
-            bankType[bank] = CHIP_NONE;
-      }
-      */
-   }
 }
 
 void resetAddressSpace(){
