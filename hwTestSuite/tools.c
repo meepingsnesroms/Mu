@@ -377,7 +377,7 @@ var listRomInfo(){
    
    if(getButtonPressed(buttonSelect)){
       //ROM must be attached to CSA(chip select a) on Dragonball VZ as it controls the boot up process
-      //the only 2 restrictions to use this dumper are, you need a Dragonball VZ Palm and internal RAM must be bigger than ROM / 128k rounded up to the nearest power of 2 * 128k
+      //the only 3 restrictions to use this dumper are, you need a Dragonball VZ Palm, an SD card must be inserted and the SD card must be bigger than ROM / 128k rounded up to the nearest power of 2 * 128k
       uint16_t csa = readArbitraryMemory16(HW_REG_ADDR(CSA));
       uint16_t csgba = readArbitraryMemory16(HW_REG_ADDR(CSGBA));
       uint16_t csugba = readArbitraryMemory16(HW_REG_ADDR(CSUGBA));

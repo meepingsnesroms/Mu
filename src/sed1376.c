@@ -330,10 +330,10 @@ void sed1376Render(){
          //rotation
          //later, unemulated
 
-         //software display inversion
+         //display inversion
          if((sed1376Registers[DISP_MODE] & 0x30) == 0x10)
             MULTITHREAD_LOOP for(uint32_t count = 0; count < 160 * 160; count++)
-               palmFramebuffer[count] ^= 0xFFFF;
+               palmFramebuffer[count] = ~palmFramebuffer[count];
 
          //backlight off, half color intensity
          if(!palmMisc.backlightOn)
