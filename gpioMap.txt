@@ -39,7 +39,7 @@ Port D Pin 0: Button Matrix Input Line 0(low when button pressed)
 Port D Pin 1: Button Matrix Input Line 1(low when button pressed)
 Port D Pin 2: Button Matrix Input Line 2(low when button pressed)
 Port D Pin 3: Button Matrix Input Line 3(low when button pressed)
-Port D Pin 4: Unknown
+Port D Pin 4: HotSync Cable Button(low when button pressed)
 Port D Pin 5: SD Card Status(low when card is inserted)
 Port D Pin 6: Unknown
 Port D Pin 7: Battery Critical Interrupt(low when critical)
@@ -75,7 +75,7 @@ Port J Pin 6: Unknown
 Port J Pin 7: Unknown
 Port K Pin 0: Unknown
 Port K Pin 1: Unknown
-Port K Pin 2: Unknown
+Port K Pin 2: Battery Charging/Docked(low when charging)
 Port K Pin 3: Unknown
 Port K Pin 4: Enable Vibrator Motor(set high to enable)
 Port K Pin 5: Button Matrix Line Select 0(set low to enable line, multiple lines can be enabled at once)
