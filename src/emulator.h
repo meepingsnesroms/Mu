@@ -17,7 +17,7 @@ extern "C" {
 //to enable opcode level debugging define EMU_OPCODE_LEVEL_DEBUG
 //to log unknown register reads and writes define EMU_LOG_REGISTER_ACCESS_UNKNOWN
 //to log all register reads and writes define EMU_LOG_REGISTER_ACCESS_ALL
-//to log all api calls define EMU_LOG_APIS
+//to log all api calls define EMU_LOG_APIS, EMU_OPCODE_LEVEL_DEBUG must also be defined for this to work
 
 //debug
 #if defined(EMU_DEBUG)
@@ -93,7 +93,7 @@ typedef struct{
 typedef struct{
    //the sdcard is stored as a directory structure with an /(SESSIONID)/sdcard(STATEID).info and /(SESSIONID)/sdcard(CHUNKID).bps
    //each emulator instance has its own sdcard SESSIONID directory if it has an sdcard
-   //sdcard(STATEID).info specifys the bps files to used
+   //sdcard(STATEID).info specifys the bps files to use
    //every savestate a new bps file is created with the changes made to the sdcard since the last savestate
    //the first bps is a patch over a buffer of sdcard size filled with 0x00
    //the frontend provides file access but the emulator does all the patching

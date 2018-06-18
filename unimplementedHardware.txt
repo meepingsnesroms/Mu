@@ -26,14 +26,13 @@ if a timer triggers more than once per CLK32 it will lose any triggers after the
 SPI1, probably the sdcard since sdcards use SPI for data transfer
 SPITEST SSTATUS is undocumented and therefore unemulated
 may need to trigger an interrupt if a IMR masked interrupt becomes unmasked and its bit is still set in IPR
-touch interrupt seems to not use IRQ5
 When SPICLK2, SPITXD or SPIRXD on port e is disabled ADS7846 functions should respond appropriately(not transmitting or receiving or blocking both for the clock)
 port g data bit 2 may need to be 0 to access ADS7846
 REFREQ clock frequency in RTCCTL should slow down the RTC when enabled
 port d IRQ* bits edge triggered interrupt mode is not emulated
 port g backlight state readback
-port d seems to allow using special function pins as inputs while active unlike other ports, this needs to be verified
 edgeTriggeredInterruptLastValue may need to be locked when PLL is off
+port d data register seems to have its data bits cleared when an edge triggered interrupt is cleared(according to MC68VZ328UM.pdf Page 10-15)
 
 Debug tools:
 missing icons
@@ -50,6 +49,8 @@ swivelview register
 
 
 Fixed:
+touch interrupt seems to not use IRQ5(it does, theres a test for it now)
+port d seems to allow using special function pins as inputs while active unlike other ports, this needs to be verified(verified by MC68VZ328UM.pdf Page 10-15)
 CPU_RUN_MODE is not preserved on save state and could allow executing after an address error if a save and load are performed(CPU_RUN_MODE is not used when address error is disabled)
 Bootloader memory access
 need to check REFREQ clock frequency in RTCCTL

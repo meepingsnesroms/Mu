@@ -870,7 +870,6 @@ uint32_t emulatorInstallPrcPdb(buffer_t file){
 
 void emulateFrame(){
    refreshInputState();
-   //sendTouchEvents();
 
    while(palmCycleCounter < CRYSTAL_FREQUENCY / EMU_FPS){
       if(palmCrystalCycles != 0.0 && !lowPowerStopActive){
@@ -899,7 +898,6 @@ bool emulateUntilDebugEventOrFrameEnd(){
 #if defined(EMU_DEBUG) && defined(EMU_OPCODE_LEVEL_DEBUG)
    invalidBehaviorAbort = false;
    refreshInputState();
-   //sendTouchEvents();
 
    while(palmCycleCounter < CRYSTAL_FREQUENCY / EMU_FPS){
       if(palmCrystalCycles != 0.0 && !lowPowerStopActive){

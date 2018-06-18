@@ -277,7 +277,7 @@ void sed1376Reset(){
 }
 
 void sed1376RefreshLut(){
-   for(uint16_t count = 0; count < SED1376_LUT_SIZE; count++)
+   MULTITHREAD_LOOP for(uint16_t count = 0; count < SED1376_LUT_SIZE; count++)
       sed1376OutputLut[count] = makeRgb16FromSed666(sed1376RLut[count], sed1376GLut[count], sed1376BLut[count]);
 }
 

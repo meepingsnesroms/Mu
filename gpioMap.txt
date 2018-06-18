@@ -35,17 +35,17 @@ Port C Pin 4: Unknown
 Port C Pin 5: Unknown
 Port C Pin 6: Unknown
 Port C Pin 7: Unknown
-Port D Pin 0: Button Matrix Input Line 0(low when button pressed)
-Port D Pin 1: Button Matrix Input Line 1(low when button pressed)
-Port D Pin 2: Button Matrix Input Line 2(low when button pressed)
-Port D Pin 3: Button Matrix Input Line 3(low when button pressed)
-Port D Pin 4: HotSync Cable Button(low when button pressed)
-Port D Pin 5: SD Card Status(low when card is inserted)
-Port D Pin 6: Unknown
-Port D Pin 7: Battery Critical Interrupt(low when critical)
-Port E Pin 0: Unknown
-Port E Pin 1: Unknown
-Port E Pin 2: Unknown
+Port D Pin 0: Button Matrix Input Line 0(INT0)(low when button pressed)
+Port D Pin 1: Button Matrix Input Line 1(INT1)(low when button pressed)
+Port D Pin 2: Button Matrix Input Line 2(INT2)(low when button pressed)
+Port D Pin 3: Button Matrix Input Line 3(INT3)(low when button pressed)
+Port D Pin 4: HotSync Cable Button(IRQ1)(low when button pressed)
+Port D Pin 5: SD Card Status(IRQ2)(low when card is inserted)
+Port D Pin 6: Unknown(IRQ3)
+Port D Pin 7: Battery Critical Interrupt(IRQ6)(low when critical)
+Port E Pin 0: SPITXD(used for ADS7846)
+Port E Pin 1: SPIRXD(used for ADS7846)
+Port E Pin 2: SPICLK2(used for ADS7846)
 Port E Pin 3: Unknown
 Port E Pin 4: Unknown
 Port E Pin 5: Unknown
@@ -54,10 +54,10 @@ Port E Pin 7: Unknown
 Port F Pin 0: Unknown
 Port F Pin 1: ADS7846 PENIRQ(low when screen is touched)
 Port F Pin 2: Clock Output(required for SED1376 operation, reads and writes do nothing)
-Port F Pin 3: Unknown
-Port F Pin 4: Unknown
-Port F Pin 5: Unknown
-Port F Pin 6: Unknown
+Port F Pin 3: Address Line 20(must be an address line for 16mb RAM to be addressed)
+Port F Pin 4: Address Line 21(must be an address line for 16mb RAM to be addressed)
+Port F Pin 5: Address Line 22(must be an address line for 16mb RAM to be addressed)
+Port F Pin 6: Address Line 23(must be an address line for 16mb RAM to be addressed)
 Port F Pin 7: Unknown
 Port G Pin 0: Unknown
 Port G Pin 1: Backlight State Read Back(high when backlight on)
