@@ -449,3 +449,12 @@ static inline uint16_t getPwmc1(){
 
    return returnValue;
 }
+
+//updaters
+static inline void updatePowerButtonLedStatus(){
+   palmMisc.powerButtonLed = (bool)(registerArrayRead8(PBDATA) & registerArrayRead8(PBSEL) & registerArrayRead8(PBDIR) & 0x40) != palmMisc.batteryCharging;
+}
+
+static inline void updateVibratorStatus(){
+   palmMisc.vibratorOn = registerArrayRead8(PKDATA) & registerArrayRead8(PKSEL) & registerArrayRead8(PKDIR) & 0x10;
+}

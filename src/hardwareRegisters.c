@@ -30,7 +30,6 @@ static void checkInterrupts();
 static void checkPortDInterrupts();
 static void recalculateCpuSpeed();
 static void pllWakeCpuIfOff();
-static void updateAlarmLedStatus();
 
 #include "hardwareRegistersAccessors.c.h"
 #include "hardwareRegistersTiming.c.h"
@@ -50,8 +49,8 @@ bool sed1376ClockConnected(){
 }
 
 void refreshInputState(){ 
-   //update alarm LED state if palmMisc.batteryCharging changed
-   updateAlarmLedStatus();
+   //update power button LED state if palmMisc.batteryCharging changed
+   updatePowerButtonLedStatus();
 
    //update touchscreen state
    if(!(registerArrayRead8(PFSEL) & 0x02)){
@@ -366,21 +365,6 @@ static void checkPortDInterrupts(){
    checkInterrupts();
 }
 
-static void updateAlarmLedStatus(){
-   bool pinLineOn = registerArrayRead8(PBDATA) & registerArrayRead8(PBSEL) & registerArrayRead8(PBDIR) & 0x40;
-   if(pinLineOn != palmMisc.batteryCharging)
-      palmMisc.alarmLed = true;
-   else
-      palmMisc.alarmLed = false;
-}
-
-static void updateVibratorStatus(){
-   if(registerArrayRead8(PKDATA) & registerArrayRead8(PKSEL) & registerArrayRead8(PKDIR) & 0x10)
-      palmMisc.vibratorOn = true;
-   else
-      palmMisc.vibratorOn = false;
-}
-
 void printUnknownHwAccess(uint32_t address, uint32_t value, uint32_t size, bool isWrite){
    if(isWrite)
       debugLog("CPU wrote %d bits of 0x%08X to register 0x%03X, PC 0x%08X.\n", size, value, address, m68k_get_reg(NULL, M68K_REG_PPC));
@@ -672,7 +656,7 @@ void setHwRegister8(uint32_t address, uint8_t value){
       case PBDIR:
       case PBDATA:
          registerArrayWrite8(address, value);
-         updateAlarmLedStatus();
+         updatePowerButtonLedStatus();
          break;
          
       case PDSEL:
@@ -1147,7 +1131,7 @@ void resetHwRegisters(){
    registerArrayWrite16(SDCTRL, 0x003C);
    
    //add register settings to misc I/O
-   updateAlarmLedStatus();
+   updatePowerButtonLedStatus();
    updateVibratorStatus();
 
    recalculateCpuSpeed();

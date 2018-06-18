@@ -109,6 +109,8 @@ void MainWindow::updateDisplay(){
    if(emu.newFrameReady()){
       ui->display->setPixmap(emu.getFramebuffer().scaled(QSize(ui->display->size().width() * 0.95, ui->display->size().height() * 0.95), Qt::KeepAspectRatio, Qt::SmoothTransformation));
       ui->display->update();
+
+      ui->powerButtonLed->setStyleSheet(emu.getPowerButtonLed() ? "background: lime" : "");
    }
 
    if(emu.debugEventOccured()){

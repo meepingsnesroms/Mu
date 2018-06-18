@@ -55,6 +55,7 @@ public:
    uint16_t screenHeight() const{return emuVideoHeight;}
    bool newFrameReady() const{return emuNewFrameReady;}
    QPixmap getFramebuffer();
+   bool getPowerButtonLed();
 
    uint64_t getEmulatorMemory(uint32_t address, uint8_t size);
 };

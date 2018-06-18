@@ -236,6 +236,10 @@ QPixmap EmuWrapper::getFramebuffer(){
    return QPixmap::fromImage(QImage((uchar*)emuDoubleBuffer, emuVideoWidth, emuVideoHeight, emuVideoWidth * sizeof(uint16_t), QImage::Format_RGB16));
 }
 
+bool EmuWrapper::getPowerButtonLed(){
+   return palmMisc.powerButtonLed;
+}
+
 uint64_t EmuWrapper::getEmulatorMemory(uint32_t address, uint8_t size){
    uint64_t data = UINT64_MAX;//invalid access
    //until SPI and UART destructive reads are implemented all reads to mapped addresses are safe, SPI is now implemented, this needs to be fixed

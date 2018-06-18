@@ -105,7 +105,7 @@ typedef struct{
 }sdcard_t;
 
 typedef struct{
-   bool    alarmLed;
+   bool    powerButtonLed;
    bool    lcdOn;
    bool    backlightOn;
    bool    vibratorOn;
