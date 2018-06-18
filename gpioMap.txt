@@ -1,5 +1,5 @@
 General Layout:
-Port A: Fixed 0x40, likely nothing attached, is used by the Dragonball VZ built in grayscale display controller on other models
+Port A: D* Data Lines
 Port B: Fixed 0x3F, likely nothing attached, probably used for chip select
 Port C: Usually 0x7F or 0x3F(less common), needs to be investigated further
 Port D: Hardware buttons
@@ -11,14 +11,14 @@ Port K: Fixed 0x04 in testing, used to select Port Ds active matrix line, bit 4 
 Port M: Fixed 0x23, needs to be investigated further
 
 Pin Mapping(all pins are accounted for, documented or not):
-Port A Pin 0: Unknown
-Port A Pin 1: Unknown
-Port A Pin 2: Unknown
-Port A Pin 3: Unknown
-Port A Pin 4: Unknown
-Port A Pin 5: Unknown
-Port A Pin 6: Unknown
-Port A Pin 7: Unknown
+Port A Pin 0: Data Line 0(can only be used as a GPIO in 8 bit mode)
+Port A Pin 1: Data Line 1(can only be used as a GPIO in 8 bit mode)
+Port A Pin 2: Data Line 2(can only be used as a GPIO in 8 bit mode)
+Port A Pin 3: Data Line 3(can only be used as a GPIO in 8 bit mode)
+Port A Pin 4: Data Line 4(can only be used as a GPIO in 8 bit mode)
+Port A Pin 5: Data Line 5(can only be used as a GPIO in 8 bit mode)
+Port A Pin 6: Data Line 6(can only be used as a GPIO in 8 bit mode)
+Port A Pin 7: Data Line 7(can only be used as a GPIO in 8 bit mode)
 Port B Pin 0: Unknown
 Port B Pin 1: Unknown
 Port B Pin 2: Unknown

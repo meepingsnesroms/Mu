@@ -11,6 +11,7 @@ var ads7846Read();
 var selfProbeSpi2();
 var getClk32Frequency();
 var getDeviceId();
+var getCpuInfo();
 var toggleBacklight();
 var toggleMotor();
 var watchPenIrq();

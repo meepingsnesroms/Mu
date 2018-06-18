@@ -305,6 +305,10 @@ void resetFunctionViewer(){
       hwTests[totalHwTests].testFunction = getDeviceId;
       totalHwTests++;
       
+      StrNCopy(hwTests[totalHwTests].name, "Get CPU Info", TEST_NAME_LENGTH);
+      hwTests[totalHwTests].testFunction = getCpuInfo;
+      totalHwTests++;
+      
       StrNCopy(hwTests[totalHwTests].name, "Watch ICR", TEST_NAME_LENGTH);
       hwTests[totalHwTests].testFunction = watchIcr;
       totalHwTests++;

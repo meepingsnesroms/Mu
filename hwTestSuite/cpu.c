@@ -30,9 +30,9 @@ void turnInterruptsOn(){
 }
 
 uint8_t getPhysicalCpuType(){
-   long     osVer;
-   FtrGet(sysFtrCreator, sysFtrNumROMVersion, &osVer);
+   int32_t osVer;
    
+   FtrGet(sysFtrCreator, sysFtrNumROMVersion, &osVer);
    if(isEmulator())
       return CPU_NONE;
    else if(osVer >= PalmOS50)

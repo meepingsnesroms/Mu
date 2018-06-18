@@ -8,6 +8,7 @@
 #include "specs/sed1376RegisterNames.h"
 #include "debug.h"
 #include "tools.h"
+#include "cpu.h"
 #include "ugui.h"
 
 
@@ -324,6 +325,33 @@ var getDeviceId(){
       deviceId[4] = '\0';/*Palm OS sprintf doesnt support %.*s string length modifyers*/
       StrPrintF(sharedDataBuffer, "Device ID:%s", &deviceId);
       UG_PutString(0, 0, sharedDataBuffer);
+   }
+   
+   if(getButtonPressed(buttonBack)){
+      firstRun = true;
+      exitSubprogram();
+   }
+   
+   return makeVar(LENGTH_0, TYPE_NULL, 0);
+}
+
+var getCpuInfo(){
+   static Boolean firstRun = true;
+   
+   if(firstRun){
+      uint16_t y = 0;
+      
+      firstRun = false;
+      debugSafeScreenClear(C_WHITE);
+      StrPrintF(sharedDataBuffer, "CPU Type:%s", getCpuString());
+      UG_PutString(0, y, sharedDataBuffer);
+      y += (FONT_HEIGHT + 1) * 5;
+      StrPrintF(sharedDataBuffer, "SCR:0x%02X", readArbitraryMemory8(HW_REG_ADDR(SCR)));
+      UG_PutString(0, y, sharedDataBuffer);
+      y += FONT_HEIGHT + 1;
+      StrPrintF(sharedDataBuffer, "CPU ID(IDR):0x%08lX", readArbitraryMemory32(HW_REG_ADDR(IDR)));
+      UG_PutString(0, y, sharedDataBuffer);
+      y += FONT_HEIGHT + 1;
    }
    
    if(getButtonPressed(buttonBack)){
