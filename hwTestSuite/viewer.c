@@ -322,6 +322,10 @@ void resetFunctionViewer(){
          hwTests[totalHwTests].testFunction = toggleMotor;
          totalHwTests++;
          
+         StrNCopy(hwTests[totalHwTests].name, "Toggle Alarm LED", TEST_NAME_LENGTH);
+         hwTests[totalHwTests].testFunction = toggleAlarmLed;
+         totalHwTests++;
+         
          StrNCopy(hwTests[totalHwTests].name, "Watch PENIRQ", TEST_NAME_LENGTH);
          hwTests[totalHwTests].testFunction = watchPenIrq;
          totalHwTests++;

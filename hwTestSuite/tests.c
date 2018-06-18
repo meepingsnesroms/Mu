@@ -74,9 +74,6 @@ var listDataRegisters(){
       exitSubprogram();
    }
    
-   StrPrintF(sharedDataBuffer, "PADATA:0x%02X", readArbitraryMemory8(HW_REG_ADDR(PADATA)));
-   UG_PutString(0, y, sharedDataBuffer);
-   y += FONT_HEIGHT + 1;
    StrPrintF(sharedDataBuffer, "PBDATA:0x%02X", readArbitraryMemory8(HW_REG_ADDR(PBDATA)));
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
@@ -124,9 +121,6 @@ var interrogateSpi2(){
       exitSubprogram();
    }
    
-   StrPrintF(sharedDataBuffer, "PADATA:0x%02X", readArbitraryMemory8(HW_REG_ADDR(PADATA)));
-   UG_PutString(0, y, sharedDataBuffer);
-   y += FONT_HEIGHT + 1;
    StrPrintF(sharedDataBuffer, "PBDATA:0x%02X", readArbitraryMemory8(HW_REG_ADDR(PBDATA)));
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
@@ -421,6 +415,28 @@ var toggleMotor(){
    
    if(getButtonPressed(buttonSelect)){
       writeArbitraryMemory8(HW_REG_ADDR(PKDATA), readArbitraryMemory8(HW_REG_ADDR(PKDATA)) ^ 0x10);
+   }
+   
+   return makeVar(LENGTH_0, TYPE_NULL, 0);
+}
+
+var toggleAlarmLed(){
+   static Boolean firstRun = true;
+   
+   if(firstRun){
+      firstRun = false;
+      debugSafeScreenClear(C_WHITE);
+      StrPrintF(sharedDataBuffer, "Select = Toggle Alarm LED");
+      UG_PutString(0, 0, sharedDataBuffer);
+   }
+   
+   if(getButtonPressed(buttonBack)){
+      firstRun = true;
+      exitSubprogram();
+   }
+   
+   if(getButtonPressed(buttonSelect)){
+      writeArbitraryMemory8(HW_REG_ADDR(PBDATA), readArbitraryMemory8(HW_REG_ADDR(PBDATA)) ^ 0x40);
    }
    
    return makeVar(LENGTH_0, TYPE_NULL, 0);

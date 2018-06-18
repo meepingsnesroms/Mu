@@ -166,13 +166,13 @@ static inline void setPllfsr(uint16_t value){
 
 static inline void setScr(uint8_t value){
    uint8_t oldScr = registerArrayRead8(SCR);
-   uint8_t newScr = value;
+   uint8_t newScr = value & 0x1F;
 
    //preserve privilege violation, write protect violation and bus error timeout
    newScr |= oldScr & 0xE0;
 
    //clear violations on writing 1 to them
-   newScr &= ~(oldScr & value & 0xE0);
+   newScr &= ~(value & 0xE0);
 
    chips[CHIP_REGISTERS].supervisorOnlyProtectedMemory = value & 0x08;
 

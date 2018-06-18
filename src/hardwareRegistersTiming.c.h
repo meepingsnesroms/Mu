@@ -141,7 +141,7 @@ static inline void timer12Clk32(){
       }
    }
 
-   if(timer1Enabled && timer1OldCount <= timer1Compare && timerCycleCounter[0] >= timer1Compare){
+   if(timer1Enabled && timer1OldCount < timer1Compare && timerCycleCounter[0] >= timer1Compare){
       //the comparison against the old value is to prevent an interrupt on every increment in free running mode
       //the timer is not cycle accurate and may not hit the value in the compare register perfectly so check if it would have during in the emulated time
 
@@ -158,7 +158,7 @@ static inline void timer12Clk32(){
          timerCycleCounter[0] -= timer1Compare;
    }
 
-   if(timer2Enabled && timer2OldCount <= timer2Compare && timerCycleCounter[1] >= timer2Compare){
+   if(timer2Enabled && timer2OldCount < timer2Compare && timerCycleCounter[1] >= timer2Compare){
       //the comparison against the old value is to prevent an interrupt on every increment in free running mode
       //the timer is not cycle accurate and may not hit the value in the compare register perfectly so check if it would have during in the emulated time
 
@@ -195,6 +195,8 @@ static inline void timer12Clk32(){
             break;
       }
    }
+
+   //if timer chaining causes an interrupt the actual interrupt takes place the next time this function is called
 
    if(timer1Enabled){
       if(timerCycleCounter[0] > 0xFFFF)

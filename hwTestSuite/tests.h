@@ -14,6 +14,7 @@ var getDeviceId();
 var getCpuInfo();
 var toggleBacklight();
 var toggleMotor();
+var toggleAlarmLed();
 var watchPenIrq();
 var watchIcr();
 

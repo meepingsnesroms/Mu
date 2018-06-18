@@ -30,6 +30,7 @@ static void checkInterrupts();
 static void checkPortDInterrupts();
 static void recalculateCpuSpeed();
 static void pllWakeCpuIfOff();
+static void updateAlarmLedStatus();
 
 #include "hardwareRegistersAccessors.c.h"
 #include "hardwareRegistersTiming.c.h"
@@ -48,34 +49,11 @@ bool sed1376ClockConnected(){
    return !(registerArrayRead8(PFSEL) & 0x04) && !(registerArrayRead16(PLLCR) & 0x0010);
 }
 
-void refreshInputState(){
-   //uint16_t icr = registerArrayRead16(ICR);
-   //bool penIrqPin = !(ads7846PenIrqEnabled && palmInput.touchscreenTouched);//penIrqPin pulled low on touch
+void refreshInputState(){ 
+   //update alarm LED state if palmMisc.batteryCharging changed
+   updateAlarmLedStatus();
 
-   /*
-   //IRQ set as pin function and triggered
-   if(!(registerArrayRead8(PFSEL) & 0x02) && penIrqPin == (bool)(icr & 0x0080))
-      setIprIsrBit(INT_IRQ5);
-   */
-
-   //IRQ set as pin function and triggered, the pen IRQ triggers when going low to high or high to low
-   //if(!(registerArrayRead8(PFSEL) & 0x02) && (penIrqPin == (bool)(icr & 0x0080)) != (bool)(edgeTriggeredInterruptLastValue & INT_IRQ5))
-   //   setIprIsrBit(INT_IRQ5);
-
-   /*
-   if(!(registerArrayRead8(PFSEL) & 0x02)){
-      if(penIrqPin == (bool)(icr & 0x0080)){
-         if(!(edgeTriggeredInterruptLastValue & INT_IRQ5)){
-            setIprIsrBit(INT_IRQ5);
-            edgeTriggeredInterruptLastValue |= INT_IRQ5;
-         }
-      }
-      else{
-         edgeTriggeredInterruptLastValue &= ~INT_IRQ5;
-      }
-   }
-   */
-
+   //update touchscreen state
    if(!(registerArrayRead8(PFSEL) & 0x02)){
       uint16_t icr = registerArrayRead16(ICR);
       bool penIrqPin = !(ads7846PenIrqEnabled && palmInput.touchscreenTouched);//penIrqPin pulled low on touch
@@ -99,6 +77,7 @@ void refreshInputState(){
       */
    }
 
+   //check for button presses and interrupts
    checkPortDInterrupts();//this calls checkInterrupts() so it doesnt need to be called above
 }
 
@@ -387,14 +366,15 @@ static void checkPortDInterrupts(){
    checkInterrupts();
 }
 
-static inline void updateAlarmLedStatus(){
-   if(registerArrayRead8(PBDATA) & registerArrayRead8(PBSEL) & registerArrayRead8(PBDIR) & 0x40)
+static void updateAlarmLedStatus(){
+   bool pinLineOn = registerArrayRead8(PBDATA) & registerArrayRead8(PBSEL) & registerArrayRead8(PBDIR) & 0x40;
+   if(pinLineOn != palmMisc.batteryCharging)
       palmMisc.alarmLed = true;
    else
       palmMisc.alarmLed = false;
 }
 
-static inline void updateVibratorStatus(){
+static void updateVibratorStatus(){
    if(registerArrayRead8(PKDATA) & registerArrayRead8(PKSEL) & registerArrayRead8(PKDIR) & 0x10)
       palmMisc.vibratorOn = true;
    else
