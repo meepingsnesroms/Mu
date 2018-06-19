@@ -275,9 +275,11 @@ void resetFunctionViewer(){
    hwTests[totalHwTests].testFunction = getTrapAddress;
    totalHwTests++;
    
+   /*
    StrNCopy(hwTests[totalHwTests].name, "IrDa telnet/VNC", TEST_NAME_LENGTH);
    hwTests[totalHwTests].testFunction = irdaRun;
    totalHwTests++;
+   */
    
    if(getPhysicalCpuType() & CPU_M68K){
       /*68k only functions*/
@@ -291,6 +293,10 @@ void resetFunctionViewer(){
       
       StrNCopy(hwTests[totalHwTests].name, "List P*DATA Registers", TEST_NAME_LENGTH);
       hwTests[totalHwTests].testFunction = listDataRegisters;
+      totalHwTests++;
+      
+      StrNCopy(hwTests[totalHwTests].name, "List P*SEL Registers", TEST_NAME_LENGTH);
+      hwTests[totalHwTests].testFunction = listRegisterFunctions;
       totalHwTests++;
       
       StrNCopy(hwTests[totalHwTests].name, "Button Test", TEST_NAME_LENGTH);

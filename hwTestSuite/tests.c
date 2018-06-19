@@ -105,6 +105,51 @@ var listDataRegisters(){
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
 
+var listRegisterFunctions(){
+   static Boolean firstRun = true;
+   uint16_t y = 0;
+   
+   if(firstRun){
+      firstRun = false;
+      debugSafeScreenClear(C_WHITE);
+   }
+   
+   if(getButtonPressed(buttonBack)){
+      firstRun = true;
+      exitSubprogram();
+   }
+   
+   StrPrintF(sharedDataBuffer, "PBSEL:0x%02X", readArbitraryMemory8(HW_REG_ADDR(PBSEL)));
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   StrPrintF(sharedDataBuffer, "PCSEL:0x%02X", readArbitraryMemory8(HW_REG_ADDR(PCSEL)));
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   StrPrintF(sharedDataBuffer, "PDSEL:0x%02X", readArbitraryMemory8(HW_REG_ADDR(PDSEL)));
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   StrPrintF(sharedDataBuffer, "PESEL:0x%02X", readArbitraryMemory8(HW_REG_ADDR(PESEL)));
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   StrPrintF(sharedDataBuffer, "PFSEL:0x%02X", readArbitraryMemory8(HW_REG_ADDR(PFSEL)));
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   StrPrintF(sharedDataBuffer, "PGSEL:0x%02X", readArbitraryMemory8(HW_REG_ADDR(PGSEL)));
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   StrPrintF(sharedDataBuffer, "PJSEL:0x%02X", readArbitraryMemory8(HW_REG_ADDR(PJSEL)));
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   StrPrintF(sharedDataBuffer, "PKSEL:0x%02X", readArbitraryMemory8(HW_REG_ADDR(PKSEL)));
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   StrPrintF(sharedDataBuffer, "PMSEL:0x%02X", readArbitraryMemory8(HW_REG_ADDR(PMSEL)));
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   
+   return makeVar(LENGTH_0, TYPE_NULL, 0);
+}
+
 var checkSpi2EnableBitDelay(){
    static Boolean firstRun = true;
    
@@ -213,29 +258,29 @@ var interrogateSpi2(){
    StrPrintF(sharedDataBuffer, "Select = ADS7846 Ch 5 Read");
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
-   StrPrintF(sharedDataBuffer, "PBDATA:0x%02X", regAddresses[0]);
+   StrPrintF(sharedDataBuffer, "PBDATA:0x%02X", registersDuringSpiRead[0]);
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
-   StrPrintF(sharedDataBuffer, "PCDATA:0x%02X", regAddresses[1]);
+   StrPrintF(sharedDataBuffer, "PCDATA:0x%02X", registersDuringSpiRead[1]);
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
    /*PDDATA is buttons, not relevent to the SPI*/
-   StrPrintF(sharedDataBuffer, "PEDATA:0x%02X", regAddresses[2]);
+   StrPrintF(sharedDataBuffer, "PEDATA:0x%02X", registersDuringSpiRead[2]);
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
-   StrPrintF(sharedDataBuffer, "PFDATA:0x%02X", regAddresses[3]);
+   StrPrintF(sharedDataBuffer, "PFDATA:0x%02X", registersDuringSpiRead[3]);
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
-   StrPrintF(sharedDataBuffer, "PGDATA:0x%02X", regAddresses[4]);
+   StrPrintF(sharedDataBuffer, "PGDATA:0x%02X", registersDuringSpiRead[4]);
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
-   StrPrintF(sharedDataBuffer, "PJDATA:0x%02X", regAddresses[5]);
+   StrPrintF(sharedDataBuffer, "PJDATA:0x%02X", registersDuringSpiRead[5]);
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
-   StrPrintF(sharedDataBuffer, "PKDATA:0x%02X", regAddresses[6]);
+   StrPrintF(sharedDataBuffer, "PKDATA:0x%02X", registersDuringSpiRead[6]);
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
-   StrPrintF(sharedDataBuffer, "PMDATA:0x%02X", regAddresses[7]);
+   StrPrintF(sharedDataBuffer, "PMDATA:0x%02X", registersDuringSpiRead[7]);
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
    /*

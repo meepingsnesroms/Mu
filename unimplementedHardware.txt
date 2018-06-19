@@ -9,7 +9,6 @@ RAM wait states
 Trace T1 bit, should be unused by the OS and applications anyway
 
 CPU I/O:
-Timer capture events, I don't think there possible though with the Palms hardware
 Peripheral Control Register, audio ppm mixing selection and timer cascade mode
 All edge triggered interrupts(currently always level triggered)
 Port G SPI stuff
@@ -49,6 +48,7 @@ swivelview register
 
 
 Fixed:
+Timer capture events, I don't think there possible though with the Palms hardware(there not possible, the power button LED occupies the TIN pin which is required for capture events)
 port b pin 6 is xored with the power detection on the alarm/power LED, if docked it turns the LED off, if not docked it turns the LED on
 touch interrupt seems to not use IRQ5(it does, theres a test for it now)
 port d seems to allow using special function pins as inputs while active unlike other ports, this needs to be verified(verified by MC68VZ328UM.pdf Page 10-15)
