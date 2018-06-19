@@ -929,6 +929,12 @@ void setHwRegister16(uint32_t address, uint16_t value){
          setSpiCont2(value);
          break;
 
+      case SPIDATA2:
+         //ignore writes when SPICONT2 ENABLE is not set
+         if(registerArrayRead16(SPICONT2) & 0x0200)
+            registerArrayWrite16(SPIDATA2, value);
+         break;
+
       case PWMC1:
          setPwmc1(value);
          break;
@@ -940,7 +946,6 @@ void setHwRegister16(uint32_t address, uint16_t value){
       case TCMP2:
       case TPRER1:
       case TPRER2:
-      case SPIDATA2:
          //simple write, no actions needed
          registerArrayWrite16(address, value);
          break;
