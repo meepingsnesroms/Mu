@@ -105,8 +105,69 @@ var listDataRegisters(){
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
 
+var checkSpi2EnableBitDelay(){
+   static Boolean firstRun = true;
+   
+   if(firstRun){
+      uint16_t y = 0;
+      uint16_t osSpi2Control = readArbitraryMemory16(HW_REG_ADDR(SPICONT2)) & 0xE030;/*use data rate, phase and polarity from OS*/
+      
+      firstRun = false;
+      debugSafeScreenClear(C_WHITE);
+      
+      /*disable SPI2*/
+      writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), osSpi2Control);/*disable*/
+      
+      /*try to enable and shift at the same time*/
+      writeArbitraryMemory16(HW_REG_ADDR(SPIDATA2), 0xD4 << 8);/*write control byte, 0xD4 means read channel 5 in 12 bit reference mode*/
+      writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), osSpi2Control | 0x0200/*enable*/ | 0x0100/*exchange*/ | 0x000F);/*enable + exchange*/
+      while(readArbitraryMemory16(HW_REG_ADDR(SPICONT2)) & 0x0100);/*wait on transfer*/
+      StrPrintF(sharedDataBuffer, "Enable + Shift:");
+      UG_PutString(0, y, sharedDataBuffer);
+      y += FONT_HEIGHT + 1;
+      StrPrintF(sharedDataBuffer, "SPIDATA2:0x%02X", readArbitraryMemory16(HW_REG_ADDR(SPIDATA2)));
+      UG_PutString(0, y, sharedDataBuffer);
+      y += FONT_HEIGHT + 1;
+      writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), osSpi2Control);/*disable*/
+      
+      /*try to disable and shift at the same time*/
+      writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), osSpi2Control | 0x0200/*enable*/);/*enable*/
+      writeArbitraryMemory16(HW_REG_ADDR(SPIDATA2), 0xD4 << 8);/*write control byte, 0xD4 means read channel 5 in 12 bit reference mode*/
+      writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), osSpi2Control | 0x0100/*exchange*/ | 0x000F);/*disable + exchange*/
+      while(readArbitraryMemory16(HW_REG_ADDR(SPICONT2)) & 0x0100);/*wait on transfer*/
+      StrPrintF(sharedDataBuffer, "Disable + Shift:");
+      UG_PutString(0, y, sharedDataBuffer);
+      y += FONT_HEIGHT + 1;
+      StrPrintF(sharedDataBuffer, "SPIDATA2:0x%02X", readArbitraryMemory16(HW_REG_ADDR(SPIDATA2)));
+      UG_PutString(0, y, sharedDataBuffer);
+      y += FONT_HEIGHT + 1;
+      
+      /*enable, shift then disable*/
+      writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), osSpi2Control | 0x0200/*enable*/);/*enable*/
+      writeArbitraryMemory16(HW_REG_ADDR(SPIDATA2), 0xD4 << 8);/*write control byte, 0xD4 means read channel 5 in 12 bit reference mode*/
+      writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), osSpi2Control | 0x0200/*enable*/ | 0x0100/*exchange*/ | 0x000F);/*exchange*/
+      while(readArbitraryMemory16(HW_REG_ADDR(SPICONT2)) & 0x0100);/*wait on transfer*/
+      StrPrintF(sharedDataBuffer, "Enable, Shift, Disable:");
+      UG_PutString(0, y, sharedDataBuffer);
+      y += FONT_HEIGHT + 1;
+      StrPrintF(sharedDataBuffer, "SPIDATA2:0x%02X", readArbitraryMemory16(HW_REG_ADDR(SPIDATA2)));
+      UG_PutString(0, y, sharedDataBuffer);
+      y += FONT_HEIGHT + 1;
+      writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), osSpi2Control);/*disable*/
+   }
+   
+   if(getButtonPressed(buttonBack)){
+      firstRun = true;
+      exitSubprogram();
+   }
+   
+   return makeVar(LENGTH_0, TYPE_NULL, 0);
+}
+
 var interrogateSpi2(){
    static Boolean firstRun = true;
+   static uint32_t regAddresses[8] = {HW_REG_ADDR(PBDATA), HW_REG_ADDR(PCDATA), HW_REG_ADDR(PEDATA), HW_REG_ADDR(PFDATA), HW_REG_ADDR(PGDATA), HW_REG_ADDR(PJDATA), HW_REG_ADDR(PKDATA), HW_REG_ADDR(PMDATA)};
+   static uint8_t registersDuringSpiRead[8];/*P(BCEFGJKM)DATA*/
    uint16_t y = 0;
    
    if(firstRun){
@@ -119,48 +180,72 @@ var interrogateSpi2(){
       exitSubprogram();
    }
    
-   if(getButtonPressed(buttonSelect)){
-      uint16_t osSpi2Control = readArbitraryMemory16(HW_REG_ADDR(SPICONT2)) & 0xE230;/*use data rate, phase and polarity from OS, also check if SPI2 is enabled*/
+   if(getButton(buttonSelect)){
+      uint8_t count;
       
-      writeArbitraryMemory16(HW_REG_ADDR(SPIDATA2), 0xD4 << 8);
-      writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), osSpi2Control | 0x0200/*enable*/);
-      writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), osSpi2Control | 0x0200/*enable*/ | 0x0100/*exchange*/ | 0x0007);
+      for(count = 0; count < sizeof(registersDuringSpiRead); count++){
+         uint16_t osSpi2Control = readArbitraryMemory16(HW_REG_ADDR(SPICONT2)) & 0xE030;/*use data rate, phase and polarity from OS*/
+         
+         /*enable SPI2*/
+         writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), osSpi2Control | 0x0200/*enable*/);
+         
+         /*flush the register*/
+         writeArbitraryMemory16(HW_REG_ADDR(SPIDATA2), 0x0000);
+         writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), osSpi2Control | 0x0200/*enable*/ | 0x0100/*exchange*/ | 0x0015);
+         while(readArbitraryMemory16(HW_REG_ADDR(SPICONT2)) & 0x0100);
+         
+         /*send control byte*/
+         writeArbitraryMemory16(HW_REG_ADDR(SPIDATA2), 0xD4 << 8);
+         writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), osSpi2Control | 0x0200/*enable*/ | 0x0100/*exchange*/ | 0x0007);
+         
+         /*final clock before busy, this should turn busy line on*/
+         writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), osSpi2Control | 0x0200/*enable*/ | 0x0100/*exchange*/ | 0x0007);
+         registersDuringSpiRead[count] = readArbitraryMemory8(regAddresses[count]);
+      }
+   }
+   else{
+      uint8_t count;
+      
+      for(count = 0; count < sizeof(registersDuringSpiRead); count++)
+         registersDuringSpiRead[count] = readArbitraryMemory8(regAddresses[count]);
    }
    
    StrPrintF(sharedDataBuffer, "Select = ADS7846 Ch 5 Read");
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
-   StrPrintF(sharedDataBuffer, "PBDATA:0x%02X", readArbitraryMemory8(HW_REG_ADDR(PBDATA)));
+   StrPrintF(sharedDataBuffer, "PBDATA:0x%02X", regAddresses[0]);
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
-   StrPrintF(sharedDataBuffer, "PCDATA:0x%02X", readArbitraryMemory8(HW_REG_ADDR(PCDATA)));
+   StrPrintF(sharedDataBuffer, "PCDATA:0x%02X", regAddresses[1]);
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
    /*PDDATA is buttons, not relevent to the SPI*/
-   StrPrintF(sharedDataBuffer, "PEDATA:0x%02X", readArbitraryMemory8(HW_REG_ADDR(PEDATA)));
+   StrPrintF(sharedDataBuffer, "PEDATA:0x%02X", regAddresses[2]);
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
-   StrPrintF(sharedDataBuffer, "PFDATA:0x%02X", readArbitraryMemory8(HW_REG_ADDR(PFDATA)));
+   StrPrintF(sharedDataBuffer, "PFDATA:0x%02X", regAddresses[3]);
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
-   StrPrintF(sharedDataBuffer, "PGDATA:0x%02X", readArbitraryMemory8(HW_REG_ADDR(PGDATA)));
+   StrPrintF(sharedDataBuffer, "PGDATA:0x%02X", regAddresses[4]);
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
-   StrPrintF(sharedDataBuffer, "PJDATA:0x%02X", readArbitraryMemory8(HW_REG_ADDR(PJDATA)));
+   StrPrintF(sharedDataBuffer, "PJDATA:0x%02X", regAddresses[5]);
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
-   StrPrintF(sharedDataBuffer, "PKDATA:0x%02X", readArbitraryMemory8(HW_REG_ADDR(PKDATA)));
+   StrPrintF(sharedDataBuffer, "PKDATA:0x%02X", regAddresses[6]);
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
-   StrPrintF(sharedDataBuffer, "PMDATA:0x%02X", readArbitraryMemory8(HW_REG_ADDR(PMDATA)));
+   StrPrintF(sharedDataBuffer, "PMDATA:0x%02X", regAddresses[7]);
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
+   /*
    StrPrintF(sharedDataBuffer, "PESEL:0x%02X", readArbitraryMemory8(HW_REG_ADDR(PESEL)));
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
    StrPrintF(sharedDataBuffer, "PEDIR:0x%02X", readArbitraryMemory8(HW_REG_ADDR(PEDIR)));
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
+   */
    StrPrintF(sharedDataBuffer, "SPICONT2:0x%04X", readArbitraryMemory16(HW_REG_ADDR(SPICONT2)));
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;

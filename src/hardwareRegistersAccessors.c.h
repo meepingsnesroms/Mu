@@ -239,19 +239,20 @@ static inline void setSpiCont1(uint16_t value){
 */
 
 static inline void setSpiCont2(uint16_t value){
-   //unsure if ENABLE can be set at the exact moment of write or must be set before write, currently allow both
+   //the ENABLE bit must be set before the transfer and in the transfer command
    //important bits are ENABLE, XCH, IRQ, IRQEN and BITCOUNT
-   //uint16_t oldSpiCont2 = registerArrayRead16(SPICONT2);
-   if(value & 0x0200 && value & 0x0100){
+   uint16_t oldSpiCont2 = registerArrayRead16(SPICONT2);
+   if(value & oldSpiCont2 & 0x0200 && value & 0x0100){
       //enabled and exchange set
       uint8_t bitCount = (value & 0x000F) + 1;
       uint16_t spi2Data = registerArrayRead16(SPIDATA2);
-      uint16_t oldSpi2Data = spi2Data;
+      //uint16_t oldSpi2Data = spi2Data;
 
       for(uint8_t bits = 0; bits < bitCount; bits++){
+         //the Palm m515 seems to invert received bits
          ads7846SendBit(spi2Data & 0x8000);
          spi2Data <<= 1;
-         spi2Data |= ads7846RecieveBit();
+         spi2Data |= !ads7846RecieveBit();
       }
       registerArrayWrite16(SPIDATA2, spi2Data);
 

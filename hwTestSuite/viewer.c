@@ -344,6 +344,10 @@ void resetFunctionViewer(){
          hwTests[totalHwTests].testFunction = ads7846Read;
          totalHwTests++;
          
+         StrNCopy(hwTests[totalHwTests].name, "Get SPI2 ENABLE Delay", TEST_NAME_LENGTH);
+         hwTests[totalHwTests].testFunction = checkSpi2EnableBitDelay;
+         totalHwTests++;
+         
          StrNCopy(hwTests[totalHwTests].name, "Interrogate SPI2", TEST_NAME_LENGTH);
          hwTests[totalHwTests].testFunction = interrogateSpi2;
          totalHwTests++;
