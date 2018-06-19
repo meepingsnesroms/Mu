@@ -10,21 +10,29 @@ bool     ads7846PenIrqEnabled;
 uint16_t ads7846OutputValue;
 
 
-void ads7846SendBit(bool bit){
+static inline bool ads7846GetAdcBit(){
+   //a new control byte can be sent while receiving data
+   //this is valid behavior as long as the start of the last control byte was 16 or more clock cycles ago
+   bool bit = ads7846OutputValue & 0x8000;
+   ads7846OutputValue <<= 1;
+   return bit;
+}
+
+bool ads7846ExchangeBit(bool bitIn){
    if(ads7846BitsToNextControl > 0)
       ads7846BitsToNextControl--;
 
    if(ads7846BitsToNextControl == 0){
       //check for control bit
-      if(bit){
+      if(bitIn){
          ads7846ControlByte = 0x01;
          ads7846BitsToNextControl = 16;
       }
-      return;
+      return ads7846GetAdcBit();
    }
    else if(ads7846BitsToNextControl < 8){
       ads7846ControlByte <<= 1;
-      ads7846ControlByte |= bit;
+      ads7846ControlByte |= bitIn;
    }
 
    if(ads7846BitsToNextControl == 7){
@@ -103,17 +111,14 @@ void ads7846SendBit(bool bit){
          }
       }
    }
+
+   return ads7846GetAdcBit();
 }
 
-bool ads7846RecieveBit(){
-   bool bit;
-
-   //a new control byte can be sent while receiving data
-   //this is valid behavior as long as there has been 16 clock cycles since the start of the last control byte
-
-   bit = ads7846OutputValue & 0x8000;
-   ads7846OutputValue <<= 1;
-   return bit;
+bool ads7846Busy(){
+   if(ads7846BitsToNextControl == 8)
+      return true;
+   return false;
 }
 
 void ads7846Reset(){

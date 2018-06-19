@@ -129,7 +129,7 @@ uint32_t EmuWrapper::init(QString romPath, QString bootloaderPath, uint32_t feat
          return EMU_ERROR_INVALID_PARAMETER;
       }
 
-      if(bootloaderPath != ""){
+      if(bootloaderPath != "" && bootloaderFile.exists()){
          if(bootloaderFile.open(QFile::ReadOnly)){
             bootloaderData = bootloaderFile.readAll();
             bootloaderFile.close();
@@ -140,6 +140,10 @@ uint32_t EmuWrapper::init(QString romPath, QString bootloaderPath, uint32_t feat
          else{
             return EMU_ERROR_INVALID_PARAMETER;
          }
+      }
+      else{
+         bootloaderBuff.data = NULL;
+         bootloaderBuff.size = 0;
       }
 
       error = emulatorInit(romBuff, bootloaderBuff, features);
