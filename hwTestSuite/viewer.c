@@ -59,17 +59,17 @@ CODE_SECTION("viewer") static void renderListFrame(){
          UG_SetBackcolor(C_BLACK);
          UG_SetForecolor(C_WHITE);
          UG_FillFrame(0, y, SCREEN_WIDTH - 1, y + TEXTBOX_PIXEL_HEIGHT - 1, C_BLACK);/*remove white lines between characters*/
-         UG_PutString(0, y, itemStrings[textBoxes]);
+         UG_PutString(0, y + TEXTBOX_PIXEL_MARGIN, itemStrings[textBoxes]);
          UG_SetBackcolor(C_WHITE);
          UG_SetForecolor(C_BLACK);
       }
       else if(textBoxes == LAST_INDEX){
          UG_FillFrame(0, y, SCREEN_WIDTH - 1, y + TEXTBOX_PIXEL_HEIGHT - 1, C_WHITE);/*remove black lines between characters*/
-         UG_PutString(0, y, itemStrings[textBoxes]);
+         UG_PutString(0, y + TEXTBOX_PIXEL_MARGIN, itemStrings[textBoxes]);
       }
       else if(forceListRefresh || PAGE != LAST_PAGE){
          /*render everything the first time or on page change, only render changes after that*/
-         UG_PutString(0, y, itemStrings[textBoxes]);
+         UG_PutString(0, y + TEXTBOX_PIXEL_MARGIN, itemStrings[textBoxes]);
       }
       
       y += TEXTBOX_PIXEL_HEIGHT;

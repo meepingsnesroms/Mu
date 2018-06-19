@@ -13,10 +13,10 @@
 
 
 var testButtonInput(){
-   static Boolean  firstRun = true;
-   static Boolean  polaritySwap;
+   static Boolean firstRun = true;
+   static Boolean polaritySwap;
    static uint8_t frameCount;
-   static uint8_t  portDOriginalPolarity;
+   static uint8_t portDOriginalPolarity;
    uint16_t y = 0;
    
    if(firstRun){
@@ -107,12 +107,10 @@ var listDataRegisters(){
 
 var interrogateSpi2(){
    static Boolean firstRun = true;
-   static float spiclk2PercentAs1;
    uint16_t y = 0;
    
    if(firstRun){
       firstRun = false;
-      spiclk2PercentAs1 = percentageOfTimeAs1(HW_REG_ADDR(PEDATA), 8, 2, 20000, 3);
       debugSafeScreenClear(C_WHITE);
    }
    
@@ -121,6 +119,17 @@ var interrogateSpi2(){
       exitSubprogram();
    }
    
+   if(getButtonPressed(buttonSelect)){
+      uint16_t osSpi2Control = readArbitraryMemory16(HW_REG_ADDR(SPICONT2)) & 0xE230;/*use data rate, phase and polarity from OS, also check if SPI2 is enabled*/
+      
+      writeArbitraryMemory16(HW_REG_ADDR(SPIDATA2), 0xD4 << 8);
+      writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), osSpi2Control | 0x0200/*enable*/);
+      writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), osSpi2Control | 0x0200/*enable*/ | 0x0100/*exchange*/ | 0x0007);
+   }
+   
+   StrPrintF(sharedDataBuffer, "Select = ADS7846 Ch 5 Read");
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
    StrPrintF(sharedDataBuffer, "PBDATA:0x%02X", readArbitraryMemory8(HW_REG_ADDR(PBDATA)));
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
@@ -156,9 +165,6 @@ var interrogateSpi2(){
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
    StrPrintF(sharedDataBuffer, "SPIDATA2:0x%04X", readArbitraryMemory16(HW_REG_ADDR(SPIDATA2)));
-   UG_PutString(0, y, sharedDataBuffer);
-   y += FONT_HEIGHT + 1;
-   StrPrintF(sharedDataBuffer, "SPICLK2:%s", floatToString(spiclk2PercentAs1));
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
    

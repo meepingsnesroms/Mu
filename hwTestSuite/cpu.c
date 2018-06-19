@@ -63,6 +63,7 @@ const char* getCpuString(){
    else if(cpuType == CPU_M68K){
       uint8_t dragonballSubtype = getPhysicalCpuType() & CPU_M68K_TYPES;
       char* dragonballTypeName;
+      
       switch(dragonballSubtype){
          case CPU_M68K_328:
             dragonballTypeName = "328";
@@ -78,6 +79,10 @@ const char* getCpuString(){
             
          case CPU_M68K_SZ:
             dragonballTypeName = "SZ";
+            break;
+            
+         default:
+            dragonballTypeName = "Unknown";
             break;
       }
       
