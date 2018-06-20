@@ -150,6 +150,51 @@ var listRegisterFunctions(){
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
 
+var listRegisterDirections(){
+   static Boolean firstRun = true;
+   uint16_t y = 0;
+   
+   if(firstRun){
+      firstRun = false;
+      debugSafeScreenClear(C_WHITE);
+   }
+   
+   if(getButtonPressed(buttonBack)){
+      firstRun = true;
+      exitSubprogram();
+   }
+   
+   StrPrintF(sharedDataBuffer, "PBDIR:0x%02X", readArbitraryMemory8(HW_REG_ADDR(PBDIR)));
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   StrPrintF(sharedDataBuffer, "PCDIR:0x%02X", readArbitraryMemory8(HW_REG_ADDR(PCDIR)));
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   StrPrintF(sharedDataBuffer, "PDDIR:0x%02X", readArbitraryMemory8(HW_REG_ADDR(PDDIR)));
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   StrPrintF(sharedDataBuffer, "PEDIR:0x%02X", readArbitraryMemory8(HW_REG_ADDR(PEDIR)));
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   StrPrintF(sharedDataBuffer, "PFDIR:0x%02X", readArbitraryMemory8(HW_REG_ADDR(PFDIR)));
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   StrPrintF(sharedDataBuffer, "PGDIR:0x%02X", readArbitraryMemory8(HW_REG_ADDR(PGDIR)));
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   StrPrintF(sharedDataBuffer, "PJDIR:0x%02X", readArbitraryMemory8(HW_REG_ADDR(PJDIR)));
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   StrPrintF(sharedDataBuffer, "PKDIR:0x%02X", readArbitraryMemory8(HW_REG_ADDR(PKDIR)));
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   StrPrintF(sharedDataBuffer, "PMDIR:0x%02X", readArbitraryMemory8(HW_REG_ADDR(PMDIR)));
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   
+   return makeVar(LENGTH_0, TYPE_NULL, 0);
+}
+
 var checkSpi2EnableBitDelay(){
    static Boolean firstRun = true;
    

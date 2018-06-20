@@ -6,6 +6,7 @@
 var testButtonInput();
 var listDataRegisters();
 var listRegisterFunctions();
+var listRegisterDirections();
 var checkSpi2EnableBitDelay();
 var interrogateSpi2();
 var tstat1GetSemaphoreLockOrder();

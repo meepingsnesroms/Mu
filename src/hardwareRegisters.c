@@ -867,62 +867,78 @@ void setHwRegister16(uint32_t address, uint16_t value){
 
       case CSA:
          setCsa(value);
-         resetAddressSpace();
+         if((value & 0x000F) != (registerArrayRead16(CSA) & 0x000F))
+            resetAddressSpace();//only reset address space if size changed or enabled/disabled
          break;
 
       case CSB:
          setCsb(value);
-         resetAddressSpace();
+         if((value & 0x000F) != (registerArrayRead16(CSB) & 0x000F))
+            resetAddressSpace();//only reset address space if size changed or enabled/disabled
          break;
 
       case CSC:
          setCsc(value);
-         resetAddressSpace();
+         if((value & 0x000F) != (registerArrayRead16(CSC) & 0x000F))
+            resetAddressSpace();//only reset address space if size changed or enabled/disabled
          break;
 
       case CSD:
          setCsd(value);
-         resetAddressSpace();
+         if((value & 0x000F) != (registerArrayRead16(CSD) & 0x000F))
+            resetAddressSpace();//only reset address space if size changed or enabled/disabled
          break;
 
       case CSGBA:
          //sets the starting location of ROM(0x10000000)
-         setCsgba(value);
-         resetAddressSpace();
+         if((value & 0xFFFE) != registerArrayRead16(CSGBA)){
+            setCsgba(value);
+            resetAddressSpace();
+         }
          break;
 
       case CSGBB:
          //sets the starting location of the SED1376(0x1FF80000)
-         setCsgbb(value);
-         resetAddressSpace();
+         if((value & 0xFFFE) != registerArrayRead16(CSGBB)){
+            setCsgbb(value);
+            resetAddressSpace();
+         }
          break;
 
       case CSGBC:
          //sets the starting location of USBPhilipsPDIUSBD12(address 0x10400000)
          //since I dont plan on adding hotsync should be fine to leave unemulated, its unemulated in pose
-         setCsgbc(value);
-         resetAddressSpace();
+         if((value & 0xFFFE) != registerArrayRead16(CSGBC)){
+            setCsgbc(value);
+            resetAddressSpace();
+         }
          break;
 
       case CSGBD:
          //sets the starting location of RAM(0x00000000)
-         setCsgbd(value);
-         resetAddressSpace();
+         if((value & 0xFFFE) != registerArrayRead16(CSGBD)){
+            setCsgbd(value);
+            resetAddressSpace();
+         }
          break;
 
       case CSUGBA:
-         registerArrayWrite16(CSUGBA, value);
-         //refresh all chipselect address lines
-         setCsgba(registerArrayRead16(CSGBA));
-         setCsgbb(registerArrayRead16(CSGBB));
-         setCsgbc(registerArrayRead16(CSGBC));
-         setCsgbd(registerArrayRead16(CSGBD));
-         resetAddressSpace();
+         if((value & 0xF777) != registerArrayRead16(CSUGBA)){
+            registerArrayWrite16(CSUGBA, value);
+            //refresh all chipselect address lines
+            setCsgba(registerArrayRead16(CSGBA));
+            setCsgbb(registerArrayRead16(CSGBB));
+            setCsgbc(registerArrayRead16(CSGBC));
+            setCsgbd(registerArrayRead16(CSGBD));
+            resetAddressSpace();
+         }
          break;
 
       case CSCTRL1:
-         setCsctrl1(value);
-         resetAddressSpace();
+         if((value & 0x7F55) != registerArrayRead16(CSCTRL1)){
+            setCsctrl1(value);
+            resetAddressSpace();
+         }
          break;
 
       case SPICONT2:

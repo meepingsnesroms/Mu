@@ -299,6 +299,10 @@ void resetFunctionViewer(){
       hwTests[totalHwTests].testFunction = listRegisterFunctions;
       totalHwTests++;
       
+      StrNCopy(hwTests[totalHwTests].name, "List P*DIR Registers", TEST_NAME_LENGTH);
+      hwTests[totalHwTests].testFunction = listRegisterDirections;
+      totalHwTests++;
+      
       StrNCopy(hwTests[totalHwTests].name, "Button Test", TEST_NAME_LENGTH);
       hwTests[totalHwTests].testFunction = testButtonInput;
       totalHwTests++;
