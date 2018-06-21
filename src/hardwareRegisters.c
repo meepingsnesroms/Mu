@@ -63,6 +63,8 @@ void refreshInputState(){
 
       if(!penIrqPin)
          setIprIsrBit(INT_IRQ5);
+      else
+         clearIprIsrBit(INT_IRQ5);
 
       /*
       //state changed trigger an interrupt
@@ -261,10 +263,12 @@ static void checkPortDInterrupts(){
    uint8_t portDIntEnable = registerArrayRead8(PDIRQEN);
    uint8_t portDKeyboardEnable = registerArrayRead8(PDKBEN);
    uint8_t portDIrqPins = ~registerArrayRead8(PDSEL);
-   uint16_t portDEdgeSelect = registerArrayRead16(PDIRQEG);
+   //uint16_t portDEdgeSelect = registerArrayRead16(PDIRQEG);
    uint16_t interruptControlRegister = registerArrayRead16(ICR);
-   bool currentPllState = pllIsOn();
+   uint8_t triggeredIntXInterrupts = portDIntEnable & portDValue & ~portDDir;
+   //bool currentPllState = pllIsOn();
 
+   /*
    if(portDIntEnable & portDValue & ~portDDir & 0x01){
       //INT0, polarity set with PDPOL
       if(!(portDEdgeSelect & 0x01)){
@@ -336,31 +340,57 @@ static void checkPortDInterrupts(){
    else{
       edgeTriggeredInterruptLastValue &= ~INT_INT3;
    }
+   */
+
+   if(triggeredIntXInterrupts & 0x01)
+      setIprIsrBit(INT_INT0);
+   else
+      clearIprIsrBit(INT_INT0);
+
+   if(triggeredIntXInterrupts & 0x02)
+      setIprIsrBit(INT_INT1);
+   else
+      clearIprIsrBit(INT_INT1);
+
+   if(triggeredIntXInterrupts & 0x04)
+      setIprIsrBit(INT_INT2);
+   else
+      clearIprIsrBit(INT_INT2);
+
+   if(triggeredIntXInterrupts & 0x08)
+      setIprIsrBit(INT_INT3);
+   else
+      clearIprIsrBit(INT_INT3);
    
-   if(portDIrqPins & ~portDDir & 0x10 && (bool)(portDValue & 0x10) == (bool)(interruptControlRegister & 0x8000)){
-      //IRQ1, polarity set in ICR
+   //IRQ1, polarity set in ICR
+   if(portDIrqPins & ~portDDir & 0x10 && (bool)(portDValue & 0x10) == (bool)(interruptControlRegister & 0x8000))
       setIprIsrBit(INT_IRQ1);
-   }
-   
-   if(portDIrqPins & ~portDDir & 0x20 && (bool)(portDValue & 0x20) == (bool)(interruptControlRegister & 0x4000)){
-      //IRQ2, polarity set in ICR
+   else
+      clearIprIsrBit(INT_IRQ1);
+
+   //IRQ2, polarity set in ICR
+   if(portDIrqPins & ~portDDir & 0x20 && (bool)(portDValue & 0x20) == (bool)(interruptControlRegister & 0x4000))
       setIprIsrBit(INT_IRQ2);
-   }
+   else
+      clearIprIsrBit(INT_IRQ2);
    
-   if(portDIrqPins & ~portDDir & 0x40 && (bool)(portDValue & 0x40) == (bool)(interruptControlRegister & 0x2000)){
-      //IRQ3, polarity set in ICR
+   //IRQ3, polarity set in ICR
+   if(portDIrqPins & ~portDDir & 0x40 && (bool)(portDValue & 0x40) == (bool)(interruptControlRegister & 0x2000))
       setIprIsrBit(INT_IRQ3);
-   }
+   else
+      clearIprIsrBit(INT_IRQ3);
    
-   if(portDIrqPins & ~portDDir & 0x80 && (bool)(portDValue & 0x80) == (bool)(interruptControlRegister & 0x1000)){
-      //IRQ6, polarity set in ICR
+   //IRQ6, polarity set in ICR
+   if(portDIrqPins & ~portDDir & 0x80 && (bool)(portDValue & 0x80) == (bool)(interruptControlRegister & 0x1000))
       setIprIsrBit(INT_IRQ6);
-   }
+   else
+      clearIprIsrBit(INT_IRQ6);
    
-   if(portDKeyboardEnable & ~portDValue & ~portDDir){
-      //active low/off level triggered interrupt
+   //active low/off level triggered interrupt
+   if(portDKeyboardEnable & ~portDValue & ~portDDir)
       setIprIsrBit(INT_KB);
-   }
+   else
+      clearIprIsrBit(INT_KB);
    
    checkInterrupts();
 }

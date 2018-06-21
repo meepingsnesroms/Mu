@@ -101,12 +101,6 @@ static inline uint32_t getPipStartAddress(){
    return pipStartAddress;
 }
 
-static inline void updateLcdStatus(){
-   palmMisc.lcdOn = sed1376Registers[GPIO_CONT_0] & sed1376Registers[GPIO_CONF_0] & 0x20;
-   palmMisc.backlightOn = sed1376Registers[GPIO_CONT_0] & sed1376Registers[GPIO_CONF_0] & 0x10;
-}
-
-
 bool sed1376PowerSaveEnabled(){
    return sed1376Registers[PWR_SAVE_CFG] & 0x01;
 }

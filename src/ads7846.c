@@ -26,23 +26,21 @@ bool ads7846ExchangeBit(bool bitIn){
       //check for control bit
       if(bitIn){
          ads7846ControlByte = 0x01;
-         ads7846BitsToNextControl = 16;
+         ads7846BitsToNextControl = 15;
       }
       return ads7846GetAdcBit();
    }
-   else if(ads7846BitsToNextControl < 8){
+   else if(ads7846BitsToNextControl >= 8){
       ads7846ControlByte <<= 1;
       ads7846ControlByte |= bitIn;
    }
 
-   if(ads7846BitsToNextControl == 7){
-      //control byte finished, get output value
+   if(ads7846BitsToNextControl == 6){
+      //control byte and busy cycle finished, get output value
       double value;
       double rangeMax;
       bool mode = ads7846ControlByte & 0x08;
       uint8_t powerSave = ads7846ControlByte & 0x03;
-
-      ads7846PenIrqEnabled = !(ads7846ControlByte & 0x01);
 
       switch(ads7846ControlByte & 0x70){
          case 0x00:
@@ -58,13 +56,14 @@ bool ads7846ExchangeBit(bool bitIn){
                value = palmInput.touchscreenY;
             else
                value = 160;
-            debugLog("Accessed ADS7846 Touchscreen y.\n");
+            debugLog("Accessed ADS7846 Touchscreen Y.\n");
             break;
 
          case 0x20:
             //battery
             rangeMax = 100;
             value = palmMisc.batteryLevel;
+            debugLog("Accessed ADS7846 Battery Level.\n");
             break;
 
          case 0x30:
@@ -81,7 +80,7 @@ bool ads7846ExchangeBit(bool bitIn){
                value = palmInput.touchscreenX;
             else
                value = 160;
-            debugLog("Accessed ADS7846 Touchscreen x.\n");
+            debugLog("Accessed ADS7846 Touchscreen X.\n");
             break;
 
          case 0x60:
@@ -110,13 +109,15 @@ bool ads7846ExchangeBit(bool bitIn){
             ads7846OutputValue <<= 4;//move to output position
          }
       }
+
+      ads7846PenIrqEnabled = powerSave != 0x01;
    }
 
    return ads7846GetAdcBit();
 }
 
 bool ads7846Busy(){
-   if(ads7846BitsToNextControl == 8)
+   if(ads7846BitsToNextControl == 7)
       return true;
    return false;
 }
