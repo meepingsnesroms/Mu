@@ -47,6 +47,10 @@ SED1376:
 swivelview register
 
 
+Safe Bugs:
+the second line on all the chip selects is not properly emulated, CS(ABCD)1 is missing, this halves the size of the ranges, if the ROM only uses one chip per chip select this will go unnoticed(only supporting 1x16mb)
+CSD and CSC may be chained to create a 16mb address space from 4x4mb chunks(only supporting 1x16mb)
+
 Fixed:
 Timer capture events, I don't think there possible though with the Palms hardware(there not possible, the power button LED occupies the TIN pin which is required for capture events)
 port b pin 6 is xored with the power detection on the alarm/power LED, if docked it turns the LED off, if not docked it turns the LED on
