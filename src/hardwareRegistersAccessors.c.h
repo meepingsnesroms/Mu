@@ -242,6 +242,14 @@ static inline void setSpiCont2(uint16_t value){
    //the ENABLE bit must be set before the transfer and in the transfer command
    //important bits are ENABLE, XCH, IRQ, IRQEN and BITCOUNT
    uint16_t oldSpiCont2 = registerArrayRead16(SPICONT2);
+
+   //force or clear an interrupt
+   if((value & 0x00C0) == 0x00C0)
+      setIprIsrBit(INT_SPI2);
+   else if(!(value & 0x0080))
+      clearIprIsrBit(INT_SPI2);
+
+   //do a transfer
    if(value & oldSpiCont2 & 0x0200 && value & 0x0100){
       //enabled and exchange set
       uint8_t bitCount = (value & 0x000F) + 1;
@@ -365,35 +373,37 @@ static inline void setIsr(uint32_t value, bool useTopWord, bool useBottomWord){
 }
 
 //register getters
+static inline uint8_t getPortDInputPinValues(){
+   uint8_t requestedRow = ~(registerArrayRead8(PKDIR) & registerArrayRead8(PKDATA));//keys are requested on port k(set low to enable) and read on port d
+   uint8_t portDInputValues = 0x00;
+
+   //portDInputValues |= 0x80;//battery dead bit, dont know the proper level to set this
+
+   if(palmSdCard.inserted)
+      portDInputValues |= 0x20;
+
+   //kbd row 0
+   if(requestedRow & 0x20)
+      portDInputValues |= palmInput.buttonCalendar | palmInput.buttonAddress << 1 | palmInput.buttonTodo << 2 | palmInput.buttonNotes << 3;
+
+   //kbd row 1
+   if(requestedRow & 0x40)
+      portDInputValues |= palmInput.buttonUp | palmInput.buttonDown << 1;
+
+   //kbd row 2
+   if(requestedRow & 0x80)
+      portDInputValues |= palmInput.buttonPower | palmInput.buttonContrast << 1 | palmInput.buttonAddress << 3;
+
+   //the port d pins state is high for false, invert them on return, Palm OS uses PDPOL to swap back to pressed == 1
+   return ~portDInputValues;
+}
+
 static inline uint8_t getPortDValue(){
-   uint8_t requestedRow = registerArrayRead8(PKDIR) & registerArrayRead8(PKDATA);//keys are requested on port k and read on port d
-   uint8_t portDValue = 0x00;
+   uint8_t portDValue = getPortDInputPinValues();
    uint8_t portDData = registerArrayRead8(PDDATA);
    uint8_t portDDir = registerArrayRead8(PDDIR);
    uint8_t portDPolarity = registerArrayRead8(PDPOL);
 
-   portDValue |= 0x80;//battery not dead bit
-
-   if(!palmSdCard.inserted){
-      portDValue |= 0x20;
-   }
-
-   if(!(requestedRow & 0x20)){
-      //kbd row 0, pins are 0 when button pressed and 1 when released, Palm OS then uses PDPOL to swap back to pressed == 1
-      portDValue |= !palmInput.buttonCalendar | !palmInput.buttonAddress << 1 | !palmInput.buttonTodo << 2 | !palmInput.buttonNotes << 3;
-   }
-
-   if(!(requestedRow & 0x40)){
-      //kbd row 1, pins are 0 when button pressed and 1 when released, Palm OS then uses PDPOL to swap back to pressed == 1
-      portDValue |= !palmInput.buttonUp | !palmInput.buttonDown << 1;
-   }
-
-   if(!(requestedRow & 0x80)){
-      //kbd row 2, pins are 0 when button pressed and 1 when released, Palm OS then uses PDPOL to swap back to pressed == 1
-      portDValue |= !palmInput.buttonPower | !palmInput.buttonContrast << 1 | !palmInput.buttonAddress << 3;
-   }
-
-   portDValue |= 0x50;//floating pins are high
    portDValue ^= portDPolarity;//only input polarity is affected by PDPOL
    portDValue &= ~portDDir;//only use above pin values for inputs, port d allows using special function pins as inputs while active unlike other ports
    portDValue |= portDData & portDDir;//if a pin is an output and has its data bit set return that too

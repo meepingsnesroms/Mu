@@ -92,10 +92,13 @@ int32_t interruptAcknowledge(int32_t intLevel){
    else
       vector = vectorOffset | intLevel;
 
+   //only active interrupts should wake the CPU and this function is only be called when an interrupt is active in both IMR and the CPU int mask
    lowPowerStopActive = false;
-   registerArrayWrite8(PCTLR, registerArrayRead8(PCTLR) & 0x1F);
-   pllWakeCpuIfOff();//only active interrupts should wake the CPU and this function is only be called when an interrupt is active in both IMR and the CPU int mask
-   recalculateCpuSpeed();
+   if(registerArrayRead8(PCTLR) & 0x80){
+      registerArrayWrite8(PCTLR, registerArrayRead8(PCTLR) & 0x1F);
+      recalculateCpuSpeed();
+   }
+   pllWakeCpuIfOff();
 
    //the interrupt should only be cleared after its been handled
 
@@ -252,95 +255,17 @@ static void checkInterrupts(){
          intLevel = 4;
    }
 
-   //some interrupts should probably be auto cleared after being run once, RTI, RTC, WATCHDOG and SPI1/2 seem like they should be cleared this way
-
    m68k_set_irq(intLevel);//should be called even if intLevel is 0, that is how the interrupt state gets cleared
 }
 
 static void checkPortDInterrupts(){
-   uint8_t portDValue = getPortDValue();
+   uint8_t portDInputValues = getPortDInputPinValues();
+   uint8_t portDInputValuesWithPolarity = portDInputValues ^ registerArrayRead8(PDPOL);
    uint8_t portDDir = registerArrayRead8(PDDIR);
-   uint8_t portDIntEnable = registerArrayRead8(PDIRQEN);
    uint8_t portDKeyboardEnable = registerArrayRead8(PDKBEN);
    uint8_t portDIrqPins = ~registerArrayRead8(PDSEL);
-   //uint16_t portDEdgeSelect = registerArrayRead16(PDIRQEG);
    uint16_t interruptControlRegister = registerArrayRead16(ICR);
-   uint8_t triggeredIntXInterrupts = portDIntEnable & portDValue & ~portDDir;
-   //bool currentPllState = pllIsOn();
-
-   /*
-   if(portDIntEnable & portDValue & ~portDDir & 0x01){
-      //INT0, polarity set with PDPOL
-      if(!(portDEdgeSelect & 0x01)){
-         //edge triggered
-         if(!(edgeTriggeredInterruptLastValue & INT_INT0) && currentPllState)
-            setIprIsrBit(INT_INT0);
-      }
-      else{
-         //level triggered
-         setIprIsrBit(INT_INT0);
-      }
-
-      edgeTriggeredInterruptLastValue |= INT_INT0;
-   }
-   else{
-      edgeTriggeredInterruptLastValue &= ~INT_INT0;
-   }
-
-   if(portDIntEnable & portDValue & ~portDDir & 0x02){
-      //INT1, polarity set with PDPOL
-      if(!(portDEdgeSelect & 0x02)){
-         //edge triggered
-         if(!(edgeTriggeredInterruptLastValue & INT_INT1) && currentPllState)
-            setIprIsrBit(INT_INT1);
-      }
-      else{
-         //level triggered
-         setIprIsrBit(INT_INT1);
-      }
-
-      edgeTriggeredInterruptLastValue |= INT_INT1;
-   }
-   else{
-      edgeTriggeredInterruptLastValue &= ~INT_INT1;
-   }
-
-   if(portDIntEnable & portDValue & ~portDDir & 0x04){
-      //INT2, polarity set with PDPOL
-      if(!(portDEdgeSelect & 0x04)){
-         //edge triggered
-         if(!(edgeTriggeredInterruptLastValue & INT_INT2) && currentPllState)
-            setIprIsrBit(INT_INT2);
-      }
-      else{
-         //level triggered
-         setIprIsrBit(INT_INT2);
-      }
-
-      edgeTriggeredInterruptLastValue |= INT_INT2;
-   }
-   else{
-      edgeTriggeredInterruptLastValue &= ~INT_INT2;
-   }
-
-   if(portDIntEnable & portDValue & ~portDDir & 0x08){
-      //INT3, polarity set with PDPOL
-      if(!(portDEdgeSelect & 0x08)){
-         //edge triggered
-         if(!(edgeTriggeredInterruptLastValue & INT_INT3) && currentPllState)
-            setIprIsrBit(INT_INT3);
-      }
-      else{
-         //level triggered
-         setIprIsrBit(INT_INT3);
-      }
-
-      edgeTriggeredInterruptLastValue |= INT_INT3;
-   }
-   else{
-      edgeTriggeredInterruptLastValue &= ~INT_INT3;
-   }
-   */
+   uint8_t triggeredIntXInterrupts = portDInputValuesWithPolarity & registerArrayRead8(PDIRQEN) & ~portDDir;
 
    if(triggeredIntXInterrupts & 0x01)
       setIprIsrBit(INT_INT0);
@@ -363,31 +288,32 @@ static void checkPortDInterrupts(){
       clearIprIsrBit(INT_INT3);
    
    //IRQ1, polarity set in ICR
-   if(portDIrqPins & ~portDDir & 0x10 && (bool)(portDValue & 0x10) == (bool)(interruptControlRegister & 0x8000))
+   if(portDIrqPins & ~portDDir & 0x10 && (bool)(portDInputValues & 0x10) == (bool)(interruptControlRegister & 0x8000))
       setIprIsrBit(INT_IRQ1);
    else
       clearIprIsrBit(INT_IRQ1);
 
    //IRQ2, polarity set in ICR
-   if(portDIrqPins & ~portDDir & 0x20 && (bool)(portDValue & 0x20) == (bool)(interruptControlRegister & 0x4000))
+   if(portDIrqPins & ~portDDir & 0x20 && (bool)(portDInputValues & 0x20) == (bool)(interruptControlRegister & 0x4000))
       setIprIsrBit(INT_IRQ2);
    else
       clearIprIsrBit(INT_IRQ2);
    
    //IRQ3, polarity set in ICR
-   if(portDIrqPins & ~portDDir & 0x40 && (bool)(portDValue & 0x40) == (bool)(interruptControlRegister & 0x2000))
+   if(portDIrqPins & ~portDDir & 0x40 && (bool)(portDInputValues & 0x40) == (bool)(interruptControlRegister & 0x2000))
       setIprIsrBit(INT_IRQ3);
    else
       clearIprIsrBit(INT_IRQ3);
    
    //IRQ6, polarity set in ICR
-   if(portDIrqPins & ~portDDir & 0x80 && (bool)(portDValue & 0x80) == (bool)(interruptControlRegister & 0x1000))
+   if(portDIrqPins & ~portDDir & 0x80 && (bool)(portDInputValues & 0x80) == (bool)(interruptControlRegister & 0x1000))
       setIprIsrBit(INT_IRQ6);
    else
       clearIprIsrBit(INT_IRQ6);
    
    //active low/off level triggered interrupt
-   if(portDKeyboardEnable & ~portDValue & ~portDDir)
+   //The SELx, POLx, IQENx, and IQEGx bits have no effect on the functionality of KBENx
+   if(portDKeyboardEnable & ~portDInputValues & ~portDDir)
       setIprIsrBit(INT_KB);
    else
       clearIprIsrBit(INT_KB);
