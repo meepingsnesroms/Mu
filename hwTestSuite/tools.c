@@ -84,8 +84,7 @@ Err makeFile(uint8_t* data, uint32_t size, char* fileName){
 }
 
 uint16_t ads7846GetValue(uint8_t channel, Boolean referenceMode, Boolean mode8bit){
-   //uint8_t osPesel = readArbitraryMemory8(HW_REG_ADDR(PESEL));
-   //uint8_t osPgdata = readArbitraryMemory8(HW_REG_ADDR(PGDATA));
+   uint8_t osPgdata = readArbitraryMemory8(HW_REG_ADDR(PGDATA));
    uint16_t osSpi2Control = readArbitraryMemory16(HW_REG_ADDR(SPICONT2)) & 0xE230;/*use data rate, phase and polarity from OS, also check if SPI2 is enabled*/
    uint16_t spi2Control = osSpi2Control;
    uint8_t config = 0x80;
@@ -99,11 +98,9 @@ uint16_t ads7846GetValue(uint8_t channel, Boolean referenceMode, Boolean mode8bi
    
    config |= channel << 4 & 0x70;
    
-   /*attach SPICLK2, SPITXD and SPIRXD if disconnected*/
-   //writeArbitraryMemory8(HW_REG_ADDR(PESEL), osPesel & 0xF8);
-   
    /*the chip select line seems to be here, pull it low*/
    //writeArbitraryMemory8(HW_REG_ADDR(PGDATA), osPgdata & 0xFB);
+   writeArbitraryMemory8(HW_REG_ADDR(PGDATA), osPgdata | 0x08);
    
    /*wait until SPI2 is free*/
    while(readArbitraryMemory16(HW_REG_ADDR(SPICONT2)) & 0x0100);
@@ -146,8 +143,7 @@ uint16_t ads7846GetValue(uint8_t channel, Boolean referenceMode, Boolean mode8bi
    value = readArbitraryMemory16(HW_REG_ADDR(SPIDATA2));
    
    /*return to OS state*/
-   //writeArbitraryMemory8(HW_REG_ADDR(PGDATA), osPgdata);
-   //writeArbitraryMemory8(HW_REG_ADDR(PESEL), osPesel);
+   writeArbitraryMemory8(HW_REG_ADDR(PGDATA), osPgdata);
    writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), osSpi2Control);
    
    /*may need to convert returned value some*/

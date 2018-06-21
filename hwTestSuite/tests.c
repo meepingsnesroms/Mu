@@ -550,6 +550,9 @@ var toggleBacklight(){
       StrPrintF(sharedDataBuffer, "Right = Port G");
       UG_PutString(0, y, sharedDataBuffer);
       y += FONT_HEIGHT + 1;
+      StrPrintF(sharedDataBuffer, "Select = Port K");
+      UG_PutString(0, y, sharedDataBuffer);
+      y += FONT_HEIGHT + 1;
    }
    
    if(getButtonPressed(buttonBack)){
@@ -565,8 +568,15 @@ var toggleBacklight(){
       writeArbitraryMemory8(HW_REG_ADDR(PGDATA), readArbitraryMemory8(HW_REG_ADDR(PGDATA)) ^ 0x02);
    }
    
-   y = (FONT_HEIGHT + 1) * 2;
+   if(getButtonPressed(buttonSelect)){
+      writeArbitraryMemory8(HW_REG_ADDR(PKDATA), readArbitraryMemory8(HW_REG_ADDR(PKDATA)) ^ 0x02);
+   }
+   
+   y = (FONT_HEIGHT + 1) * 3;
    StrPrintF(sharedDataBuffer, "PGDATA:0x%02X", readArbitraryMemory8(HW_REG_ADDR(PGDATA)));
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   StrPrintF(sharedDataBuffer, "PKDATA:0x%02X", readArbitraryMemory8(HW_REG_ADDR(PKDATA)));
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
    StrPrintF(sharedDataBuffer, "PGSEL:0x%02X", readArbitraryMemory8(HW_REG_ADDR(PGSEL)));
