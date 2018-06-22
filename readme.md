@@ -13,11 +13,6 @@ It is also written in C for RetroArch so it will run on everything at the start,
 
 It is the best Palm brand OS 4 device that has no special hardware builtin(cellphone, barcode scanner, keyboard attachment), it has a color screen, and available ROM dumps.
 
-## Warning:
-
-There are multipule versions of the m515, only the 1x16mb version is supported, all other ROMs present are for archival only.
-I will not provide support for any other ROM than "palmRoms/Palm m515/rom(1x16mb).bin", use them at your own risk, due to memory layout changes RAM corruption is to be expected!
-
 ## What about accessorys?
 
 The Palm keyboard attachment will likely be emulated later on so the PC keyboard can be used on text fields.

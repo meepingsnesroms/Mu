@@ -44,7 +44,7 @@ bool ads7846ExchangeBit(bool bitIn){
 
       switch(ads7846ControlByte & 0x70){
          case 0x00:
-            //temperature 1, unemulated for now
+            //temperature 0, unemulated for now
             rangeMax = 1;
             value = 1;
             break;
@@ -90,7 +90,7 @@ bool ads7846ExchangeBit(bool bitIn){
             break;
 
          case 0x70:
-            //temperature 2, unemulated for now
+            //temperature 1, unemulated for now
             rangeMax = 1;
             value = 1;
             break;
