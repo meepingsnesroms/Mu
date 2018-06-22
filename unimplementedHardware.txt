@@ -17,7 +17,7 @@ DRAMC write enable
 All of DRAMMC
 pen input
 Port M Infrared shutdown (PMDATA 0x20)
-interrupt control register (ICR), POL5 and edge trigger selects
+interrupt control register(ICR) edge trigger selects
 ADC7846 temperature sensors
 ADC7846 dock sensor
 some undocumented I/O might be on port e and port j
@@ -29,7 +29,6 @@ When SPICLK2, SPITXD or SPIRXD on port e is disabled ADS7846 functions should re
 port g data bit 2 may need to be 0 to access ADS7846
 REFREQ clock frequency in RTCCTL should slow down the RTC when enabled
 port d IRQ* bits edge triggered interrupt mode is not emulated
-port g backlight state readback
 edgeTriggeredInterruptLastValue may need to be locked when PLL is off
 port d data register seems to have its data bits cleared when an edge triggered interrupt is cleared(according to MC68VZ328UM.pdf Page 10-15)
 
@@ -52,6 +51,8 @@ the second line on all the chip selects is not properly emulated, CS(ABCD)1 is m
 CSD and CSC may be chained to create a 16mb address space from 4x4mb chunks(only supporting 1x16mb)
 
 Fixed:
+interrupt control register(ICR) POL5
+port g backlight state readback
 Timer capture events, I don't think there possible though with the Palms hardware(there not possible, the power button LED occupies the TIN pin which is required for capture events)
 port b pin 6 is xored with the power detection on the alarm/power LED, if docked it turns the LED off, if not docked it turns the LED on
 touch interrupt seems to not use IRQ5(it does, theres a test for it now)

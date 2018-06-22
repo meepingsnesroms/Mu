@@ -107,7 +107,7 @@ typedef struct{
 typedef struct{
    bool    powerButtonLed;
    bool    lcdOn;
-   bool    backlightOn;
+   uint8_t backlightLevel;
    bool    vibratorOn;
    bool    batteryCharging;
    uint8_t batteryLevel;

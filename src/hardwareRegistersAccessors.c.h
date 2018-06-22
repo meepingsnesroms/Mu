@@ -426,6 +426,21 @@ static inline uint8_t getPortFValue(){
    return portFValue;
 }
 
+static inline uint8_t getPortGValue(){
+   //port g only has 6 pins not 8
+   uint8_t portGValue = 0x00;
+   uint8_t portGData = registerArrayRead8(PGDATA);
+   uint8_t portGDir = registerArrayRead8(PGDIR);
+   uint8_t portGSel = registerArrayRead8(PGSEL);
+
+   portGValue |= (palmMisc.backlightLevel > 0) << 1;
+   portGValue |= 0x3D;//floating pins are high
+   portGValue &= ~portGDir & portGSel;
+   portGValue |= portGData & portGDir & portGSel;
+
+   return portGValue;
+}
+
 static inline uint8_t getPortKValue(){
    uint8_t portKValue = 0x00;
    uint8_t portKData = registerArrayRead8(PKDATA);
@@ -468,4 +483,8 @@ static inline void updatePowerButtonLedStatus(){
 
 static inline void updateVibratorStatus(){
    palmMisc.vibratorOn = registerArrayRead8(PKDATA) & registerArrayRead8(PKSEL) & registerArrayRead8(PKDIR) & 0x10;
+}
+
+static inline void updateBacklightAmplifierStatus(){
+   palmMisc.backlightLevel = (palmMisc.backlightLevel > 0) ? (1 + backlightAmplifierState()) : 0;
 }

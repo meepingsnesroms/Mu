@@ -38,6 +38,10 @@ bool pllIsOn(){
    return !(registerArrayRead16(PLLCR) & 0x0008);
 }
 
+bool backlightAmplifierState(){
+   return registerArrayRead8(PKDATA) & registerArrayRead8(PKSEL) & registerArrayRead8(PKDIR) & 0x02;
+}
+
 bool registersAreXXFFMapped(){
    return registerArrayRead8(SCR) & 0x04;
 }
@@ -400,8 +404,7 @@ uint8_t getHwRegister8(uint32_t address){
          return getPortFValue();
 
       case PGDATA:
-         //read outputs as is and inputs as true, floating pins are high
-         return (registerArrayRead8(PGDATA) & registerArrayRead8(PGDIR)) | ~registerArrayRead8(PGDIR);
+         return getPortGValue();
 
       case PJDATA:
          //read outputs as is and inputs as true, floating pins are high
@@ -649,6 +652,7 @@ void setHwRegister8(uint32_t address, uint8_t value){
          registerArrayWrite8(address, value);
          checkPortDInterrupts();
          updateVibratorStatus();
+         updateBacklightAmplifierStatus();
          break;
       
       case PMSEL:

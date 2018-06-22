@@ -71,6 +71,7 @@ void clk32();//also checks all interrupts
 
 //CPU
 bool pllIsOn();
+bool backlightAmplifierState();
 bool registersAreXXFFMapped();
 bool sed1376ClockConnected();
 void refreshInputState();

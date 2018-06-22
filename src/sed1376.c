@@ -258,7 +258,7 @@ void sed1376Reset(){
    memset(sed1376BLut, 0x00, SED1376_LUT_SIZE);
    memset(sed1376Framebuffer, 0x00, SED1376_FB_SIZE);
 
-   palmMisc.backlightOn = false;
+   palmMisc.backlightLevel = 0;
    palmMisc.lcdOn = false;
 
    renderPixel = NULL;
@@ -329,12 +329,24 @@ void sed1376Render(){
             MULTITHREAD_LOOP for(uint32_t count = 0; count < 160 * 160; count++)
                palmFramebuffer[count] = ~palmFramebuffer[count];
 
-         //backlight off, half color intensity
-         if(!palmMisc.backlightOn)
-            MULTITHREAD_LOOP for(uint32_t count = 0; count < 160 * 160; count++){
-               palmFramebuffer[count] >>= 1;
-               palmFramebuffer[count] &= 0x7BEF;
-            }
+         //backlight level, 0 = 1/4 color intensity, 1 = 1/2 color intensity, 2 = full color intensity
+         switch(palmMisc.backlightLevel){
+            case 0:
+               MULTITHREAD_LOOP for(uint32_t count = 0; count < 160 * 160; count++){
+                  palmFramebuffer[count] >>= 2;
+                  palmFramebuffer[count] &= 0x39E7;
+               }
+               break;
+            case 1:
+               MULTITHREAD_LOOP for(uint32_t count = 0; count < 160 * 160; count++){
+                  palmFramebuffer[count] >>= 1;
+                  palmFramebuffer[count] &= 0x7BEF;
+               }
+               break;
+            case 2:
+               //nothing
+               break;
+         }
       }
       else{
          debugLog("Invalid screen format, color:%s, BPP:%d, rotation:%d\n", boolString(color), bitDepth, rotation);

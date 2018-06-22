@@ -116,6 +116,8 @@ static inline void selectRenderer(bool color, uint8_t bpp){
 
 //updaters
 static inline void updateLcdStatus(){
+   bool backlightEnabled = sed1376Registers[GPIO_CONT_0] & sed1376Registers[GPIO_CONF_0] & 0x10;
+
    palmMisc.lcdOn = sed1376Registers[GPIO_CONT_0] & sed1376Registers[GPIO_CONF_0] & 0x20;
-   palmMisc.backlightOn = sed1376Registers[GPIO_CONT_0] & sed1376Registers[GPIO_CONF_0] & 0x10;
+   palmMisc.backlightLevel = backlightEnabled ? (1 + backlightAmplifierState()) : 0;
 }
