@@ -1007,10 +1007,10 @@ void resetHwRegisters(){
    chips[CHIP_A_ROM].inBootMode = true;
 
    //masks for reading and writing
-   chips[CHIP_A_ROM].mask = 0x003FFFFF;
+   chips[CHIP_A_ROM].mask = 0x003FFFFF;//4mb
    chips[CHIP_B_SED].mask = 0x0003FFFF;
    chips[CHIP_C_USB].mask = 0x00000000;
-   chips[CHIP_D_RAM].mask = palmSpecialFeatures & FEATURE_RAM_HUGE ? 0x07FFFFFF/*128mb*/ : 0x00FFFFFF/*16mb*/;
+   chips[CHIP_D_RAM].mask = 0x00FFFFFF;//16mb
    
    //system control
    registerArrayWrite8(SCR, 0x1C);

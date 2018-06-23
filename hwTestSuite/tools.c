@@ -399,3 +399,49 @@ var listRomInfo(){
    
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
+
+var listChipSelects(){
+   static Boolean firstRun = true;
+   uint16_t y = 0;
+   
+   if(firstRun){
+      debugSafeScreenClear(C_WHITE);
+      StrPrintF(sharedDataBuffer, "CSCTRL1:0x%04X", readArbitraryMemory16(HW_REG_ADDR(CSCTRL1)));
+      UG_PutString(0, y, sharedDataBuffer);
+      y += FONT_HEIGHT + 1;
+      StrPrintF(sharedDataBuffer, "CSUGBA:0x%04X", readArbitraryMemory16(HW_REG_ADDR(CSUGBA)));
+      UG_PutString(0, y, sharedDataBuffer);
+      y += FONT_HEIGHT + 1;
+      StrPrintF(sharedDataBuffer, "CSA:0x%04X", readArbitraryMemory16(HW_REG_ADDR(CSA)));
+      UG_PutString(0, y, sharedDataBuffer);
+      y += FONT_HEIGHT + 1;
+      StrPrintF(sharedDataBuffer, "CSGBA:0x%04X", readArbitraryMemory16(HW_REG_ADDR(CSGBA)));
+      UG_PutString(0, y, sharedDataBuffer);
+      y += FONT_HEIGHT + 1;
+      StrPrintF(sharedDataBuffer, "CSB:0x%04X", readArbitraryMemory16(HW_REG_ADDR(CSB)));
+      UG_PutString(0, y, sharedDataBuffer);
+      y += FONT_HEIGHT + 1;
+      StrPrintF(sharedDataBuffer, "CSGBB:0x%04X", readArbitraryMemory16(HW_REG_ADDR(CSGBB)));
+      UG_PutString(0, y, sharedDataBuffer);
+      y += FONT_HEIGHT + 1;
+      StrPrintF(sharedDataBuffer, "CSC:0x%04X", readArbitraryMemory16(HW_REG_ADDR(CSC)));
+      UG_PutString(0, y, sharedDataBuffer);
+      y += FONT_HEIGHT + 1;
+      StrPrintF(sharedDataBuffer, "CSGBC:0x%04X", readArbitraryMemory16(HW_REG_ADDR(CSGBC)));
+      UG_PutString(0, y, sharedDataBuffer);
+      y += FONT_HEIGHT + 1;
+      StrPrintF(sharedDataBuffer, "CSD:0x%04X", readArbitraryMemory16(HW_REG_ADDR(CSD)));
+      UG_PutString(0, y, sharedDataBuffer);
+      y += FONT_HEIGHT + 1;
+      StrPrintF(sharedDataBuffer, "CSGBD:0x%04X", readArbitraryMemory16(HW_REG_ADDR(CSGBD)));
+      UG_PutString(0, y, sharedDataBuffer);
+      y += FONT_HEIGHT + 1;
+   }
+   
+   if(getButtonPressed(buttonBack)){
+      firstRun = true;
+      exitSubprogram();
+   }
+   
+   return makeVar(LENGTH_0, TYPE_NULL, 0);
+}

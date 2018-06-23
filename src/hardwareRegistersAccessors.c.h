@@ -71,15 +71,10 @@ static inline void setCsd(uint16_t value){
 
    chips[CHIP_D_RAM].enable = value & 0x0001;
    chips[CHIP_D_RAM].readOnly = value & 0x8000;
-   if(csControl1 & 0x0040 && value & 0x0200){
-      if(palmSpecialFeatures && FEATURE_RAM_HUGE)
-         chips[CHIP_D_RAM].size = 0x4000000/*64mb*/ << (value >> 1 & 0x0001);
-      else
-         chips[CHIP_D_RAM].size = 0x800000/*8mb*/ << (value >> 1 & 0x0001);
-   }
-   else{
+   if(csControl1 & 0x0040 && value & 0x0200)
+      chips[CHIP_D_RAM].size = 0x800000/*8mb*/ << (value >> 1 & 0x0001);
+   else
       chips[CHIP_D_RAM].size = 0x8000/*32kb*/ << (value >> 1 & 0x0007);
-   }
 
    //attributes
    chips[CHIP_D_RAM].supervisorOnlyProtectedMemory = value & 0x4000;

@@ -291,6 +291,10 @@ void resetFunctionViewer(){
       hwTests[totalHwTests].testFunction = listRomInfo;
       totalHwTests++;
       
+      StrNCopy(hwTests[totalHwTests].name, "List Chip Selects", TEST_NAME_LENGTH);
+      hwTests[totalHwTests].testFunction = listChipSelects;
+      totalHwTests++;
+      
       StrNCopy(hwTests[totalHwTests].name, "List P*DATA Registers", TEST_NAME_LENGTH);
       hwTests[totalHwTests].testFunction = listDataRegisters;
       totalHwTests++;

@@ -32,6 +32,7 @@ port d IRQ* bits edge triggered interrupt mode is not emulated
 edgeTriggeredInterruptLastValue may need to be locked when PLL is off
 port d data register seems to have its data bits cleared when an edge triggered interrupt is cleared(according to MC68VZ328UM.pdf Page 10-15)
 Dont know if it possible to have the backlight on and the display off at the same time(theres no reason for it but it may be possible)
+CSD and CSC chaining(the Palm m515 does this to create its 16mb RAM address space, verified with hardware test)
 
 Debug tools:
 missing icons
@@ -40,8 +41,8 @@ Memory:
 Sdcard can't be read or written to
 Sdcard can't be inserted or removed
 Sdcard has no error handling in save/load state
-storage RAM protect(likely already done from fixing chip select bits)
 USB chip address range
+USB chip may be swapped in to address space with a GPIO and reconfiguring CSC chip select
 
 SED1376:
 swivelview register
@@ -52,6 +53,7 @@ the second line on all the chip selects is not properly emulated, CS(ABCD)1 is m
 CSD and CSC may be chained to create a 16mb address space from 4x4mb chunks(only supporting 1x16mb)
 
 Fixed:
+storage RAM protect(already done from fixing chip select bits, ROP bit set in CSD, verified with hardware test)
 interrupt control register(ICR) POL5
 port g backlight state readback
 Timer capture events, I don't think there possible though with the Palms hardware(there not possible, the power button LED occupies the TIN pin which is required for capture events)
