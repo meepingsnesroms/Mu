@@ -15,6 +15,7 @@ var selfProbeSpi2();
 var getClk32Frequency();
 var getDeviceId();
 var getCpuInfo();
+var getInterruptInfo();
 var toggleBacklight();
 var toggleMotor();
 var toggleAlarmLed();

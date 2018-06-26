@@ -323,8 +323,16 @@ void resetFunctionViewer(){
       hwTests[totalHwTests].testFunction = getCpuInfo;
       totalHwTests++;
       
+      StrNCopy(hwTests[totalHwTests].name, "Get Interrupt Info", TEST_NAME_LENGTH);
+      hwTests[totalHwTests].testFunction = getInterruptInfo;
+      totalHwTests++;
+      
       StrNCopy(hwTests[totalHwTests].name, "Watch ICR", TEST_NAME_LENGTH);
       hwTests[totalHwTests].testFunction = watchIcr;
+      totalHwTests++;
+      
+      StrNCopy(hwTests[totalHwTests].name, "ADS7846 Read", TEST_NAME_LENGTH);
+      hwTests[totalHwTests].testFunction = ads7846Read;
       totalHwTests++;
       
       if(isM515){
@@ -352,10 +360,6 @@ void resetFunctionViewer(){
          
          StrNCopy(hwTests[totalHwTests].name, "TSTAT1 Semaphore Info", TEST_NAME_LENGTH);
          hwTests[totalHwTests].testFunction = tstat1GetSemaphoreLockOrder;
-         totalHwTests++;
-         
-         StrNCopy(hwTests[totalHwTests].name, "ADS7846 Read", TEST_NAME_LENGTH);
-         hwTests[totalHwTests].testFunction = ads7846Read;
          totalHwTests++;
          
          StrNCopy(hwTests[totalHwTests].name, "Get SPI2 ENABLE Delay", TEST_NAME_LENGTH);

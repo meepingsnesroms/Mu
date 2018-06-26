@@ -537,6 +537,36 @@ var getCpuInfo(){
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
 
+var getInterruptInfo(){
+   static Boolean firstRun = true;
+   uint16_t y = 0;
+   
+   if(firstRun){
+      debugSafeScreenClear(C_WHITE);
+      firstRun = false;
+   }
+   
+   if(getButtonPressed(buttonBack)){
+      firstRun = true;
+      exitSubprogram();
+   }
+
+   StrPrintF(sharedDataBuffer, "IMR:0x%08lX", readArbitraryMemory32(HW_REG_ADDR(IMR)));
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   StrPrintF(sharedDataBuffer, "IPR:0x%08lX", readArbitraryMemory32(HW_REG_ADDR(IPR)));
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   StrPrintF(sharedDataBuffer, "ISR:0x%08lX", readArbitraryMemory32(HW_REG_ADDR(ISR)));
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   StrPrintF(sharedDataBuffer, "ILCR:0x%04X", readArbitraryMemory16(HW_REG_ADDR(ILCR)));
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   
+   return makeVar(LENGTH_0, TYPE_NULL, 0);
+}
+
 var toggleBacklight(){
    static Boolean firstRun = true;
    uint16_t y = 0;

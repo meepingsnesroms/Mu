@@ -1,3 +1,8 @@
+HwrIRQ4Handler Interrupt Level 4 Priority(top of the list is checked first):
+UART 1 and 2(they have the same priority)
+RTC
+All Buttons
+
 IVR = 0x18
 interrupt vector start = 0x60
 

@@ -273,6 +273,9 @@ static inline void setSpiCont2(uint16_t value){
          setIprIsrBit(INT_SPI2);
    }
 
+   //check for any interrupts from the transfer
+   checkInterrupts();
+
    registerArrayWrite16(SPICONT2, value & 0xE3FF);
 }
 

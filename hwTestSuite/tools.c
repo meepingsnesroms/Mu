@@ -9,38 +9,6 @@
 #include "debug.h"
 #include "ugui.h"
 
-#if 0
-Err makeFile(uint8_t* data, uint32_t size, char* fileName){
-   FileHand file;
-   Err error;
-   uint32_t count;
-   
-   file = FileOpen(0 /*cardNo*/, fileName, (uint32_t)'DATA', (uint32_t)'GuiC', fileModeReadWrite, &error);
-   if(file == fileNullHandle || error != errNone)
-      return error;
-   
-   /*the copy is used to anonymize the data source*/
-   count = size;
-   while(count != 0){
-      uint32_t chunkSize = min(count, SHARED_DATA_BUFFER_SIZE);
-      int32_t bytesWritten;
-      uint32_t i;
-      for(i = 0; i < chunkSize; i++){
-         sharedDataBuffer[i] = data[i + size - count];
-      }
-      bytesWritten = FileWrite(file, sharedDataBuffer, 1, chunkSize, &error);
-      if(bytesWritten != chunkSize || error != errNone){
-         FileClose(file);
-         return error;
-      }
-      
-      count -= chunkSize;
-   }
-   
-   error = FileClose(file);
-   return error;
-}
-#endif
 
 Err makeFile(uint8_t* data, uint32_t size, char* fileName){
    uint16_t volRef = 0;
@@ -84,9 +52,6 @@ Err makeFile(uint8_t* data, uint32_t size, char* fileName){
 }
 
 uint16_t ads7846GetValue(uint8_t channel, Boolean referenceMode, Boolean mode8bit){
-   uint8_t osPgdata = readArbitraryMemory8(HW_REG_ADDR(PGDATA));
-   uint16_t osSpi2Control = readArbitraryMemory16(HW_REG_ADDR(SPICONT2)) & 0xE230;/*use data rate, phase and polarity from OS, also check if SPI2 is enabled*/
-   uint16_t spi2Control = osSpi2Control;
    uint8_t config = 0x80;
    uint16_t value;
    
@@ -98,55 +63,25 @@ uint16_t ads7846GetValue(uint8_t channel, Boolean referenceMode, Boolean mode8bi
    
    config |= channel << 4 & 0x70;
    
-   /*the chip select line seems to be here, pull it low*/
-   //writeArbitraryMemory8(HW_REG_ADDR(PGDATA), osPgdata & 0xFB);
-   writeArbitraryMemory8(HW_REG_ADDR(PGDATA), osPgdata | 0x08);
-   
-   /*wait until SPI2 is free*/
-   while(readArbitraryMemory16(HW_REG_ADDR(SPICONT2)) & 0x0100);
-   
    /*enable SPI 2 if disabled*/
-   if(!(spi2Control & 0x0200)){
-      spi2Control |= 0x0200;
-      writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), spi2Control);
-   }
-   
-   /*flush the register*/
-   writeArbitraryMemory16(HW_REG_ADDR(SPIDATA2), 0x0000);
-   writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), spi2Control | 0x0100/*exchange*/ | 0x0015);
-   while(readArbitraryMemory16(HW_REG_ADDR(SPICONT2)) & 0x0100);
+   writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), 0x4207);
    
    /*set data to send*/
    writeArbitraryMemory16(HW_REG_ADDR(SPIDATA2), config << 8);
    
-#if 1
    /*send data*/
-   writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), spi2Control | 0x0100/*exchange*/ | 0x0007);
+   writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), 0x4307);
+   while(readArbitraryMemory16(HW_REG_ADDR(SPICONT2)) & 0x0100);
+
+   /*receive data*/
+   writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), 0x4300 | (mode8bit ? 0x0008 : 0x000C));
    while(readArbitraryMemory16(HW_REG_ADDR(SPICONT2)) & 0x0100);
    
-   /*clear any data received in SPIDATA2 during the previous send*/
-   writeArbitraryMemory16(HW_REG_ADDR(SPIDATA2), 0x0000);
-   /*trigger a busy event*//*there is a 1 bit delay after the config byte before data is sent*/
-   writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), spi2Control | 0x0100/*exchange*/);
-   
-   /*receive data, mode = 1(8 bits) or mode = 0(12 bits), 1 bit is a busy event*/
-   writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), spi2Control | 0x0100/*exchange*/ | (mode8bit ? 0x0007 : 0x000B));
-   while(readArbitraryMemory16(HW_REG_ADDR(SPICONT2)) & 0x0100);
-#endif
-#if 0
-   /*send and receive at the same time, should be 7 bits in SPIDATA2*/
-   writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), spi2Control | 0x0100/*exchange*/ | 0x000F);
-   while(readArbitraryMemory16(HW_REG_ADDR(SPICONT2)) & 0x0100);
-#endif
-   
-   /*get value returned, should have*/
+   /*get value returned*/
    value = readArbitraryMemory16(HW_REG_ADDR(SPIDATA2));
    
-   /*return to OS state*/
-   writeArbitraryMemory8(HW_REG_ADDR(PGDATA), osPgdata);
-   writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), osSpi2Control);
-   
-   /*may need to convert returned value some*/
+   /*disable SPI2*/
+   writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), 0xE000);
    
    return value;
 }
