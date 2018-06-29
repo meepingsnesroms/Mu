@@ -563,6 +563,9 @@ var getInterruptInfo(){
    StrPrintF(sharedDataBuffer, "ILCR:0x%04X", readArbitraryMemory16(HW_REG_ADDR(ILCR)));
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
+   StrPrintF(sharedDataBuffer, "ICR:0x%02X", readArbitraryMemory16(HW_REG_ADDR(ICR)));
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
    
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
@@ -684,24 +687,3 @@ var watchPenIrq(){
    
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
-
-var watchIcr(){
-   static Boolean firstRun = true;
-   
-   if(firstRun){
-      firstRun = false;
-      debugSafeScreenClear(C_WHITE);
-   }
-   
-   if(getButtonPressed(buttonBack)){
-      firstRun = true;
-      writeArbitraryMemory8(HW_REG_ADDR(PFSEL), readArbitraryMemory8(HW_REG_ADDR(PFSEL)) & 0xFD);
-      exitSubprogram();
-   }
-
-   StrPrintF(sharedDataBuffer, "ICR:0x%02X", readArbitraryMemory16(HW_REG_ADDR(ICR)));
-   UG_PutString(0, 0, sharedDataBuffer);
-   
-   return makeVar(LENGTH_0, TYPE_NULL, 0);
-}
-

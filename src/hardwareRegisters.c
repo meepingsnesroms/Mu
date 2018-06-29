@@ -69,17 +69,6 @@ void refreshInputState(){
          setIprIsrBit(INT_IRQ5);
       else
          clearIprIsrBit(INT_IRQ5);
-
-      /*
-      //state changed trigger an interrupt
-      if(penIrqPin != (bool)(edgeTriggeredInterruptLastValue & INT_IRQ5))
-         setIprIsrBit(INT_IRQ5);
-
-      if(penIrqPin)
-         edgeTriggeredInterruptLastValue |= INT_IRQ5;
-      else
-         edgeTriggeredInterruptLastValue &= ~INT_IRQ5;
-      */
    }
 
    //check for button presses and interrupts

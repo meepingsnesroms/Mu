@@ -327,10 +327,6 @@ void resetFunctionViewer(){
       hwTests[totalHwTests].testFunction = getInterruptInfo;
       totalHwTests++;
       
-      StrNCopy(hwTests[totalHwTests].name, "Watch ICR", TEST_NAME_LENGTH);
-      hwTests[totalHwTests].testFunction = watchIcr;
-      totalHwTests++;
-      
       StrNCopy(hwTests[totalHwTests].name, "ADS7846 Read", TEST_NAME_LENGTH);
       hwTests[totalHwTests].testFunction = ads7846Read;
       totalHwTests++;
