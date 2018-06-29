@@ -371,8 +371,8 @@ uint8_t getHwRegister8(uint32_t address){
 #endif
    switch(address){
       case PADATA:
-         //read outputs as is and inputs as true, floating pins are high
-         return (registerArrayRead8(PADATA) & registerArrayRead8(PADIR)) | ~registerArrayRead8(PADIR);
+         //not attached, used as data lines
+         return 0x00;
 
       case PBDATA:
          //read outputs as is and inputs as true, floating pins are high

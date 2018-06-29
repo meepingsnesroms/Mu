@@ -63,6 +63,12 @@ uint16_t ads7846GetValue(uint8_t channel, Boolean referenceMode, Boolean mode8bi
    
    config |= channel << 4 & 0x70;
    
+   /*misc configs from HwrADC*/
+   *((volatile uint8_t*)0xFFFFF431) &= 0xFB;
+   *((volatile uint8_t*)0xFFFFF420) |= 0x01;
+   *((volatile uint8_t*)0xFFFFF421) &= 0xFE;
+   *((volatile uint8_t*)0xFFFFF422) &= 0xFE;
+   
    /*enable SPI 2 if disabled*/
    writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), 0x4207);
    
@@ -82,6 +88,9 @@ uint16_t ads7846GetValue(uint8_t channel, Boolean referenceMode, Boolean mode8bi
    
    /*disable SPI2*/
    writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), 0xE000);
+   
+   /*misc configs from HwrADC*/
+   *((uint8_t*)0xFFFFF431) |= 0x04;
    
    return value;
 }
