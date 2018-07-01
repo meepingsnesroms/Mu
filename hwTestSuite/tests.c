@@ -10,6 +10,7 @@
 #include "tools.h"
 #include "cpu.h"
 #include "ugui.h"
+#include "blobs.h"
 
 
 var testButtonInput(){
@@ -424,6 +425,42 @@ var ads7846Read(){
    
    for(ads7846Channel = 0; ads7846Channel < 8; ads7846Channel++){
       StrPrintF(sharedDataBuffer, "Ch:%d Value:0x%04X", ads7846Channel, ads7846GetValue(ads7846Channel, referenceMode, mode8Bit));
+      UG_PutString(0, y, sharedDataBuffer);
+      y += FONT_HEIGHT + 1;
+   }
+   
+   return makeVar(LENGTH_0, TYPE_NULL, 0);
+}
+
+var ads7846ReadOsVersion(){
+   static Boolean firstRun = true;
+   static Boolean referenceMode;
+   uint8_t ads7846Channel;
+   uint16_t channelData[7];
+   uint16_t y = 0;
+   
+   if(firstRun){
+      firstRun = false;
+      referenceMode = false;
+      debugSafeScreenClear(C_WHITE);
+   }
+   
+   if(getButtonPressed(buttonSelect))
+      referenceMode = !referenceMode;
+   
+   if(getButtonPressed(buttonBack)){
+      firstRun = true;
+      exitSubprogram();
+   }
+   
+   customCall_HwrADC(channelData, referenceMode);
+   
+   StrPrintF(sharedDataBuffer, "Ref Mode:%s", referenceMode ? "true" : "false");
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   
+   for(ads7846Channel = 0; ads7846Channel < 8; ads7846Channel++){
+      StrPrintF(sharedDataBuffer, "Ch:%d Value:0x%04X", ads7846Channel, channelData[ads7846Channel]);
       UG_PutString(0, y, sharedDataBuffer);
       y += FONT_HEIGHT + 1;
    }

@@ -12,7 +12,7 @@ if [ "$1" = "clean" ]; then
    exit
 fi
 
-declare -a FILES=("testSuite" "viewer" "tools" "tests" "cpu" "irda" "vnc" "emuFunctions" "ugui")
+declare -a FILES=("testSuite" "viewer" "tools" "tests" "cpu" "irda" "vnc" "emuFunctions" "ugui" "blobs")
 DEFINES="-DHW_TEST"
 CFLAGS="-palmos4 -O3 $DEFINES"
 

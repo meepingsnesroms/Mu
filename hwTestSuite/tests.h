@@ -11,6 +11,7 @@ var checkSpi2EnableBitDelay();
 var interrogateSpi2();
 var tstat1GetSemaphoreLockOrder();
 var ads7846Read();
+var ads7846ReadOsVersion();
 var selfProbeSpi2();
 var getClk32Frequency();
 var getDeviceId();

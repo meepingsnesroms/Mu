@@ -50,16 +50,9 @@
 #include "ugui.h"
 
 /* Static functions */
- UG_RESULT _UG_WindowDrawTitle( UG_WINDOW* wnd );
- void _UG_WindowUpdate( UG_WINDOW* wnd );
- UG_RESULT _UG_WindowClear( UG_WINDOW* wnd );
- void _UG_TextboxUpdate(UG_WINDOW* wnd, UG_OBJECT* obj);
- void _UG_ButtonUpdate(UG_WINDOW* wnd, UG_OBJECT* obj);
- void _UG_CheckboxUpdate(UG_WINDOW* wnd, UG_OBJECT* obj);
- void _UG_ImageUpdate(UG_WINDOW* wnd, UG_OBJECT* obj);
  void _UG_PutChar( char chr, UG_S16 x, UG_S16 y, UG_COLOR fc, UG_COLOR bc, const UG_FONT* font);
 
- /* Pointer to the gui */
+/* Pointer to the gui */
 static UG_GUI* gui;
 
 #ifdef USE_FONT_4X6
@@ -5264,49 +5257,5 @@ void _UG_PutText(UG_TEXT* txt)
       }
       str++;
       yp += char_height + char_v_space;
-   }
-}
-
-/* -------------------------------------------------------------------------------- */
-/* -- MISCELLANEOUS FUNCTIONS                                                    -- */
-/* -------------------------------------------------------------------------------- */
-void UG_DrawBMP( UG_S16 xp, UG_S16 yp, UG_BMP* bmp )
-{
-   UG_S16 x,y,xs;
-   UG_U8 r,g,b;
-   UG_U16* p;
-   UG_U16 tmp;
-   UG_COLOR c;
-
-   if ( bmp->p == NULL ) return;
-
-   /* Only support 16 BPP so far */
-   if ( bmp->bpp == BMP_BPP_16 )
-   {
-      p = (UG_U16*)bmp->p;
-   }
-   else
-   {
-      return;
-   }
-
-   xs = xp;
-   for(y=0;y<bmp->height;y++)
-   {
-      xp = xs;
-      for(x=0;x<bmp->width;x++)
-      {
-         tmp = *p++;
-         /* Convert RGB565 to RGB888 */
-         r = (tmp>>11)&0x1F;
-         r<<=3;
-         g = (tmp>>5)&0x3F;
-         g<<=2;
-         b = (tmp)&0x1F;
-         b<<=3;
-         c = ((UG_COLOR)r<<16) | ((UG_COLOR)g<<8) | (UG_COLOR)b;
-         UG_DrawPixel( xp++ , yp , c );
-      }
-      yp++;
    }
 }

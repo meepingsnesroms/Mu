@@ -7,7 +7,9 @@
 #include "testSuiteConfig.h"
 
 /*defines*/
-#define CODE_SECTION(codeSection)  __attribute__((section(codeSection)))
+#define CODE_SECTION(codeSection) __attribute__((section(codeSection)))
+#define ALIGN(size) __attribute__((aligned(size)))
+
 #define SHARED_DATA_BUFFER_SIZE 1000
 
 #define PalmOS35 sysMakeROMVersion(3,5,0,sysROMStageRelease,0)
