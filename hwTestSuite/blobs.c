@@ -105,4 +105,4 @@ static ALIGN(2) uint8_t HwrADC_PIC_bin[] = {
 /*static uint32_t HwrADC_PIC_len = 1159;*/
 
 
-const void (*customCall_HwrADC)(void* returnData, uint16_t mode) = (const void (*)(void* , uint16_t))HwrADC_PIC_bin;
+const void (*customCall_HwrADC)(uint16_t mode, void* returnData) = (const void (*)(uint16_t, void*))HwrADC_PIC_bin;

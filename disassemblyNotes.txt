@@ -1,3 +1,13 @@
+The first argument to a function is the last pushed on the stack(proof below, the 16 bit int is the last argument and its pushed first)
+
+ROM:1003026C                 move.w  d0,-(sp)        ; Move Data from Source to Destination
+ROM:1003026E                 move.l  a4,-(sp)        ; Move Data from Source to Destination
+ROM:10030270                 move.l  d7,-(sp)        ; Move Data from Source to Destination
+ROM:10030272                 trap    #$F             ; Trap sysTrapStrNCopy
+ROM:10030272                 dc.w    $A2CE
+Char *	StrNCopy(Char *dst, const Char *src, Int16 n)SYS_TRAP(sysTrapStrNCopy);
+
+
 HwrIRQ4Handler Interrupt Level 4 Priority(top of the list is checked first):
 UART 1 and 2(they have the same priority)
 RTC
