@@ -4,6 +4,6 @@
 #include <PalmOS.h>
 #include <stdint.h>
 
-const void (*customCall_HwrADC)(uint16_t mode, void* returnData);
+uint16_t (*customCall_HwrADC)(uint16_t mode, void* returnData);
 
 #endif

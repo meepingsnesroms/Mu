@@ -439,6 +439,7 @@ var ads7846ReadOsVersion(){
    uint16_t channelData[14];/*should be 7 but just want to be safe*/
    uint16_t y = 0;
    
+   
    if(firstRun){
       firstRun = false;
       referenceMode = false;
@@ -455,7 +456,7 @@ var ads7846ReadOsVersion(){
    
    customCall_HwrADC(referenceMode, channelData);
    
-   StrPrintF(sharedDataBuffer, "Ref Mode:%s", referenceMode ? "true" : "false");
+   StrPrintF(sharedDataBuffer, "Ref Mode:%s", referenceMode ? "true " : "false");
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
    
