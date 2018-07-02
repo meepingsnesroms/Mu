@@ -435,7 +435,7 @@ var ads7846Read(){
 
 var ads7846ReadOsVersion(){
    static Boolean firstRun = true;
-   static Boolean referenceMode;
+   static uint16_t mode;
    uint8_t ads7846Channel;
    uint16_t channelData[8];
    uint16_t y = 0;
@@ -443,12 +443,15 @@ var ads7846ReadOsVersion(){
    
    if(firstRun){
       firstRun = false;
-      referenceMode = false;
+      mode = 0;
       debugSafeScreenClear(C_WHITE);
    }
    
-   if(getButtonPressed(buttonSelect))
-      referenceMode = !referenceMode;
+   if(getButtonPressed(buttonSelect)){
+      mode++;/*modes 0-8 are valid, 9 is to test invalid args*/
+      if(mode > 9)
+         mode = 0;
+   }
    
    if(getButtonPressed(buttonBack)){
       firstRun = true;
@@ -456,9 +459,9 @@ var ads7846ReadOsVersion(){
    }
    
    memset(channelData, 0x00, 8 * sizeof(uint16_t));
-   customCall_HwrADC(referenceMode, channelData);
+   customCall_HwrADC(mode, channelData);
    
-   StrPrintF(sharedDataBuffer, "Ref Mode:%s", referenceMode ? "true " : "false");
+   StrPrintF(sharedDataBuffer, "Mode:%d", mode);
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
    

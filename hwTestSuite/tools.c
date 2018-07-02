@@ -292,7 +292,7 @@ var listRomInfo(){
       
       firstRun = false;
       
-      //get ROM info
+      /*get ROM info*/
       if(csugba & 0x8000)
          romAddress |= (uint32_t)csugba << 17 & 0xE0000000;
       romAddress |= (uint32_t)csgba << 13;
@@ -316,21 +316,21 @@ var listRomInfo(){
    }
    
    if(getButtonPressed(buttonSelect)){
-      //ROM must be attached to CSA(chip select a) on Dragonball VZ as it controls the boot up process
-      //the only 3 restrictions to use this dumper are, you need a Dragonball VZ Palm, an SD card must be inserted and the SD card must be bigger than ROM / 128k rounded up to the nearest power of 2 * 128k
+      /*ROM must be attached to CSA(chip select a) on Dragonball VZ as it controls the boot up process*/
+      /*the only 3 restrictions to use this dumper are, you need a Dragonball VZ Palm, an SD card must be inserted and the SD card must be bigger than ROM / 128k rounded up to the nearest power of 2 * 128k*/
       uint16_t csa = readArbitraryMemory16(HW_REG_ADDR(CSA));
       uint16_t csgba = readArbitraryMemory16(HW_REG_ADDR(CSGBA));
       uint16_t csugba = readArbitraryMemory16(HW_REG_ADDR(CSUGBA));
       uint32_t romAddress = 0x00000000;
       uint32_t romSize = 0x00000000;
       
-      //get ROM info
+      /*get ROM info*/
       if(csugba & 0x8000)
          romAddress |= (uint32_t)csugba << 17 & 0xE0000000;
       romAddress |= (uint32_t)csgba << 13;
       romSize = 0x20000/*128k*/ << (csa >> 1 & 0x0007);
       
-      //CSA has no protected area, can read directly from address space without changing it
+      /*CSA has no protected area, can read directly from address space without changing it*/
       
       debugSafeScreenClear(C_WHITE);
       StrPrintF(sharedDataBuffer, "Dumping...", romAddress);
