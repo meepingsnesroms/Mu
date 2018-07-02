@@ -14,7 +14,7 @@ var ads7846Read();
 var ads7846ReadOsVersion();
 var selfProbeSpi2();
 var getClk32Frequency();
-var getDeviceId();
+var getDeviceInfo();
 var getCpuInfo();
 var getInterruptInfo();
 var toggleBacklight();

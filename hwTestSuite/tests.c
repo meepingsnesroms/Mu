@@ -528,18 +528,23 @@ var getClk32Frequency(){
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
 
-var getDeviceId(){
+var getDeviceInfo(){
    static Boolean firstRun = true;
    
    if(firstRun){
       char deviceId[5];
+      uint16_t y = 0;
       
       firstRun = false;
       debugSafeScreenClear(C_WHITE);
       FtrGet(sysFtrCreator, sysFtrNumOEMDeviceID, deviceId);
       deviceId[4] = '\0';/*Palm OS sprintf doesnt support %.*s string length modifyers*/
       StrPrintF(sharedDataBuffer, "Device ID:%s", &deviceId);
-      UG_PutString(0, 0, sharedDataBuffer);
+      UG_PutString(0, y, sharedDataBuffer);
+      y += FONT_HEIGHT + 1;
+      StrPrintF(sharedDataBuffer, "OS String:%s", SysGetOSVersionString());
+      UG_PutString(0, y, sharedDataBuffer);
+      y += FONT_HEIGHT + 1;
    }
    
    if(getButtonPressed(buttonBack)){

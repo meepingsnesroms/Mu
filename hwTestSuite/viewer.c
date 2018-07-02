@@ -315,8 +315,8 @@ void resetFunctionViewer(){
       hwTests[totalHwTests].testFunction = getClk32Frequency;
       totalHwTests++;
       
-      StrNCopy(hwTests[totalHwTests].name, "Get Device ID", TEST_NAME_LENGTH);
-      hwTests[totalHwTests].testFunction = getDeviceId;
+      StrNCopy(hwTests[totalHwTests].name, "Get Device Info", TEST_NAME_LENGTH);
+      hwTests[totalHwTests].testFunction = getDeviceInfo;
       totalHwTests++;
       
       StrNCopy(hwTests[totalHwTests].name, "Get CPU Info", TEST_NAME_LENGTH);
