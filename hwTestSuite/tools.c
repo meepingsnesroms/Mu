@@ -134,6 +134,11 @@ float percentageOfTimeAs1(uint32_t address, uint8_t readSize, uint8_t bitNumber,
    return (float)timesAs1 / (float)samples * 100.0;
 }
 
+uint32_t calcCrc32(uint8_t* data, uint32_t size){
+   //TODO
+   return 0x6481A088;/*Palm m515 ROM checksum*/
+}
+
 var hexRamBrowser(){
    static Boolean firstRun = true;
    static uint32_t nibble;

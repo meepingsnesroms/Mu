@@ -331,10 +331,6 @@ void resetFunctionViewer(){
       hwTests[totalHwTests].testFunction = ads7846Read;
       totalHwTests++;
       
-      StrNCopy(hwTests[totalHwTests].name, "ADS7846 OS Read", TEST_NAME_LENGTH);
-      hwTests[totalHwTests].testFunction = ads7846ReadOsVersion;
-      totalHwTests++;
-      
       if(isM515){
          StrNCopy(hwTests[totalHwTests].name, "Toggle Backlight", TEST_NAME_LENGTH);
          hwTests[totalHwTests].testFunction = toggleBacklight;
@@ -350,6 +346,12 @@ void resetFunctionViewer(){
          
          StrNCopy(hwTests[totalHwTests].name, "Watch PENIRQ", TEST_NAME_LENGTH);
          hwTests[totalHwTests].testFunction = watchPenIrq;
+         totalHwTests++;
+      }
+      
+      if(haveKsyms){
+         StrNCopy(hwTests[totalHwTests].name, "ADS7846 OS Read", TEST_NAME_LENGTH);
+         hwTests[totalHwTests].testFunction = ads7846ReadOsVersion;
          totalHwTests++;
       }
       

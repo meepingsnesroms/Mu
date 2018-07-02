@@ -65,6 +65,7 @@ uint16_t palmButtons;
 uint16_t palmButtonsLastFrame;
 Boolean  unsafeMode;
 Boolean  isM515;
+Boolean  haveKsyms;
 uint8_t* sharedDataBuffer;
 
 /*video*/
@@ -234,6 +235,7 @@ static Boolean testerInit(){
    /*setup subprogram enviroment*/
    FtrGet(sysFtrCreator, sysFtrNumOEMDeviceID, &deviceId);
    isM515 = deviceId == (uint32_t)'lith';/*"lith" is the Palm m515 device code, likely because it is one of the first with a lithium ion battery*/
+   haveKsyms = initUndocumentedApiHandlers();
    unsafeMode = false;
    subprogramIndex = 0;
    subprogramArgsSet = false;

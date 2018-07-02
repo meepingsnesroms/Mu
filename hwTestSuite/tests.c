@@ -1,6 +1,7 @@
 #include <PalmOS.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "testSuite.h"
 #include "testSuiteConfig.h"
@@ -10,7 +11,7 @@
 #include "tools.h"
 #include "cpu.h"
 #include "ugui.h"
-#include "blobs.h"
+#include "undocumentedApis.h"
 
 
 var testButtonInput(){
@@ -436,7 +437,7 @@ var ads7846ReadOsVersion(){
    static Boolean firstRun = true;
    static Boolean referenceMode;
    uint8_t ads7846Channel;
-   uint16_t channelData[14];/*should be 7 but just want to be safe*/
+   uint16_t channelData[8];
    uint16_t y = 0;
    
    
@@ -454,6 +455,7 @@ var ads7846ReadOsVersion(){
       exitSubprogram();
    }
    
+   memset(channelData, 0x00, 8 * sizeof(uint16_t));
    customCall_HwrADC(referenceMode, channelData);
    
    StrPrintF(sharedDataBuffer, "Ref Mode:%s", referenceMode ? "true " : "false");
