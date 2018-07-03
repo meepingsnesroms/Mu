@@ -252,10 +252,8 @@ static inline void setSpiCont2(uint16_t value){
       //uint16_t oldSpi2Data = spi2Data;
 
       for(uint8_t bits = 0; bits < bitCount; bits++){
-         //the Palm m515 seems to invert received bits
-         bool newBit = ads7846ExchangeBit(spi2Data & 0x8000);
          spi2Data <<= 1;
-         spi2Data |= !newBit;
+         spi2Data |= ads7846ExchangeBit(spi2Data & 0x8000);
       }
       registerArrayWrite16(SPIDATA2, spi2Data);
 
