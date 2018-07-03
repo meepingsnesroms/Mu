@@ -1,3 +1,5 @@
+cmp.* seems like it can only set the Carry flag if the result or one of the parameters is negative
+
 The first argument to a function is the last pushed on the stack(proof below, the 16 bit int is the last argument and its pushed first)
 
 ROM:1003026C                 move.w  d0,-(sp)        ; Move Data from Source to Destination
