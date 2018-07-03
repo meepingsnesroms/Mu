@@ -248,12 +248,15 @@ static inline void setSpiCont2(uint16_t value){
    if(value & oldSpiCont2 & 0x0200 && value & 0x0100){
       //enabled and exchange set
       uint8_t bitCount = (value & 0x000F) + 1;
+      uint16_t startBit = 1 << (bitCount - 1);
       uint16_t spi2Data = registerArrayRead16(SPIDATA2);
       //uint16_t oldSpi2Data = spi2Data;
 
+      //the input data is shifted into the unused bits if the transfer is less than 16 bits
       for(uint8_t bits = 0; bits < bitCount; bits++){
+         bool newBit = ads7846ExchangeBit(spi2Data & startBit);
          spi2Data <<= 1;
-         spi2Data |= ads7846ExchangeBit(spi2Data & 0x8000);
+         spi2Data |= newBit;
       }
       registerArrayWrite16(SPIDATA2, spi2Data);
 

@@ -73,24 +73,24 @@ uint16_t ads7846GetValue(uint8_t channel, Boolean referenceMode, Boolean mode8bi
    writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), 0x4207);
    
    /*set data to send*/
-   writeArbitraryMemory16(HW_REG_ADDR(SPIDATA2), config << 8);
+   writeArbitraryMemory16(HW_REG_ADDR(SPIDATA2), config);
    
    /*send data*/
    writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), 0x4307);
    while(readArbitraryMemory16(HW_REG_ADDR(SPICONT2)) & 0x0100);
-
+   
    /*receive data*/
-   writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), 0x4300 | (mode8bit ? 0x0008 : 0x000C));
+   writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), 0x4300 | (mode8bit ? 0x0007 : 0x000B));
    while(readArbitraryMemory16(HW_REG_ADDR(SPICONT2)) & 0x0100);
    
    /*get value returned*/
-   value = readArbitraryMemory16(HW_REG_ADDR(SPIDATA2));
+   value = readArbitraryMemory16(HW_REG_ADDR(SPIDATA2)) & (mode8bit ? 0x00FF : 0x0FFF);
    
    /*disable SPI2*/
    writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), 0xE000);
    
    /*misc configs from HwrADC*/
-   *((uint8_t*)0xFFFFF431) |= 0x04;
+   //*((volatile uint8_t*)0xFFFFF431) |= 0x04;
    
    return value;
 }
