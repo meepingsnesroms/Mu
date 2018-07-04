@@ -54,6 +54,7 @@ Err makeFile(uint8_t* data, uint32_t size, char* fileName){
 uint16_t ads7846GetValue(uint8_t channel, Boolean referenceMode, Boolean mode8bit){
    uint8_t config = 0x80;
    uint16_t value;
+   volatile uint32_t wasteTime;
    
    if(mode8bit)
       config |= 0x08;
@@ -63,11 +64,11 @@ uint16_t ads7846GetValue(uint8_t channel, Boolean referenceMode, Boolean mode8bi
    
    config |= channel << 4 & 0x70;
    
-   /*misc configs from HwrADC*/
-   *((volatile uint8_t*)0xFFFFF431) &= 0xFB;
-   *((volatile uint8_t*)0xFFFFF420) |= 0x01;
-   *((volatile uint8_t*)0xFFFFF421) &= 0xFE;
-   *((volatile uint8_t*)0xFFFFF422) &= 0xFE;
+   /*misc configs from HwrADC, purpose unknown*/
+   writeArbitraryMemory8(HW_REG_ADDR(PGDATA), readArbitraryMemory8(HW_REG_ADDR(PGDATA)) & 0xFB);
+   writeArbitraryMemory8(HW_REG_ADDR(PEDIR), readArbitraryMemory8(HW_REG_ADDR(PEDIR)) | 0x01);
+   writeArbitraryMemory8(HW_REG_ADDR(PEDATA), readArbitraryMemory8(HW_REG_ADDR(PEDATA)) & 0xFE);
+   writeArbitraryMemory8(HW_REG_ADDR(PEPUEN), readArbitraryMemory8(HW_REG_ADDR(PEPUEN)) & 0xFE);
    
    /*enable SPI 2 if disabled*/
    writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), 0x4207);
@@ -79,6 +80,11 @@ uint16_t ads7846GetValue(uint8_t channel, Boolean referenceMode, Boolean mode8bi
    writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), 0x4307);
    while(readArbitraryMemory16(HW_REG_ADDR(SPICONT2)) & 0x0100);
    
+   /*wait for the conversion to settle*/
+   wasteTime = 0;
+   while(wasteTime < 30)
+      wasteTime++;
+   
    /*receive data*/
    writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), 0x4300 | (mode8bit ? 0x0007 : 0x000B));
    while(readArbitraryMemory16(HW_REG_ADDR(SPICONT2)) & 0x0100);
@@ -89,8 +95,8 @@ uint16_t ads7846GetValue(uint8_t channel, Boolean referenceMode, Boolean mode8bi
    /*disable SPI2*/
    writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), 0xE000);
    
-   /*misc configs from HwrADC*/
-   //*((volatile uint8_t*)0xFFFFF431) |= 0x04;
+   /*misc configs from HwrADC, purpose unknown*/
+   writeArbitraryMemory8(HW_REG_ADDR(PGDATA), readArbitraryMemory8(HW_REG_ADDR(PGDATA)) | 0x04);
    
    return value;
 }
