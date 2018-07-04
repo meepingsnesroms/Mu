@@ -64,7 +64,7 @@ uint16_t ads7846GetValue(uint8_t channel, Boolean referenceMode, Boolean mode8bi
    
    config |= channel << 4 & 0x70;
    
-   /*misc configs from HwrADC, purpose unknown*/
+   /*misc configs from HwrADC, ADS7846 dosent work without these*/
    writeArbitraryMemory8(HW_REG_ADDR(PGDATA), readArbitraryMemory8(HW_REG_ADDR(PGDATA)) & 0xFB);
    writeArbitraryMemory8(HW_REG_ADDR(PEDIR), readArbitraryMemory8(HW_REG_ADDR(PEDIR)) | 0x01);
    writeArbitraryMemory8(HW_REG_ADDR(PEDATA), readArbitraryMemory8(HW_REG_ADDR(PEDATA)) & 0xFE);
@@ -73,29 +73,33 @@ uint16_t ads7846GetValue(uint8_t channel, Boolean referenceMode, Boolean mode8bi
    /*enable SPI 2 if disabled*/
    writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), 0x4207);
    
-   /*set data to send*/
-   writeArbitraryMemory16(HW_REG_ADDR(SPIDATA2), config);
-   
-   /*send data*/
-   writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), 0x4307);
+   /*send data, only send the first 6 bits to leave the ADC enabled*/
+   writeArbitraryMemory16(HW_REG_ADDR(SPIDATA2), config >> 2);
+   writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), 0x4305);
    while(readArbitraryMemory16(HW_REG_ADDR(SPICONT2)) & 0x0100);
    
    /*wait for the conversion to settle*/
    wasteTime = 0;
-   while(wasteTime < 30)
+   while(wasteTime < 100)
       wasteTime++;
    
+   /*send last 2 bits and 1 wait bit*/
+   writeArbitraryMemory16(HW_REG_ADDR(SPIDATA2), config << 1);
+   writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), 0x4302);
+   while(readArbitraryMemory16(HW_REG_ADDR(SPICONT2)) & 0x0100);
+   
    /*receive data*/
-   writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), 0x4300 | (mode8bit ? 0x0007 : 0x000B));
+   writeArbitraryMemory16(HW_REG_ADDR(SPIDATA2), 0x0000);/*clear to prevent sending a new control byte*/
+   writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), 0x430F);
    while(readArbitraryMemory16(HW_REG_ADDR(SPICONT2)) & 0x0100);
    
    /*get value returned*/
-   value = readArbitraryMemory16(HW_REG_ADDR(SPIDATA2)) & (mode8bit ? 0x00FF : 0x0FFF);
+   value = readArbitraryMemory16(HW_REG_ADDR(SPIDATA2)) >> (mode8bit ? 8 : 4);
    
    /*disable SPI2*/
    writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), 0xE000);
    
-   /*misc configs from HwrADC, purpose unknown*/
+   /*misc configs from HwrADC, ADS7846 dosent work without this*/
    writeArbitraryMemory8(HW_REG_ADDR(PGDATA), readArbitraryMemory8(HW_REG_ADDR(PGDATA)) | 0x04);
    
    return value;
