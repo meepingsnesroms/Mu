@@ -32,6 +32,7 @@ port d IRQ* bits edge triggered interrupt mode is not emulated
 edgeTriggeredInterruptLastValue may need to be locked when PLL is off
 port d data register seems to have its data bits cleared when an edge triggered interrupt is cleared(according to MC68VZ328UM.pdf Page 10-15)
 Dont know if it possible to have the backlight on and the display off at the same time(theres no reason for it but it may be possible)
+power button must be pushed twice to turn the CPU back on
 
 Debug tools:
 missing icons
@@ -48,6 +49,11 @@ the second line on all the chip selects is not properly emulated, CS(ABCD)1 is m
 
 SED1376:
 swivelview register
+
+ADS7846:
+channels can't be read in single reference mode in hwTestSuite
+channels are not implemented properly in the emulator
+
 
 Fixed:
 storage RAM protect(already done from fixing chip select bits, ROP bit set in CSD, verified with hardware test)

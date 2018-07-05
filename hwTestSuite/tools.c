@@ -8,6 +8,7 @@
 #include "viewer.h"
 #include "debug.h"
 #include "ugui.h"
+#include "cpu.h"
 
 
 Err makeFile(uint8_t* data, uint32_t size, char* fileName){
@@ -64,6 +65,8 @@ uint16_t ads7846GetValue(uint8_t channel, Boolean referenceMode, Boolean mode8bi
    
    config |= channel << 4 & 0x70;
    
+   turnInterruptsOff();
+   
    /*misc configs from HwrADC, ADS7846 dosent work without these*/
    writeArbitraryMemory8(HW_REG_ADDR(PGDATA), readArbitraryMemory8(HW_REG_ADDR(PGDATA)) & 0xFB);
    writeArbitraryMemory8(HW_REG_ADDR(PEDIR), readArbitraryMemory8(HW_REG_ADDR(PEDIR)) | 0x01);
@@ -73,6 +76,7 @@ uint16_t ads7846GetValue(uint8_t channel, Boolean referenceMode, Boolean mode8bi
    /*enable SPI 2 if disabled*/
    writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), 0x4207);
    
+#if 0
    /*send data, only send the first 6 bits to leave the ADC enabled*/
    writeArbitraryMemory16(HW_REG_ADDR(SPIDATA2), config >> 2);
    writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), 0x4305);
@@ -86,6 +90,11 @@ uint16_t ads7846GetValue(uint8_t channel, Boolean referenceMode, Boolean mode8bi
    /*send last 2 bits and 1 wait bit*/
    writeArbitraryMemory16(HW_REG_ADDR(SPIDATA2), config << 1);
    writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), 0x4302);
+   while(readArbitraryMemory16(HW_REG_ADDR(SPICONT2)) & 0x0100);
+#endif
+   /*send data*/
+   writeArbitraryMemory16(HW_REG_ADDR(SPIDATA2), config << 1);
+   writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), 0x4308);
    while(readArbitraryMemory16(HW_REG_ADDR(SPICONT2)) & 0x0100);
    
    /*receive data*/
@@ -101,6 +110,8 @@ uint16_t ads7846GetValue(uint8_t channel, Boolean referenceMode, Boolean mode8bi
    
    /*misc configs from HwrADC, ADS7846 dosent work without this*/
    writeArbitraryMemory8(HW_REG_ADDR(PGDATA), readArbitraryMemory8(HW_REG_ADDR(PGDATA)) | 0x04);
+   
+   turnInterruptsOn();
    
    return value;
 }

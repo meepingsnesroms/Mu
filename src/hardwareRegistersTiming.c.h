@@ -316,6 +316,7 @@ void clk32(){
       if(pllWakeWait == 0){
          //reenable PLL and CPU
          registerArrayWrite16(PLLCR, registerArrayRead16(PLLCR) & 0xFFF7);
+         recalculateCpuSpeed();
          debugLog("PLL reenabled, CPU is on!\n");
       }
       pllWakeWait--;

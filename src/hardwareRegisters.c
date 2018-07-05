@@ -163,23 +163,8 @@ static void recalculateCpuSpeed(){
 static void pllWakeCpuIfOff(){
    if(!pllIsOn() && pllWakeWait == -1){
       //PLL is off and not already in the process of waking up
-      switch(registerArrayRead16(PLLCR) & 0x0003){
-         case 0x0000:
-            pllWakeWait = 32;
-            break;
-
-         case 0x0001:
-            pllWakeWait = 48;
-            break;
-
-         case 0x0002:
-            pllWakeWait = 64;
-            break;
-
-         case 0x0003:
-            pllWakeWait = 96;
-            break;
-      }
+      uint8_t pllWaitTable[4] = {32, 48, 64, 96};
+      pllWakeWait = pllWaitTable[registerArrayRead16(PLLCR) & 0x0003];
    }
 }
 

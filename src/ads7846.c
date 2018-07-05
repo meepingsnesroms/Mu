@@ -47,6 +47,7 @@ bool ads7846ExchangeBit(bool bitIn){
 
       //check if ADC is on, if not do nothing, PENIRQ is handled in refreshInputState() in hardwareRegisters.c
       if(powerSave != 0x02){
+         debugLog("Accessed ADS7846 Ch:%d, %s Mode.\n", (ads7846ControlByte & 0x70) >> 4, differentialMode ? "Diff" : "Normal");
          if(differentialMode){
             //differential mode, this is whats used for touchscreen positions
             switch(ads7846ControlByte & 0x70){
@@ -61,26 +62,26 @@ bool ads7846ExchangeBit(bool bitIn){
                      ads7846OutputValue = ads7846RangeMap(0, 219, 219 - palmInput.touchscreenY, 0x00EE, 0x0F00);
                   else
                      ads7846OutputValue = 0x0FFF;//y is on when dorment
-                  debugLog("Accessed ADS7846 Touchscreen Y.\n");
+                  //debugLog("Accessed ADS7846 Touchscreen Y.\n");
                   break;
 
                case 0x20:
                   //battery, unknown hasent gotten low enough to test yet
                   ads7846OutputValue = 0x0FFF;
                   //ads7846OutputValue = ads7846RangeMap(0, 100, palmMisc.batteryLevel, 0x0000, 0x07F8);
-                  debugLog("Accessed Batt, Diff Mode.\n");
+                  //debugLog("Accessed Batt, Diff Mode.\n");
                   break;
 
                case 0x30:
-                  //3 seems to be a duplicate of touchscreen x with a smaller range
+                  //touchscreen x relative to y
                   ads7846OutputValue = 0x0FFF;
-                  debugLog("Accessed ADS7846 Unknown Slot 3, Diff Mode.\n");
+                  //debugLog("Accessed ADS7846 Touchscreen X~Y, Diff Mode.\n");
                   break;
 
                case 0x40:
-                  //4 seems to be a duplicate of touchscreen y with a smaller range and higher start point
+                  //touchscreen y relative to x
                   ads7846OutputValue = 0x0FFF;
-                  debugLog("Accessed ADS7846 Empty Slot 4, Diff Mode.\n");
+                  //debugLog("Accessed ADS7846 Touchscreen Y~X, Diff Mode.\n");
                   break;
 
                case 0x50:
@@ -89,7 +90,7 @@ bool ads7846ExchangeBit(bool bitIn){
                      ads7846OutputValue = ads7846RangeMap(0, 159, 159 - palmInput.touchscreenX, 0x00FD, 0x0F47);
                   else
                      ads7846OutputValue = 0x0000;
-                  debugLog("Accessed ADS7846 Touchscreen X.\n");
+                  //debugLog("Accessed ADS7846 Touchscreen X.\n");
                   break;
 
                case 0x60:
@@ -104,62 +105,52 @@ bool ads7846ExchangeBit(bool bitIn){
             }
          }
          else{
-            ads7846OutputValue = 0x0FFF;
-            debugLog("Accessed ADS7846 Non Differencial Ch:%d.\n", (ads7846ControlByte & 0x70) >> 4);
-            /*
             //not differential mode, used for battery and dock
-            if(palmInput.touchscreenTouched){
-               //when screen touched all values are 0x0FFF in this mode
-               ads7846OutputValue = 0x0FFF;
+            switch(ads7846ControlByte & 0x70){
+               case 0x00:
+                  //temperature 0, unemulated for now
+                  ads7846OutputValue = 0x05C3;
+                  //debugLog("Accessed Temp 0.\n");
+                  break;
+
+               case 0x10:
+                  //touchscreen y, wrong mode
+                  ads7846OutputValue = 0x07C3;
+                  break;
+
+               case 0x20:
+                  //battery, unknown hasent gotten low enough to test yet
+                  ads7846OutputValue = 0x07C3;
+                  //debugLog("Accessed Batt, Non Diff Mode.\n");
+                  break;
+
+               case 0x30:
+                  //empty slot
+                  ads7846OutputValue = 0x05C0;
+                  break;
+
+               case 0x40:
+                  //empty slot
+                  ads7846OutputValue = 0x07C3;
+                  break;
+
+               case 0x50:
+                  //touchscreen x, wrong mode
+                  ads7846OutputValue = 0x0002;
+                  break;
+
+               case 0x60:
+                  //dock, unemulated for now, changes depending on the type of dock attached 0x07C3 in unplugged
+                  ads7846OutputValue = 0x07C3;
+                  //debugLog("Accessed Dock.\n");
+                  break;
+
+               case 0x70:
+                  //temperature 1, unemulated for now
+                  ads7846OutputValue = 0x06C3;
+                  //debugLog("Accessed Temp 1.\n");
+                  break;
             }
-            else{
-               switch(ads7846ControlByte & 0x70){
-                  case 0x00:
-                     //temperature 0, unemulated for now
-                     ads7846OutputValue = 0x05C3;
-                     //debugLog("Accessed Temp 0.\n");
-                     break;
-
-                  case 0x10:
-                     //touchscreen y, wrong mode
-                     ads7846OutputValue = 0x07C3;
-                     break;
-
-                  case 0x20:
-                     //battery, unknown hasent gotten low enough to test yet
-                     ads7846OutputValue = 0x07C3;
-                     debugLog("Accessed Batt, Non Diff Mode.\n");
-                     break;
-
-                  case 0x30:
-                     //empty slot
-                     ads7846OutputValue = 0x05C0;
-                     break;
-
-                  case 0x40:
-                     //empty slot
-                     ads7846OutputValue = 0x07C3;
-                     break;
-
-                  case 0x50:
-                     //touchscreen x, wrong mode
-                     ads7846OutputValue = 0x0002;
-                     break;
-
-                  case 0x60:
-                     //dock, unemulated for now, changes depending on the type of dock attached 0x07C3 in unplugged
-                     ads7846OutputValue = 0x07C3;
-                     //debugLog("Accessed Dock.\n");
-                     break;
-
-                  case 0x70:
-                     //temperature 1, unemulated for now
-                     ads7846OutputValue = 0x06C3;
-                     debugLog("Accessed Temp 1.\n");
-                     break;
-               }
-            }
-            */
          }
 
          ads7846OutputValue <<= 4;//move to output position
