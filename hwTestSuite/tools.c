@@ -76,10 +76,10 @@ uint16_t ads7846GetValue(uint8_t channel, Boolean referenceMode, Boolean mode8bi
    /*enable SPI 2 if disabled*/
    writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), 0x4207);
    
-#if 0
-   /*send data, only send the first 6 bits to leave the ADC enabled*/
-   writeArbitraryMemory16(HW_REG_ADDR(SPIDATA2), config >> 2);
-   writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), 0x4305);
+#if 1
+   /*send data, only send the first 5 bits to leave the ADC enabled*/
+   writeArbitraryMemory16(HW_REG_ADDR(SPIDATA2), config >> 3);
+   writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), 0x4304);
    while(readArbitraryMemory16(HW_REG_ADDR(SPICONT2)) & 0x0100);
    
    /*wait for the conversion to settle*/
@@ -87,11 +87,14 @@ uint16_t ads7846GetValue(uint8_t channel, Boolean referenceMode, Boolean mode8bi
    while(wasteTime < 100)
       wasteTime++;
    
-   /*send last 2 bits and 1 wait bit*/
-   writeArbitraryMemory16(HW_REG_ADDR(SPIDATA2), config << 1);
-   writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), 0x4302);
+   /*send last 3 bits, wait 1 bit, get 8/12 bit result then pad the transfer to 16 bits*/
+   writeArbitraryMemory16(HW_REG_ADDR(SPIDATA2), config << 14);
+   writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), 0x430F);
    while(readArbitraryMemory16(HW_REG_ADDR(SPICONT2)) & 0x0100);
-#endif
+   
+   /*get value returned*/
+   value = readArbitraryMemory16(HW_REG_ADDR(SPIDATA2)) & 0x0FFF;
+#else
    /*send data*/
    writeArbitraryMemory16(HW_REG_ADDR(SPIDATA2), config << 1);
    writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), 0x4308);
@@ -104,6 +107,7 @@ uint16_t ads7846GetValue(uint8_t channel, Boolean referenceMode, Boolean mode8bi
    
    /*get value returned*/
    value = readArbitraryMemory16(HW_REG_ADDR(SPIDATA2)) >> (mode8bit ? 8 : 4);
+#endif
    
    /*disable SPI2*/
    writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), 0xE000);
