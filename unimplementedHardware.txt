@@ -54,6 +54,8 @@ swivelview register
 ADS7846:
 channels can't be read in single reference mode in hwTestSuite
 channels are not implemented properly in the emulator
+electrical noise on lines(conversions probably should have +-20 added to values)
+need to trigger a false PENIRQ interrupt on reading certain channels
 
 
 Fixed:

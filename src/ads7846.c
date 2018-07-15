@@ -4,6 +4,8 @@
 #include "portability.h"
 
 
+static uint16_t dockResistorValues[PORT_END] = {0xFFF/*none*/, 0x1EB/*USB cradle*/, 0/*serial cradle*/, 0/*USB peripheral*/, 0/*serial peripheral*/};
+
 uint8_t  ads7846BitsToNextControl;//bits before starting a new control byte
 uint8_t  ads7846ControlByte;
 bool     ads7846PenIrqEnabled;
@@ -41,128 +43,133 @@ bool ads7846ExchangeBit(bool bitIn){
 
    if(ads7846BitsToNextControl == 6){
       //control byte and busy cycle finished, get output value
-      bool mode = ads7846ControlByte & 0x08;
+      bool bitMode = ads7846ControlByte & 0x08;
       bool differentialMode = !(ads7846ControlByte & 0x04);
+      uint8_t channel = (ads7846ControlByte & 0x70) >> 4;
       uint8_t powerSave = ads7846ControlByte & 0x03;
 
-      //check if ADC is on, if not do nothing, PENIRQ is handled in refreshInputState() in hardwareRegisters.c
-      if(powerSave != 0x02){
-         debugLog("Accessed ADS7846 Ch:%d, %s Mode.\n", (ads7846ControlByte & 0x70) >> 4, differentialMode ? "Diff" : "Normal");
-         if(differentialMode){
-            //differential mode, this is whats used for touchscreen positions
-            switch(ads7846ControlByte & 0x70){
-               case 0x00:
+      debugLog("Accessed ADS7846 Ch:%d, %s Mode, Power Save:%d.\n", channel, differentialMode ? "Diff" : "Normal", ads7846ControlByte & 0x03);
+
+      //check if ADC is on, PENIRQ is handled in refreshInputState() in hardwareRegisters.c
+      switch(powerSave){
+         case 0:
+         case 1:
+            //normal touchscreen operation
+            switch(channel){
+               case 0:
                   //temperature 0, wrong mode
-                  ads7846OutputValue = 0x0FFF;
+                  ads7846OutputValue = 0xFFF;
                   break;
 
-               case 0x10:
+               case 1:
                   //touchscreen y
                   if(palmInput.touchscreenTouched)
-                     ads7846OutputValue = ads7846RangeMap(0, 219, 219 - palmInput.touchscreenY, 0x00EE, 0x0F00);
+                     ads7846OutputValue = ads7846RangeMap(0, 219, 219 - palmInput.touchscreenY, 0x0EE, 0xF00);
                   else
-                     ads7846OutputValue = 0x0FFF;//y is on when dorment
-                  //debugLog("Accessed ADS7846 Touchscreen Y.\n");
+                     ads7846OutputValue = 0xFEF;//y is almost fully on when dorment
                   break;
 
-               case 0x20:
-                  //battery, unknown hasent gotten low enough to test yet
-                  ads7846OutputValue = 0x0FFF;
-                  //ads7846OutputValue = ads7846RangeMap(0, 100, palmMisc.batteryLevel, 0x0000, 0x07F8);
-                  //debugLog("Accessed Batt, Diff Mode.\n");
+               case 2:
+                  //battery, wrong mode
+                  ads7846OutputValue = 0xFFF;
                   break;
 
-               case 0x30:
-                  //touchscreen x relative to y
-                  ads7846OutputValue = 0x0FFF;
-                  //debugLog("Accessed ADS7846 Touchscreen X~Y, Diff Mode.\n");
+               case 3:
+                  //touchscreen x relative to y, unemulated
+                  ads7846OutputValue = 0xFFF;
+                  debugLog("ADS7846, Unemulated Channel:3\n");
                   break;
 
-               case 0x40:
-                  //touchscreen y relative to x
-                  ads7846OutputValue = 0x0FFF;
-                  //debugLog("Accessed ADS7846 Touchscreen Y~X, Diff Mode.\n");
+               case 4:
+                  //touchscreen y relative to x, unemulated
+                  ads7846OutputValue = 0xFFF;
+                  debugLog("ADS7846, Unemulated Channel:4\n");
                   break;
 
-               case 0x50:
+               case 5:
                   //touchscreen x
                   if(palmInput.touchscreenTouched)
-                     ads7846OutputValue = ads7846RangeMap(0, 159, 159 - palmInput.touchscreenX, 0x00FD, 0x0F47);
+                     ads7846OutputValue = ads7846RangeMap(0, 159, 159 - palmInput.touchscreenX, 0x0FD, 0xF47);
                   else
-                     ads7846OutputValue = 0x0000;
-                  //debugLog("Accessed ADS7846 Touchscreen X.\n");
+                     ads7846OutputValue = 0x000;
                   break;
 
-               case 0x60:
+               case 6:
                   //dock, wrong mode
-                  ads7846OutputValue = 0x0FFF;
+                  ads7846OutputValue = 0xFFF;
                   break;
 
-               case 0x70:
+               case 7:
                   //temperature 1, wrong mode
-                  ads7846OutputValue = 0x0FFF;
+                  ads7846OutputValue = 0xFFF;
                   break;
             }
-         }
-         else{
-            //not differential mode, used for battery and dock
-            switch(ads7846ControlByte & 0x70){
-               case 0x00:
-                  //temperature 0, unemulated for now
-                  ads7846OutputValue = 0x05C3;
-                  //debugLog("Accessed Temp 0.\n");
+            break;
+
+         case 2:
+            //ADC is off, return invalid data
+            if((channel == 3 || channel == 5) && !palmInput.touchscreenTouched)
+               ads7846OutputValue = 0x000;
+            else
+               ads7846OutputValue = 0xFFF;
+            break;
+
+         case 3:
+            //non touchscreen data
+            switch(channel){
+               case 0:
+                  //temperature 0, room temperature
+                  ads7846OutputValue = 0x3E2;
                   break;
 
-               case 0x10:
+               case 1:
                   //touchscreen y, wrong mode
-                  ads7846OutputValue = 0x07C3;
+                  ads7846OutputValue = 0xFFF;
                   break;
 
-               case 0x20:
+               case 2:
                   //battery, unknown hasent gotten low enough to test yet
-                  ads7846OutputValue = 0x07C3;
-                  //debugLog("Accessed Batt, Non Diff Mode.\n");
+                  ads7846OutputValue = 0x65C;//~90%
+                  //ads7846OutputValue = ads7846RangeMap(0, 100, palmMisc.batteryLevel, 0x0000, 0x07F8);
                   break;
 
-               case 0x30:
-                  //empty slot
-                  ads7846OutputValue = 0x05C0;
+               case 3:
+                  //touchscreen x relative to y, wrong mode
+                  ads7846OutputValue = 0x000;
                   break;
 
-               case 0x40:
-                  //empty slot
-                  ads7846OutputValue = 0x07C3;
+               case 4:
+                  //touchscreen y relative to x, wrong mode
+                  ads7846OutputValue = 0xFFF;
                   break;
 
-               case 0x50:
+               case 5:
                   //touchscreen x, wrong mode
-                  ads7846OutputValue = 0x0002;
+                  ads7846OutputValue = 0x000;
                   break;
 
-               case 0x60:
-                  //dock, unemulated for now, changes depending on the type of dock attached 0x07C3 in unplugged
-                  ads7846OutputValue = 0x07C3;
-                  //debugLog("Accessed Dock.\n");
+               case 6:
+                  //dock
+                  if(palmMisc.dataPort < PORT_END)
+                     ads7846OutputValue = dockResistorValues[palmMisc.dataPort];
+                  else
+                     ads7846OutputValue = dockResistorValues[PORT_NONE];
                   break;
 
-               case 0x70:
-                  //temperature 1, unemulated for now
-                  ads7846OutputValue = 0x06C3;
-                  //debugLog("Accessed Temp 1.\n");
+               case 7:
+                  //temperature 1, room temperature
+                  ads7846OutputValue = 0x4A1;
                   break;
             }
-         }
-
-         ads7846OutputValue <<= 4;//move to output position
-
-         //if 8 bit conversion, clear extra bits
-         if(mode)
-            ads7846OutputValue &= 0xFF00;
+            break;
       }
-      else{
-         //nothing in register
-         ads7846OutputValue = 0x0000;
-      }
+
+      //move to output position
+      ads7846OutputValue <<= 4;
+
+      //if 8 bit conversion, clear extra bits
+      if(bitMode)
+         ads7846OutputValue &= 0xFF00;
 
       ads7846PenIrqEnabled = !(powerSave & 0x01);
    }

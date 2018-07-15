@@ -64,6 +64,9 @@ uint16_t ads7846GetValue(uint8_t channel, Boolean referenceMode, Boolean mode8Bi
       config |= 0x04;
       config |= 0x03;/*force ADC and reference always on*/
    }
+   else{
+      config |= 0x01;/*force ADC always on and reference off*/
+   }
    
    config |= channel << 4 & 0x70;
    
