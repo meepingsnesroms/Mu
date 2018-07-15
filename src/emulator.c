@@ -715,7 +715,7 @@ void emulatorSaveState(uint8_t* data){
    offset += sizeof(uint8_t);
    writeStateValueUint8(data + offset, palmMisc.batteryLevel);
    offset += sizeof(uint8_t);
-   writeStateValueUint8(data + offset, palmMisc.inDock);
+   writeStateValueUint8(data + offset, palmMisc.dataPort);
    offset += sizeof(uint8_t);
 }
 
@@ -858,7 +858,7 @@ void emulatorLoadState(uint8_t* data){
    offset += sizeof(uint8_t);
    palmMisc.batteryLevel = readStateValueUint8(data + offset);
    offset += sizeof(uint8_t);
-   palmMisc.inDock = readStateValueUint8(data + offset);
+   palmMisc.dataPort = readStateValueUint8(data + offset);
    offset += sizeof(uint8_t);
 }
 

@@ -17,7 +17,7 @@ static uint8_t oldScr;
 void turnInterruptsOff(){
    if(interruptsEnabled){
       oldImr = readArbitraryMemory32(HW_REG_ADDR(IMR));
-      writeArbitraryMemory32(HW_REG_ADDR(IMR), 0xFFFFF0FD);/*leave timer 1 and button interrupts enabled or program will freeze*/
+      writeArbitraryMemory32(HW_REG_ADDR(IMR), 0xFFFFFFFF);
       interruptsEnabled = false;
    }
 }
@@ -102,8 +102,6 @@ var enterUnsafeMode(){
       oldScr = readArbitraryMemory8(HW_REG_ADDR(SCR));
       writeArbitraryMemory8(HW_REG_ADDR(SCR), oldScr & 0xEF);
       
-      turnInterruptsOff();
-      
       unsafeMode = true;
       resetFunctionViewer();
       return makeVar(LENGTH_1, TYPE_BOOL, true);/*now in unsafe mode*/
@@ -116,7 +114,6 @@ var exitUnsafeMode(){
    exitSubprogram();/*only run once/for one frame*/
    
    if(unsafeMode){
-      turnInterruptsOn();
       writeArbitraryMemory8(HW_REG_ADDR(SCR), oldScr);
       unsafeMode = false;
       resetFunctionViewer();

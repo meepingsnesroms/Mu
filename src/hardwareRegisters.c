@@ -144,7 +144,6 @@ static void recalculateCpuSpeed(){
       newCpuSpeed = 0.0;
    }
 
-   /*
    if(newCpuSpeed != palmCrystalCycles){
       debugLog("New CPU frequency of:%f cycles per second.\n", newCpuSpeed * CRYSTAL_FREQUENCY);
       debugLog("New CLK32 cycle count of:%f.\n", newCpuSpeed);
@@ -155,7 +154,6 @@ static void recalculateCpuSpeed(){
             debugLog("CPU turned off with DISPLL bit.\n");
       }
    }
-   */
 
    palmCrystalCycles = newCpuSpeed;
 }

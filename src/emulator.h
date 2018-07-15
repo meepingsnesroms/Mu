@@ -57,11 +57,20 @@ enum{
 
 //sdcard types
 enum{
-   CARD_BEGIN = 0,
    CARD_NONE = 0,
    CARD_SD,
    CARD_MMC,
    CARD_END
+};
+
+//port types
+enum{
+   PORT_NONE = 0,
+   PORT_USB_CRADLE,
+   PORT_SERIAL_CRADLE,
+   PORT_USB_PERIPHERAL,
+   PORT_SERIAL_PERIPHERAL,
+   PORT_END
 };
 
 //types
@@ -111,7 +120,7 @@ typedef struct{
    bool    vibratorOn;
    bool    batteryCharging;
    uint8_t batteryLevel;
-   bool    inDock;
+   uint8_t dataPort;
 }misc_hw_t;
 
 //CPU

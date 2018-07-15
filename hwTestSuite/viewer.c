@@ -7,7 +7,6 @@
 #include "tests.h"
 #include "debug.h"
 #include "cpu.h"
-#include "irda.h"
 #include "ugui.h"
 
 

@@ -252,6 +252,13 @@ static inline void setSpiCont2(uint16_t value){
       uint16_t spi2Data = registerArrayRead16(SPIDATA2);
       //uint16_t oldSpi2Data = spi2Data;
 
+      /*
+      if(spi2Data == 0x0AE0){
+         //first ADS7846 access, for debugging
+         spi2Data = spi2Data;
+      }
+      */
+
       //the input data is shifted into the unused bits if the transfer is less than 16 bits
       for(uint8_t bits = 0; bits < bitCount; bits++){
          bool newBit = ads7846ExchangeBit(spi2Data & startBit);
@@ -446,7 +453,7 @@ static inline uint8_t getPortKValue(){
    uint8_t portKDir = registerArrayRead8(PKDIR);
    uint8_t portKSel = registerArrayRead8(PKSEL);
 
-   portKValue |= !palmMisc.inDock << 2;
+   portKValue |= !(palmMisc.dataPort == PORT_USB_CRADLE || palmMisc.dataPort == PORT_SERIAL_CRADLE) << 2;//true if charging
    portKValue |= 0xFB;//floating pins are high
    portKValue &= ~portKDir & portKSel;
    portKValue |= portKData & portKDir & portKSel;

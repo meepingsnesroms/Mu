@@ -52,16 +52,18 @@ Err makeFile(uint8_t* data, uint32_t size, char* fileName){
    return error;
 }
 
-uint16_t ads7846GetValue(uint8_t channel, Boolean referenceMode, Boolean mode8bit){
+uint16_t ads7846GetValue(uint8_t channel, Boolean referenceMode, Boolean mode8Bit){
    uint8_t config = 0x80;
    uint16_t value;
    volatile uint32_t wasteTime;
    
-   if(mode8bit)
+   if(mode8Bit)
       config |= 0x08;
    
-   if(referenceMode)
+   if(referenceMode){
       config |= 0x04;
+      config |= 0x03;/*force ADC and reference always on*/
+   }
    
    config |= channel << 4 & 0x70;
    
@@ -74,9 +76,8 @@ uint16_t ads7846GetValue(uint8_t channel, Boolean referenceMode, Boolean mode8bi
    writeArbitraryMemory8(HW_REG_ADDR(PEPUEN), readArbitraryMemory8(HW_REG_ADDR(PEPUEN)) & 0xFE);
    
    /*enable SPI 2 if disabled*/
-   writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), 0x4207);
+   writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), 0x4200);
    
-#if 1
    /*send data, only send the first 5 bits to leave the ADC enabled*/
    writeArbitraryMemory16(HW_REG_ADDR(SPIDATA2), config >> 3);
    writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), 0x4304);
@@ -94,20 +95,6 @@ uint16_t ads7846GetValue(uint8_t channel, Boolean referenceMode, Boolean mode8bi
    
    /*get value returned*/
    value = readArbitraryMemory16(HW_REG_ADDR(SPIDATA2)) & 0x0FFF;
-#else
-   /*send data*/
-   writeArbitraryMemory16(HW_REG_ADDR(SPIDATA2), config << 1);
-   writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), 0x4308);
-   while(readArbitraryMemory16(HW_REG_ADDR(SPICONT2)) & 0x0100);
-   
-   /*receive data*/
-   writeArbitraryMemory16(HW_REG_ADDR(SPIDATA2), 0x0000);/*clear to prevent sending a new control byte*/
-   writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), 0x430F);
-   while(readArbitraryMemory16(HW_REG_ADDR(SPICONT2)) & 0x0100);
-   
-   /*get value returned*/
-   value = readArbitraryMemory16(HW_REG_ADDR(SPIDATA2)) >> (mode8bit ? 8 : 4);
-#endif
    
    /*disable SPI2*/
    writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), 0xE000);
@@ -118,45 +105,6 @@ uint16_t ads7846GetValue(uint8_t channel, Boolean referenceMode, Boolean mode8bi
    turnInterruptsOn();
    
    return value;
-}
-
-float percentageOfTimeAs1(uint32_t address, uint8_t readSize, uint8_t bitNumber, uint32_t samples, uint32_t delay){
-   /*gets the percentage of time a bit spends as a 1, for example a clock line should be exactly 50%, delay is in CLK32 pulses*/
-   uint32_t sampleCount;
-   uint32_t timesAs1 = 0;
-   
-   for(sampleCount = 0; sampleCount < samples; sampleCount++){
-      uint32_t value;
-      uint32_t wait;
-      Boolean lastClk32;
-      
-      switch(readSize){
-         case 8:
-            value = readArbitraryMemory8(address);
-            break;
-            
-         case 16:
-            value = readArbitraryMemory16(address);
-            break;
-            
-         case 32:
-            value = readArbitraryMemory32(address);
-            break;
-      }
-      
-      if(value >> bitNumber & 1)
-         timesAs1++;
-      
-      lastClk32 = readArbitraryMemory16(HW_REG_ADDR(PLLFSR)) >> 15;
-      while(wait < delay){
-         if(readArbitraryMemory16(HW_REG_ADDR(PLLFSR)) >> 15 != lastClk32){
-            lastClk32 = !lastClk32;
-            wait++;
-         }
-      }
-   }
-   
-   return (float)timesAs1 / (float)samples * 100.0;
 }
 
 var hexRamBrowser(){
