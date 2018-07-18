@@ -18,8 +18,6 @@ All of DRAMMC
 pen input
 Port M Infrared shutdown (PMDATA 0x20)
 interrupt control register(ICR) edge trigger selects
-ADC7846 temperature sensors
-ADC7846 dock sensor
 some undocumented I/O might be on port e and port j
 if a timer triggers more than once per CLK32 it will lose any triggers after the first and get out of sync
 SPI1, probably the sdcard since sdcards use SPI for data transfer
@@ -56,9 +54,12 @@ channels can't be read in single reference mode in hwTestSuite
 channels are not implemented properly in the emulator
 electrical noise on lines(conversions probably should have +-20 added to values)
 need to trigger a false PENIRQ interrupt on reading certain channels
+Channels 3 and 4(they need to be scaled differently)
 
 
 Fixed:
+ADC7846 temperature sensors
+ADC7846 dock sensor
 storage RAM protect(already done from fixing chip select bits, ROP bit set in CSD, verified with hardware test)
 interrupt control register(ICR) POL5
 port g backlight state readback

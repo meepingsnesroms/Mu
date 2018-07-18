@@ -340,7 +340,7 @@ static inline void setIsr(uint32_t value, bool useTopWord, bool useBottomWord){
    //Palm OS uses this 32 bit register as 2 16 bit registers
 
    //prevent any internal hardware interrupts from being cleared
-   value &= 0x001F0F00;
+   value &= 0x000F0F00;//IRQ5 is always level triggered
 
    if(useTopWord){
       uint16_t interruptControlRegister = registerArrayRead16(ICR);

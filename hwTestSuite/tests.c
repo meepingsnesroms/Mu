@@ -388,6 +388,9 @@ var ads7846Read(){
    static Boolean firstRun = true;
    static Boolean referenceMode;
    static Boolean mode8Bit;
+   static uint16_t ads7846ChannelValues[8];
+   static uint16_t touchDrawX;
+   static uint16_t touchDrawY;
    uint8_t ads7846Channel;
    uint16_t y = 0;
    
@@ -395,6 +398,9 @@ var ads7846Read(){
       firstRun = false;
       referenceMode = false;
       mode8Bit = false;
+      memset(ads7846ChannelValues, 0x00, 8 * sizeof(uint16_t));
+      touchDrawX = 0xFFFF;
+      touchDrawY = 0xFFFF;
       debugSafeScreenClear(C_WHITE);
    }
    
@@ -420,15 +426,33 @@ var ads7846Read(){
       exitSubprogram();
    }
    
+   if(getButton(buttonLeft)){
+      for(ads7846Channel = 0; ads7846Channel < 8; ads7846Channel++)
+         ads7846ChannelValues[ads7846Channel] = ads7846GetValue(ads7846Channel, referenceMode, mode8Bit);
+      
+      touchDrawX = (1.0 - (float)(ads7846ChannelValues[5]) / 0xFFF) * 160;
+      touchDrawY = (1.0 - (float)(ads7846ChannelValues[1]) / 0xFFF) * 220;
+   }
+   
+   StrPrintF(sharedDataBuffer, "Left To Refresh");
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   StrPrintF(sharedDataBuffer, "Select To Change Mode");
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
    StrPrintF(sharedDataBuffer, "Ref Mode:%d, 8bit:%d", referenceMode, mode8Bit);
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
    
    for(ads7846Channel = 0; ads7846Channel < 8; ads7846Channel++){
-      StrPrintF(sharedDataBuffer, "Ch:%d Value:0x%04X", ads7846Channel, ads7846GetValue(ads7846Channel, referenceMode, mode8Bit));
+      StrPrintF(sharedDataBuffer, "Ch:%d Value:0x%04X", ads7846Channel, ads7846ChannelValues[ads7846Channel]);
       UG_PutString(0, y, sharedDataBuffer);
       y += FONT_HEIGHT + 1;
    }
+   
+   /*show estimated touch coord*/
+   if(touchDrawX < 160 && touchDrawY < 220)
+      UG_DrawPixel(touchDrawX, touchDrawY, C_BLACK);
    
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }

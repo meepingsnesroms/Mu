@@ -60,3 +60,15 @@ resync event?{
 }
 12 4 bit delay, 8 bit send command, 0x0E1C
 16 0xE01C
+
+TouchScreen Read Order:
+
+//check x
+Accessed ADS7846 Ch:5, Normal Mode, Power Save:0, PC:0x1008119E.(printed 1 times)
+//don't know why
+Accessed ADS7846 Ch:0, Normal Mode, Power Save:3, PC:0x10081208.(printed 1 times)
+//don't know why
+Accessed ADS7846 Ch:6, Normal Mode, Power Save:3, PC:0x10081208.(printed 1 times)
+//...repeat until released
+//check battery before returning
+Accessed ADS7846 Ch:2, Normal Mode, Power Save:3, PC:0x10081208.(printed 1 times)

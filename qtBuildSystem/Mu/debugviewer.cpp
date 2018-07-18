@@ -132,7 +132,7 @@ void DebugViewer::on_debugDump_clicked(){
    if(!location.exists())
       location.mkpath(".");
 
-   for(uint64_t index = 0; index < ui->debugValueList->count(); index++){
+   for(int index = 0; index < ui->debugValueList->count(); index++){
       fileBuffer += ui->debugValueList->item(index)->text();
       fileBuffer += '\n';
    }
