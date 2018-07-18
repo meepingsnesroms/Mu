@@ -1,3 +1,5 @@
+PFPUEN has both pull up and pull down on it, the 4 address lines are the pull downs
+
 cmp.* seems like it can only set the Carry flag if the result or one of the parameters is negative
 
 The first argument to a function is the last pushed on the stack(proof below, the 16 bit int is the last argument and its pushed first)

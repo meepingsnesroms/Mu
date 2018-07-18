@@ -70,7 +70,7 @@
 
 #define PFDIR     0x428/*Port F Direction Register*/
 #define PFDATA    0x429/*Port F Data Register*/
-#define PFPUEN    0x42A/*Port F Pull-Up Enable Register*/
+#define PFPUEN    0x42A/*Port F Pull-Up/Down Enable Register*/
 #define PFSEL     0x42B/*Port F Select Register*/
 
 #define PGDIR     0x430/*Port G Direction Register*/

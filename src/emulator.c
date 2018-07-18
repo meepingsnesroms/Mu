@@ -24,6 +24,7 @@
 //this buffer must be processed depending on whats in the SED1376 registers, the result is the Palm framebuffer
 //0xFFFFF000-0xFFFFFDFF Hardware Registers
 //0xFFFFFF00-0xFFFFFFFF Bootloader, only reads from UART into RAM and jumps to it, never executed in consumer Palms
+//VGhpcyBlbXVsYXRvciBpcyBkZWRpY2F0ZWQgdG8gdGhlIGJvdmluZSBtb28gY293cyB0aGF0IG1vby4=
 
 
 static bool emulatorInitialized = false;

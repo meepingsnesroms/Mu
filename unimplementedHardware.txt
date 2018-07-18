@@ -7,6 +7,7 @@ sysTrapPceNativeCall, ARM Emulator
 CPU32 table lookup opcodes
 RAM wait states
 Trace T1 bit, should be unused by the OS and applications anyway
+Test what bits of IMR are used
 
 CPU I/O:
 Peripheral Control Register, audio ppm mixing selection and timer cascade mode
@@ -58,6 +59,7 @@ Channels 3 and 4(they need to be scaled differently)
 
 
 Fixed:
+Allow IMR to mask interrupts after they are created
 ADC7846 temperature sensors
 ADC7846 dock sensor
 storage RAM protect(already done from fixing chip select bits, ROP bit set in CSD, verified with hardware test)

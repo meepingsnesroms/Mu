@@ -9,13 +9,15 @@ static inline void registerArrayWrite32(uint32_t address, uint32_t value){BUFFER
 //register setters
 static inline void setIprIsrBit(uint32_t interruptBit){
    //allows for setting an interrupt with masking by IMR and logging in IPR
-   registerArrayWrite32(IPR, registerArrayRead32(IPR) | interruptBit);
-   registerArrayWrite32(ISR, registerArrayRead32(ISR) | (interruptBit & ~registerArrayRead32(IMR)));
+   uint32_t newIpr = registerArrayRead32(IPR) | interruptBit;
+   registerArrayWrite32(IPR, newIpr);
+   registerArrayWrite32(ISR, newIpr & ~registerArrayRead32(IMR));
 }
 
 static inline void clearIprIsrBit(uint32_t interruptBit){
-   registerArrayWrite32(IPR, registerArrayRead32(IPR) & ~interruptBit);
-   registerArrayWrite32(ISR, registerArrayRead32(ISR) & ~interruptBit);
+   uint32_t newIpr = registerArrayRead32(IPR) & ~interruptBit;
+   registerArrayWrite32(IPR, newIpr);
+   registerArrayWrite32(ISR, newIpr & ~registerArrayRead32(IMR));
 }
 
 static inline void setCsa(uint16_t value){

@@ -41,6 +41,17 @@ bool ads7846ExchangeBit(bool bitIn){
       ads7846ControlByte <<= 1;
       ads7846ControlByte |= bitIn;
    }
+   /*
+   else{
+      //test, allow starting new control byte early
+      if(bitIn){
+         debugLog("ADS7846 new control byte starting too early.");
+         ads7846ControlByte = 0x01;
+         ads7846BitsToNextControl = 15;
+      }
+      return ads7846GetAdcBit();
+   }
+   */
 
    if(ads7846BitsToNextControl == 6){
       //control byte and busy cycle finished, get output value
@@ -93,7 +104,7 @@ bool ads7846ExchangeBit(bool bitIn){
                   if(palmInput.touchscreenTouched)
                      ads7846OutputValue = ads7846RangeMap(0, 159, 159 - palmInput.touchscreenX, 0x0FD, 0xF47);
                   else
-                     ads7846OutputValue = 0x000;
+                     ads7846OutputValue = 0x309;
                   break;
 
                case 6:

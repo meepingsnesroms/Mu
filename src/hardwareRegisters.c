@@ -717,11 +717,13 @@ void setHwRegister16(uint32_t address, uint16_t value){
          
       case IMR:
          //this is a 32 bit register but Palm OS writes it as 16 bit chunks
-         registerArrayWrite16(address, value & 0x00FF);
+         registerArrayWrite16(IMR, value & 0x00FF);
+         registerArrayWrite16(ISR, registerArrayRead16(IPR) & registerArrayRead16(IMR));
          break;
       case IMR + 2:
          //this is a 32 bit register but Palm OS writes it as 16 bit chunks
-         registerArrayWrite16(address, value & 0x03FF);
+         registerArrayWrite16(IMR + 2, value & 0x03FF);
+         registerArrayWrite16(ISR + 2, registerArrayRead16(IPR + 2) & registerArrayRead16(IMR + 2));
          break;
 
       case ISR:
@@ -942,7 +944,8 @@ void setHwRegister32(uint32_t address, uint32_t value){
          break;
          
       case IMR:
-         registerArrayWrite32(address, value & 0x00FF3FFF);
+         registerArrayWrite32(IMR, value & 0x00FF3FFF);
+         registerArrayWrite32(ISR, registerArrayRead32(IPR) & registerArrayRead32(IMR));
          break;
          
       case LSSA:
@@ -1012,7 +1015,7 @@ void resetHwRegisters(){
    registerArrayWrite8(PCTLR, 0x1F);
    
    //interrupts
-   registerArrayWrite32(IMR, 0x00FFFFFF);
+   registerArrayWrite32(IMR, 0x00FF3FFF);//the data sheet says 0x00FFFFFF and 0x00FF3FFF, since I am anding out all reserved bits I am using 0x00FF3FFF
    registerArrayWrite16(ILCR, 0x6533);
    
    //GPIO ports
