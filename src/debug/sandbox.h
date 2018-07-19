@@ -2,7 +2,7 @@
 
 enum{
    SANDBOX_TEST_OS_VER = 0,
-   SANDBOX_TEST_HWR_ADC
+   SANDBOX_TEST_TOUCH_READ
 };
 
 void sandboxInit();

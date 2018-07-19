@@ -65,7 +65,7 @@ static void logApiCalls(){
    }
 }
 
-static uint32_t callFunction(bool fallthrough, uint32_t address, const char* prototype, ...){
+static uint32_t callFunction(bool fallthrough, uint32_t address, const char* name, const char* prototype, ...){
    //prototype is a java style function signature describing values passed and returned "v(wllp)"
    //is return void and pass a uint16_t(word), 2 uint32_t(long) and 1 pointer
    //valid types are b(yte), w(ord), l(ong), p(ointer) and v(oid), a capital letter means its a return pointer
@@ -73,7 +73,6 @@ static uint32_t callFunction(bool fallthrough, uint32_t address, const char* pro
    //these are allocated in the bootloader area and interpreted to host pointers on return
    va_list args;
    const char* params = prototype + 2;
-   //uint16_t trap = reverseLookupTrap(name);
    uint32_t stackFrameStart = m68k_get_reg(NULL, M68K_REG_SP);
    uint32_t stackAddr = stackFrameStart;
    uint32_t oldPc = m68k_get_reg(NULL, M68K_REG_PC);
@@ -144,16 +143,26 @@ static uint32_t callFunction(bool fallthrough, uint32_t address, const char* pro
 
    //write to the bootloader memory, its not important when debugging
    callStart = callWriteOut;
-   //replace with "jsr address" or "jmp address"
-   /*
-   m68k_write_memory_16(callWriteOut, 0x4E4F);//trap f opcode
-   callWriteOut += 2;
-   m68k_write_memory_16(callWriteOut, trap);
-   callWriteOut += 2;
-   */
+
+   if(address){
+      //direct jump handler, used for private APIs
+      m68k_write_memory_16(callWriteOut, 0x4EB9);//jump to subroutine opcode
+      callWriteOut += 2;
+      m68k_write_memory_32(callWriteOut, address);
+      callWriteOut += 4;
+   }
+   else{
+      //OS function handler
+      uint16_t trap = reverseLookupTrap(name);
+
+      m68k_write_memory_16(callWriteOut, 0x4E4F);//trap f opcode
+      callWriteOut += 2;
+      m68k_write_memory_16(callWriteOut, trap);
+      callWriteOut += 2;
+   }
 
    //end execution with CMD_EXECUTION_DONE
-   m68k_write_memory_16(callWriteOut, 0x23FC);//move.l immediate data to address at immediate data 2 opcode
+   m68k_write_memory_16(callWriteOut, 0x23FC);//move.l data imm to address at imm2 opcode
    callWriteOut += 2;
    m68k_write_memory_32(callWriteOut, MAKE_EMU_CMD(CMD_EXECUTION_DONE));
    callWriteOut += 4;
@@ -199,140 +208,9 @@ static uint32_t callFunction(bool fallthrough, uint32_t address, const char* pro
    return functionReturn;
 }
 
-static uint32_t callTrap(bool fallthrough, const char* name, const char* prototype, ...){
-   //prototype is a java style function signature describing values passed and returned "v(wllp)"
-   //is return void and pass a uint16_t(word), 2 uint32_t(long) and 1 pointer
-   //valid types are b(yte), w(ord), l(ong), p(ointer), s(tring) and v(oid), a capital letter means its a return pointer
-   //EvtGetPen v(WWB) returns nothing but writes back to tha calling function with 3 pointers,
-   //these are allocated in the bootloader area and interpreted to host pointers on return
-   va_list args;
-   const char* params = prototype + 2;
-   uint16_t trap = reverseLookupTrap(name);
-   uint32_t stackFrameStart = m68k_get_reg(NULL, M68K_REG_SP);
-   uint32_t stackAddr = stackFrameStart;
-   uint32_t oldPc = m68k_get_reg(NULL, M68K_REG_PC);
-   uint32_t oldA0 = m68k_get_reg(NULL, M68K_REG_A0);
-   uint32_t oldD0 = m68k_get_reg(NULL, M68K_REG_D0);
-   uint32_t trapReturn = 0x00000000;
-   return_pointer_t trapReturnPointers[10];
-   uint8_t trapReturnPointerIndex = 0;
-   uint32_t callWriteOut = 0xFFFFFFE0;
-   uint32_t callStart;
-
-   va_start(args, prototype);
-   while(*params != ')'){
-      switch(*params){
-         case 'v':
-         case 'V':
-            //do nothing
-            break;
-
-         case 'b':
-            //bytes are 16 bits long on the stack due to memory alignment restrictions
-         case 'w':
-            stackAddr -= 2;
-            m68k_write_memory_16(stackAddr, va_arg(args, uint32_t));
-            break;
-
-         case 'l':
-         case 'p':
-            stackAddr -= 4;
-            m68k_write_memory_32(stackAddr, va_arg(args, uint32_t));
-            break;
-
-         //return pointer values
-         case 'B':
-            trapReturnPointers[trapReturnPointerIndex].hostPointer = va_arg(args, void*);
-            trapReturnPointers[trapReturnPointerIndex].emuPointer = callWriteOut;
-            trapReturnPointers[trapReturnPointerIndex].bytes = 1;
-            stackAddr -= 4;
-            m68k_write_memory_32(stackAddr, trapReturnPointers[trapReturnPointerIndex].emuPointer);
-            callWriteOut += 4;
-            trapReturnPointerIndex++;
-            break;
-
-         case 'W':
-            trapReturnPointers[trapReturnPointerIndex].hostPointer = va_arg(args, void*);
-            trapReturnPointers[trapReturnPointerIndex].emuPointer = callWriteOut;
-            trapReturnPointers[trapReturnPointerIndex].bytes = 2;
-            stackAddr -= 4;
-            m68k_write_memory_32(stackAddr, trapReturnPointers[trapReturnPointerIndex].emuPointer);
-            callWriteOut += 4;
-            trapReturnPointerIndex++;
-            break;
-
-         case 'L':
-         case 'P':
-            trapReturnPointers[trapReturnPointerIndex].hostPointer = va_arg(args, void*);
-            trapReturnPointers[trapReturnPointerIndex].emuPointer = callWriteOut;
-            trapReturnPointers[trapReturnPointerIndex].bytes = 4;
-            stackAddr -= 4;
-            m68k_write_memory_32(stackAddr, trapReturnPointers[trapReturnPointerIndex].emuPointer);
-            callWriteOut += 4;
-            trapReturnPointerIndex++;
-            break;
-      }
-
-      params++;
-   }
-
-   //write to the bootloader memory, its not important when debugging
-   callStart = callWriteOut;
-   m68k_write_memory_16(callWriteOut, 0x4E4F);//trap f opcode
-   callWriteOut += 2;
-   m68k_write_memory_16(callWriteOut, trap);
-   callWriteOut += 2;
-
-   //end execution with CMD_EXECUTION_DONE
-   m68k_write_memory_16(callWriteOut, 0x23FC);//move.l data imm to address at imm2 opcode
-   callWriteOut += 2;
-   m68k_write_memory_32(callWriteOut, MAKE_EMU_CMD(CMD_EXECUTION_DONE));
-   callWriteOut += 4;
-   m68k_write_memory_32(callWriteOut, EMU_REG_ADDR(EMU_CMD));
-   callWriteOut += 4;
-
-   executionFinished = false;
-   m68k_set_reg(M68K_REG_SP, stackAddr);
-   m68k_set_reg(M68K_REG_PC, callStart);
-
-   //only setup the trap then fallthrough to normal execution, may be needed on app switch since the trap may not return
-   if(!fallthrough){
-      while(!executionFinished)
-         m68k_execute(1);//m68k_execute() always runs requested cycles + extra cycles of the final opcode, this executes 1 opcode
-      if(prototype[0] == 'p')
-         trapReturn = m68k_get_reg(NULL, M68K_REG_A0);
-      else if(prototype[0] == 'b' || prototype[0] == 'w' || prototype[0] == 'l')
-         trapReturn = m68k_get_reg(NULL, M68K_REG_D0);
-      m68k_set_reg(M68K_REG_PC, oldPc);
-      m68k_set_reg(M68K_REG_SP, stackFrameStart);
-      m68k_set_reg(M68K_REG_A0, oldA0);
-      m68k_set_reg(M68K_REG_D0, oldD0);
-
-      //remap all argument pointers
-      for(uint8_t count = 0; count < trapReturnPointerIndex; count++){
-         switch(trapReturnPointers[count].bytes){
-            case 1:
-               *(uint8_t*)trapReturnPointers[count].hostPointer = m68k_read_memory_8(trapReturnPointers[count].emuPointer);
-               break;
-
-            case 2:
-               *(uint16_t*)trapReturnPointers[count].hostPointer = m68k_read_memory_16(trapReturnPointers[count].emuPointer);
-               break;
-
-            case 4:
-               *(uint32_t*)trapReturnPointers[count].hostPointer = m68k_read_memory_32(trapReturnPointers[count].emuPointer);
-               break;
-         }
-      }
-   }
-
-   va_end(args);
-   return trapReturn;
-}
-
 uint32_t makePalmString(const char* str){
    uint32_t strLength = strlen(str) + 1;
-   uint32_t strData = callTrap(false, "MemPtrNew", "p(l)", strLength);
+   uint32_t strData = callFunction(false, 0x00000000, "MemPtrNew", "p(l)", strLength);
 
    if(strData != 0)
       for(uint32_t count = 0; count < strLength; count++)
@@ -342,10 +220,10 @@ uint32_t makePalmString(const char* str){
 
 char* makeNativeString(uint32_t address){
    if(address != 0){
-      int16_t strLength = callTrap(false, "StrLen", "w(p)", address) + 1;
+      int16_t strLength = callFunction(false, 0x00000000, "StrLen", "w(p)", address) + 1;
       char* nativeStr = malloc(strLength);
 
-      for(uint32_t count = 0; count < strLength; count++)
+      for(int16_t count = 0; count < strLength; count++)
          nativeStr[count] = m68k_read_memory_8(address + count);
       return nativeStr;
    }
@@ -353,7 +231,7 @@ char* makeNativeString(uint32_t address){
 }
 
 void freePalmString(uint32_t address){
-   callTrap(false, "MemChunkFree", "w(p)", address);
+   callFunction(false, 0x00000000, "MemChunkFree", "w(p)", address);
 }
 
 #if 0
@@ -423,7 +301,7 @@ void sandboxTest(uint32_t test){
 
    switch(test){
       case SANDBOX_TEST_OS_VER:{
-            uint32_t verStrAddr = callTrap(false, "SysGetOSVersionString", "p()");
+            uint32_t verStrAddr = callFunction(false, 0x00000000, "SysGetOSVersionString", "p()");
             char* nativeStr = makeNativeString(verStrAddr);
 
             debugLog("Sandbox: OS version is:\"%s\"", nativeStr);
@@ -431,8 +309,17 @@ void sandboxTest(uint32_t test){
          }
          break;
 
-      case SANDBOX_TEST_HWR_ADC:
-         //not done yet
+      case SANDBOX_TEST_TOUCH_READ:{
+            uint32_t point;
+            int16_t x;
+            int16_t y;
+
+            //PrvBBGetXY on self dumped ROM
+            callFunction(false, 0x100827CE, NULL, "v(L)", &point);
+            x = point >> 16;
+            y = point & 0xFFFF;
+            debugLog("Sandbox: Touch position is x:%d, y:%d", x, y);
+         }
          break;
    }
 
