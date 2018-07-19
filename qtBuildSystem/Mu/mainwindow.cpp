@@ -166,10 +166,42 @@ void MainWindow::on_notes_released(){
    emu.emuInput.buttonNotes = false;
 }
 
+void MainWindow::on_up_pressed(){
+    emu.emuInput.buttonUp = true;
+}
+
+void MainWindow::on_up_released(){
+    emu.emuInput.buttonUp = false;
+}
+
+void MainWindow::on_down_pressed(){
+    emu.emuInput.buttonDown = true;
+}
+
+void MainWindow::on_down_released(){
+    emu.emuInput.buttonDown = false;
+}
+
+void MainWindow::on_left_pressed(){
+    emu.emuInput.buttonLeft = true;
+}
+
+void MainWindow::on_left_released(){
+    emu.emuInput.buttonLeft = false;
+}
+
+void MainWindow::on_right_pressed(){
+    emu.emuInput.buttonRight = true;
+}
+
+void MainWindow::on_right_released(){
+    emu.emuInput.buttonRight = false;
+}
+
 //emu control
 void MainWindow::on_ctrlBtn_clicked(){
    if(!emu.isInited()){
-      uint32_t error = emu.init(settings.value("resourceDirectory", "").toString() + "/palmos41-en-m515.rom", settings.value("resourceDirectory", "").toString() + "/bootloader-en-m515.rom", FEATURE_ACCURATE);
+      uint32_t error = emu.init(settings.value("resourceDirectory", "").toString() + "/palmos41-en-m515.rom", settings.value("resourceDirectory", "").toString() + "/bootloader-en-m515.rom", FEATURE_DEBUG);
       if(error == EMU_ERROR_NONE){
          ui->calendar->setEnabled(true);
          ui->addressBook->setEnabled(true);

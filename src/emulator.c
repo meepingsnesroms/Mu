@@ -113,6 +113,7 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t spec
    sed1376Reset();
    ads7846Reset();
    sdCardInit();
+   sandboxInit();
    
    memset(&palmInput, 0x00, sizeof(palmInput));
    memset(&palmSdCard, 0x00, sizeof(palmSdCard));
@@ -532,6 +533,12 @@ uint32_t emulatorInstallPrcPdb(buffer_t file){
 
 void emulateFrame(){
    refreshInputState();
+
+   //hack, this is just an easy way to use the sandbox without attaching it to the emulator frontend
+   if(palmInput.buttonUp){
+      palmInput.buttonUp = false;
+      sandboxTest(SANDBOX_TEST_OS_VER);
+   }
 
    while(palmCycleCounter < CRYSTAL_FREQUENCY / EMU_FPS){
       if(palmCrystalCycles != 0.0 && !lowPowerStopActive){

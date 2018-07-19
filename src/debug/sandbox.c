@@ -6,12 +6,13 @@
 
 #include "../m68k/m68k.h"
 #include "../emulator.h"
+#include "../specs/emuFeatureRegistersSpec.h"
 #include "sandbox.h"
 
 
 //this wrappers 68k code and allows calling it for tests, this should be useful for determi ing if hardware accesses are correct
 
-#if defined(EMU_DEBUG)
+#if defined(EMU_DEBUG) && defined(EMU_SANDBOX)
 typedef struct{
    void* hostPointer;
    uint32_t emuPointer;
@@ -39,13 +40,10 @@ static char* takeStackDump(uint32_t bytes){
    return textBytes;
 }
 
-static bool spammingTrap(uint16_t trap){
+static bool ignoreTrap(uint16_t trap){
    switch(trap){
       case 0xA249://sysTrapHwrDelay
          return true;
-
-      default:
-         return false;
    }
    return false;
 }
@@ -54,94 +52,154 @@ static void printTrapInfo(uint16_t trap){
    debugLog("name:%s, API:0x%04X, location:0x%08X\n", lookupTrap(trap), trap, m68k_read_memory_32(0x000008CC + (trap & 0x0FFF) * 4));
 }
 
-//debug
-#if 0//defined(EMU_DEBUG) && defined(EMU_OPCODE_LEVEL_DEBUG) //legacy memory space testing code
-#define LOGGED_OPCODES 100
-static bool invalidBehaviorAbort;
-static char disassemblyBuffer[LOGGED_OPCODES][100];//store the opcode and program counter for the last 10 opcodes
-
-static void invalidBehaviorCheck(){
-   char opcodeName[100];
+static void logApiCalls(){
    uint32_t programCounter = m68k_get_reg(NULL, M68K_REG_PPC);
    uint16_t instruction = m68k_get_reg(NULL, M68K_REG_IR);
-   bool invalidInstruction = !m68k_is_valid_instruction(instruction, M68K_CPU_TYPE_68000);
-   bool invalidBank = (bankType[START_BANK(programCounter)] == CHIP_NONE);
 
-   //get current opcode
-   if(!invalidBank){
-      //must dissasemble as 68020 to prevent address masking, is also more descriptive for invalid opcodes
-      m68k_disassemble(opcodeName, programCounter, M68K_CPU_TYPE_68020);
-   }
-   else{
-      strcpy(opcodeName, "Invalid bank, cant read");
-   }
-   sprintf(opcodeName + strlen(opcodeName), " at PC:0x%08X", programCounter);
-
-   //shift opcode buffer
-   for(uint32_t i = 0; i < LOGGED_OPCODES - 1; i++)
-      strcpy(disassemblyBuffer[i], disassemblyBuffer[i + 1]);
-
-   //add to opcode buffer
-   strcpy(disassemblyBuffer[LOGGED_OPCODES - 1], opcodeName);
-
-   if(invalidInstruction || invalidBank/* || (instruction == 0x0000 && programCounter != 0x00000000)*/){
-      //0x0000 is "ori.b #$IMM, D0", effectivly NOP if the post op byte is 0x00 but still a valid opcode
-      //usualy never encountered unless executing empty address space, so it still triggers debug abort
-      m68k_end_timeslice();
-      invalidBehaviorAbort = true;
-
-      for(uint32_t i = 0; i < LOGGED_OPCODES; i++)
-         debugLog("%s\n", disassemblyBuffer[i]);
-      //currently CPU32 opcodes will be listed as "unknown", I cant change that properly unless I directly edit musashi source, something I want to avoid doing
-      debugLog("Instruction:\"%s\", instruction value:0x%04X, bank type:%d\n", invalidInstruction ? "unknown" : opcodeName, instruction, bankType[START_BANK(programCounter)]);
-   }
-
-   //custom debug operations
-   switch(programCounter){
-      /*
-      //case 0x10000566:
-      case 0x100003F8:
-         {
-            //failing on executing first trap "HwrPreDebugInit"
-            char* data = takeStackDump(32);
-            debugLog("Stack dump:%s\n", data);
-            free(data);
-         }
-         break;
-      */
-
-      default:
-         break;
-   }
-
-#if defined(EMU_LOG_APIS)
    if(instruction == 0x4E4F){
       //Trap F/API call
       uint16_t trap = m68k_read_memory_16(programCounter + 2);
-      if(!spammingTrap(trap)){
+      if(!ignoreTrap(trap)){
          debugLog("Trap F API:%s, API number:0x%04X, PC:0x%08X\n", lookupTrap(trap), trap, programCounter);
       }
+   }
+}
 
-      //custom debug operations
-      switch(trap){
-         /*
-         case 0xA09A://sysTrapSysTimerWrite
-            printTrapInfo(trap);
-            break;
-         */
-         case 0xA255://sysTrapHwrIRQ5Handler
-            printTrapInfo(trap);
+static uint32_t callFunction(bool fallthrough, uint32_t address, const char* prototype, ...){
+   //prototype is a java style function signature describing values passed and returned "v(wllp)"
+   //is return void and pass a uint16_t(word), 2 uint32_t(long) and 1 pointer
+   //valid types are b(yte), w(ord), l(ong), p(ointer) and v(oid), a capital letter means its a return pointer
+   //EvtGetPen v(WWB) returns nothing but writes back to the calling function with 3 pointers,
+   //these are allocated in the bootloader area and interpreted to host pointers on return
+   va_list args;
+   const char* params = prototype + 2;
+   //uint16_t trap = reverseLookupTrap(name);
+   uint32_t stackFrameStart = m68k_get_reg(NULL, M68K_REG_SP);
+   uint32_t stackAddr = stackFrameStart;
+   uint32_t oldPc = m68k_get_reg(NULL, M68K_REG_PC);
+   uint32_t oldA0 = m68k_get_reg(NULL, M68K_REG_A0);
+   uint32_t oldD0 = m68k_get_reg(NULL, M68K_REG_D0);
+   uint32_t functionReturn = 0x00000000;
+   return_pointer_t functionReturnPointers[10];
+   uint8_t functionReturnPointerIndex = 0;
+   uint32_t callWriteOut = 0xFFFFFFE0;
+   uint32_t callStart;
+
+   va_start(args, prototype);
+   while(*params != ')'){
+      switch(*params){
+         case 'v':
+         case 'V':
+            //do nothing
             break;
 
-         default:
+         case 'b':
+            //bytes are 16 bits long on the stack due to memory alignment restrictions
+         case 'w':
+            stackAddr -= 2;
+            m68k_write_memory_16(stackAddr, va_arg(args, uint32_t));
+            break;
+
+         case 'l':
+         case 'p':
+            stackAddr -= 4;
+            m68k_write_memory_32(stackAddr, va_arg(args, uint32_t));
+            break;
+
+         //return pointer values
+         case 'B':
+            functionReturnPointers[functionReturnPointerIndex].hostPointer = va_arg(args, void*);
+            functionReturnPointers[functionReturnPointerIndex].emuPointer = callWriteOut;
+            functionReturnPointers[functionReturnPointerIndex].bytes = 1;
+            stackAddr -= 4;
+            m68k_write_memory_32(stackAddr, functionReturnPointers[functionReturnPointerIndex].emuPointer);
+            callWriteOut += 4;
+            functionReturnPointerIndex++;
+            break;
+
+         case 'W':
+            functionReturnPointers[functionReturnPointerIndex].hostPointer = va_arg(args, void*);
+            functionReturnPointers[functionReturnPointerIndex].emuPointer = callWriteOut;
+            functionReturnPointers[functionReturnPointerIndex].bytes = 2;
+            stackAddr -= 4;
+            m68k_write_memory_32(stackAddr, functionReturnPointers[functionReturnPointerIndex].emuPointer);
+            callWriteOut += 4;
+            functionReturnPointerIndex++;
+            break;
+
+         case 'L':
+         case 'P':
+            functionReturnPointers[functionReturnPointerIndex].hostPointer = va_arg(args, void*);
+            functionReturnPointers[functionReturnPointerIndex].emuPointer = callWriteOut;
+            functionReturnPointers[functionReturnPointerIndex].bytes = 4;
+            stackAddr -= 4;
+            m68k_write_memory_32(stackAddr, functionReturnPointers[functionReturnPointerIndex].emuPointer);
+            callWriteOut += 4;
+            functionReturnPointerIndex++;
             break;
       }
-   }
-#endif
-}
-#endif
 
-uint32_t callTrap(bool fallthrough, const char* name, const char* prototype, ...){
+      params++;
+   }
+
+   //write to the bootloader memory, its not important when debugging
+   callStart = callWriteOut;
+   //replace with "jsr address" or "jmp address"
+   /*
+   m68k_write_memory_16(callWriteOut, 0x4E4F);//trap f opcode
+   callWriteOut += 2;
+   m68k_write_memory_16(callWriteOut, trap);
+   callWriteOut += 2;
+   */
+
+   //end execution with CMD_EXECUTION_DONE
+   m68k_write_memory_16(callWriteOut, 0x23FC);//move.l immediate data to address at immediate data 2 opcode
+   callWriteOut += 2;
+   m68k_write_memory_32(callWriteOut, MAKE_EMU_CMD(CMD_EXECUTION_DONE));
+   callWriteOut += 4;
+   m68k_write_memory_32(callWriteOut, EMU_REG_ADDR(EMU_CMD));
+   callWriteOut += 4;
+
+   executionFinished = false;
+   m68k_set_reg(M68K_REG_SP, stackAddr);
+   m68k_set_reg(M68K_REG_PC, callStart);
+
+   //only setup the trap then fallthrough to normal execution, may be needed on app switch since the trap may not return
+   if(!fallthrough){
+      while(!executionFinished)
+         m68k_execute(1);//m68k_execute() always runs requested cycles + extra cycles of the final opcode, this executes 1 opcode
+      if(prototype[0] == 'p')
+         functionReturn = m68k_get_reg(NULL, M68K_REG_A0);
+      else if(prototype[0] == 'b' || prototype[0] == 'w' || prototype[0] == 'l')
+         functionReturn = m68k_get_reg(NULL, M68K_REG_D0);
+      m68k_set_reg(M68K_REG_PC, oldPc);
+      m68k_set_reg(M68K_REG_SP, stackFrameStart);
+      m68k_set_reg(M68K_REG_A0, oldA0);
+      m68k_set_reg(M68K_REG_D0, oldD0);
+
+      //remap all argument pointers
+      for(uint8_t count = 0; count < functionReturnPointerIndex; count++){
+         switch(functionReturnPointers[count].bytes){
+            case 1:
+               *(uint8_t*)functionReturnPointers[count].hostPointer = m68k_read_memory_8(functionReturnPointers[count].emuPointer);
+               break;
+
+            case 2:
+               *(uint16_t*)functionReturnPointers[count].hostPointer = m68k_read_memory_16(functionReturnPointers[count].emuPointer);
+               break;
+
+            case 4:
+               *(uint32_t*)functionReturnPointers[count].hostPointer = m68k_read_memory_32(functionReturnPointers[count].emuPointer);
+               break;
+         }
+      }
+   }
+
+   va_end(args);
+   return functionReturn;
+}
+
+static uint32_t callTrap(bool fallthrough, const char* name, const char* prototype, ...){
    //prototype is a java style function signature describing values passed and returned "v(wllp)"
    //is return void and pass a uint16_t(word), 2 uint32_t(long) and 1 pointer
    //valid types are b(yte), w(ord), l(ong), p(ointer), s(tring) and v(oid), a capital letter means its a return pointer
@@ -350,10 +408,21 @@ void sinfulExecution(){
 }
 #endif
 
+void sandboxInit(){
+#if defined(EMU_SANDBOX_OPCODE_LEVEL_DEBUG)
+   m68k_set_instr_hook_callback(sandboxOnOpcodeRun);
+#endif
+}
+
 void sandboxTest(uint32_t test){
+   //tests cant run properly(hang forever) unless the debug return hook is enabled, it also completly destroys accuracy to execute hacked in asm buffers
+   if(!(palmSpecialFeatures & FEATURE_DEBUG))
+      return;
+
+   debugLog("Sandbox: Test %d started", test);
+
    switch(test){
       case SANDBOX_TEST_OS_VER:{
-            debugLog("Sandbox: Testing OS version");
             uint32_t verStrAddr = callTrap(false, "SysGetOSVersionString", "p()");
             char* nativeStr = makeNativeString(verStrAddr);
 
@@ -366,6 +435,14 @@ void sandboxTest(uint32_t test){
          //not done yet
          break;
    }
+
+   debugLog("Sandbox: Test %d finished", test);
+}
+
+void sandboxOnOpcodeRun(){
+#if defined(EMU_SANDBOX_LOG_APIS)
+   logApiCalls();
+#endif
 }
 
 void sandboxReturn(){
@@ -373,6 +450,8 @@ void sandboxReturn(){
 }
 
 #else
+void sandboxInit(){}
 void sandboxTest(uint32_t test){}
+void sandboxOnOpcodeRun(){}
 void sandboxReturn(){}
 #endif

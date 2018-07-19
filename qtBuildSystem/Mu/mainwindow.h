@@ -43,6 +43,14 @@ private slots:
    void on_todo_released();
    void on_notes_pressed();
    void on_notes_released();
+   void on_up_pressed();
+   void on_up_released();
+   void on_down_pressed();
+   void on_down_released();
+   void on_left_pressed();
+   void on_left_released();
+   void on_right_pressed();
+   void on_right_released();
 
    void on_ctrlBtn_clicked();
 
