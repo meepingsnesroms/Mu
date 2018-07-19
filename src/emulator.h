@@ -21,7 +21,6 @@ extern "C" {
 
 //debug
 #if defined(EMU_DEBUG)
-extern bool executionFinished;
 #if defined(EMU_CUSTOM_DEBUG_LOG_HANDLER)
 extern uint32_t frontendDebugStringSize;
 extern char*    frontendDebugString;
@@ -166,7 +165,6 @@ void emulatorSaveState(uint8_t* data);
 void emulatorLoadState(uint8_t* data);
 uint32_t emulatorInstallPrcPdb(buffer_t file);
 void emulateFrame();
-bool emulateUntilDebugEventOrFrameEnd();//false for frame end, true for debug event
    
 #ifdef __cplusplus
 }

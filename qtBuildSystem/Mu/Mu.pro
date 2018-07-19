@@ -60,10 +60,10 @@ SOURCES += \
     src/sdcard.c \
     src/sed1376.c \
     src/silkscreen.c \
-    src/trapNumToName.c \
     src/ads7846.c \
     debugviewer.cpp \
-    emuwrapper.cpp
+    emuwrapper.cpp \
+    src/debug/sandbox.c
 
 HEADERS += \
     src/bps/crc32.h \
@@ -93,7 +93,9 @@ HEADERS += \
     src/specs/hardwareRegisterNames.h \
     src/specs/irdaCommands.h \
     src/specs/sed1376RegisterNames.h \
-    emuwrapper.h
+    emuwrapper.h \
+    src/debug/sandbox.h \
+    src/debug/sandboxTrapNumToName.c.h
 
 FORMS += \
     mainwindow.ui \

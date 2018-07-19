@@ -10,6 +10,7 @@
 #include "portability.h"
 #include "ads7846.h"
 #include "m68k/m68k.h"
+#include "debug/sandbox.h"
 
 
 chip_t   chips[CHIP_END];
@@ -328,10 +329,8 @@ static void setEmuRegister(uint32_t address, uint32_t value){
             value &= 0xFFFF;
             switch(value){
                case CMD_EXECUTION_DONE:
-#if defined(EMU_DEBUG)
                   if(palmSpecialFeatures & FEATURE_DEBUG)
-                     executionFinished = true;
-#endif
+                     sandboxReturn();
                   break;
 
                default:

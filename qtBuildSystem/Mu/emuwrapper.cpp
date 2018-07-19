@@ -84,16 +84,7 @@ void EmuWrapper::emuThreadRun(){
       if(emuRunning){
          emuPaused = false;
          palmInput = emuInput;
-#if defined(EMU_DEBUG)
-         if(emulateUntilDebugEventOrFrameEnd()){
-            //debug event occured
-            emuRunning = false;
-            emuPaused = true;
-            emuDebugEvent = true;
-         }
-#else
          emulateFrame();
-#endif
          if(!emuNewFrameReady){
             memcpy(emuDoubleBuffer, emuVideoWidth == 320 ? palmExtendedFramebuffer : palmFramebuffer, emuVideoWidth * emuVideoHeight * sizeof(uint16_t));
             emuNewFrameReady = true;
