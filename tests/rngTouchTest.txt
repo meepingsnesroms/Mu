@@ -1,0 +1,19 @@
+Sandbox: Test 1 started(printed 1 times)
+SPI2 transfer, ENABLE:true, XCH:true, IRQ:false, IRQEN:false, BITCOUNT:5(printed 1 times)
+SPI2 transfer, before:0x001B, after:0x0360, PC:0x1008119E(printed 1 times)
+Accessed ADS7846 Ch:5, 8 bits, Diff Mode, Power Save:1, PC:0x10081208.(printed 1 times)
+SPI2 transfer, ENABLE:true, XCH:true, IRQ:false, IRQEN:false, BITCOUNT:12(printed 1 times)
+SPI2 transfer, before:0x0213, after:0x3059, PC:0x10081208(printed 1 times)
+Accessed ADS7846 Ch:1, 8 bits, Diff Mode, Power Save:1, PC:0x10081208.(printed 1 times)
+SPI2 transfer, ENABLE:true, XCH:true, IRQ:false, IRQEN:false, BITCOUNT:12(printed 1 times)
+SPI2 transfer, before:0x021B, after:0xB017, PC:0x10081208(printed 1 times)
+SPI2 transfer, ENABLE:true, XCH:true, IRQ:false, IRQEN:false, BITCOUNT:3(printed 1 times)
+SPI2 transfer, before:0x0004, after:0x0020, PC:0x1008124C(printed 1 times)
+Sandbox: Real touch position is x:108, y:211(printed 1 times)
+Sandbox: OS reported touch position is x:89, y:23(printed 1 times)
+Sandbox: Test 1 finished(printed 1 times)
+
+Results:
+X Inaccuracy -19
+Y Inaccuracy +15(y seems to be inverted)(219 - 211 = 8)(23 - 8 = 15)
+This is before the touch calibration screen.

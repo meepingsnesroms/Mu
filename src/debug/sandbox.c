@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
+#include <time.h>
 
 #include "../m68k/m68k.h"
 #include "../emulator.h"
@@ -61,6 +62,24 @@ static void logApiCalls(){
          debugLog("Trap F API:%s, API number:0x%04X, PC:0x%08X\n", lookupTrap(trap), trap, programCounter);
       }
    }
+}
+
+static int64_t randomRange(int64_t start, int64_t end){
+   static bool seedRng = true;
+   int64_t result;
+
+   if(seedRng){
+      srand(time(NULL));
+      seedRng = false;
+   }
+
+   result = rand();
+   result <<= 32;
+   result |= rand();
+   result %= llabs(end - start) + 1;
+   result += start;
+
+   return result;
 }
 
 /*
@@ -361,14 +380,21 @@ void sandboxTest(uint32_t test){
             //since the sandbox can interrupt any running function(including ADC ones) this safeguard is needed
             if(ads7846BitsToNextControl == 0){
                uint32_t point;
-               int16_t x;
-               int16_t y;
+               int16_t osX;
+               int16_t osY;
+               input_t oldInput = palmInput;
+
+               palmInput.touchscreenTouched = true;
+               palmInput.touchscreenX = randomRange(0, 159);
+               palmInput.touchscreenY = randomRange(0, 219);
 
                //PrvBBGetXY on self dumped ROM
                callFunction(false, 0x100827CE, NULL, "v(L)", &point);
-               x = point >> 16;
-               y = point & 0xFFFF;
-               debugLog("Sandbox: Touch position is x:%d, y:%d\n", x, y);
+               osX = point >> 16;
+               osY = point & 0xFFFF;
+               debugLog("Sandbox: Real touch position is x:%d, y:%d\n", palmInput.touchscreenX, palmInput.touchscreenY);
+               debugLog("Sandbox: OS reported touch position is x:%d, y:%d\n", osX, osY);
+               palmInput = oldInput;
             }
             else{
                debugLog("Sandbox: Unsafe to read touch position.\n");
