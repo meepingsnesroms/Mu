@@ -252,25 +252,19 @@ static inline void setSpiCont2(uint16_t value){
       uint8_t bitCount = (value & 0x000F) + 1;
       uint16_t startBit = 1 << (bitCount - 1);
       uint16_t spi2Data = registerArrayRead16(SPIDATA2);
-      //uint16_t oldSpi2Data = spi2Data;
-
-      /*
-      if(spi2Data == 0x0AE0){
-         //first ADS7846 access, for debugging
-         spi2Data = spi2Data;
-      }
-      */
+      uint16_t oldSpi2Data = spi2Data;
 
       //the input data is shifted into the unused bits if the transfer is less than 16 bits
       for(uint8_t bits = 0; bits < bitCount; bits++){
          bool newBit = ads7846ExchangeBit(spi2Data & startBit);
+         //debugLog("Sent Bit:%d\n", (bool)(spi2Data & startBit));
          spi2Data <<= 1;
          spi2Data |= newBit;
       }
       registerArrayWrite16(SPIDATA2, spi2Data);
 
-      //debugLog("SPI2 transfer, ENABLE:%s, XCH:%s, IRQ:%s, IRQEN:%s, BITCOUNT:%d\n", boolString(value & 0x0200), boolString(value & 0x0100), boolString(value & 0x0080), boolString(value & 0x0400), (value & 0x000F) + 1);
-      //debugLog("SPI2 transfer, before:0x%04X, after:0x%04X, PC:0x%08X\n", oldSpi2Data, spi2Data, m68k_get_reg(NULL, M68K_REG_PPC));
+      debugLog("SPI2 transfer, ENABLE:%s, XCH:%s, IRQ:%s, IRQEN:%s, BITCOUNT:%d\n", boolString(value & 0x0200), boolString(value & 0x0100), boolString(value & 0x0080), boolString(value & 0x0400), (value & 0x000F) + 1);
+      debugLog("SPI2 transfer, before:0x%04X, after:0x%04X, PC:0x%08X\n", oldSpi2Data, spi2Data, m68k_get_reg(NULL, M68K_REG_PPC));
 
       //unset XCH, transfers are instant since timing is not emulated
       value &= 0xFEFF;

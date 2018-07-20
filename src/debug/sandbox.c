@@ -6,21 +6,19 @@
 
 #include "../m68k/m68k.h"
 #include "../emulator.h"
+#include "../ads7846.h"
+#include "../hardwareRegisters.h"
 #include "../specs/emuFeatureRegistersSpec.h"
 #include "sandbox.h"
 
 
-//this wrappers 68k code and allows calling it for tests, this should be useful for determi ing if hardware accesses are correct
-
 #if defined(EMU_DEBUG) && defined(EMU_SANDBOX)
-typedef struct{
-   void* hostPointer;
-   uint32_t emuPointer;
-   uint64_t bytes;//may be used for strings or structs in the future
-}return_pointer_t;
+//this wrappers 68k code and allows calling it for tests, this should be useful for determining if hardware accesses are correct
+//Note: when running a test the emulator runs at native speed and no clocks are emulated
 
 
-static bool executionFinished;
+//used to "log out" of the emulator once a test has finished
+static bool inSandbox;
 
 
 #include "sandboxTrapNumToName.c.h"
@@ -65,6 +63,54 @@ static void logApiCalls(){
    }
 }
 
+/*
+static uint32_t scanForPrivateFunctionAddress(const char* name){
+   //this is not 100% accurate, it scans memory for a function
+   //if a duplicate set of stings is found but not encasing a function a fatal error will occur on execution
+   uint32_t rangeStart = chips[CHIP_A_ROM].start;
+   uint32_t rangeEnd = chips[CHIP_A_ROM].start + chips[CHIP_A_ROM].size;
+   uint32_t functionNameLength = strlen(name);
+
+   for(uint32_t address = rangeStart; address < rangeEnd; address++){
+      //check every byte against the start character
+
+   }
+}
+*/
+
+static uint32_t getNewStackFrameSize(const char* prototype){
+   const char* params = prototype + 2;
+   uint32_t size = 0;
+
+   while(*params != ')'){
+      switch(*params){
+         case 'v':
+         case 'V':
+            //do nothing
+            break;
+
+         case 'b':
+            //bytes are 16 bits long on the stack due to memory alignment restrictions
+         case 'w':
+            size += 2;
+            break;
+
+         case 'l':
+         case 'p':
+         case 'B':
+         case 'W':
+         case 'L':
+         case 'P':
+            size += 4;
+            break;
+      }
+
+      params++;
+   }
+
+   return size;
+}
+
 static uint32_t callFunction(bool fallthrough, uint32_t address, const char* name, const char* prototype, ...){
    //prototype is a java style function signature describing values passed and returned "v(wllp)"
    //is return void and pass a uint16_t(word), 2 uint32_t(long) and 1 pointer
@@ -74,7 +120,8 @@ static uint32_t callFunction(bool fallthrough, uint32_t address, const char* nam
    va_list args;
    const char* params = prototype + 2;
    uint32_t stackFrameStart = m68k_get_reg(NULL, M68K_REG_SP);
-   uint32_t stackAddr = stackFrameStart;
+   uint32_t newStackFrameSize = getNewStackFrameSize(prototype);
+   uint32_t stackWriteAddr = stackFrameStart - newStackFrameSize;
    uint32_t oldPc = m68k_get_reg(NULL, M68K_REG_PC);
    uint32_t oldA0 = m68k_get_reg(NULL, M68K_REG_A0);
    uint32_t oldD0 = m68k_get_reg(NULL, M68K_REG_D0);
@@ -95,14 +142,14 @@ static uint32_t callFunction(bool fallthrough, uint32_t address, const char* nam
          case 'b':
             //bytes are 16 bits long on the stack due to memory alignment restrictions
          case 'w':
-            stackAddr -= 2;
-            m68k_write_memory_16(stackAddr, va_arg(args, uint32_t));
+            m68k_write_memory_16(stackWriteAddr, va_arg(args, uint32_t));
+            stackWriteAddr += 2;
             break;
 
          case 'l':
          case 'p':
-            stackAddr -= 4;
-            m68k_write_memory_32(stackAddr, va_arg(args, uint32_t));
+            m68k_write_memory_32(stackWriteAddr, va_arg(args, uint32_t));
+            stackWriteAddr += 4;
             break;
 
          //return pointer values
@@ -110,8 +157,8 @@ static uint32_t callFunction(bool fallthrough, uint32_t address, const char* nam
             functionReturnPointers[functionReturnPointerIndex].hostPointer = va_arg(args, void*);
             functionReturnPointers[functionReturnPointerIndex].emuPointer = callWriteOut;
             functionReturnPointers[functionReturnPointerIndex].bytes = 1;
-            stackAddr -= 4;
-            m68k_write_memory_32(stackAddr, functionReturnPointers[functionReturnPointerIndex].emuPointer);
+            m68k_write_memory_32(stackWriteAddr, functionReturnPointers[functionReturnPointerIndex].emuPointer);
+            stackWriteAddr += 4;
             callWriteOut += 4;
             functionReturnPointerIndex++;
             break;
@@ -120,8 +167,8 @@ static uint32_t callFunction(bool fallthrough, uint32_t address, const char* nam
             functionReturnPointers[functionReturnPointerIndex].hostPointer = va_arg(args, void*);
             functionReturnPointers[functionReturnPointerIndex].emuPointer = callWriteOut;
             functionReturnPointers[functionReturnPointerIndex].bytes = 2;
-            stackAddr -= 4;
-            m68k_write_memory_32(stackAddr, functionReturnPointers[functionReturnPointerIndex].emuPointer);
+            m68k_write_memory_32(stackWriteAddr, functionReturnPointers[functionReturnPointerIndex].emuPointer);
+            stackWriteAddr += 4;
             callWriteOut += 4;
             functionReturnPointerIndex++;
             break;
@@ -131,8 +178,8 @@ static uint32_t callFunction(bool fallthrough, uint32_t address, const char* nam
             functionReturnPointers[functionReturnPointerIndex].hostPointer = va_arg(args, void*);
             functionReturnPointers[functionReturnPointerIndex].emuPointer = callWriteOut;
             functionReturnPointers[functionReturnPointerIndex].bytes = 4;
-            stackAddr -= 4;
-            m68k_write_memory_32(stackAddr, functionReturnPointers[functionReturnPointerIndex].emuPointer);
+            m68k_write_memory_32(stackWriteAddr, functionReturnPointers[functionReturnPointerIndex].emuPointer);
+            stackWriteAddr += 4;
             callWriteOut += 4;
             functionReturnPointerIndex++;
             break;
@@ -169,13 +216,13 @@ static uint32_t callFunction(bool fallthrough, uint32_t address, const char* nam
    m68k_write_memory_32(callWriteOut, EMU_REG_ADDR(EMU_CMD));
    callWriteOut += 4;
 
-   executionFinished = false;
-   m68k_set_reg(M68K_REG_SP, stackAddr);
+   inSandbox = true;
+   m68k_set_reg(M68K_REG_SP, stackFrameStart - newStackFrameSize);
    m68k_set_reg(M68K_REG_PC, callStart);
 
    //only setup the trap then fallthrough to normal execution, may be needed on app switch since the trap may not return
    if(!fallthrough){
-      while(!executionFinished)
+      while(inSandbox)
          m68k_execute(1);//m68k_execute() always runs requested cycles + extra cycles of the final opcode, this executes 1 opcode
       if(prototype[0] == 'p')
          functionReturn = m68k_get_reg(NULL, M68K_REG_A0);
@@ -287,6 +334,7 @@ void sinfulExecution(){
 #endif
 
 void sandboxInit(){
+   inSandbox = false;
 #if defined(EMU_SANDBOX_OPCODE_LEVEL_DEBUG)
    m68k_set_instr_hook_callback(sandboxOnOpcodeRun);
 #endif
@@ -297,33 +345,39 @@ void sandboxTest(uint32_t test){
    if(!(palmSpecialFeatures & FEATURE_DEBUG))
       return;
 
-   debugLog("Sandbox: Test %d started", test);
+   debugLog("Sandbox: Test %d started\n", test);
 
    switch(test){
       case SANDBOX_TEST_OS_VER:{
             uint32_t verStrAddr = callFunction(false, 0x00000000, "SysGetOSVersionString", "p()");
             char* nativeStr = makeNativeString(verStrAddr);
 
-            debugLog("Sandbox: OS version is:\"%s\"", nativeStr);
+            debugLog("Sandbox: OS version is:\"%s\"\n", nativeStr);
             free(nativeStr);
          }
          break;
 
       case SANDBOX_TEST_TOUCH_READ:{
-            uint32_t point;
-            int16_t x;
-            int16_t y;
+            //since the sandbox can interrupt any running function(including ADC ones) this safeguard is needed
+            if(ads7846BitsToNextControl == 0){
+               uint32_t point;
+               int16_t x;
+               int16_t y;
 
-            //PrvBBGetXY on self dumped ROM
-            callFunction(false, 0x100827CE, NULL, "v(L)", &point);
-            x = point >> 16;
-            y = point & 0xFFFF;
-            debugLog("Sandbox: Touch position is x:%d, y:%d", x, y);
+               //PrvBBGetXY on self dumped ROM
+               callFunction(false, 0x100827CE, NULL, "v(L)", &point);
+               x = point >> 16;
+               y = point & 0xFFFF;
+               debugLog("Sandbox: Touch position is x:%d, y:%d\n", x, y);
+            }
+            else{
+               debugLog("Sandbox: Unsafe to read touch position.\n");
+            }
          }
          break;
    }
 
-   debugLog("Sandbox: Test %d finished", test);
+   debugLog("Sandbox: Test %d finished\n", test);
 }
 
 void sandboxOnOpcodeRun(){
@@ -332,13 +386,18 @@ void sandboxOnOpcodeRun(){
 #endif
 }
 
+bool sandboxRunning(){
+   return inSandbox;
+}
+
 void sandboxReturn(){
-   executionFinished = true;
+   inSandbox = false;
 }
 
 #else
 void sandboxInit(){}
 void sandboxTest(uint32_t test){}
 void sandboxOnOpcodeRun(){}
+bool sandboxRunning(){return false;}
 void sandboxReturn(){}
 #endif

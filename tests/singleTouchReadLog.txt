@@ -1,0 +1,45 @@
+Sandbox: Test 1 started(printed 1 times)
+Sent Bit:1(printed 1 times)
+Accessed ADS7846 Ch:5, Normal Mode, Power Save:0, PC:0x1008119E.(printed 1 times)
+Sent Bit:1(printed 1 times)
+Sent Bit:0(printed 1 times)
+Sent Bit:1(printed 2 times)
+SPI2 transfer, ENABLE:true, XCH:true, IRQ:false, IRQEN:false, BITCOUNT:5(printed 1 times)
+SPI2 transfer, before:0x001B, after:0x0363, PC:0x1008119E(printed 1 times)
+Sent Bit:0(printed 2 times)
+Sent Bit:1(printed 1 times)
+Sent Bit:0(printed 4 times)
+Sent Bit:1(printed 1 times)
+Sent Bit:0(printed 2 times)
+Sent Bit:1(printed 1 times)
+Accessed ADS7846 Ch:0, Normal Mode, Power Save:0, PC:0x10081208.(printed 1 times)
+Sent Bit:1(printed 1 times)
+SPI2 transfer, ENABLE:true, XCH:true, IRQ:false, IRQEN:false, BITCOUNT:12(printed 1 times)
+SPI2 transfer, before:0x0213, after:0x3001, PC:0x10081208(printed 1 times)
+Sent Bit:0(printed 2 times)
+Sent Bit:1(printed 1 times)
+Sent Bit:0(printed 4 times)
+Sent Bit:1(printed 2 times)
+Sent Bit:0(printed 1 times)
+Sent Bit:1(printed 2 times)
+SPI2 transfer, ENABLE:true, XCH:true, IRQ:false, IRQEN:false, BITCOUNT:12(printed 1 times)
+SPI2 transfer, before:0x021B, after:0xBFFE, PC:0x10081208(printed 1 times)
+Sent Bit:1(printed 1 times)
+Sent Bit:0(printed 2 times)
+SPI2 transfer, ENABLE:true, XCH:true, IRQ:false, IRQEN:false, BITCOUNT:3(printed 1 times)
+SPI2 transfer, before:0x0004, after:0x0020, PC:0x1008124C(printed 1 times)
+Sandbox: Touch position is x:1, y:254(printed 1 times)
+Sandbox: Test 1 finished(printed 1 times)
+
+Total Bitstream: 11011001 0000 10011001 0000 11011100
+This is equivalent to:
+Get Channel 5 in 8 bit mode and disable PENIRQ(Touchscreen X)
+Wait 4 bits
+Get Channel 1 in 8 bit mode and disable PENIRQ(Touchscreen Y)
+Wait 4 bits
+Get Channel 5 in 8 bit mode and reenable PENIRQ(Touchscreen X)(seems to be triggered by the SPI2 interrupt because it sometimes shows up inside the sandbox and sometimes outside(outside means the sandbox interrupted an interrupt level higher than INT_SPI2 masking it until the sandbox is exited and the higher interrupt completes))
+
+This channel order is the exact behavior expected to read the touchscreen.
+PENIRQ is disabled because reading from the converter can trigger an interrupt.
+Datasheet: If the last control byte written to the ADS7846 contains PD0 = 1, the pen- interrupt output function is disabled and is not able to detect when the screen is touched.
+Datasheet: It is recommended that the processor mask the interrupt PENIRQ is associated with whenever the processor sends a control byte to the ADS7846.

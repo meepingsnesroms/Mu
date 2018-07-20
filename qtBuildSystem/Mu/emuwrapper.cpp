@@ -40,6 +40,9 @@ void frontendHandleDebugPrint(){
    //this debug handler doesnt need the \n
    if(newDebugString.back() == '\n')
       newDebugString.remove(newDebugString.length() - 1, 1);
+   else
+      newDebugString.append("MISSING \"\\n\"");
+
 
    if(!debugStrings.empty() && newDebugString == debugStrings.back()){
       duplicateCallCount.back()++;

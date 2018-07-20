@@ -41,17 +41,6 @@ bool ads7846ExchangeBit(bool bitIn){
       ads7846ControlByte <<= 1;
       ads7846ControlByte |= bitIn;
    }
-   /*
-   else{
-      //test, allow starting new control byte early
-      if(bitIn){
-         debugLog("ADS7846 new control byte starting too early.");
-         ads7846ControlByte = 0x01;
-         ads7846BitsToNextControl = 15;
-      }
-      return ads7846GetAdcBit();
-   }
-   */
 
    if(ads7846BitsToNextControl == 6){
       //control byte and busy cycle finished, get output value
@@ -60,7 +49,7 @@ bool ads7846ExchangeBit(bool bitIn){
       uint8_t channel = (ads7846ControlByte & 0x70) >> 4;
       uint8_t powerSave = ads7846ControlByte & 0x03;
 
-      debugLog("Accessed ADS7846 Ch:%d, %s Mode, Power Save:%d, PC:0x%08X.\n", channel, differentialMode ? "Diff" : "Normal", ads7846ControlByte & 0x03, m68k_get_reg(NULL, M68K_REG_PPC));
+      debugLog("Accessed ADS7846 Ch:%d, %d bits, %s Mode, Power Save:%d, PC:0x%08X.\n", channel, bitMode ? 8 : 12, differentialMode ? "Diff" : "Normal", ads7846ControlByte & 0x03, m68k_get_reg(NULL, M68K_REG_PPC));
 
       //check if ADC is on, PENIRQ is handled in refreshInputState() in hardwareRegisters.c
       switch(powerSave){
@@ -186,9 +175,11 @@ bool ads7846ExchangeBit(bool bitIn){
       //move to output position
       ads7846OutputValue <<= 4;
 
-      //if 8 bit conversion, clear extra bits
-      if(bitMode)
+      //if 8 bit conversion, clear extra bits and shorten conversion by 4 bits
+      if(bitMode){
          ads7846OutputValue &= 0xFF00;
+         ads7846BitsToNextControl -= 4;
+      }
 
       ads7846PenIrqEnabled = !(powerSave & 0x01);
    }

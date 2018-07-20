@@ -536,9 +536,13 @@ void emulateFrame(){
 
    //hack, this is just an easy way to use the sandbox without attaching it to the emulator frontend
    if(palmInput.buttonUp){
+      static bool runOnce = false;
       palmInput.buttonUp = false;
-      //sandboxTest(SANDBOX_TEST_OS_VER);
-      sandboxTest(SANDBOX_TEST_TOUCH_READ);
+      if(!runOnce){
+         //sandboxTest(SANDBOX_TEST_OS_VER);
+         sandboxTest(SANDBOX_TEST_TOUCH_READ);
+         runOnce = true;
+      }
    }
 
    while(palmCycleCounter < CRYSTAL_FREQUENCY / EMU_FPS){
