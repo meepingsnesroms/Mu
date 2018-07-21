@@ -5,7 +5,7 @@
 //address space
 //new bank size (0x4000)
 #define BANK_SCOOT 14
-#define NUM_BANKS(areaSize) ((areaSize) & 0x00003FFF ? ((areaSize) >> BANK_SCOOT) + 1 : (areaSize) >> BANK_SCOOT)
+#define NUM_BANKS(areaSize) (((areaSize) >> BANK_SCOOT) + ((areaSize) & 0x00003FFF ? 1 : 0))
 #define START_BANK(address) ((address) >> BANK_SCOOT)
 #define END_BANK(address, size) (START_BANK(address) + NUM_BANKS(size) - 1)
 #define BANK_IN_RANGE(bank, address, size) ((bank) >= START_BANK(address) && (bank) <= END_BANK(address, size))

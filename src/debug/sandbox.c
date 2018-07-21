@@ -82,20 +82,95 @@ static int64_t randomRange(int64_t start, int64_t end){
    return result;
 }
 
-/*
-static uint32_t scanForPrivateFunctionAddress(const char* name){
-   //this is not 100% accurate, it scans memory for a function
-   //if a duplicate set of stings is found but not encasing a function a fatal error will occur on execution
-   uint32_t rangeStart = chips[CHIP_A_ROM].start;
-   uint32_t rangeEnd = chips[CHIP_A_ROM].start + chips[CHIP_A_ROM].size;
-   uint32_t functionNameLength = strlen(name);
 
-   for(uint32_t address = rangeStart; address < rangeEnd; address++){
-      //check every byte against the start character
-
-   }
+static bool isAlphanumeric(char chr){
+   if((chr >= 'a' && chr <= 'z') || (chr >= 'A' && chr <= 'Z') || (chr >= '0' && chr <= '9'))
+      return true;
+   return false;
 }
-*/
+
+static bool readable6CharsBack(uint32_t address){
+   for(uint8_t count = 0; count < 6; count++)
+      if(!isAlphanumeric(m68k_read_memory_8(address - count)))
+         return false;
+   return true;
+}
+
+static uint32_t find68kString(const char* str, uint32_t rangeStart, uint32_t rangeEnd){
+   uint32_t strLength = strlen(str) + 1;//include null terminator
+
+   for(uint32_t scanAddress = rangeStart; scanAddress <= rangeEnd - (strLength - 1); scanAddress++){
+      //since only the first char is range checked remove the rest from the range to prevent reading off the end
+
+      //check every byte against the start character
+      if(m68k_read_memory_8(scanAddress) == str[0]){
+         bool wrongString = false;
+
+          //character match found, check for string
+         for(uint32_t strIndex = 1; strIndex < strLength; strIndex++){
+            if(m68k_read_memory_8(scanAddress + strIndex) != str[strIndex]){
+               wrongString = true;
+               break;
+            }
+         }
+
+         if(wrongString == false)
+            return scanAddress;
+      }
+   }
+
+   return rangeEnd;
+}
+
+static uint32_t skip68kString(uint32_t address){
+   while(m68k_read_memory_8(address) != '\0')
+      address++;
+   address++;//skip null terminator too
+   return address;
+}
+
+//THIS FUNCTION DOES NOT WORK IF A WORD ALIGNED 0x0000 IS FOUND IN THE FUNCTION BEING SEARCHED FOR, THIS IS A BUG
+static uint32_t scanForPrivateFunctionAddress(const char* name){
+   //function name format [0x**(unknown), string(with null terminator), 0x00, 0x00(if last 0x00 was on an even address, protects opcode alignemnt)]
+   //this is not 100% accurate, it scans memory for a function address based on a string
+   //if a duplicate set of stings is found but not encasing a function a fatal error will occur on execution
+   uint32_t rangeEnd = chips[CHIP_A_ROM].start + chips[CHIP_A_ROM].size - 1;
+   uint32_t address = find68kString(name, chips[CHIP_A_ROM].start, rangeEnd);
+
+   while(address < rangeEnd){
+      uint32_t signatureBegining = address - 3;//last opcode of function being looked for if the string is correct
+
+      //skip string to test the null terminators
+      address = skip68kString(address);
+
+      //after a function string there are 2 null terminators(the one all strings have and 1 extra) or 3(2 extra) if the previous one was on an even address
+      if(m68k_read_memory_8(address) == '\0' && (address & 0x00000001 || m68k_read_memory_8(address + 1) == '\0')){
+         //valid string match found, get prior functions signature(a function string has a minimum of 6 printable chars with 2 null terminators)
+         uint32_t priorFunctionSignature = signatureBegining;//last opcode of the function thats being looked for
+         bool extraNull = false;
+
+         while(m68k_read_memory_16(priorFunctionSignature) != '\0\0')
+            priorFunctionSignature -= 2;
+
+         //remove extra null terminator if present
+         if(m68k_read_memory_8(priorFunctionSignature - 1) == '\0'){
+            priorFunctionSignature--;
+            extraNull = true;
+         }
+
+         //check that there are 6 valid alphanumeric characters before the nulls, this indicates that its a valid function signature
+         if(readable6CharsBack(priorFunctionSignature - 1)){
+            //valid, get first opcode after string and return its address
+            return priorFunctionSignature + (extraNull ? 3 : 2);
+         }
+      }
+
+      //string matched but structure was invalid, get next string
+      address = find68kString(name, address, rangeEnd);
+   }
+
+   return 0x00000000;
+}
 
 static uint32_t getNewStackFrameSize(const char* prototype){
    const char* params = prototype + 2;
