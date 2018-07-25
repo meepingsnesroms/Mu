@@ -13,5 +13,6 @@ var manualLssa();
 var dumpBootloaderToFile();
 var listRomInfo();
 var listChipSelects();
+var getTouchscreenLut();
 
 #endif

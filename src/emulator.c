@@ -60,7 +60,7 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t spec
    if(emulatorInitialized)
       return EMU_ERROR_NONE;
    
-   if(palmRomDump.data == NULL)
+   if(!palmRomDump.data)
       return EMU_ERROR_INVALID_PARAMETER;
 
    //allocate the buffers

@@ -63,7 +63,6 @@ char* floatToString(float data){
 /*exports*/
 uint16_t palmButtons;
 uint16_t palmButtonsLastFrame;
-Boolean  unsafeMode;
 Boolean  isM515;
 Boolean  haveKsyms;
 uint8_t* sharedDataBuffer;
@@ -86,6 +85,7 @@ static Boolean    applicationRunning;
 
 static var errorSubprogramStackOverflow(){
    static Boolean wipedScreen = false;
+   
    if(!wipedScreen){
       debugSafeScreenClear(C_WHITE);
       UG_PutString(0, 0, "Subprogram stack overflow!\nYou must close the program.");
@@ -100,6 +100,7 @@ static var errorSubprogramStackOverflow(){
 
 var memoryAllocationError(){
    static Boolean wipedScreen = false;
+   
    if(!wipedScreen){
       debugSafeScreenClear(C_WHITE);
       UG_PutString(0, 0, "Could not allocate memory!\nYou must close the program.");
@@ -160,10 +161,8 @@ void exitSubprogram(){
    }
    else{
       /*last subprogram is complete*/
-      if(!unsafeMode){
-         setDebugTag("Application Exiting");
-         applicationRunning = false;
-      }
+      setDebugTag("Application Exiting");
+      applicationRunning = false;
    }
 }
 
@@ -208,7 +207,7 @@ static Boolean testerInit(){
    }
    
    sharedDataBuffer = MemPtrNew(SHARED_DATA_BUFFER_SIZE);
-   if(sharedDataBuffer == NULL){
+   if(!sharedDataBuffer){
       FrmCustomAlert(alt_err, "Cant create memory buffer", 0, 0);
       return false;
    }
@@ -236,7 +235,6 @@ static Boolean testerInit(){
    FtrGet(sysFtrCreator, sysFtrNumOEMDeviceID, &deviceId);
    isM515 = deviceId == (uint32_t)'lith';/*"lith" is the Palm m515 device code, likely because it is one of the first with a lithium ion battery*/
    haveKsyms = initUndocumentedApiHandlers();
-   unsafeMode = false;
    subprogramIndex = 0;
    subprogramArgsSet = false;
    lastSubprogramReturnValue = makeVar(LENGTH_0, TYPE_NULL, 0);
@@ -256,22 +254,20 @@ static void testerExit(){
 
 static void testerFrameLoop(){
    static uint32_t lastResetTime = 0;
+   EventType event;
    
    palmButtons = KeyCurrentState();
    
-   if(!unsafeMode){
-      /*allow exiting the app normally and prevent filling up the event loop*/
-      EventType event;
-      do{
-         EvtGetEvent(&event, 1);
-         SysHandleEvent(&event);
-         if(event.eType == appStopEvent){
-            applicationRunning = false;
-            break;
-         }
+   /*allow exiting the app normally and prevent filling up the event loop*/
+   do{
+      EvtGetEvent(&event, 1);
+      SysHandleEvent(&event);
+      if(event.eType == appStopEvent){
+         applicationRunning = false;
+         break;
       }
-      while(event.eType != nilEvent);
    }
+   while(event.eType != nilEvent);
    
    /*disable auto off timer*/
    if(TimGetSeconds() - lastResetTime > 50){

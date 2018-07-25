@@ -1,6 +1,7 @@
 #include <PalmOS.h>
 #include <PalmUtils.h>
 #include <stdint.h>
+#include <string.h>
 #include <Extensions/ExpansionMgr/VFSMgr.h>
 
 #include "specs/hardwareRegisterNames.h"
@@ -325,6 +326,7 @@ var listChipSelects(){
    uint16_t y = 0;
    
    if(firstRun){
+      firstRun = false;
       debugSafeScreenClear(C_WHITE);
       StrPrintF(sharedDataBuffer, "CSCTRL1:0x%04X", readArbitraryMemory16(HW_REG_ADDR(CSCTRL1)));
       UG_PutString(0, y, sharedDataBuffer);
@@ -360,6 +362,83 @@ var listChipSelects(){
    
    if(getButtonPressed(buttonBack)){
       firstRun = true;
+      exitSubprogram();
+   }
+   
+   return makeVar(LENGTH_0, TYPE_NULL, 0);
+}
+
+var getTouchscreenLut(){
+   static Boolean firstRun = true;
+   static uint16_t bufferStrip;
+   static uint16_t* pixelData;
+   const uint8_t bufferHeight = 20;
+   const uint32_t totalSize = (uint32_t)SCREEN_WIDTH * (SCREEN_HEIGHT + 60) * 4 * sizeof(uint16_t);/*uint32_t cast required to prevent integer overflow*/
+   const uint32_t bufferSize = (uint32_t)SCREEN_WIDTH * bufferHeight * 4 * sizeof(uint16_t);/*uint32_t cast required to prevent integer overflow*/
+   
+   if(firstRun){
+      debugSafeScreenClear(C_WHITE);
+      UG_FillFrame(0, bufferHeight, SCREEN_WIDTH - 1, SCREEN_HEIGHT - 1, C_BLACK);
+      bufferStrip = 0;
+      pixelData = MemPtrNew(bufferSize);
+      if(pixelData){
+         memset(pixelData, 0x00, bufferSize);
+      }
+      else{
+         uint16_t y = 0;
+         
+         StrPrintF(sharedDataBuffer, "Out of memory!");
+         UG_PutString(0, y, sharedDataBuffer);
+         y += FONT_HEIGHT + 1;
+         StrPrintF(sharedDataBuffer, "buf:0x%08lX", pixelData);
+         UG_PutString(0, y, sharedDataBuffer);
+         y += FONT_HEIGHT + 1;
+      }
+      firstRun = false;
+   }
+   
+   if(pixelData){
+      PointType pen;
+      Err fail;
+      
+      fail = PenGetRawPen(&pen);
+      if(fail == errNone)
+         PenRawToScreen(&pen);
+      if(fail == errNone){
+         if(pen.y >= bufferStrip * bufferHeight && pen.y < (bufferStrip + 1) * bufferHeight){
+            pixelData[(pen.x + (pen.y % bufferHeight) * SCREEN_WIDTH) * 4] = ads7846GetValue(1, false, false);//touch y
+            pixelData[(pen.x + (pen.y % bufferHeight) * SCREEN_WIDTH) * 4 + 1] = ads7846GetValue(3, false, false);//touch x ~ y
+            pixelData[(pen.x + (pen.y % bufferHeight) * SCREEN_WIDTH) * 4 + 2] = ads7846GetValue(4, false, false);//touch y ~ x
+            pixelData[(pen.x + (pen.y % bufferHeight) * SCREEN_WIDTH) * 4 + 3] = ads7846GetValue(5, false, false);//touch x
+            
+            UG_DrawPixel(pen.x, pen.y % bufferHeight, C_BLACK);
+         }
+      }
+      
+      if(getButtonPressed(buttonSelect)){
+         StrPrintF(sharedDataBuffer, "TOUCHM%d.BIN", bufferStrip);
+         makeFile((uint8_t*)pixelData, bufferSize, sharedDataBuffer);
+         bufferStrip++;
+         if(bufferStrip * bufferHeight >= SCREEN_HEIGHT + 60){
+            /*last strip finished*/
+            firstRun = true;
+            if(pixelData)
+               MemPtrFree(pixelData);
+            exitSubprogram();
+         }
+         else{
+            /*render test area at top and reset point list*/
+            debugSafeScreenClear(C_WHITE);
+            UG_FillFrame(0, bufferHeight, SCREEN_WIDTH - 1, SCREEN_HEIGHT - 1, C_BLACK);
+            memset(pixelData, 0x00, bufferSize);
+         }
+      }
+   }
+   
+   if(getButtonPressed(buttonBack)){
+      firstRun = true;
+      if(pixelData)
+         MemPtrFree(pixelData);
       exitSubprogram();
    }
    

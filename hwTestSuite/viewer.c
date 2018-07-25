@@ -346,6 +346,10 @@ void resetFunctionViewer(){
          StrNCopy(hwTests[totalHwTests].name, "Watch PENIRQ", TEST_NAME_LENGTH);
          hwTests[totalHwTests].testFunction = watchPenIrq;
          totalHwTests++;
+         
+         StrNCopy(hwTests[totalHwTests].name, "Make Touchscreen LUT", TEST_NAME_LENGTH);
+         hwTests[totalHwTests].testFunction = getTouchscreenLut;
+         totalHwTests++;
       }
       
       if(haveKsyms){
@@ -354,35 +358,24 @@ void resetFunctionViewer(){
          totalHwTests++;
       }
       
-      if(unsafeMode){
-         StrNCopy(hwTests[totalHwTests].name, "Manual LSSA", TEST_NAME_LENGTH);
-         hwTests[totalHwTests].testFunction = manualLssa;
-         totalHwTests++;
-         
-         StrNCopy(hwTests[totalHwTests].name, "TSTAT1 Semaphore Info", TEST_NAME_LENGTH);
-         hwTests[totalHwTests].testFunction = tstat1GetSemaphoreLockOrder;
-         totalHwTests++;
-         
-         StrNCopy(hwTests[totalHwTests].name, "Get SPI2 ENABLE Delay", TEST_NAME_LENGTH);
-         hwTests[totalHwTests].testFunction = checkSpi2EnableBitDelay;
-         totalHwTests++;
-         
-         StrNCopy(hwTests[totalHwTests].name, "Interrogate SPI2", TEST_NAME_LENGTH);
-         hwTests[totalHwTests].testFunction = interrogateSpi2;
-         totalHwTests++;
-         
-         StrNCopy(hwTests[totalHwTests].name, "Self Probe SPI2", TEST_NAME_LENGTH);
-         hwTests[totalHwTests].testFunction = selfProbeSpi2;
-         totalHwTests++;
-         
-         StrNCopy(hwTests[totalHwTests].name, "Exit Unsafe Mode", TEST_NAME_LENGTH);
-         hwTests[totalHwTests].testFunction = exitUnsafeMode;
-         totalHwTests++;
-      }
-      else{
-         StrNCopy(hwTests[totalHwTests].name, "Enter Unsafe Mode", TEST_NAME_LENGTH);
-         hwTests[totalHwTests].testFunction = enterUnsafeMode;
-         totalHwTests++;
-      }
+      StrNCopy(hwTests[totalHwTests].name, "Manual LSSA", TEST_NAME_LENGTH);
+      hwTests[totalHwTests].testFunction = manualLssa;
+      totalHwTests++;
+      
+      StrNCopy(hwTests[totalHwTests].name, "TSTAT1 Semaphore Info", TEST_NAME_LENGTH);
+      hwTests[totalHwTests].testFunction = tstat1GetSemaphoreLockOrder;
+      totalHwTests++;
+      
+      StrNCopy(hwTests[totalHwTests].name, "Get SPI2 ENABLE Delay", TEST_NAME_LENGTH);
+      hwTests[totalHwTests].testFunction = checkSpi2EnableBitDelay;
+      totalHwTests++;
+      
+      StrNCopy(hwTests[totalHwTests].name, "Interrogate SPI2", TEST_NAME_LENGTH);
+      hwTests[totalHwTests].testFunction = interrogateSpi2;
+      totalHwTests++;
+      
+      StrNCopy(hwTests[totalHwTests].name, "Self Probe SPI2", TEST_NAME_LENGTH);
+      hwTests[totalHwTests].testFunction = selfProbeSpi2;
+      totalHwTests++;
    }
 }

@@ -54,7 +54,6 @@ typedef struct{
 /*variables*/
 extern uint16_t palmButtons;
 extern uint16_t palmButtonsLastFrame;
-extern Boolean  unsafeMode;
 extern Boolean  isM515;
 extern Boolean  haveKsyms;
 extern uint8_t* sharedDataBuffer;

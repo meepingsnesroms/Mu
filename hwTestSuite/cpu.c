@@ -17,7 +17,9 @@ static uint8_t oldScr;
 void turnInterruptsOff(){
    if(interruptsEnabled){
       oldImr = readArbitraryMemory32(HW_REG_ADDR(IMR));
+      oldScr = readArbitraryMemory8(HW_REG_ADDR(SCR));
       writeArbitraryMemory32(HW_REG_ADDR(IMR), 0xFFFFFFFF);
+      writeArbitraryMemory8(HW_REG_ADDR(SCR), oldScr & 0xEF);
       interruptsEnabled = false;
    }
 }
@@ -25,6 +27,7 @@ void turnInterruptsOff(){
 void turnInterruptsOn(){
    if(!interruptsEnabled){
       writeArbitraryMemory32(HW_REG_ADDR(IMR), oldImr);
+      writeArbitraryMemory8(HW_REG_ADDR(SCR), oldScr);
       interruptsEnabled = true;
    }
 }
@@ -92,32 +95,4 @@ const char* getCpuString(){
    }
    
    return cpuStringBuffer;
-}
-
-var enterUnsafeMode(){
-   exitSubprogram();/*only run once/for one frame*/
-   
-   if((getPhysicalCpuType() & CPU_M68K) || isEmulator()){
-      /*disable interrupt on invalid memory access*/
-      oldScr = readArbitraryMemory8(HW_REG_ADDR(SCR));
-      writeArbitraryMemory8(HW_REG_ADDR(SCR), oldScr & 0xEF);
-      
-      unsafeMode = true;
-      resetFunctionViewer();
-      return makeVar(LENGTH_1, TYPE_BOOL, true);/*now in unsafe mode*/
-   }
-
-   return makeVar(LENGTH_1, TYPE_BOOL, false);
-}
-
-var exitUnsafeMode(){
-   exitSubprogram();/*only run once/for one frame*/
-   
-   if(unsafeMode){
-      writeArbitraryMemory8(HW_REG_ADDR(SCR), oldScr);
-      unsafeMode = false;
-      resetFunctionViewer();
-   }
-   
-   return makeVar(LENGTH_0, TYPE_NULL, 0);
 }

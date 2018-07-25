@@ -77,14 +77,17 @@ bool ads7846ExchangeBit(bool bitIn){
 
                case 3:
                   //touchscreen x relative to y
-                  ads7846OutputValue = ads7846RangeMap(0, 159, 159 - palmInput.touchscreenX, 0x093, 0x600) + ads7846RangeMap(0, 219, 219 - palmInput.touchscreenY, 0x000, 0x280);
+                  if(palmInput.touchscreenTouched)
+                     ads7846OutputValue = ads7846RangeMap(0, 159, 159 - palmInput.touchscreenX, 0x093, 0x600) + ads7846RangeMap(0, 219, 219 - palmInput.touchscreenY, 0x000, 0x280);
+                  else
+                     ads7846OutputValue = 0x000;
                   break;
 
                case 4:
                   //touchscreen y relative to x
-                  ads7846OutputValue = ads7846RangeMap(0, 219, 219 - palmInput.touchscreenY, 0x9AF, 0xF3F) + ads7846RangeMap(0, 159, 159 - palmInput.touchscreenX, 0x000, 0x150);
-                  //hack need to scale value of 2nd coord based on where the touchpoint is
-                  if(ads7846OutputValue > 0xFFF)
+                  if(palmInput.touchscreenTouched)
+                     ads7846OutputValue = ads7846RangeMap(0, 219, 219 - palmInput.touchscreenY, 0x9AF, 0xF3F) + ads7846RangeMap(0, 159, 159 - palmInput.touchscreenX, 0x000, 0x150);
+                  else
                      ads7846OutputValue = 0xFFF;
                   break;
 
