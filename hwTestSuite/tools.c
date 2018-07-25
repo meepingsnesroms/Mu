@@ -416,7 +416,7 @@ var getTouchscreenLut(){
       }
       
       if(getButtonPressed(buttonSelect)){
-         StrPrintF(sharedDataBuffer, "TOUCHM%d.BIN", bufferStrip);
+         StrPrintF(sharedDataBuffer, "TOUCHMAP%d.BIN", bufferStrip);
          makeFile((uint8_t*)pixelData, bufferSize, sharedDataBuffer);
          bufferStrip++;
          if(bufferStrip * bufferHeight >= SCREEN_HEIGHT + 60){
@@ -433,6 +433,8 @@ var getTouchscreenLut(){
             memset(pixelData, 0x00, bufferSize);
          }
       }
+      
+      skipFrameDelay = true;/*run as fast as possible to pick up pen movement*/
    }
    
    if(getButtonPressed(buttonBack)){

@@ -65,6 +65,7 @@ uint16_t palmButtons;
 uint16_t palmButtonsLastFrame;
 Boolean  isM515;
 Boolean  haveKsyms;
+Boolean  skipFrameDelay;
 uint8_t* sharedDataBuffer;
 
 /*video*/
@@ -235,6 +236,7 @@ static Boolean testerInit(){
    FtrGet(sysFtrCreator, sysFtrNumOEMDeviceID, &deviceId);
    isM515 = deviceId == (uint32_t)'lith';/*"lith" is the Palm m515 device code, likely because it is one of the first with a lithium ion battery*/
    haveKsyms = initUndocumentedApiHandlers();
+   skipFrameDelay = false;
    subprogramIndex = 0;
    subprogramArgsSet = false;
    lastSubprogramReturnValue = makeVar(LENGTH_0, TYPE_NULL, 0);
@@ -294,7 +296,9 @@ DWord PilotMain(Word cmd, Ptr cmdBPB, Word launchFlags){
       applicationRunning = true;
       while(applicationRunning){
          testerFrameLoop();
-         SysTaskDelay(4);/*30 fps*/
+         if(!skipFrameDelay)
+            SysTaskDelay(4);/*30 fps*/
+         skipFrameDelay = false;
       }
       
       testerExit();
