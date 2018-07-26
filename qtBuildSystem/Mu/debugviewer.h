@@ -5,22 +5,22 @@
 
 #include <stdint.h>
 
-namespace Ui {
+namespace Ui{
 class DebugViewer;
 }
 
-class DebugViewer : public QDialog
-{
+class DebugViewer : public QDialog{
    Q_OBJECT
 
 public:
-   explicit DebugViewer(QWidget* parent = 0);
+   explicit DebugViewer(QWidget* parent = nullptr);
    ~DebugViewer();
 
-private slots:
+private:
    int64_t numberFromString(QString str, bool negativeAllowed);
    QString stringFromNumber(int64_t number, bool hex, uint32_t forcedZeros = 0);
 
+private slots:
    void debugRadioButtonHandler();
 
    void on_debugGetHexValues_clicked();
@@ -35,6 +35,6 @@ private slots:
    void on_debugEraseDebugLogs_clicked();
 
 private:
-   uint8_t bitsPerEntry;
+   uint8_t          bitsPerEntry;
    Ui::DebugViewer* ui;
 };

@@ -10,8 +10,7 @@
 
 #include "src/emulator.h"
 
-class EmuWrapper
-{
+class EmuWrapper{
 private:
    EmuWrapper(const EmuWrapper&) = delete;//non construction copyable
    EmuWrapper& operator=(const EmuWrapper&) = delete;//non copyable

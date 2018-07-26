@@ -13,6 +13,7 @@
 /libretroBuildSystem/libs
 /qtBuildSystem/build-Mu-*
 /localTester/build-LocalTester-*
+/tools/build-BufferGraphViewer-*
 /localTester/3dsIrForwarder/build
 /localTester/3dsIrForwarder/3dsIrForwarder.elf
 /localTester/3dsIrForwarder/3dsIrForwarder.3dsx

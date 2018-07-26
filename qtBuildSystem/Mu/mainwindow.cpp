@@ -93,12 +93,12 @@ bool MainWindow::eventFilter(QObject *object, QEvent *event){
 }
 
 void MainWindow::selectHomePath(){
-   QString dir = QFileDialog::getOpenFileName(this, "New Home Directory(\"~/Mu\" is default)", QDir::root().path(), 0);
+   QString dir = QFileDialog::getOpenFileName(this, "New Home Directory(\"~/Mu\" is default)", QDir::root().path(), nullptr);
    settings.setValue("resourceDirectory", dir);
 }
 
 void MainWindow::on_install_pressed(){
-   QString app = QFileDialog::getOpenFileName(this, "Open *.prc/pdb/pqa", QDir::root().path(), 0);
+   QString app = QFileDialog::getOpenFileName(this, "Open *.prc/pdb/pqa", QDir::root().path(), nullptr);
    uint32_t error = emu.installApplication(app);
    if(error != EMU_ERROR_NONE)
       popupErrorDialog("Could not install app");
