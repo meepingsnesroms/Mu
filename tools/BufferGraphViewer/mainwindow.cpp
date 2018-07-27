@@ -15,8 +15,8 @@
 uint16_t getEmWaveHeatMapColor(uint16_t data){
    //stolen from http://www.andrewnoske.com/wiki/Code_-_heatmaps_and_color_gradients
    const int NUM_COLORS = 8;
-   static float color[NUM_COLORS][3] = {{0,0,0}, {1,0,0}, {1,1,0}, {0,1,0}, {0,1,1}, {0,0,1}, {0,0,1}, {1,1,1}};//{r,g,b}
-   float value = (float)data / (float)0xFFFF;
+   const float color[NUM_COLORS][3] = {{0,0,0}, {1,0,0}, {1,1,0}, {0,1,0}, {0,1,1}, {0,0,1}, {0,0,1}, {1,1,1}};//{r,g,b}
+   float value = (float)data / 0xFFFF;
    float red, green, blue;
    int idx1;        // |-- Our desired color will be between these two indexes in "color".
    int idx2;        // |
@@ -31,10 +31,10 @@ uint16_t getEmWaveHeatMapColor(uint16_t data){
       idx1 = idx2 = NUM_COLORS-1;
    }
    else{
-      value = value * (NUM_COLORS-1);    // Will multiply value by NUM_COLORS.
+      value = value * (NUM_COLORS - 1);    // Will multiply value by NUM_COLORS.
       idx1  = (int)value;                // Our desired color will be after this index.
-      idx2  = idx1 + 1;                    // ... and before this index (inclusive).
-      fractBetween = value - float(idx1);// Distance between the two indexes (0-1).
+      idx2  = idx1 + 1;                  // ... and before this index (inclusive).
+      fractBetween = value - (float)idx1;// Distance between the two indexes (0-1).
    }
 
    red   = (color[idx2][0] - color[idx1][0]) * fractBetween + color[idx1][0];
@@ -63,8 +63,8 @@ void MainWindow::refreshOnscreenData(){
    int interlacedSegments = ui->interlacedSegments->value();
    int activeSegment = ui->segment->value();
    int width = ui->width->value();
-   int height = fileData.length() / 2 / interlacedSegments / width;
-   int imageIndex = activeSegment;
+   int height = fileData.length() / sizeof(uint16_t) / interlacedSegments / width;
+   int imageIndex = activeSegment * sizeof(uint16_t);
    uint16_t* oldImage = imageData;
 
    imageData = new uint16_t[width * height];
@@ -72,8 +72,8 @@ void MainWindow::refreshOnscreenData(){
    for(int y = 0; y < height; y++){
       for(int x = 0; x < width; x++){
          //deinterlace the data
-         imageData[x + y * width] = getEmWaveHeatMapColor(fileData[imageIndex * 2] << 8 | fileData[imageIndex * 2 + 1]);
-         imageIndex += interlacedSegments;
+         imageData[x + y * width] = getEmWaveHeatMapColor((uint8_t)fileData[imageIndex] << 8 | (uint8_t)fileData[imageIndex + 1]);
+         imageIndex += interlacedSegments * sizeof(uint16_t);
       }
    }
 
