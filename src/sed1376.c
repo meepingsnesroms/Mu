@@ -113,9 +113,9 @@ uint8_t sed1376GetRegister(uint8_t address){
    switch(address){
       case LUT_READ_LOC:
       case LUT_WRITE_LOC:
-      case LUT_R_WRITE:
-      case LUT_G_WRITE:
       case LUT_B_WRITE:
+      case LUT_G_WRITE:
+      case LUT_R_WRITE:
          //write only
          return 0x00;
 
@@ -185,20 +185,23 @@ void sed1376SetRegister(uint8_t address, uint8_t value){
          break;
 
       case LUT_WRITE_LOC:
-         sed1376RLut[value] = sed1376Registers[LUT_R_WRITE];
-         sed1376GLut[value] = sed1376Registers[LUT_G_WRITE];
          sed1376BLut[value] = sed1376Registers[LUT_B_WRITE];
-         sed1376Registers[LUT_R_READ] = sed1376RLut[value];
-         sed1376Registers[LUT_G_READ] = sed1376GLut[value];
+         sed1376GLut[value] = sed1376Registers[LUT_G_WRITE];
+         sed1376RLut[value] = sed1376Registers[LUT_R_WRITE];
+         //wheter or not these are changed on a write, or if that depends on the LUT_READ_LOC register is yet to be tested, turn this off for now
+         /*
          sed1376Registers[LUT_B_READ] = sed1376BLut[value];
+         sed1376Registers[LUT_G_READ] = sed1376GLut[value];
+         sed1376Registers[LUT_R_READ] = sed1376RLut[value];
+         */
          //debugLog("Writing R:0x%02X, G:0x%02X, B:0x%02X to LUT:0x%02X\n", sed1376RLut[value], sed1376GLut[value], sed1376BLut[value], value);
          sed1376OutputLut[value] = makeRgb16FromSed666(sed1376RLut[value], sed1376GLut[value], sed1376BLut[value]);
          break;
 
       case LUT_READ_LOC:
-         sed1376Registers[LUT_R_READ] = sed1376RLut[value];
-         sed1376Registers[LUT_G_READ] = sed1376GLut[value];
          sed1376Registers[LUT_B_READ] = sed1376BLut[value];
+         sed1376Registers[LUT_G_READ] = sed1376GLut[value];
+         sed1376Registers[LUT_R_READ] = sed1376RLut[value];
          break;
 
       case GPIO_CONF_0:
@@ -220,9 +223,9 @@ void sed1376SetRegister(uint8_t address, uint8_t value){
          sed1376Registers[address] = value & 0x73;
          break;
 
-      case LUT_R_WRITE:
-      case LUT_G_WRITE:
       case LUT_B_WRITE:
+      case LUT_G_WRITE:
+      case LUT_R_WRITE:
          sed1376Registers[address] = value & 0xFC;
          break;
 

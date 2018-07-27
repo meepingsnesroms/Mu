@@ -10,13 +10,11 @@ static inline uint32_t handlePanelDataSwaps(uint32_t address){
 }
 
 //color conversion
-static inline uint16_t swapRedBlue(uint16_t color){
-   return color << 11 | (color & 0x07E0) | color >> 11;
-}
 static inline uint16_t makeRgb16FromSed666(uint8_t r, uint8_t g, uint8_t b){
-   uint16_t color = b >> 2 << 10 & 0xF800;
+   //the Palm m515 display controller -> LCD color lines are swapped for red and blue, so blue is put at the top
+   uint16_t color = r >> 2 << 10 & 0xF800;
    color |= g >> 2 << 5 & 0x07E0;
-   color |= r >> 2 >> 1 & 0x001F;
+   color |= b >> 2 >> 1 & 0x001F;
    return color;
 }
 static inline uint16_t makeRgb16FromGreenComponent(uint16_t g){
@@ -61,7 +59,7 @@ static uint16_t get8BppColor(uint16_t x, uint16_t y){
    return sed1376OutputLut[sed1376Framebuffer[handlePanelDataSwaps(screenStartAddress + y * lineSize + x)]];
 }
 static uint16_t get16BppColor(uint16_t x, uint16_t y){
-   return swapRedBlue(sed1376Framebuffer[handlePanelDataSwaps(screenStartAddress + (y * lineSize + x) * 2)] << 8 | sed1376Framebuffer[handlePanelDataSwaps(screenStartAddress + (y * lineSize + x) * 2 + 1)]);
+   return sed1376Framebuffer[handlePanelDataSwaps(screenStartAddress + (y * lineSize + x) * 2)] << 8 | sed1376Framebuffer[handlePanelDataSwaps(screenStartAddress + (y * lineSize + x) * 2 + 1)];
 }
 
 static inline void selectRenderer(bool color, uint8_t bpp){

@@ -59,6 +59,7 @@ Channels 3 and 4(they need to be scaled differently)
 
 
 Fixed:
+early on I swapped RGB16 R and B, the LUT register addresses for red and blue were swapped though, red actually is the top 5 bits
 Allow IMR to mask interrupts after they are created
 ADC7846 temperature sensors
 ADC7846 dock sensor

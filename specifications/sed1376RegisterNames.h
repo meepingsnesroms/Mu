@@ -12,13 +12,13 @@
 #define PIXEL_CLK      0x05
 
 /*Look Up Table Registers*/
-#define LUT_R_WRITE    0x08
+#define LUT_B_WRITE    0x08
 #define LUT_G_WRITE    0x09
-#define LUT_B_WRITE    0x0A
+#define LUT_R_WRITE    0x0A
 #define LUT_WRITE_LOC  0x0B
-#define LUT_R_READ     0x0C
+#define LUT_B_READ     0x0C
 #define LUT_G_READ     0x0D
-#define LUT_B_READ     0x0E
+#define LUT_R_READ     0x0E
 #define LUT_READ_LOC   0x0F
 
 /*Panel Configuration Registers*/
