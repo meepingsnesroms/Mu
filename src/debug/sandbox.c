@@ -439,45 +439,6 @@ void sandboxTest(uint32_t test){
             callFunction(false, 0x00000000, "EvtEnqueuePenPoint", "w(p)", 0xFFFFFFE0 - 4);
          }
          break;
-
-      case SANDBOX_SEND_OS_TOUCH_CALIBRATE:{
-            //press, top left
-            m68k_write_memory_16(0xFFFFFFE0 - 4, 10/*x*/);
-            m68k_write_memory_16(0xFFFFFFE0 - 2, 10/*y*/);
-            callFunction(false, 0x00000000, "PenScreenToRaw", "w(p)", 0xFFFFFFE0 - 4);
-            callFunction(false, 0x00000000, "EvtEnqueuePenPoint", "w(p)", 0xFFFFFFE0 - 4);
-
-            //release
-            m68k_write_memory_16(0xFFFFFFE0 - 4, (uint16_t)-1/*x*/);
-            m68k_write_memory_16(0xFFFFFFE0 - 2, (uint16_t)-1/*y*/);
-            callFunction(false, 0x00000000, "PenScreenToRaw", "w(p)", 0xFFFFFFE0 - 4);
-            callFunction(false, 0x00000000, "EvtEnqueuePenPoint", "w(p)", 0xFFFFFFE0 - 4);
-
-            //press, bottom right
-            m68k_write_memory_16(0xFFFFFFE0 - 4, 159 - 10/*x*/);
-            m68k_write_memory_16(0xFFFFFFE0 - 2, 159 - 10/*y*/);
-            callFunction(false, 0x00000000, "PenScreenToRaw", "w(p)", 0xFFFFFFE0 - 4);
-            callFunction(false, 0x00000000, "EvtEnqueuePenPoint", "w(p)", 0xFFFFFFE0 - 4);
-
-            //release
-            m68k_write_memory_16(0xFFFFFFE0 - 4, (uint16_t)-1/*x*/);
-            m68k_write_memory_16(0xFFFFFFE0 - 2, (uint16_t)-1/*y*/);
-            callFunction(false, 0x00000000, "PenScreenToRaw", "w(p)", 0xFFFFFFE0 - 4);
-            callFunction(false, 0x00000000, "EvtEnqueuePenPoint", "w(p)", 0xFFFFFFE0 - 4);
-
-            //press, upper middle
-            m68k_write_memory_16(0xFFFFFFE0 - 4, 159 / 2/*x*/);
-            m68k_write_memory_16(0xFFFFFFE0 - 2, 159 / 2 - 13/*y*/);
-            callFunction(false, 0x00000000, "PenScreenToRaw", "w(p)", 0xFFFFFFE0 - 4);
-            callFunction(false, 0x00000000, "EvtEnqueuePenPoint", "w(p)", 0xFFFFFFE0 - 4);
-
-            //release
-            m68k_write_memory_16(0xFFFFFFE0 - 4, (uint16_t)-1/*x*/);
-            m68k_write_memory_16(0xFFFFFFE0 - 2, (uint16_t)-1/*y*/);
-            callFunction(false, 0x00000000, "PenScreenToRaw", "w(p)", 0xFFFFFFE0 - 4);
-            callFunction(false, 0x00000000, "EvtEnqueuePenPoint", "w(p)", 0xFFFFFFE0 - 4);
-         }
-         break;
    }
 
    debugLog("Sandbox: Test %d finished\n", test);

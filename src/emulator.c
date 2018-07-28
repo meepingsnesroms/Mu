@@ -536,8 +536,6 @@ void emulateFrame(){
 
    //hack, this is just an easy way to use the sandbox without attaching it to the emulator frontend
    static bool allowRun1 = true;
-   static bool allowRun2 = true;
-
    if(palmInput.buttonUp){
       palmInput.buttonUp = false;
 
@@ -548,18 +546,6 @@ void emulateFrame(){
    }
    else{
       allowRun1 = true;
-   }
-
-   if(palmInput.buttonDown){
-      palmInput.buttonDown = false;
-
-      if(allowRun2){
-         sandboxTest(SANDBOX_SEND_OS_TOUCH_CALIBRATE);
-         allowRun2 = false;
-      }
-   }
-   else{
-      allowRun2 = true;
    }
 
    while(palmCycleCounter < CRYSTAL_FREQUENCY / EMU_FPS){
