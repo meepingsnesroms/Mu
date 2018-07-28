@@ -1,3 +1,15 @@
+//declare I/O port functions in advance
+static inline uint8_t getPortAValue();
+static inline uint8_t getPortBValue();
+static inline uint8_t getPortCValue();
+static inline uint8_t getPortDValue();
+static inline uint8_t getPortEValue();
+static inline uint8_t getPortFValue();
+static inline uint8_t getPortGValue();
+static inline uint8_t getPortJValue();
+static inline uint8_t getPortKValue();
+static inline uint8_t getPortMValue();
+
 //basic accessors
 static inline uint8_t registerArrayRead8(uint32_t address){return BUFFER_READ_8(palmReg, address, 0, 0xFFF);}
 static inline uint16_t registerArrayRead16(uint32_t address){return BUFFER_READ_16(palmReg, address, 0, 0xFFF);}
@@ -252,6 +264,7 @@ static inline void setSpiCont2(uint16_t value){
       uint8_t bitCount = (value & 0x000F) + 1;
       uint16_t startBit = 1 << (bitCount - 1);
       uint16_t spi2Data = registerArrayRead16(SPIDATA2);
+      bool ads7846ChipSelect = getPortGValue() & 0x04;
       //uint16_t oldSpi2Data = spi2Data;
 
       //the input data is shifted into the unused bits if the transfer is less than 16 bits
@@ -376,7 +389,8 @@ static inline void setIsr(uint32_t value, bool useTopWord, bool useBottomWord){
 
 //register getters
 static inline uint8_t getPortDInputPinValues(){
-   uint8_t requestedRow = ~(registerArrayRead8(PKDIR) & registerArrayRead8(PKDATA));//keys are requested on port k(set low to enable) and read on port d
+   //uint8_t requestedRow = ~(registerArrayRead8(PKDATA) & registerArrayRead8(PKSEL) & registerArrayRead8(PKDIR));//keys are requested on port k(set low to enable) and read on port d
+   uint8_t requestedRow = ~getPortKValue();
    uint8_t portDInputValues = 0x00;
 
    //portDInputValues |= 0x80;//battery dead bit, dont know the proper level to set this
@@ -400,6 +414,20 @@ static inline uint8_t getPortDInputPinValues(){
    return ~portDInputValues;
 }
 
+static inline uint8_t getPortAValue(){
+   //not attached, used as data lines
+   return 0x00;
+}
+
+static inline uint8_t getPortBValue(){
+   return ((registerArrayRead8(PBDATA) & registerArrayRead8(PBDIR)) | ~registerArrayRead8(PBDIR)) & registerArrayRead8(PBSEL);
+}
+
+static inline uint8_t getPortCValue(){
+   //port c uses pull downs not pull ups
+   return registerArrayRead8(PCDATA) & registerArrayRead8(PCDIR) & registerArrayRead8(PCSEL);
+}
+
 static inline uint8_t getPortDValue(){
    uint8_t portDValue = getPortDInputPinValues();
    uint8_t portDData = registerArrayRead8(PDDATA);
@@ -411,6 +439,10 @@ static inline uint8_t getPortDValue(){
    portDValue |= portDData & portDDir;//if a pin is an output and has its data bit set return that too
 
    return portDValue;
+}
+
+static inline uint8_t getPortEValue(){
+   return ((registerArrayRead8(PEDATA) & registerArrayRead8(PEDIR)) | ~registerArrayRead8(PEDIR)) & registerArrayRead8(PESEL);
 }
 
 static inline uint8_t getPortFValue(){
@@ -443,6 +475,10 @@ static inline uint8_t getPortGValue(){
    return portGValue;
 }
 
+static inline uint8_t getPortJValue(){
+   return ((registerArrayRead8(PJDATA) & registerArrayRead8(PJDIR)) | ~registerArrayRead8(PJDIR)) & registerArrayRead8(PJSEL);
+}
+
 static inline uint8_t getPortKValue(){
    uint8_t portKValue = 0x00;
    uint8_t portKData = registerArrayRead8(PKDATA);
@@ -455,6 +491,11 @@ static inline uint8_t getPortKValue(){
    portKValue |= portKData & portKDir & portKSel;
 
    return portKValue;
+}
+
+static inline uint8_t getPortMValue(){
+   //bit 5 has a pull up not pull down, bits 4-0 have a pull down, bit 7-6 are not active at all
+   return ((registerArrayRead8(PMDATA) & registerArrayRead8(PMDIR)) | (~registerArrayRead8(PMDIR) & 0x20)) & registerArrayRead8(PMSEL);
 }
 
 static inline uint16_t getSpiTest(){
@@ -480,11 +521,11 @@ static inline uint16_t getPwmc1(){
 
 //updaters
 static inline void updatePowerButtonLedStatus(){
-   palmMisc.powerButtonLed = (bool)(registerArrayRead8(PBDATA) & registerArrayRead8(PBSEL) & registerArrayRead8(PBDIR) & 0x40) != palmMisc.batteryCharging;
+   palmMisc.powerButtonLed = (bool)(getPortBValue() & 0x40) != palmMisc.batteryCharging;
 }
 
 static inline void updateVibratorStatus(){
-   palmMisc.vibratorOn = registerArrayRead8(PKDATA) & registerArrayRead8(PKSEL) & registerArrayRead8(PKDIR) & 0x10;
+   palmMisc.vibratorOn = getPortKValue() & 0x10;
 }
 
 static inline void updateBacklightAmplifierStatus(){

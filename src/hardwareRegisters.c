@@ -40,7 +40,7 @@ bool pllIsOn(){
 }
 
 bool backlightAmplifierState(){
-   return registerArrayRead8(PKDATA) & registerArrayRead8(PKSEL) & registerArrayRead8(PKDIR) & 0x02;
+   return getPortKValue() & 0x02;
 }
 
 bool registersAreXXFFMapped(){
@@ -358,23 +358,19 @@ uint8_t getHwRegister8(uint32_t address){
 
    switch(address){
       case PADATA:
-         //not attached, used as data lines
-         return 0x00;
+         return getPortAValue();
 
       case PBDATA:
-         //read outputs as is and inputs as true, floating pins are high
-         return (registerArrayRead8(PBDATA) & registerArrayRead8(PBDIR)) | ~registerArrayRead8(PBDIR);
+         return getPortBValue();
 
       case PCDATA:
-         //read outputs as is and inputs as false, floating pins are low, port c has a pull down not up
-         return registerArrayRead8(PCDATA) & registerArrayRead8(PCDIR);
+         return getPortCValue();
 
       case PDDATA:
          return getPortDValue();
 
       case PEDATA:
-         //read outputs as is and inputs as true, floating pins are high
-         return (registerArrayRead8(PEDATA) & registerArrayRead8(PEDIR)) | ~registerArrayRead8(PEDIR);
+         return getPortEValue();
 
       case PFDATA:
          return getPortFValue();
@@ -383,15 +379,13 @@ uint8_t getHwRegister8(uint32_t address){
          return getPortGValue();
 
       case PJDATA:
-         //read outputs as is and inputs as true, floating pins are high
-         return (registerArrayRead8(PJDATA) & registerArrayRead8(PJDIR)) | ~registerArrayRead8(PJDIR);
+         return getPortJValue();
 
       case PKDATA:
          return getPortKValue();
 
       case PMDATA:
-         //read outputs as is and inputs as true, floating pins are high
-         return (registerArrayRead8(PMDATA) & registerArrayRead8(PMDIR)) | ~registerArrayRead8(PMDIR);
+         return getPortMValue();
 
       //basic non GPIO functions
       case LCKCON:
