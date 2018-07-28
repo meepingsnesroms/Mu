@@ -7,6 +7,7 @@
 #include "memoryAccess.h"
 #include "specs/sed1376RegisterNames.h"
 #include "m68k/m68k.h"
+#include "debug/sandbox.h"
 
 
 //the SED1376 has only 16 address lines(17 if you count the line that switches between registers and framebuffer) and 16 data lines, the most you can read is 16 bits, registers are 8 bits
@@ -107,9 +108,10 @@ bool sed1376PowerSaveEnabled(){
 
 uint8_t sed1376GetRegister(uint8_t address){
    //returning 0x00 on power save mode is done in the sed1376ReadXX functions
-#if defined(EMU_DEBUG) && defined(EMU_LOG_REGISTER_ACCESS_ALL)
-   debugLog("SED1376 register read from 0x%02X, PC 0x%08X.\n", address, m68k_get_reg(NULL, M68K_REG_PPC));
-#endif
+
+   if(sandboxRunning())
+      debugLog("SED1376 register read from 0x%02X, PC 0x%08X.\n", address, m68k_get_reg(NULL, M68K_REG_PPC));
+
    switch(address){
       case LUT_READ_LOC:
       case LUT_WRITE_LOC:
@@ -139,9 +141,6 @@ uint8_t sed1376GetRegister(uint8_t address){
          return sed1376Registers[address];
 
       default:
-#if defined(EMU_DEBUG) && defined(EMU_LOG_REGISTER_ACCESS_UNKNOWN) && !defined(EMU_LOG_REGISTER_ACCESS_ALL)
-         debugLog("SED1376 register read from 0x%02X, PC 0x%08X.\n", address, m68k_get_reg(NULL, M68K_REG_PPC));
-#endif
          return 0x00;
    }
    
@@ -149,9 +148,10 @@ uint8_t sed1376GetRegister(uint8_t address){
 }
 
 void sed1376SetRegister(uint8_t address, uint8_t value){
-#if defined(EMU_DEBUG) && defined(EMU_LOG_REGISTER_ACCESS_ALL)
-   debugLog("SED1376 register write 0x%02X to 0x%02X, PC 0x%08X.\n", value, address, m68k_get_reg(NULL, M68K_REG_PPC));
-#endif
+
+   if(sandboxRunning())
+      debugLog("SED1376 register write 0x%02X to 0x%02X, PC 0x%08X.\n", value, address, m68k_get_reg(NULL, M68K_REG_PPC));
+
    switch(address){
       case PWR_SAVE_CFG:
          //bit 7 must always be set, timing hack
@@ -246,9 +246,6 @@ void sed1376SetRegister(uint8_t address, uint8_t value){
          break;
 
       default:
-#if defined(EMU_DEBUG) && defined(EMU_LOG_REGISTER_ACCESS_UNKNOWN) && !defined(EMU_LOG_REGISTER_ACCESS_ALL)
-         debugLog("SED1376 register write 0x%02X to 0x%02X, PC 0x%08X.\n", value, address, m68k_get_reg(NULL, M68K_REG_PPC));
-#endif
          break;
    }
 }

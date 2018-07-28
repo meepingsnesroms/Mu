@@ -243,7 +243,7 @@ static inline void setSpiCont2(uint16_t value){
    //force or clear an interrupt
    if((value & 0x00C0) == 0x00C0)
       setIprIsrBit(INT_SPI2);
-   else if(!(value & 0x0080))
+   else
       clearIprIsrBit(INT_SPI2);
 
    //do a transfer
@@ -252,7 +252,7 @@ static inline void setSpiCont2(uint16_t value){
       uint8_t bitCount = (value & 0x000F) + 1;
       uint16_t startBit = 1 << (bitCount - 1);
       uint16_t spi2Data = registerArrayRead16(SPIDATA2);
-      uint16_t oldSpi2Data = spi2Data;
+      //uint16_t oldSpi2Data = spi2Data;
 
       //the input data is shifted into the unused bits if the transfer is less than 16 bits
       for(uint8_t bits = 0; bits < bitCount; bits++){
@@ -263,8 +263,8 @@ static inline void setSpiCont2(uint16_t value){
       }
       registerArrayWrite16(SPIDATA2, spi2Data);
 
-      debugLog("SPI2 transfer, ENABLE:%s, XCH:%s, IRQ:%s, IRQEN:%s, BITCOUNT:%d\n", boolString(value & 0x0200), boolString(value & 0x0100), boolString(value & 0x0080), boolString(value & 0x0400), (value & 0x000F) + 1);
-      debugLog("SPI2 transfer, before:0x%04X, after:0x%04X, PC:0x%08X\n", oldSpi2Data, spi2Data, m68k_get_reg(NULL, M68K_REG_PPC));
+      //debugLog("SPI2 transfer, ENABLE:%s, XCH:%s, IRQ:%s, IRQEN:%s, BITCOUNT:%d\n", boolString(value & 0x0200), boolString(value & 0x0100), boolString(value & 0x0080), boolString(value & 0x0400), (value & 0x000F) + 1);
+      //debugLog("SPI2 transfer, before:0x%04X, after:0x%04X, PC:0x%08X\n", oldSpi2Data, spi2Data, m68k_get_reg(NULL, M68K_REG_PPC));
 
       //unset XCH, transfers are instant since timing is not emulated
       value &= 0xFEFF;

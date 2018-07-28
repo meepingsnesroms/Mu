@@ -5,7 +5,7 @@
 #include "m68k/m68k.h"//only used for debugLog
 
 
-static uint16_t dockResistorValues[PORT_END] = {0xFFF/*none*/, 0x1EB/*USB cradle*/, 0/*serial cradle*/, 0/*USB peripheral*/, 0/*serial peripheral*/};
+static const uint16_t dockResistorValues[PORT_END] = {0xFFF/*none*/, 0x1EB/*USB cradle*/, 0/*serial cradle*/, 0/*USB peripheral*/, 0/*serial peripheral*/};
 
 uint8_t  ads7846BitsToNextControl;//bits before starting a new control byte
 uint8_t  ads7846ControlByte;
@@ -65,7 +65,7 @@ bool ads7846ExchangeBit(bool bitIn){
                case 1:
                   //touchscreen y
                   if(palmInput.touchscreenTouched)
-                     ads7846OutputValue = ads7846RangeMap(0, 219, 219 - palmInput.touchscreenY, 0x0EE, 0xEE4);
+                     ads7846OutputValue = 0x7DC;//ads7846OutputValue = ads7846RangeMap(0, 219, 219 - palmInput.touchscreenY, 0x0EE, 0xEE4);
                   else
                      ads7846OutputValue = 0xFEF;//y is almost fully on when dorment
                   break;
@@ -78,7 +78,7 @@ bool ads7846ExchangeBit(bool bitIn){
                case 3:
                   //touchscreen x relative to y
                   if(palmInput.touchscreenTouched)
-                     ads7846OutputValue = ads7846RangeMap(0, 159, 159 - palmInput.touchscreenX, 0x093, 0x600) + ads7846RangeMap(0, 219, 219 - palmInput.touchscreenY, 0x000, 0x280);
+                      ads7846OutputValue = 0x5BF;//ads7846OutputValue = ads7846RangeMap(0, 159, 159 - palmInput.touchscreenX, 0x093, 0x600) + ads7846RangeMap(0, 219, 219 - palmInput.touchscreenY, 0x000, 0x280);
                   else
                      ads7846OutputValue = 0x000;
                   break;
@@ -86,7 +86,7 @@ bool ads7846ExchangeBit(bool bitIn){
                case 4:
                   //touchscreen y relative to x
                   if(palmInput.touchscreenTouched)
-                     ads7846OutputValue = ads7846RangeMap(0, 219, 219 - palmInput.touchscreenY, 0x9AF, 0xF3F) + ads7846RangeMap(0, 159, 159 - palmInput.touchscreenX, 0x000, 0x150);
+                      ads7846OutputValue = 0xD5B;//ads7846OutputValue = ads7846RangeMap(0, 219, 219 - palmInput.touchscreenY, 0x9AF, 0xF3F) + ads7846RangeMap(0, 159, 159 - palmInput.touchscreenX, 0x000, 0x150);
                   else
                      ads7846OutputValue = 0xFFF;
                   break;
@@ -94,7 +94,7 @@ bool ads7846ExchangeBit(bool bitIn){
                case 5:
                   //touchscreen x
                   if(palmInput.touchscreenTouched)
-                     ads7846OutputValue = ads7846RangeMap(0, 159, 159 - palmInput.touchscreenX, 0x0FD, 0xF47);
+                      ads7846OutputValue = 0xD0D;//ads7846OutputValue = ads7846RangeMap(0, 159, 159 - palmInput.touchscreenX, 0x0FD, 0xF47);
                   else
                      ads7846OutputValue = 0x309;
                   break;

@@ -16,8 +16,6 @@ extern "C" {
 //to enable degguging define EMU_DEBUG, all options below do nothing unless EMU_DEBUG is defined
 //to enable sandbox debugging define EMU_SANDBOX
 //to enable opcode level debugging define EMU_SANDBOX_OPCODE_LEVEL_DEBUG
-//to log unknown register reads and writes define EMU_LOG_REGISTER_ACCESS_UNKNOWN
-//to log all register reads and writes define EMU_LOG_REGISTER_ACCESS_ALL
 //to log all api calls define EMU_SANDBOX_LOG_APIS, EMU_SANDBOX_OPCODE_LEVEL_DEBUG must also be defined for this to work
 
 //debug

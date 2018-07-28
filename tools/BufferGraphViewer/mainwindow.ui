@@ -15,13 +15,6 @@
   </property>
   <widget class="QWidget" name="centralWidget">
    <layout class="QGridLayout" name="gridLayout">
-    <item row="3" column="0">
-     <widget class="QPushButton" name="loadData">
-      <property name="text">
-       <string>Load Data</string>
-      </property>
-     </widget>
-    </item>
     <item row="1" column="0">
      <widget class="QWidget" name="options" native="true">
       <property name="sizePolicy">
@@ -107,6 +100,13 @@
       </property>
       <property name="alignment">
        <set>Qt::AlignCenter</set>
+      </property>
+     </widget>
+    </item>
+    <item row="2" column="0">
+     <widget class="QPushButton" name="loadData">
+      <property name="text">
+       <string>Load Data</string>
       </property>
      </widget>
     </item>

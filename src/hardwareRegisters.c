@@ -352,9 +352,10 @@ uint8_t getHwRegister8(uint32_t address){
       return 0x00;
    
    address &= 0x00000FFF;
-#if defined(EMU_DEBUG) && defined(EMU_LOG_REGISTER_ACCESS_ALL)
-   printUnknownHwAccess(address, 0, 8, false);
-#endif
+
+   if(sandboxRunning() && address < 0xE00)
+      printUnknownHwAccess(address, 0, 8, false);
+
    switch(address){
       case PADATA:
          //not attached, used as data lines
@@ -441,10 +442,6 @@ uint8_t getHwRegister8(uint32_t address){
          //bootloader
          if(address >= 0xE00)
             return registerArrayRead8(address);
-#if defined(EMU_DEBUG) && defined(EMU_LOG_REGISTER_ACCESS_UNKNOWN) && !defined(EMU_LOG_REGISTER_ACCESS_ALL)
-         else
-            printUnknownHwAccess(address, 0, 8, false);
-#endif
          return 0x00;
    }
    
@@ -457,9 +454,10 @@ uint16_t getHwRegister16(uint32_t address){
       return 0x0000;
    
    address &= 0x00000FFF;
-#if defined(EMU_DEBUG) && defined(EMU_LOG_REGISTER_ACCESS_ALL)
-   printUnknownHwAccess(address, 0, 16, false);
-#endif
+
+   if(sandboxRunning() && address < 0xE00)
+      printUnknownHwAccess(address, 0, 16, false);
+
    switch(address){
       case TSTAT1:
          timerStatusReadAcknowledge[0] |= registerArrayRead16(TSTAT1);//active bits acknowledged
@@ -513,10 +511,6 @@ uint16_t getHwRegister16(uint32_t address){
          //bootloader
          if(address >= 0xE00)
             return registerArrayRead16(address);
-#if defined(EMU_DEBUG) && defined(EMU_LOG_REGISTER_ACCESS_UNKNOWN) && !defined(EMU_LOG_REGISTER_ACCESS_ALL)
-         else
-            printUnknownHwAccess(address, 0, 16, false);
-#endif
          return 0x0000;
    }
    
@@ -532,9 +526,10 @@ uint32_t getHwRegister32(uint32_t address){
    }
    
    address &= 0x00000FFF;
-#if defined(EMU_DEBUG) && defined(EMU_LOG_REGISTER_ACCESS_ALL)
-   printUnknownHwAccess(address, 0, 32, false);
-#endif
+
+   if(sandboxRunning() && address < 0xE00)
+      printUnknownHwAccess(address, 0, 32, false);
+
    switch(address){
       //16 bit registers being read as 32 bit
       case PLLFSR:
@@ -551,10 +546,6 @@ uint32_t getHwRegister32(uint32_t address){
          //bootloader
          if(address >= 0xE00)
             return registerArrayRead32(address);
-#if defined(EMU_DEBUG) && defined(EMU_LOG_REGISTER_ACCESS_UNKNOWN) && !defined(EMU_LOG_REGISTER_ACCESS_ALL)
-         else
-            printUnknownHwAccess(address, 0, 32, false);
-#endif
          return 0x00000000;
    }
    
@@ -568,9 +559,10 @@ void setHwRegister8(uint32_t address, uint8_t value){
       return;
    
    address &= 0x00000FFF;
-#if defined(EMU_DEBUG) && defined(EMU_LOG_REGISTER_ACCESS_ALL)
-   printUnknownHwAccess(address, value, 8, true);
-#endif
+
+   if(sandboxRunning() && address < 0xE00)
+      printUnknownHwAccess(address, value, 8, true);
+
    switch(address){ 
       case SCR:
          setScr(value);
@@ -687,10 +679,6 @@ void setHwRegister8(uint32_t address, uint8_t value){
          //writeable bootloader region
          if(address >= 0xFC0)
             registerArrayWrite32(address, value);
-#if defined(EMU_DEBUG) && defined(EMU_LOG_REGISTER_ACCESS_UNKNOWN) && !defined(EMU_LOG_REGISTER_ACCESS_ALL)
-         else
-            printUnknownHwAccess(address, value, 8, true);
-#endif
          break;
    }
 }
@@ -701,9 +689,10 @@ void setHwRegister16(uint32_t address, uint16_t value){
       return;
    
    address &= 0x00000FFF;
-#if defined(EMU_DEBUG) && defined(EMU_LOG_REGISTER_ACCESS_ALL)
-   printUnknownHwAccess(address, value, 16, true);
-#endif
+
+   if(sandboxRunning() && address < 0xE00)
+      printUnknownHwAccess(address, value, 16, true);
+
    switch(address){  
       case RTCIENR:
          //missing bits 6 and 7
@@ -907,10 +896,6 @@ void setHwRegister16(uint32_t address, uint16_t value){
          //writeable bootloader region
          if(address >= 0xFC0)
             registerArrayWrite16(address, value);
-#if defined(EMU_DEBUG) && defined(EMU_LOG_REGISTER_ACCESS_UNKNOWN) && !defined(EMU_LOG_REGISTER_ACCESS_ALL)
-         else
-            printUnknownHwAccess(address, value, 16, true);
-#endif
          break;
    }
 }
@@ -924,9 +909,10 @@ void setHwRegister32(uint32_t address, uint32_t value){
    }
    
    address &= 0x00000FFF;
-#if defined(EMU_DEBUG) && defined(EMU_LOG_REGISTER_ACCESS_ALL)
-   printUnknownHwAccess(address, value, 32, true);
-#endif
+
+   if(sandboxRunning() && address < 0xE00)
+      printUnknownHwAccess(address, value, 32, true);
+
    switch(address){
       case RTCTIME:
       case RTCALRM:
@@ -956,10 +942,6 @@ void setHwRegister32(uint32_t address, uint32_t value){
          //writeable bootloader region
          if(address >= 0xFC0)
             registerArrayWrite32(address, value);
-#if defined(EMU_DEBUG) && defined(EMU_LOG_REGISTER_ACCESS_UNKNOWN) && !defined(EMU_LOG_REGISTER_ACCESS_ALL)
-         else
-            printUnknownHwAccess(address, value, 32, true);
-#endif
          break;
    }
 }
