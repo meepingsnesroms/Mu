@@ -375,58 +375,6 @@ void freePalmString(uint32_t address){
    callFunction(false, 0x00000000, "MemChunkFree", "w(p)", address);
 }
 
-#if 0
-void sendTouchEvents(){
-   static input_t lastFrameInput = {0};
-   bool locationChanged = lastFrameInput.touchscreenX != palmInput.touchscreenX || lastFrameInput.touchscreenY != palmInput.touchscreenY;
-   bool pressedChanged = lastFrameInput.touchscreenTouched != palmInput.touchscreenTouched;
-
-   //proto: Err EvtEnqueuePenPoint(PointType *ptP);
-   //PointType is int16, int16
-   if(locationChanged || pressedChanged){
-      if(palmInput.touchscreenTouched){
-         m68k_write_memory_16(0xFFFFFFE0 - 4, palmInput.touchscreenX);
-         m68k_write_memory_16(0xFFFFFFE0 - 2, palmInput.touchscreenY);
-      }
-      else{
-         m68k_write_memory_16(0xFFFFFFE0 - 4, (uint16_t)-1);
-         m68k_write_memory_16(0xFFFFFFE0 - 2, (uint16_t)-1);
-      }
-      callTrap(false, "EvtEnqueuePenPoint", "w(p)", 0xFFFFFFE0 - 4);
-   }
-
-   lastFrameInput = palmInput;
-}
-#endif
-
-#if 0
-#include "../../postBootProof.png.c"//contains finishedBooting.pixel_data
-
-void sinfulExecution(){
-   //jump directly to an application using SysAppLaunch, very evil and inaccurate, will be removed before version 1.0
-   static bool alreadyRun = false;
-
-   if(!alreadyRun){
-      bool hasBooted = !memcmp(palmFramebuffer, finishedBooting.pixel_data, 160 * 160 * 2);
-      if(hasBooted){
-         /*proto:Err SysAppLaunch(UInt16 cardNo, LocalID dbID, UInt16 launchFlags,
-                     UInt16 cmd, MemPtr cmdPBP, UInt32 *resultP);
-         */
-
-         uint32_t palmString = makePalmString("Memo Pad");
-         if(palmString != 0){
-            uint32_t localId = callTrap(false, "DmFindDatabase", "l(wp)", 0, palmString);
-            callTrap(true, "SysAppLaunch", "w(wlwwpp)", 0, localId, 0, 0, 0, 0);
-            //dont free palmString yet
-            //SysUIAppSwitch
-         }
-
-         alreadyRun = true;
-      }
-   }
-}
-#endif
-
 void sandboxInit(){
    inSandbox = false;
 #if defined(EMU_SANDBOX_OPCODE_LEVEL_DEBUG)
@@ -474,6 +422,52 @@ void sandboxTest(uint32_t test){
             else{
                debugLog("Sandbox: Unsafe to read touch position.\n");
             }
+         }
+         break;
+
+      case SANDBOX_SEND_OS_TOUCH:{
+            //press
+            m68k_write_memory_16(0xFFFFFFE0 - 4, palmInput.touchscreenX);
+            m68k_write_memory_16(0xFFFFFFE0 - 2, palmInput.touchscreenY);
+            callFunction(false, 0x00000000, "EvtEnqueuePenPoint", "w(p)", 0xFFFFFFE0 - 4);
+
+            //release
+            m68k_write_memory_16(0xFFFFFFE0 - 4, (uint16_t)-1);
+            m68k_write_memory_16(0xFFFFFFE0 - 2, (uint16_t)-1);
+            callFunction(false, 0x00000000, "EvtEnqueuePenPoint", "w(p)", 0xFFFFFFE0 - 4);
+         }
+         break;
+
+      case SANDBOX_SEND_OS_TOUCH_CALIBRATE:{
+            //press, top left
+            m68k_write_memory_16(0xFFFFFFE0 - 4, 11/*x*/);
+            m68k_write_memory_16(0xFFFFFFE0 - 2, 11/*y*/);
+            callFunction(false, 0x00000000, "EvtEnqueuePenPoint", "w(p)", 0xFFFFFFE0 - 4);
+
+            //release
+            m68k_write_memory_16(0xFFFFFFE0 - 4, (uint16_t)-1/*x*/);
+            m68k_write_memory_16(0xFFFFFFE0 - 2, (uint16_t)-1/*y*/);
+            callFunction(false, 0x00000000, "EvtEnqueuePenPoint", "w(p)", 0xFFFFFFE0 - 4);
+
+            //press, bottom right
+            m68k_write_memory_16(0xFFFFFFE0 - 4, 159 - 11/*x*/);
+            m68k_write_memory_16(0xFFFFFFE0 - 2, 159 - 11/*y*/);
+            callFunction(false, 0x00000000, "EvtEnqueuePenPoint", "w(p)", 0xFFFFFFE0 - 4);
+
+            //release
+            m68k_write_memory_16(0xFFFFFFE0 - 4, (uint16_t)-1/*x*/);
+            m68k_write_memory_16(0xFFFFFFE0 - 2, (uint16_t)-1/*y*/);
+            callFunction(false, 0x00000000, "EvtEnqueuePenPoint", "w(p)", 0xFFFFFFE0 - 4);
+
+            //press, upper middle
+            m68k_write_memory_16(0xFFFFFFE0 - 4, 159 / 2/*x*/);
+            m68k_write_memory_16(0xFFFFFFE0 - 2, 159 / 2 - 13/*y*/);
+            callFunction(false, 0x00000000, "EvtEnqueuePenPoint", "w(p)", 0xFFFFFFE0 - 4);
+
+            //release
+            m68k_write_memory_16(0xFFFFFFE0 - 4, (uint16_t)-1/*x*/);
+            m68k_write_memory_16(0xFFFFFFE0 - 2, (uint16_t)-1/*y*/);
+            callFunction(false, 0x00000000, "EvtEnqueuePenPoint", "w(p)", 0xFFFFFFE0 - 4);
          }
          break;
    }

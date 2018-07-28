@@ -748,13 +748,11 @@ var watchPenIrq(){
    if(firstRun){
       firstRun = false;
       writeArbitraryMemory8(HW_REG_ADDR(PFDIR), readArbitraryMemory8(HW_REG_ADDR(PFDIR)) & 0xFD);
-      writeArbitraryMemory8(HW_REG_ADDR(PFSEL), readArbitraryMemory8(HW_REG_ADDR(PFSEL)) | 0x02);
       debugSafeScreenClear(C_WHITE);
    }
    
    if(getButtonPressed(buttonBack)){
       firstRun = true;
-      writeArbitraryMemory8(HW_REG_ADDR(PFSEL), readArbitraryMemory8(HW_REG_ADDR(PFSEL)) & 0xFD);
       exitSubprogram();
    }
    

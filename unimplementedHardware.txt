@@ -35,7 +35,7 @@ power button must be pushed twice to turn the CPU back on(when debugging it work
 STOP opcode may be causing issues with the power button(it may be setting a separate CPU disable option)
 
 Debug tools:
-missing icons
+missing home screen icons
 
 Memory:
 Sdcard can't be read or written to
@@ -51,6 +51,7 @@ SED1376:
 swivelview register
 
 ADS7846:
+verify chip select
 channels can't be read in single reference mode in hwTestSuite
 channels are not implemented properly in the emulator
 electrical noise on lines(conversions probably should have +-20 added to values)
@@ -59,6 +60,7 @@ Channels 3 and 4(they need to be scaled differently)
 
 
 Fixed:
+PENIRQ can be read even when PFSEL bit 1 is false
 early on I swapped RGB16 R and B, the LUT register addresses for red and blue were swapped though, red actually is the top 5 bits
 Allow IMR to mask interrupts after they are created
 ADC7846 temperature sensors

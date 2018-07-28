@@ -264,12 +264,16 @@ static inline void setSpiCont2(uint16_t value){
       uint8_t bitCount = (value & 0x000F) + 1;
       uint16_t startBit = 1 << (bitCount - 1);
       uint16_t spi2Data = registerArrayRead16(SPIDATA2);
-      bool ads7846ChipSelect = getPortGValue() & 0x04;
+      bool ads7846ChipSelect = !(getPortGValue() & 0x04);//this is unproven, but having it high makes the ADS7846 not work on hardware
       //uint16_t oldSpi2Data = spi2Data;
 
       //the input data is shifted into the unused bits if the transfer is less than 16 bits
       for(uint8_t bits = 0; bits < bitCount; bits++){
-         bool newBit = ads7846ExchangeBit(spi2Data & startBit);
+         bool newBit = true;
+
+         if(ads7846ChipSelect)
+            newBit = ads7846ExchangeBit(spi2Data & startBit);
+
          //debugLog("Sent Bit:%d\n", (bool)(spi2Data & startBit));
          spi2Data <<= 1;
          spi2Data |= newBit;
@@ -453,8 +457,8 @@ static inline uint8_t getPortFValue(){
    bool penIrqPin = !(ads7846PenIrqEnabled && palmInput.touchscreenTouched);//penIrqPin pulled low on touch
 
    portFValue |= penIrqPin << 1;
-   portFValue |= 0xFD;//floating pins are high
-   portFValue &= ~portFDir & portFSel;
+   portFValue |= 0x85;//bit 7 & 2-0 have pull ups, bits 6-3 have pull downs, bit 2 is occupied by PENIRQ
+   portFValue &= ~portFDir & (portFSel | 0x02);//IRQ5 is readable even when PFSEL bit 2 is false
    portFValue |= portFData & portFDir & portFSel;
 
    return portFValue;

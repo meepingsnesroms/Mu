@@ -535,14 +535,31 @@ void emulateFrame(){
    refreshInputState();
 
    //hack, this is just an easy way to use the sandbox without attaching it to the emulator frontend
+   static bool allowRun1 = true;
+   static bool allowRun2 = true;
+
    if(palmInput.buttonUp){
-      static bool runOnce = false;
       palmInput.buttonUp = false;
-      if(!runOnce){
-         //sandboxTest(SANDBOX_TEST_OS_VER);
-         sandboxTest(SANDBOX_TEST_TOUCH_READ);
-         runOnce = true;
+
+      if(allowRun1){
+         sandboxTest(SANDBOX_SEND_OS_TOUCH);
+         allowRun1 = false;
       }
+   }
+   else{
+      allowRun1 = true;
+   }
+
+   if(palmInput.buttonDown){
+      palmInput.buttonDown = false;
+
+      if(allowRun2){
+         sandboxTest(SANDBOX_SEND_OS_TOUCH_CALIBRATE);
+         allowRun2 = false;
+      }
+   }
+   else{
+      allowRun2 = true;
    }
 
    while(palmCycleCounter < CRYSTAL_FREQUENCY / EMU_FPS){
@@ -550,7 +567,7 @@ void emulateFrame(){
          //the frequency can change mid frame and get stuck in an infinite loop because of a divide by 0.0
          //+= m68k_execute(palmCrystalCycles{old value} * palmClockMultiplier) / (palmCrystalCycles{new value of 0.0} * palmClockMultiplier) == infinity
          double currentFrequency = palmCrystalCycles;
-         palmCycleCounter += m68k_execute(currentFrequency * palmClockMultiplier) / (currentFrequency * palmClockMultiplier);
+         palmCycleCounter += (double)m68k_execute(currentFrequency * palmClockMultiplier) / (currentFrequency * palmClockMultiplier);
       }
       else{
          palmCycleCounter += 1.0;
