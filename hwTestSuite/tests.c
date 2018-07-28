@@ -761,3 +761,40 @@ var watchPenIrq(){
    
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
+
+var getPenPosition(){
+   static Boolean firstRun = true;
+   uint16_t y = 0;
+   PointType rawPen;
+   PointType screenPen;
+   
+   if(firstRun){
+      firstRun = false;
+      writeArbitraryMemory8(HW_REG_ADDR(PFDIR), readArbitraryMemory8(HW_REG_ADDR(PFDIR)) & 0xFD);
+      debugSafeScreenClear(C_WHITE);
+   }
+   
+   if(getButtonPressed(buttonBack)){
+      firstRun = true;
+      exitSubprogram();
+   }
+   
+   PenGetRawPen(&rawPen);
+   screenPen = rawPen;
+   PenRawToScreen(&screenPen);
+   
+   StrPrintF(sharedDataBuffer, "Raw X:%d    ", rawPen.x);/*"true " needs the space to clear the e from "false"*/
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   StrPrintF(sharedDataBuffer, "Raw Y:%d    ", rawPen.y);/*"true " needs the space to clear the e from "false"*/
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   StrPrintF(sharedDataBuffer, "Screen X:%d    ", screenPen.x);/*"true " needs the space to clear the e from "false"*/
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   StrPrintF(sharedDataBuffer, "Screen Y:%d    ", screenPen.y);/*"true " needs the space to clear the e from "false"*/
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   
+   return makeVar(LENGTH_0, TYPE_NULL, 0);
+}

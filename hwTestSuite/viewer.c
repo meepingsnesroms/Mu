@@ -278,11 +278,9 @@ void resetFunctionViewer(){
    hwTests[totalHwTests].testFunction = getDeviceInfo;
    totalHwTests++;
    
-   /*
-   StrNCopy(hwTests[totalHwTests].name, "IrDa telnet/VNC", TEST_NAME_LENGTH);
-   hwTests[totalHwTests].testFunction = irdaRun;
+   StrNCopy(hwTests[totalHwTests].name, "Get Pen Position", TEST_NAME_LENGTH);
+   hwTests[totalHwTests].testFunction = getPenPosition;
    totalHwTests++;
-   */
    
    if(getPhysicalCpuType() & CPU_M68K){
       /*68k only functions*/

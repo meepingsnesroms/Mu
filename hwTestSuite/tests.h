@@ -21,5 +21,6 @@ var toggleBacklight();
 var toggleMotor();
 var toggleAlarmLed();
 var watchPenIrq();
+var getPenPosition();
 
 #endif
