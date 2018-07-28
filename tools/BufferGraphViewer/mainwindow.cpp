@@ -15,12 +15,12 @@
 uint16_t getEmWaveHeatMapColor(uint16_t data){
    //stolen from http://www.andrewnoske.com/wiki/Code_-_heatmaps_and_color_gradients
    const int NUM_COLORS = 8;
-   const float color[NUM_COLORS][3] = {{0,0,0}, {1,0,0}, {1,1,0}, {0,1,0}, {0,1,1}, {0,0,1}, {0,0,1}, {1,1,1}};//{r,g,b}
-   float value = (float)data / 0xFFFF;
-   float red, green, blue;
+   const double color[NUM_COLORS][3] = {{0,0,0}, {1,0,0}, {1,1,0}, {0,1,0}, {0,1,1}, {0,0,1}, {0,0,1}, {1,1,1}};//{r,g,b}
+   double value = (double)data / 0xFFFF;
+   double red, green, blue;
    int idx1;        // |-- Our desired color will be between these two indexes in "color".
    int idx2;        // |
-   float fractBetween = 0;  // Fraction between "idx1" and "idx2" where our value is.
+   double fractBetween = 0;  // Fraction between "idx1" and "idx2" where our value is.
 
    if(value <= 0){
       // accounts for an input <=0
@@ -31,10 +31,10 @@ uint16_t getEmWaveHeatMapColor(uint16_t data){
       idx1 = idx2 = NUM_COLORS-1;
    }
    else{
-      value = value * (NUM_COLORS - 1);    // Will multiply value by NUM_COLORS.
-      idx1  = (int)value;                // Our desired color will be after this index.
-      idx2  = idx1 + 1;                  // ... and before this index (inclusive).
-      fractBetween = value - (float)idx1;// Distance between the two indexes (0-1).
+      value = value * (NUM_COLORS - 1);   // Will multiply value by NUM_COLORS.
+      idx1  = (int)value;                 // Our desired color will be after this index.
+      idx2  = idx1 + 1;                   // ... and before this index (inclusive).
+      fractBetween = value - (double)idx1;// Distance between the two indexes (0-1).
    }
 
    red   = (color[idx2][0] - color[idx1][0]) * fractBetween + color[idx1][0];
