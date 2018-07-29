@@ -223,6 +223,7 @@ static inline void watchdogSecondTickClk32(){
          //time expired
          if(watchdogState & 0x0002){
             //interrupt
+            watchdogState |= 0x0080;
             setIprIsrBit(INT_WDT);
          }
          else{
@@ -255,15 +256,17 @@ static inline void rtcAddSecondClk32(){
          uint16_t stopwatch = registerArrayRead16(STPWCH);
 
          if(stopwatch != 0x003F){
-            if(stopwatch == 0x0000){
+            if(stopwatch == 0x0000)
                stopwatch = 0x003F;
-               rtcInterruptEvents |= 0x0001;
-            }
-            else{
+            else
                stopwatch--;
-            }
             registerArrayWrite16(STPWCH, stopwatch);
          }
+
+         //if stopwatch ran out above or was enabled with 0x003F in the register trigger interrupt
+         if(stopwatch == 0x003F)
+            rtcInterruptEvents |= 0x0001;
+
          minutes++;
          seconds = 0;
          rtcInterruptEvents |= 0x0002;
@@ -311,6 +314,12 @@ void clk32(){
       clk32Counter++;
    }
 
+   //disabled if both the watchdog timer AND the RTC timer are disabled
+   if(registerArrayRead16(RTCCTL) & 0x0080 || registerArrayRead16(WATCHDOG) & 0x01)
+      rtiInterruptClk32();
+
+   timer12Clk32();
+
    //PLLCR wake select wait
    if(pllWakeWait != -1){
       if(pllWakeWait == 0){
@@ -321,9 +330,6 @@ void clk32(){
       }
       pllWakeWait--;
    }
-
-   rtiInterruptClk32();
-   timer12Clk32();
 
    checkInterrupts();
 }

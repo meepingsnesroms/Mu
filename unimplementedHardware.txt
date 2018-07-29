@@ -8,6 +8,7 @@ CPU32 table lookup opcodes
 RAM wait states
 Trace T1 bit, should be unused by the OS and applications anyway
 Test what bits of IMR are used
+a reset caused by the stopwatch may cause undefined behavior
 
 CPU I/O:
 Peripheral Control Register, audio ppm mixing selection and timer cascade mode

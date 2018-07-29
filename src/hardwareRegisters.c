@@ -694,7 +694,7 @@ void setHwRegister16(uint32_t address, uint16_t value){
          break;
 
       case RTCCTL:
-         registerArrayWrite16(address, value & 0x000A);
+         registerArrayWrite16(address, value & 0x00A0);
          break;
          
       case IMR:
@@ -730,7 +730,10 @@ void setHwRegister16(uint32_t address, uint16_t value){
          
       case WATCHDOG:
          //writing to the watchdog resets the counter bits(8 and 9) to 0
-         registerArrayWrite16(address, value & 0x0083);
+         //1 must be written to clear INTF
+         registerArrayWrite16(WATCHDOG, (value & 0x0003) | (registerArrayRead16(WATCHDOG) & (~value & 0x0080)));
+         if(!(registerArrayRead16(WATCHDOG) & 0x0080))
+            clearIprIsrBit(INT_WDT);
          break;
          
       case RTCISR:
