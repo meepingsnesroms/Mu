@@ -19,19 +19,26 @@ float TouchScreen::rangeSwap(float newRange, float oldRange, float value){
 }
 
 void TouchScreen::mousePressEvent(QMouseEvent* ev){
-   EmuWrapper& emu = ((MainWindow*)(parentWidget()->parentWidget()))->emu;
-   emu.emuInput.touchscreenX = (uint16_t)rangeSwap(emu.screenWidth(), this->width(), ev->x());
-   emu.emuInput.touchscreenY = (uint16_t)rangeSwap(emu.screenHeight(), this->height(), ev->y());
-   emu.emuInput.touchscreenTouched = true;
+   if(ev->x() >= 0 && ev->x() < this->width() && ev->y() >= 0 && ev->y() < this->height()){
+      EmuWrapper& emu = ((MainWindow*)(parentWidget()->parentWidget()->parentWidget()))->emu;
+
+      emu.emuInput.touchscreenX = (uint16_t)rangeSwap(emu.screenWidth(), this->width(), ev->x());
+      emu.emuInput.touchscreenY = (uint16_t)rangeSwap(emu.screenHeight(), this->height(), ev->y());
+      emu.emuInput.touchscreenTouched = true;
+   }
 }
 
 void TouchScreen::mouseMoveEvent(QMouseEvent* ev){
-   EmuWrapper& emu = ((MainWindow*)(parentWidget()->parentWidget()))->emu;
-   emu.emuInput.touchscreenX = (uint16_t)rangeSwap(emu.screenWidth(), this->width(), ev->x());
-   emu.emuInput.touchscreenY = (uint16_t)rangeSwap(emu.screenHeight(), this->height(), ev->y());
+   if(ev->x() >= 0 && ev->x() < this->width() && ev->y() >= 0 && ev->y() < this->height()){
+      EmuWrapper& emu = ((MainWindow*)(parentWidget()->parentWidget()->parentWidget()))->emu;
+
+      emu.emuInput.touchscreenX = (uint16_t)rangeSwap(emu.screenWidth(), this->width(), ev->x());
+      emu.emuInput.touchscreenY = (uint16_t)rangeSwap(emu.screenHeight(), this->height(), ev->y());
+   }
 }
 
 void TouchScreen::mouseReleaseEvent(QMouseEvent* ev){
-   EmuWrapper& emu = ((MainWindow*)(parentWidget()->parentWidget()))->emu;
+   EmuWrapper& emu = ((MainWindow*)(parentWidget()->parentWidget()->parentWidget()))->emu;
+
    emu.emuInput.touchscreenTouched = false;
 }

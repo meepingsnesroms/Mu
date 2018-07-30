@@ -48,6 +48,7 @@ int64_t DebugViewer::numberFromString(QString str, bool negativeAllowed){
 QString DebugViewer::stringFromNumber(int64_t number, bool hex, uint32_t forcedZeros){
    if(hex){
       QString hexString;
+
       hexString += QString::number(number, 16).toUpper();
       while(hexString.length() < (int)forcedZeros)hexString.push_front("0");
       hexString.push_front("0x");
@@ -182,6 +183,7 @@ void DebugViewer::on_debugPrintDebugLogs_clicked(){
 
 void DebugViewer::on_debugEraseDebugLogs_clicked(){
    EmuWrapper& emu = ((MainWindow*)parentWidget())->emu;
+
    emu.getDebugStrings().clear();
    emu.getDuplicateCallCount().clear();
 }

@@ -44,6 +44,7 @@ static bool ignoreTrap(uint16_t trap){
       case 0xA249://sysTrapHwrDelay
          return true;
    }
+
    return false;
 }
 

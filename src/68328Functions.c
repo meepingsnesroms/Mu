@@ -24,16 +24,17 @@ static inline void patchOpcode(uint16_t opcode, void (*handler)(void), uint8_t c
 
 void cpu32OpLpstop(void){
    uint immData = OPER_I_16();
+
    if(FLAG_S && immData & 0x2000){
       //turn off the CPU and wait for interrupts
       m68ki_set_sr(immData);
       lowPowerStopActive = true;
+      debugLog("LowPowerStop set, CPU is off, PC:0x%08X!\n", m68k_get_reg(NULL, M68K_REG_PPC));
    }
    else{
       //program lacks authority
       m68ki_exception_privilege_violation();
    }
-   debugLog("LowPowerStop set, CPU is off, PC:0x%08X!\n", m68k_get_reg(NULL, M68K_REG_PPC));
 }
 
 void cpu32OpTbls(void){
@@ -62,31 +63,37 @@ void m68k_op_cpu32_dispatch(void){
    uint opcodePart2 = OPER_I_16();
    
    if(opcodePart1 == 0xF800 && opcodePart2 == 0x01C0){
-      //Low Power Stop
+      //low power stop
       cpu32OpLpstop();
-      return;
    }
-   
-   switch(opcodePart1 & 0x0C00){
-      case 0x0800:
-         //signed and rounded
-         cpu32OpTbls();
-         return;
-      case 0x0C00:
-         //signed, not rounded
-         cpu32OpTblsn();
-         return;
-      case 0x0000:
-         //unsigned and rounded
-         cpu32OpTblu();
-         return;
-      case 0x0400:
-         //unsigned, not rounded
-         cpu32OpTblun();
-         return;
+   else{
+      //other opcodes
+      switch(opcodePart1 & 0x0C00){
+         case 0x0800:
+            //signed and rounded
+            cpu32OpTbls();
+            break;
+
+         case 0x0C00:
+            //signed, not rounded
+            cpu32OpTblsn();
+            break;
+
+         case 0x0000:
+            //unsigned and rounded
+            cpu32OpTblu();
+            break;
+
+         case 0x0400:
+            //unsigned, not rounded
+            cpu32OpTblun();
+            break;
+
+         default:
+            m68ki_exception_1111();//illegal coprocessor instruction
+            break;
+      }
    }
-   
-   m68ki_exception_1111();//illegal coprocessor instruction
 }
 
 

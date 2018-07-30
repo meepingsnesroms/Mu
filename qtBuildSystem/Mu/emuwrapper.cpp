@@ -66,7 +66,7 @@ EmuWrapper::EmuWrapper(){
    emuVideoWidth = 0;
    emuVideoHeight = 0;
    emuNewFrameReady = false;
-   emuDoubleBuffer = NULL;
+   emuDoubleBuffer = nullptr;
 
    frontendDebugString = new char[200];
    frontendDebugStringSize = 200;
@@ -224,6 +224,7 @@ std::vector<uint64_t>& EmuWrapper::getDuplicateCallCount(){
 
 std::vector<uint32_t> EmuWrapper::getCpuRegisters(){
    std::vector<uint32_t> registers;
+
    for(uint8_t reg = M68K_REG_D0; reg <= M68K_REG_SR; reg++)
       registers.push_back(m68k_get_reg(NULL, (m68k_register_t)reg));
    return registers;
@@ -240,6 +241,7 @@ bool EmuWrapper::getPowerButtonLed(){
 
 uint64_t EmuWrapper::getEmulatorMemory(uint32_t address, uint8_t size){
    uint64_t data = UINT64_MAX;//invalid access
+
    //until SPI and UART destructive reads are implemented all reads to mapped addresses are safe, SPI is now implemented, this needs to be fixed
    if(bankType[START_BANK(address)] != CHIP_NONE){
       uint16_t m68kSr = m68k_get_reg(NULL, M68K_REG_SR);

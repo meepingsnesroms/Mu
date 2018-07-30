@@ -553,7 +553,7 @@ void emulateFrame(){
          //the frequency can change mid frame and get stuck in an infinite loop because of a divide by 0.0
          //+= m68k_execute(palmCrystalCycles{old value} * palmClockMultiplier) / (palmCrystalCycles{new value of 0.0} * palmClockMultiplier) == infinity
          double currentFrequency = palmCrystalCycles;
-         palmCycleCounter += (double)m68k_execute(currentFrequency * palmClockMultiplier) / (currentFrequency * palmClockMultiplier);
+         palmCycleCounter += m68k_execute(currentFrequency * palmClockMultiplier) / (currentFrequency * palmClockMultiplier);
       }
       else{
          palmCycleCounter += 1.0;

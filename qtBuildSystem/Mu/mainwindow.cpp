@@ -29,6 +29,10 @@ MainWindow::MainWindow(QWidget* parent) :
    emuDebugger = new DebugViewer(this);
    refreshDisplay = new QTimer(this);
 
+   //this makes the display window resize properly
+   ui->displayContainer->installEventFilter(this);
+   ui->displayContainer->setObjectName("displayContainer");
+
    ui->calendar->installEventFilter(this);
    ui->addressBook->installEventFilter(this);
    ui->todo->installEventFilter(this);
@@ -86,7 +90,18 @@ void MainWindow::popupInformationDialog(QString info){
 bool MainWindow::eventFilter(QObject *object, QEvent *event){
    if(QString(object->metaObject()->className()) == "QPushButton" && event->type() == QEvent::Resize){
       QPushButton* button = (QPushButton*)object;
+
       button->setIconSize(QSize(button->size().width() / 1.7, button->size().height() / 1.7));
+   }
+
+   if(QString(object->metaObject()->className()) == "QWidget" && event->type() == QEvent::Resize){
+      if(object->objectName() == "displayContainer"){
+         QWidget* displayContainer = (QWidget*)object;
+         double smallestRatio = qMin(displayContainer->size().width() * 0.98 / 3.0 , displayContainer->size().height() * 0.98 / 4.0);
+         //the 0.98 above allows the display to shrink, without it the displayContainer couldent shrink because of the fixed size of the display
+
+         ui->display->setFixedSize(smallestRatio * 3.0, smallestRatio * 4.0);
+      }
    }
 
    return QMainWindow::eventFilter(object, event);
@@ -94,12 +109,14 @@ bool MainWindow::eventFilter(QObject *object, QEvent *event){
 
 void MainWindow::selectHomePath(){
    QString dir = QFileDialog::getOpenFileName(this, "New Home Directory(\"~/Mu\" is default)", QDir::root().path(), nullptr);
+
    settings.setValue("resourceDirectory", dir);
 }
 
 void MainWindow::on_install_pressed(){
    QString app = QFileDialog::getOpenFileName(this, "Open *.prc/pdb/pqa", QDir::root().path(), nullptr);
    uint32_t error = emu.installApplication(app);
+
    if(error != EMU_ERROR_NONE)
       popupErrorDialog("Could not install app");
 }
@@ -107,7 +124,7 @@ void MainWindow::on_install_pressed(){
 //display
 void MainWindow::updateDisplay(){
    if(emu.newFrameReady()){
-      ui->display->setPixmap(emu.getFramebuffer().scaled(QSize(ui->display->size().width() * 0.95, ui->display->size().height() * 0.95), Qt::KeepAspectRatio, Qt::SmoothTransformation));
+      ui->display->setPixmap(emu.getFramebuffer().scaled(QSize(ui->display->size().width(), ui->display->size().height()), Qt::KeepAspectRatio, Qt::SmoothTransformation));
       ui->display->update();
 
       ui->powerButtonLed->setStyleSheet(emu.getPowerButtonLed() ? "background: lime" : "");
@@ -252,6 +269,7 @@ void MainWindow::on_debugger_clicked(){
 
 void MainWindow::on_screenshot_clicked(){
    const QPixmap* currentScreenPixmap = ui->display->pixmap();
+
    if(currentScreenPixmap != nullptr && !currentScreenPixmap->isNull()){
       uint64_t screenshotNumber = settings.value("screenshotNum", 0).toLongLong();
       QString path = settings.value("resourceDirectory", "").toString();

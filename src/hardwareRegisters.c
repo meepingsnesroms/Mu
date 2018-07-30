@@ -139,7 +139,7 @@ static void recalculateCpuSpeed(){
 
       //power control burst mode
       if(pctlr & 0x80)
-         newCpuSpeed *= (double)(pctlr & 0x1F) / 31.0;
+         newCpuSpeed *= (pctlr & 0x1F) / 31.0;
    }
    else{
       newCpuSpeed = 0.0;
