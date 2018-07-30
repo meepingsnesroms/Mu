@@ -534,7 +534,18 @@ uint32_t emulatorInstallPrcPdb(buffer_t file){
 void emulateFrame(){
    refreshInputState();
 
+   static uint16_t oldTouchX = 0;
+   static uint16_t oldTouchY = 0;
+   static bool oldTouchDown = false;
+   if(palmInput.touchscreenX != oldTouchX || palmInput.touchscreenY != oldTouchY || palmInput.touchscreenTouched != oldTouchDown){
+      sandboxTest(SANDBOX_SEND_OS_TOUCH);
+      oldTouchX = palmInput.touchscreenX;
+      oldTouchY = palmInput.touchscreenY;
+      oldTouchDown = palmInput.touchscreenTouched;
+   }
+
    //hack, this is just an easy way to use the sandbox without attaching it to the emulator frontend
+   /*
    static bool allowRun1 = true;
    if(palmInput.buttonUp){
       palmInput.buttonUp = false;
@@ -547,6 +558,7 @@ void emulateFrame(){
    else{
       allowRun1 = true;
    }
+   */
 
    while(palmCycleCounter < CRYSTAL_FREQUENCY / EMU_FPS){
       if(palmCrystalCycles != 0.0 && !lowPowerStopActive){

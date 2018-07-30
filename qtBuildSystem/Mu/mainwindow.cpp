@@ -52,16 +52,23 @@ MainWindow::MainWindow(QWidget* parent) :
 
    ui->ctrlBtn->setIcon(QIcon(":/buttons/images/play.png"));
 
+
+   //set resource directory if first launch
+   if(settings.value("resourceDirectory", "").toString() == ""){
+      QString path;
+
 #if defined(Q_OS_ANDROID)
-   if(settings.value("resourceDirectory", "").toString() == "")
-      settings.setValue("resourceDirectory", "/sdcard/Mu");
+      path = "/sdcard/Mu";
 #elif defined(Q_OS_IOS)
-   if(settings.value("resourceDirectory", "").toString() == "")
-      settings.setValue("resourceDirectory", "/var/mobile/Media");
+      path = "/var/mobile/Media/Mu";
 #else
-   if(settings.value("resourceDirectory", "").toString() == "")
-      settings.setValue("resourceDirectory", QDir::homePath() + "/Mu");
+      path = QDir::homePath() + "/Mu";
 #endif
+
+      settings.setValue("resourceDirectory", path);
+      QDir(path).mkpath(".");
+   }
+
 
 #if defined(Q_OS_ANDROID) || defined(Q_OS_IOS)
    ui->debugger->hide();
@@ -271,7 +278,7 @@ void MainWindow::on_screenshot_clicked(){
    const QPixmap* currentScreenPixmap = ui->display->pixmap();
 
    if(currentScreenPixmap != nullptr && !currentScreenPixmap->isNull()){
-      uint64_t screenshotNumber = settings.value("screenshotNum", 0).toLongLong();
+      qlonglong screenshotNumber = settings.value("screenshotNum", 0).toLongLong();
       QString path = settings.value("resourceDirectory", "").toString();
       QDir location = path + "/screenshots";
 

@@ -237,7 +237,7 @@
          </property>
          <property name="icon">
           <iconset resource="mainwindow.qrc">
-           <normaloff>:/buttons/images/toDo.png</normaloff>:/buttons/images/toDo.png</iconset>
+           <normaloff>:/buttons/images/todo.png</normaloff>:/buttons/images/todo.png</iconset>
          </property>
         </widget>
        </item>

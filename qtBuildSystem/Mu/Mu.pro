@@ -30,6 +30,12 @@ macx {
     QMAKE_INFO_PLIST = macos/Info.plist
 }
 
+android {
+    QMAKE_CFLAGS += -fopenmp
+    QMAKE_CXXFLAGS += -fopenmp
+    QMAKE_LFLAGS += -fopenmp
+}
+
 CONFIG(debug, debug|release){
     DEFINES += EMU_DEBUG EMU_SANDBOX EMU_CUSTOM_DEBUG_LOG_HANDLER
 #   DEFINES += EMU_SANDBOX_OPCODE_LEVEL_DEBUG EMU_SANDBOX_LOG_APIS
