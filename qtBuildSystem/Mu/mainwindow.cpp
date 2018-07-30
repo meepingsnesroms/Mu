@@ -53,21 +53,23 @@ MainWindow::MainWindow(QWidget* parent) :
    ui->ctrlBtn->setIcon(QIcon(":/buttons/images/play.png"));
 
 
-   //set resource directory if first launch
-   if(settings.value("resourceDirectory", "").toString() == ""){
-      QString path;
+   QString resourceDirPath = settings.value("resourceDirectory", "").toString();
 
+   //use default path if path not set
+   if(resourceDirPath == ""){
 #if defined(Q_OS_ANDROID)
-      path = "/sdcard/Mu";
+      resourceDirPath = "/sdcard/Mu";
 #elif defined(Q_OS_IOS)
-      path = "/var/mobile/Media/Mu";
+      resourceDirPath = "/var/mobile/Media/Mu";
 #else
-      path = QDir::homePath() + "/Mu";
+      resourceDirPath = QDir::homePath() + "/Mu";
 #endif
-
-      settings.setValue("resourceDirectory", path);
-      QDir(path).mkpath(".");
+      settings.setValue("resourceDirectory", resourceDirPath);
    }
+
+   //create path if it doesnt exist
+   if(!QDir(resourceDirPath).exists())
+      QDir(resourceDirPath).mkpath(".");
 
 
 #if defined(Q_OS_ANDROID) || defined(Q_OS_IOS)
