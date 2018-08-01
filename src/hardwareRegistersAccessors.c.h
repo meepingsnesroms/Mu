@@ -94,8 +94,6 @@ static inline void setCsd(uint16_t value){
    else
       chips[CHIP_D_RAM].lineSize = 0x8000/*32kb*/ << (value >> 1 & 0x0007);
 
-   printf("Set CSD, size:0x%08X, PC:0x%08X\n", chips[CHIP_D_RAM].lineSize, m68k_get_reg(NULL, M68K_REG_PPC));
-
    //attributes
    chips[CHIP_D_RAM].supervisorOnlyProtectedMemory = value & 0x4000;
    chips[CHIP_D_RAM].readOnlyForProtectedMemory = value & 0x2000;

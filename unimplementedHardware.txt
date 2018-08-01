@@ -49,6 +49,7 @@ CSD and CSC chaining to create a 16mb address space from 4x4mb chunks(the Palm m
 the second line on all the chip selects is not properly emulated, CS(ABCD)1 is missing, this halves the size of the ranges, if the ROM only uses one chip per chip select this will go unnoticed
 CSC and CSD chaining may just be CSD using CSC lines an losing a chipselect, the CSC address space is never accessed, this further supports chaining or losing this chipselect
 there is conflicting information on wether the DRAM bit effects CSC, needs a test made
+chipselect mirroring is wrong(CS*0 and CS*1 are considered continuous when mapped with more address space than memory, mirroring is currently [CS*0, CS*1, repeat alternating till the end of address space] it should be [CS*0, repeat CS*0 until half way through CS* address space, CS*1, repeat CS*1 until end of CS* address space])
 
 SED1376:
 swivelview register

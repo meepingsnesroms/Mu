@@ -872,7 +872,7 @@ void setHwRegister16(uint32_t address, uint16_t value){
 
       case CSUGBA:
          if((value & 0xF777) != registerArrayRead16(CSUGBA)){
-            registerArrayWrite16(CSUGBA, value);
+            registerArrayWrite16(CSUGBA, value & 0xF777);
             //refresh all chipselect address lines
             setCsgba(registerArrayRead16(CSGBA));
             setCsgbb(registerArrayRead16(CSGBB));
@@ -997,7 +997,7 @@ void resetHwRegisters(){
    //all chipselects are disabled at boot and CSA is mapped to 0x00000000 and covers the entire address range until CSGBA set otherwise
    chips[CHIP_A_ROM].inBootMode = true;
 
-   //default size, prevents divide by 0 crash in access checks
+   //default size, prevents divide by 0 crash in access checks(should never actually happen execpt for CHIP_REGISTERS and CHIP_NONE, but just be safe anyway)
    chips[CHIP_A_ROM].lineSize = 0x20000;
    chips[CHIP_B_SED].lineSize = 0x20000;
    chips[CHIP_C_USB].lineSize = 0x8000;
