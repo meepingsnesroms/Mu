@@ -135,7 +135,7 @@ static uint32_t scanForPrivateFunctionAddress(const char* name){
    //function name format [0x**(unknown), string(with null terminator), 0x00, 0x00(if last 0x00 was on an even address, protects opcode alignemnt)]
    //this is not 100% accurate, it scans memory for a function address based on a string
    //if a duplicate set of stings is found but not encasing a function a fatal error will occur on execution
-   uint32_t rangeEnd = chips[CHIP_A_ROM].start + chips[CHIP_A_ROM].size - 1;
+   uint32_t rangeEnd = chips[CHIP_A_ROM].start + chips[CHIP_A_ROM].lineSize - 1;
    uint32_t address = find68kString(name, chips[CHIP_A_ROM].start, rangeEnd);
 
    while(address < rangeEnd){

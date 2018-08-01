@@ -276,7 +276,7 @@ void emulatorSaveState(uint8_t* data){
       offset += sizeof(uint8_t);
       writeStateValueUint32(data + offset, chips[chip].start);
       offset += sizeof(uint32_t);
-      writeStateValueUint32(data + offset, chips[chip].size);
+      writeStateValueUint32(data + offset, chips[chip].lineSize);
       offset += sizeof(uint32_t);
       writeStateValueUint32(data + offset, chips[chip].mask);
       offset += sizeof(uint32_t);
@@ -420,7 +420,7 @@ void emulatorLoadState(uint8_t* data){
       offset += sizeof(uint8_t);
       chips[chip].start = readStateValueUint32(data + offset);
       offset += sizeof(uint32_t);
-      chips[chip].size = readStateValueUint32(data + offset);
+      chips[chip].lineSize = readStateValueUint32(data + offset);
       offset += sizeof(uint32_t);
       chips[chip].mask = readStateValueUint32(data + offset);
       offset += sizeof(uint32_t);

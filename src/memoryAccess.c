@@ -81,9 +81,12 @@ static inline void sed1376Write32(uint32_t address, uint32_t value){
 }
 
 static inline bool probeRead(uint8_t bank, uint32_t address){
-   if(chips[bank].supervisorOnlyProtectedMemory && address >= chips[bank].unprotectedSize && !(m68k_get_reg(NULL, M68K_REG_SR) & 0x2000)){
-      setPrivilegeViolation(address, false);
-      return false;
+   if(chips[bank].supervisorOnlyProtectedMemory){
+      uint32_t index = address - chips[bank].start % chips[bank].lineSize;//below size = CS*0 any value above size is considered CS*1
+      if(index >= chips[bank].unprotectedSize && !(m68k_get_reg(NULL, M68K_REG_SR) & 0x2000)){
+         setPrivilegeViolation(address, false);
+         return false;
+      }
    }
    return true;
 }
@@ -93,14 +96,17 @@ static inline bool probeWrite(uint8_t bank, uint32_t address){
       setWriteProtectViolation(address);
       return false;
    }
-   else if(address >= chips[bank].unprotectedSize){
-      if(chips[bank].supervisorOnlyProtectedMemory && !(m68k_get_reg(NULL, M68K_REG_SR) & 0x2000)){
-         setPrivilegeViolation(address, true);
-         return false;
-      }
-      if(chips[bank].readOnlyForProtectedMemory){
-         setWriteProtectViolation(address);
-         return false;
+   else if(chips[bank].supervisorOnlyProtectedMemory || chips[bank].readOnlyForProtectedMemory){
+      uint32_t index = address - chips[bank].start % chips[bank].lineSize;//below size = CS*0 any value above size is considered CS*1
+      if(index >= chips[bank].unprotectedSize){
+         if(chips[bank].supervisorOnlyProtectedMemory && !(m68k_get_reg(NULL, M68K_REG_SR) & 0x2000)){
+            setPrivilegeViolation(address, true);
+            return false;
+         }
+         if(chips[bank].readOnlyForProtectedMemory){
+            setWriteProtectViolation(address);
+            return false;
+         }
       }
    }
    return true;
@@ -343,16 +349,16 @@ static uint8_t getProperBankType(uint32_t bank){
       //registers have first priority, they cover 0xFFFFF000 even if a chipselect overlaps this area or CHIP_A_ROM is in boot mode
       return CHIP_REGISTERS;
    }
-   else if(chips[CHIP_A_ROM].inBootMode || (chips[CHIP_A_ROM].enable && BANK_IN_RANGE(bank, chips[CHIP_A_ROM].start, chips[CHIP_A_ROM].size))){
+   else if(chips[CHIP_A_ROM].inBootMode || (chips[CHIP_A_ROM].enable && BANK_IN_RANGE(bank, chips[CHIP_A_ROM].start, chips[CHIP_A_ROM].lineSize * 2))){
       return CHIP_A_ROM;
    }
-   else if(chips[CHIP_B_SED].enable && BANK_IN_RANGE(bank, chips[CHIP_B_SED].start, chips[CHIP_B_SED].size) && sed1376ClockConnected()){
+   else if(chips[CHIP_B_SED].enable && BANK_IN_RANGE(bank, chips[CHIP_B_SED].start, chips[CHIP_B_SED].lineSize * 2) && sed1376ClockConnected()){
       return CHIP_B_SED;
    }
-   else if(chips[CHIP_C_USB].enable && BANK_IN_RANGE(bank, chips[CHIP_C_USB].start, chips[CHIP_C_USB].size)){
+   else if(chips[CHIP_C_USB].enable && BANK_IN_RANGE(bank, chips[CHIP_C_USB].start, chips[CHIP_C_USB].lineSize * 2)){
       return CHIP_C_USB;
    }
-   else if(chips[CHIP_D_RAM].enable && BANK_IN_RANGE(bank, chips[CHIP_D_RAM].start, chips[CHIP_D_RAM].size)){
+   else if(chips[CHIP_D_RAM].enable && BANK_IN_RANGE(bank, chips[CHIP_D_RAM].start, chips[CHIP_D_RAM].lineSize * 2)){
       return CHIP_D_RAM;
    }
 
@@ -373,7 +379,7 @@ void setRegisterFFFFAccessMode(){
 
 void setSed1376Attached(bool attached){
    if(chips[CHIP_B_SED].enable && bankType[START_BANK(chips[CHIP_B_SED].start)] != (attached ? CHIP_B_SED : CHIP_NONE))
-      memset(&bankType[START_BANK(chips[CHIP_B_SED].start)], attached ? CHIP_B_SED : CHIP_NONE, END_BANK(chips[CHIP_B_SED].start, chips[CHIP_B_SED].size) - START_BANK(chips[CHIP_B_SED].start) + 1);
+      memset(&bankType[START_BANK(chips[CHIP_B_SED].start)], attached ? CHIP_B_SED : CHIP_NONE, END_BANK(chips[CHIP_B_SED].start, chips[CHIP_B_SED].lineSize) - START_BANK(chips[CHIP_B_SED].start) + 1);
 }
 
 void resetAddressSpace(){

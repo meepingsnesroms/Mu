@@ -43,7 +43,7 @@ enum{
 typedef struct{
    bool     enable;
    uint32_t start;
-   uint32_t size;
+   uint32_t lineSize;//the size of a single chip select line, multiply by 2 to get the range size
    uint32_t mask;//the address lines the chip responds to, so 0x10000 on an chip with 16 address lines will return the value at 0x0000
 
    //attributes

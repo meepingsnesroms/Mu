@@ -35,7 +35,7 @@ static inline void clearIprIsrBit(uint32_t interruptBit){
 static inline void setCsa(uint16_t value){
    chips[CHIP_A_ROM].enable = value & 0x0001;
    chips[CHIP_A_ROM].readOnly = value & 0x8000;
-   chips[CHIP_A_ROM].size = 0x20000/*128kb*/ << (value >> 1 & 0x0007);
+   chips[CHIP_A_ROM].lineSize = 0x20000/*128kb*/ << (value >> 1 & 0x0007);
 
    //CSA is now just a normal chipselect
    if(chips[CHIP_A_ROM].enable && chips[CHIP_A_ROM].inBootMode)
@@ -49,33 +49,37 @@ static inline void setCsb(uint16_t value){
 
    chips[CHIP_B_SED].enable = value & 0x0001;
    chips[CHIP_B_SED].readOnly = value & 0x8000;
-   chips[CHIP_B_SED].size = 0x20000/*128kb*/ << (value >> 1 & 0x0007);
+   chips[CHIP_B_SED].lineSize = 0x20000/*128kb*/ << (value >> 1 & 0x0007);
 
    //attributes
    chips[CHIP_B_SED].supervisorOnlyProtectedMemory = value & 0x4000;
    chips[CHIP_B_SED].readOnlyForProtectedMemory = value & 0x2000;
    if(csControl1 & 0x4000 && csControl1 & 0x0001)
-      chips[CHIP_B_SED].unprotectedSize = 0x8000/*32kb*/ << ((value >> 11 & 0x0003) | 0x0004);
+      chips[CHIP_B_SED].unprotectedSize = chips[CHIP_B_SED].lineSize / (1 << 7 - ((value >> 11 & 0x0003) | 0x0004));
    else
-      chips[CHIP_B_SED].unprotectedSize = 0x8000/*32kb*/ << (value >> 11 & 0x0003);
+      chips[CHIP_B_SED].unprotectedSize = chips[CHIP_B_SED].lineSize / (1 << 7 - (value >> 11 & 0x0003));
 
    registerArrayWrite16(CSB, value & 0xF9FF);
 }
 
 static inline void setCsc(uint16_t value){
    uint16_t csControl1 = registerArrayRead16(CSCTRL1);
+   bool csdDramBit = registerArrayRead16(CSD) & 0x0200;
 
    chips[CHIP_C_USB].enable = value & 0x0001;
    chips[CHIP_C_USB].readOnly = value & 0x8000;
-   chips[CHIP_C_USB].size = 0x8000/*32kb*/ << (value >> 1 & 0x0007);
+   if(csControl1 & 0x0040 && csdDramBit)
+      chips[CHIP_C_USB].lineSize = 0x800000/*8mb*/ << (value >> 1 & 0x0001);
+   else
+      chips[CHIP_C_USB].lineSize = 0x8000/*32kb*/ << (value >> 1 & 0x0007);
 
    //attributes
    chips[CHIP_C_USB].supervisorOnlyProtectedMemory = value & 0x4000;
    chips[CHIP_C_USB].readOnlyForProtectedMemory = value & 0x2000;
    if(csControl1 & 0x4000 && csControl1 & 0x0004)
-      chips[CHIP_C_USB].unprotectedSize = 0x8000/*32kb*/ << ((value >> 11 & 0x0003) | 0x0004);
+      chips[CHIP_C_USB].unprotectedSize = chips[CHIP_C_USB].lineSize / (1 << 7 - ((value >> 11 & 0x0003) | 0x0004));
    else
-      chips[CHIP_C_USB].unprotectedSize = 0x8000/*32kb*/ << (value >> 11 & 0x0003);
+      chips[CHIP_C_USB].unprotectedSize = chips[CHIP_C_USB].lineSize / (1 << 7 - (value >> 11 & 0x0003));
 
    registerArrayWrite16(CSC, value & 0xF9FF);
 }
@@ -86,17 +90,17 @@ static inline void setCsd(uint16_t value){
    chips[CHIP_D_RAM].enable = value & 0x0001;
    chips[CHIP_D_RAM].readOnly = value & 0x8000;
    if(csControl1 & 0x0040 && value & 0x0200)
-      chips[CHIP_D_RAM].size = 0x800000/*8mb*/ << (value >> 1 & 0x0001);
+      chips[CHIP_D_RAM].lineSize = 0x800000/*8mb*/ << (value >> 1 & 0x0001);
    else
-      chips[CHIP_D_RAM].size = 0x8000/*32kb*/ << (value >> 1 & 0x0007);
+      chips[CHIP_D_RAM].lineSize = 0x8000/*32kb*/ << (value >> 1 & 0x0007);
 
    //attributes
    chips[CHIP_D_RAM].supervisorOnlyProtectedMemory = value & 0x4000;
    chips[CHIP_D_RAM].readOnlyForProtectedMemory = value & 0x2000;
    if(csControl1 & 0x4000 && csControl1 & 0x0010)
-      chips[CHIP_D_RAM].unprotectedSize = 0x8000/*32kb*/ << ((value >> 11 & 0x0003) | 0x0004);
+      chips[CHIP_D_RAM].unprotectedSize = chips[CHIP_D_RAM].lineSize / (1 << 7 - ((value >> 11 & 0x0003) | 0x0004));
    else
-      chips[CHIP_D_RAM].unprotectedSize = 0x8000/*32kb*/ << (value >> 11 & 0x0003);
+      chips[CHIP_D_RAM].unprotectedSize = chips[CHIP_D_RAM].lineSize / (1 << 7 - (value >> 11 & 0x0003));
 
    registerArrayWrite16(CSD, value);
 }
@@ -148,21 +152,6 @@ static inline void setCsgbd(uint16_t value){
 
    registerArrayWrite16(CSGBD, value & 0xFFFE);
 }
-
-static inline void setCsctrl1(uint16_t value){
-   uint16_t oldCsctrl1 = registerArrayRead16(CSCTRL1);
-
-   registerArrayWrite16(CSCTRL1, value & 0x7F55);
-   if((oldCsctrl1 & 0x4055) != (value & 0x4055)){
-      //something important changed, update all chipselects
-      //CSA is not dependant on CSCTRL1
-      setCsb(registerArrayRead16(CSB));
-      setCsc(registerArrayRead16(CSC));
-      setCsd(registerArrayRead16(CSD));
-   }
-}
-
-//csctrl 2 and 3 only deal with timing and bus transfer size
 
 static inline void setPllfsr(uint16_t value){
    uint16_t oldPllfsr = registerArrayRead16(PLLFSR);

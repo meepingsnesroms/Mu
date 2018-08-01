@@ -790,28 +790,51 @@ void setHwRegister16(uint32_t address, uint16_t value){
          registerArrayWrite16(address, value & 0xDC7F);
          break;
 
-      case CSA:
-         setCsa(value);
-         if((value & 0x000F) != (registerArrayRead16(CSA) & 0x000F))
-            resetAddressSpace();//only reset address space if size changed or enabled/disabled
+      case CSA:{
+            uint16_t oldCsa = registerArrayRead16(CSA);
+
+            setCsa(value);
+
+            //only reset address space if size changed or enabled/disabled
+            if((value & 0x000F) != (oldCsa & 0x000F))
+               resetAddressSpace();
+         }
          break;
 
-      case CSB:
-         setCsb(value);
-         if((value & 0x000F) != (registerArrayRead16(CSB) & 0x000F))
-            resetAddressSpace();//only reset address space if size changed or enabled/disabled
+      case CSB:{
+            uint16_t oldCsb = registerArrayRead16(CSB);
+
+            setCsb(value);
+
+            //only reset address space if size changed or enabled/disabled
+            if((value & 0x000F) != (oldCsb & 0x000F))
+               resetAddressSpace();
+         }
          break;
 
-      case CSC:
-         setCsc(value);
-         if((value & 0x000F) != (registerArrayRead16(CSC) & 0x000F))
-            resetAddressSpace();//only reset address space if size changed or enabled/disabled
+      case CSC:{
+            uint16_t oldCsc = registerArrayRead16(CSC);
+
+            setCsc(value);
+
+            //only reset address space if size changed or enabled/disabled
+            if((value & 0x000F) != (oldCsc & 0x000F))
+               resetAddressSpace();
+         }
          break;
 
-      case CSD:
-         setCsd(value);
-         if((value & 0x000F) != (registerArrayRead16(CSD) & 0x000F))
-            resetAddressSpace();//only reset address space if size changed or enabled/disabled
+      case CSD:{
+            uint16_t oldCsd = registerArrayRead16(CSD);
+
+            setCsd(value);
+
+            if((value & 0x0200) != (oldCsd & 0x0200))
+               setCsc(registerArrayRead16(CSC));//CSC may rely on CSD DRAM bit, untested
+
+            //only reset address space if size changed, enabled/disabled or DRAM bit changed
+            if((value & 0x020F) != (oldCsd & 0x020F))
+               resetAddressSpace();
+         }
          break;
 
       case CSGBA:
@@ -859,10 +882,19 @@ void setHwRegister16(uint32_t address, uint16_t value){
          }
          break;
 
-      case CSCTRL1:
-         if((value & 0x7F55) != registerArrayRead16(CSCTRL1)){
-            setCsctrl1(value);
-            resetAddressSpace();
+      case CSCTRL1:{
+            uint16_t oldCsctrl1 = registerArrayRead16(CSCTRL1);
+
+            registerArrayWrite16(CSCTRL1, value & 0x7F55);
+
+            if((value & 0x4055) != (oldCsctrl1 & 0x4055)){
+               //something important changed, update all chipselects
+               //CSA is not dependant on CSCTRL1
+               setCsb(registerArrayRead16(CSB));
+               setCsc(registerArrayRead16(CSC));
+               setCsd(registerArrayRead16(CSD));
+               resetAddressSpace();
+            }
          }
          break;
 
@@ -964,6 +996,14 @@ void resetHwRegisters(){
    memset(chips, 0x00, sizeof(chips));
    //all chipselects are disabled at boot and CSA is mapped to 0x00000000 and covers the entire address range until CSGBA set otherwise
    chips[CHIP_A_ROM].inBootMode = true;
+
+   //default size, prevents divide by 0 crash in access checks
+   chips[CHIP_A_ROM].lineSize = 0x20000;
+   chips[CHIP_B_SED].lineSize = 0x20000;
+   chips[CHIP_C_USB].lineSize = 0x8000;
+   chips[CHIP_D_RAM].lineSize = 0x8000;
+   chips[CHIP_REGISTERS].lineSize = 0x10000;
+   chips[CHIP_NONE].lineSize = 0x1;
 
    //masks for reading and writing
    chips[CHIP_A_ROM].mask = 0x003FFFFF;//4mb
