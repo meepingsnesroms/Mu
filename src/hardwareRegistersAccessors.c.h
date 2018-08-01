@@ -11,12 +11,12 @@ static inline uint8_t getPortKValue();
 static inline uint8_t getPortMValue();
 
 //basic accessors
-static inline uint8_t registerArrayRead8(uint32_t address){return BUFFER_READ_8(palmReg, address, 0, 0xFFF);}
-static inline uint16_t registerArrayRead16(uint32_t address){return BUFFER_READ_16(palmReg, address, 0, 0xFFF);}
-static inline uint32_t registerArrayRead32(uint32_t address){return BUFFER_READ_32(palmReg, address, 0, 0xFFF);}
-static inline void registerArrayWrite8(uint32_t address, uint8_t value){BUFFER_WRITE_8(palmReg, address, 0, 0xFFF, value);}
-static inline void registerArrayWrite16(uint32_t address, uint16_t value){BUFFER_WRITE_16(palmReg, address, 0, 0xFFF, value);}
-static inline void registerArrayWrite32(uint32_t address, uint32_t value){BUFFER_WRITE_32(palmReg, address, 0, 0xFFF, value);}
+static inline uint8_t registerArrayRead8(uint32_t address){return BUFFER_READ_8(palmReg, address, 0xFFF);}
+static inline uint16_t registerArrayRead16(uint32_t address){return BUFFER_READ_16(palmReg, address, 0xFFF);}
+static inline uint32_t registerArrayRead32(uint32_t address){return BUFFER_READ_32(palmReg, address, 0xFFF);}
+static inline void registerArrayWrite8(uint32_t address, uint8_t value){BUFFER_WRITE_8(palmReg, address, 0xFFF, value);}
+static inline void registerArrayWrite16(uint32_t address, uint16_t value){BUFFER_WRITE_16(palmReg, address, 0xFFF, value);}
+static inline void registerArrayWrite32(uint32_t address, uint32_t value){BUFFER_WRITE_32(palmReg, address, 0xFFF, value);}
 
 //register setters
 static inline void setIprIsrBit(uint32_t interruptBit){
@@ -93,6 +93,8 @@ static inline void setCsd(uint16_t value){
       chips[CHIP_D_RAM].lineSize = 0x800000/*8mb*/ << (value >> 1 & 0x0001);
    else
       chips[CHIP_D_RAM].lineSize = 0x8000/*32kb*/ << (value >> 1 & 0x0007);
+
+   printf("Set CSD, size:0x%08X, PC:0x%08X\n", chips[CHIP_D_RAM].lineSize, m68k_get_reg(NULL, M68K_REG_PPC));
 
    //attributes
    chips[CHIP_D_RAM].supervisorOnlyProtectedMemory = value & 0x4000;

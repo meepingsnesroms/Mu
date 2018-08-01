@@ -63,6 +63,7 @@ Channels 3 and 4(they need to be scaled differently)
 
 
 Fixed:
+Since chipselects must be aligned to there memory size the start address doesnt need to be subtracted from each address calculation
 PENIRQ can be read even when PFSEL bit 1 is false
 early on I swapped RGB16 R and B, the LUT register addresses for red and blue were swapped though, red actually is the top 5 bits
 Allow IMR to mask interrupts after they are created

@@ -28,12 +28,12 @@
 #define SED1376_FB_OFFSET 0x20000//offset from SED1376 registers
 
 //the read/write stuff looks messy here but makes the memory access functions alot cleaner
-#define BUFFER_READ_8(segment, accessAddress, startAddress, mask)  segment[accessAddress - startAddress & mask]
-#define BUFFER_READ_16(segment, accessAddress, startAddress, mask) (segment[accessAddress - startAddress & mask] << 8 | segment[accessAddress - startAddress + 1 & mask])
-#define BUFFER_READ_32(segment, accessAddress, startAddress, mask) (segment[accessAddress - startAddress & mask] << 24 | segment[accessAddress - startAddress + 1 & mask] << 16 | segment[accessAddress - startAddress + 2 & mask] << 8 | segment[accessAddress - startAddress + 3 & mask])
-#define BUFFER_WRITE_8(segment, accessAddress, startAddress, mask, value)  segment[accessAddress - startAddress & mask] = value
-#define BUFFER_WRITE_16(segment, accessAddress, startAddress, mask, value) (segment[accessAddress - startAddress & mask] = value >> 8, segment[accessAddress - startAddress + 1 & mask] = value & 0xFF)
-#define BUFFER_WRITE_32(segment, accessAddress, startAddress, mask, value) (segment[accessAddress - startAddress & mask] = value >> 24, segment[accessAddress - startAddress + 1 & mask] = (value >> 16) & 0xFF, segment[accessAddress - startAddress + 2 & mask] = (value >> 8) & 0xFF, segment[accessAddress - startAddress + 3 & mask] = value & 0xFF)
+#define BUFFER_READ_8(segment, accessAddress, mask)  segment[(accessAddress) & (mask)]
+#define BUFFER_READ_16(segment, accessAddress, mask) (segment[(accessAddress) & (mask)] << 8 | segment[(accessAddress) + 1 & (mask)])
+#define BUFFER_READ_32(segment, accessAddress, mask) (segment[(accessAddress) & (mask)] << 24 | segment[(accessAddress) + 1 & (mask)] << 16 | segment[(accessAddress) + 2 & (mask)] << 8 | segment[(accessAddress) + 3 & (mask)])
+#define BUFFER_WRITE_8(segment, accessAddress, mask, value)  segment[(accessAddress) & (mask)] = (value)
+#define BUFFER_WRITE_16(segment, accessAddress, mask, value) (segment[(accessAddress) & (mask)] = (value) >> 8, segment[(accessAddress) + 1 & (mask)] = (value) & 0xFF)
+#define BUFFER_WRITE_32(segment, accessAddress, mask, value) (segment[(accessAddress) & (mask)] = (value) >> 24, segment[(accessAddress) + 1 & (mask)] = ((value) >> 16) & 0xFF, segment[(accessAddress) + 2 & (mask)] = ((value) >> 8) & 0xFF, segment[(accessAddress) + 3 & (mask)] = (value) & 0xFF)
 
 extern uint8_t bankType[];
 

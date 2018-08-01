@@ -306,9 +306,9 @@ static void checkPortDInterrupts(){
 
 void printUnknownHwAccess(uint32_t address, uint32_t value, uint32_t size, bool isWrite){
    if(isWrite)
-      debugLog("CPU wrote %d bits of 0x%08X to register 0x%03X, PC 0x%08X.\n", size, value, address, m68k_get_reg(NULL, M68K_REG_PPC));
+      debugLog("CPU wrote %d bits of 0x%08X to register 0x%03X, PC:0x%08X.\n", size, value, address, m68k_get_reg(NULL, M68K_REG_PPC));
    else
-      debugLog("CPU read %d bits from register 0x%03X, PC 0x%08X.\n", size, address, m68k_get_reg(NULL, M68K_REG_PPC));
+      debugLog("CPU read %d bits from register 0x%03X, PC:0x%08X.\n", size, address, m68k_get_reg(NULL, M68K_REG_PPC));
 }
 
 static uint32_t getEmuRegister(uint32_t address){

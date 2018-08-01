@@ -12,72 +12,66 @@ uint8_t bankType[TOTAL_MEMORY_BANKS];
 
 
 //RAM accesses
-static inline uint8_t ramRead8(uint32_t address){return BUFFER_READ_8(palmRam, address, chips[CHIP_D_RAM].start, chips[CHIP_D_RAM].mask);}
-static inline uint16_t ramRead16(uint32_t address){return BUFFER_READ_16(palmRam, address, chips[CHIP_D_RAM].start, chips[CHIP_D_RAM].mask);}
-static inline uint32_t ramRead32(uint32_t address){return BUFFER_READ_32(palmRam, address, chips[CHIP_D_RAM].start, chips[CHIP_D_RAM].mask);}
-static inline void ramWrite8(uint32_t address, uint8_t value){BUFFER_WRITE_8(palmRam, address, chips[CHIP_D_RAM].start, chips[CHIP_D_RAM].mask, value);}
-static inline void ramWrite16(uint32_t address, uint16_t value){BUFFER_WRITE_16(palmRam, address, chips[CHIP_D_RAM].start, chips[CHIP_D_RAM].mask, value);}
-static inline void ramWrite32(uint32_t address, uint32_t value){BUFFER_WRITE_32(palmRam, address, chips[CHIP_D_RAM].start, chips[CHIP_D_RAM].mask, value);}
+static inline uint8_t ramRead8(uint32_t address){return BUFFER_READ_8(palmRam, address, chips[CHIP_D_RAM].mask);}
+static inline uint16_t ramRead16(uint32_t address){return BUFFER_READ_16(palmRam, address, chips[CHIP_D_RAM].mask);}
+static inline uint32_t ramRead32(uint32_t address){return BUFFER_READ_32(palmRam, address, chips[CHIP_D_RAM].mask);}
+static inline void ramWrite8(uint32_t address, uint8_t value){BUFFER_WRITE_8(palmRam, address, chips[CHIP_D_RAM].mask, value);}
+static inline void ramWrite16(uint32_t address, uint16_t value){BUFFER_WRITE_16(palmRam, address, chips[CHIP_D_RAM].mask, value);}
+static inline void ramWrite32(uint32_t address, uint32_t value){BUFFER_WRITE_32(palmRam, address, chips[CHIP_D_RAM].mask, value);}
 
 //ROM accesses
-static inline uint8_t romRead8(uint32_t address){return BUFFER_READ_8(palmRom, address, chips[CHIP_A_ROM].start, chips[CHIP_A_ROM].mask);}
-static inline uint16_t romRead16(uint32_t address){return BUFFER_READ_16(palmRom, address, chips[CHIP_A_ROM].start, chips[CHIP_A_ROM].mask);}
-static inline uint32_t romRead32(uint32_t address){return BUFFER_READ_32(palmRom, address, chips[CHIP_A_ROM].start, chips[CHIP_A_ROM].mask);}
+static inline uint8_t romRead8(uint32_t address){return BUFFER_READ_8(palmRom, address, chips[CHIP_A_ROM].mask);}
+static inline uint16_t romRead16(uint32_t address){return BUFFER_READ_16(palmRom, address, chips[CHIP_A_ROM].mask);}
+static inline uint32_t romRead32(uint32_t address){return BUFFER_READ_32(palmRom, address, chips[CHIP_A_ROM].mask);}
 
 //SED1376 accesses
 static inline uint8_t sed1376Read8(uint32_t address){
    if(sed1376PowerSaveEnabled())
       return 0x00;
-   address -= chips[CHIP_B_SED].start;
    address &= chips[CHIP_B_SED].mask;
    if(address < SED1376_FB_OFFSET)
       return sed1376GetRegister(address & 0xFF);
    else
-      return BUFFER_READ_8(sed1376Framebuffer, address, SED1376_FB_OFFSET, 0xFFFFFFFF);
+      return BUFFER_READ_8(sed1376Framebuffer, address - SED1376_FB_OFFSET, 0xFFFFFFFF);
 }
 static inline uint16_t sed1376Read16(uint32_t address){
    if(sed1376PowerSaveEnabled())
       return 0x0000;
-   address -= chips[CHIP_B_SED].start;
    address &= chips[CHIP_B_SED].mask;
    if(address < SED1376_FB_OFFSET)
       return sed1376GetRegister(address & 0xFF);
    else
-      return BUFFER_READ_16(sed1376Framebuffer, address, SED1376_FB_OFFSET, 0xFFFFFFFF);
+      return BUFFER_READ_16(sed1376Framebuffer, address - SED1376_FB_OFFSET, 0xFFFFFFFF);
 }
 static inline uint32_t sed1376Read32(uint32_t address){
    if(sed1376PowerSaveEnabled())
       return 0x00000000;
-   address -= chips[CHIP_B_SED].start;
    address &= chips[CHIP_B_SED].mask;
    if(address < SED1376_FB_OFFSET)
       return sed1376GetRegister(address & 0xFF);
    else
-      return BUFFER_READ_32(sed1376Framebuffer, address, SED1376_FB_OFFSET, 0xFFFFFFFF);
+      return BUFFER_READ_32(sed1376Framebuffer, address - SED1376_FB_OFFSET, 0xFFFFFFFF);
 }
 static inline void sed1376Write8(uint32_t address, uint8_t value){
-   address -= chips[CHIP_B_SED].start;
    address &= chips[CHIP_B_SED].mask;
    if(address < SED1376_FB_OFFSET)
       sed1376SetRegister(address & 0xFF, value);
    else
-      BUFFER_WRITE_8(sed1376Framebuffer, address, SED1376_FB_OFFSET, 0xFFFFFFFF, value);
+      BUFFER_WRITE_8(sed1376Framebuffer, address - SED1376_FB_OFFSET, 0xFFFFFFFF, value);
 }
 static inline void sed1376Write16(uint32_t address, uint16_t value){
-   address -= chips[CHIP_B_SED].start;
    address &= chips[CHIP_B_SED].mask;
    if(address < SED1376_FB_OFFSET)
       sed1376SetRegister(address & 0xFF, value);
    else
-      BUFFER_WRITE_16(sed1376Framebuffer, address, SED1376_FB_OFFSET, 0xFFFFFFFF, value);
+      BUFFER_WRITE_16(sed1376Framebuffer, address - SED1376_FB_OFFSET, 0xFFFFFFFF, value);
 }
 static inline void sed1376Write32(uint32_t address, uint32_t value){
-   address -= chips[CHIP_B_SED].start;
    address &= chips[CHIP_B_SED].mask;
    if(address < SED1376_FB_OFFSET)
       sed1376SetRegister(address & 0xFF, value);
    else
-      BUFFER_WRITE_32(sed1376Framebuffer, address, SED1376_FB_OFFSET, 0xFFFFFFFF, value);
+      BUFFER_WRITE_32(sed1376Framebuffer, address - SED1376_FB_OFFSET, 0xFFFFFFFF, value);
 }
 
 static inline bool probeRead(uint8_t bank, uint32_t address){
