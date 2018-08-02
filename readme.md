@@ -63,9 +63,9 @@ Make sure you have done all the steps here https://docs.libretro.com/ under "For
 
 #### For Qt
 Install Qt 5.11.1 and Qt Creator(optional) if not installed  
-Open the .pro file in Qt Creator click "Run"
+Open the .pro file in Qt Creator and click "Run" or build from command line
 
-##### Build without Qt Creator
+##### To build without Qt Creator
 
     cd ./qtBuildSystem/Mu
     qmake
