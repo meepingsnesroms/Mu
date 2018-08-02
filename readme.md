@@ -1,4 +1,4 @@
-﻿# Palm m515/OS 4.1 emulator(Mu)
+# Palm m515/OS 4.1 emulator(Mu)
 
 This is a complete restart of my Palm OS emulator, with the last one the code got too messy and the goal too ambitious(to emulate every palm API in software and for compatibility with all Palm OS versions and devices).
 
@@ -62,13 +62,14 @@ Make sure you have done all the steps here https://docs.libretro.com/ under "For
     make
 
 #### For Qt
+Install Qt 5.11.1 and Qt Creator(optional) if not installed  
 Open the .pro file in Qt Creator click "Run"
 
-##### Without Qt Creator
+##### Build without Qt Creator
 
     cd ./qtBuildSystem/Mu
-	qmake
-	make
+    qmake
+    make
 
 #### TestSuite for Palm OS
 Install prc-tools from the below link(self compiled or prepackaged vm)  
