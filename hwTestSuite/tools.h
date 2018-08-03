@@ -12,6 +12,7 @@ var getTrapAddress();
 var manualLssa();
 var dumpBootloaderToFile();
 var listRomInfo();
+var listRamInfo();
 var listChipSelects();
 var getTouchscreenLut();
 

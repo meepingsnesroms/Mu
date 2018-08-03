@@ -321,6 +321,72 @@ var listRomInfo(){
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
 
+var listRamInfo(){
+   static Boolean firstRun = true;
+   uint16_t y = 0;
+   
+   if(firstRun){
+      uint16_t csd = readArbitraryMemory16(HW_REG_ADDR(CSD));
+      uint16_t csgbd = readArbitraryMemory16(HW_REG_ADDR(CSGBD));
+      uint16_t csugba = readArbitraryMemory16(HW_REG_ADDR(CSUGBA));
+      uint16_t csctrl1 = readArbitraryMemory16(HW_REG_ADDR(CSCTRL1));
+      uint32_t ramAddress = 0x00000000;
+      uint32_t ramSize = 0x00000000;
+      uint16_t temp;
+      
+      firstRun = false;
+      
+      /*get RAM info*/
+      if(csugba & 0x8000)
+         ramAddress |= (uint32_t)csugba << 29 & 0xE0000000;
+      ramAddress |= (uint32_t)csgbd << 13;
+      
+      if(csctrl1 & 0x0040)
+         ramSize = 0x800000/*8mb*/ << (csd >> 1 & 0x0007);
+      else
+         ramSize = 0x8000/*32k*/ << (csd >> 1 & 0x0007);
+      
+      debugSafeScreenClear(C_WHITE);
+      StrPrintF(sharedDataBuffer, "RAM Address:0x%08lX", ramAddress);
+      UG_PutString(0, y, sharedDataBuffer);
+      y += FONT_HEIGHT + 1;
+      StrPrintF(sharedDataBuffer, "RAM Size:0x%08lX", ramSize);
+      UG_PutString(0, y, sharedDataBuffer);
+      y += FONT_HEIGHT + 1;
+      
+#if 0
+      /*test if RAM is mirrored across CSD0 and CSD1*/
+      temp = readArbitraryMemory16(ramAddress + ramSize);
+      StrPrintF(sharedDataBuffer, "RAM[CSD0 + 0]:0x%04X", readArbitraryMemory16(ramAddress));
+      UG_PutString(0, y, sharedDataBuffer);
+      y += FONT_HEIGHT + 1;
+      StrPrintF(sharedDataBuffer, "RAM[CSD1 + 0]:0x%04X", readArbitraryMemory16(ramAddress + ramSize));
+      UG_PutString(0, y, sharedDataBuffer);
+      y += FONT_HEIGHT + 1;
+      
+      writeArbitraryMemory16(ramAddress + ramSize, temp + 1);
+      StrPrintF(sharedDataBuffer, "RAM[CSD1 + 0] += 1");
+      UG_PutString(0, y, sharedDataBuffer);
+      y += FONT_HEIGHT + 1;
+      
+      StrPrintF(sharedDataBuffer, "RAM[CSD0 + 0]:0x%04X", readArbitraryMemory16(ramAddress));
+      UG_PutString(0, y, sharedDataBuffer);
+      y += FONT_HEIGHT + 1;
+      StrPrintF(sharedDataBuffer, "RAM[CSD1 + 0]:0x%04X", readArbitraryMemory16(ramAddress + ramSize));
+      UG_PutString(0, y, sharedDataBuffer);
+      y += FONT_HEIGHT + 1;
+      writeArbitraryMemory16(ramAddress + ramSize, temp);
+#endif
+   }
+   
+   if(getButtonPressed(buttonBack)){
+      firstRun = true;
+      exitSubprogram();
+   }
+   
+   return makeVar(LENGTH_0, TYPE_NULL, 0);
+}
+
 var listChipSelects(){
    static Boolean firstRun = true;
    uint16_t y = 0;

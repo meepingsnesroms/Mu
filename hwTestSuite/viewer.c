@@ -292,6 +292,10 @@ void resetFunctionViewer(){
       hwTests[totalHwTests].testFunction = listRomInfo;
       totalHwTests++;
       
+      StrNCopy(hwTests[totalHwTests].name, "List RAM Info", TEST_NAME_LENGTH);
+      hwTests[totalHwTests].testFunction = listRamInfo;
+      totalHwTests++;
+      
       StrNCopy(hwTests[totalHwTests].name, "List Chip Selects", TEST_NAME_LENGTH);
       hwTests[totalHwTests].testFunction = listChipSelects;
       totalHwTests++;
