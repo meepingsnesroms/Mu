@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>577</width>
-    <height>427</height>
+    <width>578</width>
+    <height>359</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -48,30 +48,69 @@
       </sizepolicy>
      </property>
      <layout class="QGridLayout" name="gridLayout_2">
-      <item row="0" column="0" rowspan="12">
-       <widget class="QListWidget" name="debugValueList"/>
-      </item>
-      <item row="0" column="1" colspan="2">
-       <widget class="QLabel" name="label_4">
-        <property name="text">
-         <string>Address</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="1" colspan="3">
-       <widget class="QLineEdit" name="debugAddress"/>
-      </item>
-      <item row="2" column="1">
-       <widget class="QRadioButton" name="debug8Bit">
-        <property name="text">
-         <string>8bit</string>
-        </property>
-       </widget>
-      </item>
       <item row="2" column="2">
        <widget class="QRadioButton" name="debug16Bit">
         <property name="text">
          <string>16bit</string>
+        </property>
+       </widget>
+      </item>
+      <item row="6" column="1" colspan="3">
+       <widget class="QPushButton" name="debugShowRegisters">
+        <property name="text">
+         <string>Show Registers</string>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="1" colspan="3">
+       <widget class="QPushButton" name="debugGetHexValues">
+        <property name="text">
+         <string>Get Hex Values</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0" rowspan="10">
+       <widget class="QListWidget" name="debugValueList"/>
+      </item>
+      <item row="4" column="1" colspan="3">
+       <widget class="QLineEdit" name="debugFilePath">
+        <property name="placeholderText">
+         <string>File Path</string>
+        </property>
+       </widget>
+      </item>
+      <item row="7" column="1" colspan="3">
+       <widget class="QPushButton" name="debugPrintDebugLogs">
+        <property name="text">
+         <string>Print Debug Logs</string>
+        </property>
+       </widget>
+      </item>
+      <item row="8" column="1" colspan="3">
+       <widget class="QPushButton" name="debugEraseDebugLogs">
+        <property name="text">
+         <string>Erase Debug Logs</string>
+        </property>
+       </widget>
+      </item>
+      <item row="9" column="1" colspan="3">
+       <widget class="QPushButton" name="debugDump">
+        <property name="text">
+         <string>Dump To File</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="1" colspan="3">
+       <widget class="QLineEdit" name="debugLength">
+        <property name="placeholderText">
+         <string>Length</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1" colspan="3">
+       <widget class="QLineEdit" name="debugAddress">
+        <property name="placeholderText">
+         <string>Address</string>
         </property>
        </widget>
       </item>
@@ -82,58 +121,10 @@
         </property>
        </widget>
       </item>
-      <item row="3" column="1" colspan="2">
-       <widget class="QLabel" name="label_5">
+      <item row="2" column="1">
+       <widget class="QRadioButton" name="debug8Bit">
         <property name="text">
-         <string>Length</string>
-        </property>
-       </widget>
-      </item>
-      <item row="4" column="1" colspan="3">
-       <widget class="QLineEdit" name="debugLength"/>
-      </item>
-      <item row="5" column="1" colspan="2">
-       <widget class="QLabel" name="label_7">
-        <property name="text">
-         <string>File Path</string>
-        </property>
-       </widget>
-      </item>
-      <item row="6" column="1" colspan="3">
-       <widget class="QLineEdit" name="debugFilePath"/>
-      </item>
-      <item row="7" column="1" colspan="3">
-       <widget class="QPushButton" name="debugGetHexValues">
-        <property name="text">
-         <string>Get Hex Values</string>
-        </property>
-       </widget>
-      </item>
-      <item row="8" column="1" colspan="3">
-       <widget class="QPushButton" name="debugShowRegisters">
-        <property name="text">
-         <string>Show Registers</string>
-        </property>
-       </widget>
-      </item>
-      <item row="9" column="1" colspan="3">
-       <widget class="QPushButton" name="debugPrintDebugLogs">
-        <property name="text">
-         <string>Print Debug Logs</string>
-        </property>
-       </widget>
-      </item>
-      <item row="10" column="1" colspan="3">
-       <widget class="QPushButton" name="debugEraseDebugLogs">
-        <property name="text">
-         <string>Erase Debug Logs</string>
-        </property>
-       </widget>
-      </item>
-      <item row="11" column="1" colspan="3">
-       <widget class="QPushButton" name="debugDump">
-        <property name="text">
-         <string>Dump To File</string>
+         <string>8bit</string>
         </property>
        </widget>
       </item>
