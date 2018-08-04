@@ -16,6 +16,7 @@ static uint64_t  sdCardSize;
 
 static inline void updateChunkBufferLength(){
    uint64_t newChunkLength = 0;
+
    while(true){
       newChunkLength++;
       if(sdCardChunks[newChunkLength] == 0x0000000000000000)
@@ -81,6 +82,7 @@ uint32_t sdCardReconfigure(uint64_t size){
 
 buffer_t sdCardGetImage(){
    buffer_t image;
+
    image.data = sdCardData;
    image.size = sdCardSize;
 

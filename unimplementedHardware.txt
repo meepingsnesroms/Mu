@@ -29,7 +29,7 @@ port d IRQ* bits edge triggered interrupt mode is not emulated
 edgeTriggeredInterruptLastValue may need to be locked when PLL is off
 port d data register seems to have its data bits cleared when an edge triggered interrupt is cleared(according to MC68VZ328UM.pdf Page 10-15)
 Dont know if it possible to have the backlight on and the display off at the same time(theres no reason for it but it may be possible)
-power button must be pushed twice to turn the CPU back on(when debugging it works the first time, then must be pushed twice to turn off instead of on)
+power button must be pushed twice to turn the CPU back on(when debugging it works the first time, then must be pushed twice to turn off instead of on)(this also occurs in the RetroArch build)
 STOP opcode may be causing issues with the power button(it may be setting a separate CPU disable option)
 
 Debug tools:

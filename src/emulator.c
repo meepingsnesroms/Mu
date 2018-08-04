@@ -535,30 +535,13 @@ bool emulatorLoadState(buffer_t buffer){
    return true;
 }
 
-uint64_t emulatorGetRamSize(){
-   return palmSpecialFeatures & FEATURE_RAM_HUGE ? SUPERMASSIVE_RAM_SIZE : RAM_SIZE;
-}
+buffer_t emulatorGetRamBuffer(){
+   buffer_t ramInfo;
 
-bool emulatorGetRam(buffer_t buffer){
-   uint32_t ramSize = emulatorGetRamSize();
+   ramInfo.data = palmRam;
+   ramInfo.size = palmSpecialFeatures & FEATURE_RAM_HUGE ? SUPERMASSIVE_RAM_SIZE : RAM_SIZE;
 
-   if(buffer.size < ramSize)
-      return false;//invalid buffer, too small
-
-   memcpy(buffer.data, palmRam, ramSize);
-
-   return true;
-}
-
-bool emulatorSetRam(buffer_t buffer){
-   uint32_t ramSize = emulatorGetRamSize();
-
-   if(buffer.size < ramSize)
-      return false;//invalid RAM block, too small
-
-   memcpy(palmRam, buffer.data, ramSize);
-
-   return true;
+   return ramInfo;
 }
 
 uint32_t emulatorInstallPrcPdb(buffer_t file){

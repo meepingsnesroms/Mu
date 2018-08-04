@@ -157,14 +157,12 @@ void emulatorExit();
 void emulatorReset();
 void emulatorSetRtc(uint16_t days, uint8_t hours, uint8_t minutes, uint8_t seconds);
 uint32_t emulatorSetNewSdCard(uint64_t size, uint8_t type);
-buffer_t emulatorGetSdCardImage();//doing anything with the emulator will alter this, do not free it, it is a direct pointer to the sdcard data
+buffer_t emulatorGetSdCardImage();//this is a direct pointer to the sdcard data, do not free it
 uint32_t emulatorSetSdCardFromImage(buffer_t image, uint8_t type);
 uint64_t emulatorGetStateSize();
 bool emulatorSaveState(buffer_t buffer);//true = success
 bool emulatorLoadState(buffer_t buffer);//true = success
-uint64_t emulatorGetRamSize();
-bool emulatorGetRam(buffer_t buffer);//true = success
-bool emulatorSetRam(buffer_t buffer);//true = success
+buffer_t emulatorGetRamBuffer();//this is a direct pointer to RAM, do not free it
 uint32_t emulatorInstallPrcPdb(buffer_t file);
 void emulateFrame();
    

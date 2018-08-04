@@ -376,32 +376,32 @@ size_t retro_serialize_size(void)
 
 bool retro_serialize(void *data, size_t size)
 {
-   if(size < emulatorGetStateSize())
-      return false;
+   buffer_t saveBuffer;
    
-   emulatorSaveState((uint8_t*)data);
-   return true;
+   saveBuffer.data = (uint8_t*)data;
+   saveBuffer.size = size;
+   
+   return emulatorSaveState(saveBuffer);
 }
 
 bool retro_unserialize(const void *data, size_t size)
 {
-   if(size < emulatorGetStateSize())
-      return false;
+   buffer_t saveBuffer;
    
-   emulatorLoadState((uint8_t*)data);
-   return true;
+   saveBuffer.data = (uint8_t*)data;
+   saveBuffer.size = size;
+   
+   return emulatorLoadState(saveBuffer);
 }
 
 void *retro_get_memory_data(unsigned id)
 {
-   //Palm m515 is too complicated for SRAM, use savestates
-   return NULL;
+   return emulatorGetRamBuffer().data;
 }
 
 size_t retro_get_memory_size(unsigned id)
 {
-   //Palm m515 is too complicated for SRAM, use savestates
-   return 0;
+   return emulatorGetRamBuffer().size;
 }
 
 void retro_cheat_reset(void)
