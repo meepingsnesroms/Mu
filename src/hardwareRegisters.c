@@ -774,20 +774,23 @@ void setHwRegister16(uint32_t address, uint16_t value){
          break;
          
       case DRAMC:
-         //unemulated
+         //somewhat unemulated
          //missing bit 7 and 6
+         //debugLog("Set DRAMC, old value:0x%04X, new value:0x%04X, PC:0x%08X\n", registerArrayRead16(address), value, m68k_get_reg(NULL, M68K_REG_PPC));
          registerArrayWrite16(address, value & 0xFF3F);
+         updateCsdAddressLines();//the EDO bit can disable SDRAM access
          break;
          
       case DRAMMC:
-         //unemulated
+         //unemulated, address line remapping, too CPU intensive to emulate
          registerArrayWrite16(address, value);
          break;
          
       case SDCTRL:
-         //unemulated
          //missing bits 13, 9, 8 and 7
+         //debugLog("Set SDCTRL, old value:0x%04X, new value:0x%04X, PC:0x%08X\n", registerArrayRead16(address), value, m68k_get_reg(NULL, M68K_REG_PPC));
          registerArrayWrite16(address, value & 0xDC7F);
+         updateCsdAddressLines();
          break;
 
       case CSA:{
@@ -828,8 +831,11 @@ void setHwRegister16(uint32_t address, uint16_t value){
 
             setCsd(value);
 
-            if((value & 0x0200) != (oldCsd & 0x0200))
-               setCsc(registerArrayRead16(CSC));//CSC may rely on CSD DRAM bit, untested
+            if((value & 0x0200) != (oldCsd & 0x0200)){
+               //CSD DRAM bit changed
+               updateCsdAddressLines();
+               setCsc(registerArrayRead16(CSC));//CSC relys on CSD DRAM bit, untested but the datasheet states that CSC has expanded size when CSCTRL1 DSIZ3 and CSD DRAM bits are enabled
+            }
 
             //only reset address space if size changed, enabled/disabled or DRAM bit changed
             if((value & 0x020F) != (oldCsd & 0x020F))
@@ -1009,7 +1015,7 @@ void resetHwRegisters(){
    chips[CHIP_A_ROM].mask = 0x003FFFFF;//4mb
    chips[CHIP_B_SED].mask = 0x0003FFFF;
    chips[CHIP_C_USB].mask = 0x00000000;
-   chips[CHIP_D_RAM].mask = 0x00FFFFFF;//16mb
+   chips[CHIP_D_RAM].mask = 0x00000000;//16mb, no RAM enabled until the DRAM module is initialized
    
    //system control
    registerArrayWrite8(SCR, 0x1C);

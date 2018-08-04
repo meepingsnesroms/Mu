@@ -1,3 +1,5 @@
+CS(A/B/C/D)1 seem to not be connected, only CS*0 is used
+
 PFPUEN has both pull up and pull down on it, the 4 address lines are the pull downs
 
 cmp.* seems like it can only set the Carry flag if the result or one of the parameters is negative

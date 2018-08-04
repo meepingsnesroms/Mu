@@ -153,6 +153,28 @@ static inline void setCsgbd(uint16_t value){
    registerArrayWrite16(CSGBD, value & 0xFFFE);
 }
 
+static inline void updateCsdAddressLines(){
+   uint16_t dramc = registerArrayRead16(DRAMC);
+   uint16_t sdctrl = registerArrayRead16(SDCTRL);
+
+   if(registerArrayRead16(CSD) & 0x0200 && sdctrl & 0x8000 && dramc & 0x8000 && !(dramc & 0x0400)){
+      //this register can remap address lines, that behavior is way too CPU intensive and complicated so only the "memory testing" and "correct" behavior is being emulated
+      chips[CHIP_D_RAM].mask = 0x003FFFFF;
+
+      //address line 23 is enabled
+      if((sdctrl & 0x000C) == 0x0008)
+         chips[CHIP_D_RAM].mask |= 0x00800000;
+
+      //address line 22 is enabled
+      if((sdctrl & 0x0030) == 0x0010)
+         chips[CHIP_D_RAM].mask |= 0x00400000;
+   }
+   else{
+      //RAM is not enabled properly
+      chips[CHIP_D_RAM].mask = 0x00000000;
+   }
+}
+
 static inline void setPllfsr(uint16_t value){
    uint16_t oldPllfsr = registerArrayRead16(PLLFSR);
    if(!(oldPllfsr & 0x4000)){
