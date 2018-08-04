@@ -8,6 +8,7 @@ Holding the buttons emulates pressing them like a turbo button(may be caused by 
 Screenshots use window size and that makes them blurry from filtering
 
 Fixed:
+State menu jitters when made too small(smallest size is now 30x40)
 Screen scales wrong when paused
 Memory is only 8mb(expected since only 1/2 the chipselect lines are emulated properly)
 RTC doesnt seem to work

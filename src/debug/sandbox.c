@@ -427,22 +427,25 @@ void sandboxTest(uint32_t test){
          break;
 
       case SANDBOX_SEND_OS_TOUCH:{
-            //the hack only seems to work when in an interrupt, a hack for a hack :(
-            m68k_set_irq(5);
+            if(!m68k_read_memory_8(0x00000253)){
+               //0x00000253 seems to be a mutex for accessing the event queue
+               //the hack only seems to work when in an interrupt, a hack for a hack :(
+               m68k_set_irq(5);
 
-            if(palmInput.touchscreenTouched){
-               //press
-               m68k_write_memory_16(0xFFFFFFE0 - 4, palmInput.touchscreenX);
-               m68k_write_memory_16(0xFFFFFFE0 - 2, palmInput.touchscreenY);
-               callFunction(false, 0x00000000, "PenScreenToRaw", "w(p)", 0xFFFFFFE0 - 4);
-               callFunction(false, 0x00000000, "EvtEnqueuePenPoint", "w(p)", 0xFFFFFFE0 - 4);
-            }
-            else{
-               //release
-               m68k_write_memory_16(0xFFFFFFE0 - 4, (uint16_t)-1);
-               m68k_write_memory_16(0xFFFFFFE0 - 2, (uint16_t)-1);
-               callFunction(false, 0x00000000, "PenScreenToRaw", "w(p)", 0xFFFFFFE0 - 4);
-               callFunction(false, 0x00000000, "EvtEnqueuePenPoint", "w(p)", 0xFFFFFFE0 - 4);
+               if(palmInput.touchscreenTouched){
+                  //press
+                  m68k_write_memory_16(0xFFFFFFE0 - 4, palmInput.touchscreenX);
+                  m68k_write_memory_16(0xFFFFFFE0 - 2, palmInput.touchscreenY);
+                  callFunction(false, 0x00000000, "PenScreenToRaw", "w(p)", 0xFFFFFFE0 - 4);
+                  callFunction(false, 0x00000000, "EvtEnqueuePenPoint", "w(p)", 0xFFFFFFE0 - 4);
+               }
+               else{
+                  //release
+                  m68k_write_memory_16(0xFFFFFFE0 - 4, (uint16_t)-1);
+                  m68k_write_memory_16(0xFFFFFFE0 - 2, (uint16_t)-1);
+                  callFunction(false, 0x00000000, "PenScreenToRaw", "w(p)", 0xFFFFFFE0 - 4);
+                  callFunction(false, 0x00000000, "EvtEnqueuePenPoint", "w(p)", 0xFFFFFFE0 - 4);
+               }
             }
          }
          break;
