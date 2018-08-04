@@ -2,7 +2,6 @@
 #include "ui_debugviewer.h"
 
 #include <QString>
-#include <QSettings>
 #include <QFile>
 #include <QDir>
 
@@ -123,15 +122,8 @@ void DebugViewer::on_debug32Bit_clicked(){
 }
 
 void DebugViewer::on_debugDump_clicked(){
-   QSettings& settings = ((MainWindow*)parentWidget())->settings;
    QString fileBuffer;
-   QString fileName = ui->debugFilePath->text();
-   QString filePath = settings.value("resourceDirectory", "").toString() + "/debugDumps";
-   QDir location = filePath;
-   QFile fileOut(filePath + "/" + fileName);
-
-   if(!location.exists())
-      location.mkpath(".");
+   QFile fileOut(((MainWindow*)parentWidget())->settings.value("resourceDirectory", "").toString() + "/debugDumps/" + ui->debugFilePath->text());
 
    for(int index = 0; index < ui->debugValueList->count(); index++){
       fileBuffer += ui->debugValueList->item(index)->text();

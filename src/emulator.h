@@ -160,8 +160,11 @@ uint32_t emulatorSetNewSdCard(uint64_t size, uint8_t type);
 buffer_t emulatorGetSdCardImage();//doing anything with the emulator will alter this, do not free it, it is a direct pointer to the sdcard data
 uint32_t emulatorSetSdCardFromImage(buffer_t image, uint8_t type);
 uint64_t emulatorGetStateSize();
-void emulatorSaveState(uint8_t* data);
-void emulatorLoadState(uint8_t* data);
+bool emulatorSaveState(buffer_t buffer);//true = success
+bool emulatorLoadState(buffer_t buffer);//true = success
+uint64_t emulatorGetRamSize();
+bool emulatorGetRam(buffer_t buffer);//true = success
+bool emulatorSetRam(buffer_t buffer);//true = success
 uint32_t emulatorInstallPrcPdb(buffer_t file);
 void emulateFrame();
    

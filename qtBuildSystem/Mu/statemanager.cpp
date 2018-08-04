@@ -36,13 +36,21 @@ void StateManager::updateStateList(){
 }
 
 void StateManager::on_saveState_clicked(){
-   QString statePath = ((MainWindow*)parentWidget())->settings.value("resourceDirectory", "").toString() + "/saveStates/" + ;
-   ((MainWindow*)parentWidget())->emu.saveState();
-   updateStateList();
+   if(ui->newStateName->text() != ""){
+      QString statePath = ((MainWindow*)parentWidget())->settings.value("resourceDirectory", "").toString() + "/saveStates/" + ui->newStateName->text();
+
+      ((MainWindow*)parentWidget())->emu.saveState(statePath + ".state");
+      ((MainWindow*)parentWidget())->emu.getFramebuffer().save(statePath + ".png");
+      updateStateList();
+   }
 }
 
 void StateManager::on_loadState_clicked(){
-   updateStateList();
+   if(ui->states->currentItem() != nullptr){
+      QString statePath = ((MainWindow*)parentWidget())->settings.value("resourceDirectory", "").toString() + "/saveStates/" + ui->states->currentItem()->text();
+
+      ((MainWindow*)parentWidget())->emu.loadState(statePath + ".state");
+   }
 }
 
 void StateManager::on_states_currentItemChanged(QListWidgetItem* current, QListWidgetItem* previous){

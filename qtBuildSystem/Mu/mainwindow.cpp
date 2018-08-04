@@ -13,9 +13,6 @@
 #include <QGraphicsScene>
 #include <QPixmap>
 
-#include <chrono>
-#include <thread>
-#include <atomic>
 #include <stdint.h>
 
 #include "debugviewer.h"
@@ -68,9 +65,8 @@ MainWindow::MainWindow(QWidget* parent) :
       settings.setValue("resourceDirectory", resourceDirPath);
    }
 
-   //create path if it doesnt exist
-   if(!QDir(resourceDirPath).exists())
-      QDir(resourceDirPath).mkpath(".");
+   //create directory tree, in case someone deleted it since the emu was last run
+   createHomeDirectoryTree(resourceDirPath);
 
 
 #if !defined(EMU_DEBUG) || defined(Q_OS_ANDROID) || defined(Q_OS_IOS)
@@ -84,6 +80,16 @@ MainWindow::MainWindow(QWidget* parent) :
 
 MainWindow::~MainWindow(){
    delete ui;
+}
+
+void MainWindow::createHomeDirectoryTree(QString path){
+   QDir homeDir(path);
+
+   //creates directorys if not present, does nothing if they exist already
+   homeDir.mkpath(".");
+   homeDir.mkpath("./saveStates");
+   homeDir.mkpath("./screenshots");
+   homeDir.mkpath("./debugDumps");
 }
 
 void MainWindow::popupErrorDialog(QString error){
@@ -120,9 +126,10 @@ bool MainWindow::eventFilter(QObject *object, QEvent *event){
 }
 
 void MainWindow::selectHomePath(){
-   QString dir = QFileDialog::getOpenFileName(this, "New Home Directory(\"~/Mu\" is default)", QDir::root().path(), nullptr);
+   QString homeDirPath = QFileDialog::getOpenFileName(this, "New Home Directory(\"~/Mu\" is default)", QDir::root().path(), nullptr);
 
-   settings.setValue("resourceDirectory", dir);
+   createHomeDirectoryTree(homeDirPath);
+   settings.setValue("resourceDirectory", homeDirPath);
 }
 
 void MainWindow::on_install_pressed(){
@@ -283,13 +290,9 @@ void MainWindow::on_screenshot_clicked(){
 
    if(currentScreenPixmap != nullptr && !currentScreenPixmap->isNull()){
       qlonglong screenshotNumber = settings.value("screenshotNum", 0).toLongLong();
-      QString path = settings.value("resourceDirectory", "").toString();
-      QDir location = path + "/screenshots";
+      QString screenshotPath = settings.value("resourceDirectory", "").toString() + "/screenshots/screenshot" + QString::number(screenshotNumber, 10) + ".png";
 
-      if(!location.exists())
-         location.mkpath(".");
-
-      currentScreenPixmap->save(path + "/screenshots/" + "screenshot" + QString::number(screenshotNumber, 10) + ".png", "PNG", 100);
+      currentScreenPixmap->save(screenshotPath, "PNG", 100);
       screenshotNumber++;
       settings.setValue("screenshotNum", screenshotNumber);
    }

@@ -22,6 +22,9 @@ public:
    explicit MainWindow(QWidget* parent = nullptr);
    ~MainWindow();
 
+private:
+   void createHomeDirectoryTree(QString path);
+
 private slots:
    void popupErrorDialog(QString error);
    void popupInformationDialog(QString info);

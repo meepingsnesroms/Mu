@@ -198,30 +198,66 @@ void EmuWrapper::resume(){
 
 uint32_t EmuWrapper::saveState(QString path){
    bool wasPaused = isPaused();
+   uint32_t error = EMU_ERROR_INVALID_PARAMETER;
+   QFile stateFile(path);
 
    if(!wasPaused)
       pause();
 
    //save here
+   if(stateFile.open(QFile::WriteOnly)){
+      buffer_t stateData;
+
+      stateData.size = emulatorGetStateSize();
+      stateData.data = new uint8_t[stateData.size];
+
+      emulatorSaveState(stateData);//no need to check for errors since the buffer is always the right size
+      stateFile.write((const char*)stateData.data, stateData.size);
+      stateFile.close();
+
+      error = EMU_ERROR_NONE;
+   }
 
    if(!wasPaused)
       resume();
+
+   return error;
 }
 
 uint32_t EmuWrapper::loadState(QString path){
    bool wasPaused = isPaused();
+   uint32_t error = EMU_ERROR_INVALID_PARAMETER;
+   QFile stateFile(path);
 
    if(!wasPaused)
       pause();
 
-   //load here
+   if(stateFile.open(QFile::ReadOnly)){
+      QByteArray stateDataBuffer;
+      buffer_t stateData;
+
+      stateDataBuffer = stateFile.readAll();
+      stateFile.close();
+      stateData.data = (uint8_t*)stateDataBuffer.data();
+      stateData.size = stateDataBuffer.size();
+
+      if(emulatorLoadState(stateData))
+         error = EMU_ERROR_NONE;
+   }
 
    if(!wasPaused)
       resume();
+
+   return error;
 }
 
 uint32_t EmuWrapper::installApplication(QString path){
+   bool wasPaused = isPaused();
+   uint32_t error = EMU_ERROR_INVALID_PARAMETER;
    QFile appFile(path);
+
+   if(!wasPaused)
+      pause();
 
    if(appFile.open(QFile::ReadOnly)){
       QByteArray appDataBuffer;
@@ -231,11 +267,14 @@ uint32_t EmuWrapper::installApplication(QString path){
       appFile.close();
       appData.data = (uint8_t*)appDataBuffer.data();
       appData.size = appDataBuffer.size();
-      if(appData.size != 0)
-         return emulatorInstallPrcPdb(appData);
+      if(emulatorInstallPrcPdb(appData))
+         error = EMU_ERROR_NONE;
    }
 
-   return EMU_ERROR_OUT_OF_MEMORY;
+   if(!wasPaused)
+      resume();
+
+   return error;
 }
 
 std::vector<QString>& EmuWrapper::getDebugStrings(){
