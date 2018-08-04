@@ -8,7 +8,7 @@ class TouchScreen : public QLabel{
    Q_OBJECT
    
 private:
-   float rangeSwap(float newRange, float oldRange, float value);
+   double rangeSwap(double newRange, double oldRange, double value);
 
 public:
    explicit TouchScreen(QWidget* parent = nullptr);

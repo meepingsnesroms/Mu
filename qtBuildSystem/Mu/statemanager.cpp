@@ -13,6 +13,10 @@ StateManager::StateManager(QWidget* parent) :
    QDialog(parent),
    ui(new Ui::StateManager){
    ui->setupUi(this);
+
+   //this allows resizing the screenshot of the savestate
+   ui->statePreview->installEventFilter(this);
+   ui->statePreview->setObjectName("statePreview");
 }
 
 StateManager::~StateManager(){
@@ -31,8 +35,30 @@ void StateManager::updateStateList(){
 
    //list all file names
    ui->states->clear();
-   for(int stateIndex = 0; stateIndex < saveStateNames.length(); stateIndex++)
+   for(int stateIndex = 0; stateIndex < saveStateNames.length(); stateIndex++){
+      //remove .state from name
+      saveStateNames[stateIndex].remove(saveStateNames[stateIndex].length() - 6, 6);
+
       ui->states->addItem(saveStateNames[stateIndex]);
+   }
+}
+
+bool StateManager::eventFilter(QObject* object, QEvent* event){
+   if(object->objectName() == "statePreview" && event->type() == QEvent::Resize)
+      updateStatePreview();
+
+   return QDialog::eventFilter(object, event);
+}
+
+void StateManager::updateStatePreview(){
+   if(ui->states->currentItem()){
+      QString statePath = ((MainWindow*)parentWidget())->settings.value("resourceDirectory", "").toString() + "/saveStates/" + ui->states->currentItem()->text();
+      QPixmap previewPicture;
+
+      previewPicture.load(statePath + ".png");
+      ui->statePreview->setPixmap(previewPicture.scaled(ui->statePreview->width() * 0.98, ui->statePreview->height() * 0.98, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+      ui->statePreview->update();
+   }
 }
 
 void StateManager::on_saveState_clicked(){
@@ -46,7 +72,7 @@ void StateManager::on_saveState_clicked(){
 }
 
 void StateManager::on_loadState_clicked(){
-   if(ui->states->currentItem() != nullptr){
+   if(ui->states->currentItem()){
       QString statePath = ((MainWindow*)parentWidget())->settings.value("resourceDirectory", "").toString() + "/saveStates/" + ui->states->currentItem()->text();
 
       ((MainWindow*)parentWidget())->emu.loadState(statePath + ".state");
@@ -54,10 +80,5 @@ void StateManager::on_loadState_clicked(){
 }
 
 void StateManager::on_states_currentItemChanged(QListWidgetItem* current, QListWidgetItem* previous){
-    //set the new state preview picture
-   QString savePath = ((MainWindow*)parentWidget())->settings.value("resourceDirectory", "").toString() + "/saveStates/" + current->text();
-   QPixmap previewPicture;
-
-   previewPicture.load(savePath);
-   ui->statePreview->setPixmap(previewPicture);
+   updateStatePreview();
 }

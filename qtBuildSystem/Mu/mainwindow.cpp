@@ -27,7 +27,7 @@ MainWindow::MainWindow(QWidget* parent) :
    emuDebugger = new DebugViewer(this);
    refreshDisplay = new QTimer(this);
 
-   //this makes the display window resize properly
+   //this makes the display window and button icons resize properly
    ui->displayContainer->installEventFilter(this);
    ui->displayContainer->setObjectName("displayContainer");
 
@@ -101,24 +101,25 @@ void MainWindow::popupInformationDialog(QString info){
 }
 
 bool MainWindow::eventFilter(QObject *object, QEvent *event){
-   if(QString(object->metaObject()->className()) == "QPushButton" && event->type() == QEvent::Resize){
-      QPushButton* button = (QPushButton*)object;
+   if(event->type() == QEvent::Resize){
+      if(QString(object->metaObject()->className()) == "QPushButton"){
+         QPushButton* button = (QPushButton*)object;
 
-      button->setIconSize(QSize(button->size().width() / 1.7, button->size().height() / 1.7));
-   }
+         button->setIconSize(QSize(button->size().width() / 1.7, button->size().height() / 1.7));
+      }
 
-   if(QString(object->metaObject()->className()) == "QWidget" && event->type() == QEvent::Resize){
       if(object->objectName() == "displayContainer"){
-         QWidget* displayContainer = (QWidget*)object;
-         double smallestRatio = qMin(displayContainer->size().width() * 0.98 / 3.0 , displayContainer->size().height() * 0.98 / 4.0);
+         double smallestRatio = qMin(ui->displayContainer->size().width() * 0.98 / 3.0 , ui->displayContainer->size().height() * 0.98 / 4.0);
          //the 0.98 above allows the display to shrink, without it the displayContainer couldent shrink because of the fixed size of the display
 
          //set new size
          ui->display->setFixedSize(smallestRatio * 3.0, smallestRatio * 4.0);
 
-         //scale framebuffer to new size
-         if(emu.isInited())
+         //scale framebuffer to new size and refresh
+         if(emu.isInited()){
             ui->display->setPixmap(emu.getFramebuffer().scaled(QSize(ui->display->size().width(), ui->display->size().height()), Qt::KeepAspectRatio, Qt::SmoothTransformation));
+            ui->display->update();
+         }
       }
    }
 
@@ -143,7 +144,7 @@ void MainWindow::on_install_pressed(){
 //display
 void MainWindow::updateDisplay(){
    if(emu.newFrameReady()){
-      ui->display->setPixmap(emu.getFramebuffer().scaled(QSize(ui->display->size().width(), ui->display->size().height()), Qt::KeepAspectRatio, Qt::SmoothTransformation));
+      ui->display->setPixmap(emu.getFramebuffer().scaled(ui->display->size().width(), ui->display->size().height(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
       ui->display->update();
 
       ui->powerButtonLed->setStyleSheet(emu.getPowerButtonLed() ? "background: lime" : "");
@@ -288,7 +289,7 @@ void MainWindow::on_debugger_clicked(){
 void MainWindow::on_screenshot_clicked(){
    const QPixmap* currentScreenPixmap = ui->display->pixmap();
 
-   if(currentScreenPixmap != nullptr && !currentScreenPixmap->isNull()){
+   if(currentScreenPixmap && !currentScreenPixmap->isNull()){
       qlonglong screenshotNumber = settings.value("screenshotNum", 0).toLongLong();
       QString screenshotPath = settings.value("resourceDirectory", "").toString() + "/screenshots/screenshot" + QString::number(screenshotNumber, 10) + ".png";
 
@@ -300,9 +301,15 @@ void MainWindow::on_screenshot_clicked(){
 
 void MainWindow::on_stateManager_clicked(){
    if(emu.isInited()){
-      emu.pause();
-      ui->ctrlBtn->setIcon(QIcon(":/buttons/images/play.png"));
-      ui->ctrlBtn->repaint();//Qt 5.11 broke icon changes on click, this is a patch
+      bool wasPaused = emu.isPaused();
+
+      if(!wasPaused)
+         emu.pause();
+
+      stateManager->updateStateList();
       stateManager->exec();
+
+      if(!wasPaused)
+         emu.resume();
    }
 }

@@ -540,7 +540,7 @@ uint64_t emulatorGetRamSize(){
 }
 
 bool emulatorGetRam(buffer_t buffer){
-   uint32_t ramSize = palmSpecialFeatures & FEATURE_RAM_HUGE ? SUPERMASSIVE_RAM_SIZE : RAM_SIZE;
+   uint32_t ramSize = emulatorGetRamSize();
 
    if(buffer.size < ramSize)
       return false;//invalid buffer, too small
@@ -551,7 +551,7 @@ bool emulatorGetRam(buffer_t buffer){
 }
 
 bool emulatorSetRam(buffer_t buffer){
-   uint32_t ramSize = palmSpecialFeatures & FEATURE_RAM_HUGE ? SUPERMASSIVE_RAM_SIZE : RAM_SIZE;
+   uint32_t ramSize = emulatorGetRamSize();
 
    if(buffer.size < ramSize)
       return false;//invalid RAM block, too small

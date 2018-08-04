@@ -14,8 +14,12 @@ public:
    explicit StateManager(QWidget* parent = nullptr);
    ~StateManager();
 
-private slots:
    void updateStateList();
+
+private slots:
+   bool eventFilter(QObject* object, QEvent* event);
+
+   void updateStatePreview();
 
    void on_saveState_clicked();
    void on_loadState_clicked();
