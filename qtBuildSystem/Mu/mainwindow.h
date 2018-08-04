@@ -5,6 +5,7 @@
 #include <QSettings>
 
 #include "emuwrapper.h"
+#include "statemanager.h"
 #include "debugviewer.h"
 
 namespace Ui{
@@ -51,13 +52,14 @@ private slots:
    void on_right_pressed();
    void on_right_released();
 
+   //frontend buttons
    void on_ctrlBtn_clicked();
-
    void on_debugger_clicked();
-
    void on_screenshot_clicked();
+   void on_stateManager_clicked();
 
 private:
+   StateManager*   stateManager;
    DebugViewer*    emuDebugger;
    QTimer*         refreshDisplay;
    Ui::MainWindow* ui;

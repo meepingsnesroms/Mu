@@ -69,7 +69,8 @@ SOURCES += \
     src/ads7846.c \
     debugviewer.cpp \
     emuwrapper.cpp \
-    src/debug/sandbox.c
+    src/debug/sandbox.c \
+    statemanager.cpp
 
 HEADERS += \
     src/bps/crc32.h \
@@ -101,11 +102,13 @@ HEADERS += \
     src/specs/sed1376RegisterNames.h \
     emuwrapper.h \
     src/debug/sandbox.h \
-    src/debug/sandboxTrapNumToName.c.h
+    src/debug/sandboxTrapNumToName.c.h \
+    statemanager.h
 
 FORMS += \
     mainwindow.ui \
-    debugviewer.ui
+    debugviewer.ui \
+    statemanager.ui
 
 CONFIG += mobility
 MOBILITY = 

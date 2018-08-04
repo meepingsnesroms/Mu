@@ -38,6 +38,8 @@ public:
    void exit();
    void pause();
    void resume();
+   uint32_t saveState(QString path);
+   uint32_t loadState(QString path);
    bool isInited() const{return emuInited;}
    bool isRunning() const{return emuRunning;}
    bool isPaused() const{return emuPaused;}

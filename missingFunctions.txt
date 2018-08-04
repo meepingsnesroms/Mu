@@ -7,6 +7,7 @@ Only runs in debug mode because the touchscreen can only be pushed with a jump t
 Holding the buttons emulates pressing them like a turbo button(may be caused by the lack of sound emulation, a sound plays on app switch and may block the CPU while waiting for the button to release)
 
 Fixed:
+Screen scales wrong when paused
 Memory is only 8mb(expected since only 1/2 the chipselect lines are emulated properly)
 RTC doesnt seem to work
 The touchscreen pixels do not correspond to the device pixels in the QT version

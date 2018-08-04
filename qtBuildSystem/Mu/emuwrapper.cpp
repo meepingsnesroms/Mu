@@ -196,6 +196,30 @@ void EmuWrapper::resume(){
    }
 }
 
+uint32_t EmuWrapper::saveState(QString path){
+   bool wasPaused = isPaused();
+
+   if(!wasPaused)
+      pause();
+
+   //save here
+
+   if(!wasPaused)
+      resume();
+}
+
+uint32_t EmuWrapper::loadState(QString path){
+   bool wasPaused = isPaused();
+
+   if(!wasPaused)
+      pause();
+
+   //load here
+
+   if(!wasPaused)
+      resume();
+}
+
 uint32_t EmuWrapper::installApplication(QString path){
    QFile appFile(path);
 

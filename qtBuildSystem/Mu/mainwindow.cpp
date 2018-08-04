@@ -26,6 +26,7 @@ MainWindow::MainWindow(QWidget* parent) :
    ui(new Ui::MainWindow){
    ui->setupUi(this);
 
+   stateManager = new StateManager(this);
    emuDebugger = new DebugViewer(this);
    refreshDisplay = new QTimer(this);
 
@@ -72,11 +73,8 @@ MainWindow::MainWindow(QWidget* parent) :
       QDir(resourceDirPath).mkpath(".");
 
 
-#if defined(Q_OS_ANDROID) || defined(Q_OS_IOS)
+#if !defined(EMU_DEBUG) || defined(Q_OS_ANDROID) || defined(Q_OS_IOS)
    ui->debugger->hide();
-#endif
-
-#if !defined(EMU_DEBUG)
    ui->touchscreenState->hide();
 #endif
 
@@ -109,7 +107,12 @@ bool MainWindow::eventFilter(QObject *object, QEvent *event){
          double smallestRatio = qMin(displayContainer->size().width() * 0.98 / 3.0 , displayContainer->size().height() * 0.98 / 4.0);
          //the 0.98 above allows the display to shrink, without it the displayContainer couldent shrink because of the fixed size of the display
 
+         //set new size
          ui->display->setFixedSize(smallestRatio * 3.0, smallestRatio * 4.0);
+
+         //scale framebuffer to new size
+         if(emu.isInited())
+            ui->display->setPixmap(emu.getFramebuffer().scaled(QSize(ui->display->size().width(), ui->display->size().height()), Qt::KeepAspectRatio, Qt::SmoothTransformation));
       }
    }
 
@@ -145,7 +148,7 @@ void MainWindow::updateDisplay(){
       emuDebugger->exec();
    }
 
-#if defined(EMU_DEBUG)
+#if defined(EMU_DEBUG) && !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
    if(emu.isRunning())
       ui->touchscreenState->setText("X:" + QString::number(emu.emuInput.touchscreenX) + ", Y:" + QString::number(emu.emuInput.touchscreenY) + ", Touched:" + (emu.emuInput.touchscreenTouched ? "true" : "false"));
 #endif
@@ -246,6 +249,8 @@ void MainWindow::on_ctrlBtn_clicked(){
          ui->center->setEnabled(true);
          */
 
+         ui->debugger->setEnabled(true);
+         ui->stateManager->setEnabled(true);
          ui->ctrlBtn->setIcon(QIcon(":/buttons/images/pause.png"));
       }
       else{
@@ -271,9 +276,6 @@ void MainWindow::on_debugger_clicked(){
       ui->ctrlBtn->repaint();//Qt 5.11 broke icon changes on click, this is a patch
       emuDebugger->exec();
    }
-   else{
-      popupInformationDialog("Cant open debugger, emulator not running.");
-   }
 }
 
 void MainWindow::on_screenshot_clicked(){
@@ -290,5 +292,14 @@ void MainWindow::on_screenshot_clicked(){
       currentScreenPixmap->save(path + "/screenshots/" + "screenshot" + QString::number(screenshotNumber, 10) + ".png", "PNG", 100);
       screenshotNumber++;
       settings.setValue("screenshotNum", screenshotNumber);
+   }
+}
+
+void MainWindow::on_stateManager_clicked(){
+   if(emu.isInited()){
+      emu.pause();
+      ui->ctrlBtn->setIcon(QIcon(":/buttons/images/play.png"));
+      ui->ctrlBtn->repaint();//Qt 5.11 broke icon changes on click, this is a patch
+      stateManager->exec();
    }
 }
