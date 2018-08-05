@@ -269,6 +269,15 @@ static inline void setSpiCont2(uint16_t value){
    else
       clearIprIsrBit(INT_SPI2);
 
+   /*
+   if(value & 0x0200 && !(oldSpiCont2 & 0x0200)){
+      //there may be some random shifing when enableing/disableing the register
+      for(uint8_t skip = 0; skip < 20; skip++)
+         ads7846ExchangeBit(false);
+      //this for some reason prevents the battery from shooting up to 100% after a few seconds?
+   }
+   */
+
    //do a transfer
    if(value & oldSpiCont2 & 0x0200 && value & 0x0100){
       //enabled and exchange set

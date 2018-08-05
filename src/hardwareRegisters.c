@@ -74,6 +74,13 @@ void refreshInputState(){
    }
    */
 
+   /*
+   if(palmInput.touchscreenTouched)
+      setIprIsrBit(INT_IRQ5);
+   else
+      clearIprIsrBit(INT_IRQ5);
+   */
+
    //check for button presses and interrupts
    checkPortDInterrupts();//this calls checkInterrupts() so it doesnt need to be called above
 }
@@ -438,6 +445,8 @@ uint8_t getHwRegister8(uint32_t address){
          //bootloader
          if(address >= 0xE00)
             return registerArrayRead8(address);
+         if(address < 0xE00)
+            printUnknownHwAccess(address, 0, 8, false);
          return 0x00;
    }
    
@@ -507,6 +516,8 @@ uint16_t getHwRegister16(uint32_t address){
          //bootloader
          if(address >= 0xE00)
             return registerArrayRead16(address);
+         if(address < 0xE00)
+            printUnknownHwAccess(address, 0, 16, false);
          return 0x0000;
    }
    
@@ -542,6 +553,8 @@ uint32_t getHwRegister32(uint32_t address){
          //bootloader
          if(address >= 0xE00)
             return registerArrayRead32(address);
+         if(address < 0xE00)
+            printUnknownHwAccess(address, 0, 32, false);
          return 0x00000000;
    }
    
@@ -675,6 +688,8 @@ void setHwRegister8(uint32_t address, uint8_t value){
          //writeable bootloader region
          if(address >= 0xFC0)
             registerArrayWrite32(address, value);
+         if(address < 0xE00)
+            printUnknownHwAccess(address, value, 8, true);
          break;
    }
 }
@@ -933,6 +948,8 @@ void setHwRegister16(uint32_t address, uint16_t value){
          //writeable bootloader region
          if(address >= 0xFC0)
             registerArrayWrite16(address, value);
+         if(address < 0xE00)
+            printUnknownHwAccess(address, value, 16, true);
          break;
    }
 }
@@ -979,6 +996,8 @@ void setHwRegister32(uint32_t address, uint32_t value){
          //writeable bootloader region
          if(address >= 0xFC0)
             registerArrayWrite32(address, value);
+         if(address < 0xE00)
+            printUnknownHwAccess(address, value, 32, true);
          break;
    }
 }

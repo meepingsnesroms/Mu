@@ -46,6 +46,7 @@ the second line on all the chip selects is not properly emulated, they should be
 the CSC address space is never accessed, this may be because the DRAM controller takes it over
 there is conflicting information on wether the DRAM bit effects CSC, needs a test made
 chipselect mirroring is wrong(CS*0 and CS*1 are considered continuous when mapped with more address space than memory, mirroring is currently [CS*0, CS*1, repeat alternating till the end of address space] it should be [CS*0, repeat CS*0 until half way through CS* address space, CS*1, repeat CS*1 until end of CS* address space])
+CSC0 and CSA1 ranges overlap, something specifically stated as what not to do(the CSA1 pin is disabled though)
 
 SED1376:
 swivelview register
