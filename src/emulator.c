@@ -18,11 +18,11 @@
 
 
 //Memory Map of Palm m515
-//0x00000000-0x00FFFFFF RAM, the first 256(0x100) bytes is copyed from the first 256 bytes of ROM before boot, this applys to all Palms with the 68k architecture
-//0x10000000-0x103FFFFF ROM, palmos41-en-m515.rom, substitute "en" for your language code
-//0x10400000-0x10C00000 USB, CSC0, 8mb range(if DSIZ3 applys when CSC is not an extension of CSD), actual size unknown
-//0x1FF80000-0x1FF800B3 SED1376(Display Controller) Registers
-//0x1FFA0000-0x1FFB3FFF SED1376(Display Controller) Framebuffer, this is not the same as the Palm framebuffer which is always 16 bit color,
+//0x00000000-0x00FFFFFF RAM, CSC0 as RAS0, CSC1 as RAS1, CSD0 as CAS0 and CSD1 as CAS1
+//0x10000000-0x103FFFFF ROM, CSA0, at address 0x00000000 during boot, palmos41-en-m515.rom, substitute "en" for your language code
+//0x10400000-0x10C00000 USB, CSC0, 8mb range(if DSIZ3 applys when CSC is not an extension of CSD, otherwise 32k), actual size unknown
+//0x1FF80000-0x1FF800B3 SED1376(Display Controller) Registers, CSB0
+//0x1FFA0000-0x1FFB3FFF SED1376(Display Controller) Framebuffer, CSB0, this is not the same as the Palm framebuffer which is always 16 bit color,
 //this buffer must be processed depending on whats in the SED1376 registers, the result is the Palm framebuffer
 //0xFFFFF000-0xFFFFFDFF Hardware Registers
 //0xFFFFFE00-0xFFFFFFFF Bootloader, only reads from UART into RAM and jumps to it, never executed in consumer Palms
