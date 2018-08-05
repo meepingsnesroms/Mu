@@ -25,6 +25,7 @@ private:
    uint16_t          emuVideoHeight;
    std::atomic<bool> emuNewFrameReady;
    uint16_t*         emuDoubleBuffer;
+   QString           emuRamFilePath;
 
    void emuThreadRun();
 
@@ -34,7 +35,7 @@ public:
    EmuWrapper();
    ~EmuWrapper();
 
-   uint32_t init(QString romPath, QString bootloaderPath, uint32_t features);
+   uint32_t init(QString romPath, QString bootloaderPath, QString ramPath, uint32_t features);
    void exit();
    void pause();
    void resume();

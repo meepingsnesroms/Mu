@@ -101,7 +101,7 @@ void EmuWrapper::emuThreadRun(){
    }
 }
 
-uint32_t EmuWrapper::init(QString romPath, QString bootloaderPath, uint32_t features){
+uint32_t EmuWrapper::init(QString romPath, QString bootloaderPath, QString ramPath, uint32_t features){
    if(!emuRunning && !emuInited){
       //start emu
       uint32_t error;
@@ -112,7 +112,7 @@ uint32_t EmuWrapper::init(QString romPath, QString bootloaderPath, uint32_t feat
       buffer_t romBuff;
       buffer_t bootloaderBuff;
 
-      if(romFile.open(QFile::ReadOnly)){
+      if(romFile.open(QFile::ReadOnly | QFile::ExistingOnly)){
          romData = romFile.readAll();
          romFile.close();
 
@@ -123,8 +123,8 @@ uint32_t EmuWrapper::init(QString romPath, QString bootloaderPath, uint32_t feat
          return EMU_ERROR_INVALID_PARAMETER;
       }
 
-      if(bootloaderPath != "" && bootloaderFile.exists()){
-         if(bootloaderFile.open(QFile::ReadOnly)){
+      if(bootloaderPath != ""){
+         if(bootloaderFile.open(QFile::ReadOnly | QFile::ExistingOnly)){
             bootloaderData = bootloaderFile.readAll();
             bootloaderFile.close();
 
@@ -142,6 +142,25 @@ uint32_t EmuWrapper::init(QString romPath, QString bootloaderPath, uint32_t feat
 
       error = emulatorInit(romBuff, bootloaderBuff, features);
       if(error == EMU_ERROR_NONE){
+         if(ramPath != ""){
+            QFile ramFile(ramPath);
+
+            if(ramFile.exists()){
+               if(ramFile.open(QFile::ReadOnly | QFile::ExistingOnly)){
+                  QByteArray ramData;
+                  buffer_t emuRam = emulatorGetRamBuffer();
+
+                  ramData = ramFile.readAll();
+                  ramFile.close();
+
+                  //only copy in data if its the correct size, the file will be overwritten on exit with the devices RAM either way
+                  //(changing RAM size requires a factory reset for now and always will when going from 128mb back to 16mb)
+                  if(ramData.size() == emuRam.size)
+                     memcpy(emuRam.data, ramData.data(), emuRam.size);
+               }
+            }
+         }
+
          if(features & FEATURE_320x320){
             emuVideoWidth = 320;
             emuVideoHeight = 320 + 120;
@@ -152,6 +171,7 @@ uint32_t EmuWrapper::init(QString romPath, QString bootloaderPath, uint32_t feat
          }
 
          emuInput = palmInput;
+         emuRamFilePath = ramPath;
 
          emuThreadJoin = false;
          emuInited = true;
@@ -175,6 +195,16 @@ void EmuWrapper::exit(){
    if(emuThread.joinable())
       emuThread.join();
    if(emuInited){
+      if(emuRamFilePath != ""){
+         QFile ramFile(emuRamFilePath);
+         buffer_t emuRam = emulatorGetRamBuffer();
+
+         //save out RAM before exit
+         if(ramFile.open(QFile::WriteOnly | QFile::Truncate)){
+            ramFile.write((const char*)emuRam.data, emuRam.size);
+            ramFile.close();
+         }
+      }
       emulatorExit();
       delete[] emuDoubleBuffer;
    }

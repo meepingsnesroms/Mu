@@ -238,7 +238,8 @@ void MainWindow::on_right_released(){
 //emu control
 void MainWindow::on_ctrlBtn_clicked(){
    if(!emu.isInited()){
-      uint32_t error = emu.init(settings.value("resourceDirectory", "").toString() + "/palmos41-en-m515.rom", settings.value("resourceDirectory", "").toString() + "/bootloader-en-m515.rom", FEATURE_DEBUG);
+      QString systemDirectory = settings.value("resourceDirectory", "").toString();
+      uint32_t error = emu.init(systemDirectory + "/palmos41-en-m515.rom", systemDirectory + "/bootloader-en-m515.rom", systemDirectory + "/userdata-en-m515.ram", FEATURE_DEBUG);
       if(error == EMU_ERROR_NONE){
          ui->calendar->setEnabled(true);
          ui->addressBook->setEnabled(true);
