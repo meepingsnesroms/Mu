@@ -272,7 +272,7 @@ static inline void setSpiCont2(uint16_t value){
    /*
    if(value & 0x0200 && !(oldSpiCont2 & 0x0200)){
       //there may be some random shifing when enableing/disableing the register
-      for(uint8_t skip = 0; skip < 20; skip++)
+      for(uint8_t skip = 0; skip < 3; skip++)//started with 20, 1 and 2 causes power down, 3 is the minimum that works
          ads7846ExchangeBit(false);
       //this for some reason prevents the battery from shooting up to 100% after a few seconds?
    }

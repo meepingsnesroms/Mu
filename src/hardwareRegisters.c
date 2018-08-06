@@ -57,8 +57,8 @@ void refreshInputState(){
    //update power button LED state if palmMisc.batteryCharging changed
    updatePowerButtonLedStatus();
 
-   //update touchscreen state
    /*
+   //update touchscreen state
    if(!(registerArrayRead8(PFSEL) & 0x02)){
       uint16_t icr = registerArrayRead16(ICR);
       bool penIrqPin = !(ads7846PenIrqEnabled && palmInput.touchscreenTouched);//penIrqPin pulled low on touch
