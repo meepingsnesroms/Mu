@@ -28,8 +28,10 @@ MainWindow::MainWindow(QWidget* parent) :
    refreshDisplay = new QTimer(this);
 
    //this makes the display window and button icons resize properly
-   ui->displayContainer->installEventFilter(this);
-   ui->displayContainer->setObjectName("displayContainer");
+   ui->centralWidget->installEventFilter(this);
+   ui->centralWidget->setObjectName("centralWidget");
+   //ui->displayContainer->installEventFilter(this);
+   //ui->displayContainer->setObjectName("displayContainer");
 
    ui->calendar->installEventFilter(this);
    ui->addressBook->installEventFilter(this);
@@ -45,10 +47,13 @@ MainWindow::MainWindow(QWidget* parent) :
    ui->power->installEventFilter(this);
 
    ui->screenshot->installEventFilter(this);
-   ui->ctrlBtn->installEventFilter(this);
+   //ui->install->installEventFilter(this);//enable when install gets an icon
+   //ui->stateManager->installEventFilter(this);//enable when stateManager gets an icon
    ui->debugger->installEventFilter(this);
 
-   ui->ctrlBtn->setIcon(QIcon(":/buttons/images/play.png"));
+   ui->ctrlBtn->installEventFilter(this);
+
+   //ui->ctrlBtn->setIcon(QIcon(":/buttons/images/play.png"));
 
 
    QString resourceDirPath = settings.value("resourceDirectory", "").toString();
@@ -71,7 +76,6 @@ MainWindow::MainWindow(QWidget* parent) :
 
 #if !defined(EMU_DEBUG) || defined(Q_OS_ANDROID) || defined(Q_OS_IOS)
    ui->debugger->hide();
-   ui->touchscreenState->hide();
 #endif
 
    connect(refreshDisplay, SIGNAL(timeout()), this, SLOT(updateDisplay()));
@@ -108,8 +112,13 @@ bool MainWindow::eventFilter(QObject *object, QEvent *event){
          button->setIconSize(QSize(button->size().width() / 1.7, button->size().height() / 1.7));
       }
 
-      if(object->objectName() == "displayContainer"){
-         double smallestRatio = qMin(ui->displayContainer->size().width() * 0.98 / 3.0 , ui->displayContainer->size().height() * 0.98 / 4.0);
+      if(object->objectName() == "centralWidget"){
+         double smallestRatio;
+
+         //update displayContainer first, make the display occupy the top 3/4 of the screen
+         ui->displayContainer->setFixedHeight(ui->centralWidget->height() * 0.75);
+
+         smallestRatio = qMin(ui->displayContainer->size().width() * 0.98 / 3.0 , ui->displayContainer->size().height() * 0.98 / 4.0);
          //the 0.98 above allows the display to shrink, without it the displayContainer couldent shrink because of the fixed size of the display
 
          //set new size
@@ -155,11 +164,6 @@ void MainWindow::updateDisplay(){
       ui->ctrlBtn->setIcon(QIcon(":/buttons/images/play.png"));
       emuDebugger->exec();
    }
-
-#if defined(EMU_DEBUG) && !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
-   if(emu.isRunning())
-      ui->touchscreenState->setText("X:" + QString::number(emu.emuInput.touchscreenX) + ", Y:" + QString::number(emu.emuInput.touchscreenY) + ", Touched:" + (emu.emuInput.touchscreenTouched ? "true" : "false"));
-#endif
 }
 
 //palm buttons
@@ -258,8 +262,11 @@ void MainWindow::on_ctrlBtn_clicked(){
          ui->center->setEnabled(true);
          */
 
-         ui->debugger->setEnabled(true);
+         ui->screenshot->setEnabled(true);
+         ui->install->setEnabled(true);
          ui->stateManager->setEnabled(true);
+         ui->debugger->setEnabled(true);
+
          ui->ctrlBtn->setIcon(QIcon(":/buttons/images/pause.png"));
       }
       else{
@@ -288,13 +295,11 @@ void MainWindow::on_debugger_clicked(){
 }
 
 void MainWindow::on_screenshot_clicked(){
-   const QPixmap* currentScreenPixmap = ui->display->pixmap();
-
-   if(currentScreenPixmap && !currentScreenPixmap->isNull()){
+   if(emu.isInited()){
       qlonglong screenshotNumber = settings.value("screenshotNum", 0).toLongLong();
       QString screenshotPath = settings.value("resourceDirectory", "").toString() + "/screenshots/screenshot" + QString::number(screenshotNumber, 10) + ".png";
 
-      currentScreenPixmap->save(screenshotPath, "PNG", 100);
+      emu.getFramebuffer().save(screenshotPath, "PNG", 100);
       screenshotNumber++;
       settings.setValue("screenshotNum", screenshotNumber);
    }

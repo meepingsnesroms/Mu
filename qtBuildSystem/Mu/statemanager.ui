@@ -75,12 +75,18 @@
      <property name="text">
       <string>Save State</string>
      </property>
+     <property name="autoDefault">
+      <bool>false</bool>
+     </property>
     </widget>
    </item>
    <item>
     <widget class="QPushButton" name="loadState">
      <property name="text">
       <string>Load State</string>
+     </property>
+     <property name="autoDefault">
+      <bool>false</bool>
      </property>
     </widget>
    </item>
