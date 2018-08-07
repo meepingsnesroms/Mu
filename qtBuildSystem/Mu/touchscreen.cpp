@@ -1,3 +1,5 @@
+#include <QMouseEvent>
+
 #include <stdint.h>
 
 #include "touchscreen.h"

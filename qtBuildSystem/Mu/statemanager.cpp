@@ -3,6 +3,8 @@
 
 #include <QPixmap>
 #include <QString>
+#include <QObject>
+#include <QEvent>
 #include <QDir>
 #include <QListWidgetItem>
 

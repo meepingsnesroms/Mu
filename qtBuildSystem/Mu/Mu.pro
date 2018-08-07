@@ -114,15 +114,6 @@ CONFIG += mobility
 MOBILITY = 
 
 DISTFILES += \
-    images/addressBook.png \
-    images/center.png \
-    images/down.png \
-    images/left.png \
-    images/notes.png \
-    images/power.png \
-    images/right.png \
-    images/up.png \
-    images/todo.png \
     android/AndroidManifest.xml \
     android/gradle/wrapper/gradle-wrapper.jar \
     android/gradlew \
@@ -133,12 +124,23 @@ DISTFILES += \
     android/res/drawable-hdpi/icon.png \
     android/res/drawable-ldpi/icon.png \
     android/res/drawable-mdpi/icon.png \
-    images/pause.png \
-    images/play.png \
-    images/saveLoad.png \
-    images/screenshot.png \
-    images/stop.png \
-    images/calendar.png
+    images/addressBook.svg \
+    images/calendar.svg \
+    images/center.svg \
+    images/debugger.svg \
+    images/down.svg \
+    images/install.svg \
+    images/left.svg \
+    images/notes.svg \
+    images/pause.svg \
+    images/play.svg \
+    images/power.svg \
+    images/right.svg \
+    images/screenshot.svg \
+    images/stateManager.svg \
+    images/stop.svg \
+    images/todo.svg \
+    images/up.svg
 
 RESOURCES += \
     mainwindow.qrc

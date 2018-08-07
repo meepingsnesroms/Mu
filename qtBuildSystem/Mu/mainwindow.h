@@ -2,6 +2,10 @@
 
 #include <QMainWindow>
 #include <QTimer>
+#include <QIcon>
+#include <QString>
+#include <QObject>
+#include <QEvent>
 #include <QSettings>
 
 #include "emuwrapper.h"
@@ -26,11 +30,10 @@ private:
    void createHomeDirectoryTree(QString path);
 
 private slots:
+   bool eventFilter(QObject* object, QEvent* event);
    void popupErrorDialog(QString error);
    void popupInformationDialog(QString info);
-   bool eventFilter(QObject* object, QEvent* event);
    void selectHomePath();
-   void on_install_pressed();
 
    //display
    void updateDisplay();
@@ -57,6 +60,7 @@ private slots:
 
    //frontend buttons
    void on_ctrlBtn_clicked();
+   void on_install_pressed();
    void on_debugger_clicked();
    void on_screenshot_clicked();
    void on_stateManager_clicked();

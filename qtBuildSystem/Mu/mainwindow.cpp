@@ -9,6 +9,8 @@
 #include <QSettings>
 #include <QFont>
 #include <QIcon>
+#include <QObject>
+#include <QEvent>
 #include <QKeyEvent>
 #include <QGraphicsScene>
 #include <QPixmap>
@@ -30,8 +32,6 @@ MainWindow::MainWindow(QWidget* parent) :
    //this makes the display window and button icons resize properly
    ui->centralWidget->installEventFilter(this);
    ui->centralWidget->setObjectName("centralWidget");
-   //ui->displayContainer->installEventFilter(this);
-   //ui->displayContainer->setObjectName("displayContainer");
 
    ui->calendar->installEventFilter(this);
    ui->addressBook->installEventFilter(this);
@@ -46,14 +46,11 @@ MainWindow::MainWindow(QWidget* parent) :
 
    ui->power->installEventFilter(this);
 
-   ui->screenshot->installEventFilter(this);
-   //ui->install->installEventFilter(this);//enable when install gets an icon
-   //ui->stateManager->installEventFilter(this);//enable when stateManager gets an icon
-   ui->debugger->installEventFilter(this);
-
    ui->ctrlBtn->installEventFilter(this);
-
-   //ui->ctrlBtn->setIcon(QIcon(":/buttons/images/play.png"));
+   ui->install->installEventFilter(this);
+   ui->debugger->installEventFilter(this);
+   ui->screenshot->installEventFilter(this);
+   ui->stateManager->installEventFilter(this);
 
 
    QString resourceDirPath = settings.value("resourceDirectory", "").toString();
@@ -86,24 +83,6 @@ MainWindow::~MainWindow(){
    delete ui;
 }
 
-void MainWindow::createHomeDirectoryTree(QString path){
-   QDir homeDir(path);
-
-   //creates directorys if not present, does nothing if they exist already
-   homeDir.mkpath(".");
-   homeDir.mkpath("./saveStates");
-   homeDir.mkpath("./screenshots");
-   homeDir.mkpath("./debugDumps");
-}
-
-void MainWindow::popupErrorDialog(QString error){
-   QMessageBox::critical(this, "Mu", error, QMessageBox::Ok);
-}
-
-void MainWindow::popupInformationDialog(QString info){
-   QMessageBox::information(this, "Mu", info, QMessageBox::Ok);
-}
-
 bool MainWindow::eventFilter(QObject *object, QEvent *event){
    if(event->type() == QEvent::Resize){
       if(QString(object->metaObject()->className()) == "QPushButton"){
@@ -115,8 +94,8 @@ bool MainWindow::eventFilter(QObject *object, QEvent *event){
       if(object->objectName() == "centralWidget"){
          double smallestRatio;
 
-         //update displayContainer first, make the display occupy the top 3/4 of the screen
-         ui->displayContainer->setFixedHeight(ui->centralWidget->height() * 0.75);
+         //update displayContainer first, make the display occupy the top 2/3 of the screen
+         ui->displayContainer->setFixedHeight(ui->centralWidget->height() * 0.66);
 
          smallestRatio = qMin(ui->displayContainer->size().width() * 0.98 / 3.0 , ui->displayContainer->size().height() * 0.98 / 4.0);
          //the 0.98 above allows the display to shrink, without it the displayContainer couldent shrink because of the fixed size of the display
@@ -135,19 +114,29 @@ bool MainWindow::eventFilter(QObject *object, QEvent *event){
    return QMainWindow::eventFilter(object, event);
 }
 
+void MainWindow::createHomeDirectoryTree(QString path){
+   QDir homeDir(path);
+
+   //creates directorys if not present, does nothing if they exist already
+   homeDir.mkpath(".");
+   homeDir.mkpath("./saveStates");
+   homeDir.mkpath("./screenshots");
+   homeDir.mkpath("./debugDumps");
+}
+
+void MainWindow::popupErrorDialog(QString error){
+   QMessageBox::critical(this, "Mu", error, QMessageBox::Ok);
+}
+
+void MainWindow::popupInformationDialog(QString info){
+   QMessageBox::information(this, "Mu", info, QMessageBox::Ok);
+}
+
 void MainWindow::selectHomePath(){
    QString homeDirPath = QFileDialog::getOpenFileName(this, "New Home Directory(\"~/Mu\" is default)", QDir::root().path(), nullptr);
 
    createHomeDirectoryTree(homeDirPath);
    settings.setValue("resourceDirectory", homeDirPath);
-}
-
-void MainWindow::on_install_pressed(){
-   QString app = QFileDialog::getOpenFileName(this, "Open *.prc/pdb/pqa", QDir::root().path(), nullptr);
-   uint32_t error = emu.installApplication(app);
-
-   if(error != EMU_ERROR_NONE)
-      popupErrorDialog("Could not install app");
 }
 
 //display
@@ -161,7 +150,7 @@ void MainWindow::updateDisplay(){
 
    if(emu.debugEventOccured()){
       emu.clearDebugEvent();
-      ui->ctrlBtn->setIcon(QIcon(":/buttons/images/play.png"));
+      ui->ctrlBtn->setIcon(QIcon(":/buttons/images/play.svg"));
       emuDebugger->exec();
    }
 }
@@ -267,7 +256,7 @@ void MainWindow::on_ctrlBtn_clicked(){
          ui->stateManager->setEnabled(true);
          ui->debugger->setEnabled(true);
 
-         ui->ctrlBtn->setIcon(QIcon(":/buttons/images/pause.png"));
+         ui->ctrlBtn->setIcon(QIcon(":/buttons/images/pause.svg"));
       }
       else{
          popupErrorDialog("Emu error:" + QString::number(error) + ", cant run!");
@@ -275,14 +264,24 @@ void MainWindow::on_ctrlBtn_clicked(){
    }
    else if(emu.isRunning()){
       emu.pause();
-      ui->ctrlBtn->setIcon(QIcon(":/buttons/images/play.png"));
+      ui->ctrlBtn->setIcon(QIcon(":/buttons/images/play.svg"));
    }
    else if(emu.isPaused()){
       emu.resume();
-      ui->ctrlBtn->setIcon(QIcon(":/buttons/images/pause.png"));
+      ui->ctrlBtn->setIcon(QIcon(":/buttons/images/pause.svg"));
    }
 
    ui->ctrlBtn->repaint();//Qt 5.11 broke icon changes on click, this is a patch
+}
+
+void MainWindow::on_install_pressed(){
+   if(emu.isInited()){
+      QString app = QFileDialog::getOpenFileName(this, "Open *.prc/pdb/pqa", QDir::root().path(), nullptr);
+      uint32_t error = emu.installApplication(app);
+
+      if(error != EMU_ERROR_NONE)
+         popupErrorDialog("Could not install app");
+   }
 }
 
 void MainWindow::on_debugger_clicked(){

@@ -113,7 +113,7 @@
          </property>
          <property name="icon">
           <iconset resource="mainwindow.qrc">
-           <normaloff>:/buttons/images/calendar.png</normaloff>:/buttons/images/calendar.png</iconset>
+           <normaloff>:/buttons/images/calendar.svg</normaloff>:/buttons/images/calendar.svg</iconset>
          </property>
         </widget>
        </item>
@@ -130,7 +130,7 @@
          </property>
          <property name="icon">
           <iconset resource="mainwindow.qrc">
-           <normaloff>:/buttons/images/down.png</normaloff>:/buttons/images/down.png</iconset>
+           <normaloff>:/buttons/images/down.svg</normaloff>:/buttons/images/down.svg</iconset>
          </property>
         </widget>
        </item>
@@ -147,7 +147,7 @@
          </property>
          <property name="icon">
           <iconset resource="mainwindow.qrc">
-           <normaloff>:/buttons/images/up.png</normaloff>:/buttons/images/up.png</iconset>
+           <normaloff>:/buttons/images/up.svg</normaloff>:/buttons/images/up.svg</iconset>
          </property>
         </widget>
        </item>
@@ -164,7 +164,7 @@
          </property>
          <property name="icon">
           <iconset resource="mainwindow.qrc">
-           <normaloff>:/buttons/images/addressBook.png</normaloff>:/buttons/images/addressBook.png</iconset>
+           <normaloff>:/buttons/images/addressBook.svg</normaloff>:/buttons/images/addressBook.svg</iconset>
          </property>
         </widget>
        </item>
@@ -181,7 +181,7 @@
          </property>
          <property name="icon">
           <iconset resource="mainwindow.qrc">
-           <normaloff>:/buttons/images/right.png</normaloff>:/buttons/images/right.png</iconset>
+           <normaloff>:/buttons/images/right.svg</normaloff>:/buttons/images/right.svg</iconset>
          </property>
         </widget>
        </item>
@@ -198,7 +198,7 @@
          </property>
          <property name="icon">
           <iconset resource="mainwindow.qrc">
-           <normaloff>:/buttons/images/center.png</normaloff>:/buttons/images/center.png</iconset>
+           <normaloff>:/buttons/images/center.svg</normaloff>:/buttons/images/center.svg</iconset>
          </property>
         </widget>
        </item>
@@ -227,7 +227,7 @@
          </property>
          <property name="icon">
           <iconset resource="mainwindow.qrc">
-           <normaloff>:/buttons/images/todo.png</normaloff>:/buttons/images/todo.png</iconset>
+           <normaloff>:/buttons/images/todo.svg</normaloff>:/buttons/images/todo.svg</iconset>
          </property>
         </widget>
        </item>
@@ -244,7 +244,7 @@
          </property>
          <property name="icon">
           <iconset resource="mainwindow.qrc">
-           <normaloff>:/buttons/images/power.png</normaloff>:/buttons/images/power.png</iconset>
+           <normaloff>:/buttons/images/power.svg</normaloff>:/buttons/images/power.svg</iconset>
          </property>
         </widget>
        </item>
@@ -261,7 +261,7 @@
          </property>
          <property name="icon">
           <iconset resource="mainwindow.qrc">
-           <normaloff>:/buttons/images/notes.png</normaloff>:/buttons/images/notes.png</iconset>
+           <normaloff>:/buttons/images/notes.svg</normaloff>:/buttons/images/notes.svg</iconset>
          </property>
         </widget>
        </item>
@@ -278,7 +278,7 @@
          </property>
          <property name="icon">
           <iconset resource="mainwindow.qrc">
-           <normaloff>:/buttons/images/left.png</normaloff>:/buttons/images/left.png</iconset>
+           <normaloff>:/buttons/images/left.svg</normaloff>:/buttons/images/left.svg</iconset>
          </property>
         </widget>
        </item>
@@ -295,7 +295,7 @@
          </property>
          <property name="icon">
           <iconset resource="mainwindow.qrc">
-           <normaloff>:/buttons/images/play.png</normaloff>:/buttons/images/play.png</iconset>
+           <normaloff>:/buttons/images/play.svg</normaloff>:/buttons/images/play.svg</iconset>
          </property>
         </widget>
        </item>
@@ -312,7 +312,7 @@
          </property>
          <property name="icon">
           <iconset resource="mainwindow.qrc">
-           <normaloff>:/buttons/images/screenshot.png</normaloff>:/buttons/images/screenshot.png</iconset>
+           <normaloff>:/buttons/images/screenshot.svg</normaloff>:/buttons/images/screenshot.svg</iconset>
          </property>
         </widget>
        </item>
@@ -329,7 +329,7 @@
          </property>
          <property name="icon">
           <iconset resource="mainwindow.qrc">
-           <normaloff>:/buttons/images/hexViewer.png</normaloff>:/buttons/images/hexViewer.png</iconset>
+           <normaloff>:/buttons/images/debugger.svg</normaloff>:/buttons/images/debugger.svg</iconset>
          </property>
         </widget>
        </item>
@@ -344,8 +344,9 @@
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
-         <property name="text">
-          <string>Install</string>
+         <property name="icon">
+          <iconset resource="mainwindow.qrc">
+           <normaloff>:/buttons/images/install.svg</normaloff>:/buttons/images/install.svg</iconset>
          </property>
         </widget>
        </item>
@@ -374,7 +375,11 @@
           </sizepolicy>
          </property>
          <property name="text">
-          <string>State Mgr</string>
+          <string/>
+         </property>
+         <property name="icon">
+          <iconset resource="mainwindow.qrc">
+           <normaloff>:/buttons/images/stateManager.svg</normaloff>:/buttons/images/stateManager.svg</iconset>
          </property>
         </widget>
        </item>
@@ -389,7 +394,7 @@
   <customwidget>
    <class>TouchScreen</class>
    <extends>QLabel</extends>
-   <header location="global">touchscreen.h</header>
+   <header>touchscreen.h</header>
   </customwidget>
  </customwidgets>
  <resources>

@@ -1,6 +1,8 @@
 #pragma once
 
 #include <QDialog>
+#include <QObject>
+#include <QEvent>
 #include <QListWidgetItem>
 
 namespace Ui{

@@ -1,20 +1,21 @@
 <RCC>
     <qresource prefix="/buttons">
-        <file>images/addressBook.png</file>
-        <file>images/center.png</file>
-        <file>images/down.png</file>
-        <file>images/left.png</file>
-        <file>images/notes.png</file>
-        <file>images/power.png</file>
-        <file>images/right.png</file>
-        <file>images/todo.png</file>
-        <file>images/up.png</file>
-        <file>images/pause.png</file>
-        <file>images/play.png</file>
-        <file>images/saveLoad.png</file>
-        <file>images/screenshot.png</file>
-        <file>images/stop.png</file>
-        <file>images/hexViewer.png</file>
-        <file>images/calendar.png</file>
+        <file>images/addressBook.svg</file>
+        <file>images/calendar.svg</file>
+        <file>images/center.svg</file>
+        <file>images/debugger.svg</file>
+        <file>images/down.svg</file>
+        <file>images/install.svg</file>
+        <file>images/left.svg</file>
+        <file>images/notes.svg</file>
+        <file>images/pause.svg</file>
+        <file>images/play.svg</file>
+        <file>images/power.svg</file>
+        <file>images/right.svg</file>
+        <file>images/screenshot.svg</file>
+        <file>images/stateManager.svg</file>
+        <file>images/stop.svg</file>
+        <file>images/todo.svg</file>
+        <file>images/up.svg</file>
     </qresource>
 </RCC>
