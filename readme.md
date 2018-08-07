@@ -1,4 +1,4 @@
-# Palm m515/OS 4.1 emulator(Mu)
+﻿# Palm m515/OS 4.1 emulator(Mu)
 
 This is a complete restart of my Palm OS emulator, with the last one the code got too messy and the goal too ambitious(to emulate every palm API in software and for compatibility with all Palm OS versions and devices).
 
@@ -48,10 +48,8 @@ The lack of ARM CPU will be fixed in my emulator see "OS improvements".
 
 ## Credits
 Musashi v3.4(last version that builds outside of mame) (68k core)  
-http://www.iconarchive.com/show/clean-3d-icons-by-mysitemyway.html (Palm Action Buttons , clean3d-blue.zip)  
 http://www.iconarchive.com/show/crystal-clear-icons-by-everaldo/App-palm-icon.html (Desktop Icon)  
-http://tango.freedesktop.org/Tango_Icon_Library (All UI buttons)  
-https://www.iconexperience.com/v_collection/icons/?icon=led_red (3dsIrForwarder icon)
+http://tango.freedesktop.org/Tango_Icon_Library (Palm Action Buttons, All UI buttons)  
 Some main board photos by Reddit /u/KHRoN
 
 ## Building
@@ -76,6 +74,20 @@ Install prc-tools from the below link(self compiled or prepackaged vm)
 
     cd ./hwTestSuite
     ./make.sh
+
+## Running
+#### For Qt
+ 1. Run once to create the directory tree
+ 2. Copy "palmRoms/Palm m515/rom(selfDumped).bin" to "~/Mu"
+ 3. Rename "rom(selfDumped).bin" to "palmos41-en-m515.rom"
+ 4. Copy "palmBootloaders/Palm m515/bootloader(type 2).bin" to "~/Mu"
+ 5. Rename "bootloader(type 2).bin" to "bootloader-en-m515.rom"
+ 6. Run emu and press start button
+ 
+ #### For RetroArch 
+ 1. Copy and rename the same files as above but to the RetroArch "system" directory
+ 2. Copy mu_libretro.(so/dylib/dll) to the RetroArch "cores" directory
+ 3. Run RetroArch, select "Load Core",  select "Mu", select "Start Core"
 
 ## Tools
 [Prc-tools, Palm OS SDKs, pilrc, pilot-link](https://github.com/meepingsnesroms/prc-tools-remix)
