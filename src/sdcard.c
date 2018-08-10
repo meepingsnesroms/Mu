@@ -67,7 +67,7 @@ uint32_t sdCardReconfigure(uint64_t size){
    if(!sdCardOldData)
       return EMU_ERROR_OUT_OF_MEMORY;
    
-   sdCardChunks = malloc(sizeof(uint64_t) * SDCARD_STATE_CHUNKS_VECTOR_SIZE);
+   sdCardChunks = malloc(sizeof(uint64_t) * SD_CARD_CHUNK_VECTOR_SIZE);
    if(!sdCardChunks)
       return EMU_ERROR_OUT_OF_MEMORY;
    
@@ -127,8 +127,8 @@ void sdCardSaveState(uint64_t sessionId, uint64_t stateId){
       
       if(sdCardChunkIndex + 2 >= sdCardChunkMaxIndex){
          //resize vector if needed
-         sdCardChunks = realloc(sdCardChunks, sizeof(uint64_t) * (sdCardChunkMaxIndex + SDCARD_STATE_CHUNKS_VECTOR_SIZE));
-         sdCardChunkMaxIndex += SDCARD_STATE_CHUNKS_VECTOR_SIZE;
+         sdCardChunks = realloc(sdCardChunks, sizeof(uint64_t) * (sdCardChunkMaxIndex + SD_CARD_CHUNK_VECTOR_SIZE));
+         sdCardChunkMaxIndex += SD_CARD_CHUNK_VECTOR_SIZE;
       }
       sdCardChunks[sdCardChunkIndex] = stateId;
       sdCardChunkIndex++;

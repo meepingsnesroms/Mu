@@ -35,7 +35,7 @@ uint8_t*  palmRam;
 uint8_t*  palmRom;
 uint8_t   palmReg[REG_SIZE];
 input_t   palmInput;
-sd_card_t  palmSdCard;
+sd_card_t palmSdCard;
 misc_hw_t palmMisc;
 uint16_t  palmFramebuffer[160 * (160 + 60)];//really 160*160, the extra pixels are the silkscreened digitizer area
 uint16_t* palmExtendedFramebuffer;
@@ -45,11 +45,11 @@ double    palmCycleCounter;//can be greater then 0 if too many cycles where run
 double    palmClockMultiplier;//used by the emulator to overclock the emulated Palm
 
 
-uint64_t (*emulatorGetSysTime)();
-uint64_t* (*emulatorGetSdCardStateChunkList)(uint64_t sessionId, uint64_t stateId);//returns the BPS chunkIds for a stateId in the order they need to be applied
-void (*emulatorSetSdCardStateChunkList)(uint64_t sessionId, uint64_t stateId, uint64_t* data);//sets the BPS chunkIds for a stateId in the order they need to be applied
-buffer_t (*emulatorGetSdCardChunk)(uint64_t sessionId, uint64_t chunkId);
-void (*emulatorSetSdCardChunk)(uint64_t sessionId, uint64_t chunkId, buffer_t chunk);
+uint64_t (*emulatorGetSysTime)() = NULL;
+uint64_t* (*emulatorGetSdCardStateChunkList)(uint64_t sessionId, uint64_t stateId) = NULL;//returns the BPS chunkIds for a stateId in the order they need to be applied
+void (*emulatorSetSdCardStateChunkList)(uint64_t sessionId, uint64_t stateId, uint64_t* data) = NULL;//sets the BPS chunkIds for a stateId in the order they need to be applied
+buffer_t (*emulatorGetSdCardChunk)(uint64_t sessionId, uint64_t chunkId) = NULL;
+void (*emulatorSetSdCardChunk)(uint64_t sessionId, uint64_t chunkId, buffer_t chunk) = NULL;
 
 static inline bool allSdCardCallbacksPresent(){
    if(emulatorGetSysTime && emulatorGetSdCardStateChunkList && emulatorSetSdCardStateChunkList && emulatorGetSdCardChunk && emulatorSetSdCardChunk)
@@ -123,9 +123,8 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t spec
    
    //config
    palmClockMultiplier = (specialFeatures & FEATURE_FAST_CPU) ? 2.0 : 1.0;//overclock
-   palmClockMultiplier *= 0.80;//run at 80% speed, 20% is likely memory waitstates
+   palmClockMultiplier *= 0.80;//run at 80% speed, 20% is likely memory waitstates, at 100% it crashes on the spinning Palm welcome screen, 90% works though
    palmSpecialFeatures = specialFeatures;
-   setRtc(0, 0, 0, 0);
    
    //start running
    m68k_pulse_reset();

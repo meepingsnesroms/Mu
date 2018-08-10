@@ -16,7 +16,7 @@ extern "C" {
 //to enable degguging define EMU_DEBUG, all options below do nothing unless EMU_DEBUG is defined
 //to enable sandbox debugging define EMU_SANDBOX
 //to enable opcode level debugging define EMU_SANDBOX_OPCODE_LEVEL_DEBUG
-//to log all api calls define EMU_SANDBOX_LOG_APIS, EMU_SANDBOX_OPCODE_LEVEL_DEBUG must also be defined for this to work
+//to log all API calls define EMU_SANDBOX_LOG_APIS, EMU_SANDBOX_OPCODE_LEVEL_DEBUG must also be defined for this to work
 
 //debug
 #if defined(EMU_DEBUG)
@@ -127,22 +127,22 @@ typedef struct{
 
 //config options
 #define EMU_FPS 60.0
-#define SDCARD_STATE_CHUNKS_VECTOR_SIZE 100
+#define SD_CARD_CHUNK_VECTOR_SIZE 100
 #define SAVE_STATE_VERSION 1
 
-//emulator data
-extern uint8_t*  palmRam;
-extern uint8_t*  palmRom;
-extern uint8_t   palmReg[];
-extern input_t   palmInput;
-extern sd_card_t palmSdCard;
-extern misc_hw_t palmMisc;
-extern uint16_t  palmFramebuffer[];
-extern uint16_t* palmExtendedFramebuffer;
-extern uint32_t  palmSpecialFeatures;
-extern double    palmCrystalCycles;
-extern double    palmCycleCounter;
-extern double    palmClockMultiplier;
+//emulator data, some are GUI interface variables, some should be left alone
+extern uint8_t*  palmRam;//dont touch
+extern uint8_t*  palmRom;//dont touch
+extern uint8_t   palmReg[];//dont touch
+extern input_t   palmInput;//write allowed
+extern sd_card_t palmSdCard;//dont touch
+extern misc_hw_t palmMisc;//read/write allowed
+extern uint16_t  palmFramebuffer[];//read allowed if FEATURE_320x320 is off, or else invalid data will be displayed
+extern uint16_t* palmExtendedFramebuffer;//read allowed if FEATURE_320x320 is on, or else SIGSEGV
+extern uint32_t  palmSpecialFeatures;//read allowed
+extern double    palmCrystalCycles;//dont touch
+extern double    palmCycleCounter;//dont touch
+extern double    palmClockMultiplier;//read/write allowed
 
 //callbacks
 extern uint64_t (*emulatorGetSysTime)();

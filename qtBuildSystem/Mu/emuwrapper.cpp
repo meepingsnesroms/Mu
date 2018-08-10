@@ -3,6 +3,9 @@
 #include <QImage>
 #include <QFile>
 #include <QByteArray>
+#include <QDateTime>
+#include <QDate>
+#include <QTime>
 
 #include <new>
 #include <chrono>
@@ -52,6 +55,11 @@ void frontendHandleDebugPrint(){
       duplicateCallCount.push_back(1);
    }
 }
+
+uint64_t frontendGetSysTime(){
+   return QDateTime::currentMSecsSinceEpoch();
+}
+
 
 EmuWrapper::EmuWrapper(){
    if(alreadyExists == true)
@@ -142,6 +150,10 @@ uint32_t EmuWrapper::init(QString romPath, QString bootloaderPath, QString ramPa
 
       error = emulatorInit(romBuff, bootloaderBuff, features);
       if(error == EMU_ERROR_NONE){
+         QTime now = QTime::currentTime();
+
+         emulatorSetRtc(QDate::currentDate().day(), now.hour(), now.minute(), now.second());
+
          if(ramPath != ""){
             QFile ramFile(ramPath);
 
