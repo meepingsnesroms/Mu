@@ -236,27 +236,39 @@ static inline void setIlcr(uint16_t value){
    registerArrayWrite16(ILCR, newIlcr);
 }
 
-/*
 static inline void setSpiCont1(uint16_t value){
-   //unsure if ENABLE can be set at the exact moment of write or must be set before write, currently allow both
-   //important bits are ENABLE, XCH, IRQ, IRQEN and BITCOUNT
-   //uint16_t oldSpiCont1 = registerArrayRead16(SPICONT1);
-   if(value & 0x0400 && value & 0x0200 && value & 0x0100){
-      //master mode, enabled and exchange set
+   //only master mode is implemented!!!
+   uint16_t oldSpiCont1 = registerArrayRead16(SPICONT1);
+
+   //do a transfer
+   if(value & oldSpiCont1 & 0x0200 && value & 0x0100){
+      //enabled and exchange set
       uint8_t bitCount = (value & 0x000F) + 1;
+      uint16_t startBit = 1 << (bitCount - 1);
+      uint16_t currentTxFifoEntry = spi1TxFifo[0];
+      uint16_t newRxFifoEntry = 0;
 
-      //dont know what to transfer here yet
+      for(uint8_t bits = 0; bits < bitCount; bits++){
+         newRxFifoEntry |= sdCardExchangeBit(currentTxFifoEntry & startBit);
+         newRxFifoEntry <<= 1;
+         currentTxFifoEntry <<= 1;
+      }
 
-      //debugLog("SPI2 transfer, ENABLE:%s, XCH:%s, IRQ:%s, IRQEN:%s, BITCOUNT:%d\n", boolString(value & 0x0200), boolString(value & 0x0100), boolString(value & 0x0080), boolString(value & 0x0400), (value & 0x000F) + 1);
-      //debugLog("SPI2 transfer, shifted in:0x%04X, shifted out:0x%04X\n", spi2Data << (16 - bitCount) >> bitCount, oldSpiCont2 >> (16 - bitCount));
+      //add received data to RX FIFO
+      if(spi1RxPosition < 8){
+         //not full add entry
+         spi1RxPosition = newRxFifoEntry;
+         spi1RxPosition++;
+      }
 
-      //unset XCH, transfers are instant since timing is not emulated
-      value &= 0xFEFF;
+      //remove used TX FIFO entry
+      for(uint8_t count = 0; count < 7; count++)
+         spi1TxFifo[count] = spi1TxFifo[count + 1];
+      spi1TxPosition--;
    }
 
    registerArrayWrite16(SPICONT1, value);
 }
-*/
 
 static inline void setSpiCont2(uint16_t value){
    //the ENABLE bit must be set before the transfer and in the transfer command

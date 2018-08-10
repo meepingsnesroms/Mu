@@ -25,6 +25,7 @@ port d IRQ* bits edge triggered interrupt mode is not emulated
 edgeTriggeredInterruptLastValue may need to be locked when PLL is off
 port d data register seems to have its data bits cleared when an edge triggered interrupt is cleared(according to MC68VZ328UM.pdf Page 10-15)
 Dont know if it possible to have the backlight on and the display off at the same time(theres no reason for it but it may be possible)
+SPI1 slave mode, should never be used
 
 Debug tools:
 missing home screen icons
@@ -38,6 +39,7 @@ USB chip may be swapped in to address space with a GPIO and reconfiguring CSC ch
 EMUCS memory range is unemulated
 the second line on all the chip selects is not properly emulated, they should be empty and trigger a bus error(except CSD1, it seems to follow different rules) but currently mirror the first half
 the CSC address space is never accessed, this may be because the DRAM controller takes it over
+unknown if DRAM bit expanded address space is used for CSC when its not an extension of CSD
 there is conflicting information on wether the DRAM bit effects CSC, needs a test made
 chipselect mirroring is wrong(CS*0 and CS*1 are considered continuous when mapped with more address space than memory, mirroring is currently [CS*0, CS*1, repeat alternating till the end of address space] it should be [CS*0, repeat CS*0 until half way through CS* address space, CS*1, repeat CS*1 until end of CS* address space])
 CSC0 and CSA1 ranges overlap, something specifically stated as what not to do(the CSA1 pin is disabled though)

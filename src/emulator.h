@@ -53,7 +53,7 @@ enum{
    EMU_ERROR_INVALID_PARAMETER
 };
 
-//sdcard types
+//SD card types
 enum{
    CARD_NONE = 0,
    CARD_SD,
@@ -98,18 +98,18 @@ typedef struct{
 }input_t;
 
 typedef struct{
-   //the sdcard is stored as a directory structure with an /(SESSIONID)/sdcard(STATEID).info and /(SESSIONID)/sdcard(CHUNKID).bps
-   //each emulator instance has its own sdcard SESSIONID directory if it has an sdcard
-   //sdcard(STATEID).info specifys the bps files to use
-   //every savestate a new bps file is created with the changes made to the sdcard since the last savestate
-   //the first bps is a patch over a buffer of sdcard size filled with 0x00
+   //the SD card is stored as a directory structure with an /(SESSIONID)/sdCard(STATEID).info and /(SESSIONID)/sdCard(CHUNKID).bps
+   //each emulator instance has its own SD card SESSIONID directory if it has an SD card
+   //sdCard(STATEID).info specifys the BPS files to use
+   //every savestate a new BPS file is created with the changes made to the SD card since the last savestate
+   //the first BPS is a patch over a buffer of SD card size filled with 0x00
    //the frontend provides file access but the emulator does all the patching
    uint64_t sessionId;//64 bit system time when emulator starts
    uint64_t stateId;//64 bit system time when the savestate was taken
    uint64_t size;
    uint8_t  type;
    bool     inserted;
-}sdcard_t;
+}sd_card_t;
 
 typedef struct{
    bool    powerButtonLed;
@@ -135,7 +135,7 @@ extern uint8_t*  palmRam;
 extern uint8_t*  palmRom;
 extern uint8_t   palmReg[];
 extern input_t   palmInput;
-extern sdcard_t  palmSdCard;
+extern sd_card_t palmSdCard;
 extern misc_hw_t palmMisc;
 extern uint16_t  palmFramebuffer[];
 extern uint16_t* palmExtendedFramebuffer;
@@ -146,8 +146,8 @@ extern double    palmClockMultiplier;
 
 //callbacks
 extern uint64_t (*emulatorGetSysTime)();
-extern uint64_t* (*emulatorGetSdCardStateChunkList)(uint64_t sessionId, uint64_t stateId);//returns the bps chunkIds for a stateId in the order they need to be applied
-extern void (*emulatorSetSdCardStateChunkList)(uint64_t sessionId, uint64_t stateId, uint64_t* data);//sets the bps chunkIds for a stateId in the order they need to be applied
+extern uint64_t* (*emulatorGetSdCardStateChunkList)(uint64_t sessionId, uint64_t stateId);//returns the BPS chunkIds for a stateId in the order they need to be applied
+extern void (*emulatorSetSdCardStateChunkList)(uint64_t sessionId, uint64_t stateId, uint64_t* data);//sets the BPS chunkIds for a stateId in the order they need to be applied
 extern buffer_t (*emulatorGetSdCardChunk)(uint64_t sessionId, uint64_t chunkId);
 extern void (*emulatorSetSdCardChunk)(uint64_t sessionId, uint64_t chunkId, buffer_t chunk);
 
@@ -157,7 +157,7 @@ void emulatorExit();
 void emulatorReset();
 void emulatorSetRtc(uint16_t days, uint8_t hours, uint8_t minutes, uint8_t seconds);
 uint32_t emulatorSetNewSdCard(uint64_t size, uint8_t type);
-buffer_t emulatorGetSdCardImage();//this is a direct pointer to the sdcard data, do not free it
+buffer_t emulatorGetSdCardImage();//this is a direct pointer to the SD card data, do not free it
 uint32_t emulatorSetSdCardFromImage(buffer_t image, uint8_t type);
 uint64_t emulatorGetStateSize();
 bool emulatorSaveState(buffer_t buffer);//true = success

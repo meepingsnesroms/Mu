@@ -63,7 +63,7 @@ SOURCES += \
     src/emulator.c \
     src/hardwareRegisters.c \
     src/memoryAccess.c \
-    src/sdcard.c \
+    src/sdCard.c \
     src/sed1376.c \
     src/silkscreen.c \
     src/ads7846.c \
@@ -85,7 +85,7 @@ HEADERS += \
     src/hardwareRegisters.h \
     src/memoryAccess.h \
     src/portability.h \
-    src/sdcard.h \
+    src/sdCard.h \
     src/sed1376.h \
     src/silkscreen.h \
     mainwindow.h \

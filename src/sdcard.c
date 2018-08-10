@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <stdbool.h>
 #include <string.h>
 #include <stdlib.h>
 
@@ -101,7 +102,7 @@ uint32_t sdCardSetFromImage(buffer_t image){
 }
 
 void sdCardSaveState(uint64_t sessionId, uint64_t stateId){
-   //make single bps if sdcard data has changed
+   //make single BPS if SD card data has changed
    if(memcmp(sdCardOldData, sdCardData, sdCardSize) != 0){
       struct mem source;
       struct mem target;
@@ -140,7 +141,7 @@ void sdCardSaveState(uint64_t sessionId, uint64_t stateId){
 }
 
 void sdCardLoadState(uint64_t sessionId, uint64_t stateId){
-   //rebuild sdcard from bps chain
+   //rebuild SD card from BPS chain
    free(sdCardChunks);
    sdCardChunks = emulatorGetSdCardStateChunkList(sessionId, stateId);
    updateChunkBufferLength();
@@ -166,4 +167,9 @@ void sdCardLoadState(uint64_t sessionId, uint64_t stateId){
    }
    
    memcpy(sdCardOldData, sdCardData, sdCardSize);
+}
+
+bool sdCardExchangeBit(bool bit){
+   //not done
+   return true;//eek
 }

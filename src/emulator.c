@@ -10,7 +10,7 @@
 #include "memoryAccess.h"
 #include "sed1376.h"
 #include "ads7846.h"
-#include "sdcard.h"
+#include "sdCard.h"
 #include "silkscreen.h"
 #include "portability.h"
 #include "debug/sandbox.h"
@@ -35,7 +35,7 @@ uint8_t*  palmRam;
 uint8_t*  palmRom;
 uint8_t   palmReg[REG_SIZE];
 input_t   palmInput;
-sdcard_t  palmSdCard;
+sd_card_t  palmSdCard;
 misc_hw_t palmMisc;
 uint16_t  palmFramebuffer[160 * (160 + 60)];//really 160*160, the extra pixels are the silkscreened digitizer area
 uint16_t* palmExtendedFramebuffer;
@@ -46,8 +46,8 @@ double    palmClockMultiplier;//used by the emulator to overclock the emulated P
 
 
 uint64_t (*emulatorGetSysTime)();
-uint64_t* (*emulatorGetSdCardStateChunkList)(uint64_t sessionId, uint64_t stateId);//returns the bps chunkIds for a stateId in the order they need to be applied
-void (*emulatorSetSdCardStateChunkList)(uint64_t sessionId, uint64_t stateId, uint64_t* data);//sets the bps chunkIds for a stateId in the order they need to be applied
+uint64_t* (*emulatorGetSdCardStateChunkList)(uint64_t sessionId, uint64_t stateId);//returns the BPS chunkIds for a stateId in the order they need to be applied
+void (*emulatorSetSdCardStateChunkList)(uint64_t sessionId, uint64_t stateId, uint64_t* data);//sets the BPS chunkIds for a stateId in the order they need to be applied
 buffer_t (*emulatorGetSdCardChunk)(uint64_t sessionId, uint64_t chunkId);
 void (*emulatorSetSdCardChunk)(uint64_t sessionId, uint64_t chunkId, buffer_t chunk);
 
@@ -146,7 +146,7 @@ void emulatorExit(){
 }
 
 void emulatorReset(){
-   //reset doesnt clear RAM or sdcard, all programs are stored in RAM or on sdcard
+   //reset doesnt clear RAM or SD card, all programs are stored in RAM or on SD card
    debugLog("Reset triggered, PC:0x%08X\n", m68k_get_reg(NULL, M68K_REG_PPC));
    resetHwRegisters();
    resetAddressSpace();//address space must be reset after hardware registers because it is dependant on them
@@ -168,7 +168,7 @@ uint32_t emulatorSetNewSdCard(uint64_t size, uint8_t type){
       return EMU_ERROR_INVALID_PARAMETER;
 
    if(type != CARD_NONE){
-      palmSdCard.sessionId = emulatorGetSysTime();//completely new sdcard, reset delta state chain
+      palmSdCard.sessionId = emulatorGetSysTime();//completely new SD card, reset delta state chain
       palmSdCard.stateId = 0x0000000000000000;//set when saving state
       palmSdCard.size = size;
       palmSdCard.type = type;
@@ -195,7 +195,7 @@ uint32_t emulatorSetSdCardFromImage(buffer_t image, uint8_t type){
 
    sdCardSetFromImage(image);
 
-   palmSdCard.sessionId = emulatorGetSysTime();//completely new sdcard, reset delta state chain
+   palmSdCard.sessionId = emulatorGetSysTime();//completely new SD card, reset delta state chain
    palmSdCard.stateId = 0x0000000000000000;//set when saving state
    palmSdCard.size = image.size;
    palmSdCard.type = type;
@@ -308,8 +308,8 @@ bool emulatorSaveState(buffer_t buffer){
    memcpy(buffer.data + offset, sed1376Framebuffer, SED1376_FB_SIZE);
    offset += SED1376_FB_SIZE;
 
-   //sdcard
-   //update sdcard struct and save sdcard data
+   //SD card
+   //update SD card struct and save SD card data
    if(allSdCardCallbacksPresent() && palmSdCard.type != CARD_NONE){
       palmSdCard.stateId = emulatorGetSysTime();
       sdCardSaveState(palmSdCard.sessionId, palmSdCard.stateId);
@@ -458,7 +458,7 @@ bool emulatorLoadState(buffer_t buffer){
    offset += SED1376_FB_SIZE;
    sed1376RefreshLut();
 
-   //sdcard
+   //SD card
    palmSdCard.sessionId = readStateValueUint64(buffer.data + offset);
    offset += sizeof(uint64_t);
    palmSdCard.stateId = readStateValueUint64(buffer.data + offset);
@@ -469,7 +469,7 @@ bool emulatorLoadState(buffer_t buffer){
    offset += sizeof(uint8_t);
    palmSdCard.inserted = readStateValueBool(buffer.data + offset);
    offset += sizeof(uint8_t);
-   //update sdcard data from sdcard struct
+   //update SD card data from SD card struct
    if(allSdCardCallbacksPresent() && palmSdCard.type != CARD_NONE)
       sdCardLoadState(palmSdCard.sessionId, palmSdCard.stateId);
 

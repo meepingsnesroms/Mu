@@ -9,6 +9,7 @@
 #include "68328Functions.h"
 #include "portability.h"
 #include "ads7846.h"
+#include "sdCard.h"
 #include "m68k/m68k.h"
 #include "debug/sandbox.h"
 
@@ -507,6 +508,7 @@ uint16_t getHwRegister16(uint32_t address){
       case TPRER2:
       case TCTL1:
       case TCTL2:
+      case SPICONT1:
       case SPICONT2:
       case SPIDATA2:
          //simple read, no actions needed
@@ -917,6 +919,10 @@ void setHwRegister16(uint32_t address, uint16_t value){
                resetAddressSpace();
             }
          }
+         break;
+
+      case SPICONT1:
+         setSpiCont1(value);
          break;
 
       case SPICONT2:
