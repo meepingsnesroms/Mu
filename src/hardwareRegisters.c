@@ -1035,6 +1035,9 @@ void setHwRegister32(uint32_t address, uint32_t value){
 
 
 void resetHwRegisters(){
+   uint32_t oldRtc = registerArrayRead32(RTCTIME);//preserve RTCTIME
+   uint16_t oldDayr = registerArrayRead16(DAYR);//preserve DAYR
+
    memset(palmReg, 0x00, REG_SIZE - BOOTLOADER_SIZE);
    palmCrystalCycles = 0.0;
    clk32Counter = 0;
@@ -1146,7 +1149,7 @@ void resetHwRegisters(){
    registerArrayWrite16(UBAUD2, 0x0002);
    registerArrayWrite16(HMARK, 0x0102);
    
-   //LCD control registers, unused since the SED1376 is present
+   //LCD control registers, unused since the SED1376 controls the LCD
    registerArrayWrite8(LVPW, 0xFF);
    registerArrayWrite16(LXMAX, 0x03F0);
    registerArrayWrite16(LYMAX, 0x01FF);
@@ -1157,11 +1160,11 @@ void resetHwRegisters(){
    registerArrayWrite8(DMACR, 0x62);
    
    //realtime clock
-   //RTCTIME is not changed on reset
+   registerArrayWrite32(RTCTIME, oldRtc);//RTCTIME is not changed on reset
    registerArrayWrite16(WATCHDOG, 0x0001);
    registerArrayWrite16(RTCCTL, 0x0080);//conflicting size in datasheet, it says its 8 bit but provides 16 bit values
    registerArrayWrite16(STPWCH, 0x003F);//conflicting size in datasheet, it says its 8 bit but provides 16 bit values
-   //DAYR is not changed on reset
+   registerArrayWrite16(DAYR, oldDayr);//DAYR is not changed on reset
    
    //SDRAM control, unused since RAM refresh is unemulated
    registerArrayWrite16(SDCTRL, 0x003C);

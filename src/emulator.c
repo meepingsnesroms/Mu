@@ -125,6 +125,7 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t spec
    palmClockMultiplier = (specialFeatures & FEATURE_FAST_CPU) ? 2.0 : 1.0;//overclock
    palmClockMultiplier *= 0.80;//run at 80% speed, 20% is likely memory waitstates, at 100% it crashes on the spinning Palm welcome screen, 90% works though
    palmSpecialFeatures = specialFeatures;
+   setRtc(0,0,0,0);//RTCTIME and DAYR are not cleared by reset, clear them manually in case the front end doesnt set the RTC
    
    //start running
    m68k_pulse_reset();
