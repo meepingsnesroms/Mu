@@ -475,6 +475,24 @@ uint16_t getHwRegister16(uint32_t address){
 
       case PWMC1:
          return getPwmc1();
+
+      case SPIRXD:{
+            uint16_t rxFifoValue;
+
+            if(spi1RxPosition > 0){
+               rxFifoValue = spi1RxFifo[0];
+
+               //remove used RX FIFO entry
+               spi1RxPosition--;
+               for(uint8_t count = 0; count < spi1RxPosition; count++)
+                  spi1RxFifo[count] = spi1RxFifo[count + 1];
+            }
+            else{
+               rxFifoValue = 0x0000;
+            }
+
+            return rxFifoValue;
+         }
          
       //32 bit registers accessed as 16 bit
       case IMR:
@@ -923,6 +941,13 @@ void setHwRegister16(uint32_t address, uint16_t value){
 
       case SPICONT1:
          setSpiCont1(value);
+         break;
+
+      case SPITXD:
+         if(spi1TxPosition < 8){
+            spi1TxFifo[spi1TxPosition] = value;
+            spi1TxPosition++;
+         }
          break;
 
       case SPICONT2:

@@ -241,7 +241,7 @@ static inline void setSpiCont1(uint16_t value){
    uint16_t oldSpiCont1 = registerArrayRead16(SPICONT1);
 
    //do a transfer
-   if(value & oldSpiCont1 & 0x0200 && value & 0x0100){
+   if(value & oldSpiCont1 & 0x0200 && value & 0x0100 && spi1TxPosition > 0){
       //enabled and exchange set
       uint8_t bitCount = (value & 0x000F) + 1;
       uint16_t startBit = 1 << (bitCount - 1);
@@ -256,15 +256,15 @@ static inline void setSpiCont1(uint16_t value){
 
       //add received data to RX FIFO
       if(spi1RxPosition < 8){
-         //not full add entry
-         spi1RxPosition = newRxFifoEntry;
+         //not full, add entry
+         spi1RxFifo[spi1RxPosition] = newRxFifoEntry;
          spi1RxPosition++;
       }
 
       //remove used TX FIFO entry
-      for(uint8_t count = 0; count < 7; count++)
-         spi1TxFifo[count] = spi1TxFifo[count + 1];
       spi1TxPosition--;
+      for(uint8_t count = 0; count < spi1TxPosition; count++)
+         spi1TxFifo[count] = spi1TxFifo[count + 1];
    }
 
    registerArrayWrite16(SPICONT1, value);
