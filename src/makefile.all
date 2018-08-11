@@ -12,6 +12,4 @@ EMU_SOURCES_C := $(EMU_PATH)/emulator.c \
       $(EMU_PATH)/m68k/m68kopac.c \
       $(EMU_PATH)/m68k/m68kdasm.c \
       $(EMU_PATH)/m68k/m68kcpu.c \
-      $(EMU_PATH)/bps/libbps.c \
-      $(EMU_PATH)/bps/crc32.c \
       $(EMU_PATH)/debug/sandbox.c

@@ -35,7 +35,7 @@ uint8_t*  palmRam;
 uint8_t*  palmRom;
 uint8_t   palmReg[REG_SIZE];
 input_t   palmInput;
-sd_card_t palmSdCard;
+buffer_t  palmSdCard;
 misc_hw_t palmMisc;
 uint16_t  palmFramebuffer[160 * (160 + 60)];//really 160*160, the extra pixels are the silkscreened digitizer area
 uint16_t* palmExtendedFramebuffer;
@@ -44,18 +44,6 @@ double    palmCrystalCycles;//how many cycles before toggling the 32.768 kHz cry
 double    palmCycleCounter;//can be greater then 0 if too many cycles where run
 double    palmClockMultiplier;//used by the emulator to overclock the emulated Palm
 
-
-uint64_t (*emulatorGetSysTime)() = NULL;
-uint64_t* (*emulatorGetSdCardStateChunkList)(uint64_t sessionId, uint64_t stateId) = NULL;//returns the BPS chunkIds for a stateId in the order they need to be applied
-void (*emulatorSetSdCardStateChunkList)(uint64_t sessionId, uint64_t stateId, uint64_t* data) = NULL;//sets the BPS chunkIds for a stateId in the order they need to be applied
-buffer_t (*emulatorGetSdCardChunk)(uint64_t sessionId, uint64_t chunkId) = NULL;
-void (*emulatorSetSdCardChunk)(uint64_t sessionId, uint64_t chunkId, buffer_t chunk) = NULL;
-
-static inline bool allSdCardCallbacksPresent(){
-   if(emulatorGetSysTime && emulatorGetSdCardStateChunkList && emulatorSetSdCardStateChunkList && emulatorGetSdCardChunk && emulatorSetSdCardChunk)
-      return true;
-   return false;
-}
 
 uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t specialFeatures){
    if(emulatorInitialized)
@@ -113,7 +101,6 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t spec
    resetAddressSpace();
    sed1376Reset();
    ads7846Reset();
-   sdCardInit();
    sandboxInit();
    
    memset(&palmInput, 0x00, sizeof(palmInput));
@@ -140,7 +127,8 @@ void emulatorExit(){
       free(palmRom);
       if(palmSpecialFeatures & FEATURE_320x320)
          free(palmExtendedFramebuffer);
-      sdCardExit();
+      if(palmSdCard.data)
+         free(palmSdCard.data);
       emulatorInitialized = false;
    }
 }
@@ -157,51 +145,6 @@ void emulatorReset(){
 
 void emulatorSetRtc(uint16_t days, uint8_t hours, uint8_t minutes, uint8_t seconds){
    setRtc(days, hours, minutes, seconds);
-}
-
-uint32_t emulatorSetNewSdCard(uint64_t size, uint8_t type){
-   if(!allSdCardCallbacksPresent())
-      return EMU_ERROR_CALLBACKS_NOT_SET;
-
-   //more than 2gb/too large for FAT16 or not a card type
-   if(size > 0x80000000 || type >= CARD_END)
-      return EMU_ERROR_INVALID_PARAMETER;
-
-   if(type != CARD_NONE){
-      palmSdCard.sessionId = emulatorGetSysTime();//completely new SD card, reset delta state chain
-      palmSdCard.stateId = 0x0000000000000000;//set when saving state
-      palmSdCard.size = size;
-      palmSdCard.type = type;
-      palmSdCard.inserted = true;
-   }
-   else{
-      memset(&palmSdCard, 0x00, sizeof(palmSdCard));
-   }
-   
-   return EMU_ERROR_NONE;
-}
-
-buffer_t emulatorGetSdCardImage(){
-   return sdCardGetImage();
-}
-
-uint32_t emulatorSetSdCardFromImage(buffer_t image, uint8_t type){
-   if(!allSdCardCallbacksPresent())
-      return EMU_ERROR_CALLBACKS_NOT_SET;
-
-   //invalid pointer, more than 2gb/too large for FAT16 or not a card type
-   if(!image.data || image.size > 0x80000000 || type == CARD_NONE || type >= CARD_END)
-      return EMU_ERROR_INVALID_PARAMETER;
-
-   sdCardSetFromImage(image);
-
-   palmSdCard.sessionId = emulatorGetSysTime();//completely new SD card, reset delta state chain
-   palmSdCard.stateId = 0x0000000000000000;//set when saving state
-   palmSdCard.size = image.size;
-   palmSdCard.type = type;
-   palmSdCard.inserted = true;
-
-   return EMU_ERROR_NONE;
 }
 
 uint64_t emulatorGetStateSize(){
@@ -222,8 +165,6 @@ uint64_t emulatorGetStateSize(){
    size += TOTAL_MEMORY_BANKS;//bank handlers
    size += sizeof(uint32_t) * 4 * CHIP_END;//chip select states
    size += sizeof(uint8_t) * 5 * CHIP_END;//chip select states
-   size += sizeof(uint64_t) * 3;//palmSdCard
-   size += sizeof(uint8_t) * 2;//palmSdCard
    size += sizeof(uint64_t) * 4;//32.32 fixed point double, timerXCycleCounter and CPU cycle timers
    size += sizeof(int32_t);//pllWakeWait
    size += sizeof(uint32_t);//clk32Counter
@@ -236,6 +177,8 @@ uint64_t emulatorGetStateSize(){
    size += sizeof(uint8_t);//ads7846PenIrqEnabled
    size += sizeof(uint16_t);//ads7846
    size += sizeof(uint8_t) * 7;//palmMisc
+   size += sizeof(uint64_t);//palmSdCard.size
+   size += palmSdCard.size;//palmSdCard.data
    
    return size;
 }
@@ -308,23 +251,6 @@ bool emulatorSaveState(buffer_t buffer){
    memcpy(buffer.data + offset, sed1376Framebuffer, SED1376_FB_SIZE);
    offset += SED1376_FB_SIZE;
 
-   //SD card
-   //update SD card struct and save SD card data
-   if(allSdCardCallbacksPresent() && palmSdCard.type != CARD_NONE){
-      palmSdCard.stateId = emulatorGetSysTime();
-      sdCardSaveState(palmSdCard.sessionId, palmSdCard.stateId);
-   }
-   writeStateValueUint64(buffer.data + offset, palmSdCard.sessionId);
-   offset += sizeof(uint64_t);
-   writeStateValueUint64(buffer.data + offset, palmSdCard.stateId);
-   offset += sizeof(uint64_t);
-   writeStateValueUint64(buffer.data + offset, palmSdCard.size);
-   offset += sizeof(uint64_t);
-   writeStateValueUint8(buffer.data + offset, palmSdCard.type);
-   offset += sizeof(uint8_t);
-   writeStateValueBool(buffer.data + offset, palmSdCard.inserted);
-   offset += sizeof(uint8_t);
-
    //timing
    writeStateValueDouble(buffer.data + offset, palmCrystalCycles);
    offset += sizeof(uint64_t);
@@ -384,6 +310,12 @@ bool emulatorSaveState(buffer_t buffer){
    offset += sizeof(uint8_t);
    writeStateValueUint8(buffer.data + offset, palmMisc.dataPort);
    offset += sizeof(uint8_t);
+
+   //SD card
+   writeStateValueUint64(buffer.data + offset, palmSdCard.size);
+   offset += sizeof(uint64_t);
+   memcpy(palmSdCard.data, buffer.data + offset, palmSdCard.size);
+   offset += palmSdCard.size;
 
    return true;
 }
@@ -458,21 +390,6 @@ bool emulatorLoadState(buffer_t buffer){
    offset += SED1376_FB_SIZE;
    sed1376RefreshLut();
 
-   //SD card
-   palmSdCard.sessionId = readStateValueUint64(buffer.data + offset);
-   offset += sizeof(uint64_t);
-   palmSdCard.stateId = readStateValueUint64(buffer.data + offset);
-   offset += sizeof(uint64_t);
-   palmSdCard.size = readStateValueUint64(buffer.data + offset);
-   offset += sizeof(uint64_t);
-   palmSdCard.type = readStateValueUint8(buffer.data + offset);
-   offset += sizeof(uint8_t);
-   palmSdCard.inserted = readStateValueBool(buffer.data + offset);
-   offset += sizeof(uint8_t);
-   //update SD card data from SD card struct
-   if(allSdCardCallbacksPresent() && palmSdCard.type != CARD_NONE)
-      sdCardLoadState(palmSdCard.sessionId, palmSdCard.stateId);
-
    //timing
    palmCrystalCycles = readStateValueDouble(buffer.data + offset);
    offset += sizeof(uint64_t);
@@ -533,6 +450,23 @@ bool emulatorLoadState(buffer_t buffer){
    palmMisc.dataPort = readStateValueUint8(buffer.data + offset);
    offset += sizeof(uint8_t);
 
+   //SD card
+   if(palmSdCard.data){
+      free(palmSdCard.data);
+      palmSdCard.data = NULL;
+   }
+   palmSdCard.size = readStateValueUint64(buffer.data + offset);
+   offset += sizeof(uint64_t);
+   if(palmSdCard.size > 0){
+      palmSdCard.data = malloc(palmSdCard.size);
+
+      if(!palmSdCard.data)
+         return false;
+
+      memcpy(palmSdCard.data, buffer.data + offset, palmSdCard.size);
+   }
+   offset += palmSdCard.size;
+
    return true;
 }
 
@@ -543,6 +477,36 @@ buffer_t emulatorGetRamBuffer(){
    ramInfo.size = palmSpecialFeatures & FEATURE_RAM_HUGE ? SUPERMASSIVE_RAM_SIZE : RAM_SIZE;
 
    return ramInfo;
+}
+
+buffer_t emulatorGetSdCardBuffer(){
+   return palmSdCard;
+}
+
+uint32_t emulatorInsertSdCard(buffer_t image){
+   //SD card is currently inserted
+   if(palmSdCard.data)
+      return EMU_ERROR_RESOURCE_LOCKED;
+
+   palmSdCard.data = malloc(image.size);
+   if(!palmSdCard.data)
+      return EMU_ERROR_OUT_OF_MEMORY;
+
+   if(image.data)
+      memcpy(palmSdCard.data, image.data, image.size);
+   else
+      memset(palmSdCard.data, 0x00, image.size);
+
+   palmSdCard.size = image.size;
+
+   return EMU_ERROR_NONE;
+}
+
+void emulatorEjectSdCard(){
+   if(palmSdCard.data)
+      free(palmSdCard.data);
+   palmSdCard.data = NULL;
+   palmSdCard.size = 0;
 }
 
 uint32_t emulatorInstallPrcPdb(buffer_t file){

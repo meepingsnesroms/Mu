@@ -56,10 +56,6 @@ void frontendHandleDebugPrint(){
    }
 }
 
-uint64_t frontendGetSysTime(){
-   return QDateTime::currentMSecsSinceEpoch();
-}
-
 
 EmuWrapper::EmuWrapper(){
    if(alreadyExists == true)

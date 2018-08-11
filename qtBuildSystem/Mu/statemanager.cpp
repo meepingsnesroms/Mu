@@ -81,6 +81,16 @@ void StateManager::on_loadState_clicked(){
    }
 }
 
+void StateManager::on_deleteState_clicked(){
+   if(ui->states->currentItem()){
+      QString statePath = ((MainWindow*)parentWidget())->settings.value("resourceDirectory", "").toString() + "/saveStates/" + ui->states->currentItem()->text();
+
+      //not hooked up yet
+      //((MainWindow*)parentWidget())->emu.loadState(statePath + ".state");
+      updateStatePreview();
+   }
+}
+
 void StateManager::on_states_currentItemChanged(QListWidgetItem* current, QListWidgetItem* previous){
    updateStatePreview();
 }

@@ -51,8 +51,6 @@ SOURCES += \
     main.cpp \
     mainwindow.cpp \
     touchscreen.cpp \
-    src/bps/crc32.c \
-    src/bps/libbps.c \
     src/m68k/m68kcpu.c \
     src/m68k/m68kdasm.c \
     src/m68k/m68kopac.c \
@@ -73,9 +71,6 @@ SOURCES += \
     statemanager.cpp
 
 HEADERS += \
-    src/bps/crc32.h \
-    src/bps/global.h \
-    src/bps/libbps.h \
     src/m68k/m68k.h \
     src/m68k/m68kconf.h \
     src/m68k/m68kcpu.h \

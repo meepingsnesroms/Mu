@@ -25,6 +25,7 @@ private slots:
 
    void on_saveState_clicked();
    void on_loadState_clicked();
+   void on_deleteState_clicked();
 
    void on_states_currentItemChanged(QListWidgetItem* current, QListWidgetItem* previous);
 

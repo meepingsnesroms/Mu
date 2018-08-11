@@ -90,6 +90,16 @@
      </property>
     </widget>
    </item>
+   <item>
+    <widget class="QPushButton" name="deleteState">
+     <property name="text">
+      <string>Delete State</string>
+     </property>
+     <property name="autoDefault">
+      <bool>false</bool>
+     </property>
+    </widget>
+   </item>
   </layout>
  </widget>
  <resources/>
