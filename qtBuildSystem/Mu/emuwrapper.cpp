@@ -105,7 +105,7 @@ void EmuWrapper::emuThreadRun(){
    }
 }
 
-uint32_t EmuWrapper::init(QString romPath, QString bootloaderPath, QString ramPath, uint32_t features){
+uint32_t EmuWrapper::init(QString romPath, QString bootloaderPath, QString ramPath, QString sdCardPath, uint32_t features){
    if(!emuRunning && !emuInited){
       //start emu
       uint32_t error;
@@ -169,6 +169,22 @@ uint32_t EmuWrapper::init(QString romPath, QString bootloaderPath, QString ramPa
             }
          }
 
+         if(sdCardPath != ""){
+            QFile sdCardFile(sdCardPath);
+
+            if(sdCardFile.exists()){
+               if(sdCardFile.open(QFile::ReadOnly | QFile::ExistingOnly)){
+                  QByteArray sdCardData;
+                  buffer_t emuSdCard = emulatorGetSdCardBuffer();
+
+                  sdCardData = sdCardFile.readAll();
+                  sdCardFile.close();
+
+                  emulatorInsertSdCard(emuSdCard);
+               }
+            }
+         }
+
          if(features & FEATURE_320x320){
             emuVideoWidth = 320;
             emuVideoHeight = 320 + 120;
@@ -180,6 +196,7 @@ uint32_t EmuWrapper::init(QString romPath, QString bootloaderPath, QString ramPa
 
          emuInput = palmInput;
          emuRamFilePath = ramPath;
+         emuSdCardFilePath = sdCardPath;
 
          emuThreadJoin = false;
          emuInited = true;
@@ -211,6 +228,16 @@ void EmuWrapper::exit(){
          if(ramFile.open(QFile::WriteOnly | QFile::Truncate)){
             ramFile.write((const char*)emuRam.data, emuRam.size);
             ramFile.close();
+         }
+      }
+      if(emuSdCardFilePath != ""){
+         QFile sdCardFile(emuSdCardFilePath);
+         buffer_t emuSdCard = emulatorGetSdCardBuffer();
+
+         //save out SD card before exit
+         if(sdCardFile.open(QFile::WriteOnly | QFile::Truncate)){
+            sdCardFile.write((const char*)emuSdCard.data, emuSdCard.size);
+            sdCardFile.close();
          }
       }
       emulatorExit();

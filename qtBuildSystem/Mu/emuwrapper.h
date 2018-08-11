@@ -26,6 +26,7 @@ private:
    std::atomic<bool> emuNewFrameReady;
    uint16_t*         emuDoubleBuffer;
    QString           emuRamFilePath;
+   QString           emuSdCardFilePath;
 
    void emuThreadRun();
 
@@ -35,7 +36,7 @@ public:
    EmuWrapper();
    ~EmuWrapper();
 
-   uint32_t init(QString romPath, QString bootloaderPath, QString ramPath, uint32_t features);
+   uint32_t init(QString romPath, QString bootloaderPath = "", QString ramPath = "", QString sdCardPath = "", uint32_t features = FEATURE_ACCURATE);
    void exit();
    void pause();
    void resume();

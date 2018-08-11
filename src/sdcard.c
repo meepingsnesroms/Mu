@@ -1,6 +1,6 @@
 #include <stdbool.h>
 
-//#include "emulator.h"
+#include "emulator.h"
 
 
 bool sdCardExchangeBit(bool bit){
