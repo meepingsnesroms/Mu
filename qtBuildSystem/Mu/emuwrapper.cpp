@@ -175,12 +175,15 @@ uint32_t EmuWrapper::init(QString romPath, QString bootloaderPath, QString ramPa
             if(sdCardFile.exists()){
                if(sdCardFile.open(QFile::ReadOnly | QFile::ExistingOnly)){
                   QByteArray sdCardData;
-                  buffer_t emuSdCard = emulatorGetSdCardBuffer();
+                  buffer_t newSdCard;
 
                   sdCardData = sdCardFile.readAll();
                   sdCardFile.close();
 
-                  emulatorInsertSdCard(emuSdCard);
+                  newSdCard.data = (uint8_t*)sdCardData.data();
+                  newSdCard.size = sdCardData.size();
+
+                  emulatorInsertSdCard(newSdCard);
                }
             }
          }
@@ -231,13 +234,16 @@ void EmuWrapper::exit(){
          }
       }
       if(emuSdCardFilePath != ""){
-         QFile sdCardFile(emuSdCardFilePath);
          buffer_t emuSdCard = emulatorGetSdCardBuffer();
 
-         //save out SD card before exit
-         if(sdCardFile.open(QFile::WriteOnly | QFile::Truncate)){
-            sdCardFile.write((const char*)emuSdCard.data, emuSdCard.size);
-            sdCardFile.close();
+         if(emuSdCard.data){
+            QFile sdCardFile(emuSdCardFilePath);
+
+            //save out SD card before exit
+            if(sdCardFile.open(QFile::WriteOnly | QFile::Truncate)){
+               sdCardFile.write((const char*)emuSdCard.data, emuSdCard.size);
+               sdCardFile.close();
+            }
          }
       }
       emulatorExit();

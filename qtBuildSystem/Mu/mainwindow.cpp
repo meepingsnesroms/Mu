@@ -287,7 +287,7 @@ void MainWindow::on_install_pressed(){
 void MainWindow::on_debugger_clicked(){
    if(emu.isInited()){
       emu.pause();
-      ui->ctrlBtn->setIcon(QIcon(":/buttons/images/play.png"));
+      ui->ctrlBtn->setIcon(QIcon(":/buttons/images/play.svg"));
       ui->ctrlBtn->repaint();//Qt 5.11 broke icon changes on click, this is a patch
       emuDebugger->exec();
    }
