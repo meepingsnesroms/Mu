@@ -322,9 +322,6 @@ bool emulatorSaveState(buffer_t buffer){
 
 bool emulatorLoadState(buffer_t buffer){
    uint64_t offset = 0;
-
-   if(buffer.size < emulatorGetStateSize())
-      return false;//not a valid state
    
    //state validation, wont load states that are not from the same state version
    if(readStateValueUint32(buffer.data + offset) != SAVE_STATE_VERSION)
