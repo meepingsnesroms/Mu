@@ -430,8 +430,8 @@ static inline uint8_t getPortDInputPinValues(){
 
    //portDInputValues |= 0x80;//battery dead bit, dont know the proper level to set this
 
-   //if(palmSdCard.data)
-   //   portDInputValues |= 0x20;
+   if(palmSdCard.data)
+      portDInputValues |= 0x20;
 
    //kbd row 0
    if(requestedRow & 0x20)
