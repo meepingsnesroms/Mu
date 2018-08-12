@@ -6,6 +6,7 @@ When running OS commands through callFunction() it can crash
 Only runs in debug mode because the touchscreen can only be pushed with a jump to OS function hack
 Holding the buttons emulates pressing them like a turbo button(may be caused by the lack of sound emulation, a sound plays on app switch and may block the CPU while waiting for the button to release)
 State manager goes bezerk and crashes when saving on android, also can't close the window or it won't open again(also only on android)
+Lockups occur when a state with no SD card is loaded after a state with an SD card(reason unknown, does not occur when SD card inserted check is removed from getPortDInputPinValues)
 
 Fixed:
 Deleting a save state

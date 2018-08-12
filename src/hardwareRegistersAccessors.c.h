@@ -425,14 +425,13 @@ static inline void setIsr(uint32_t value, bool useTopWord, bool useBottomWord){
 
 //register getters
 static inline uint8_t getPortDInputPinValues(){
-   //uint8_t requestedRow = ~(registerArrayRead8(PKDATA) & registerArrayRead8(PKSEL) & registerArrayRead8(PKDIR));//keys are requested on port k(set low to enable) and read on port d
    uint8_t requestedRow = ~getPortKValue();
    uint8_t portDInputValues = 0x00;
 
    //portDInputValues |= 0x80;//battery dead bit, dont know the proper level to set this
 
-   if(palmSdCard.data)
-      portDInputValues |= 0x20;
+   //if(palmSdCard.data)
+   //   portDInputValues |= 0x20;
 
    //kbd row 0
    if(requestedRow & 0x20)

@@ -198,7 +198,7 @@ bool emulatorSaveState(buffer_t buffer){
    offset += sizeof(uint32_t);
    
    //CPU
-   for(uint32_t cpuReg = 0; cpuReg <=  M68K_REG_CAAR; cpuReg++){
+   for(uint8_t cpuReg = 0; cpuReg <=  M68K_REG_CAAR; cpuReg++){
       writeStateValueUint32(buffer.data + offset, m68k_get_reg(NULL, cpuReg));
       offset += sizeof(uint32_t);
    }
@@ -218,7 +218,7 @@ bool emulatorSaveState(buffer_t buffer){
    offset += REG_SIZE;
    memcpy(buffer.data + offset, bankType, TOTAL_MEMORY_BANKS);
    offset += TOTAL_MEMORY_BANKS;
-   for(uint32_t chip = CHIP_BEGIN; chip < CHIP_END; chip++){
+   for(uint8_t chip = CHIP_BEGIN; chip < CHIP_END; chip++){
       writeStateValueBool(buffer.data + offset, chips[chip].enable);
       offset += sizeof(uint8_t);
       writeStateValueUint32(buffer.data + offset, chips[chip].start);
@@ -333,12 +333,12 @@ bool emulatorLoadState(buffer_t buffer){
    offset += sizeof(uint32_t);
 
    //CPU
-   for(uint32_t cpuReg = 0; cpuReg <=  M68K_REG_CAAR; cpuReg++){
+   for(uint8_t cpuReg = 0; cpuReg <=  M68K_REG_CAAR; cpuReg++){
       m68k_set_reg(cpuReg, readStateValueUint32(buffer.data + offset));
       offset += sizeof(uint32_t);
    }
    lowPowerStopActive = readStateValueBool(buffer.data + offset);
-   offset += 1;
+   offset += sizeof(uint8_t);
    
    //memory
    if(palmSpecialFeatures & FEATURE_RAM_HUGE){
@@ -353,7 +353,7 @@ bool emulatorLoadState(buffer_t buffer){
    offset += REG_SIZE;
    memcpy(bankType, buffer.data + offset, TOTAL_MEMORY_BANKS);
    offset += TOTAL_MEMORY_BANKS;
-   for(uint32_t chip = CHIP_BEGIN; chip < CHIP_END; chip++){
+   for(uint8_t chip = CHIP_BEGIN; chip < CHIP_END; chip++){
       chips[chip].enable = readStateValueBool(buffer.data + offset);
       offset += sizeof(uint8_t);
       chips[chip].start = readStateValueUint32(buffer.data + offset);
