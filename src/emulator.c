@@ -92,6 +92,7 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t spec
       memset(palmExtendedFramebuffer, 0x00, 320 * 320 * sizeof(uint16_t));
       //add 320*320 silkscreen image later, 2xBRZ should be able to make 320*320 version of the 160*160 silkscreen
    }
+   m68328Reset();
    sed1376Reset();
    ads7846Reset();
    sandboxInit();
@@ -106,9 +107,6 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t spec
    palmClockMultiplier *= 0.80;//run at 80% speed, 20% is likely memory waitstates, at 100% it crashes on the spinning Palm welcome screen, 90% works though
    palmSpecialFeatures = specialFeatures;
    setRtc(0,0,0,0);//RTCTIME and DAYR are not cleared by reset, clear them manually in case the front end doesnt set the RTC
-   
-   //start running
-   m68328Reset();
 
    emulatorInitialized = true;
    return EMU_ERROR_NONE;
@@ -129,9 +127,9 @@ void emulatorExit(){
 void emulatorReset(){
    //reset doesnt clear RAM or SD card, all programs are stored in RAM or on SD card
    debugLog("Reset triggered, PC:0x%08X\n", m68k_get_reg(NULL, M68K_REG_PPC));
+   m68328Reset();
    sed1376Reset();
    ads7846Reset();
-   m68328Reset();
 }
 
 void emulatorSetRtc(uint16_t days, uint8_t hours, uint8_t minutes, uint8_t seconds){
@@ -305,8 +303,10 @@ bool emulatorSaveState(buffer_t buffer){
    //SD card
    writeStateValueUint64(buffer.data + offset, palmSdCard.size);
    offset += sizeof(uint64_t);
-   memcpy(palmSdCard.data, buffer.data + offset, palmSdCard.size);
+   memcpy(buffer.data + offset, palmSdCard.data, palmSdCard.size);
    offset += palmSdCard.size;
+
+   //printf("Offset:%d, Size:%d\n", offset, emulatorGetStateSize());
 
    return true;
 }
@@ -447,7 +447,7 @@ bool emulatorLoadState(buffer_t buffer){
    }
    palmSdCard.size = readStateValueUint64(buffer.data + offset);
    //printf("state SD size:0x%016lX\n", palmSdCard.size);
-   printf("New State PC:0x%08X\n", m68k_get_reg(NULL, M68K_REG_PPC));
+   //printf("New State PC:0x%08X\n", m68k_get_reg(NULL, M68K_REG_PPC));
    offset += sizeof(uint64_t);
    if(palmSdCard.size > 0){
       palmSdCard.data = malloc(palmSdCard.size);
@@ -458,6 +458,8 @@ bool emulatorLoadState(buffer_t buffer){
       memcpy(palmSdCard.data, buffer.data + offset, palmSdCard.size);
    }
    offset += palmSdCard.size;
+
+   //printf("Offset:%d, Size:%d\n", offset, emulatorGetStateSize());
 
    return true;
 }
