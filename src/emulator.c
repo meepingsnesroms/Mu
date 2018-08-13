@@ -70,13 +70,7 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t spec
    }
 
    //CPU
-   m68k_init();
-   m68k_set_cpu_type(M68K_CPU_TYPE_68000);
-   patchTo68328();
-   m68k_set_reset_instr_callback(emulatorReset);
-   m68k_set_int_ack_callback(interruptAcknowledge);
-   resetHwRegisters();
-   lowPowerStopActive = false;
+   m68328Init();
    palmCycleCounter = 0.0;
    
    //memory
@@ -98,7 +92,6 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t spec
       memset(palmExtendedFramebuffer, 0x00, 320 * 320 * sizeof(uint16_t));
       //add 320*320 silkscreen image later, 2xBRZ should be able to make 320*320 version of the 160*160 silkscreen
    }
-   resetAddressSpace();
    sed1376Reset();
    ads7846Reset();
    sandboxInit();
@@ -115,7 +108,7 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t spec
    setRtc(0,0,0,0);//RTCTIME and DAYR are not cleared by reset, clear them manually in case the front end doesnt set the RTC
    
    //start running
-   m68k_pulse_reset();
+   m68328Reset();
 
    emulatorInitialized = true;
    return EMU_ERROR_NONE;
@@ -136,11 +129,9 @@ void emulatorExit(){
 void emulatorReset(){
    //reset doesnt clear RAM or SD card, all programs are stored in RAM or on SD card
    debugLog("Reset triggered, PC:0x%08X\n", m68k_get_reg(NULL, M68K_REG_PPC));
-   resetHwRegisters();
-   resetAddressSpace();//address space must be reset after hardware registers because it is dependant on them
    sed1376Reset();
    ads7846Reset();
-   m68k_pulse_reset();
+   m68328Reset();
 }
 
 void emulatorSetRtc(uint16_t days, uint8_t hours, uint8_t minutes, uint8_t seconds){
@@ -152,7 +143,7 @@ uint64_t emulatorGetStateSize(){
    
    size += sizeof(uint32_t);//save state version
    size += sizeof(uint32_t);//palmSpecialFeatures
-   size += sizeof(uint32_t) * (M68K_REG_CAAR + 1);//CPU registers
+   size += sizeof(uint32_t) * (M68K_REG_IR + 1);//CPU registers
    size += sizeof(uint8_t);//lowPowerStopActive
    if(palmSpecialFeatures & FEATURE_RAM_HUGE)
       size += SUPERMASSIVE_RAM_SIZE;//system RAM buffer
@@ -175,7 +166,7 @@ uint64_t emulatorGetStateSize(){
    size += sizeof(uint8_t) * 2;//spi1(R/T)xPosition
    size += sizeof(uint8_t) * 2;//ads7846InputBitsLeft, ads7846ControlByte
    size += sizeof(uint8_t);//ads7846PenIrqEnabled
-   size += sizeof(uint16_t);//ads7846
+   size += sizeof(uint16_t);//ads7846OutputValue
    size += sizeof(uint8_t) * 7;//palmMisc
    size += sizeof(uint64_t);//palmSdCard.size
    size += palmSdCard.size;//palmSdCard.data
@@ -193,12 +184,12 @@ bool emulatorSaveState(buffer_t buffer){
    writeStateValueUint32(buffer.data + offset, SAVE_STATE_VERSION);
    offset += sizeof(uint32_t);
 
-   //features
+   //features, hotpluging emulated hardware is not supported
    writeStateValueUint32(buffer.data + offset, palmSpecialFeatures);
    offset += sizeof(uint32_t);
    
    //CPU
-   for(uint8_t cpuReg = 0; cpuReg <=  M68K_REG_CAAR; cpuReg++){
+   for(uint8_t cpuReg = 0; cpuReg <=  M68K_REG_IR; cpuReg++){
       writeStateValueUint32(buffer.data + offset, m68k_get_reg(NULL, cpuReg));
       offset += sizeof(uint32_t);
    }
@@ -328,12 +319,13 @@ bool emulatorLoadState(buffer_t buffer){
       return false;
    offset += sizeof(uint32_t);
 
-   //features
-   palmSpecialFeatures = readStateValueUint32(buffer.data + offset);
+   //features, hotpluging emulated hardware is not supported
+   if(readStateValueUint32(buffer.data + offset) != palmSpecialFeatures)
+      return false;
    offset += sizeof(uint32_t);
 
    //CPU
-   for(uint8_t cpuReg = 0; cpuReg <=  M68K_REG_CAAR; cpuReg++){
+   for(uint8_t cpuReg = 0; cpuReg <=  M68K_REG_IR; cpuReg++){
       m68k_set_reg(cpuReg, readStateValueUint32(buffer.data + offset));
       offset += sizeof(uint32_t);
    }
@@ -455,6 +447,7 @@ bool emulatorLoadState(buffer_t buffer){
    }
    palmSdCard.size = readStateValueUint64(buffer.data + offset);
    //printf("state SD size:0x%016lX\n", palmSdCard.size);
+   printf("New State PC:0x%08X\n", m68k_get_reg(NULL, M68K_REG_PPC));
    offset += sizeof(uint64_t);
    if(palmSdCard.size > 0){
       palmSdCard.data = malloc(palmSdCard.size);

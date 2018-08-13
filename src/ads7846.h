@@ -1,5 +1,6 @@
 #pragma once
 
+#include <stdint.h>
 #include <stdbool.h>
 
 extern uint8_t  ads7846BitsToNextControl;
