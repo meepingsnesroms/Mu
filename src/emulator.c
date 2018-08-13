@@ -451,8 +451,10 @@ bool emulatorLoadState(buffer_t buffer){
    if(palmSdCard.data){
       free(palmSdCard.data);
       palmSdCard.data = NULL;
+      //palmSdCard.size = 0;
    }
    palmSdCard.size = readStateValueUint64(buffer.data + offset);
+   //printf("state SD size:0x%016lX\n", palmSdCard.size);
    offset += sizeof(uint64_t);
    if(palmSdCard.size > 0){
       palmSdCard.data = malloc(palmSdCard.size);
