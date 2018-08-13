@@ -14,7 +14,7 @@
 #define OPCODE_CPU32_END   0xF83F
 
 
-bool lowPowerStopActive;
+bool m68328LowPowerStop;
 
 
 static inline void patchOpcode(uint16_t opcode, void (*handler)(void), uint8_t cycles){
@@ -31,7 +31,7 @@ void cpu32OpLpstop(void){
    if(FLAG_S && immData & 0x2000){
       //turn off the CPU and wait for interrupts
       m68ki_set_sr(immData);
-      lowPowerStopActive = true;
+      m68328LowPowerStop = true;
       debugLog("LowPowerStop set, CPU is off, PC:0x%08X!\n", m68k_get_reg(NULL, M68K_REG_PPC));
    }
    else{
@@ -123,7 +123,7 @@ void m68328Init(){
 void m68328Reset(){
    resetHwRegisters();
    resetAddressSpace();//address space must be reset after hardware registers because it is dependent on them
-   lowPowerStopActive = false;
+   m68328LowPowerStop = false;
    m68k_pulse_reset();
 }
 
@@ -199,7 +199,7 @@ void m68328SaveState(uint8_t* data){
    writeStateValueUint32(data + offset, m68ki_cpu.run_mode);
    offset += sizeof(uint32_t);
 
-   printf("Offset:%d, Size:%d\n", offset, getCpuStateSize());
+   printf("Offset:%d, Size:%d\n", offset, m68328GetStateSize());
 }
 
 void m68328LoadState(uint8_t* data){
@@ -270,10 +270,10 @@ void m68328LoadState(uint8_t* data){
    m68ki_cpu.run_mode = readStateValueUint32(data + offset);
    offset += sizeof(uint32_t);
 
-   printf("Offset:%d, Size:%d\n", offset, getCpuStateSize());
+   printf("Offset:%d, Size:%d\n", offset, m68328GetStateSize());
 }
 
-void triggerBusError(uint32_t address, bool isWrite){
+void m68328BusError(uint32_t address, bool isWrite){
    uint sr = m68ki_init_exception();
 
    m68ki_push_32(REG_PC);

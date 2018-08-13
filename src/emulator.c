@@ -4,7 +4,7 @@
 #include <string.h>
 
 #include "m68k/m68k.h"
-#include "68328Functions.h"
+#include "m68328.h"
 #include "emulator.h"
 #include "hardwareRegisters.h"
 #include "memoryAccess.h"
@@ -193,7 +193,7 @@ bool emulatorSaveState(buffer_t buffer){
       writeStateValueUint32(buffer.data + offset, m68k_get_reg(NULL, cpuReg));
       offset += sizeof(uint32_t);
    }
-   writeStateValueBool(buffer.data + offset, lowPowerStopActive);
+   writeStateValueBool(buffer.data + offset, m68328LowPowerStop);
    offset += sizeof(uint8_t);
    
    //memory
@@ -329,7 +329,7 @@ bool emulatorLoadState(buffer_t buffer){
       m68k_set_reg(cpuReg, readStateValueUint32(buffer.data + offset));
       offset += sizeof(uint32_t);
    }
-   lowPowerStopActive = readStateValueBool(buffer.data + offset);
+   m68328LowPowerStop = readStateValueBool(buffer.data + offset);
    offset += sizeof(uint8_t);
    
    //memory
@@ -537,7 +537,7 @@ void emulateFrame(){
    */
 
    while(palmCycleCounter < CRYSTAL_FREQUENCY / EMU_FPS){
-      if(palmCrystalCycles != 0.0 && !lowPowerStopActive){
+      if(palmCrystalCycles != 0.0 && !m68328LowPowerStop){
          //the frequency can change mid frame and get stuck in an infinite loop because of a divide by 0.0
          //+= m68k_execute(palmCrystalCycles{old value} * palmClockMultiplier) / (palmCrystalCycles{new value of 0.0} * palmClockMultiplier) == infinity
          double currentFrequency = palmCrystalCycles;

@@ -5,7 +5,7 @@ EMU_SOURCES_C := $(EMU_PATH)/emulator.c \
       $(EMU_PATH)/ads7846.c \
       $(EMU_PATH)/sdCard.c \
       $(EMU_PATH)/silkscreen.c \
-      $(EMU_PATH)/68328Functions.c \
+      $(EMU_PATH)/m68328.c \
       $(EMU_PATH)/m68k/m68kops.c \
       $(EMU_PATH)/m68k/m68kopnz.c \
       $(EMU_PATH)/m68k/m68kopdm.c \

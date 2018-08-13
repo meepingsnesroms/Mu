@@ -57,7 +57,6 @@ SOURCES += \
     src/m68k/m68kopdm.c \
     src/m68k/m68kopnz.c \
     src/m68k/m68kops.c \
-    src/68328Functions.c \
     src/emulator.c \
     src/hardwareRegisters.c \
     src/memoryAccess.c \
@@ -68,14 +67,14 @@ SOURCES += \
     debugviewer.cpp \
     emuwrapper.cpp \
     src/debug/sandbox.c \
-    statemanager.cpp
+    statemanager.cpp \
+    src/m68328.c
 
 HEADERS += \
     src/m68k/m68k.h \
     src/m68k/m68kconf.h \
     src/m68k/m68kcpu.h \
     src/m68k/m68kops.h \
-    src/68328Functions.h \
     src/emulator.h \
     src/hardwareRegisters.h \
     src/memoryAccess.h \
@@ -98,7 +97,8 @@ HEADERS += \
     emuwrapper.h \
     src/debug/sandbox.h \
     src/debug/sandboxTrapNumToName.c.h \
-    statemanager.h
+    statemanager.h \
+    src/m68328.h
 
 FORMS += \
     mainwindow.ui \

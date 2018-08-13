@@ -6,7 +6,7 @@
 #include "specs/hardwareRegisterNames.h"
 #include "hardwareRegisters.h"
 #include "memoryAccess.h"
-#include "68328Functions.h"
+#include "m68328.h"
 #include "portability.h"
 #include "ads7846.h"
 #include "sdCard.h"
@@ -97,7 +97,7 @@ int32_t interruptAcknowledge(int32_t intLevel){
       vector = vectorOffset | intLevel;
 
    //only active interrupts should wake the CPU and this function is only be called when an interrupt is active in both IMR and the CPU int mask
-   lowPowerStopActive = false;
+   m68328LowPowerStop = false;
    if(registerArrayRead8(PCTLR) & 0x80){
       registerArrayWrite8(PCTLR, registerArrayRead8(PCTLR) & 0x1F);
       recalculateCpuSpeed();
@@ -113,7 +113,7 @@ void setBusErrorTimeOut(uint32_t address, bool isWrite){
    uint8_t scr = registerArrayRead8(SCR);
    debugLog("Bus error timeout, PC:0x%08X\n", m68k_get_reg(NULL, M68K_REG_PPC));
    if(scr & 0x10)
-      triggerBusError(address, isWrite);
+      m68328BusError(address, isWrite);
    registerArrayWrite8(SCR, scr | 0x80);
 }
 
@@ -121,7 +121,7 @@ void setPrivilegeViolation(uint32_t address, bool isWrite){
    uint8_t scr = registerArrayRead8(SCR);
    debugLog("Privilege violation, PC:0x%08X\n", m68k_get_reg(NULL, M68K_REG_PPC));
    if(scr & 0x10)
-      triggerBusError(address, isWrite);
+      m68328BusError(address, isWrite);
    registerArrayWrite8(SCR, scr | 0x20);
 }
 
@@ -129,7 +129,7 @@ void setWriteProtectViolation(uint32_t address){
    uint8_t scr = registerArrayRead8(SCR);
    debugLog("Write protect violation, PC:0x%08X\n", m68k_get_reg(NULL, M68K_REG_PPC));
    if(scr & 0x10)
-      triggerBusError(address, true);
+      m68328BusError(address, true);
    registerArrayWrite8(SCR, scr | 0x40);
 }
 
