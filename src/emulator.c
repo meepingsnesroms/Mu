@@ -141,13 +141,15 @@ uint64_t emulatorGetStateSize(){
    
    size += sizeof(uint32_t);//save state version
    size += sizeof(uint32_t);//palmSpecialFeatures
-   size += m68328StateSize();//the current CPU state
+   size += sizeof(uint64_t);//palmSdCard.size, needs to be done first to verify the malloc worked
+   size += m68328StateSize();
+   size += sed1376StateSize();
+   size += ads7846StateSize();
    if(palmSpecialFeatures & FEATURE_RAM_HUGE)
       size += SUPERMASSIVE_RAM_SIZE;//system RAM buffer
    else
       size += RAM_SIZE;//system RAM buffer
    size += REG_SIZE;//hardware registers
-   size += sed1376StateSize();
    size += TOTAL_MEMORY_BANKS;//bank handlers
    size += sizeof(uint32_t) * 4 * CHIP_END;//chip select states
    size += sizeof(uint8_t) * 5 * CHIP_END;//chip select states
@@ -159,11 +161,7 @@ uint64_t emulatorGetStateSize(){
    size += sizeof(uint16_t) * 8;//RX 8 * 16 SPI1 FIFO
    size += sizeof(uint16_t) * 8;//TX 8 * 16 SPI1 FIFO
    size += sizeof(uint8_t) * 2;//spi1(R/T)xPosition
-   size += sizeof(uint8_t) * 2;//ads7846InputBitsLeft, ads7846ControlByte
-   size += sizeof(uint8_t);//ads7846PenIrqEnabled
-   size += sizeof(uint16_t);//ads7846OutputValue
    size += sizeof(uint8_t) * 7;//palmMisc
-   size += sizeof(uint64_t);//palmSdCard.size
    size += palmSdCard.size;//palmSdCard.data
    
    return size;
@@ -182,10 +180,18 @@ bool emulatorSaveState(buffer_t buffer){
    //features, hotpluging emulated hardware is not supported
    writeStateValueUint32(buffer.data + offset, palmSpecialFeatures);
    offset += sizeof(uint32_t);
+
+   //SD card size
+   writeStateValueUint64(buffer.data + offset, palmSdCard.size);
+   offset += sizeof(uint64_t);
    
-   //CPU
+   //chips
    m68328SaveState(buffer.data + offset);
    offset += m68328StateSize();
+   sed1376SaveState(buffer.data + offset);
+   offset += sed1376StateSize();
+   ads7846SaveState(buffer.data + offset);
+   offset += ads7846StateSize();
    
    //memory
    if(palmSpecialFeatures & FEATURE_RAM_HUGE){
@@ -221,10 +227,6 @@ bool emulatorSaveState(buffer_t buffer){
       offset += sizeof(uint32_t);
    }
 
-   //SED1376
-   sed1376SaveState(buffer.data + offset);
-   offset += sed1376StateSize();
-
    //timing
    writeStateValueDouble(buffer.data + offset, palmCrystalCycles);
    offset += sizeof(uint64_t);
@@ -258,16 +260,6 @@ bool emulatorSaveState(buffer_t buffer){
    offset += sizeof(uint8_t);
    writeStateValueUint8(buffer.data + offset, spi1TxPosition);
    offset += sizeof(uint8_t);
-
-   //ADS7846
-   writeStateValueUint8(buffer.data + offset, ads7846BitsToNextControl);
-   offset += sizeof(uint8_t);
-   writeStateValueUint8(buffer.data + offset, ads7846ControlByte);
-   offset += sizeof(uint8_t);
-   writeStateValueBool(buffer.data + offset, ads7846PenIrqEnabled);
-   offset += sizeof(uint8_t);
-   writeStateValueUint16(buffer.data + offset, ads7846OutputValue);
-   offset += sizeof(uint16_t);
    
    //misc
    writeStateValueBool(buffer.data + offset, palmMisc.powerButtonLed);
@@ -285,9 +277,7 @@ bool emulatorSaveState(buffer_t buffer){
    writeStateValueUint8(buffer.data + offset, palmMisc.dataPort);
    offset += sizeof(uint8_t);
 
-   //SD card
-   writeStateValueUint64(buffer.data + offset, palmSdCard.size);
-   offset += sizeof(uint64_t);
+   //SD card data
    memcpy(buffer.data + offset, palmSdCard.data, palmSdCard.size);
    offset += palmSdCard.size;
 
@@ -307,9 +297,20 @@ bool emulatorLoadState(buffer_t buffer){
       return false;
    offset += sizeof(uint32_t);
 
-   //CPU
+   //SD card size, the malloc when loading can make it fail, make sure if it fails the emulator state doesnt change
+   uint64_t stateSdCardSize = readStateValueUint64(buffer.data + offset);
+   uint8_t* stateSdCardBuffer = stateSdCardSize > 0 ? malloc(stateSdCardSize) : NULL;
+   if(stateSdCardSize > 0 && !stateSdCardBuffer)
+      return false;
+   offset += sizeof(uint64_t);
+
+   //chips
    m68328LoadState(buffer.data + offset);
    offset += m68328StateSize();
+   sed1376LoadState(buffer.data + offset);
+   offset += sed1376StateSize();
+   ads7846LoadState(buffer.data + offset);
+   offset += ads7846StateSize();
    
    //memory
    if(palmSpecialFeatures & FEATURE_RAM_HUGE){
@@ -345,10 +346,6 @@ bool emulatorLoadState(buffer_t buffer){
       offset += sizeof(uint32_t);
    }
 
-   //SED1376
-   sed1376LoadState(buffer.data + offset);
-   offset += sed1376StateSize();
-
    //timing
    palmCrystalCycles = readStateValueDouble(buffer.data + offset);
    offset += sizeof(uint64_t);
@@ -382,16 +379,6 @@ bool emulatorLoadState(buffer_t buffer){
    offset += sizeof(uint8_t);
    spi1TxPosition = readStateValueUint8(buffer.data + offset);
    offset += sizeof(uint8_t);
-
-   //ADS7846
-   ads7846BitsToNextControl = readStateValueUint8(buffer.data + offset);
-   offset += sizeof(uint8_t);
-   ads7846ControlByte = readStateValueUint8(buffer.data + offset);
-   offset += sizeof(uint8_t);
-   ads7846PenIrqEnabled = readStateValueBool(buffer.data + offset);
-   offset += sizeof(uint8_t);
-   ads7846OutputValue = readStateValueUint16(buffer.data + offset);
-   offset += sizeof(uint16_t);
    
    //misc
    palmMisc.powerButtonLed = readStateValueBool(buffer.data + offset);
@@ -409,22 +396,13 @@ bool emulatorLoadState(buffer_t buffer){
    palmMisc.dataPort = readStateValueUint8(buffer.data + offset);
    offset += sizeof(uint8_t);
 
-   //SD card
-   if(palmSdCard.data){
+   //SD card data
+   if(palmSdCard.data)
       free(palmSdCard.data);
-      palmSdCard.data = NULL;
-   }
-   palmSdCard.size = readStateValueUint64(buffer.data + offset);
-   offset += sizeof(uint64_t);
-   if(palmSdCard.size > 0){
-      palmSdCard.data = malloc(palmSdCard.size);
-
-      if(!palmSdCard.data)
-         return false;
-
-      memcpy(palmSdCard.data, buffer.data + offset, palmSdCard.size);
-   }
-   offset += palmSdCard.size;
+   palmSdCard.data = stateSdCardBuffer;
+   palmSdCard.size = stateSdCardSize;
+   memcpy(palmSdCard.data, buffer.data + offset, stateSdCardSize);
+   offset += stateSdCardSize;
 
    return true;
 }

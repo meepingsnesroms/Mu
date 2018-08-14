@@ -3,12 +3,12 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-extern uint8_t  ads7846BitsToNextControl;
-extern uint8_t  ads7846ControlByte;
-extern bool     ads7846PenIrqEnabled;
-extern uint16_t ads7846OutputValue;
+extern bool ads7846PenIrqEnabled;
+
+void ads7846Reset();
+uint64_t ads7846StateSize();
+void ads7846SaveState(uint8_t* data);
+void ads7846LoadState(uint8_t* data);
 
 bool ads7846ExchangeBit(bool bitIn);
 bool ads7846Busy();
-
-void ads7846Reset();

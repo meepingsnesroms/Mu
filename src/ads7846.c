@@ -5,12 +5,12 @@
 #include "m68k/m68k.h"//only used for debugLog
 
 
-static const uint16_t dockResistorValues[PORT_END] = {0xFFF/*none*/, 0x1EB/*USB cradle*/, 0/*serial cradle*/, 0/*USB peripheral*/, 0/*serial peripheral*/};
-
-uint8_t  ads7846BitsToNextControl;//bits before starting a new control byte
-uint8_t  ads7846ControlByte;
 bool     ads7846PenIrqEnabled;
-uint16_t ads7846OutputValue;
+
+static const uint16_t ads7846DockResistorValues[PORT_END] = {0xFFF/*none*/, 0x1EB/*USB cradle*/, 0/*serial cradle*/, 0/*USB peripheral*/, 0/*serial peripheral*/};
+static uint8_t  ads7846BitsToNextControl;//bits before starting a new control byte
+static uint8_t  ads7846ControlByte;
+static uint16_t ads7846OutputValue;
 
 
 static inline double ads7846RangeMap(double oldMin, double oldMax, double value, double newMin, double newMax){
@@ -23,6 +23,49 @@ static inline bool ads7846GetAdcBit(){
    bool bit = ads7846OutputValue & 0x8000;
    ads7846OutputValue <<= 1;
    return bit;
+}
+
+
+void ads7846Reset(){
+   ads7846BitsToNextControl = 0;
+   ads7846ControlByte = 0x00;
+   ads7846PenIrqEnabled = true;
+   ads7846OutputValue = 0x0000;
+}
+
+uint64_t ads7846StateSize(){
+   uint64_t size = 0;
+
+   size += sizeof(uint8_t) * 3;
+   size += sizeof(uint16_t);
+
+   return size;
+}
+
+void ads7846SaveState(uint8_t* data){
+   uint64_t offset = 0;
+
+   writeStateValueUint8(data + offset, ads7846BitsToNextControl);
+   offset += sizeof(uint8_t);
+   writeStateValueUint8(data + offset, ads7846ControlByte);
+   offset += sizeof(uint8_t);
+   writeStateValueBool(data + offset, ads7846PenIrqEnabled);
+   offset += sizeof(uint8_t);
+   writeStateValueUint16(data + offset, ads7846OutputValue);
+   offset += sizeof(uint16_t);
+}
+
+void ads7846LoadState(uint8_t* data){
+   uint64_t offset = 0;
+
+   ads7846BitsToNextControl = readStateValueUint8(data + offset);
+   offset += sizeof(uint8_t);
+   ads7846ControlByte = readStateValueUint8(data + offset);
+   offset += sizeof(uint8_t);
+   ads7846PenIrqEnabled = readStateValueBool(data + offset);
+   offset += sizeof(uint8_t);
+   ads7846OutputValue = readStateValueUint16(data + offset);
+   offset += sizeof(uint16_t);
 }
 
 bool ads7846ExchangeBit(bool bitIn){
@@ -172,9 +215,9 @@ bool ads7846ExchangeBit(bool bitIn){
                   case 6:
                      //dock
                      if(palmMisc.dataPort < PORT_END)
-                        ads7846OutputValue = dockResistorValues[palmMisc.dataPort];
+                        ads7846OutputValue = ads7846DockResistorValues[palmMisc.dataPort];
                      else
-                        ads7846OutputValue = dockResistorValues[PORT_NONE];
+                        ads7846OutputValue = ads7846DockResistorValues[PORT_NONE];
                      break;
 
                   case 7:
@@ -209,11 +252,4 @@ bool ads7846Busy(){
    if(ads7846BitsToNextControl == 7)
       return true;
    return false;
-}
-
-void ads7846Reset(){
-   ads7846OutputValue = 0x0000;
-   ads7846ControlByte = 0x00;
-   ads7846PenIrqEnabled = true;
-   ads7846BitsToNextControl = 0;
 }

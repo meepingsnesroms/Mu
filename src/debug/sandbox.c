@@ -402,6 +402,7 @@ void sandboxTest(uint32_t test){
 
       case SANDBOX_TEST_TOUCH_READ:{
             //since the sandbox can interrupt any running function(including ADC ones) this safeguard is needed
+            /*
             if(ads7846BitsToNextControl == 0){
                uint32_t point;
                int16_t osX;
@@ -423,6 +424,7 @@ void sandboxTest(uint32_t test){
             else{
                debugLog("Sandbox: Unsafe to read touch position.\n");
             }
+            */
          }
          break;
 
