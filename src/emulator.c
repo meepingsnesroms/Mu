@@ -142,15 +142,12 @@ uint64_t emulatorGetStateSize(){
    size += sizeof(uint32_t);//save state version
    size += sizeof(uint32_t);//palmSpecialFeatures
    size += m68328StateSize();//the current CPU state
-   size += sizeof(uint8_t);//lowPowerStopActive
    if(palmSpecialFeatures & FEATURE_RAM_HUGE)
       size += SUPERMASSIVE_RAM_SIZE;//system RAM buffer
    else
       size += RAM_SIZE;//system RAM buffer
    size += REG_SIZE;//hardware registers
-   size += SED1376_FB_SIZE;//SED1376
-   size += SED1376_LUT_SIZE * 3;//SED1376 r, g and b luts
-   size += SED1376_REG_SIZE;//SED1376
+   size += sed1376StateSize();
    size += TOTAL_MEMORY_BANKS;//bank handlers
    size += sizeof(uint32_t) * 4 * CHIP_END;//chip select states
    size += sizeof(uint8_t) * 5 * CHIP_END;//chip select states
@@ -225,16 +222,8 @@ bool emulatorSaveState(buffer_t buffer){
    }
 
    //SED1376
-   memcpy(buffer.data + offset, sed1376Registers, SED1376_REG_SIZE);
-   offset += SED1376_REG_SIZE;
-   memcpy(buffer.data + offset, sed1376RLut, SED1376_LUT_SIZE);
-   offset += SED1376_LUT_SIZE;
-   memcpy(buffer.data + offset, sed1376GLut, SED1376_LUT_SIZE);
-   offset += SED1376_LUT_SIZE;
-   memcpy(buffer.data + offset, sed1376BLut, SED1376_LUT_SIZE);
-   offset += SED1376_LUT_SIZE;
-   memcpy(buffer.data + offset, sed1376Framebuffer, SED1376_FB_SIZE);
-   offset += SED1376_FB_SIZE;
+   sed1376SaveState(buffer.data + offset);
+   offset += sed1376StateSize();
 
    //timing
    writeStateValueDouble(buffer.data + offset, palmCrystalCycles);
@@ -357,17 +346,8 @@ bool emulatorLoadState(buffer_t buffer){
    }
 
    //SED1376
-   memcpy(sed1376Registers, buffer.data + offset, SED1376_REG_SIZE);
-   offset += SED1376_REG_SIZE;
-   memcpy(sed1376RLut, buffer.data + offset, SED1376_LUT_SIZE);
-   offset += SED1376_LUT_SIZE;
-   memcpy(sed1376GLut, buffer.data + offset, SED1376_LUT_SIZE);
-   offset += SED1376_LUT_SIZE;
-   memcpy(sed1376BLut, buffer.data + offset, SED1376_LUT_SIZE);
-   offset += SED1376_LUT_SIZE;
-   memcpy(sed1376Framebuffer, buffer.data + offset, SED1376_FB_SIZE);
-   offset += SED1376_FB_SIZE;
-   sed1376RefreshLut();
+   sed1376LoadState(buffer.data + offset);
+   offset += sed1376StateSize();
 
    //timing
    palmCrystalCycles = readStateValueDouble(buffer.data + offset);

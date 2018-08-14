@@ -101,23 +101,26 @@ void m68k_op_cpu32_dispatch(void){
 
 
 void m68328Init(){
-   m68k_init();
-   m68k_set_cpu_type(M68K_CPU_TYPE_68000);
+   static bool inited = false;
 
-   CPU_ADDRESS_MASK = 0xFFFFFFFF;
+   if(!inited){
+      m68k_init();
+      m68k_set_cpu_type(M68K_CPU_TYPE_68000);
 
-   patchOpcode(OPCODE_BGND, m68k_op_bgnd, 16/*dont know how many cycles, average opcode*/);
+      CPU_ADDRESS_MASK = 0xFFFFFFFF;
 
-   for(uint16_t currentOpcode = OPCODE_CPU32_START; currentOpcode <= OPCODE_CPU32_END; currentOpcode++)
-      patchOpcode(currentOpcode, m68k_op_cpu32_dispatch, 91/*dont know how many cycles, most expensive opcode*/);
+      patchOpcode(OPCODE_BGND, m68k_op_bgnd, 16/*dont know how many cycles, average opcode*/);
 
-   //68328 may actually use some 68020 opcodes, those will be patched in if and when Palm OS attempts to call one
+      for(uint16_t currentOpcode = OPCODE_CPU32_START; currentOpcode <= OPCODE_CPU32_END; currentOpcode++)
+         patchOpcode(currentOpcode, m68k_op_cpu32_dispatch, 91/*dont know how many cycles, most expensive opcode*/);
 
-   m68k_set_reset_instr_callback(emulatorReset);
-   m68k_set_int_ack_callback(interruptAcknowledge);
-   //resetHwRegisters();
-   //resetAddressSpace();//address space must be reset after hardware registers because it is dependent on them
-   //lowPowerStopActive = false;
+      //68328 may actually use some 68020 opcodes, those will be patched in if and when Palm OS attempts to call one
+
+      m68k_set_reset_instr_callback(emulatorReset);
+      m68k_set_int_ack_callback(interruptAcknowledge);
+
+      inited = true;
+   }
 }
 
 void m68328Reset(){

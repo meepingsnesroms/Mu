@@ -24,16 +24,16 @@
 //The LCD power-off sequence is activated by programming the Power Save Mode Enable bit (REG[A0h] bit 0) to 1.
 
 
-uint8_t sed1376Registers[SED1376_REG_SIZE];
-uint8_t sed1376RLut[SED1376_LUT_SIZE];
-uint8_t sed1376GLut[SED1376_LUT_SIZE];
-uint8_t sed1376BLut[SED1376_LUT_SIZE];
-uint8_t sed1376Framebuffer[SED1376_FB_SIZE];
-
+static uint8_t  sed1376Registers[SED1376_REG_SIZE];
+static uint8_t  sed1376RLut[SED1376_LUT_SIZE];
+static uint8_t  sed1376GLut[SED1376_LUT_SIZE];
+static uint8_t  sed1376BLut[SED1376_LUT_SIZE];
 static uint16_t sed1376OutputLut[SED1376_LUT_SIZE];//used to speed up pixel conversion
 static uint32_t screenStartAddress;
 static uint16_t lineSize;
 static uint16_t (*renderPixel)(uint16_t x, uint16_t y);
+
+uint8_t sed1376Framebuffer[SED1376_FB_SIZE];
 
 
 #include "sed1376Accessors.c.h"
@@ -100,6 +100,70 @@ static inline uint32_t getPipStartAddress(){
    }
 
    return pipStartAddress;
+}
+
+void sed1376Reset(){
+   memset(sed1376Registers, 0x00, SED1376_REG_SIZE);
+   memset(sed1376OutputLut, 0x00, SED1376_LUT_SIZE * sizeof(uint16_t));
+   memset(sed1376RLut, 0x00, SED1376_LUT_SIZE);
+   memset(sed1376GLut, 0x00, SED1376_LUT_SIZE);
+   memset(sed1376BLut, 0x00, SED1376_LUT_SIZE);
+   memset(sed1376Framebuffer, 0x00, SED1376_FB_SIZE);
+
+   palmMisc.backlightLevel = 0;
+   palmMisc.lcdOn = false;
+
+   renderPixel = NULL;
+
+   sed1376Registers[REV_CODE] = 0x28;
+   sed1376Registers[DISP_BUFF_SIZE] = 0x14;
+
+   //timing hack
+   sed1376Registers[PWR_SAVE_CFG] = 0x80;
+}
+
+uint64_t sed1376StateSize(){
+   uint64_t size = 0;
+
+   size += SED1376_REG_SIZE;
+   size += SED1376_LUT_SIZE * 3;
+   size += SED1376_FB_SIZE;
+
+   return size;
+}
+
+void sed1376SaveState(uint8_t* data){
+   uint64_t offset = 0;
+
+   memcpy(data + offset, sed1376Registers, SED1376_REG_SIZE);
+   offset += SED1376_REG_SIZE;
+   memcpy(data + offset, sed1376RLut, SED1376_LUT_SIZE);
+   offset += SED1376_LUT_SIZE;
+   memcpy(data + offset, sed1376GLut, SED1376_LUT_SIZE);
+   offset += SED1376_LUT_SIZE;
+   memcpy(data + offset, sed1376BLut, SED1376_LUT_SIZE);
+   offset += SED1376_LUT_SIZE;
+   memcpy(data + offset, sed1376Framebuffer, SED1376_FB_SIZE);
+   offset += SED1376_FB_SIZE;
+}
+
+void sed1376LoadState(uint8_t* data){
+   uint64_t offset = 0;
+
+   memcpy(sed1376Registers, data + offset, SED1376_REG_SIZE);
+   offset += SED1376_REG_SIZE;
+   memcpy(sed1376RLut, data + offset, SED1376_LUT_SIZE);
+   offset += SED1376_LUT_SIZE;
+   memcpy(sed1376GLut, data + offset, SED1376_LUT_SIZE);
+   offset += SED1376_LUT_SIZE;
+   memcpy(sed1376BLut, data + offset, SED1376_LUT_SIZE);
+   offset += SED1376_LUT_SIZE;
+   memcpy(sed1376Framebuffer, data + offset, SED1376_FB_SIZE);
+   offset += SED1376_FB_SIZE;
+
+   //refresh LUT
+   MULTITHREAD_LOOP for(uint16_t count = 0; count < SED1376_LUT_SIZE; count++)
+      sed1376OutputLut[count] = makeRgb16FromSed666(sed1376RLut[count], sed1376GLut[count], sed1376BLut[count]);
 }
 
 bool sed1376PowerSaveEnabled(){
@@ -248,31 +312,6 @@ void sed1376SetRegister(uint8_t address, uint8_t value){
       default:
          break;
    }
-}
-
-void sed1376Reset(){
-   memset(sed1376Registers, 0x00, SED1376_REG_SIZE);
-   memset(sed1376OutputLut, 0x00, SED1376_LUT_SIZE * sizeof(uint16_t));
-   memset(sed1376RLut, 0x00, SED1376_LUT_SIZE);
-   memset(sed1376GLut, 0x00, SED1376_LUT_SIZE);
-   memset(sed1376BLut, 0x00, SED1376_LUT_SIZE);
-   memset(sed1376Framebuffer, 0x00, SED1376_FB_SIZE);
-
-   palmMisc.backlightLevel = 0;
-   palmMisc.lcdOn = false;
-
-   renderPixel = NULL;
-   
-   sed1376Registers[REV_CODE] = 0x28;
-   sed1376Registers[DISP_BUFF_SIZE] = 0x14;
-
-   //timing hack
-   sed1376Registers[PWR_SAVE_CFG] = 0x80;
-}
-
-void sed1376RefreshLut(){
-   MULTITHREAD_LOOP for(uint16_t count = 0; count < SED1376_LUT_SIZE; count++)
-      sed1376OutputLut[count] = makeRgb16FromSed666(sed1376RLut[count], sed1376GLut[count], sed1376BLut[count]);
 }
 
 void sed1376Render(){
