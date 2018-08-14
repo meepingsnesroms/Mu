@@ -127,8 +127,13 @@ void m68328Reset(){
    m68k_pulse_reset();
 }
 
-uint64_t m68328GetStateSize(){
-   return sizeof(uint32_t) * 51;
+uint64_t m68328StateSize(){
+   uint64_t size = 0;
+
+   size += sizeof(uint32_t) * 51;//m68ki_cpu
+   size += sizeof(uint8_t);//m68328LowPowerStop
+
+   return size;
 }
 
 void m68328SaveState(uint8_t* data){
@@ -198,8 +203,10 @@ void m68328SaveState(uint8_t* data){
    offset += sizeof(uint32_t);
    writeStateValueUint32(data + offset, m68ki_cpu.run_mode);
    offset += sizeof(uint32_t);
+   writeStateValueBool(data + offset, m68328LowPowerStop);
+   offset += sizeof(uint8_t);
 
-   printf("Offset:%d, Size:%d\n", offset, m68328GetStateSize());
+   printf("Offset:%d, Size:%d\n", offset, m68328StateSize());
 }
 
 void m68328LoadState(uint8_t* data){
@@ -213,64 +220,66 @@ void m68328LoadState(uint8_t* data){
    }
    m68ki_cpu.ppc = readStateValueUint32(data + offset);
    offset += sizeof(uint32_t);
-   writeStateValueUint32(data + offset, m68ki_cpu.pc);
+   m68ki_cpu.pc = readStateValueUint32(data + offset);
    offset += sizeof(uint32_t);
    for(uint8_t index = 0; index < 7; index++){
-      writeStateValueUint32(data + offset, m68ki_cpu.sp[index]);
+      m68ki_cpu.sp[index] = readStateValueUint32(data + offset);
       offset += sizeof(uint32_t);
    }
-   writeStateValueUint32(data + offset, m68ki_cpu.vbr);
+   m68ki_cpu.vbr = readStateValueUint32(data + offset);
    offset += sizeof(uint32_t);
-   writeStateValueUint32(data + offset, m68ki_cpu.sfc);
+   m68ki_cpu.sfc = readStateValueUint32(data + offset);
    offset += sizeof(uint32_t);
-   writeStateValueUint32(data + offset, m68ki_cpu.dfc);
+   m68ki_cpu.dfc = readStateValueUint32(data + offset);
    offset += sizeof(uint32_t);
-   writeStateValueUint32(data + offset, m68ki_cpu.cacr);
+   m68ki_cpu.cacr = readStateValueUint32(data + offset);
    offset += sizeof(uint32_t);
-   writeStateValueUint32(data + offset, m68ki_cpu.caar);
+   m68ki_cpu.caar = readStateValueUint32(data + offset);
    offset += sizeof(uint32_t);
-   writeStateValueUint32(data + offset, m68ki_cpu.ir);
+   m68ki_cpu.ir = readStateValueUint32(data + offset);
    offset += sizeof(uint32_t);
-   writeStateValueUint32(data + offset, m68ki_cpu.t1_flag);
+   m68ki_cpu.t1_flag = readStateValueUint32(data + offset);
    offset += sizeof(uint32_t);
-   writeStateValueUint32(data + offset, m68ki_cpu.t0_flag);
+   m68ki_cpu.t0_flag = readStateValueUint32(data + offset);
    offset += sizeof(uint32_t);
-   writeStateValueUint32(data + offset, m68ki_cpu.s_flag);
+   m68ki_cpu.s_flag = readStateValueUint32(data + offset);
    offset += sizeof(uint32_t);
-   writeStateValueUint32(data + offset, m68ki_cpu.m_flag);
+   m68ki_cpu.m_flag = readStateValueUint32(data + offset);
    offset += sizeof(uint32_t);
-   writeStateValueUint32(data + offset, m68ki_cpu.x_flag);
+   m68ki_cpu.x_flag = readStateValueUint32(data + offset);
    offset += sizeof(uint32_t);
-   writeStateValueUint32(data + offset, m68ki_cpu.n_flag);
+   m68ki_cpu.n_flag = readStateValueUint32(data + offset);
    offset += sizeof(uint32_t);
-   writeStateValueUint32(data + offset, m68ki_cpu.not_z_flag);
+   m68ki_cpu.not_z_flag = readStateValueUint32(data + offset);
    offset += sizeof(uint32_t);
-   writeStateValueUint32(data + offset, m68ki_cpu.v_flag);
+   m68ki_cpu.v_flag = readStateValueUint32(data + offset);
    offset += sizeof(uint32_t);
-   writeStateValueUint32(data + offset, m68ki_cpu.c_flag);
+   m68ki_cpu.c_flag = readStateValueUint32(data + offset);
    offset += sizeof(uint32_t);
-   writeStateValueUint32(data + offset, m68ki_cpu.int_mask);
+   m68ki_cpu.int_mask = readStateValueUint32(data + offset);
    offset += sizeof(uint32_t);
-   writeStateValueUint32(data + offset, m68ki_cpu.int_level);
+   m68ki_cpu.int_level = readStateValueUint32(data + offset);
    offset += sizeof(uint32_t);
-   writeStateValueUint32(data + offset, m68ki_cpu.int_cycles);
+   m68ki_cpu.int_cycles = readStateValueUint32(data + offset);
    offset += sizeof(uint32_t);
-   writeStateValueUint32(data + offset, m68ki_cpu.stopped);
+   m68ki_cpu.stopped = readStateValueUint32(data + offset);
    offset += sizeof(uint32_t);
-   writeStateValueUint32(data + offset, m68ki_cpu.pref_addr);
+   m68ki_cpu.pref_addr = readStateValueUint32(data + offset);
    offset += sizeof(uint32_t);
-   writeStateValueUint32(data + offset, m68ki_cpu.pref_data);
+   m68ki_cpu.pref_data = readStateValueUint32(data + offset);
    offset += sizeof(uint32_t);
-   writeStateValueUint32(data + offset, m68ki_cpu.address_mask);
+   m68ki_cpu.address_mask = readStateValueUint32(data + offset);
    offset += sizeof(uint32_t);
-   writeStateValueUint32(data + offset, m68ki_cpu.sr_mask);
+   m68ki_cpu.sr_mask = readStateValueUint32(data + offset);
    offset += sizeof(uint32_t);
    m68ki_cpu.instr_mode = readStateValueUint32(data + offset);
    offset += sizeof(uint32_t);
    m68ki_cpu.run_mode = readStateValueUint32(data + offset);
    offset += sizeof(uint32_t);
+   m68328LowPowerStop = readStateValueBool(data + offset);
+   offset += sizeof(uint8_t);
 
-   printf("Offset:%d, Size:%d\n", offset, m68328GetStateSize());
+   printf("Offset:%d, Size:%d\n", offset, m68328StateSize());
 }
 
 void m68328BusError(uint32_t address, bool isWrite){

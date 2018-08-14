@@ -57,6 +57,7 @@ Channels 3 and 4(they need to be scaled differently)
 
 
 Fixed:
+there was what appeared to be memory corruption because a byte was incrementing and dementing for loading and saving the same state but it was just the precision cast from uint64_t > double > uint64_t made it increment by 1
 power button must be pushed twice to turn the CPU back on(when debugging it works the first time, then must be pushed twice to turn off instead of on)(this also occurs in the RetroArch build)(this was not a bug, I was just pushing the power button too fast, when counting to 6 inbetween presses it worked fine)
 STOP opcode may be causing issues with the power button(it may be setting a separate CPU disable option)(not a bug)
 add 320*320 frame buffer silkscreen, 2xBRZ should be able to make 320*320 version of the 160*160 silkscreen(not hooked up but one has been created)

@@ -106,7 +106,7 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t spec
    palmClockMultiplier = (specialFeatures & FEATURE_FAST_CPU) ? 2.0 : 1.0;//overclock
    palmClockMultiplier *= 0.80;//run at 80% speed, 20% is likely memory waitstates, at 100% it crashes on the spinning Palm welcome screen, 90% works though
    palmSpecialFeatures = specialFeatures;
-   setRtc(0,0,0,0);//RTCTIME and DAYR are not cleared by reset, clear them manually in case the front end doesnt set the RTC
+   setRtc(0,0,0,0);//RTCTIME and DAYR are not cleared by reset, clear them manually in case the frontend doesnt set the RTC
 
    emulatorInitialized = true;
    return EMU_ERROR_NONE;
@@ -141,7 +141,7 @@ uint64_t emulatorGetStateSize(){
    
    size += sizeof(uint32_t);//save state version
    size += sizeof(uint32_t);//palmSpecialFeatures
-   size += sizeof(uint32_t) * (M68K_REG_IR + 1);//CPU registers
+   size += m68328StateSize();//the current CPU state
    size += sizeof(uint8_t);//lowPowerStopActive
    if(palmSpecialFeatures & FEATURE_RAM_HUGE)
       size += SUPERMASSIVE_RAM_SIZE;//system RAM buffer
@@ -187,12 +187,8 @@ bool emulatorSaveState(buffer_t buffer){
    offset += sizeof(uint32_t);
    
    //CPU
-   for(uint8_t cpuReg = 0; cpuReg <=  M68K_REG_IR; cpuReg++){
-      writeStateValueUint32(buffer.data + offset, m68k_get_reg(NULL, cpuReg));
-      offset += sizeof(uint32_t);
-   }
-   writeStateValueBool(buffer.data + offset, m68328LowPowerStop);
-   offset += sizeof(uint8_t);
+   m68328SaveState(buffer.data + offset);
+   offset += m68328StateSize();
    
    //memory
    if(palmSpecialFeatures & FEATURE_RAM_HUGE){
@@ -306,8 +302,6 @@ bool emulatorSaveState(buffer_t buffer){
    memcpy(buffer.data + offset, palmSdCard.data, palmSdCard.size);
    offset += palmSdCard.size;
 
-   //printf("Offset:%d, Size:%d\n", offset, emulatorGetStateSize());
-
    return true;
 }
 
@@ -325,12 +319,8 @@ bool emulatorLoadState(buffer_t buffer){
    offset += sizeof(uint32_t);
 
    //CPU
-   for(uint8_t cpuReg = 0; cpuReg <=  M68K_REG_IR; cpuReg++){
-      m68k_set_reg(cpuReg, readStateValueUint32(buffer.data + offset));
-      offset += sizeof(uint32_t);
-   }
-   m68328LowPowerStop = readStateValueBool(buffer.data + offset);
-   offset += sizeof(uint8_t);
+   m68328LoadState(buffer.data + offset);
+   offset += m68328StateSize();
    
    //memory
    if(palmSpecialFeatures & FEATURE_RAM_HUGE){
@@ -443,11 +433,8 @@ bool emulatorLoadState(buffer_t buffer){
    if(palmSdCard.data){
       free(palmSdCard.data);
       palmSdCard.data = NULL;
-      //palmSdCard.size = 0;
    }
    palmSdCard.size = readStateValueUint64(buffer.data + offset);
-   //printf("state SD size:0x%016lX\n", palmSdCard.size);
-   //printf("New State PC:0x%08X\n", m68k_get_reg(NULL, M68K_REG_PPC));
    offset += sizeof(uint64_t);
    if(palmSdCard.size > 0){
       palmSdCard.data = malloc(palmSdCard.size);
@@ -458,8 +445,6 @@ bool emulatorLoadState(buffer_t buffer){
       memcpy(palmSdCard.data, buffer.data + offset, palmSdCard.size);
    }
    offset += palmSdCard.size;
-
-   //printf("Offset:%d, Size:%d\n", offset, emulatorGetStateSize());
 
    return true;
 }
