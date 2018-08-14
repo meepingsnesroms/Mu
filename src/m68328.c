@@ -130,7 +130,7 @@ void m68328Reset(){
 uint64_t m68328StateSize(){
    uint64_t size = 0;
 
-   size += sizeof(uint32_t) * 51;//m68ki_cpu
+   size += sizeof(uint32_t) * 50;//m68ki_cpu
    size += sizeof(uint8_t);//m68328LowPowerStop
 
    return size;
@@ -139,8 +139,6 @@ uint64_t m68328StateSize(){
 void m68328SaveState(uint8_t* data){
    uint64_t offset = 0;
 
-   writeStateValueUint32(data + offset, m68ki_cpu.cpu_type);
-   offset += sizeof(uint32_t);
    for(uint8_t index = 0; index < 16; index++){
       writeStateValueUint32(data + offset, m68ki_cpu.dar[index]);
       offset += sizeof(uint32_t);
@@ -205,15 +203,11 @@ void m68328SaveState(uint8_t* data){
    offset += sizeof(uint32_t);
    writeStateValueBool(data + offset, m68328LowPowerStop);
    offset += sizeof(uint8_t);
-
-   printf("Offset:%d, Size:%d\n", offset, m68328StateSize());
 }
 
 void m68328LoadState(uint8_t* data){
    uint64_t offset = 0;
 
-   m68ki_cpu.cpu_type = readStateValueUint32(data + offset);
-   offset += sizeof(uint32_t);
    for(uint8_t index = 0; index < 16; index++){
       m68ki_cpu.dar[index] = readStateValueUint32(data + offset);
       offset += sizeof(uint32_t);
@@ -278,8 +272,6 @@ void m68328LoadState(uint8_t* data){
    offset += sizeof(uint32_t);
    m68328LowPowerStop = readStateValueBool(data + offset);
    offset += sizeof(uint8_t);
-
-   printf("Offset:%d, Size:%d\n", offset, m68328StateSize());
 }
 
 void m68328BusError(uint32_t address, bool isWrite){
