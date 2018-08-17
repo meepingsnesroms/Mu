@@ -566,3 +566,27 @@ static inline void updateVibratorStatus(){
 static inline void updateBacklightAmplifierStatus(){
    palmMisc.backlightLevel = (palmMisc.backlightLevel > 0) ? (1 + backlightAmplifierState()) : 0;
 }
+
+static inline void updateTouchState(){
+   /*
+   //update touchscreen state
+   if(!(registerArrayRead8(PFSEL) & 0x02)){
+      uint16_t icr = registerArrayRead16(ICR);
+      bool penIrqPin = !(ads7846PenIrqEnabled && palmInput.touchscreenTouched);//penIrqPin pulled low on touch
+
+      //switch polarity
+      if(icr & 0x0080)
+         penIrqPin = !penIrqPin;
+
+      if(!penIrqPin)
+         setIprIsrBit(INT_IRQ5);
+      else
+         clearIprIsrBit(INT_IRQ5);
+   }
+
+   if(palmInput.touchscreenTouched)
+      setIprIsrBit(INT_IRQ5);
+   else
+      clearIprIsrBit(INT_IRQ5);
+   */
+}

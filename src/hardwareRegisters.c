@@ -19,15 +19,13 @@ int32_t  pllWakeWait;
 uint32_t clk32Counter;
 double   timerCycleCounter[2];
 uint16_t timerStatusReadAcknowledge[2];
-uint32_t edgeTriggeredInterruptLastValue;
+uint32_t interruptEdgeTriggered;
 uint16_t spi1RxFifo[8];
 uint16_t spi1TxFifo[8];
 uint8_t  spi1RxPosition;
 uint8_t  spi1TxPosition;
-//bool     spi1RxFifoOverflow;//may not be needed, just dont send any data unless FIFO has a slot
 
 
-bool pllIsOn();
 static void checkInterrupts();
 static void checkPortDInterrupts();
 static void recalculateCpuSpeed();
@@ -58,29 +56,8 @@ void refreshInputState(){
    //update power button LED state if palmMisc.batteryCharging changed
    updatePowerButtonLedStatus();
 
-   /*
-   //update touchscreen state
-   if(!(registerArrayRead8(PFSEL) & 0x02)){
-      uint16_t icr = registerArrayRead16(ICR);
-      bool penIrqPin = !(ads7846PenIrqEnabled && palmInput.touchscreenTouched);//penIrqPin pulled low on touch
-
-      //switch polarity
-      if(icr & 0x0080)
-         penIrqPin = !penIrqPin;
-
-      if(!penIrqPin)
-         setIprIsrBit(INT_IRQ5);
-      else
-         clearIprIsrBit(INT_IRQ5);
-   }
-   */
-
-   /*
-   if(palmInput.touchscreenTouched)
-      setIprIsrBit(INT_IRQ5);
-   else
-      clearIprIsrBit(INT_IRQ5);
-   */
+   //update touchscreen
+   updateTouchState();
 
    //check for button presses and interrupts
    checkPortDInterrupts();//this calls checkInterrupts() so it doesnt need to be called above
@@ -255,52 +232,101 @@ static void checkPortDInterrupts(){
    uint8_t portDDir = registerArrayRead8(PDDIR);
    uint8_t portDKeyboardEnable = registerArrayRead8(PDKBEN);
    uint8_t portDIrqPins = ~registerArrayRead8(PDSEL);
+   uint8_t portDEdgeTriggered = registerArrayRead8(PDIRQEG);
    uint16_t interruptControlRegister = registerArrayRead16(ICR);
    uint8_t triggeredIntXInterrupts = portDInputValuesWithPolarity & registerArrayRead8(PDIRQEN) & ~portDDir;
 
-   if(triggeredIntXInterrupts & 0x01)
-      setIprIsrBit(INT_INT0);
-   else
-      clearIprIsrBit(INT_INT0);
+   if(triggeredIntXInterrupts & 0x01){
+      if(!(portDEdgeTriggered & 0x01) || (!(interruptEdgeTriggered & INT_INT0) && pllIsOn()))
+         setIprIsrBit(INT_INT0);
+      interruptEdgeTriggered |= INT_INT0;
+   }
+   else{
+      if(!(portDEdgeTriggered & 0x01))
+         clearIprIsrBit(INT_INT0);
+      interruptEdgeTriggered &= ~INT_INT0;
+   }
 
-   if(triggeredIntXInterrupts & 0x02)
-      setIprIsrBit(INT_INT1);
-   else
-      clearIprIsrBit(INT_INT1);
+   if(triggeredIntXInterrupts & 0x02){
+      if(!(portDEdgeTriggered & 0x02) || (!(interruptEdgeTriggered & INT_INT1) && pllIsOn()))
+         setIprIsrBit(INT_INT1);
+      interruptEdgeTriggered |= INT_INT1;
+   }
+   else{
+      if(!(portDEdgeTriggered & 0x02))
+         clearIprIsrBit(INT_INT1);
+      interruptEdgeTriggered &= ~INT_INT1;
+   }
 
-   if(triggeredIntXInterrupts & 0x04)
-      setIprIsrBit(INT_INT2);
-   else
-      clearIprIsrBit(INT_INT2);
+   if(triggeredIntXInterrupts & 0x04){
+      if(!(portDEdgeTriggered & 0x04) || (!(interruptEdgeTriggered & INT_INT2) && pllIsOn()))
+         setIprIsrBit(INT_INT2);
+      interruptEdgeTriggered |= INT_INT2;
+   }
+   else{
+      if(!(portDEdgeTriggered & 0x04))
+         clearIprIsrBit(INT_INT2);
+      interruptEdgeTriggered &= ~INT_INT2;
+   }
 
-   if(triggeredIntXInterrupts & 0x08)
-      setIprIsrBit(INT_INT3);
-   else
-      clearIprIsrBit(INT_INT3);
+   if(triggeredIntXInterrupts & 0x08){
+      if(!(portDEdgeTriggered & 0x08) || (!(interruptEdgeTriggered & INT_INT3) && pllIsOn()))
+         setIprIsrBit(INT_INT3);
+      interruptEdgeTriggered |= INT_INT3;
+   }
+   else{
+      if(!(portDEdgeTriggered & 0x08))
+         clearIprIsrBit(INT_INT3);
+      interruptEdgeTriggered &= ~INT_INT3;
+   }
    
    //IRQ1, polarity set in ICR
-   if(portDIrqPins & ~portDDir & 0x10 && (bool)(portDInputValues & 0x10) == (bool)(interruptControlRegister & 0x8000))
-      setIprIsrBit(INT_IRQ1);
-   else
-      clearIprIsrBit(INT_IRQ1);
+   if(portDIrqPins & ~portDDir & 0x10 && (bool)(portDInputValues & 0x10) == (bool)(interruptControlRegister & 0x8000)){
+      if(!(interruptControlRegister & 0x0800) || !(interruptEdgeTriggered & INT_IRQ1))
+         setIprIsrBit(INT_IRQ1);
+      interruptEdgeTriggered |= INT_IRQ1;
+   }
+   else{
+      if(!(interruptControlRegister & 0x0800))
+         clearIprIsrBit(INT_IRQ1);
+      interruptEdgeTriggered &= ~INT_IRQ1;
+   }
 
    //IRQ2, polarity set in ICR
-   if(portDIrqPins & ~portDDir & 0x20 && (bool)(portDInputValues & 0x20) == (bool)(interruptControlRegister & 0x4000))
-      setIprIsrBit(INT_IRQ2);
-   else
-      clearIprIsrBit(INT_IRQ2);
+   if(portDIrqPins & ~portDDir & 0x20 && (bool)(portDInputValues & 0x20) == (bool)(interruptControlRegister & 0x4000)){
+      if(!(interruptControlRegister & 0x0400) || !(interruptEdgeTriggered & INT_IRQ2))
+         setIprIsrBit(INT_IRQ2);
+      interruptEdgeTriggered |= INT_IRQ2;
+   }
+   else{
+      if(!(interruptControlRegister & 0x0400))
+         clearIprIsrBit(INT_IRQ2);
+      interruptEdgeTriggered &= ~INT_IRQ2;
+   }
    
    //IRQ3, polarity set in ICR
-   if(portDIrqPins & ~portDDir & 0x40 && (bool)(portDInputValues & 0x40) == (bool)(interruptControlRegister & 0x2000))
-      setIprIsrBit(INT_IRQ3);
-   else
-      clearIprIsrBit(INT_IRQ3);
+   if(portDIrqPins & ~portDDir & 0x40 && (bool)(portDInputValues & 0x40) == (bool)(interruptControlRegister & 0x2000)){
+      if(!(interruptControlRegister & 0x0200) || !(interruptEdgeTriggered & INT_IRQ3))
+         setIprIsrBit(INT_IRQ3);
+      interruptEdgeTriggered |= INT_IRQ3;
+   }
+   else{
+      if(!(interruptControlRegister & 0x0200))
+         clearIprIsrBit(INT_IRQ3);
+      interruptEdgeTriggered &= ~INT_IRQ3;
+   }
    
    //IRQ6, polarity set in ICR
-   if(portDIrqPins & ~portDDir & 0x80 && (bool)(portDInputValues & 0x80) == (bool)(interruptControlRegister & 0x1000))
-      setIprIsrBit(INT_IRQ6);
-   else
-      clearIprIsrBit(INT_IRQ6);
+   if(portDIrqPins & ~portDDir & 0x80 && (bool)(portDInputValues & 0x80) == (bool)(interruptControlRegister & 0x1000)){
+      if(!(interruptControlRegister & 0x0100) || !(interruptEdgeTriggered & INT_IRQ6))
+         setIprIsrBit(INT_IRQ6);
+      interruptEdgeTriggered |= INT_IRQ6;
+   }
+   else{
+      if(!(interruptControlRegister & 0x0100))
+         clearIprIsrBit(INT_IRQ6);
+      interruptEdgeTriggered &= ~INT_IRQ6;
+   }
    
    //active low/off level triggered interrupt
    //The SELx, POLx, IQENx, and IQEGx bits have no effect on the functionality of KBENx
@@ -802,6 +828,8 @@ void setHwRegister16(uint32_t address, uint16_t value){
       case ICR:
          //missing bottom 7 bits
          registerArrayWrite16(address, value & 0xFF80);
+         updateTouchState();
+         checkPortDInterrupts();//this calls checkInterrupts() so it doesnt need to be called above
          break;
 
       case ILCR:
@@ -1046,7 +1074,7 @@ void resetHwRegisters(){
    timerCycleCounter[1] = 0.0;
    timerStatusReadAcknowledge[0] = 0x0000;
    timerStatusReadAcknowledge[1] = 0x0000;
-   edgeTriggeredInterruptLastValue = 0x00000000;
+   interruptEdgeTriggered = 0x00000000;
    memset(spi1RxFifo, 0x00, 8 * sizeof(uint16_t));
    memset(spi1TxFifo, 0x00, 8 * sizeof(uint16_t));
    spi1RxPosition = 0;

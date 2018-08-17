@@ -744,6 +744,7 @@ var toggleAlarmLed(){
 
 var watchPenIrq(){
    static Boolean firstRun = true;
+   uint16_t y = 0;
    
    if(firstRun){
       firstRun = false;
@@ -756,8 +757,22 @@ var watchPenIrq(){
       exitSubprogram();
    }
    
+   if(getButtonPressed(buttonSelect)){
+      writeArbitraryMemory16(HW_REG_ADDR(ICR), readArbitraryMemory16(HW_REG_ADDR(ICR)) ^ 0x0080);
+   }
+   
+   StrPrintF(sharedDataBuffer, "Select = Toggle ICR POL5");
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   StrPrintF(sharedDataBuffer, "IPR:0x%08lX", readArbitraryMemory32(HW_REG_ADDR(IPR)));
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   StrPrintF(sharedDataBuffer, "ICR:0x%02X", readArbitraryMemory16(HW_REG_ADDR(ICR)));
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
    StrPrintF(sharedDataBuffer, "PENIRQ State:%s", (readArbitraryMemory8(HW_REG_ADDR(PFDATA)) & 0x02) ? "true " : "false");/*"true " needs the space to clear the e from "false"*/
-   UG_PutString(0, 0, sharedDataBuffer);
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
    
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }

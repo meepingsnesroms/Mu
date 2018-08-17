@@ -157,7 +157,7 @@ uint64_t emulatorGetStateSize(){
    size += sizeof(int32_t);//pllWakeWait
    size += sizeof(uint32_t);//clk32Counter
    size += sizeof(uint16_t) * 2;//timerStatusReadAcknowledge
-   size += sizeof(uint32_t);//edgeTriggeredInterruptLastValue
+   size += sizeof(uint32_t);//interruptEdgeTriggered
    size += sizeof(uint16_t) * 8;//RX 8 * 16 SPI1 FIFO
    size += sizeof(uint16_t) * 8;//TX 8 * 16 SPI1 FIFO
    size += sizeof(uint8_t) * 2;//spi1(R/T)xPosition
@@ -244,7 +244,7 @@ bool emulatorSaveState(buffer_t buffer){
    offset += sizeof(uint16_t);
    writeStateValueUint16(buffer.data + offset, timerStatusReadAcknowledge[1]);
    offset += sizeof(uint16_t);
-   writeStateValueUint32(buffer.data + offset, edgeTriggeredInterruptLastValue);
+   writeStateValueUint32(buffer.data + offset, interruptEdgeTriggered);
    offset += sizeof(uint32_t);
 
    //SPI1
@@ -363,7 +363,7 @@ bool emulatorLoadState(buffer_t buffer){
    offset += sizeof(uint16_t);
    timerStatusReadAcknowledge[1] = readStateValueUint16(buffer.data + offset);
    offset += sizeof(uint16_t);
-   edgeTriggeredInterruptLastValue = readStateValueUint32(buffer.data + offset);
+   interruptEdgeTriggered = readStateValueUint32(buffer.data + offset);
    offset += sizeof(uint32_t);
 
    //SPI1
