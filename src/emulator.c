@@ -10,6 +10,7 @@
 #include "memoryAccess.h"
 #include "sed1376.h"
 #include "ads7846.h"
+#include "pdiUsbD12.h"
 #include "sdCard.h"
 #include "silkscreen.h"
 #include "portability.h"
@@ -95,6 +96,7 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t spec
    m68328Reset();
    sed1376Reset();
    ads7846Reset();
+   pdiUsbD12Reset();
    sandboxInit();
    
    memset(&palmInput, 0x00, sizeof(palmInput));
@@ -130,6 +132,7 @@ void emulatorReset(){
    m68328Reset();
    sed1376Reset();
    ads7846Reset();
+   pdiUsbD12Reset();
 }
 
 void emulatorSetRtc(uint16_t days, uint8_t hours, uint8_t minutes, uint8_t seconds){
@@ -145,6 +148,7 @@ uint64_t emulatorGetStateSize(){
    size += m68328StateSize();
    size += sed1376StateSize();
    size += ads7846StateSize();
+   size += pdiUsbD12StateSize();
    if(palmSpecialFeatures & FEATURE_RAM_HUGE)
       size += SUPERMASSIVE_RAM_SIZE;//system RAM buffer
    else
@@ -192,6 +196,8 @@ bool emulatorSaveState(buffer_t buffer){
    offset += sed1376StateSize();
    ads7846SaveState(buffer.data + offset);
    offset += ads7846StateSize();
+   pdiUsbD12SaveState(buffer.data + offset);
+   offset += pdiUsbD12StateSize();
    
    //memory
    if(palmSpecialFeatures & FEATURE_RAM_HUGE){
@@ -311,6 +317,8 @@ bool emulatorLoadState(buffer_t buffer){
    offset += sed1376StateSize();
    ads7846LoadState(buffer.data + offset);
    offset += ads7846StateSize();
+   pdiUsbD12LoadState(buffer.data + offset);
+   offset += pdiUsbD12StateSize();
    
    //memory
    if(palmSpecialFeatures & FEATURE_RAM_HUGE){

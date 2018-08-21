@@ -68,7 +68,8 @@ SOURCES += \
     emuwrapper.cpp \
     src/debug/sandbox.c \
     statemanager.cpp \
-    src/m68328.c
+    src/m68328.c \
+    src/pdiUsbD12.c
 
 HEADERS += \
     src/m68k/m68k.h \
@@ -98,7 +99,8 @@ HEADERS += \
     src/debug/sandbox.h \
     src/debug/sandboxTrapNumToName.c.h \
     statemanager.h \
-    src/m68328.h
+    src/m68328.h \
+    src/pdiUsbD12.h
 
 FORMS += \
     mainwindow.ui \

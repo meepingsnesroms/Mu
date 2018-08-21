@@ -6,6 +6,7 @@
 #include "memoryAccess.h"
 #include "m68k/m68k.h"
 #include "sed1376.h"
+#include "pdiUsbD12.h"
 
 
 uint8_t bankType[TOTAL_MEMORY_BANKS];
@@ -120,7 +121,7 @@ uint8_t m68k_read_memory_8(uint32_t address){
          return sed1376Read8(address);
 
       case CHIP_C_USB:
-         return 0x00;
+         return pdiUsbD12GetRegister(address & 0x00000001);
 
       case CHIP_D_RAM:
          return ramRead8(address);
@@ -154,7 +155,7 @@ uint16_t m68k_read_memory_16(uint32_t address){
          return sed1376Read16(address);
 
       case CHIP_C_USB:
-         return 0x0000;
+         return pdiUsbD12GetRegister(address & 0x00000001);
 
       case CHIP_D_RAM:
          return ramRead16(address);
@@ -188,7 +189,7 @@ uint32_t m68k_read_memory_32(uint32_t address){
          return sed1376Read32(address);
 
       case CHIP_C_USB:
-         return 0x00000000;
+         return pdiUsbD12GetRegister(address & 0x00000001);
 
       case CHIP_D_RAM:
          return ramRead32(address);
@@ -223,6 +224,7 @@ void m68k_write_memory_8(uint32_t address, uint8_t value){
          break;
 
       case CHIP_C_USB:
+         pdiUsbD12SetRegister(address & 0x00000001, value);
          break;
 
       case CHIP_D_RAM:
@@ -260,6 +262,7 @@ void m68k_write_memory_16(uint32_t address, uint16_t value){
          break;
 
       case CHIP_C_USB:
+         pdiUsbD12SetRegister(address & 0x00000001, value);
          break;
 
       case CHIP_D_RAM:
@@ -297,6 +300,7 @@ void m68k_write_memory_32(uint32_t address, uint32_t value){
          break;
 
       case CHIP_C_USB:
+         pdiUsbD12SetRegister(address & 0x00000001, value);
          break;
 
       case CHIP_D_RAM:
@@ -320,8 +324,7 @@ void m68k_write_memory_32(uint32_t address, uint32_t value){
 }
 
 void m68k_write_memory_32_pd(uint32_t address, uint32_t value){
-   //musashi says to write 2 16 bit words, but for now I am just writing as 32bit long
-   //normal 68k has 16 bit bus but Dragonball VZ has 32 bit bus, so just write all at once(unverified, may not be accurate)
+   //musashi says to write 2 16 bit words, but for now I am just writing a 32bit long since RAM cycles are unemulated
    m68k_write_memory_32(address, value >> 16 | value << 16);
 }
 
