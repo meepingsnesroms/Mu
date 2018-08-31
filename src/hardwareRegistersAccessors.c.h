@@ -33,13 +33,18 @@ static inline void clearIprIsrBit(uint32_t interruptBit){
 }
 
 static inline void setCsa(uint16_t value){
-   chips[CHIP_A_ROM].enable = value & 0x0001;
-   chips[CHIP_A_ROM].readOnly = value & 0x8000;
-   chips[CHIP_A_ROM].lineSize = 0x20000/*128kb*/ << (value >> 1 & 0x0007);
+   chips[CHIP_A0_ROM].enable = value & 0x0001;
+   chips[CHIP_A0_ROM].readOnly = value & 0x8000;
+   chips[CHIP_A0_ROM].lineSize = 0x20000/*128kb*/ << (value >> 1 & 0x0007);
 
    //CSA is now just a normal chipselect
-   if(chips[CHIP_A_ROM].enable && chips[CHIP_A_ROM].inBootMode)
-      chips[CHIP_A_ROM].inBootMode = false;
+   if(chips[CHIP_A0_ROM].enable && chips[CHIP_A0_ROM].inBootMode)
+      chips[CHIP_A0_ROM].inBootMode = false;
+
+   chips[CHIP_A1_USB].enable = chips[CHIP_A0_ROM].enable;
+   chips[CHIP_A1_USB].readOnly = chips[CHIP_A0_ROM].readOnly;
+   chips[CHIP_A1_USB].start = chips[CHIP_A0_ROM].start + chips[CHIP_A0_ROM].lineSize;
+   chips[CHIP_A1_USB].lineSize = chips[CHIP_A0_ROM].lineSize;
 
    registerArrayWrite16(CSA, value & 0x81FF);
 }
@@ -47,60 +52,38 @@ static inline void setCsa(uint16_t value){
 static inline void setCsb(uint16_t value){
    uint16_t csControl1 = registerArrayRead16(CSCTRL1);
 
-   chips[CHIP_B_SED].enable = value & 0x0001;
-   chips[CHIP_B_SED].readOnly = value & 0x8000;
-   chips[CHIP_B_SED].lineSize = 0x20000/*128kb*/ << (value >> 1 & 0x0007);
+   chips[CHIP_B0_SED].enable = value & 0x0001;
+   chips[CHIP_B0_SED].readOnly = value & 0x8000;
+   chips[CHIP_B0_SED].lineSize = 0x20000/*128kb*/ << (value >> 1 & 0x0007);
 
    //attributes
-   chips[CHIP_B_SED].supervisorOnlyProtectedMemory = value & 0x4000;
-   chips[CHIP_B_SED].readOnlyForProtectedMemory = value & 0x2000;
+   chips[CHIP_B0_SED].supervisorOnlyProtectedMemory = value & 0x4000;
+   chips[CHIP_B0_SED].readOnlyForProtectedMemory = value & 0x2000;
    if(csControl1 & 0x4000 && csControl1 & 0x0001)
-      chips[CHIP_B_SED].unprotectedSize = chips[CHIP_B_SED].lineSize / (1 << 7 - ((value >> 11 & 0x0003) | 0x0004));
+      chips[CHIP_B0_SED].unprotectedSize = chips[CHIP_B0_SED].lineSize / (1 << 7 - ((value >> 11 & 0x0003) | 0x0004));
    else
-      chips[CHIP_B_SED].unprotectedSize = chips[CHIP_B_SED].lineSize / (1 << 7 - (value >> 11 & 0x0003));
+      chips[CHIP_B0_SED].unprotectedSize = chips[CHIP_B0_SED].lineSize / (1 << 7 - (value >> 11 & 0x0003));
 
    registerArrayWrite16(CSB, value & 0xF9FF);
-}
-
-static inline void setCsc(uint16_t value){
-   uint16_t csControl1 = registerArrayRead16(CSCTRL1);
-   bool csdDramBit = registerArrayRead16(CSD) & 0x0200;
-
-   chips[CHIP_C_USB].enable = value & 0x0001;
-   chips[CHIP_C_USB].readOnly = value & 0x8000;
-   if(csControl1 & 0x0040 && csdDramBit)
-      chips[CHIP_C_USB].lineSize = 0x800000/*8mb*/ << (value >> 1 & 0x0001);
-   else
-      chips[CHIP_C_USB].lineSize = 0x8000/*32kb*/ << (value >> 1 & 0x0007);
-
-   //attributes
-   chips[CHIP_C_USB].supervisorOnlyProtectedMemory = value & 0x4000;
-   chips[CHIP_C_USB].readOnlyForProtectedMemory = value & 0x2000;
-   if(csControl1 & 0x4000 && csControl1 & 0x0004)
-      chips[CHIP_C_USB].unprotectedSize = chips[CHIP_C_USB].lineSize / (1 << 7 - ((value >> 11 & 0x0003) | 0x0004));
-   else
-      chips[CHIP_C_USB].unprotectedSize = chips[CHIP_C_USB].lineSize / (1 << 7 - (value >> 11 & 0x0003));
-
-   registerArrayWrite16(CSC, value & 0xF9FF);
 }
 
 static inline void setCsd(uint16_t value){
    uint16_t csControl1 = registerArrayRead16(CSCTRL1);
 
-   chips[CHIP_D_RAM].enable = value & 0x0001;
-   chips[CHIP_D_RAM].readOnly = value & 0x8000;
+   chips[CHIP_DX_RAM].enable = value & 0x0001;
+   chips[CHIP_DX_RAM].readOnly = value & 0x8000;
    if(csControl1 & 0x0040 && value & 0x0200)
-      chips[CHIP_D_RAM].lineSize = 0x800000/*8mb*/ << (value >> 1 & 0x0001);
+      chips[CHIP_DX_RAM].lineSize = 0x800000/*8mb*/ << (value >> 1 & 0x0001);
    else
-      chips[CHIP_D_RAM].lineSize = 0x8000/*32kb*/ << (value >> 1 & 0x0007);
+      chips[CHIP_DX_RAM].lineSize = 0x8000/*32kb*/ << (value >> 1 & 0x0007);
 
    //attributes
-   chips[CHIP_D_RAM].supervisorOnlyProtectedMemory = value & 0x4000;
-   chips[CHIP_D_RAM].readOnlyForProtectedMemory = value & 0x2000;
+   chips[CHIP_DX_RAM].supervisorOnlyProtectedMemory = value & 0x4000;
+   chips[CHIP_DX_RAM].readOnlyForProtectedMemory = value & 0x2000;
    if(csControl1 & 0x4000 && csControl1 & 0x0010)
-      chips[CHIP_D_RAM].unprotectedSize = chips[CHIP_D_RAM].lineSize / (1 << 7 - ((value >> 11 & 0x0003) | 0x0004));
+      chips[CHIP_DX_RAM].unprotectedSize = chips[CHIP_DX_RAM].lineSize / (1 << 7 - ((value >> 11 & 0x0003) | 0x0004));
    else
-      chips[CHIP_D_RAM].unprotectedSize = chips[CHIP_D_RAM].lineSize / (1 << 7 - (value >> 11 & 0x0003));
+      chips[CHIP_DX_RAM].unprotectedSize = chips[CHIP_DX_RAM].lineSize / (1 << 7 - (value >> 11 & 0x0003));
 
    registerArrayWrite16(CSD, value);
 }
@@ -110,9 +93,11 @@ static inline void setCsgba(uint16_t value){
 
    //add extra address bits if enabled
    if(csugba & 0x8000)
-      chips[CHIP_A_ROM].start = (csugba >> 12 & 0x0007) << 29 | value >> 1 << 14;
+      chips[CHIP_A0_ROM].start = (csugba >> 12 & 0x0007) << 29 | value >> 1 << 14;
    else
-      chips[CHIP_A_ROM].start = value >> 1 << 14;
+      chips[CHIP_A0_ROM].start = value >> 1 << 14;
+
+   chips[CHIP_A1_USB].start = chips[CHIP_A0_ROM].start + chips[CHIP_A0_ROM].lineSize;
 
    registerArrayWrite16(CSGBA, value & 0xFFFE);
 }
@@ -122,23 +107,11 @@ static inline void setCsgbb(uint16_t value){
 
    //add extra address bits if enabled
    if(csugba & 0x8000)
-      chips[CHIP_B_SED].start = (csugba >> 8 & 0x0007) << 29 | value >> 1 << 14;
+      chips[CHIP_B0_SED].start = (csugba >> 8 & 0x0007) << 29 | value >> 1 << 14;
    else
-      chips[CHIP_B_SED].start = value >> 1 << 14;
+      chips[CHIP_B0_SED].start = value >> 1 << 14;
 
    registerArrayWrite16(CSGBB, value & 0xFFFE);
-}
-
-static inline void setCsgbc(uint16_t value){
-   uint16_t csugba = registerArrayRead16(CSUGBA);
-
-   //add extra address bits if enabled
-   if(csugba & 0x8000)
-      chips[CHIP_C_USB].start = (csugba >> 4 & 0x0007) << 29 | value >> 1 << 14;
-   else
-      chips[CHIP_C_USB].start = value >> 1 << 14;
-
-   registerArrayWrite16(CSGBC, value & 0xFFFE);
 }
 
 static inline void setCsgbd(uint16_t value){
@@ -146,9 +119,9 @@ static inline void setCsgbd(uint16_t value){
 
    //add extra address bits if enabled
    if(csugba & 0x8000)
-      chips[CHIP_D_RAM].start = (csugba & 0x0007) << 29 | value >> 1 << 14;
+      chips[CHIP_DX_RAM].start = (csugba & 0x0007) << 29 | value >> 1 << 14;
    else
-      chips[CHIP_D_RAM].start = value >> 1 << 14;
+      chips[CHIP_DX_RAM].start = value >> 1 << 14;
 
    registerArrayWrite16(CSGBD, value & 0xFFFE);
 }
@@ -159,19 +132,19 @@ static inline void updateCsdAddressLines(){
 
    if(registerArrayRead16(CSD) & 0x0200 && sdctrl & 0x8000 && dramc & 0x8000 && !(dramc & 0x0400)){
       //this register can remap address lines, that behavior is way too CPU intensive and complicated so only the "memory testing" and "correct" behavior is being emulated
-      chips[CHIP_D_RAM].mask = 0x003FFFFF;
+      chips[CHIP_DX_RAM].mask = 0x003FFFFF;
 
       //address line 23 is enabled
       if((sdctrl & 0x000C) == 0x0008)
-         chips[CHIP_D_RAM].mask |= 0x00800000;
+         chips[CHIP_DX_RAM].mask |= 0x00800000;
 
       //address line 22 is enabled
       if((sdctrl & 0x0030) == 0x0010)
-         chips[CHIP_D_RAM].mask |= 0x00400000;
+         chips[CHIP_DX_RAM].mask |= 0x00400000;
    }
    else{
       //RAM is not enabled properly
-      chips[CHIP_D_RAM].mask = 0x00000000;
+      chips[CHIP_DX_RAM].mask = 0x00000000;
    }
 }
 
@@ -240,6 +213,8 @@ static inline void setSpiCont1(uint16_t value){
    //only master mode is implemented!!!
    uint16_t oldSpiCont1 = registerArrayRead16(SPICONT1);
 
+   debugLog("SPI1 write, old value:0x%04X, value:0x%04X\n", oldSpiCont1, value);
+
    //do a transfer
    if(value & oldSpiCont1 & 0x0200 && value & 0x0100 && spi1TxPosition > 0){
       //enabled and exchange set
@@ -247,6 +222,8 @@ static inline void setSpiCont1(uint16_t value){
       uint16_t startBit = 1 << (bitCount - 1);
       uint16_t currentTxFifoEntry = spi1TxFifo[0];
       uint16_t newRxFifoEntry = 0;
+
+      debugLog("SPI1 transfer, PC:0x%08X\n", m68k_get_reg(NULL, M68K_REG_PPC));
 
       for(uint8_t bits = 0; bits < bitCount; bits++){
          newRxFifoEntry |= sdCardExchangeBit(currentTxFifoEntry & startBit);

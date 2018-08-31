@@ -30,10 +30,11 @@
 //chip names
 enum{
    CHIP_BEGIN = 0,
-   CHIP_A_ROM = 0,
-   CHIP_B_SED,
-   CHIP_C_USB,
-   CHIP_D_RAM,
+   CHIP_A0_ROM = 0,
+   CHIP_A1_USB,
+   CHIP_B0_SED,
+   //CHIP_CX_RAM, // CSC* is owned by CSD during normal operation
+   CHIP_DX_RAM,
    CHIP_REGISTERS,
    CHIP_NONE,
    CHIP_END

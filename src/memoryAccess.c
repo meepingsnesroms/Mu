@@ -13,23 +13,23 @@ uint8_t bankType[TOTAL_MEMORY_BANKS];
 
 
 //RAM accesses
-static inline uint8_t ramRead8(uint32_t address){return BUFFER_READ_8(palmRam, address, chips[CHIP_D_RAM].mask);}
-static inline uint16_t ramRead16(uint32_t address){return BUFFER_READ_16(palmRam, address, chips[CHIP_D_RAM].mask);}
-static inline uint32_t ramRead32(uint32_t address){return BUFFER_READ_32(palmRam, address, chips[CHIP_D_RAM].mask);}
-static inline void ramWrite8(uint32_t address, uint8_t value){BUFFER_WRITE_8(palmRam, address, chips[CHIP_D_RAM].mask, value);}
-static inline void ramWrite16(uint32_t address, uint16_t value){BUFFER_WRITE_16(palmRam, address, chips[CHIP_D_RAM].mask, value);}
-static inline void ramWrite32(uint32_t address, uint32_t value){BUFFER_WRITE_32(palmRam, address, chips[CHIP_D_RAM].mask, value);}
+static inline uint8_t ramRead8(uint32_t address){return BUFFER_READ_8(palmRam, address, chips[CHIP_DX_RAM].mask);}
+static inline uint16_t ramRead16(uint32_t address){return BUFFER_READ_16(palmRam, address, chips[CHIP_DX_RAM].mask);}
+static inline uint32_t ramRead32(uint32_t address){return BUFFER_READ_32(palmRam, address, chips[CHIP_DX_RAM].mask);}
+static inline void ramWrite8(uint32_t address, uint8_t value){BUFFER_WRITE_8(palmRam, address, chips[CHIP_DX_RAM].mask, value);}
+static inline void ramWrite16(uint32_t address, uint16_t value){BUFFER_WRITE_16(palmRam, address, chips[CHIP_DX_RAM].mask, value);}
+static inline void ramWrite32(uint32_t address, uint32_t value){BUFFER_WRITE_32(palmRam, address, chips[CHIP_DX_RAM].mask, value);}
 
 //ROM accesses
-static inline uint8_t romRead8(uint32_t address){return BUFFER_READ_8(palmRom, address, chips[CHIP_A_ROM].mask);}
-static inline uint16_t romRead16(uint32_t address){return BUFFER_READ_16(palmRom, address, chips[CHIP_A_ROM].mask);}
-static inline uint32_t romRead32(uint32_t address){return BUFFER_READ_32(palmRom, address, chips[CHIP_A_ROM].mask);}
+static inline uint8_t romRead8(uint32_t address){return BUFFER_READ_8(palmRom, address, chips[CHIP_A0_ROM].mask);}
+static inline uint16_t romRead16(uint32_t address){return BUFFER_READ_16(palmRom, address, chips[CHIP_A0_ROM].mask);}
+static inline uint32_t romRead32(uint32_t address){return BUFFER_READ_32(palmRom, address, chips[CHIP_A0_ROM].mask);}
 
 //SED1376 accesses
 static inline uint8_t sed1376Read8(uint32_t address){
    if(sed1376PowerSaveEnabled())
       return 0x00;
-   address &= chips[CHIP_B_SED].mask;
+   address &= chips[CHIP_B0_SED].mask;
    if(address < SED1376_FB_OFFSET)
       return sed1376GetRegister(address & 0xFF);
    else
@@ -38,7 +38,7 @@ static inline uint8_t sed1376Read8(uint32_t address){
 static inline uint16_t sed1376Read16(uint32_t address){
    if(sed1376PowerSaveEnabled())
       return 0x0000;
-   address &= chips[CHIP_B_SED].mask;
+   address &= chips[CHIP_B0_SED].mask;
    if(address < SED1376_FB_OFFSET)
       return sed1376GetRegister(address & 0xFF);
    else
@@ -47,28 +47,28 @@ static inline uint16_t sed1376Read16(uint32_t address){
 static inline uint32_t sed1376Read32(uint32_t address){
    if(sed1376PowerSaveEnabled())
       return 0x00000000;
-   address &= chips[CHIP_B_SED].mask;
+   address &= chips[CHIP_B0_SED].mask;
    if(address < SED1376_FB_OFFSET)
       return sed1376GetRegister(address & 0xFF);
    else
       return BUFFER_READ_32(sed1376Framebuffer, address - SED1376_FB_OFFSET, 0xFFFFFFFF);
 }
 static inline void sed1376Write8(uint32_t address, uint8_t value){
-   address &= chips[CHIP_B_SED].mask;
+   address &= chips[CHIP_B0_SED].mask;
    if(address < SED1376_FB_OFFSET)
       sed1376SetRegister(address & 0xFF, value);
    else
       BUFFER_WRITE_8(sed1376Framebuffer, address - SED1376_FB_OFFSET, 0xFFFFFFFF, value);
 }
 static inline void sed1376Write16(uint32_t address, uint16_t value){
-   address &= chips[CHIP_B_SED].mask;
+   address &= chips[CHIP_B0_SED].mask;
    if(address < SED1376_FB_OFFSET)
       sed1376SetRegister(address & 0xFF, value);
    else
       BUFFER_WRITE_16(sed1376Framebuffer, address - SED1376_FB_OFFSET, 0xFFFFFFFF, value);
 }
 static inline void sed1376Write32(uint32_t address, uint32_t value){
-   address &= chips[CHIP_B_SED].mask;
+   address &= chips[CHIP_B0_SED].mask;
    if(address < SED1376_FB_OFFSET)
       sed1376SetRegister(address & 0xFF, value);
    else
@@ -77,7 +77,7 @@ static inline void sed1376Write32(uint32_t address, uint32_t value){
 
 static inline bool probeRead(uint8_t bank, uint32_t address){
    if(chips[bank].supervisorOnlyProtectedMemory){
-      uint32_t index = address - chips[bank].start % chips[bank].lineSize;//below size = CS*0 any value above size is considered CS*1
+      uint32_t index = address - chips[bank].start;
       if(index >= chips[bank].unprotectedSize && !(m68k_get_reg(NULL, M68K_REG_SR) & 0x2000)){
          setPrivilegeViolation(address, false);
          return false;
@@ -92,7 +92,7 @@ static inline bool probeWrite(uint8_t bank, uint32_t address){
       return false;
    }
    else if(chips[bank].supervisorOnlyProtectedMemory || chips[bank].readOnlyForProtectedMemory){
-      uint32_t index = address - chips[bank].start % chips[bank].lineSize;//below size = CS*0 any value above size is considered CS*1
+      uint32_t index = address - chips[bank].start;
       if(index >= chips[bank].unprotectedSize){
          if(chips[bank].supervisorOnlyProtectedMemory && !(m68k_get_reg(NULL, M68K_REG_SR) & 0x2000)){
             setPrivilegeViolation(address, true);
@@ -114,16 +114,16 @@ uint8_t m68k_read_memory_8(uint32_t address){
       return 0x00;
 
    switch(addressType){
-      case CHIP_A_ROM:
+      case CHIP_A0_ROM:
          return romRead8(address);
 
-      case CHIP_B_SED:
+      case CHIP_A1_USB:
+         return pdiUsbD12GetRegister(address & chips[CHIP_A1_USB].mask);
+
+      case CHIP_B0_SED:
          return sed1376Read8(address);
 
-      case CHIP_C_USB:
-         return pdiUsbD12GetRegister(address & 0x00000001);
-
-      case CHIP_D_RAM:
+      case CHIP_DX_RAM:
          return ramRead8(address);
 
       case CHIP_REGISTERS:
@@ -148,16 +148,16 @@ uint16_t m68k_read_memory_16(uint32_t address){
       return 0x0000;
 
    switch(addressType){
-      case CHIP_A_ROM:
+      case CHIP_A0_ROM:
          return romRead16(address);
 
-      case CHIP_B_SED:
+      case CHIP_A1_USB:
+         return pdiUsbD12GetRegister(address & chips[CHIP_A1_USB].mask);
+
+      case CHIP_B0_SED:
          return sed1376Read16(address);
 
-      case CHIP_C_USB:
-         return pdiUsbD12GetRegister(address & 0x00000001);
-
-      case CHIP_D_RAM:
+      case CHIP_DX_RAM:
          return ramRead16(address);
 
       case CHIP_REGISTERS:
@@ -182,16 +182,16 @@ uint32_t m68k_read_memory_32(uint32_t address){
       return 0x00000000;
 
    switch(addressType){
-      case CHIP_A_ROM:
+      case CHIP_A0_ROM:
          return romRead32(address);
 
-      case CHIP_B_SED:
+      case CHIP_A1_USB:
+         return pdiUsbD12GetRegister(address & chips[CHIP_A1_USB].mask);
+
+      case CHIP_B0_SED:
          return sed1376Read32(address);
 
-      case CHIP_C_USB:
-         return pdiUsbD12GetRegister(address & 0x00000001);
-
-      case CHIP_D_RAM:
+      case CHIP_DX_RAM:
          return ramRead32(address);
 
       case CHIP_REGISTERS:
@@ -216,18 +216,18 @@ void m68k_write_memory_8(uint32_t address, uint8_t value){
       return;
 
    switch(addressType){
-      case CHIP_A_ROM:
+      case CHIP_A0_ROM:
          break;
 
-      case CHIP_B_SED:
+      case CHIP_A1_USB:
+         pdiUsbD12SetRegister(address & chips[CHIP_A1_USB].mask, value);
+         break;
+
+      case CHIP_B0_SED:
          sed1376Write8(address, value);
          break;
 
-      case CHIP_C_USB:
-         pdiUsbD12SetRegister(address & 0x00000001, value);
-         break;
-
-      case CHIP_D_RAM:
+      case CHIP_DX_RAM:
          ramWrite8(address, value);
          break;
 
@@ -254,18 +254,18 @@ void m68k_write_memory_16(uint32_t address, uint16_t value){
       return;
 
    switch(addressType){
-      case CHIP_A_ROM:
+      case CHIP_A0_ROM:
          break;
 
-      case CHIP_B_SED:
+      case CHIP_A1_USB:
+         pdiUsbD12SetRegister(address & chips[CHIP_A1_USB].mask, value);
+         break;
+
+      case CHIP_B0_SED:
          sed1376Write16(address, value);
          break;
 
-      case CHIP_C_USB:
-         pdiUsbD12SetRegister(address & 0x00000001, value);
-         break;
-
-      case CHIP_D_RAM:
+      case CHIP_DX_RAM:
          ramWrite16(address, value);
          break;
 
@@ -292,18 +292,18 @@ void m68k_write_memory_32(uint32_t address, uint32_t value){
       return;
 
    switch(addressType){
-      case CHIP_A_ROM:
+      case CHIP_A0_ROM:
          break;
 
-      case CHIP_B_SED:
+      case CHIP_A1_USB:
+         pdiUsbD12SetRegister(address & chips[CHIP_A1_USB].mask, value);
+         break;
+
+      case CHIP_B0_SED:
          sed1376Write32(address, value);
          break;
 
-      case CHIP_C_USB:
-         pdiUsbD12SetRegister(address & 0x00000001, value);
-         break;
-
-      case CHIP_D_RAM:
+      case CHIP_DX_RAM:
          ramWrite32(address, value);
          break;
 
@@ -335,28 +335,21 @@ uint32_t m68k_read_disassembler_32(uint32_t address){return m68k_read_memory_32(
 
 
 static uint8_t getProperBankType(uint32_t bank){
-   //special conditions
-   if((bank & 0x00FF) == 0x00FF && registersAreXXFFMapped()){
-      //XXFF register mode
+   if(BANK_IN_RANGE(bank, REG_START_ADDRESS, REG_SIZE) || ((bank & 0x00FF) == 0x00FF && registersAreXXFFMapped())){
+      //registers have first priority, they cover 0xFFFFF000(and 0xXXFFF000 when DMAP enabled in SCR) even if a chipselect overlaps this area or CHIP_A0_ROM is in boot mode
       return CHIP_REGISTERS;
    }
-   
-   //normal banks
-   if(BANK_IN_RANGE(bank, REG_START_ADDRESS, REG_SIZE)){
-      //registers have first priority, they cover 0xFFFFF000 even if a chipselect overlaps this area or CHIP_A_ROM is in boot mode
-      return CHIP_REGISTERS;
+   else if(chips[CHIP_A0_ROM].inBootMode || (chips[CHIP_A0_ROM].enable && BANK_IN_RANGE(bank, chips[CHIP_A0_ROM].start, chips[CHIP_A0_ROM].lineSize))){
+      return CHIP_A0_ROM;
    }
-   else if(chips[CHIP_A_ROM].inBootMode || (chips[CHIP_A_ROM].enable && BANK_IN_RANGE(bank, chips[CHIP_A_ROM].start, chips[CHIP_A_ROM].lineSize * 2))){
-      return CHIP_A_ROM;
+   else if(chips[CHIP_A1_USB].enable && BANK_IN_RANGE(bank, chips[CHIP_A1_USB].start, chips[CHIP_A1_USB].lineSize)){
+      return CHIP_A1_USB;
    }
-   else if(chips[CHIP_B_SED].enable && BANK_IN_RANGE(bank, chips[CHIP_B_SED].start, chips[CHIP_B_SED].lineSize * 2) && sed1376ClockConnected()){
-      return CHIP_B_SED;
+   else if(chips[CHIP_B0_SED].enable && BANK_IN_RANGE(bank, chips[CHIP_B0_SED].start, chips[CHIP_B0_SED].lineSize) && sed1376ClockConnected()){
+      return CHIP_B0_SED;
    }
-   else if(chips[CHIP_C_USB].enable && BANK_IN_RANGE(bank, chips[CHIP_C_USB].start, chips[CHIP_C_USB].lineSize * 2)){
-      return CHIP_C_USB;
-   }
-   else if(chips[CHIP_D_RAM].enable && BANK_IN_RANGE(bank, chips[CHIP_D_RAM].start, chips[CHIP_D_RAM].lineSize * 2)){
-      return CHIP_D_RAM;
+   else if(chips[CHIP_DX_RAM].enable && BANK_IN_RANGE(bank, chips[CHIP_DX_RAM].start, chips[CHIP_DX_RAM].lineSize * 2)){
+      return CHIP_DX_RAM;
    }
 
    return CHIP_NONE;
@@ -375,8 +368,8 @@ void setRegisterFFFFAccessMode(){
 }
 
 void setSed1376Attached(bool attached){
-   if(chips[CHIP_B_SED].enable && bankType[START_BANK(chips[CHIP_B_SED].start)] != (attached ? CHIP_B_SED : CHIP_NONE))
-      memset(&bankType[START_BANK(chips[CHIP_B_SED].start)], attached ? CHIP_B_SED : CHIP_NONE, END_BANK(chips[CHIP_B_SED].start, chips[CHIP_B_SED].lineSize) - START_BANK(chips[CHIP_B_SED].start) + 1);
+   if(chips[CHIP_B0_SED].enable && bankType[START_BANK(chips[CHIP_B0_SED].start)] != (attached ? CHIP_B0_SED : CHIP_NONE))
+      memset(&bankType[START_BANK(chips[CHIP_B0_SED].start)], attached ? CHIP_B0_SED : CHIP_NONE, END_BANK(chips[CHIP_B0_SED].start, chips[CHIP_B0_SED].lineSize) - START_BANK(chips[CHIP_B0_SED].start) + 1);
 }
 
 void resetAddressSpace(){

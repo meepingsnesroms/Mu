@@ -858,11 +858,12 @@ void setHwRegister16(uint32_t address, uint16_t value){
 
       case CSA:{
             uint16_t oldCsa = registerArrayRead16(CSA);
+            bool oldBootMode = chips[CHIP_A0_ROM].inBootMode;
 
             setCsa(value);
 
-            //only reset address space if size changed or enabled/disabled
-            if((value & 0x000F) != (oldCsa & 0x000F))
+            //only reset address space if size changed, enabled/disabled or exiting boot mode
+            if((value & 0x000F) != (oldCsa & 0x000F) || chips[CHIP_A0_ROM].inBootMode != oldBootMode)
                resetAddressSpace();
          }
          break;
@@ -878,15 +879,8 @@ void setHwRegister16(uint32_t address, uint16_t value){
          }
          break;
 
-      case CSC:{
-            uint16_t oldCsc = registerArrayRead16(CSC);
-
-            setCsc(value);
-
-            //only reset address space if size changed or enabled/disabled
-            if((value & 0x000F) != (oldCsc & 0x000F))
-               resetAddressSpace();
-         }
+      case CSC:
+         registerArrayWrite16(CSC, value & 0xF9FF);
          break;
 
       case CSD:{
@@ -894,11 +888,10 @@ void setHwRegister16(uint32_t address, uint16_t value){
 
             setCsd(value);
 
-            if((value & 0x0200) != (oldCsd & 0x0200)){
-               //CSD DRAM bit changed
+            //CSD DRAM bit changed
+            if((value & 0x0200) != (oldCsd & 0x0200))
                updateCsdAddressLines();
-               setCsc(registerArrayRead16(CSC));//CSC relys on CSD DRAM bit, untested but the datasheet states that CSC has expanded size when CSCTRL1 DSIZ3 and CSD DRAM bits are enabled
-            }
+
 
             //only reset address space if size changed, enabled/disabled or DRAM bit changed
             if((value & 0x020F) != (oldCsd & 0x020F))
@@ -907,7 +900,7 @@ void setHwRegister16(uint32_t address, uint16_t value){
          break;
 
       case CSGBA:
-         //sets the starting location of ROM(0x10000000)
+         //sets the starting location of ROM(0x10000000) and the PDIUSBD12 chip
          if((value & 0xFFFE) != registerArrayRead16(CSGBA)){
             setCsgba(value);
             resetAddressSpace();
@@ -923,12 +916,7 @@ void setHwRegister16(uint32_t address, uint16_t value){
          break;
 
       case CSGBC:
-         //sets the starting location of USBPhilipsPDIUSBD12(address 0x10400000)
-         //since I dont plan on adding hotsync should be fine to leave unemulated, its unemulated in pose
-         if((value & 0xFFFE) != registerArrayRead16(CSGBC)){
-            setCsgbc(value);
-            resetAddressSpace();
-         }
+         registerArrayWrite16(CSGBC, value & 0xFFFE);
          break;
 
       case CSGBD:
@@ -945,7 +933,6 @@ void setHwRegister16(uint32_t address, uint16_t value){
             //refresh all chipselect address lines
             setCsgba(registerArrayRead16(CSGBA));
             setCsgbb(registerArrayRead16(CSGBB));
-            setCsgbc(registerArrayRead16(CSGBC));
             setCsgbd(registerArrayRead16(CSGBD));
             resetAddressSpace();
          }
@@ -958,9 +945,8 @@ void setHwRegister16(uint32_t address, uint16_t value){
 
             if((value & 0x4055) != (oldCsctrl1 & 0x4055)){
                //something important changed, update all chipselects
-               //CSA is not dependant on CSCTRL1
+               //CSA is not dependent on CSCTRL1
                setCsb(registerArrayRead16(CSB));
-               setCsc(registerArrayRead16(CSC));
                setCsd(registerArrayRead16(CSD));
                resetAddressSpace();
             }
@@ -1081,22 +1067,20 @@ void resetHwRegisters(){
    spi1TxPosition = 0;
 
    memset(chips, 0x00, sizeof(chips));
-   //all chipselects are disabled at boot and CSA is mapped to 0x00000000 and covers the entire address range until CSGBA set otherwise
-   chips[CHIP_A_ROM].inBootMode = true;
+   //all chipselects are disabled at boot and CSA0 is mapped to 0x00000000 and covers the entire address range until CSA is set enabled
+   chips[CHIP_A0_ROM].inBootMode = true;
 
-   //default size, prevents divide by 0 crash in access checks(should never actually happen execpt for CHIP_REGISTERS and CHIP_NONE, but just be safe anyway)
-   chips[CHIP_A_ROM].lineSize = 0x20000;
-   chips[CHIP_B_SED].lineSize = 0x20000;
-   chips[CHIP_C_USB].lineSize = 0x8000;
-   chips[CHIP_D_RAM].lineSize = 0x8000;
-   chips[CHIP_REGISTERS].lineSize = 0x10000;
-   chips[CHIP_NONE].lineSize = 0x1;
+   //default sizes
+   chips[CHIP_A0_ROM].lineSize = 0x20000;
+   chips[CHIP_A1_USB].lineSize = 0x20000;
+   chips[CHIP_B0_SED].lineSize = 0x20000;
+   chips[CHIP_DX_RAM].lineSize = 0x8000;
 
    //masks for reading and writing
-   chips[CHIP_A_ROM].mask = 0x003FFFFF;//4mb
-   chips[CHIP_B_SED].mask = 0x0003FFFF;
-   chips[CHIP_C_USB].mask = 0x00000000;
-   chips[CHIP_D_RAM].mask = 0x00000000;//16mb, no RAM enabled until the DRAM module is initialized
+   chips[CHIP_A0_ROM].mask = 0x003FFFFF;//4mb
+   chips[CHIP_A1_USB].mask = 0x00000002;//A1 is used as USB chip A0
+   chips[CHIP_B0_SED].mask = 0x0003FFFF;
+   chips[CHIP_DX_RAM].mask = 0x00000000;//16mb, no RAM enabled until the DRAM module is initialized
    
    //system control
    registerArrayWrite8(SCR, 0x1C);

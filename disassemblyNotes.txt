@@ -1,3 +1,5 @@
+PDIUSBD12 uses CSA1 and CPU A1 as USB A0
+
 All of the interrupt signals in the table can be used as system wake-up interrupts, except for the edge interrupt on INT[3:0]. Edge interrupts on INT[3:0] can only interrupt the CPU when the system is awake. The INT[3:0] signals are all level 4 interrupts, but IRQx has its own level. Any combination of Port D signals and OR (negative logic) can be selected to generate keyboard (KB) interrupts to the CPU. The KBx signal is an active low, level-sensitive interrupt of the selected pins. Like the other ports, each pin can be configured as an input or output on a bit-by-bit basis. When they are configured as inputs, each pin can generate a CPU interrupt.
 
 CS(A/B/C/D)1 seem to not be connected, only CS*0 is used
