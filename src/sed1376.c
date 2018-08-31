@@ -4,24 +4,28 @@
 #include "emulator.h"
 #include "portability.h"
 #include "hardwareRegisters.h"
-#include "memoryAccess.h"
 #include "specs/sed1376RegisterNames.h"
 #include "m68k/m68k.h"
 #include "debug/sandbox.h"
 
 
-//the SED1376 has only 16 address lines(17 if you count the line that switches between registers and framebuffer) and 16 data lines, the most you can read is 16 bits, registers are 8 bits
+//the SED1376 has only 16 address lines(17 if you count the line that switches between registers and framebuffer) and 16 data lines, the most you can read at once is 16 bits, registers are 8 bits
 
 //the actions described below are just my best guesses after reading the datasheet, I have not tested with actual hardware
 //you read and write the register on the address lines set
 //8 bit register access works normal
-//16 bit register reads will result in you getting (0x00 << 8 | register).
-//16 bit register writes will result in you writing the lower 8 bits.
-//32 bit register reads will result in you getting (randomUint16 << 16 | 0x00 << 8 | register), upper 16 bits are floating because SED1376 only has 16 address lines.
-//32 bit register writes will result in you writing the lower 8 bits.
+//16 bit register reads will result in you getting (0x00 << 8 | register)(this is unverified)
+//16 bit register writes will result in you writing the lower 8 bits(this is unverified)
+//32 bit register reads will result in doing 2 16 bit reads
+//32 bit register writes will result in doing 2 16 bit writes
 
 //The LCD power-on sequence is activated by programming the Power Save Mode Enable bit (REG[A0h] bit 0) to 0.
 //The LCD power-off sequence is activated by programming the Power Save Mode Enable bit (REG[A0h] bit 0) to 1.
+
+
+#define SED1376_REG_SIZE 0xB4
+#define SED1376_LUT_SIZE 0x100
+#define SED1376_FB_SIZE  0x14000
 
 
 static uint8_t  sed1376Registers[SED1376_REG_SIZE];

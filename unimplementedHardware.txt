@@ -37,6 +37,7 @@ there is conflicting information on wether the DRAM bit effects CSC, needs a tes
 the unemulated chip selects(CSB1, CSC0/1) privilege violation interrupts will not be handled properly
 
 SED1376:
+framebuffer accesses can cause a buffer overflow(this was always the case, its not a new bug)
 swivelview register
 
 ADS7846:

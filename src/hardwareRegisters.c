@@ -502,6 +502,10 @@ uint16_t getHwRegister16(uint32_t address){
       case PWMC1:
          return getPwmc1();
 
+      case SPIINTCS:
+         debugLog("SPIINTCS read not implented yet\n");
+         return 0x0000;
+
       case SPIRXD:{
             uint16_t rxFifoValue;
 
@@ -957,6 +961,10 @@ void setHwRegister16(uint32_t address, uint16_t value){
          setSpiCont1(value);
          break;
 
+      case SPIINTCS:
+         debugLog("SPIINTCS write not implented yet\n");
+         break;
+
       case SPITXD:
          if(spi1TxPosition < 8){
             spi1TxFifo[spi1TxPosition] = value;
@@ -1079,7 +1087,7 @@ void resetHwRegisters(){
    //masks for reading and writing
    chips[CHIP_A0_ROM].mask = 0x003FFFFF;//4mb
    chips[CHIP_A1_USB].mask = 0x00000002;//A1 is used as USB chip A0
-   chips[CHIP_B0_SED].mask = 0x0003FFFF;
+   chips[CHIP_B0_SED].mask = 0x0001FFFF;
    chips[CHIP_DX_RAM].mask = 0x00000000;//16mb, no RAM enabled until the DRAM module is initialized
    
    //system control

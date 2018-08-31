@@ -29,50 +29,44 @@ static inline uint32_t romRead32(uint32_t address){return BUFFER_READ_32(palmRom
 static inline uint8_t sed1376Read8(uint32_t address){
    if(sed1376PowerSaveEnabled())
       return 0x00;
-   address &= chips[CHIP_B0_SED].mask;
-   if(address < SED1376_FB_OFFSET)
-      return sed1376GetRegister(address & 0xFF);
+   if(address & SED1376_MR_BIT)
+      return BUFFER_READ_8(sed1376Framebuffer, address, chips[CHIP_B0_SED].mask);
    else
-      return BUFFER_READ_8(sed1376Framebuffer, address - SED1376_FB_OFFSET, 0xFFFFFFFF);
+      return sed1376GetRegister(address & chips[CHIP_B0_SED].mask);
 }
 static inline uint16_t sed1376Read16(uint32_t address){
    if(sed1376PowerSaveEnabled())
       return 0x0000;
-   address &= chips[CHIP_B0_SED].mask;
-   if(address < SED1376_FB_OFFSET)
-      return sed1376GetRegister(address & 0xFF);
+   if(address & SED1376_MR_BIT)
+      return BUFFER_READ_16(sed1376Framebuffer, address, chips[CHIP_B0_SED].mask);
    else
-      return BUFFER_READ_16(sed1376Framebuffer, address - SED1376_FB_OFFSET, 0xFFFFFFFF);
+      return sed1376GetRegister(address & chips[CHIP_B0_SED].mask);
 }
 static inline uint32_t sed1376Read32(uint32_t address){
    if(sed1376PowerSaveEnabled())
       return 0x00000000;
-   address &= chips[CHIP_B0_SED].mask;
-   if(address < SED1376_FB_OFFSET)
-      return sed1376GetRegister(address & 0xFF);
+   if(address & SED1376_MR_BIT)
+      return BUFFER_READ_32(sed1376Framebuffer, address, chips[CHIP_B0_SED].mask);
    else
-      return BUFFER_READ_32(sed1376Framebuffer, address - SED1376_FB_OFFSET, 0xFFFFFFFF);
+      return sed1376GetRegister(address & chips[CHIP_B0_SED].mask);
 }
 static inline void sed1376Write8(uint32_t address, uint8_t value){
-   address &= chips[CHIP_B0_SED].mask;
-   if(address < SED1376_FB_OFFSET)
-      sed1376SetRegister(address & 0xFF, value);
+   if(address & SED1376_MR_BIT)
+      BUFFER_WRITE_8(sed1376Framebuffer, address, chips[CHIP_B0_SED].mask, value);
    else
-      BUFFER_WRITE_8(sed1376Framebuffer, address - SED1376_FB_OFFSET, 0xFFFFFFFF, value);
+      sed1376SetRegister(address & chips[CHIP_B0_SED].mask, value);
 }
 static inline void sed1376Write16(uint32_t address, uint16_t value){
-   address &= chips[CHIP_B0_SED].mask;
-   if(address < SED1376_FB_OFFSET)
-      sed1376SetRegister(address & 0xFF, value);
+   if(address & SED1376_MR_BIT)
+      BUFFER_WRITE_16(sed1376Framebuffer, address, chips[CHIP_B0_SED].mask, value);
    else
-      BUFFER_WRITE_16(sed1376Framebuffer, address - SED1376_FB_OFFSET, 0xFFFFFFFF, value);
+      sed1376SetRegister(address & chips[CHIP_B0_SED].mask, value);
 }
 static inline void sed1376Write32(uint32_t address, uint32_t value){
-   address &= chips[CHIP_B0_SED].mask;
-   if(address < SED1376_FB_OFFSET)
-      sed1376SetRegister(address & 0xFF, value);
+   if(address & SED1376_MR_BIT)
+      BUFFER_WRITE_32(sed1376Framebuffer, address, chips[CHIP_B0_SED].mask, value);
    else
-      BUFFER_WRITE_32(sed1376Framebuffer, address - SED1376_FB_OFFSET, 0xFFFFFFFF, value);
+      sed1376SetRegister(address & chips[CHIP_B0_SED].mask, value);
 }
 
 static inline bool probeRead(uint8_t bank, uint32_t address){
