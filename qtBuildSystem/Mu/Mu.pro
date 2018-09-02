@@ -93,14 +93,14 @@ HEADERS += \
     debugviewer.h \
     src/specs/emuFeatureRegistersSpec.h \
     src/specs/hardwareRegisterNames.h \
-    src/specs/irdaCommands.h \
     src/specs/sed1376RegisterNames.h \
     emuwrapper.h \
     src/debug/sandbox.h \
     src/debug/sandboxTrapNumToName.c.h \
     statemanager.h \
     src/m68328.h \
-    src/pdiUsbD12.h
+    src/pdiUsbD12.h \
+    src/specs/pdiUsbD12Commands.h
 
 FORMS += \
     mainwindow.ui \
