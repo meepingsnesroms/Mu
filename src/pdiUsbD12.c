@@ -77,7 +77,7 @@ uint8_t pdiUsbD12GetRegister(bool address){
    }
    else{
       //0x1 commands
-
+      //may just return 0x00(or random 0xXX) or may return current command(not read by Palm OS during boot up)
    }
 
    return 0x00;

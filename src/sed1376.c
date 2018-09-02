@@ -25,7 +25,7 @@
 
 #define SED1376_REG_SIZE 0xB4
 #define SED1376_LUT_SIZE 0x100
-#define SED1376_FB_SIZE  0x14000
+#define SED1376_FB_SIZE  0x20000//actual size is 0x14000, but that cant be masked off by address lines so size is increased to prevent buffer overflow
 
 
 static uint8_t  sed1376Registers[SED1376_REG_SIZE];
