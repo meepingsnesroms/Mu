@@ -20,10 +20,12 @@ uint32_t clk32Counter;
 double   timerCycleCounter[2];
 uint16_t timerStatusReadAcknowledge[2];
 uint32_t interruptEdgeTriggered;
-uint16_t spi1RxFifo[8];
-uint16_t spi1TxFifo[8];
-uint8_t  spi1RxPosition;
-uint8_t  spi1TxPosition;
+uint16_t spi1RxFifo[9];
+uint16_t spi1TxFifo[9];
+uint8_t  spi1RxReadPosition;
+uint8_t  spi1RxWritePosition;
+uint8_t  spi1TxReadPosition;
+uint8_t  spi1TxWritePosition;
 
 
 static void checkInterrupts();
@@ -506,23 +508,12 @@ uint16_t getHwRegister16(uint32_t address){
          debugLog("SPIINTCS read not implented yet\n");
          return 0x0000;
 
-      case SPIRXD:{
-            uint16_t rxFifoValue;
+      case SPITEST:
+         //SSTATUS is unemulated because the datasheet has no descrption of how it works
+         return spi1RxFifoEntrys() << 4 | spi1TxFifoEntrys();
 
-            if(spi1RxPosition > 0){
-               rxFifoValue = spi1RxFifo[0];
-
-               //remove used RX FIFO entry
-               spi1RxPosition--;
-               for(uint8_t count = 0; count < spi1RxPosition; count++)
-                  spi1RxFifo[count] = spi1RxFifo[count + 1];
-            }
-            else{
-               rxFifoValue = 0x0000;
-            }
-
-            return rxFifoValue;
-         }
+      case SPIRXD:
+         return spi1RxFifoRead();
          
       //32 bit registers accessed as 16 bit
       case IMR:
@@ -965,11 +956,14 @@ void setHwRegister16(uint32_t address, uint16_t value){
          debugLog("SPIINTCS write not implented yet\n");
          break;
 
+      case SPITEST:
+         debugLog("SPITEST write not implented yet\n");
+         break;
+
       case SPITXD:
-         if(spi1TxPosition < 8){
-            spi1TxFifo[spi1TxPosition] = value;
-            spi1TxPosition++;
-         }
+         //Writing to TxFIFO is permitted as long as TxFIFO is not full, from MC68VZ328UM.pdf
+         if(spi1TxFifoEntrys() < 8)
+            spi1TxFifoWrite(value);
          break;
 
       case SPICONT2:
@@ -1071,8 +1065,10 @@ void resetHwRegisters(){
    interruptEdgeTriggered = 0x00000000;
    memset(spi1RxFifo, 0x00, 8 * sizeof(uint16_t));
    memset(spi1TxFifo, 0x00, 8 * sizeof(uint16_t));
-   spi1RxPosition = 0;
-   spi1TxPosition = 0;
+   spi1RxReadPosition = 0;
+   spi1RxWritePosition = 0;
+   spi1TxReadPosition = 0;
+   spi1TxWritePosition = 0;
 
    memset(chips, 0x00, sizeof(chips));
    //all chipselects are disabled at boot and CSA0 is mapped to 0x00000000 and covers the entire address range until CSA is set enabled

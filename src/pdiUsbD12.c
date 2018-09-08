@@ -13,21 +13,26 @@
 
 #define PDIUSBD12_TRANSFER_BUFFER_SIZE 130
 
+
 static uint8_t pdiUsbD12FifoBuffer[PDIUSBD12_TRANSFER_BUFFER_SIZE];
 static uint8_t pdiUsbD12ReadIndex;
 static uint8_t pdiUsbD12WriteIndex;
-//static uint8_t pdiUsbD12WaitForWrites;
 
 
-static inline uint8_t pdiUsbD12ReadByte(){
-   uint8_t data = pdiUsbD12FifoBuffer[pdiUsbD12ReadIndex];
-   pdiUsbD12ReadIndex++;
-   return data;
+static inline uint8_t pdiUsbD12FifoRead(){
+   uint8_t value = pdiUsbD12FifoBuffer[pdiUsbD12ReadIndex];
+   pdiUsbD12ReadIndex = (pdiUsbD12ReadIndex + 1) % PDIUSBD12_TRANSFER_BUFFER_SIZE;
+   return value;
 }
 
-static inline void pdiUsbD12WriteByte(uint8_t data){
-   pdiUsbD12FifoBuffer[pdiUsbD12WriteIndex] = data;
-   pdiUsbD12WriteIndex++;
+static inline void pdiUsbD12FifoWrite(uint8_t value){
+   pdiUsbD12FifoBuffer[pdiUsbD12WriteIndex] = value;
+   pdiUsbD12WriteIndex = (pdiUsbD12WriteIndex + 1) % PDIUSBD12_TRANSFER_BUFFER_SIZE;
+}
+
+static inline void pdiUsbD12FifoStartNewCommand(){
+   pdiUsbD12ReadIndex = 0;
+   pdiUsbD12WriteIndex = 0;
 }
 
 void pdiUsbD12Reset(){
@@ -73,11 +78,12 @@ uint8_t pdiUsbD12GetRegister(bool address){
 
    if(!address){
       //0x0 data
-
+      return pdiUsbD12FifoRead();
    }
    else{
       //0x1 commands
       //may just return 0x00(or random 0xXX) or may return current command(not read by Palm OS during boot up)
+      debugLog("USB command readback, response unknown, address:0x%01X\n", address);
    }
 
    return 0x00;
@@ -89,13 +95,17 @@ void pdiUsbD12SetRegister(bool address, uint8_t value){
 
    if(!address){
       //0x0 data
-
+      pdiUsbD12FifoWrite(value);
    }
    else{
       //0x1 commands
+      pdiUsbD12FifoStartNewCommand();
+
       switch(value){
          case READ_INTERRUPT_REGISTER:
-
+            //just reply with no interrupt for now
+            pdiUsbD12FifoWrite(0x00);
+            pdiUsbD12FifoWrite(0x00);
             break;
 
          default:

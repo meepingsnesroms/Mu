@@ -64,8 +64,10 @@ extern uint16_t timerStatusReadAcknowledge[];
 extern uint32_t interruptEdgeTriggered;
 extern uint16_t spi1RxFifo[];
 extern uint16_t spi1TxFifo[];
-extern uint8_t  spi1RxPosition;
-extern uint8_t  spi1TxPosition;
+extern uint8_t  spi1RxReadPosition;
+extern uint8_t  spi1RxWritePosition;
+extern uint8_t  spi1TxReadPosition;
+extern uint8_t  spi1TxWritePosition;
 
 //timing
 void clk32();//also checks all interrupts

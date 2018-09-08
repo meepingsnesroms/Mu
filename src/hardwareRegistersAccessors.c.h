@@ -18,6 +18,43 @@ static inline void registerArrayWrite8(uint32_t address, uint8_t value){BUFFER_W
 static inline void registerArrayWrite16(uint32_t address, uint16_t value){BUFFER_WRITE_16(palmReg, address, 0xFFF, value);}
 static inline void registerArrayWrite32(uint32_t address, uint32_t value){BUFFER_WRITE_32(palmReg, address, 0xFFF, value);}
 
+//SPI1 FIFO accessors, this doesnt quite belong here but it is a memory accessor so its ok for now
+static inline uint16_t spi1RxFifoRead(){
+   uint16_t value = spi1RxFifo[spi1RxReadPosition];
+   spi1RxReadPosition = (spi1RxReadPosition + 1) % 9;
+   return value;
+}
+
+static inline void spi1RxFifoWrite(uint16_t value){
+   spi1RxFifo[spi1RxWritePosition] = value;
+   spi1RxWritePosition = (spi1RxWritePosition + 1) % 9;
+}
+
+static inline uint8_t spi1RxFifoEntrys(){
+   //check for wraparound
+   if(spi1RxWritePosition < spi1RxReadPosition)
+      return spi1RxWritePosition + 9 - spi1RxReadPosition;
+   return spi1RxWritePosition - spi1RxReadPosition;
+}
+
+static inline uint16_t spi1TxFifoRead(){
+   uint16_t value = spi1TxFifo[spi1TxReadPosition];
+   spi1TxReadPosition = (spi1TxReadPosition + 1) % 9;
+   return value;
+}
+
+static inline void spi1TxFifoWrite(uint16_t value){
+   spi1TxFifo[spi1TxWritePosition] = value;
+   spi1TxWritePosition = (spi1TxWritePosition + 1) % 9;
+}
+
+static inline uint8_t spi1TxFifoEntrys(){
+   //check for wraparound
+   if(spi1TxWritePosition < spi1TxReadPosition)
+      return spi1TxWritePosition + 9 - spi1TxReadPosition;
+   return spi1TxWritePosition - spi1TxReadPosition;
+}
+
 //register setters
 static inline void setIprIsrBit(uint32_t interruptBit){
    //allows for setting an interrupt with masking by IMR and logging in IPR
@@ -215,33 +252,36 @@ static inline void setSpiCont1(uint16_t value){
 
    debugLog("SPI1 write, old value:0x%04X, value:0x%04X\n", oldSpiCont1, value);
 
+   if(value & 0x0400){
+      //slave mode, dont know what to do
+      debugLog("SPI1 set to slave mode, PC:0x%08X\n", m68k_get_reg(NULL, M68K_REG_PPC));
+   }
+
    //do a transfer
-   if(value & oldSpiCont1 & 0x0200 && value & 0x0100 && spi1TxPosition > 0){
+   if(value & oldSpiCont1 & 0x0200 && value & 0x0100){
       //enabled and exchange set
       uint8_t bitCount = (value & 0x000F) + 1;
       uint16_t startBit = 1 << (bitCount - 1);
-      uint16_t currentTxFifoEntry = spi1TxFifo[0];
-      uint16_t newRxFifoEntry = 0;
 
       debugLog("SPI1 transfer, PC:0x%08X\n", m68k_get_reg(NULL, M68K_REG_PPC));
 
-      for(uint8_t bits = 0; bits < bitCount; bits++){
-         newRxFifoEntry |= sdCardExchangeBit(currentTxFifoEntry & startBit);
-         newRxFifoEntry <<= 1;
-         currentTxFifoEntry <<= 1;
-      }
+      while(spi1TxFifoEntrys() > 0){
+         uint16_t currentTxFifoEntry = spi1TxFifoRead();
+         uint16_t newRxFifoEntry = 0;
 
-      //add received data to RX FIFO
-      if(spi1RxPosition < 8){
-         //not full, add entry
-         spi1RxFifo[spi1RxPosition] = newRxFifoEntry;
-         spi1RxPosition++;
-      }
+         for(uint8_t bits = 0; bits < bitCount; bits++){
+            newRxFifoEntry |= sdCardExchangeBit(currentTxFifoEntry & startBit);
+            newRxFifoEntry <<= 1;
+            currentTxFifoEntry <<= 1;
+         }
 
-      //remove used TX FIFO entry
-      spi1TxPosition--;
-      for(uint8_t count = 0; count < spi1TxPosition; count++)
-         spi1TxFifo[count] = spi1TxFifo[count + 1];
+         spi1RxFifoWrite(newRxFifoEntry);
+
+         //overflow occured, remove 1 FIFO entry
+         //I do not currently know if the FIFO entry is removed from the back or front of the FIFO, going with the back for now
+         if(spi1RxFifoEntrys() == 0)
+            spi1RxFifoRead();
+      }
    }
 
    registerArrayWrite16(SPICONT1, value);
@@ -508,11 +548,6 @@ static inline uint8_t getPortKValue(){
 static inline uint8_t getPortMValue(){
    //bit 5 has a pull up not pull down, bits 4-0 have a pull down, bit 7-6 are not active at all
    return ((registerArrayRead8(PMDATA) & registerArrayRead8(PMDIR)) | (~registerArrayRead8(PMDIR) & 0x20)) & registerArrayRead8(PMSEL);
-}
-
-static inline uint16_t getSpiTest(){
-   //SSTATUS is unemulated because the datasheet has no descrption of how it works
-   return spi1RxPosition << 4 | spi1TxPosition;
 }
 
 static inline uint16_t getPwmc1(){

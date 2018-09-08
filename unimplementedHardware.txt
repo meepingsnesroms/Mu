@@ -25,6 +25,7 @@ Edge triggered IRQ* and INT* interrupt pins may actually read the value of the i
 ICR POL(1,2,3,6) may flip the pin value as well as the interrupt, POL5 does not flip the INT5 pin though, this was confirmed with a hardware test
 port d data register seems to have its data bits cleared when an edge triggered interrupt is cleared(according to MC68VZ328UM.pdf Page 10-15)
 USB chip seems to share an interrupt with the SD card
+RxOverflow on SPI1, don't know if back or front of FIFO is overwritten on overflow(currently losing oldest entry)
 
 Debug tools:
 missing home screen icons

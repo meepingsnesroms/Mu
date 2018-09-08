@@ -162,9 +162,9 @@ uint64_t emulatorGetStateSize(){
    size += sizeof(uint32_t);//clk32Counter
    size += sizeof(uint16_t) * 2;//timerStatusReadAcknowledge
    size += sizeof(uint32_t);//interruptEdgeTriggered
-   size += sizeof(uint16_t) * 8;//RX 8 * 16 SPI1 FIFO
-   size += sizeof(uint16_t) * 8;//TX 8 * 16 SPI1 FIFO
-   size += sizeof(uint8_t) * 2;//spi1(R/T)xPosition
+   size += sizeof(uint16_t) * 9;//RX 8 * 16 SPI1 FIFO, 1 index is for FIFO full
+   size += sizeof(uint16_t) * 9;//TX 8 * 16 SPI1 FIFO, 1 index is for FIFO full
+   size += sizeof(uint8_t) * 4;//spi1(R/T)x(Read/Write)Position
    size += sizeof(uint8_t) * 7;//palmMisc
    size += palmSdCard.size;//palmSdCard.data
    
@@ -254,17 +254,21 @@ bool emulatorSaveState(buffer_t buffer){
    offset += sizeof(uint32_t);
 
    //SPI1
-   for(uint8_t fifoPosition = 0; fifoPosition < 8; fifoPosition++){
+   for(uint8_t fifoPosition = 0; fifoPosition < 9; fifoPosition++){
       writeStateValueUint16(buffer.data + offset, spi1RxFifo[fifoPosition]);
       offset += sizeof(uint16_t);
    }
-   for(uint8_t fifoPosition = 0; fifoPosition < 8; fifoPosition++){
+   for(uint8_t fifoPosition = 0; fifoPosition < 9; fifoPosition++){
       writeStateValueUint16(buffer.data + offset, spi1TxFifo[fifoPosition]);
       offset += sizeof(uint16_t);
    }
-   writeStateValueUint8(buffer.data + offset, spi1RxPosition);
+   writeStateValueUint8(buffer.data + offset, spi1RxReadPosition);
    offset += sizeof(uint8_t);
-   writeStateValueUint8(buffer.data + offset, spi1TxPosition);
+   writeStateValueUint8(buffer.data + offset, spi1RxWritePosition);
+   offset += sizeof(uint8_t);
+   writeStateValueUint8(buffer.data + offset, spi1TxReadPosition);
+   offset += sizeof(uint8_t);
+   writeStateValueUint8(buffer.data + offset, spi1TxWritePosition);
    offset += sizeof(uint8_t);
    
    //misc
@@ -375,17 +379,21 @@ bool emulatorLoadState(buffer_t buffer){
    offset += sizeof(uint32_t);
 
    //SPI1
-   for(uint8_t fifoPosition = 0; fifoPosition < 8; fifoPosition++){
+   for(uint8_t fifoPosition = 0; fifoPosition < 9; fifoPosition++){
       spi1RxFifo[fifoPosition] = readStateValueUint16(buffer.data + offset);
       offset += sizeof(uint16_t);
    }
-   for(uint8_t fifoPosition = 0; fifoPosition < 8; fifoPosition++){
+   for(uint8_t fifoPosition = 0; fifoPosition < 9; fifoPosition++){
       spi1TxFifo[fifoPosition] = readStateValueUint16(buffer.data + offset);
       offset += sizeof(uint16_t);
    }
-   spi1RxPosition = readStateValueUint8(buffer.data + offset);
+   spi1RxReadPosition = readStateValueUint8(buffer.data + offset);
    offset += sizeof(uint8_t);
-   spi1TxPosition = readStateValueUint8(buffer.data + offset);
+   spi1RxWritePosition = readStateValueUint8(buffer.data + offset);
+   offset += sizeof(uint8_t);
+   spi1TxReadPosition = readStateValueUint8(buffer.data + offset);
+   offset += sizeof(uint8_t);
+   spi1TxWritePosition = readStateValueUint8(buffer.data + offset);
    offset += sizeof(uint8_t);
    
    //misc
