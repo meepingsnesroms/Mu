@@ -17,6 +17,7 @@ var getClk32Frequency();
 var getDeviceInfo();
 var getCpuInfo();
 var getInterruptInfo();
+var getIcrInversion();
 var toggleBacklight();
 var toggleMotor();
 var toggleAlarmLed();

@@ -35,29 +35,39 @@ var testButtonInput(){
       frameCount = 0;
    }
    
-   if(getButton(buttonLeft) && getButton(buttonRight) && getButton(buttonUp) && getButton(buttonBack) && !getButton(buttonDown) && !getButton(buttonSelect)){
+   if(getButton(buttonUp) && !getButton(buttonDown)){
       firstRun = true;
       writeArbitraryMemory8(HW_REG_ADDR(PDPOL), portDOriginalPolarity);
       exitSubprogram();
    }
-
    
-   UG_PutString(0, y, "Press Left,Right,Up and Back to exit this test.");
+   UG_PutString(0, y, "Press Up but not Down to exit this test.");
    y += (FONT_HEIGHT + 1) * 2;
    
    UG_PutString(0, y, "This requirement is to allow button testing.");
    y += (FONT_HEIGHT + 1) * 2;
    
+   StrPrintF(sharedDataBuffer, "PDDIR:0x%02X", readArbitraryMemory8(HW_REG_ADDR(PDDIR)));
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   StrPrintF(sharedDataBuffer, "PDSEL:0x%02X", readArbitraryMemory8(HW_REG_ADDR(PDSEL)));
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
    StrPrintF(sharedDataBuffer, "PDPOL:0x%02X", readArbitraryMemory8(HW_REG_ADDR(PDPOL)));
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
    StrPrintF(sharedDataBuffer, "PDDATA:0x%02X", readArbitraryMemory8(HW_REG_ADDR(PDDATA)));
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
+   StrPrintF(sharedDataBuffer, "PDIRQEN:0x%02X", readArbitraryMemory8(HW_REG_ADDR(PDIRQEN)));
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   StrPrintF(sharedDataBuffer, "PDIRQEG:0x%02X", readArbitraryMemory8(HW_REG_ADDR(PDIRQEG)));
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
    StrPrintF(sharedDataBuffer, "PDKBEN:0x%02X", readArbitraryMemory8(HW_REG_ADDR(PDKBEN)));
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
-   
    
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
@@ -640,6 +650,47 @@ var getInterruptInfo(){
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
    StrPrintF(sharedDataBuffer, "ICR:0x%02X", readArbitraryMemory16(HW_REG_ADDR(ICR)));
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   
+   return makeVar(LENGTH_0, TYPE_NULL, 0);
+}
+
+var getIcrInversion(){
+   static Boolean firstRun = true;
+   uint16_t oldIcr;
+   uint8_t portDValues[2];
+   uint16_t y = 0;
+   
+   if(firstRun){
+      debugSafeScreenClear(C_WHITE);
+      firstRun = false;
+   }
+   
+   if(getButtonPressed(buttonBack)){
+      firstRun = true;
+      exitSubprogram();
+   }
+   
+   turnInterruptsOff();
+   oldIcr = readArbitraryMemory16(HW_REG_ADDR(ICR));
+   
+   //not inverted
+   portDValues[0] = readArbitraryMemory8(HW_REG_ADDR(PDDATA));
+   
+   writeArbitraryMemory16(HW_REG_ADDR(ICR), oldIcr | 0xF000);
+   
+   //inverted
+   portDValues[1] = readArbitraryMemory8(HW_REG_ADDR(PDDATA));
+   
+   writeArbitraryMemory16(HW_REG_ADDR(ICR), oldIcr);
+   
+   turnInterruptsOn();
+   
+   StrPrintF(sharedDataBuffer, "PDDATA Normal:0x%02X", portDValues[0]);
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   StrPrintF(sharedDataBuffer, "PDDATA Inverted:0x%02X", portDValues[1]);
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
    

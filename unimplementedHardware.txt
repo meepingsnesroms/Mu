@@ -22,10 +22,10 @@ REFREQ clock frequency in RTCCTL should slow down the RTC when enabled
 Dont know if it possible to have the backlight on and the display off at the same time(theres no reason for it but it may be possible)
 SPI1 slave mode, should never be used
 Edge triggered IRQ* and INT* interrupt pins may actually read the value of the interrupt instead of the pin value
-ICR POL(1,2,3,6) may flip the pin value as well as the interrupt, POL5 does not flip the INT5 pin though, this was confirmed with a hardware test
 port d data register seems to have its data bits cleared when an edge triggered interrupt is cleared(according to MC68VZ328UM.pdf Page 10-15)
 USB chip seems to share an interrupt with the SD card
 RxOverflow on SPI1, don't know if back or front of FIFO is overwritten on overflow(currently losing oldest entry)
+IRQ2 seems to not even be hooked up in IDA
 
 Debug tools:
 missing home screen icons
@@ -50,6 +50,7 @@ Channels 3 and 4(they need to be scaled differently)
 
 
 Fixed:
+ICR POL(1,2,3,6) may flip the pin value as well as the interrupt, POL5 does not flip the INT5 pin though, this was confirmed with a hardware test(it doesnt)
 framebuffer accesses can cause a buffer overflow(this was always the case, its not a new bug)(just increased the buffer to an address line maskable size)
 chipselect mirroring is wrong(CS*0 and CS*1 are considered continuous when mapped with more address space than memory, mirroring is currently [CS*0, CS*1, repeat alternating till the end of address space] it should be [CS*0, repeat CS*0 until half way through CS* address space, CS*1, repeat CS*1 until end of CS* address space])
 the second line on all the chip selects is not properly emulated, they should be empty and trigger a bus error(except CSD1, it seems to follow different rules) but currently mirror the first half

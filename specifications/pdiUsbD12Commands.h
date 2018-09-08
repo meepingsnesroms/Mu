@@ -2,6 +2,21 @@
 #define PDIUSBD12_COMMANDS_HEADER
 /*PDIUSBD12 Commands*/
 
-#define READ_INTERRUPT_REGISTER 0xF4
+#define SELECT_ENDPOINT_CTRL_OUT 0x00
+#define SELECT_ENDPOINT_CTRL_IN  0x01
+#define SELECT_ENDPOINT_EP1_OUT  0x02
+#define SELECT_ENDPOINT_EP1_IN   0x03
+#define SELECT_ENDPOINT_EP2_OUT  0x04
+#define SELECT_ENDPOINT_EP2_IN   0x05
+
+#define SET_ADDRESS_ENABLE       0xD0
+
+#define SET_ENDPOINT_ENABLE      0xD8
+
+#define CLEAR_BUFFER             0xF2
+#define SET_MODE                 0xF3
+#define READ_INTERRUPT_REGISTER  0xF4
+
+#define SET_DMA                  0xFB
 
 #endif

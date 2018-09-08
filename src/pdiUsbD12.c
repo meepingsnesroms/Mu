@@ -74,7 +74,7 @@ void pdiUsbD12LoadState(uint8_t* data){
 
 uint8_t pdiUsbD12GetRegister(bool address){
    //just log all USB accesses for now
-   debugLog("USB read, address:0x%01X\n", address);
+   //debugLog("USB read, address:0x%01X\n", address);
 
    if(!address){
       //0x0 data
@@ -91,7 +91,7 @@ uint8_t pdiUsbD12GetRegister(bool address){
 
 void pdiUsbD12SetRegister(bool address, uint8_t value){
    //just log all USB accesses for now
-   debugLog("USB write, address:0x%01X, value:0x%02X\n", address, value);
+   //debugLog("USB write, address:0x%01X, value:0x%02X\n", address, value);
 
    if(!address){
       //0x0 data
@@ -109,6 +109,7 @@ void pdiUsbD12SetRegister(bool address, uint8_t value){
             break;
 
          default:
+            debugLog("USB unknown command, address:0x%01X, value:0x%02X\n", address, value);
             break;
       }
    }
