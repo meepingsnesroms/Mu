@@ -3,8 +3,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-extern bool m68328LowPowerStop;
-
 void m68328Init();
 void m68328Reset();
 uint64_t m68328StateSize();

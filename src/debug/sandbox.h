@@ -6,7 +6,8 @@
 enum{
    SANDBOX_TEST_OS_VER = 0,
    SANDBOX_TEST_TOUCH_READ,
-   SANDBOX_SEND_OS_TOUCH
+   SANDBOX_SEND_OS_TOUCH,
+   SANDBOX_PATCH_OS
 };
 
 typedef struct{
@@ -17,6 +18,7 @@ typedef struct{
 
 void sandboxInit();
 void sandboxTest(uint32_t test);
+void sandboxBreakpoint();
 void sandboxOnOpcodeRun();
 bool sandboxRunning();
 void sandboxReturn();//should only be called called by 68k code

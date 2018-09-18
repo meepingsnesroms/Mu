@@ -429,6 +429,7 @@ void sandboxTest(uint32_t test){
          break;
 
       case SANDBOX_SEND_OS_TOUCH:{
+            //this will not be in the v1.0 release
             if(!m68k_read_memory_8(0x00000253)){
                //0x00000253 seems to be a mutex for accessing the event queue
                //the hack only seems to work when in an interrupt, a hack for a hack :(
@@ -451,9 +452,28 @@ void sandboxTest(uint32_t test){
             }
          }
          break;
+
+      case SANDBOX_PATCH_OS:{
+            //this will not be in the v1.0 release
+            //remove parts of the OS that cause lockups, yeah its bad
+
+            //remove ErrDisplayFileLineMsg from HwrIRQ2Handler, device locks on USB polling without this
+            palmRom[0x83652] = 0x4E;
+            palmRom[0x83653] = 0x72;
+            palmRom[0x83654] = 0x4E;
+            palmRom[0x83655] = 0x72;
+         }
+         break;
    }
 
    debugLog("Sandbox: Test %d finished\n", test);
+}
+
+void sandboxBreakpoint(){
+
+   //set breakpoint here|vvv
+   uint16_t uselessDeclaration = 0;
+   //set breakpoint here|^^^
 }
 
 void sandboxOnOpcodeRun(){
@@ -473,6 +493,7 @@ void sandboxReturn(){
 #else
 void sandboxInit(){}
 void sandboxTest(uint32_t test){}
+void sandboxBreakpoint(){}
 void sandboxOnOpcodeRun(){}
 bool sandboxRunning(){return false;}
 void sandboxReturn(){}

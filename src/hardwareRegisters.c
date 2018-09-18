@@ -76,7 +76,6 @@ int32_t interruptAcknowledge(int32_t intLevel){
       vector = vectorOffset | intLevel;
 
    //only active interrupts should wake the CPU and this function is only be called when an interrupt is active in both IMR and the CPU int mask
-   m68328LowPowerStop = false;
    if(registerArrayRead8(PCTLR) & 0x80){
       registerArrayWrite8(PCTLR, registerArrayRead8(PCTLR) & 0x1F);
       recalculateCpuSpeed();

@@ -98,6 +98,9 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t spec
    ads7846Reset();
    pdiUsbD12Reset();
    sandboxInit();
+
+   //hack, patch ROM image
+   sandboxTest(SANDBOX_PATCH_OS);
    
    memset(&palmInput, 0x00, sizeof(palmInput));
    memset(&palmSdCard, 0x00, sizeof(palmSdCard));
@@ -471,6 +474,7 @@ uint32_t emulatorInstallPrcPdb(buffer_t file){
 void emulateFrame(){
    refreshInputState();
 
+   //hack, touch injection, ADS7846 touch dosent work yet
    static uint16_t oldTouchX = 0;
    static uint16_t oldTouchY = 0;
    static bool oldTouchDown = false;
@@ -481,24 +485,8 @@ void emulateFrame(){
       oldTouchDown = palmInput.touchscreenTouched;
    }
 
-   //hack, this is just an easy way to use the sandbox without attaching it to the emulator frontend
-   /*
-   static bool allowRun1 = true;
-   if(palmInput.buttonUp){
-      palmInput.buttonUp = false;
-
-      if(allowRun1){
-         sandboxTest(SANDBOX_SEND_OS_TOUCH);
-         allowRun1 = false;
-      }
-   }
-   else{
-      allowRun1 = true;
-   }
-   */
-
    while(palmCycleCounter < CRYSTAL_FREQUENCY / EMU_FPS){
-      if(palmCrystalCycles != 0.0 && !m68328LowPowerStop){
+      if(palmCrystalCycles != 0.0){
          //the frequency can change mid frame and get stuck in an infinite loop because of a divide by 0.0
          //+= m68k_execute(palmCrystalCycles{old value} * palmClockMultiplier) / (palmCrystalCycles{new value of 0.0} * palmClockMultiplier) == infinity
          double currentFrequency = palmCrystalCycles;
