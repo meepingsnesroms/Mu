@@ -23,7 +23,6 @@ Dont know if it possible to have the backlight on and the display off at the sam
 SPI1 slave mode, should never be used
 Edge triggered IRQ* and INT* interrupt pins may actually read the value of the interrupt instead of the pin value(IRQ* reads the pin, INT* hasn't been tested yet)
 port d data register seems to have its data bits cleared when an edge triggered interrupt is cleared(according to MC68VZ328UM.pdf Page 10-15)
-USB chip seems to share an interrupt with the SD card
 RxOverflow on SPI1, don't know if back or front of FIFO is overwritten on overflow(currently losing oldest entry)
 ICR POL(1,2,3,6) may flip the pin value as well as the interrupt, POL5 does not flip the INT5 pin though, this was confirmed with a hardware test(it doesnt seem to but there is instability on the pin when the SD card is plugged in, this may have to do with card detect also being a data line on the SD pinout)
 
@@ -50,6 +49,7 @@ Channels 3 and 4(they need to be scaled differently)
 
 
 Fixed:
+USB chip seems to share an interrupt with the SD card(the SD card interrupt is unimplemented at boot and triggers a printf over USB instead, if USB is not properly emulated that will cause a lock up)
 IRQ2 seems to not even be hooked up in IDA(IRQ2 is setup after boot by the SD driver, the kernels IRQ2 driver only sends a debug message over USB or serial)
 framebuffer accesses can cause a buffer overflow(this was always the case, its not a new bug)(just increased the buffer to an address line maskable size)
 chipselect mirroring is wrong(CS*0 and CS*1 are considered continuous when mapped with more address space than memory, mirroring is currently [CS*0, CS*1, repeat alternating till the end of address space] it should be [CS*0, repeat CS*0 until half way through CS* address space, CS*1, repeat CS*1 until end of CS* address space])

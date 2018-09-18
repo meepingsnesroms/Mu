@@ -98,9 +98,6 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t spec
    ads7846Reset();
    pdiUsbD12Reset();
    sandboxInit();
-
-   //hack, patch ROM image
-   sandboxTest(SANDBOX_PATCH_OS);
    
    memset(&palmInput, 0x00, sizeof(palmInput));
    memset(&palmSdCard, 0x00, sizeof(palmSdCard));
@@ -114,6 +111,10 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t spec
    setRtc(0,0,0,0);//RTCTIME and DAYR are not cleared by reset, clear them manually in case the frontend doesnt set the RTC
 
    emulatorInitialized = true;
+
+   //hack, patch ROM image
+   sandboxTest(SANDBOX_PATCH_OS);
+
    return EMU_ERROR_NONE;
 }
 

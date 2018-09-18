@@ -72,7 +72,7 @@
  * auto-clear when the interrupt is serviced.
  */
 #define M68K_EMULATE_INT_ACK        OPT_ON
-#define M68K_INT_ACK_CALLBACK(A)    interruptAcknowledge(A)
+#define M68K_INT_ACK_CALLBACK(A)    your_int_ack_handler_function(A)
 
 
 /* If ON, CPU will call the breakpoint acknowledge callback when it encounters
@@ -91,7 +91,7 @@
  * instruction.
  */
 #define M68K_EMULATE_RESET          OPT_ON
-#define M68K_RESET_CALLBACK()       emulatorReset()
+#define M68K_RESET_CALLBACK()       your_reset_handler_function()
 
 
 /* If ON, CPU will call the set fc callback on every memory access to

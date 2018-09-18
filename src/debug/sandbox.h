@@ -18,7 +18,6 @@ typedef struct{
 
 void sandboxInit();
 void sandboxTest(uint32_t test);
-void sandboxBreakpoint();
 void sandboxOnOpcodeRun();
 bool sandboxRunning();
 void sandboxReturn();//should only be called called by 68k code

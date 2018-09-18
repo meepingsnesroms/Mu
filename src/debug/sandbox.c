@@ -459,9 +459,9 @@ void sandboxTest(uint32_t test){
 
             //remove ErrDisplayFileLineMsg from HwrIRQ2Handler, device locks on USB polling without this
             palmRom[0x83652] = 0x4E;
-            palmRom[0x83653] = 0x72;
+            palmRom[0x83653] = 0x71;
             palmRom[0x83654] = 0x4E;
-            palmRom[0x83655] = 0x72;
+            palmRom[0x83655] = 0x71;
          }
          break;
    }
@@ -469,17 +469,61 @@ void sandboxTest(uint32_t test){
    debugLog("Sandbox: Test %d finished\n", test);
 }
 
-void sandboxBreakpoint(){
-
-   //set breakpoint here|vvv
-   uint16_t uselessDeclaration = 0;
-   //set breakpoint here|^^^
-}
-
 void sandboxOnOpcodeRun(){
 #if defined(EMU_SANDBOX_LOG_APIS)
    logApiCalls();
 #endif
+   switch(m68k_get_reg(NULL, M68K_REG_PPC)){
+
+      case 0x10083652://USB issue location
+         //to add a emulator breakpoint add a new line above here|^^^
+         {
+            uint32_t m68kRegisters[M68K_REG_CPU_TYPE];
+
+            for(uint8_t count = 0; count < M68K_REG_CPU_TYPE; count++)
+               m68kRegisters[count] = m68k_get_reg(NULL, count);
+
+            /*
+            register order, read m68kRegisters with debugger
+            M68K_REG_D0,
+            M68K_REG_D1,
+            M68K_REG_D2,
+            M68K_REG_D3,
+            M68K_REG_D4,
+            M68K_REG_D5,
+            M68K_REG_D6,
+            M68K_REG_D7,
+            M68K_REG_A0,
+            M68K_REG_A1,
+            M68K_REG_A2,
+            M68K_REG_A3,
+            M68K_REG_A4,
+            M68K_REG_A5,
+            M68K_REG_A6,
+            M68K_REG_A7,
+            M68K_REG_PC,
+            M68K_REG_SR,
+            M68K_REG_SP,
+            M68K_REG_USP,
+            M68K_REG_ISP,
+            M68K_REG_MSP,
+            M68K_REG_SFC,
+            M68K_REG_DFC,
+            M68K_REG_VBR,
+            M68K_REG_CACR,
+            M68K_REG_CAAR,
+            M68K_REG_PREF_ADDR,
+            M68K_REG_PREF_DATA,
+            M68K_REG_PPC,
+            M68K_REG_IR
+            */
+
+            //set host breakpoint here|vvv
+            bool breakHere = true;
+            //set host breakpoint here|^^^
+         }
+         break;
+   }
 }
 
 bool sandboxRunning(){
@@ -493,7 +537,6 @@ void sandboxReturn(){
 #else
 void sandboxInit(){}
 void sandboxTest(uint32_t test){}
-void sandboxBreakpoint(){}
 void sandboxOnOpcodeRun(){}
 bool sandboxRunning(){return false;}
 void sandboxReturn(){}
