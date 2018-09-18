@@ -675,12 +675,12 @@ var getIcrInversion(){
    turnInterruptsOff();
    oldIcr = readArbitraryMemory16(HW_REG_ADDR(ICR));
    
-   //not inverted
+   /*not inverted*/
    portDValues[0] = readArbitraryMemory8(HW_REG_ADDR(PDDATA));
    
    writeArbitraryMemory16(HW_REG_ADDR(ICR), oldIcr | 0xF000);
    
-   //inverted
+   /*inverted*/
    portDValues[1] = readArbitraryMemory8(HW_REG_ADDR(PDDATA));
    
    writeArbitraryMemory16(HW_REG_ADDR(ICR), oldIcr);
@@ -693,6 +693,77 @@ var getIcrInversion(){
    StrPrintF(sharedDataBuffer, "PDDATA Inverted:0x%02X", portDValues[1]);
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
+   
+   return makeVar(LENGTH_0, TYPE_NULL, 0);
+}
+
+var doesIrq2ClearChangePinValue(){
+   static Boolean firstRun = true;
+   
+   if(firstRun){
+      uint16_t oldIcr;
+      uint16_t y = 0;
+      
+      turnInterruptsOff();
+      
+      debugSafeScreenClear(C_WHITE);
+      
+      oldIcr = readArbitraryMemory16(HW_REG_ADDR(ICR));
+      
+      if(!(readArbitraryMemory8(HW_REG_ADDR(PDDATA)) & 0x20)){
+         StrPrintF(sharedDataBuffer, "Remove SD Card");
+         UG_PutString(0, y, sharedDataBuffer);
+         y += FONT_HEIGHT + 1;
+         forceFrameRedraw();
+         while(!(readArbitraryMemory8(HW_REG_ADDR(PDDATA)) & 0x20));/*SD is still inserted*/
+      }
+      
+      /*set to edge triggered mode and reset IRQ2, trigger on insert event*/
+      writeArbitraryMemory16(HW_REG_ADDR(ICR), (oldIcr | 0x0400) & 0xBFFF);
+      writeArbitraryMemory32(HW_REG_ADDR(ISR), 0x00020000);
+      StrPrintF(sharedDataBuffer, "IRQ2 Pin:%s", (readArbitraryMemory8(HW_REG_ADDR(PDDATA)) & 0x20) ? "true " : "false");
+      UG_PutString(0, y, sharedDataBuffer);
+      y += FONT_HEIGHT + 1;
+      StrPrintF(sharedDataBuffer, "IPR IRQ2:%s", (readArbitraryMemory32(HW_REG_ADDR(IPR)) & 0x00020000) ? "true " : "false");
+      UG_PutString(0, y, sharedDataBuffer);
+      y += FONT_HEIGHT + 1;
+      forceFrameRedraw();
+      
+      StrPrintF(sharedDataBuffer, "Insert SD Card");
+      UG_PutString(0, y, sharedDataBuffer);
+      y += FONT_HEIGHT + 1;
+      forceFrameRedraw();
+      while(readArbitraryMemory8(HW_REG_ADDR(PDDATA)) & 0x20);/*SD is not inserted*/
+      StrPrintF(sharedDataBuffer, "IRQ2 Pin:%s", (readArbitraryMemory8(HW_REG_ADDR(PDDATA)) & 0x20) ? "true " : "false");
+      UG_PutString(0, y, sharedDataBuffer);
+      y += FONT_HEIGHT + 1;
+      StrPrintF(sharedDataBuffer, "IPR IRQ2:%s", (readArbitraryMemory32(HW_REG_ADDR(IPR)) & 0x00020000) ? "true " : "false");
+      UG_PutString(0, y, sharedDataBuffer);
+      y += FONT_HEIGHT + 1;
+      
+      writeArbitraryMemory32(HW_REG_ADDR(ISR), 0x00020000);
+      StrPrintF(sharedDataBuffer, "IRQ2 Cleared");
+      UG_PutString(0, y, sharedDataBuffer);
+      y += FONT_HEIGHT + 1;
+      StrPrintF(sharedDataBuffer, "IRQ2 Pin:%s", (readArbitraryMemory8(HW_REG_ADDR(PDDATA)) & 0x20) ? "true " : "false");
+      UG_PutString(0, y, sharedDataBuffer);
+      y += FONT_HEIGHT + 1;
+      StrPrintF(sharedDataBuffer, "IPR IRQ2:%s", (readArbitraryMemory32(HW_REG_ADDR(IPR)) & 0x00020000) ? "true " : "false");
+      UG_PutString(0, y, sharedDataBuffer);
+      y += FONT_HEIGHT + 1;
+      forceFrameRedraw();
+      
+      writeArbitraryMemory16(HW_REG_ADDR(ICR), oldIcr);
+      
+      turnInterruptsOn();
+      
+      firstRun = false;
+   }
+   
+   if(getButtonPressed(buttonBack)){
+      firstRun = true;
+      exitSubprogram();
+   }
    
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
