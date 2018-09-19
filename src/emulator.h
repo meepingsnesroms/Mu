@@ -10,7 +10,7 @@ extern "C" {
 #include <stdarg.h>
 #include <stdio.h>
 
-#include "memoryAccess.h"//for size macros
+//#include "memoryAccess.h"//for size macros
 #include "specs/emuFeatureRegistersSpec.h"
 
 //to enable degguging define EMU_DEBUG, all options below do nothing unless EMU_DEBUG is defined
@@ -91,6 +91,12 @@ typedef struct{
 }input_t;
 
 typedef struct{
+   uint8_t  response;
+   uint8_t  dataPacket[1 + 2048 + 2];
+   buffer_t flashChip;
+}sd_card_t;
+
+typedef struct{
    bool    powerButtonLed;
    bool    lcdOn;
    uint8_t backlightLevel;
@@ -113,7 +119,7 @@ extern uint8_t*  palmRam;//dont touch
 extern uint8_t*  palmRom;//dont touch
 extern uint8_t   palmReg[];//dont touch
 extern input_t   palmInput;//write allowed
-extern buffer_t  palmSdCard;//dont touch
+extern sd_card_t palmSdCard;//dont touch
 extern misc_hw_t palmMisc;//read/write allowed
 extern uint16_t  palmFramebuffer[];//read allowed if FEATURE_320x320 is off, or else invalid data will be displayed
 extern uint16_t* palmExtendedFramebuffer;//read allowed if FEATURE_320x320 is on, or else SIGSEGV

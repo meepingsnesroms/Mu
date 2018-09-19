@@ -36,7 +36,7 @@ uint8_t*  palmRam;
 uint8_t*  palmRom;
 uint8_t   palmReg[REG_SIZE];
 input_t   palmInput;
-buffer_t  palmSdCard;
+sd_card_t palmSdCard;
 misc_hw_t palmMisc;
 uint16_t  palmFramebuffer[160 * (160 + 60)];//really 160*160, the extra pixels are the silkscreened digitizer area
 uint16_t* palmExtendedFramebuffer;
@@ -124,8 +124,8 @@ void emulatorExit(){
       free(palmRom);
       if(palmSpecialFeatures & FEATURE_320x320)
          free(palmExtendedFramebuffer);
-      if(palmSdCard.data)
-         free(palmSdCard.data);
+      if(palmSdCard.flashChip.data)
+         free(palmSdCard.flashChip.data);
       emulatorInitialized = false;
    }
 }
@@ -148,7 +148,7 @@ uint64_t emulatorGetStateSize(){
    
    size += sizeof(uint32_t);//save state version
    size += sizeof(uint32_t);//palmSpecialFeatures
-   size += sizeof(uint64_t);//palmSdCard.size, needs to be done first to verify the malloc worked
+   size += sizeof(uint64_t);//palmSdCard.flashChip.size, needs to be done first to verify the malloc worked
    size += m68328StateSize();
    size += sed1376StateSize();
    size += ads7846StateSize();
@@ -170,7 +170,9 @@ uint64_t emulatorGetStateSize(){
    size += sizeof(uint16_t) * 9;//TX 8 * 16 SPI1 FIFO, 1 index is for FIFO full
    size += sizeof(uint8_t) * 4;//spi1(R/T)x(Read/Write)Position
    size += sizeof(uint8_t) * 7;//palmMisc
-   size += palmSdCard.size;//palmSdCard.data
+   size += sizeof(uint8_t);//palmSdCard.response
+   size += sizeof(palmSdCard.dataPacket);//palmSdCard.dataPacket
+   size += palmSdCard.flashChip.size;//palmSdCard.flashChip.data
    
    return size;
 }
@@ -190,7 +192,7 @@ bool emulatorSaveState(buffer_t buffer){
    offset += sizeof(uint32_t);
 
    //SD card size
-   writeStateValueUint64(buffer.data + offset, palmSdCard.size);
+   writeStateValueUint64(buffer.data + offset, palmSdCard.flashChip.size);
    offset += sizeof(uint64_t);
    
    //chips
@@ -291,9 +293,13 @@ bool emulatorSaveState(buffer_t buffer){
    writeStateValueUint8(buffer.data + offset, palmMisc.dataPort);
    offset += sizeof(uint8_t);
 
-   //SD card data
-   memcpy(buffer.data + offset, palmSdCard.data, palmSdCard.size);
-   offset += palmSdCard.size;
+   //SD card
+   writeStateValueUint8(buffer.data + offset, palmSdCard.response);
+   offset += sizeof(uint8_t);
+   memcpy(buffer.data + offset, palmSdCard.dataPacket, sizeof(palmSdCard.dataPacket));
+   offset += sizeof(palmSdCard.dataPacket);
+   memcpy(buffer.data + offset, palmSdCard.flashChip.data, palmSdCard.flashChip.size);
+   offset += palmSdCard.flashChip.size;
 
    return true;
 }
@@ -416,12 +422,16 @@ bool emulatorLoadState(buffer_t buffer){
    palmMisc.dataPort = readStateValueUint8(buffer.data + offset);
    offset += sizeof(uint8_t);
 
-   //SD card data
-   if(palmSdCard.data)
-      free(palmSdCard.data);
-   palmSdCard.data = stateSdCardBuffer;
-   palmSdCard.size = stateSdCardSize;
-   memcpy(palmSdCard.data, buffer.data + offset, stateSdCardSize);
+   //SD card
+   palmSdCard.response = readStateValueUint8(buffer.data + offset);
+   offset += sizeof(uint8_t);
+   memcpy(palmSdCard.dataPacket, buffer.data + offset, sizeof(palmSdCard.dataPacket));
+   offset += sizeof(palmSdCard.dataPacket);
+   if(palmSdCard.flashChip.data)
+      free(palmSdCard.flashChip.data);
+   palmSdCard.flashChip.data = stateSdCardBuffer;
+   palmSdCard.flashChip.size = stateSdCardSize;
+   memcpy(palmSdCard.flashChip.data, buffer.data + offset, stateSdCardSize);
    offset += stateSdCardSize;
 
    return true;
@@ -437,33 +447,33 @@ buffer_t emulatorGetRamBuffer(){
 }
 
 buffer_t emulatorGetSdCardBuffer(){
-   return palmSdCard;
+   return palmSdCard.flashChip;
 }
 
 uint32_t emulatorInsertSdCard(buffer_t image){
    //SD card is currently inserted
-   if(palmSdCard.data)
+   if(palmSdCard.flashChip.data)
       return EMU_ERROR_RESOURCE_LOCKED;
 
-   palmSdCard.data = malloc(image.size);
-   if(!palmSdCard.data)
+   palmSdCard.flashChip.data = malloc(image.size);
+   if(!palmSdCard.flashChip.data)
       return EMU_ERROR_OUT_OF_MEMORY;
 
    if(image.data)
-      memcpy(palmSdCard.data, image.data, image.size);
+      memcpy(palmSdCard.flashChip.data, image.data, image.size);
    else
-      memset(palmSdCard.data, 0x00, image.size);
+      memset(palmSdCard.flashChip.data, 0x00, image.size);
 
-   palmSdCard.size = image.size;
+   palmSdCard.flashChip.size = image.size;
 
    return EMU_ERROR_NONE;
 }
 
 void emulatorEjectSdCard(){
-   if(palmSdCard.data)
-      free(palmSdCard.data);
-   palmSdCard.data = NULL;
-   palmSdCard.size = 0;
+   //clear SD flash chip and controller
+   if(palmSdCard.flashChip.data)
+      free(palmSdCard.flashChip.data);
+   memset(&palmSdCard, 0x00, sizeof(palmSdCard));
 }
 
 uint32_t emulatorInstallPrcPdb(buffer_t file){

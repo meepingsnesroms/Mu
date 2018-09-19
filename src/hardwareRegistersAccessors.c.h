@@ -443,7 +443,7 @@ static inline uint8_t getPortDInputPinValues(){
 
    //portDInputValues |= 0x80;//battery dead bit, dont know the proper level to set this
 
-   if(palmSdCard.data)
+   if(palmSdCard.flashChip.data)
       portDInputValues |= 0x20;
 
    //kbd row 0
