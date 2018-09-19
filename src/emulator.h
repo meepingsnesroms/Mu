@@ -112,7 +112,7 @@ typedef struct{
 
 //config options
 #define EMU_FPS 60.0
-#define SAVE_STATE_VERSION 4
+#define SAVE_STATE_VERSION 0
 
 //emulator data, some are GUI interface variables, some should be left alone
 extern uint8_t*  palmRam;//dont touch
