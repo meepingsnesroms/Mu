@@ -475,17 +475,6 @@ uint32_t emulatorInstallPrcPdb(buffer_t file){
 void emulateFrame(){
    refreshInputState();
 
-   //hack, touch injection, ADS7846 touch dosent work yet
-   static uint16_t oldTouchX = 0;
-   static uint16_t oldTouchY = 0;
-   static bool oldTouchDown = false;
-   if(palmInput.touchscreenX != oldTouchX || palmInput.touchscreenY != oldTouchY || palmInput.touchscreenTouched != oldTouchDown){
-      sandboxTest(SANDBOX_SEND_OS_TOUCH);
-      oldTouchX = palmInput.touchscreenX;
-      oldTouchY = palmInput.touchscreenY;
-      oldTouchDown = palmInput.touchscreenTouched;
-   }
-
    while(palmCycleCounter < CRYSTAL_FREQUENCY / EMU_FPS){
       if(palmCrystalCycles != 0.0){
          //the frequency can change mid frame and get stuck in an infinite loop because of a divide by 0.0

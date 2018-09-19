@@ -88,11 +88,11 @@ bool ads7846ExchangeBit(bool bitIn){
    if(ads7846BitsToNextControl == 6){
       //control byte and busy cycle finished, get output value
       bool bitMode = ads7846ControlByte & 0x08;
-      bool differentialMode = !(ads7846ControlByte & 0x04);
+      //bool differentialMode = !(ads7846ControlByte & 0x04);
       uint8_t channel = (ads7846ControlByte & 0x70) >> 4;
       uint8_t powerSave = ads7846ControlByte & 0x03;
 
-      debugLog("Accessed ADS7846 Ch:%d, %d bits, %s Mode, Power Save:%d, PC:0x%08X.\n", channel, bitMode ? 8 : 12, differentialMode ? "Diff" : "Normal", ads7846ControlByte & 0x03, m68k_get_reg(NULL, M68K_REG_PPC));
+      //debugLog("Accessed ADS7846 Ch:%d, %d bits, %s Mode, Power Save:%d, PC:0x%08X.\n", channel, bitMode ? 8 : 12, differentialMode ? "Diff" : "Normal", ads7846ControlByte & 0x03, m68k_get_reg(NULL, M68K_REG_PPC));
 
       //check if ADC is on, PENIRQ is handled in refreshInputState() in hardwareRegisters.c
       switch(powerSave){
@@ -181,10 +181,13 @@ bool ads7846ExchangeBit(bool bitIn){
 
                   case 2:
                      //battery, unknown hasent gotten low enough to test yet
+                     //ads7846OutputValue = 0x600;//5%
+                     //ads7846OutputValue = 0x61C;//30%
+                     //ads7846OutputValue = 0x63C;//40%
                      //ads7846OutputValue = 0x65C;//60%
-                     ads7846OutputValue = 0x67C;//80%
+                     //ads7846OutputValue = 0x67C;//80%
                      //ads7846OutputValue = 0x68C;//100%
-                     //ads7846OutputValue = 0x69C;//100%
+                     ads7846OutputValue = 0x69C;//100%
                      //ads7846OutputValue = ads7846RangeMap(0, 100, palmMisc.batteryLevel, 0x0000, 0x07F8);
                      break;
 

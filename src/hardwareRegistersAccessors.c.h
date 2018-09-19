@@ -298,14 +298,9 @@ static inline void setSpiCont2(uint16_t value){
    else
       clearIprIsrBit(INT_SPI2);
 
-   /*
-   if(value & 0x0200 && !(oldSpiCont2 & 0x0200)){
-      //there may be some random shifing when enableing/disableing the register
-      for(uint8_t skip = 0; skip < 3; skip++)//started with 20, 1 and 2 causes power down, 3 is the minimum that works
-         ads7846ExchangeBit(false);
-      //this for some reason prevents the battery from shooting up to 100% after a few seconds?
-   }
-   */
+   //this fixes all ADS7846 communication problems, maybe the power to the ADS7846 is cut when the transfer is over?
+   if(value & 0x0200 && !(oldSpiCont2 & 0x0200))
+      ads7846Reset();
 
    //do a transfer
    if(value & oldSpiCont2 & 0x0200 && value & 0x0100){
@@ -313,6 +308,7 @@ static inline void setSpiCont2(uint16_t value){
       uint8_t bitCount = (value & 0x000F) + 1;
       uint16_t startBit = 1 << (bitCount - 1);
       uint16_t spi2Data = registerArrayRead16(SPIDATA2);
+      bool spiClk2Enabled = !(registerArrayRead8(PESEL) & 0x04);
       bool ads7846ChipSelect = !(getPortGValue() & 0x04);//this is unproven, but having it high makes the ADS7846 not work on hardware
       //uint16_t oldSpi2Data = spi2Data;
 
@@ -320,7 +316,7 @@ static inline void setSpiCont2(uint16_t value){
       for(uint8_t bits = 0; bits < bitCount; bits++){
          bool newBit = true;
 
-         if(ads7846ChipSelect)
+         if(spiClk2Enabled && ads7846ChipSelect)
             newBit = ads7846ExchangeBit(spi2Data & startBit);
 
          //debugLog("Sent Bit:%d\n", (bool)(spi2Data & startBit));
@@ -580,7 +576,6 @@ static inline void updateBacklightAmplifierStatus(){
 }
 
 static inline void updateTouchState(){
-   /*
    //update touchscreen state
    if(!(registerArrayRead8(PFSEL) & 0x02)){
       uint16_t icr = registerArrayRead16(ICR);
@@ -600,5 +595,4 @@ static inline void updateTouchState(){
       setIprIsrBit(INT_IRQ5);
    else
       clearIprIsrBit(INT_IRQ5);
-   */
 }

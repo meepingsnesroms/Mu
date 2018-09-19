@@ -1,6 +1,5 @@
 CPU:
 sysTrapPceNativeCall, ARM Emulator
-CPU32 table lookup opcodes
 Trace T1 bit, should be unused by the OS and applications anyway
 Test what bits of IMR are writable
 
@@ -28,9 +27,10 @@ ICR POL(1,2,3,6) may flip the pin value as well as the interrupt, POL5 does not 
 
 Debug tools:
 missing home screen icons
+ADS7846 channels can't be read in single reference mode in hwTestSuite
 
 Memory:
-Sdcard can't be read or written to by Palm OS
+SD card can't be read or written to by Palm OS
 EMUCS memory range is unemulated
 unknown if DRAM bit expanded address space is used for CSC when its not an extension of CSD
 there is conflicting information on wether the DRAM bit effects CSC, needs a test made
@@ -40,15 +40,16 @@ SED1376:
 swivelview register
 
 ADS7846:
+the ADS7846 is currently being reset every time the SPI is disabled and reenabled(I don't know if this actually occurs or this is just a hack that works really well)
 verify chip select
-channels can't be read in single reference mode in hwTestSuite
-channels are not implemented properly in the emulator
-electrical noise on lines(conversions probably should have +-20 added to values)
 need to trigger a false PENIRQ interrupt on reading certain channels
-Channels 3 and 4(they need to be scaled differently)
+electrical noise on lines(conversions probably should have +-20 added to values)(probably no need for this, it works so theres no need to use less precise values)
 
 
 Fixed:
+ADS7846 channels are not implemented properly in the emulator(works now)
+ADS7846 Channels 3 and 4(they need to be scaled differently)(works now)
+CPU32 table lookup opcodes(there is no CPU32)
 USB chip seems to share an interrupt with the SD card(the SD card interrupt is unimplemented at boot and triggers a printf over USB instead, if USB is not properly emulated that will cause a lock up)
 IRQ2 seems to not even be hooked up in IDA(IRQ2 is setup after boot by the SD driver, the kernels IRQ2 driver only sends a debug message over USB or serial)
 framebuffer accesses can cause a buffer overflow(this was always the case, its not a new bug)(just increased the buffer to an address line maskable size)
