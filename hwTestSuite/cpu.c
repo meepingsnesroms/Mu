@@ -10,24 +10,19 @@
 
 static char cpuStringBuffer[100];
 static Boolean interruptsEnabled = true;
-static uint32_t oldImr;
-static uint8_t oldScr;
+static uint16_t statusRegister;
 
 
 void turnInterruptsOff(){
    if(interruptsEnabled){
-      oldImr = readArbitraryMemory32(HW_REG_ADDR(IMR));
-      oldScr = readArbitraryMemory8(HW_REG_ADDR(SCR));
-      writeArbitraryMemory32(HW_REG_ADDR(IMR), 0xFFFFFFFF);
-      writeArbitraryMemory8(HW_REG_ADDR(SCR), oldScr & 0xEF);
+      statusRegister = SysDisableInts();
       interruptsEnabled = false;
    }
 }
 
 void turnInterruptsOn(){
    if(!interruptsEnabled){
-      writeArbitraryMemory32(HW_REG_ADDR(IMR), oldImr);
-      writeArbitraryMemory8(HW_REG_ADDR(SCR), oldScr);
+      SysRestoreStatus(statusRegister);
       interruptsEnabled = true;
    }
 }

@@ -1,2 +1,17 @@
 v0.7 to v0.9(Jul 30 2018 - Sept ** 2018)
-TODO
+Still more todo
+
+Qt GUI:
+*All Button Icons Are Now SVGs(they can scale infinitely without getting blocky)
+*touch locations are now scaled properly
+*size is now correct on Android
+*loading and saving of device RAM
+*can load and save savestates
+
+Core:
+*touchscreen works without memory injection
+*can now touch the screen outside of debug mode
+*touching the screen no longer crashes anything
+*full 16mb of RAM is now present(only 8mb showed before)
+*actual vectorized Palm M515 silkscreen image is now used for the touchscreen
+*SD card can be inserted(requires hacks and isn't readable even with hacks)
