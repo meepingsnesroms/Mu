@@ -42,6 +42,7 @@ ADS7846:
 verify chip select(no test has been done yet, put everything points to port g bit 2)
 need to trigger a false PENIRQ interrupt on reading certain channels
 electrical noise on lines(conversions probably should have +-20 added to values)(probably no need for this, it works so theres no need to use less precise values)
+in the edge case that SPICLK2 is disabled while using ADS7846 and a 1 was the last bit shifted out 0s will still be shifted in
 
 
 Fixed:

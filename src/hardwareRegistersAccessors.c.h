@@ -305,19 +305,20 @@ static inline void setSpiCont2(uint16_t value){
       uint16_t startBit = 1 << (bitCount - 1);
       uint16_t spi2Data = registerArrayRead16(SPIDATA2);
       bool spiClk2Enabled = !(registerArrayRead8(PESEL) & 0x04);
-      bool ads7846ChipSelect = !(getPortGValue() & 0x04);//this is unproven, but having it high makes the ADS7846 not work on hardware
       //uint16_t oldSpi2Data = spi2Data;
 
       //the input data is shifted into the unused bits if the transfer is less than 16 bits
-      for(uint8_t bits = 0; bits < bitCount; bits++){
-         bool newBit = true;
-
-         if(spiClk2Enabled && ads7846ChipSelect)
-            newBit = ads7846ExchangeBit(spi2Data & startBit);
-
-         //debugLog("Sent Bit:%d\n", (bool)(spi2Data & startBit));
-         spi2Data <<= 1;
-         spi2Data |= newBit;
+      if(spiClk2Enabled){
+         //shift in valid data
+         for(uint8_t bits = 0; bits < bitCount; bits++){
+            bool newBit = ads7846ExchangeBit(spi2Data & startBit);
+            spi2Data <<= 1;
+            spi2Data |= newBit;
+         }
+      }
+      else{
+         //shift in 0s
+         spi2Data <<= bitCount;
       }
       registerArrayWrite16(SPIDATA2, spi2Data);
 

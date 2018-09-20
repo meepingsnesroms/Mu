@@ -19,8 +19,6 @@ static inline double ads7846RangeMap(double oldMin, double oldMax, double value,
 }
 
 static inline bool ads7846GetAdcBit(){
-   //a new control byte can be sent while receiving data
-   //this is valid behavior as long as the start of the last control byte was 16 or more clock cycles ago
    bool bit = ads7846OutputValue & 0x8000;
    ads7846OutputValue <<= 1;
    return bit;
@@ -85,11 +83,17 @@ void ads7846SetChipSelect(bool value){
 }
 
 bool ads7846ExchangeBit(bool bitIn){
+   //chip data out is high when off
+   if(ads7846ChipSelect)
+      return true;
+
    if(ads7846BitsToNextControl > 0)
       ads7846BitsToNextControl--;
 
    if(ads7846BitsToNextControl == 0){
       //check for control bit
+      //a new control byte can be sent while receiving data
+      //this is valid behavior as long as the start of the last control byte was 16 or more clock cycles ago
       if(bitIn){
          ads7846ControlByte = 0x01;
          ads7846BitsToNextControl = 15;
