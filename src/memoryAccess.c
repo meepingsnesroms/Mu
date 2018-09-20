@@ -330,7 +330,7 @@ uint32_t m68k_read_disassembler_32(uint32_t address){return m68k_read_memory_32(
 
 static uint8_t getProperBankType(uint32_t bank){
    if(BANK_IN_RANGE(bank, REG_START_ADDRESS, REG_SIZE) || ((bank & 0x00FF) == 0x00FF && registersAreXXFFMapped())){
-      //registers have first priority, they cover 0xFFFFF000(and 0xXXFFF000 when DMAP enabled in SCR) even if a chipselect overlaps this area or CHIP_A0_ROM is in boot mode
+      //registers have first priority, they cover 0xFFFFF000(and 0xXXFFF000 when DMAP enabled in SCR) even if a chip select overlaps this area or CHIP_A0_ROM is in boot mode
       return CHIP_REGISTERS;
    }
    else if(chips[CHIP_A0_ROM].inBootMode || (chips[CHIP_A0_ROM].enable && BANK_IN_RANGE(bank, chips[CHIP_A0_ROM].start, chips[CHIP_A0_ROM].lineSize))){

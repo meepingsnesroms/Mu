@@ -11,6 +11,7 @@ static const uint16_t ads7846DockResistorValues[PORT_END] = {0xFFF/*none*/, 0x1E
 static uint8_t  ads7846BitsToNextControl;//bits before starting a new control byte
 static uint8_t  ads7846ControlByte;
 static uint16_t ads7846OutputValue;
+static bool     ads7846ChipSelect;
 
 
 static inline double ads7846RangeMap(double oldMin, double oldMax, double value, double newMin, double newMax){
@@ -31,12 +32,13 @@ void ads7846Reset(){
    ads7846ControlByte = 0x00;
    ads7846PenIrqEnabled = true;
    ads7846OutputValue = 0x0000;
+   ads7846ChipSelect = false;
 }
 
 uint64_t ads7846StateSize(){
    uint64_t size = 0;
 
-   size += sizeof(uint8_t) * 3;
+   size += sizeof(uint8_t) * 4;
    size += sizeof(uint16_t);
 
    return size;
@@ -45,27 +47,41 @@ uint64_t ads7846StateSize(){
 void ads7846SaveState(uint8_t* data){
    uint64_t offset = 0;
 
+   writeStateValueBool(data + offset, ads7846PenIrqEnabled);
+   offset += sizeof(uint8_t);
    writeStateValueUint8(data + offset, ads7846BitsToNextControl);
    offset += sizeof(uint8_t);
    writeStateValueUint8(data + offset, ads7846ControlByte);
    offset += sizeof(uint8_t);
-   writeStateValueBool(data + offset, ads7846PenIrqEnabled);
-   offset += sizeof(uint8_t);
    writeStateValueUint16(data + offset, ads7846OutputValue);
    offset += sizeof(uint16_t);
+   writeStateValueBool(data + offset, ads7846ChipSelect);
+   offset += sizeof(uint8_t);
 }
 
 void ads7846LoadState(uint8_t* data){
    uint64_t offset = 0;
 
+   ads7846PenIrqEnabled = readStateValueBool(data + offset);
+   offset += sizeof(uint8_t);
    ads7846BitsToNextControl = readStateValueUint8(data + offset);
    offset += sizeof(uint8_t);
    ads7846ControlByte = readStateValueUint8(data + offset);
    offset += sizeof(uint8_t);
-   ads7846PenIrqEnabled = readStateValueBool(data + offset);
-   offset += sizeof(uint8_t);
    ads7846OutputValue = readStateValueUint16(data + offset);
    offset += sizeof(uint16_t);
+   ads7846ChipSelect = readStateValueBool(data + offset);
+   offset += sizeof(uint8_t);
+}
+
+void ads7846SetChipSelect(bool value){
+   //reset the chip when disabled, chip is active when chip select is low
+   if(value && !ads7846ChipSelect){
+      ads7846BitsToNextControl = 0;
+      ads7846ControlByte = 0x00;
+      ads7846PenIrqEnabled = true;
+      ads7846OutputValue = 0x0000;
+   }
 }
 
 bool ads7846ExchangeBit(bool bitIn){

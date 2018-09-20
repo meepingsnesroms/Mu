@@ -74,7 +74,7 @@ static inline void setCsa(uint16_t value){
    chips[CHIP_A0_ROM].readOnly = value & 0x8000;
    chips[CHIP_A0_ROM].lineSize = 0x20000/*128kb*/ << (value >> 1 & 0x0007);
 
-   //CSA is now just a normal chipselect
+   //CSA is now just a normal chip select
    if(chips[CHIP_A0_ROM].enable && chips[CHIP_A0_ROM].inBootMode)
       chips[CHIP_A0_ROM].inBootMode = false;
 
@@ -297,10 +297,6 @@ static inline void setSpiCont2(uint16_t value){
       setIprIsrBit(INT_SPI2);
    else
       clearIprIsrBit(INT_SPI2);
-
-   //this fixes all ADS7846 communication problems, maybe the power to the ADS7846 is cut when the transfer is over?
-   if(value & 0x0200 && !(oldSpiCont2 & 0x0200))
-      ads7846Reset();
 
    //do a transfer
    if(value & oldSpiCont2 & 0x0200 && value & 0x0100){
@@ -569,6 +565,10 @@ static inline void updatePowerButtonLedStatus(){
 
 static inline void updateVibratorStatus(){
    palmMisc.vibratorOn = getPortKValue() & 0x10;
+}
+
+static inline void updateAds7846ChipSelectStatus(){
+   ads7846SetChipSelect(getPortGValue() & 0x04);
 }
 
 static inline void updateBacklightAmplifierStatus(){

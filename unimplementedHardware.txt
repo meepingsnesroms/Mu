@@ -6,10 +6,8 @@ On hardware PDIRQEG seems not to actually work at all(CPUID:0x57000000)
 
 CPU I/O:
 Peripheral Control Register, audio ppm mixing selection and timer cascade mode
-Port G SPI stuff
 Setting the battery dead bit(PDDATA 0x80) if the emulated battery percent gets too low(don't know how low this is, a test will be slow and painful with how big the battery is on my device)
 DRAMC write enable
-pen input
 Port M Infrared shutdown (PMDATA 0x20)
 some undocumented I/O might be on port e and port j
 if a timer triggers more than once per CLK32(> 32768 times a second) it will lose any triggers after the first and get out of sync
@@ -17,7 +15,6 @@ SPI1, probably the SD card since SD cards use SPI for data transfer
 SPITEST SSTATUS is undocumented and therefore unemulated
 may need to trigger an interrupt if a IMR masked interrupt becomes unmasked and its bit is still set in IPR
 When SPICLK2, SPITXD or SPIRXD on port e is disabled ADS7846 functions should respond appropriately(not transmitting or receiving or blocking both for the clock)
-port g data bit 2 may need to be 0 to access ADS7846
 REFREQ clock frequency in RTCCTL should slow down the RTC when enabled
 Dont know if it possible to have the backlight on and the display off at the same time(theres no reason for it but it may be possible)
 SPI1 slave mode, should never be used
@@ -42,14 +39,18 @@ SED1376:
 swivelview register
 
 ADS7846:
-the ADS7846 is currently being reset every time the SPI is disabled and reenabled(I don't know if this actually occurs or this is just a hack that works really well)
-verify chip select
+verify chip select(no test has been done yet, put everything points to port g bit 2)
 need to trigger a false PENIRQ interrupt on reading certain channels
 electrical noise on lines(conversions probably should have +-20 added to values)(probably no need for this, it works so theres no need to use less precise values)
-pulling chip select low when high state likely resets the ADS7846 bit stream(this is currently being done when the SPI bus is enabled)
 
 
 Fixed:
+port g data bit 2 may need to be 0 to access ADS7846(it is)
+pen input
+pulling chip select low when high state likely resets the ADS7846 bit stream(this is currently being done when the SPI bus is enabled)(resetting on disable, that would make more sense because the chip needs to be read/written instantly once chip select is pulled low)
+From ADS7846 datasheet:Chip Select Input. Controls conversion timing and enables the serial input/output register. (this means the chip timing is likely reset when cs goes low)
+the ADS7846 is currently being reset every time the SPI is disabled and reenabled(happens when ADS7846 chip select is turned off, not on SPI enable)
+Port G SPI stuff(ADS7846 chip select was on port g)
 Edge triggered IRQ* interrupt pins may actually read the value of the interrupt instead of the pin value(IRQ* reads the pin, INT* still hasn't been tested yet)
 ADS7846 channels are not implemented properly in the emulator(works now)
 ADS7846 Channels 3 and 4(they need to be scaled differently)(works now)

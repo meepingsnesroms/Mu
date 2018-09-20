@@ -657,9 +657,9 @@ void setHwRegister8(uint32_t address, uint8_t value){
       case PGSEL:
       case PGDIR:
       case PGDATA:
-         //port g also does SPI stuff, unemulated so far
          //write without the top 2 bits
          registerArrayWrite8(address, value & 0x3F);
+         updateAds7846ChipSelectStatus();
          break;
          
       case PKSEL:
@@ -924,7 +924,7 @@ void setHwRegister16(uint32_t address, uint16_t value){
       case CSUGBA:
          if((value & 0xF777) != registerArrayRead16(CSUGBA)){
             registerArrayWrite16(CSUGBA, value & 0xF777);
-            //refresh all chipselect address lines
+            //refresh all chip select address lines
             setCsgba(registerArrayRead16(CSGBA));
             setCsgbb(registerArrayRead16(CSGBB));
             setCsgbd(registerArrayRead16(CSGBD));
@@ -938,7 +938,7 @@ void setHwRegister16(uint32_t address, uint16_t value){
             registerArrayWrite16(CSCTRL1, value & 0x7F55);
 
             if((value & 0x4055) != (oldCsctrl1 & 0x4055)){
-               //something important changed, update all chipselects
+               //something important changed, update all chip selects
                //CSA is not dependent on CSCTRL1
                setCsb(registerArrayRead16(CSB));
                setCsd(registerArrayRead16(CSD));
@@ -1070,7 +1070,7 @@ void resetHwRegisters(){
    spi1TxWritePosition = 0;
 
    memset(chips, 0x00, sizeof(chips));
-   //all chipselects are disabled at boot and CSA0 is mapped to 0x00000000 and covers the entire address range until CSA is set enabled
+   //all chip selects are disabled at boot and CSA0 is mapped to 0x00000000 and covers the entire address range until CSA is set enabled
    chips[CHIP_A0_ROM].inBootMode = true;
 
    //default sizes
@@ -1184,9 +1184,11 @@ void resetHwRegisters(){
    //SDRAM control, unused since RAM refresh is unemulated
    registerArrayWrite16(SDCTRL, 0x003C);
    
-   //add register settings to misc I/O
+   //move register settings to other I/O
    updatePowerButtonLedStatus();
    updateVibratorStatus();
+   updateAds7846ChipSelectStatus();
+   updateBacklightAmplifierStatus();
 
    recalculateCpuSpeed();
 }

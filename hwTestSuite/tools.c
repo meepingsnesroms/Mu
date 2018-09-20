@@ -56,7 +56,6 @@ Err makeFile(uint8_t* data, uint32_t size, char* fileName){
 uint16_t ads7846GetValue(uint8_t channel, Boolean referenceMode, Boolean mode8Bit){
    uint8_t config = 0x80;
    uint16_t value;
-   volatile uint32_t wasteTime;
    
    if(mode8Bit)
       config |= 0x08;
@@ -73,7 +72,7 @@ uint16_t ads7846GetValue(uint8_t channel, Boolean referenceMode, Boolean mode8Bi
    
    turnInterruptsOff();
    
-   /*misc configs from HwrADC, ADS7846 dosent work without these*/
+   /*ADS7846 chip select and SPI2 CLK,DIN,DOUT*/
    writeArbitraryMemory8(HW_REG_ADDR(PGDATA), readArbitraryMemory8(HW_REG_ADDR(PGDATA)) & 0xFB);
    writeArbitraryMemory8(HW_REG_ADDR(PEDIR), readArbitraryMemory8(HW_REG_ADDR(PEDIR)) | 0x01);
    writeArbitraryMemory8(HW_REG_ADDR(PEDATA), readArbitraryMemory8(HW_REG_ADDR(PEDATA)) & 0xFE);
@@ -87,11 +86,6 @@ uint16_t ads7846GetValue(uint8_t channel, Boolean referenceMode, Boolean mode8Bi
    writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), 0x4304);
    while(readArbitraryMemory16(HW_REG_ADDR(SPICONT2)) & 0x0100);
    
-   /*wait for the conversion to settle*/
-   wasteTime = 0;
-   while(wasteTime < 100)
-      wasteTime++;
-   
    /*send last 3 bits, wait 1 bit, get 8/12 bit result then pad the transfer to 16 bits*/
    writeArbitraryMemory16(HW_REG_ADDR(SPIDATA2), config << 14);
    writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), 0x430F);
@@ -103,7 +97,7 @@ uint16_t ads7846GetValue(uint8_t channel, Boolean referenceMode, Boolean mode8Bi
    /*disable SPI2*/
    writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), 0xE000);
    
-   /*misc configs from HwrADC, ADS7846 dosent work without this*/
+   /*ADS7846 chip select*/
    writeArbitraryMemory8(HW_REG_ADDR(PGDATA), readArbitraryMemory8(HW_REG_ADDR(PGDATA)) | 0x04);
    
    turnInterruptsOn();
