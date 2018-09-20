@@ -106,7 +106,7 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t spec
    
    //config
    palmClockMultiplier = (specialFeatures & FEATURE_FAST_CPU) ? 2.0 : 1.0;//overclock
-   palmClockMultiplier *= 0.80;//run at 80% speed, 20% is likely memory waitstates, at 100% it crashes on the spinning Palm welcome screen, 90% works though
+   palmClockMultiplier *= 0.80;//run at 80% speed, 20% is likely memory waitstates, at 100% it crashes on the spinning Palm welcome screen, 90% crashes at the digitizer test
    palmSpecialFeatures = specialFeatures;
    setRtc(0,0,0,0);//RTCTIME and DAYR are not cleared by reset, clear them manually in case the frontend doesnt set the RTC
 
@@ -170,7 +170,8 @@ uint64_t emulatorGetStateSize(){
    size += sizeof(uint16_t) * 9;//TX 8 * 16 SPI1 FIFO, 1 index is for FIFO full
    size += sizeof(uint8_t) * 4;//spi1(R/T)x(Read/Write)Position
    size += sizeof(uint8_t) * 7;//palmMisc
-   size += sizeof(uint8_t);//palmSdCard.response
+   size += sizeof(uint32_t);//palmSdCard.command
+   size += sizeof(uint8_t) * 2;//palmSdCard.response / palmSdCard.commandBitsRemaining
    size += sizeof(palmSdCard.dataPacket);//palmSdCard.dataPacket
    size += palmSdCard.flashChip.size;//palmSdCard.flashChip.data
    
@@ -294,6 +295,10 @@ bool emulatorSaveState(buffer_t buffer){
    offset += sizeof(uint8_t);
 
    //SD card
+   writeStateValueUint32(buffer.data + offset, palmSdCard.command);
+   offset += sizeof(uint32_t);
+   writeStateValueUint8(buffer.data + offset, palmSdCard.commandBitsRemaining);
+   offset += sizeof(uint8_t);
    writeStateValueUint8(buffer.data + offset, palmSdCard.response);
    offset += sizeof(uint8_t);
    memcpy(buffer.data + offset, palmSdCard.dataPacket, sizeof(palmSdCard.dataPacket));
@@ -423,6 +428,10 @@ bool emulatorLoadState(buffer_t buffer){
    offset += sizeof(uint8_t);
 
    //SD card
+   palmSdCard.command = readStateValueUint32(buffer.data + offset);
+   offset += sizeof(uint32_t);
+   palmSdCard.commandBitsRemaining = readStateValueUint8(buffer.data + offset);
+   offset += sizeof(uint8_t);
    palmSdCard.response = readStateValueUint8(buffer.data + offset);
    offset += sizeof(uint8_t);
    memcpy(palmSdCard.dataPacket, buffer.data + offset, sizeof(palmSdCard.dataPacket));

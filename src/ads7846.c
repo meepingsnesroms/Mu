@@ -104,8 +104,7 @@ bool ads7846ExchangeBit(bool bitIn){
       ads7846ControlByte <<= 1;
       ads7846ControlByte |= bitIn;
    }
-
-   if(ads7846BitsToNextControl == 6){
+   else if(ads7846BitsToNextControl == 6){
       //control byte and busy cycle finished, get output value
       bool bitMode = ads7846ControlByte & 0x08;
       //bool differentialMode = !(ads7846ControlByte & 0x04);

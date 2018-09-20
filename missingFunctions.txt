@@ -5,7 +5,7 @@ Nothing can be installed(theres no memory card, hotsync emulation or direct inst
 When running OS commands through callFunction() it can crash
 Holding the buttons emulates pressing them like a turbo button(may be caused by the lack of sound emulation, a sound plays on app switch and may block the CPU while waiting for the button to release)
 State manager goes bezerk and crashes when saving on android, also can't close the window or it won't open again(also only on Android)
-If there is no userdata-en-m515.ram on Android the emu won't create it
+If there is no userdata-en-m515.ram on Android the emu won't create it(this is likely because theres no graceful exit being done on Android only goto home menu and kill process)
 
 Fixed:
 Only runs in debug mode because the touchscreen can only be pushed with a jump to OS function hack
