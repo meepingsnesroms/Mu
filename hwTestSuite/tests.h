@@ -18,7 +18,7 @@ var getDeviceInfo();
 var getCpuInfo();
 var getInterruptInfo();
 var getIcrInversion();
-var doesIrq2ClearChangePinValue();
+var doesIsrClearChangePinValue();
 var toggleBacklight();
 var toggleMotor();
 var toggleAlarmLed();

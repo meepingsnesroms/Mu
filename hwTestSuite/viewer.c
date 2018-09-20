@@ -332,8 +332,8 @@ void resetFunctionViewer(){
       hwTests[totalHwTests].testFunction = getIcrInversion;
       totalHwTests++;
       
-      StrNCopy(hwTests[totalHwTests].name, "IRQ2 Clear Pin Change", TEST_NAME_LENGTH);
-      hwTests[totalHwTests].testFunction = doesIrq2ClearChangePinValue;
+      StrNCopy(hwTests[totalHwTests].name, "ISR Clear Pin Change", TEST_NAME_LENGTH);
+      hwTests[totalHwTests].testFunction = doesIsrClearChangePinValue;
       totalHwTests++;
       
       StrNCopy(hwTests[totalHwTests].name, "ADS7846 Read", TEST_NAME_LENGTH);

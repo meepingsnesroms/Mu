@@ -1,0 +1,10 @@
+PrvWakeupIntHandler
+HwrSleep
+HwrDoze
+HwrWake
+PrvShutDownPLL
+PrvShutDownCPU
+
+Innocent Functions:
+HwrAttnHalWakeShutoff(just turns timer 2(its use in the OS is not known), the alarm LED and vibrator motor off)
+PrvHwrLockout(just calls HwrAttnHalWakeShutoff and HwrSpiPortShutoff)
