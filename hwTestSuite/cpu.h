@@ -19,6 +19,7 @@
 
 void turnInterruptsOff();
 void turnInterruptsOn();
+void wasteXOpcodes(uint32_t opcodes);
 uint8_t getPhysicalCpuType();
 uint8_t getSupportedInstructionSets();
 const char* getCpuString();

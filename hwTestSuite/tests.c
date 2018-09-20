@@ -750,7 +750,7 @@ var doesIsrClearChangePinValue(){
          StrPrintF(sharedDataBuffer, "IRQ2 Pin:%s", (readArbitraryMemory8(HW_REG_ADDR(PDDATA)) & 0x20) ? "true " : "false");
          UG_PutString(0, y, sharedDataBuffer);
          y += FONT_HEIGHT + 1;
-         StrPrintF(sharedDataBuffer, "IPR IRQ2:%s", (readArbitraryMemory32(HW_REG_ADDR(IPR)) & 0x00020000) ? "true " : "false");
+         StrPrintF(sharedDataBuffer, "ISR IRQ2:%s", (readArbitraryMemory32(HW_REG_ADDR(ISR)) & 0x00020000) ? "true " : "false");
          UG_PutString(0, y, sharedDataBuffer);
          y += FONT_HEIGHT + 1;
          forceFrameRedraw();
@@ -763,7 +763,7 @@ var doesIsrClearChangePinValue(){
          StrPrintF(sharedDataBuffer, "IRQ2 Pin:%s", (readArbitraryMemory8(HW_REG_ADDR(PDDATA)) & 0x20) ? "true " : "false");
          UG_PutString(0, y, sharedDataBuffer);
          y += FONT_HEIGHT + 1;
-         StrPrintF(sharedDataBuffer, "IPR IRQ2:%s", (readArbitraryMemory32(HW_REG_ADDR(IPR)) & 0x00020000) ? "true " : "false");
+         StrPrintF(sharedDataBuffer, "ISR IRQ2:%s", (readArbitraryMemory32(HW_REG_ADDR(ISR)) & 0x00020000) ? "true " : "false");
          UG_PutString(0, y, sharedDataBuffer);
          y += FONT_HEIGHT + 1;
          
@@ -774,7 +774,7 @@ var doesIsrClearChangePinValue(){
          StrPrintF(sharedDataBuffer, "IRQ2 Pin:%s", (readArbitraryMemory8(HW_REG_ADDR(PDDATA)) & 0x20) ? "true " : "false");
          UG_PutString(0, y, sharedDataBuffer);
          y += FONT_HEIGHT + 1;
-         StrPrintF(sharedDataBuffer, "IPR IRQ2:%s", (readArbitraryMemory32(HW_REG_ADDR(IPR)) & 0x00020000) ? "true " : "false");
+         StrPrintF(sharedDataBuffer, "ISR IRQ2:%s", (readArbitraryMemory32(HW_REG_ADDR(ISR)) & 0x00020000) ? "true " : "false");
          UG_PutString(0, y, sharedDataBuffer);
          y += FONT_HEIGHT + 1;
          
@@ -803,14 +803,15 @@ var doesIsrClearChangePinValue(){
       }
       
       /*set to edge triggered mode and reset INT3, trigger on button down*/
-      writeArbitraryMemory8(HW_REG_ADDR(PDIRQEG), oldPdirqeg | 0x08);
-      writeArbitraryMemory8(HW_REG_ADDR(PDIRQEN), oldPdirqen | 0x0F);
-      writeArbitraryMemory32(HW_REG_ADDR(ISR), 0x00000800);
       writeArbitraryMemory8(HW_REG_ADDR(PKDATA), readArbitraryMemory8(HW_REG_ADDR(PKDATA)) & 0x1F);/*enable all button rows*/
+      writeArbitraryMemory8(HW_REG_ADDR(PDIRQEN), 0x00);/*turn INT* off first to prevent glitches*/
+      writeArbitraryMemory8(HW_REG_ADDR(PDIRQEG), 0x0F);
+      writeArbitraryMemory8(HW_REG_ADDR(PDIRQEN), 0x0F);
+      writeArbitraryMemory32(HW_REG_ADDR(ISR), 0x00000800);/*clear any interrupt that may have triggered*/
       StrPrintF(sharedDataBuffer, "INT3 Pin:%s", (readArbitraryMemory8(HW_REG_ADDR(PDDATA)) & 0x08) ? "true " : "false");
       UG_PutString(0, y, sharedDataBuffer);
       y += FONT_HEIGHT + 1;
-      StrPrintF(sharedDataBuffer, "IPR INT3:%s", (readArbitraryMemory32(HW_REG_ADDR(IPR)) & 0x00000800) ? "true " : "false");
+      StrPrintF(sharedDataBuffer, "ISR INT3:%s", (readArbitraryMemory32(HW_REG_ADDR(ISR)) & 0x00000800) ? "true " : "false");
       UG_PutString(0, y, sharedDataBuffer);
       y += FONT_HEIGHT + 1;
       
@@ -819,10 +820,20 @@ var doesIsrClearChangePinValue(){
       y += FONT_HEIGHT + 1;
       forceFrameRedraw();
       while(!(readArbitraryMemory8(HW_REG_ADDR(PDDATA)) & 0x08));
+      /*
+      StrPrintF(sharedDataBuffer, "Release Select");
+      UG_PutString(0, y, sharedDataBuffer);
+      y += FONT_HEIGHT + 1;
+      StrPrintF(sharedDataBuffer, "3sec Wait");
+      UG_PutString(0, y, sharedDataBuffer);
+      y += FONT_HEIGHT + 1;
+      forceFrameRedraw();
+      SysTaskDelay(SysTicksPerSecond() * 3);
+      */
       StrPrintF(sharedDataBuffer, "INT3 Pin:%s", (readArbitraryMemory8(HW_REG_ADDR(PDDATA)) & 0x08) ? "true " : "false");
       UG_PutString(0, y, sharedDataBuffer);
       y += FONT_HEIGHT + 1;
-      StrPrintF(sharedDataBuffer, "IPR INT3:%s", (readArbitraryMemory32(HW_REG_ADDR(IPR)) & 0x00000800) ? "true " : "false");
+      StrPrintF(sharedDataBuffer, "ISR INT3:%s", (readArbitraryMemory32(HW_REG_ADDR(ISR)) & 0x00000800) ? "true " : "false");
       UG_PutString(0, y, sharedDataBuffer);
       y += FONT_HEIGHT + 1;
       
@@ -833,7 +844,7 @@ var doesIsrClearChangePinValue(){
       StrPrintF(sharedDataBuffer, "INT3 Pin:%s", (readArbitraryMemory8(HW_REG_ADDR(PDDATA)) & 0x08) ? "true " : "false");
       UG_PutString(0, y, sharedDataBuffer);
       y += FONT_HEIGHT + 1;
-      StrPrintF(sharedDataBuffer, "IPR INT3:%s", (readArbitraryMemory32(HW_REG_ADDR(IPR)) & 0x00000800) ? "true " : "false");
+      StrPrintF(sharedDataBuffer, "ISR INT3:%s", (readArbitraryMemory32(HW_REG_ADDR(ISR)) & 0x00000800) ? "true " : "false");
       UG_PutString(0, y, sharedDataBuffer);
       y += FONT_HEIGHT + 1;
       

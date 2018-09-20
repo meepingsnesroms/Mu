@@ -27,6 +27,12 @@ void turnInterruptsOn(){
    }
 }
 
+void wasteXOpcodes(uint32_t opcodes){
+   volatile uint32_t blockOptimize = opcodes;
+   while(blockOptimize)
+      blockOptimize--;
+}
+
 uint8_t getPhysicalCpuType(){
    int32_t osVer;
    

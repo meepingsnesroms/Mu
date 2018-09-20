@@ -1,3 +1,8 @@
+The datasheet states:
+When external interrupts INT[3:0], IRQ1, IRQ2, IRQ3, and IRQ6 are programmed as edge-triggered interrupts, they can be cleared by writing a 1 to the corresponding status bit in the interrupt status register in the interrupt controller. When programmed as level-triggered interrupts, these interrupts are cleared at the requesting sources.
+
+But all attempts to use the INT* pins as edge triggered have failed and they continue as level triggered
+
 PDIUSBD12 uses CSA1 and CPU A1 as USB A0
 
 All of the interrupt signals in the table can be used as system wake-up interrupts, except for the edge interrupt on INT[3:0]. Edge interrupts on INT[3:0] can only interrupt the CPU when the system is awake. The INT[3:0] signals are all level 4 interrupts, but IRQx has its own level. Any combination of Port D signals and OR (negative logic) can be selected to generate keyboard (KB) interrupts to the CPU. The KBx signal is an active low, level-sensitive interrupt of the selected pins. Like the other ports, each pin can be configured as an input or output on a bit-by-bit basis. When they are configured as inputs, each pin can generate a CPU interrupt.
