@@ -1,0 +1,21 @@
+Running at 80%:
+Trap F API:AttnDoEmergencySpecialEffects, API number:0xA42F, PC:0x10037160(printed 1 times)
+Trap F API:TimGetTicks, API number:0xA0F7, PC:0x1003718A(printed 1 times)
+Trap F API:SysEvGroupWait, API number:0xA2CB, PC:0x100371C4(printed 1 times)
+Trap F API:SysDoze, API number:0xA08D, PC:0x101157D6(printed 1 times)
+Trap F API:HwrDoze, API number:0xA23F, PC:0x10017FA6(printed 1 times)
+Trap F API:SysDoze, API number:0xA08D, PC:0x101157D6(printed 1 times)
+Trap F API:HwrDoze, API number:0xA23F, PC:0x10017FA6(printed 1 times)
+Trap F API:SysDoze, API number:0xA08D, PC:0x101157D6(printed 1 times)
+Trap F API:HwrDoze, API number:0xA23F, PC:0x10017FA6(printed 1 times)
+Trap F API:SysDoze, API number:0xA08D, PC:0x101157D6(printed 1 times)
+Trap F API:HwrDoze, API number:0xA23F, PC:0x10017FA6(printed 1 times)
+
+Running at 100%:
+Trap F API:AttnDoEmergencySpecialEffects, API number:0xA42F, PC:0x10037160(printed 1 times)
+Trap F API:TimGetTicks, API number:0xA0F7, PC:0x1003718A(printed 1 times)
+Trap F API:SysEvGroupWait, API number:0xA2CB, PC:0x100371C4(printed 1 times)
+Trap F API:SysDoze, API number:0xA08D, PC:0x101157D6(printed 1 times)(called from an unlabeled location presumably in the AMX68000 kernel)
+Trap F API:HwrDoze, API number:0xA23F, PC:0x10017FA6(printed 1 times)(was called directly from SysDoze)
+
+HwrDoze locks up when running at 100%, the cause is currently unknown.

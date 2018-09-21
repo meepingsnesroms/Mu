@@ -1,5 +1,9 @@
 v0.7 to v0.9(Jul 30 2018 - Sept ** 2018)
-Still more todo
+
+What Needs To Be Fixed Still Before Release:
+*crashing at 100%
+*not saving on exit with Android
+*double pressing power button issue
 
 Qt GUI:
 *All Button Icons Are Now SVGs(they can scale infinitely without getting blocky)
