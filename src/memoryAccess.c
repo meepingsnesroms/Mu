@@ -318,7 +318,7 @@ void m68k_write_memory_32(uint32_t address, uint32_t value){
 }
 
 void m68k_write_memory_32_pd(uint32_t address, uint32_t value){
-   //musashi says to write 2 16 bit words, but for now I am just writing a 32bit long since RAM cycles are unemulated
+   //musashi says to write 2 16 bit words, but for now I am just writing a 32 bit long since RAM cycles are unemulated
    m68k_write_memory_32(address, value >> 16 | value << 16);
 }
 

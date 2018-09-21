@@ -252,7 +252,7 @@ static inline void setSpiCont1(uint16_t value){
 
    debugLog("SPI1 write, old value:0x%04X, value:0x%04X\n", oldSpiCont1, value);
 
-   if(value & 0x0400){
+   if(!(value & 0x0400)){
       //slave mode, dont know what to do
       debugLog("SPI1 set to slave mode, PC:0x%08X\n", m68k_get_reg(NULL, M68K_REG_PPC));
    }
