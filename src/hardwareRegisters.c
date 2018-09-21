@@ -477,8 +477,6 @@ uint8_t getHwRegister8(uint32_t address){
             printUnknownHwAccess(address, 0, 8, false);
          return 0x00;
    }
-   
-   return 0x00;//silence warnings
 }
 
 uint16_t getHwRegister16(uint32_t address){
@@ -560,8 +558,6 @@ uint16_t getHwRegister16(uint32_t address){
             printUnknownHwAccess(address, 0, 16, false);
          return 0x0000;
    }
-   
-   return 0x0000;//silence warnings
 }
 
 uint32_t getHwRegister32(uint32_t address){
@@ -597,8 +593,6 @@ uint32_t getHwRegister32(uint32_t address){
             printUnknownHwAccess(address, 0, 32, false);
          return 0x00000000;
    }
-   
-   return 0x00000000;//silence warnings
 }
 
 

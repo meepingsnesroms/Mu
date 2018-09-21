@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui svg
+QT += core gui svg
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -39,7 +39,7 @@ android {
 CONFIG(debug, debug|release){
     DEFINES += EMU_DEBUG EMU_SANDBOX EMU_CUSTOM_DEBUG_LOG_HANDLER
     DEFINES += EMU_SANDBOX_OPCODE_LEVEL_DEBUG
-    # DEFINES += EMU_SANDBOX_LOG_APIS
+    DEFINES += EMU_SANDBOX_LOG_APIS
 }
 
 DEFINES += EMU_MULTITHREADED
@@ -101,7 +101,8 @@ HEADERS += \
     statemanager.h \
     src/m68328.h \
     src/pdiUsbD12.h \
-    src/specs/pdiUsbD12Commands.h
+    src/specs/pdiUsbD12Commands.h \
+    src/debug/trapNames.h
 
 FORMS += \
     mainwindow.ui \

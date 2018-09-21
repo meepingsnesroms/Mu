@@ -7,6 +7,7 @@ Holding the buttons emulates pressing them like a turbo button(may be caused by 
 State manager goes bezerk and crashes when saving on android, also can't close the window or it won't open again(also only on Android)
 If there is no userdata-en-m515.ram on Android the emu won't create it(this is likely because theres no graceful exit being done on Android only goto home menu and kill process)
 Theres no auto ROM installer
+Running at 100% speed causes crashes
 
 Fixed:
 Only runs in debug mode because the touchscreen can only be pushed with a jump to OS function hack

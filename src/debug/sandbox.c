@@ -11,6 +11,7 @@
 #include "../hardwareRegisters.h"
 #include "../specs/emuFeatureRegistersSpec.h"
 #include "sandbox.h"
+#include "trapNames.h"
 
 
 #if defined(EMU_DEBUG) && defined(EMU_SANDBOX)
@@ -41,7 +42,11 @@ static char* takeStackDump(uint32_t bytes){
 
 static bool ignoreTrap(uint16_t trap){
    switch(trap){
-      case 0xA249://sysTrapHwrDelay
+      case HwrDisableDataWrites:
+      case HwrEnableDataWrites:
+      case DmGetDatabase://this could be important later but is spammy on boot
+      case MemStoreInfo://this could be important later but is spammy on boot
+      case HwrDelay:
          return true;
    }
 
