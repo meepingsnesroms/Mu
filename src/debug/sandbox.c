@@ -405,34 +405,6 @@ void sandboxTest(uint32_t test){
          }
          break;
 
-      case SANDBOX_TEST_TOUCH_READ:{
-            //since the sandbox can interrupt any running function(including ADC ones) this safeguard is needed
-            /*
-            if(ads7846BitsToNextControl == 0){
-               uint32_t point;
-               int16_t osX;
-               int16_t osY;
-               input_t oldInput = palmInput;
-
-               palmInput.touchscreenTouched = true;
-               palmInput.touchscreenX = randomRange(0, 159);
-               palmInput.touchscreenY = randomRange(0, 219);
-
-               //PrvBBGetXY on self dumped ROM
-               callFunction(false, 0x100827CE, NULL, "v(L)", &point);
-               osX = point >> 16;
-               osY = point & 0xFFFF;
-               debugLog("Sandbox: Real touch position is x:%d, y:%d\n", palmInput.touchscreenX, palmInput.touchscreenY);
-               debugLog("Sandbox: OS reported touch position is x:%d, y:%d\n", osX, osY);
-               palmInput = oldInput;
-            }
-            else{
-               debugLog("Sandbox: Unsafe to read touch position.\n");
-            }
-            */
-         }
-         break;
-
       case SANDBOX_SEND_OS_TOUCH:{
             //this will not be in the v1.0 release
             if(!m68k_read_memory_8(0x00000253)){
@@ -479,8 +451,9 @@ void sandboxOnOpcodeRun(){
    logApiCalls();
 #endif
    switch(m68k_get_reg(NULL, M68K_REG_PPC)){
-
-      case 0x10083652://USB issue location
+      //case 0x10083652://USB issue location
+      case 0x100846C0://HwrDelay, before mysterious jump
+      case 0x100846CC://HwrDelay, after mysterious jump
          //to add a emulator breakpoint add a new line above here|^^^
          {
             uint32_t m68kRegisters[M68K_REG_CPU_TYPE];

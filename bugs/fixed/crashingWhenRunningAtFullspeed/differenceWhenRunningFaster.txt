@@ -19,3 +19,13 @@ Trap F API:SysDoze, API number:0xA08D, PC:0x101157D6(printed 1 times)(called fro
 Trap F API:HwrDoze, API number:0xA23F, PC:0x10017FA6(printed 1 times)(was called directly from SysDoze)
 
 HwrDoze locks up when running at 100%, the cause is currently unknown.
+
+This fixes it but inaccurate, so it has something to do with PCTLR
+//power control burst mode
+/*
+if(pctlr & 0x80)
+   newCpuSpeed *= (pctlr & 0x1F) / 31.0;
+*/
+
+Need to wake the CPU from PCTLR even if the interrupt is masked:
+Power Control Enable—This bit controls the operation of the power control module. While this bit is low, the CPU clock is on continu- ously. When this bit is high, the pulse-width comparator presents the clock to the CPU in bursts or disables it. When this bit is high, a masked interrupt can disable the power control module.

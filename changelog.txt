@@ -1,7 +1,6 @@
 v0.7 to v0.9(Jul 30 2018 - Sept ** 2018)
 
 What Needs To Be Fixed Still Before Release:
-*crashing at 100%
 *not saving on exit with Android
 *double pressing power button issue
 
@@ -13,6 +12,7 @@ Qt GUI:
 *can load and save savestates
 
 Core:
+*fixed crashing at 100% speed
 *touchscreen works without memory injection
 *can now touch the screen outside of debug mode
 *touching the screen no longer crashes anything

@@ -75,11 +75,7 @@ int32_t interruptAcknowledge(int32_t intLevel){
    else
       vector = vectorOffset | intLevel;
 
-   //only active interrupts should wake the CPU and this function is only be called when an interrupt is active in both IMR and the CPU int mask
-   if(registerArrayRead8(PCTLR) & 0x80){
-      registerArrayWrite8(PCTLR, registerArrayRead8(PCTLR) & 0x1F);
-      recalculateCpuSpeed();
-   }
+   //only active interrupts should wake the CPU if the PLL is off
    pllWakeCpuIfOff();
 
    //the interrupt should only be cleared after its been handled
@@ -222,6 +218,12 @@ static void checkInterrupts(){
       //All Fixed Level 4 Interrupts
       if(intLevel < 4)
          intLevel = 4;
+   }
+
+   //even masked interrupts turn off PCTLR, Chapter 4.5.4 MC68VZ328UM.pdf
+   if(intLevel > 0 && registerArrayRead8(PCTLR) & 0x80){
+      registerArrayWrite8(PCTLR, registerArrayRead8(PCTLR) & 0x1F);
+      recalculateCpuSpeed();
    }
 
    m68k_set_irq(intLevel);//should be called even if intLevel is 0, that is how the interrupt state gets cleared
