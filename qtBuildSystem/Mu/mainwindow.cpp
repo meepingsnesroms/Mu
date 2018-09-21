@@ -232,7 +232,7 @@ void MainWindow::on_right_released(){
 void MainWindow::on_ctrlBtn_clicked(){
    if(!emu.isInited()){
       QString sysDir = settings.value("resourceDirectory", "").toString();
-      uint32_t error = emu.init(sysDir + "/palmos41-en-m515.rom", sysDir + "/bootloader-en-m515.rom", sysDir + "/userdata-en-m515.ram", sysDir + "/sd-en-m515.img", FEATURE_DEBUG);
+      uint32_t error = emu.init(sysDir + "/palmos41-en-m515.rom", QFile(sysDir + "/bootloader-en-m515.rom").exists() ? sysDir + "/bootloader-en-m515.rom" : "", sysDir + "/userdata-en-m515.ram", sysDir + "/sd-en-m515.img", FEATURE_DEBUG);
       if(error == EMU_ERROR_NONE){
          ui->calendar->setEnabled(true);
          ui->addressBook->setEnabled(true);
