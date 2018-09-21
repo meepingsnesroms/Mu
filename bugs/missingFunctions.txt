@@ -3,13 +3,13 @@ This is like unimplementedHardware.txt but only lists things that have functiona
 Sound(those cute little PWM beeps)
 Nothing can be installed(theres no memory card, hotsync emulation or direct installation hack)
 When running OS commands through callFunction() it can crash
-Holding the buttons emulates pressing them like a turbo button(may be caused by the lack of sound emulation, a sound plays on app switch and may block the CPU while waiting for the button to release)
+Holding the buttons emulates pressing them like a turbo button(may be caused by the lack of sound emulation, a sound plays on app switch and may block the CPU while waiting for the button to release)(also may be because the minimum length of a button press is a whole frame)
 State manager goes bezerk and crashes when saving on android, also can't close the window or it won't open again(also only on Android)
 If there is no userdata-en-m515.ram on Android the emu won't create it(this is likely because theres no graceful exit being done on Android only goto home menu and kill process)
 Theres no auto ROM installer
-Running at 100% speed causes crashes
 
 Fixed:
+Running at 100% speed causes crashes
 Only runs in debug mode because the touchscreen can only be pushed with a jump to OS function hack
 Screen doesnt have the proper size on load on android(rotating it sideways and back fixes it)
 Lockups occur when a state is loaded after the device locked up from trying to boot with an SD card(the program counter and status register where not restored properly)

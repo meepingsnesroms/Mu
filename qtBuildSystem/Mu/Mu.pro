@@ -27,6 +27,7 @@ DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs depr
 # }
 
 macx {
+    CONFIG += sdk_no_version_check # using 10.14 SDK which Qt only unofficialy supports
     QMAKE_INFO_PLIST = macos/Info.plist
 }
 
