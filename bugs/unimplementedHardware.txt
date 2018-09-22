@@ -3,6 +3,7 @@ sysTrapPceNativeCall, ARM Emulator
 Trace T1 bit, should be unused by the OS and applications anyway
 Test what bits of IMR are writable
 On hardware PDIRQEG seems not to actually work at all(CPUID:0x57000000)
+SCR privilege violation doesnt trigger the same as on hardware(likely has to do with not emulating the unused chip selects)
 
 CPU I/O:
 Peripheral Control Register, audio ppm mixing selection and timer cascade mode
