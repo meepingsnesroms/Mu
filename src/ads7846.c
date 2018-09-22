@@ -24,7 +24,6 @@ static inline bool ads7846GetAdcBit(){
    return bit;
 }
 
-
 void ads7846Reset(){
    ads7846BitsToNextControl = 0;
    ads7846ControlByte = 0x00;

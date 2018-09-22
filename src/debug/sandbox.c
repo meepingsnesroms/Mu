@@ -1,5 +1,10 @@
 #include <stdint.h>
 #include <stdbool.h>
+
+
+#if defined(EMU_DEBUG) && defined(EMU_SANDBOX)
+//this wrappers 68k code and allows calling it for tests, this should be useful for determining if hardware accesses are correct
+//Note: when running a test the emulator runs at native speed and no clocks are emulated
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
@@ -14,9 +19,11 @@
 #include "trapNames.h"
 
 
-#if defined(EMU_DEBUG) && defined(EMU_SANDBOX)
-//this wrappers 68k code and allows calling it for tests, this should be useful for determining if hardware accesses are correct
-//Note: when running a test the emulator runs at native speed and no clocks are emulated
+typedef struct{
+   void* hostPointer;
+   uint32_t emuPointer;
+   uint64_t bytes;//may be used for strings or structs in the future
+}return_pointer_t;
 
 
 //used to "log out" of the emulator once a test has finished
@@ -211,7 +218,7 @@ static uint32_t getNewStackFrameSize(const char* prototype){
    return size;
 }
 
-static uint32_t callFunction(bool fallthrough, uint32_t address, const char* name, const char* prototype, ...){
+static uint32_t callFunction(bool fallthrough, uint32_t address, uint16_t trap, const char* prototype, ...){
    //prototype is a java style function signature describing values passed and returned "v(wllp)"
    //is return void and pass a uint16_t(word), 2 uint32_t(long) and 1 pointer
    //valid types are b(yte), w(ord), l(ong), p(ointer) and v(oid), a capital letter means its a return pointer
@@ -300,8 +307,6 @@ static uint32_t callFunction(bool fallthrough, uint32_t address, const char* nam
    }
    else{
       //OS function handler
-      uint16_t trap = reverseLookupTrap(name);
-
       m68k_write_memory_16(callWriteOut, 0x4E4F);//trap f opcode
       callWriteOut += 2;
       m68k_write_memory_16(callWriteOut, trap);
@@ -355,9 +360,9 @@ static uint32_t callFunction(bool fallthrough, uint32_t address, const char* nam
    return functionReturn;
 }
 
-uint32_t makePalmString(const char* str){
+static uint32_t makePalmString(const char* str){
    uint32_t strLength = strlen(str) + 1;
-   uint32_t strData = callFunction(false, 0x00000000, "MemPtrNew", "p(l)", strLength);
+   uint32_t strData = callFunction(false, 0x00000000, MemPtrNew, "p(l)", strLength);
 
    if(strData != 0)
       for(uint32_t count = 0; count < strLength; count++)
@@ -365,9 +370,9 @@ uint32_t makePalmString(const char* str){
    return strData;
 }
 
-char* makeNativeString(uint32_t address){
+static char* makeNativeString(uint32_t address){
    if(address != 0){
-      int16_t strLength = callFunction(false, 0x00000000, "StrLen", "w(p)", address) + 1;
+      int16_t strLength = callFunction(false, 0x00000000, StrLen, "w(p)", address) + 1;
       char* nativeStr = malloc(strLength);
 
       for(int16_t count = 0; count < strLength; count++)
@@ -377,8 +382,12 @@ char* makeNativeString(uint32_t address){
    return NULL;
 }
 
-void freePalmString(uint32_t address){
-   callFunction(false, 0x00000000, "MemChunkFree", "w(p)", address);
+static void freePalmString(uint32_t address){
+   callFunction(false, 0x00000000, MemChunkFree, "w(p)", address);
+}
+
+static bool installResourceToDevice(buffer_t data){
+   return false;//failed, need to implement
 }
 
 void sandboxInit(){
@@ -388,7 +397,7 @@ void sandboxInit(){
 #endif
 }
 
-void sandboxTest(uint32_t test){
+void sandboxCommand(uint32_t test, void* data){
    //tests cant run properly(hang forever) unless the debug return hook is enabled, it also completly destroys accuracy to execute hacked in asm buffers
    if(!(palmSpecialFeatures & FEATURE_DEBUG))
       return;
@@ -397,7 +406,7 @@ void sandboxTest(uint32_t test){
 
    switch(test){
       case SANDBOX_TEST_OS_VER:{
-            uint32_t verStrAddr = callFunction(false, 0x00000000, "SysGetOSVersionString", "p()");
+            uint32_t verStrAddr = callFunction(false, 0x00000000, SysGetOSVersionString, "p()");
             char* nativeStr = makeNativeString(verStrAddr);
 
             debugLog("Sandbox: OS version is:\"%s\"\n", nativeStr);
@@ -416,15 +425,15 @@ void sandboxTest(uint32_t test){
                   //press
                   m68k_write_memory_16(0xFFFFFFE0 - 4, palmInput.touchscreenX);
                   m68k_write_memory_16(0xFFFFFFE0 - 2, palmInput.touchscreenY);
-                  callFunction(false, 0x00000000, "PenScreenToRaw", "w(p)", 0xFFFFFFE0 - 4);
-                  callFunction(false, 0x00000000, "EvtEnqueuePenPoint", "w(p)", 0xFFFFFFE0 - 4);
+                  callFunction(false, 0x00000000, PenScreenToRaw, "w(p)", 0xFFFFFFE0 - 4);
+                  callFunction(false, 0x00000000, EvtEnqueuePenPoint, "w(p)", 0xFFFFFFE0 - 4);
                }
                else{
                   //release
                   m68k_write_memory_16(0xFFFFFFE0 - 4, (uint16_t)-1);
                   m68k_write_memory_16(0xFFFFFFE0 - 2, (uint16_t)-1);
-                  callFunction(false, 0x00000000, "PenScreenToRaw", "w(p)", 0xFFFFFFE0 - 4);
-                  callFunction(false, 0x00000000, "EvtEnqueuePenPoint", "w(p)", 0xFFFFFFE0 - 4);
+                  callFunction(false, 0x00000000, PenScreenToRaw, "w(p)", 0xFFFFFFE0 - 4);
+                  callFunction(false, 0x00000000, EvtEnqueuePenPoint, "w(p)", 0xFFFFFFE0 - 4);
                }
             }
          }
@@ -439,6 +448,13 @@ void sandboxTest(uint32_t test){
             palmRom[0x83653] = 0x71;
             palmRom[0x83654] = 0x4E;
             palmRom[0x83655] = 0x71;
+         }
+         break;
+
+      case SANDBOX_INSTALL_APP:{
+            buffer_t* app = (buffer_t*)data;
+            //app->data;
+
          }
          break;
    }
@@ -514,7 +530,7 @@ void sandboxReturn(){
 
 #else
 void sandboxInit(){}
-void sandboxTest(uint32_t test){}
+void sandboxCommand(uint32_t test, void* data){}
 void sandboxOnOpcodeRun(){}
 bool sandboxRunning(){return false;}
 void sandboxReturn(){}

@@ -197,7 +197,7 @@ void subprogramSetData(var data){
 }
 
 static Boolean testerInit(){
-   int32_t osVer;
+   uint32_t osVer;
    uint32_t deviceId;
    Err error;
    

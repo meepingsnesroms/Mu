@@ -113,7 +113,7 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t spec
    emulatorInitialized = true;
 
    //hack, patch ROM image
-   sandboxTest(SANDBOX_PATCH_OS);
+   sandboxCommand(SANDBOX_PATCH_OS, NULL);
 
    return EMU_ERROR_NONE;
 }

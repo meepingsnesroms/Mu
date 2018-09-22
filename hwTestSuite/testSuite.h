@@ -12,8 +12,8 @@
 
 #define SHARED_DATA_BUFFER_SIZE 1000
 
-#define PalmOS35 sysMakeROMVersion(3,5,0,sysROMStageRelease,0)
-#define PalmOS50 sysMakeROMVersion(5,0,0,sysROMStageRelease,0)
+#define PalmOS35 sysMakeROMVersion(3, 5, 0, sysROMStageRelease, 0)
+#define PalmOS50 sysMakeROMVersion(5, 0, 0, sysROMStageRelease, 0)
 
 #define buttonLeft   keyBitHard1
 #define buttonRight  keyBitHard2

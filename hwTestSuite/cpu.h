@@ -13,8 +13,8 @@
 
 #define CPU_M68K_328   0x10
 #define CPU_M68K_EZ    0x20
-#define CPU_M68K_VZ    0x40
-#define CPU_M68K_SZ    0x80
+#define CPU_M68K_VZ    0x30
+#define CPU_M68K_SZ    0x40
 #define CPU_M68K_TYPES 0xF0
 
 void turnInterruptsOff();
