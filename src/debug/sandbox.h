@@ -11,7 +11,7 @@ enum{
 };
 
 void sandboxInit();
-void sandboxCommand(uint32_t test, void* data);
+uint32_t sandboxCommand(uint32_t test, void* data);
 void sandboxOnOpcodeRun();
 bool sandboxRunning();
 void sandboxReturn();//should only be called called by 68k code

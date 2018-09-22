@@ -1,9 +1,5 @@
 v0.7 to v0.9(Jul 30 2018 - Sept ** 2018)
 
-What Needs To Be Fixed Still Before Release:
-*not saving on exit with Android
-*double pressing power button issue
-
 Qt GUI:
 *All Button Icons Are Now SVGs(they can scale infinitely without getting blocky)
 *touch locations are now scaled properly
@@ -12,6 +8,7 @@ Qt GUI:
 *can load and save savestates
 
 Core:
+*apps can be installed(with a hack, max app size is 64k, Palm OS can only malloc 64k at once)
 *fixed crashing at 100% speed
 *touchscreen works without memory injection
 *can now touch the screen outside of debug mode

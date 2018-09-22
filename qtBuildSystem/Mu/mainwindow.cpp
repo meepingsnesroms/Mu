@@ -274,13 +274,16 @@ void MainWindow::on_ctrlBtn_clicked(){
    ui->ctrlBtn->repaint();//Qt 5.11 broke icon changes on click, this is a patch
 }
 
-void MainWindow::on_install_pressed(){
+void MainWindow::on_install_clicked(){
    if(emu.isInited()){
       QString app = QFileDialog::getOpenFileName(this, "Open *.prc/pdb/pqa", QDir::root().path(), nullptr);
-      uint32_t error = emu.installApplication(app);
 
-      if(error != EMU_ERROR_NONE)
-         popupErrorDialog("Could not install app");
+      if(app != ""){
+         uint32_t error = emu.installApplication(app);
+
+         if(error != EMU_ERROR_NONE)
+            popupErrorDialog("Could not install app, Error:" + QString::number(error));
+      }
    }
 }
 

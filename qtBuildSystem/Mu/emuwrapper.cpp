@@ -338,8 +338,7 @@ uint32_t EmuWrapper::installApplication(QString path){
       appFile.close();
       appData.data = (uint8_t*)appDataBuffer.data();
       appData.size = appDataBuffer.size();
-      if(emulatorInstallPrcPdb(appData))
-         error = EMU_ERROR_NONE;
+      error = emulatorInstallPrcPdb(appData);
    }
 
    if(!wasPaused)

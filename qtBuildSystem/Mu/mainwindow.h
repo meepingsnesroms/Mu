@@ -60,7 +60,7 @@ private slots:
 
    //frontend buttons
    void on_ctrlBtn_clicked();
-   void on_install_pressed();
+   void on_install_clicked();
    void on_debugger_clicked();
    void on_screenshot_clicked();
    void on_stateManager_clicked();

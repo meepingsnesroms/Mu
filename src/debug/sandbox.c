@@ -11,6 +11,7 @@
 #include <time.h>
 
 #include "../m68k/m68k.h"
+#include "../m68k/m68kcpu.h"
 #include "../emulator.h"
 #include "../ads7846.h"
 #include "../hardwareRegisters.h"
@@ -229,6 +230,7 @@ static uint32_t callFunction(bool fallthrough, uint32_t address, uint16_t trap, 
    uint32_t stackFrameStart = m68k_get_reg(NULL, M68K_REG_SP);
    uint32_t newStackFrameSize = getNewStackFrameSize(prototype);
    uint32_t stackWriteAddr = stackFrameStart - newStackFrameSize;
+   uint32_t oldStopped = m68ki_cpu.stopped;
    uint32_t oldPc = m68k_get_reg(NULL, M68K_REG_PC);
    uint32_t oldA0 = m68k_get_reg(NULL, M68K_REG_A0);
    uint32_t oldD0 = m68k_get_reg(NULL, M68K_REG_D0);
@@ -322,6 +324,7 @@ static uint32_t callFunction(bool fallthrough, uint32_t address, uint16_t trap, 
    callWriteOut += 4;
 
    inSandbox = true;
+   m68ki_cpu.stopped = 0;
    m68k_set_reg(M68K_REG_SP, stackFrameStart - newStackFrameSize);
    m68k_set_reg(M68K_REG_PC, callStart);
 
@@ -333,6 +336,7 @@ static uint32_t callFunction(bool fallthrough, uint32_t address, uint16_t trap, 
          functionReturn = m68k_get_reg(NULL, M68K_REG_A0);
       else if(prototype[0] == 'b' || prototype[0] == 'w' || prototype[0] == 'l')
          functionReturn = m68k_get_reg(NULL, M68K_REG_D0);
+      m68ki_cpu.stopped = oldStopped;
       m68k_set_reg(M68K_REG_PC, oldPc);
       m68k_set_reg(M68K_REG_SP, stackFrameStart);
       m68k_set_reg(M68K_REG_A0, oldA0);
@@ -386,8 +390,24 @@ static void freePalmString(uint32_t address){
    callFunction(false, 0x00000000, MemChunkFree, "w(p)", address);
 }
 
-static bool installResourceToDevice(buffer_t data){
-   return false;//failed, need to implement
+static bool installResourceToDevice(buffer_t resourceBuffer){
+   uint32_t palmSideResourceData = callFunction(false, 0x00000000, MemPtrNew, "p(l)", (uint32_t)resourceBuffer.size);
+   uint16_t error;
+
+   //buffer not allocated
+   if(!palmSideResourceData)
+      return false;
+
+   for(uint32_t count = 0; count < resourceBuffer.size; count++)
+      m68k_write_memory_8(palmSideResourceData + count, resourceBuffer.data[count]);
+   error = callFunction(false, 0x00000000, DmCreateDatabaseFromImage, "w(p)", palmSideResourceData);//Err DmCreateDatabaseFromImage(MemPtr bufferP);//this looks best
+   callFunction(false, 0x00000000, MemChunkFree, "w(p)", palmSideResourceData);
+
+   //dident install
+   if(error != 0)
+      return false;
+
+   return true;
 }
 
 void sandboxInit(){
@@ -397,10 +417,12 @@ void sandboxInit(){
 #endif
 }
 
-void sandboxCommand(uint32_t test, void* data){
+uint32_t sandboxCommand(uint32_t test, void* data){
+   uint32_t result = EMU_ERROR_NONE;
+
    //tests cant run properly(hang forever) unless the debug return hook is enabled, it also completly destroys accuracy to execute hacked in asm buffers
    if(!(palmSpecialFeatures & FEATURE_DEBUG))
-      return;
+      return EMU_ERROR_NOT_IMPLEMENTED;
 
    debugLog("Sandbox: Test %d started\n", test);
 
@@ -453,13 +475,17 @@ void sandboxCommand(uint32_t test, void* data){
 
       case SANDBOX_INSTALL_APP:{
             buffer_t* app = (buffer_t*)data;
-            //app->data;
+            bool success = installResourceToDevice(*app);
 
+            if(!success)
+               result = EMU_ERROR_OUT_OF_MEMORY;
          }
          break;
    }
 
    debugLog("Sandbox: Test %d finished\n", test);
+
+   return result;
 }
 
 void sandboxOnOpcodeRun(){
@@ -530,7 +556,7 @@ void sandboxReturn(){
 
 #else
 void sandboxInit(){}
-void sandboxCommand(uint32_t test, void* data){}
+uint32_t sandboxCommand(uint32_t test, void* data){return 0;}
 void sandboxOnOpcodeRun(){}
 bool sandboxRunning(){return false;}
 void sandboxReturn(){}

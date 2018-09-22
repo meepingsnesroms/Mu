@@ -486,9 +486,8 @@ void emulatorEjectSdCard(){
 }
 
 uint32_t emulatorInstallPrcPdb(buffer_t file){
-   //pretend to pass for now
-   //return EMU_ERROR_NOT_IMPLEMENTED;
-   return EMU_ERROR_NONE;
+   return sandboxCommand(SANDBOX_INSTALL_APP, &file);
+   //return EMU_ERROR_NONE;
 }
 
 void emulateFrame(){
