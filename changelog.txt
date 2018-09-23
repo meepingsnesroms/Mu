@@ -1,4 +1,4 @@
-v0.7 to v0.9(Jul 30 2018 - Sept ** 2018)
+v0.7 to v0.9(Jul 30 2018 - Sept 22 2018)
 
 Qt GUI:
 *All Button Icons Are Now SVGs(they can scale infinitely without getting blocky)
