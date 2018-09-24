@@ -98,6 +98,10 @@
 #define PWMS1     0x502/*PWM Unit 1 Sample Register*/
 #define PWMP1     0x504/*PWM Unit 1 Period Register*/
 #define PWMCNT1   0x505/*PWM Unit 1 Counter Register*/
+#define PWMC2     0x510/*PWM Unit 2 Control Register*/
+#define PWMP2     0x512/*PWM Unit 2 Period Register*/
+#define PWMW2     0x514/*PWM Unit 2 Width Register*/
+#define PWMCNT2   0x516/*PWM Unit 2 Counter Register*/
 
 /*Timer*/
 #define TCTL1     0x600/*Timer Unit 1 Control Register*/

@@ -8,6 +8,7 @@
 
 #include "../src/emulator.h"
 
+
 #ifndef PATH_MAX_LENGTH
 #if defined(__CELLOS_LV2__)
 #define PATH_MAX_LENGTH CELL_FS_MAX_FS_PATH_LENGTH
@@ -29,7 +30,6 @@
 
 static retro_log_printf_t log_cb;
 static retro_video_refresh_t video_cb;
-//static retro_audio_sample_t audio_cb;
 static retro_audio_sample_batch_t audio_batch_cb;
 static retro_environment_t environ_cb;
 static retro_input_poll_t input_poll_cb;
@@ -150,7 +150,7 @@ void retro_get_system_info(struct retro_system_info *info)
 void retro_get_system_av_info(struct retro_system_av_info *info)
 {
    info->timing.fps = 60.0;
-   info->timing.sample_rate = 44100.0;
+   info->timing.sample_rate = 32768.0;
 
    info->geometry.base_width   = 160;
    info->geometry.base_height  = 220;
@@ -190,7 +190,7 @@ void retro_set_environment(retro_environment_t cb)
 
 void retro_set_audio_sample(retro_audio_sample_t cb)
 {
-   //audio_cb = cb;
+   
 }
 
 void retro_set_audio_sample_batch(retro_audio_sample_batch_t cb)

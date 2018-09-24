@@ -55,6 +55,32 @@ static inline uint8_t spi1TxFifoEntrys(){
    return spi1TxWritePosition - spi1TxReadPosition;
 }
 
+//PWM1 FIFO
+static inline uint8_t pwm1FifoCurrentValue(){
+   return pwm1Fifo[pwm1ReadPosition];
+}
+
+static inline void pwm1FifoRemove(){
+   pwm1ReadPosition = (pwm1ReadPosition + 1) % 6;
+}
+
+static inline void pwm1FifoWrite(uint8_t value){
+   pwm1Fifo[pwm1WritePosition] = value;
+   pwm1WritePosition = (pwm1WritePosition + 1) % 6;
+}
+
+static inline void pwm1FifoFlush(){
+   pwm1ReadPosition = 0;
+   pwm1WritePosition = 0;
+}
+
+static inline uint8_t pwm1FifoEntrys(){
+   //check for wraparound
+   if(pwm1WritePosition < pwm1ReadPosition)
+      return pwm1WritePosition + 6 - pwm1ReadPosition;
+   return pwm1WritePosition - pwm1ReadPosition;
+}
+
 //register setters
 static inline void setIprIsrBit(uint32_t interruptBit){
    //allows for setting an interrupt with masking by IMR and logging in IPR
@@ -373,19 +399,29 @@ static inline void setTstat2(uint16_t value){
 }
 
 static inline void setPwmc1(uint16_t value){
-   if((value & 0x00D0) == 0x00D0){
-      //enabled, interrupt enabled and interrupt set
-      //this register allows forcing an interrupt by writing a 1 to its IRQ bit
+   uint16_t oldPwmc1 = registerArrayRead16(PWMC1);
+
+   //PWM1 enabled, set IRQ bit to fill FIFO
+   if(!(oldPwmc1 & 0x0010) && value & 0x0010)
+      value |= 0x0080;
+
+   //clear interrupt by write(reading can also clear the interrupt)
+   if(oldPwmc1 & 0x0080 && !(value & 0x0080)){
+      clearIprIsrBit(INT_PWM1);
+      checkInterrupts();
+   }
+
+   //interrupt enabled and interrupt set
+   if((value & 0x00C0) == 0x00C0){
+      //this register also allows forcing an interrupt by writing a 1 to its IRQ bit when IRQEN is enabled
       setIprIsrBit(INT_PWM1);
       checkInterrupts();
    }
 
+   //PWM1 disabled
    if(!(value & 0x0010)){
-      //PWM1 set to disabled
-
       value &= 0x80FF;//clear PWM prescaler value
-
-      //need to flush PWM1 FIFO, unemulated
+      pwm1FifoFlush();
    }
 
    registerArrayWrite16(PWMC1, value);
@@ -541,6 +577,51 @@ static inline uint8_t getPortKValue(){
 static inline uint8_t getPortMValue(){
    //bit 5 has a pull up not pull down, bits 4-0 have a pull down, bit 7-6 are not active at all
    return ((registerArrayRead8(PMDATA) & registerArrayRead8(PMDIR)) | (~registerArrayRead8(PMDIR) & 0x20)) & registerArrayRead8(PMSEL);
+}
+
+static inline uint16_t getCurrentSpeakerSample(){
+   uint16_t sampleValue;
+   uint8_t audioMode = registerArrayRead8(PCR) >> 2 & 0x03;
+
+   //00 = PWM1, 01 = PWM2, 10 = PWM1 | PWM2, 11 = PWM1 & PWM2
+   //the calculations for and/or of the 2 pins is too CPU intensive and will not be emulated
+   switch(audioMode){
+      case 0x00:{
+            //PWM1 alone
+            double pwm1Frequency = (double)pwm1FifoCurrentValue() / (registerArrayRead8(PWMP1) + 2);//0<->1
+
+            //cap at 100% duty cycle
+            if(pwm1Frequency > 1.0)
+               pwm1Frequency = 1.0;
+
+            sampleValue = pwm1Frequency * 0xFFFF;
+         }
+         break;
+
+      case 0x01:{
+            //PWM2 alone
+            double pwm2Frequency = (double)registerArrayRead16(PWMW2) / (registerArrayRead16(PWMP2) + 1);
+
+            //cap at 100% duty cycle
+            if(pwm2Frequency > 1.0)
+               pwm2Frequency = 1.0;
+
+            sampleValue = pwm2Frequency * 0xFFFF;
+         }
+         break;
+
+      case 0x02:
+      case 0x03:
+         debugLog("PCR audio mode:%d not supported\n", audioMode);
+         sampleValue = 0;
+         break;
+   }
+
+   return sampleValue;
+}
+
+static inline void clk32PwmX(){
+   //handles clk32
 }
 
 static inline uint16_t getPwmc1(){

@@ -40,6 +40,7 @@ sd_card_t palmSdCard;
 misc_hw_t palmMisc;
 uint16_t  palmFramebuffer[160 * (160 + 60)];//really 160*160, the extra pixels are the silkscreened digitizer area
 uint16_t* palmExtendedFramebuffer;
+uint16_t  palmAudio[AUDIO_SAMPLES];
 uint32_t  palmSpecialFeatures;
 double    palmCrystalCycles;//how many cycles before toggling the 32.768 kHz crystal
 double    palmCycleCounter;//can be greater then 0 if too many cycles where run

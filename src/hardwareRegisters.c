@@ -27,6 +27,12 @@ uint8_t  spi1RxWritePosition;
 uint8_t  spi1TxReadPosition;
 uint8_t  spi1TxWritePosition;
 
+//warning: pwm1 is not in savestates yet!!!
+uint16_t pwm1ClocksToNextSample;
+uint8_t  pwm1Fifo[6];
+uint8_t  pwm1ReadPosition;
+uint8_t  pwm1WritePosition;
+
 
 static void checkInterrupts();
 static void checkPortDInterrupts();
@@ -614,6 +620,11 @@ void setHwRegister8(uint32_t address, uint8_t value){
          setScr(value);
          break;
 
+      case PWMS1 + 1:
+         if(pwm1FifoEntrys() < 5)
+            pwm1FifoWrite(value);
+         break;
+
       case PCTLR:
          registerArrayWrite8(address, value & 0x9F);
          recalculateCpuSpeed();
@@ -974,6 +985,13 @@ void setHwRegister16(uint32_t address, uint16_t value){
 
       case PWMC1:
          setPwmc1(value);
+         break;
+
+      case PWMS1:
+         if(pwm1FifoEntrys() < 5)
+            pwm1FifoWrite(value >> 8);
+         if(pwm1FifoEntrys() < 5)
+            pwm1FifoWrite(value & 0xFF);
          break;
 
       case SPISPC:
