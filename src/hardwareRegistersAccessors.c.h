@@ -83,7 +83,7 @@ static inline uint8_t pwm1FifoEntrys(){
 
 static inline uint16_t pwm1FifoSampleDuration(){
    uint16_t pwmc1 = registerArrayRead16(PWMC1);
-   uint8_t prescaler = pwmc1 >> 8 & 0x7F;
+   uint8_t prescaler = (pwmc1 >> 8 & 0x7F) + 1;
    uint8_t clockDivider = 2 << (pwmc1 & 0x03);
    uint8_t repeat = 1 << (pwmc1 >> 2 & 0x03);
 
@@ -415,7 +415,7 @@ static inline void setTstat2(uint16_t value){
 static inline void setPwmc1(uint16_t value){
    uint16_t oldPwmc1 = registerArrayRead16(PWMC1);
 
-   //always have FIFOAV set right now
+   //always have FIFOAV set right now, hack
    value |= 0x0020;
 
    //PWM1 enabled, set IRQ and FIFOAV bit to fill FIFO
