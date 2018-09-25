@@ -620,8 +620,46 @@ static inline uint16_t getCurrentSpeakerSample(){
    return sampleValue;
 }
 
-static inline void clk32PwmX(){
-   //handles clk32
+static inline void samplePwmXClk32(){
+   //call every clk32, adds samples to audio buffer
+   if(palmAudioSampleIndex < AUDIO_SAMPLES){
+      double dutyCycle;
+      uint16_t firstLowSample;
+      uint8_t audioMode = registerArrayRead8(PCR) >> 2 & 0x03;
+
+      //00 = PWM1, 01 = PWM2, 10 = PWM1 | PWM2, 11 = PWM1 & PWM2
+      //the calculations for and/or of the 2 pins is too CPU intensive and will not be emulated
+      switch(audioMode){
+         case 0x00:
+            //PWM1 alone
+            dutyCycle = (double)pwm1FifoCurrentValue() / (registerArrayRead8(PWMP1) + 2);//0<->1
+            //cap at 100% duty cycle
+            if(dutyCycle > 1.0)
+               dutyCycle = 1.0;
+            break;
+
+         case 0x01:
+            //PWM2 alone
+            dutyCycle = (double)registerArrayRead16(PWMW2) / (registerArrayRead16(PWMP2) + 1);//0<->1
+            //cap at 100% duty cycle
+            if(dutyCycle > 1.0)
+               dutyCycle = 1.0;
+            break;
+
+         case 0x02:
+         case 0x03:
+            debugLog("PCR audio mode:%d not supported\n", audioMode);
+            dutyCycle = 0;
+            break;
+      }
+
+      //add samples to audio buffer
+      firstLowSample = dutyCycle * AUDIO_DUTY_CYCLE_SIZE;
+      for(uint16_t count = 0; count < AUDIO_DUTY_CYCLE_SIZE; count++){
+         palmAudio[palmAudioSampleIndex] = (count < firstLowSample) ? 32767 : -32768;
+         palmAudioSampleIndex++;
+      }
+   }
 }
 
 static inline uint16_t getPwmc1(){
@@ -658,7 +696,6 @@ static inline void updateBacklightAmplifierStatus(){
 }
 
 static inline void updateTouchState(){
-   //update touchscreen state
    if(!(registerArrayRead8(PFSEL) & 0x02)){
       uint16_t icr = registerArrayRead16(ICR);
       bool penIrqPin = !(ads7846PenIrqEnabled && palmInput.touchscreenTouched);//penIrqPin pulled low on touch
@@ -672,9 +709,4 @@ static inline void updateTouchState(){
       else
          clearIprIsrBit(INT_IRQ5);
    }
-
-   if(palmInput.touchscreenTouched)
-      setIprIsrBit(INT_IRQ5);
-   else
-      clearIprIsrBit(INT_IRQ5);
 }

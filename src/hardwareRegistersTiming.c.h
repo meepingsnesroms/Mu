@@ -38,35 +38,35 @@ static inline void rtiInterruptClk32(){
    //this function is part of clk32();
    uint16_t triggeredRtiInterrupts = 0x0000;
 
-   if(clk32Counter % ((uint32_t)CRYSTAL_FREQUENCY / 512) == 0){
+   if(clk32Counter % (CRYSTAL_FREQUENCY / 512) == 0){
       //RIS7 - 512HZ
       triggeredRtiInterrupts |= 0x8000;
    }
-   if(clk32Counter % ((uint32_t)CRYSTAL_FREQUENCY / 256) == 0){
+   if(clk32Counter % (CRYSTAL_FREQUENCY / 256) == 0){
       //RIS6 - 256HZ
       triggeredRtiInterrupts |= 0x4000;
    }
-   if(clk32Counter % ((uint32_t)CRYSTAL_FREQUENCY / 128) == 0){
+   if(clk32Counter % (CRYSTAL_FREQUENCY / 128) == 0){
       //RIS5 - 128HZ
       triggeredRtiInterrupts |= 0x2000;
    }
-   if(clk32Counter % ((uint32_t)CRYSTAL_FREQUENCY / 64) == 0){
+   if(clk32Counter % (CRYSTAL_FREQUENCY / 64) == 0){
       //RIS4 - 64HZ
       triggeredRtiInterrupts |= 0x1000;
    }
-   if(clk32Counter % ((uint32_t)CRYSTAL_FREQUENCY / 32) == 0){
+   if(clk32Counter % (CRYSTAL_FREQUENCY / 32) == 0){
       //RIS3 - 32HZ
       triggeredRtiInterrupts |= 0x0800;
    }
-   if(clk32Counter % ((uint32_t)CRYSTAL_FREQUENCY / 16) == 0){
+   if(clk32Counter % (CRYSTAL_FREQUENCY / 16) == 0){
       //RIS2 - 16HZ
       triggeredRtiInterrupts |= 0x0400;
    }
-   if(clk32Counter % ((uint32_t)CRYSTAL_FREQUENCY / 8) == 0){
+   if(clk32Counter % (CRYSTAL_FREQUENCY / 8) == 0){
       //RIS1 - 8HZ
       triggeredRtiInterrupts |= 0x0200;
    }
-   if(clk32Counter % ((uint32_t)CRYSTAL_FREQUENCY / 4) == 0){
+   if(clk32Counter % (CRYSTAL_FREQUENCY / 4) == 0){
       //RIS0 - 4HZ
       triggeredRtiInterrupts |= 0x0100;
    }
@@ -319,6 +319,7 @@ void clk32(){
       rtiInterruptClk32();
 
    timer12Clk32();
+   samplePwmXClk32();
 
    //PLLCR wake select wait
    if(pllWakeWait != -1){

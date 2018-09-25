@@ -113,10 +113,13 @@ typedef struct{
 }misc_hw_t;
 
 //config options
-#define CRYSTAL_FREQUENCY 32768.0
-#define EMU_FPS 60.0
-#define AUDIO_SAMPLES (32768 / 60)//using the previous define will cause: "warning: variable length array folded to constant array as an extension"
+#define AUDIO_DUTY_CYCLE_SIZE 20//the amount of frequencys the PWM can play
 #define SAVE_STATE_VERSION 0
+
+//system constants
+#define CRYSTAL_FREQUENCY 32768
+#define EMU_FPS 60
+#define AUDIO_SAMPLES (CRYSTAL_FREQUENCY / EMU_FPS * AUDIO_DUTY_CYCLE_SIZE)
 
 //emulator data, some are GUI interface variables, some should be left alone
 extern uint8_t*  palmRam;//dont touch
@@ -127,7 +130,7 @@ extern sd_card_t palmSdCard;//dont touch
 extern misc_hw_t palmMisc;//read/write allowed
 extern uint16_t  palmFramebuffer[];//read allowed if FEATURE_320x320 is off, or else invalid data will be displayed
 extern uint16_t* palmExtendedFramebuffer;//read allowed if FEATURE_320x320 is on, or else SIGSEGV
-extern int16_t   palmAudio[];//read allowed
+extern int16_t   palmAudio[];//read allowed, 2 channel signed 16 bit audio
 extern uint32_t  palmAudioSampleIndex;//dont touch
 extern uint32_t  palmSpecialFeatures;//read allowed
 extern double    palmCrystalCycles;//dont touch

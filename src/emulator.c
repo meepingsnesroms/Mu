@@ -497,25 +497,13 @@ void emulateFrame(){
    refreshInputState();
    palmAudioSampleIndex = 0;
 
-   while(palmCycleCounter < CRYSTAL_FREQUENCY / EMU_FPS){
-      if(palmCrystalCycles != 0.0){
-         //the frequency can change mid frame and get stuck in an infinite loop because of a divide by 0.0
-         //+= m68k_execute(palmCrystalCycles{old value} * palmClockMultiplier) / (palmCrystalCycles{new value of 0.0} * palmClockMultiplier) == infinity
-         double currentFrequency = palmCrystalCycles;
-         palmCycleCounter += m68k_execute(currentFrequency * palmClockMultiplier) / (currentFrequency * palmClockMultiplier);
-      }
-      else{
-         palmCycleCounter += 1.0;
-      }
+   while(palmCycleCounter < (double)CRYSTAL_FREQUENCY / EMU_FPS){
+      if(palmCrystalCycles > 0.0)
+         m68k_execute(palmCrystalCycles * palmClockMultiplier);
       clk32();
+      palmCycleCounter += 1.0;
    }
-   palmCycleCounter -= CRYSTAL_FREQUENCY / EMU_FPS;
-
-   //CPU can run more then the requested clock cycles, add missed CLK32 pulses from those cycles
-   while(palmCycleCounter >= 1.0){
-      clk32();
-      palmCycleCounter -= 1.0;
-   }
+   palmCycleCounter -= (double)CRYSTAL_FREQUENCY / EMU_FPS;
 
    sed1376Render();
 }
