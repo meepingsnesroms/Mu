@@ -66,11 +66,10 @@ EmuWrapper::EmuWrapper(){
    emuThreadJoin = false;
    emuRunning = false;
    emuPaused = false;
-   emuDebugEvent = false;
    emuVideoWidth = 0;
    emuVideoHeight = 0;
    emuNewFrameReady = false;
-   emuDoubleBuffer = nullptr;
+   emuDoubleBufferVideo = nullptr;
 
    frontendDebugString = new char[200];
    frontendDebugStringSize = 200;
@@ -93,7 +92,8 @@ void EmuWrapper::emuThreadRun(){
          palmInput = emuInput;
          emulateFrame();
          if(!emuNewFrameReady){
-            memcpy(emuDoubleBuffer, emuVideoWidth == 320 ? palmExtendedFramebuffer : palmFramebuffer, emuVideoWidth * emuVideoHeight * sizeof(uint16_t));
+            memcpy(emuDoubleBufferVideo, emuVideoWidth == 320 ? palmExtendedFramebuffer : palmFramebuffer, emuVideoWidth * emuVideoHeight * sizeof(uint16_t));
+            memcpy(emuDoubleBufferAudio, palmAudio, AUDIO_SAMPLES);
             emuNewFrameReady = true;
          }
       }
@@ -206,7 +206,8 @@ uint32_t EmuWrapper::init(QString romPath, QString bootloaderPath, QString ramPa
          emuRunning = true;
          emuPaused = false;
          emuNewFrameReady = false;
-         emuDoubleBuffer = new uint16_t[emuVideoWidth * emuVideoHeight];
+         emuDoubleBufferVideo = new uint16_t[emuVideoWidth * emuVideoHeight];
+         emuDoubleBufferAudio = new int16_t[CRYSTAL_FREQUENCY * AUDIO_DUTY_CYCLE_SIZE * 2/*channels*/];
          emuThread = std::thread(&EmuWrapper::emuThreadRun, this);
       }
       else{
@@ -247,7 +248,7 @@ void EmuWrapper::exit(){
          }
       }
       emulatorExit();
-      delete[] emuDoubleBuffer;
+      delete[] emuDoubleBufferVideo;
    }
 }
 
@@ -361,15 +362,6 @@ std::vector<uint32_t> EmuWrapper::getCpuRegisters(){
    for(uint8_t reg = M68K_REG_D0; reg <= M68K_REG_SR; reg++)
       registers.push_back(m68k_get_reg(NULL, (m68k_register_t)reg));
    return registers;
-}
-
-QPixmap EmuWrapper::getFramebuffer(){
-   emuNewFrameReady = false;
-   return QPixmap::fromImage(QImage((uchar*)emuDoubleBuffer, emuVideoWidth, emuVideoHeight, emuVideoWidth * sizeof(uint16_t), QImage::Format_RGB16));
-}
-
-bool EmuWrapper::getPowerButtonLed(){
-   return palmMisc.powerButtonLed;
 }
 
 uint64_t EmuWrapper::getEmulatorMemory(uint32_t address, uint8_t size){

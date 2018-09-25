@@ -7,6 +7,8 @@
 #include <QObject>
 #include <QEvent>
 #include <QSettings>
+#include <QAudioOutput>
+#include <QIODevice>
 
 #include "emuwrapper.h"
 #include "statemanager.h"
@@ -69,5 +71,7 @@ private:
    StateManager*   stateManager;
    DebugViewer*    emuDebugger;
    QTimer*         refreshDisplay;
+   QAudioOutput*   audioDevice;
+   QIODevice*      audioOut;
    Ui::MainWindow* ui;
 };

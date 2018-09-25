@@ -14,6 +14,8 @@
 #include <QKeyEvent>
 #include <QGraphicsScene>
 #include <QPixmap>
+#include <QAudioOutput>
+#include <QAudioFormat>
 
 #include <stdint.h>
 
@@ -25,9 +27,23 @@ MainWindow::MainWindow(QWidget* parent) :
    ui(new Ui::MainWindow){
    ui->setupUi(this);
 
+   QAudioFormat format;
+   format.setSampleRate(CRYSTAL_FREQUENCY);
+   format.setChannelCount(2);
+   format.setSampleSize(16);
+   format.setCodec("audio/pcm");
+#if Q_BYTE_ORDER == Q_BIG_ENDIAN
+   format.setByteOrder(QAudioFormat::BigEndian);
+#else
+   format.setByteOrder(QAudioFormat::LittleEndian);
+#endif
+   format.setSampleType(QAudioFormat::SignedInt);
+
    stateManager = new StateManager(this);
    emuDebugger = new DebugViewer(this);
    refreshDisplay = new QTimer(this);
+   audioDevice = new QAudioOutput(format, this);
+   audioOut = audioDevice->start();
 
    //this makes the display window and button icons resize properly
    ui->centralWidget->installEventFilter(this);
@@ -80,6 +96,11 @@ MainWindow::MainWindow(QWidget* parent) :
 }
 
 MainWindow::~MainWindow(){
+   refreshDisplay->stop();
+   delete stateManager;
+   delete emuDebugger;
+   delete refreshDisplay;
+   delete audioDevice;
    delete ui;
 }
 
@@ -142,16 +163,19 @@ void MainWindow::selectHomePath(){
 //display
 void MainWindow::updateDisplay(){
    if(emu.newFrameReady()){
+      //video
       ui->display->setPixmap(emu.getFramebuffer().scaled(ui->display->size().width(), ui->display->size().height(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
-      ui->display->update();
+      ui->display->repaint();
 
+      //audio
+      audioOut->write((const char*)emu.getAudioSamples(), AUDIO_SAMPLES * sizeof(int16_t));
+
+      //power LED
       ui->powerButtonLed->setStyleSheet(emu.getPowerButtonLed() ? "background: lime" : "");
-   }
+      ui->powerButtonLed->repaint();
 
-   if(emu.debugEventOccured()){
-      emu.clearDebugEvent();
-      ui->ctrlBtn->setIcon(QIcon(":/buttons/images/play.svg"));
-      emuDebugger->exec();
+      //allow next frame to start
+      emu.frameHandled();
    }
 }
 
@@ -271,7 +295,7 @@ void MainWindow::on_ctrlBtn_clicked(){
       ui->ctrlBtn->setIcon(QIcon(":/buttons/images/pause.svg"));
    }
 
-   ui->ctrlBtn->repaint();//Qt 5.11 broke icon changes on click, this is a patch
+   ui->ctrlBtn->repaint();
 }
 
 void MainWindow::on_install_clicked(){
@@ -291,7 +315,7 @@ void MainWindow::on_debugger_clicked(){
    if(emu.isInited()){
       emu.pause();
       ui->ctrlBtn->setIcon(QIcon(":/buttons/images/play.svg"));
-      ui->ctrlBtn->repaint();//Qt 5.11 broke icon changes on click, this is a patch
+      ui->ctrlBtn->repaint();
       emuDebugger->exec();
    }
 }

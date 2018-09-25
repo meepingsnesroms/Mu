@@ -579,47 +579,6 @@ static inline uint8_t getPortMValue(){
    return ((registerArrayRead8(PMDATA) & registerArrayRead8(PMDIR)) | (~registerArrayRead8(PMDIR) & 0x20)) & registerArrayRead8(PMSEL);
 }
 
-static inline uint16_t getCurrentSpeakerSample(){
-   uint16_t sampleValue;
-   uint8_t audioMode = registerArrayRead8(PCR) >> 2 & 0x03;
-
-   //00 = PWM1, 01 = PWM2, 10 = PWM1 | PWM2, 11 = PWM1 & PWM2
-   //the calculations for and/or of the 2 pins is too CPU intensive and will not be emulated
-   switch(audioMode){
-      case 0x00:{
-            //PWM1 alone
-            double pwm1Frequency = (double)pwm1FifoCurrentValue() / (registerArrayRead8(PWMP1) + 2);//0<->1
-
-            //cap at 100% duty cycle
-            if(pwm1Frequency > 1.0)
-               pwm1Frequency = 1.0;
-
-            sampleValue = pwm1Frequency * 0xFFFF;
-         }
-         break;
-
-      case 0x01:{
-            //PWM2 alone
-            double pwm2Frequency = (double)registerArrayRead16(PWMW2) / (registerArrayRead16(PWMP2) + 1);
-
-            //cap at 100% duty cycle
-            if(pwm2Frequency > 1.0)
-               pwm2Frequency = 1.0;
-
-            sampleValue = pwm2Frequency * 0xFFFF;
-         }
-         break;
-
-      case 0x02:
-      case 0x03:
-         debugLog("PCR audio mode:%d not supported\n", audioMode);
-         sampleValue = 0;
-         break;
-   }
-
-   return sampleValue;
-}
-
 static inline void samplePwmXClk32(){
    //call every clk32, adds samples to audio buffer
    if(palmAudioSampleIndex < AUDIO_SAMPLES * 2){

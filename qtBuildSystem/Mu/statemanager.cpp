@@ -98,6 +98,6 @@ void StateManager::on_deleteState_clicked(){
 
 void StateManager::on_states_currentItemChanged(QListWidgetItem* current, QListWidgetItem* previous){
    updateStatePreview();
-   ui->states->repaint();//hack, fixes image refresh, this is a Qt bug
-   ui->statePreview->repaint();//hack, fixes image refresh, this is a Qt bug
+   ui->states->repaint();
+   ui->statePreview->repaint();
 }

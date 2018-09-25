@@ -2,6 +2,7 @@
 
 #include <QPixmap>
 #include <QString>
+#include <QByteArray>
 
 #include <thread>
 #include <atomic>
@@ -20,11 +21,11 @@ private:
    std::atomic<bool> emuThreadJoin;
    std::atomic<bool> emuRunning;
    std::atomic<bool> emuPaused;
-   std::atomic<bool> emuDebugEvent;
    uint16_t          emuVideoWidth;
    uint16_t          emuVideoHeight;
    std::atomic<bool> emuNewFrameReady;
-   uint16_t*         emuDoubleBuffer;
+   uint16_t*         emuDoubleBufferVideo;
+   int16_t*          emuDoubleBufferAudio;
    QString           emuRamFilePath;
    QString           emuSdCardFilePath;
 
@@ -51,14 +52,14 @@ public:
    std::vector<QString>& getDebugStrings();
    std::vector<uint64_t>& getDuplicateCallCount();
    std::vector<uint32_t> getCpuRegisters();
-   bool debugEventOccured() const{return emuDebugEvent;}
-   void clearDebugEvent(){emuDebugEvent = false;}
 
    uint16_t screenWidth() const{return emuVideoWidth;}
    uint16_t screenHeight() const{return emuVideoHeight;}
    bool newFrameReady() const{return emuNewFrameReady;}
-   QPixmap getFramebuffer();
-   bool getPowerButtonLed();
+   const QPixmap getFramebuffer(){return QPixmap::fromImage(QImage((uchar*)emuDoubleBufferVideo, emuVideoWidth, emuVideoHeight, emuVideoWidth * sizeof(uint16_t), QImage::Format_RGB16));}
+   const int16_t* getAudioSamples(){return emuDoubleBufferAudio;}
+   void frameHandled(){emuNewFrameReady = false;}
+   bool getPowerButtonLed() const{return palmMisc.powerButtonLed;}
 
    uint64_t getEmulatorMemory(uint32_t address, uint8_t size);
 };
