@@ -81,6 +81,20 @@ static inline uint8_t pwm1FifoEntrys(){
    return pwm1WritePosition - pwm1ReadPosition;
 }
 
+static inline uint16_t pwm1FifoSampleDuration(){
+   uint16_t pwmc1 = registerArrayRead16(PWMC1);
+   uint8_t prescaler = pwmc1 >> 8 & 0x7F;
+   uint8_t clockDivider = 2 << (pwmc1 & 0x03);
+   uint8_t repeat = 1 << (pwmc1 >> 2 & 0x03);
+
+   //using SYSCLK as PWM1 clock
+   //if(!(pwmc1 & 0x8000))
+   //   return prescaler * clockDivider * repeat / sysclksPerClk32();
+
+   //just using CLK32
+   return prescaler * clockDivider * repeat;
+}
+
 //register setters
 static inline void setIprIsrBit(uint32_t interruptBit){
    //allows for setting an interrupt with masking by IMR and logging in IPR
@@ -401,9 +415,14 @@ static inline void setTstat2(uint16_t value){
 static inline void setPwmc1(uint16_t value){
    uint16_t oldPwmc1 = registerArrayRead16(PWMC1);
 
-   //PWM1 enabled, set IRQ bit to fill FIFO
-   if(!(oldPwmc1 & 0x0010) && value & 0x0010)
-      value |= 0x0080;
+   //always have FIFOAV set right now
+   value |= 0x0020;
+
+   //PWM1 enabled, set IRQ and FIFOAV bit to fill FIFO
+   if(!(oldPwmc1 & 0x0010) && value & 0x0010){
+      value |= 0x00A0;
+      pwm1ClocksToNextSample = pwm1FifoSampleDuration();
+   }
 
    //clear interrupt by write(reading can also clear the interrupt)
    if(oldPwmc1 & 0x0080 && !(value & 0x0080)){
@@ -419,7 +438,7 @@ static inline void setPwmc1(uint16_t value){
    }
 
    //PWM1 disabled
-   if(!(value & 0x0010)){
+   if(oldPwmc1 & 0x0010 && !(value & 0x0010)){
       value &= 0x80FF;//clear PWM prescaler value
       pwm1FifoFlush();
    }
@@ -581,12 +600,33 @@ static inline uint8_t getPortMValue(){
 
 static inline void samplePwmXClk32(){
    //call every clk32, adds samples to audio buffer
+
+   //clear PWM1 FIFO values corresponding to the amount of time that has passed
+   if(pwm1FifoEntrys() != 0){
+      if(pwm1ClocksToNextSample > 0)
+         pwm1ClocksToNextSample--;
+      if(pwm1ClocksToNextSample == 0){
+         uint16_t pwmc1 = registerArrayRead16(PWMC1);
+
+         //switch out sample
+         pwm1FifoRemove();
+         pwm1ClocksToNextSample = pwm1FifoSampleDuration();
+
+         //set FIFOAV
+         registerArrayWrite16(PWMC1, pwmc1 | 0x0020);
+
+         //interrupt to fill FIFO
+         if(pwm1FifoEntrys() < 2 && (pwmc1 & 0x00C0) == 0x0040){
+            setIprIsrBit(INT_PWM1);
+            checkInterrupts();
+         }
+      }
+   }
+
    if(palmAudioSampleIndex < AUDIO_SAMPLES * 2){
       double dutyCycle;
       uint16_t firstLowSample;
       uint8_t audioMode = registerArrayRead8(PCR) >> 2 & 0x03;
-
-      //unemulated, need to clear PWM1 FIFO values corrisponding to the amount of time that has passed
 
       //00 = PWM1, 01 = PWM2, 10 = PWM1 | PWM2, 11 = PWM1 & PWM2
       //the calculations for and/or of the 2 pins is too CPU intensive and will not be emulated

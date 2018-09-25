@@ -621,10 +621,13 @@ void setHwRegister8(uint32_t address, uint8_t value){
          break;
 
       case PWMS1 + 1:
-         //write only if PWM1 enabled
-         if(registerArrayRead16(PWMC1) & 0x0010)
-            if(pwm1FifoEntrys() < 5)
-               pwm1FifoWrite(value);
+         //write only if PWM1 and FIFOAV are set and a slot is available
+         if((registerArrayRead16(PWMC1) & 0x0030) == 0x0030 && pwm1FifoEntrys() < 5)
+            pwm1FifoWrite(value);
+
+         //clear FIFOAV if full
+         if(pwm1FifoEntrys() == 5)
+            registerArrayWrite16(PWMC1, registerArrayRead16(PWMC1) & 0xFFDF);
          break;
 
       case PWMP1:
@@ -996,12 +999,16 @@ void setHwRegister16(uint32_t address, uint16_t value){
          break;
 
       case PWMS1:
-         //write only if PWM1 enabled
-         if(registerArrayRead16(PWMC1) & 0x0010){
+         //write only if PWM1 and FIFOAV are set and a slot is available
+         if((registerArrayRead16(PWMC1) & 0x0030) == 0x0030){
             if(pwm1FifoEntrys() < 5)
                pwm1FifoWrite(value >> 8);
             if(pwm1FifoEntrys() < 5)
                pwm1FifoWrite(value & 0xFF);
+
+            //clear FIFOAV if full
+            if(pwm1FifoEntrys() == 5)
+               registerArrayWrite16(PWMC1, registerArrayRead16(PWMC1) & 0xFFDF);
          }
          break;
 
@@ -1088,12 +1095,16 @@ void resetHwRegisters(){
    timerStatusReadAcknowledge[0] = 0x0000;
    timerStatusReadAcknowledge[1] = 0x0000;
    interruptEdgeTriggered = 0x00000000;
-   memset(spi1RxFifo, 0x00, 8 * sizeof(uint16_t));
-   memset(spi1TxFifo, 0x00, 8 * sizeof(uint16_t));
+   memset(spi1RxFifo, 0x00, sizeof(spi1RxFifo));
+   memset(spi1TxFifo, 0x00, sizeof(spi1TxFifo));
    spi1RxReadPosition = 0;
    spi1RxWritePosition = 0;
    spi1TxReadPosition = 0;
    spi1TxWritePosition = 0;
+   pwm1ClocksToNextSample = 0;
+   memset(pwm1Fifo, 0x00, sizeof(pwm1Fifo));
+   pwm1ReadPosition = 0;
+   pwm1WritePosition = 0;
 
    memset(chips, 0x00, sizeof(chips));
    //all chip selects are disabled at boot and CSA0 is mapped to 0x00000000 and covers the entire address range until CSA is set enabled
