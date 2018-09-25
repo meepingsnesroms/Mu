@@ -621,8 +621,16 @@ void setHwRegister8(uint32_t address, uint8_t value){
          break;
 
       case PWMS1 + 1:
-         if(pwm1FifoEntrys() < 5)
-            pwm1FifoWrite(value);
+         //write only if PWM1 enabled
+         if(registerArrayRead16(PWMC1) & 0x0010)
+            if(pwm1FifoEntrys() < 5)
+               pwm1FifoWrite(value);
+         break;
+
+      case PWMP1:
+         //write only if PWM1 enabled
+         if(registerArrayRead16(PWMC1) & 0x0010)
+            registerArrayWrite8(address, value);
          break;
 
       case PCTLR:
@@ -988,10 +996,13 @@ void setHwRegister16(uint32_t address, uint16_t value){
          break;
 
       case PWMS1:
-         if(pwm1FifoEntrys() < 5)
-            pwm1FifoWrite(value >> 8);
-         if(pwm1FifoEntrys() < 5)
-            pwm1FifoWrite(value & 0xFF);
+         //write only if PWM1 enabled
+         if(registerArrayRead16(PWMC1) & 0x0010){
+            if(pwm1FifoEntrys() < 5)
+               pwm1FifoWrite(value >> 8);
+            if(pwm1FifoEntrys() < 5)
+               pwm1FifoWrite(value & 0xFF);
+         }
          break;
 
       case SPISPC:

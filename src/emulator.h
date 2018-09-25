@@ -127,7 +127,8 @@ extern sd_card_t palmSdCard;//dont touch
 extern misc_hw_t palmMisc;//read/write allowed
 extern uint16_t  palmFramebuffer[];//read allowed if FEATURE_320x320 is off, or else invalid data will be displayed
 extern uint16_t* palmExtendedFramebuffer;//read allowed if FEATURE_320x320 is on, or else SIGSEGV
-extern uint16_t  palmAudio[];//read allowed
+extern int16_t   palmAudio[];//read allowed
+extern uint32_t  palmAudioSampleIndex;//dont touch
 extern uint32_t  palmSpecialFeatures;//read allowed
 extern double    palmCrystalCycles;//dont touch
 extern double    palmCycleCounter;//dont touch
