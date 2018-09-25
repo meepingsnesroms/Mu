@@ -586,15 +586,22 @@ static inline void samplePwmXClk32(){
       uint16_t firstLowSample;
       uint8_t audioMode = registerArrayRead8(PCR) >> 2 & 0x03;
 
+      //unemulated, need to clear PWM1 FIFO values corrisponding to the amount of time that has passed
+
       //00 = PWM1, 01 = PWM2, 10 = PWM1 | PWM2, 11 = PWM1 & PWM2
       //the calculations for and/or of the 2 pins is too CPU intensive and will not be emulated
       switch(audioMode){
          case 0x00:
             //PWM1 alone
-            dutyCycle = (double)pwm1FifoCurrentValue() / (registerArrayRead8(PWMP1) + 2);//0<->1
-            //cap at 100% duty cycle
-            if(dutyCycle > 1.0)
-               dutyCycle = 1.0;
+            if(pwm1FifoEntrys() != 0){
+               dutyCycle = (double)pwm1FifoCurrentValue() / (registerArrayRead8(PWMP1) + 2);//0<->1
+               //cap at 100% duty cycle
+               if(dutyCycle > 1.0)
+                  dutyCycle = 1.0;
+            }
+            else{
+               dutyCycle = 0.0;
+            }
             break;
 
          case 0x01:
@@ -608,7 +615,7 @@ static inline void samplePwmXClk32(){
          case 0x02:
          case 0x03:
             debugLog("PCR audio mode:%d not supported\n", audioMode);
-            dutyCycle = 0;
+            dutyCycle = 0.0;
             break;
       }
 
