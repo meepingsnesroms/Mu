@@ -10,8 +10,8 @@ extern "C" {
 #include <stdarg.h>
 #include <stdio.h>
 
-//#include "memoryAccess.h"//for size macros
-#include "specs/emuFeatureRegistersSpec.h"
+#include "memoryAccess.h"//for size macros
+#include "specs/emuFeatureRegistersSpec.h"//for feature names
 
 //to enable degguging define EMU_DEBUG, all options below do nothing unless EMU_DEBUG is defined
 //to enable sandbox debugging define EMU_SANDBOX

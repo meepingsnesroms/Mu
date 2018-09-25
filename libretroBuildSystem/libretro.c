@@ -259,6 +259,7 @@ void retro_run(void)
       //TODO make mouse cursor
    }
    
+   audio_batch_cb(palmAudio, AUDIO_SAMPLES);
    video_cb(palmFramebuffer, screenWidth, screenHeight, screenWidth * sizeof(uint16_t));
 }
 

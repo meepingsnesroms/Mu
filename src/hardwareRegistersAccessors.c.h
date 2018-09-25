@@ -622,7 +622,7 @@ static inline uint16_t getCurrentSpeakerSample(){
 
 static inline void samplePwmXClk32(){
    //call every clk32, adds samples to audio buffer
-   if(palmAudioSampleIndex < AUDIO_SAMPLES){
+   if(palmAudioSampleIndex < AUDIO_SAMPLES * 2){
       double dutyCycle;
       uint16_t firstLowSample;
       uint8_t audioMode = registerArrayRead8(PCR) >> 2 & 0x03;
@@ -656,8 +656,9 @@ static inline void samplePwmXClk32(){
       //add samples to audio buffer
       firstLowSample = dutyCycle * AUDIO_DUTY_CYCLE_SIZE;
       for(uint16_t count = 0; count < AUDIO_DUTY_CYCLE_SIZE; count++){
-         palmAudio[palmAudioSampleIndex] = (count < firstLowSample) ? 32767 : -32768;
-         palmAudioSampleIndex++;
+         palmAudio[palmAudioSampleIndex] = (count < firstLowSample) ? 0x6666 : -0x6666;//not full volume, leave 20% for audio spikes
+         palmAudio[palmAudioSampleIndex + 1] = palmAudio[palmAudioSampleIndex];
+         palmAudioSampleIndex += 2;
       }
    }
 }
