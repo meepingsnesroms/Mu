@@ -489,7 +489,7 @@ static inline uint8_t getPortDInputPinValues(){
 
    //kbd row 2
    if(requestedRow & 0x80)
-      portDInputValues |= palmInput.buttonPower | palmInput.buttonContrast << 1 | palmInput.buttonAddress << 3;
+      portDInputValues |= palmInput.buttonPower | palmInput.buttonAddress << 3;
 
    //the port d pins state is high for false, invert them on return, Palm OS uses PDPOL to swap back to pressed == 1
    return ~portDInputValues;

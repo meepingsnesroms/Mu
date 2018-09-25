@@ -30,7 +30,7 @@
 
 static retro_log_printf_t log_cb;
 static retro_video_refresh_t video_cb;
-static retro_audio_sample_batch_t audio_batch_cb;
+static retro_audio_sample_batch_t audio_cb;
 static retro_environment_t environ_cb;
 static retro_input_poll_t input_poll_cb;
 static retro_input_state_t input_state_cb;
@@ -149,8 +149,8 @@ void retro_get_system_info(struct retro_system_info *info)
 
 void retro_get_system_av_info(struct retro_system_av_info *info)
 {
-   info->timing.fps = 60.0;
-   info->timing.sample_rate = 32768.0;
+   info->timing.fps = EMU_FPS;
+   info->timing.sample_rate = CRYSTAL_FREQUENCY * AUDIO_DUTY_CYCLE_SIZE;
 
    info->geometry.base_width   = 160;
    info->geometry.base_height  = 220;
@@ -195,7 +195,7 @@ void retro_set_audio_sample(retro_audio_sample_t cb)
 
 void retro_set_audio_sample_batch(retro_audio_sample_batch_t cb)
 {
-   audio_batch_cb = cb;
+   audio_cb = cb;
 }
 
 void retro_set_input_poll(retro_input_poll_t cb)
@@ -227,6 +227,16 @@ void retro_run(void)
       touchCursorX += input_state_cb(0, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_LEFT, RETRO_DEVICE_ID_ANALOG_X) * JOYSTICK_MULTIPLIER;
       touchCursorY += input_state_cb(0, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_LEFT, RETRO_DEVICE_ID_ANALOG_Y) * JOYSTICK_MULTIPLIER;
       
+      if(touchCursorX < 0)
+         touchCursorX = 0;
+      else if(touchCursorX > 159)
+         touchCursorX = 159;
+      
+      if(touchCursorY < 0)
+         touchCursorY = 0;
+      else if(touchCursorY > 219)
+         touchCursorY = 219;
+      
       palmInput.touchscreenX = touchCursorX;
       palmInput.touchscreenY = touchCursorY;
       palmInput.touchscreenTouched = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R2);
@@ -250,8 +260,8 @@ void retro_run(void)
    
    //special buttons
    palmInput.buttonPower = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_START);
-   palmInput.buttonContrast = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_SELECT);
    
+   //run emulator
    emulateFrame();
    
    //draw mouse
@@ -259,8 +269,8 @@ void retro_run(void)
       //TODO make mouse cursor
    }
    
-   audio_batch_cb(palmAudio, AUDIO_SAMPLES);
    video_cb(palmFramebuffer, screenWidth, screenHeight, screenWidth * sizeof(uint16_t));
+   audio_cb(palmAudio, AUDIO_SAMPLES);
 }
 
 bool retro_load_game(const struct retro_game_info *info)
@@ -287,7 +297,6 @@ bool retro_load_game(const struct retro_game_info *info)
       { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_RIGHT,  "Dpad Right" },
       { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R,      "Dpad Middle" },
       { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_START,  "Power" },
-      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_SELECT, "Contrast" },
       { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_A,      "Notes" },
       { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_B,      "Todo" },
       { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_X,      "Address Book" },

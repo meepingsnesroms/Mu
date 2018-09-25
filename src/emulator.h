@@ -83,7 +83,6 @@ typedef struct{
    bool     buttonNotes;//hw button 4
    
    bool     buttonPower;
-   bool     buttonContrast;
    
    uint16_t touchscreenX;
    uint16_t touchscreenY;
