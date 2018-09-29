@@ -8,8 +8,10 @@ Theres no auto ROM installer
 app install hack needs to be removed when SD card works
 double pressing power button issue
 QSettings is broken on Windows(this prevents loading the ROM)
+Mac Qt build has no icons
 
 Fixed:
+Windows Qt build has no icons
 When running OS commands through callFunction() it can crash
 Nothing can be installed(theres no memory card, hotsync emulation or direct installation hack)
 Running at 100% speed causes crashes

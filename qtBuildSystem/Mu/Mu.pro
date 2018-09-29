@@ -34,6 +34,7 @@ macx {
 }
 
 windows {
+    RC_ICONS = windows/palm.ico
     QMAKE_CFLAGS += -openmp
     QMAKE_CXXFLAGS += -openmp
     DEFINES += "_Pragma=__pragma"
