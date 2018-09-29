@@ -76,6 +76,15 @@ Install prc-tools from the below link(self compiled or prepackaged vm)
     ./make.sh
 
 ## Running
+#### Before Compiling On Windows
+You must enable symlinks first:
+
+    cd ./libretro-palmm515emu
+    git config core.symlinks true
+
+Then open GitHub Desktop and discard all changes to create the linked directorys.  
+The source files can now be located properly.
+
 #### For Qt
  1. Run once to create the directory tree
  2. Copy "palmRoms/Palm m515/rom(selfDumped).bin" to "~/Mu"

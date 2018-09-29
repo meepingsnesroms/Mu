@@ -4,10 +4,6 @@
 
 #include <stdint.h>
 
-#if defined(_MSC_VER) && _MSC_VER > 1200
-#define SWAP16 _byteswap_ushort
-#define SWAP32 _byteswap_ulong
-#else
 #define SWAP16(x) ((uint16_t)(                  \
          (((uint16_t)(x) & 0x00ff) << 8)      | \
          (((uint16_t)(x) & 0xff00) >> 8)        \
@@ -18,7 +14,6 @@
          (((uint32_t)(x) & 0x00ff0000) >>  8) | \
          (((uint32_t)(x) & 0xff000000) >> 24)   \
          ))
-#endif
 
 #if defined(_MSC_VER) && _MSC_VER <= 1200
 #define SWAP64(val)                                             \

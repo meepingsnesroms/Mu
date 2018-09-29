@@ -24,17 +24,28 @@ DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000 # disables all the APIs depreca
 
 # ios {
 #     QMAKE_INFO_PLIST = ios/Info.plist
+#     DEFINES += EMU_MULTITHREADED
 # }
 
 macx {
     CONFIG += sdk_no_version_check # using 10.14 SDK which Qt only unofficialy supports
     QMAKE_INFO_PLIST = macos/Info.plist
+    DEFINES += EMU_MULTITHREADED
+}
+
+windows {
+    QMAKE_CFLAGS += -openmp
+    QMAKE_CXXFLAGS += -openmp
+    QMAKE_LFLAGS += -openmp
+    DEFINES += "_Pragma=__pragma"
+    DEFINES += EMU_MULTITHREADED
 }
 
 android {
     QMAKE_CFLAGS += -fopenmp
     QMAKE_CXXFLAGS += -fopenmp
     QMAKE_LFLAGS += -fopenmp
+    DEFINES += EMU_MULTITHREADED
 }
 
 CONFIG(debug, debug|release){
@@ -44,9 +55,8 @@ CONFIG(debug, debug|release){
     # DEFINES += EMU_SANDBOX_LOG_APIS
 }
 
-DEFINES += EMU_MULTITHREADED
 QMAKE_CFLAGS += -std=c99
-QMAKE_CXXFLAGS += -std=c++11
+CONFIG += c++11
 
 INCLUDEPATH += $$PWD/qt-common/include
 
