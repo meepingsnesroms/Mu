@@ -37,12 +37,12 @@ public:
    EmuWrapper();
    ~EmuWrapper();
 
-   uint32_t init(QString romPath, QString bootloaderPath = "", QString ramPath = "", QString sdCardPath = "", uint32_t features = FEATURE_ACCURATE);
+   uint32_t init(const QString& romPath, const QString& bootloaderPath = "", const QString& ramPath = "", const QString& sdCardPath = "", uint32_t features = FEATURE_ACCURATE);
    void exit();
    void pause();
    void resume();
-   uint32_t saveState(QString path);
-   uint32_t loadState(QString path);
+   uint32_t saveState(const QString& path);
+   uint32_t loadState(const QString& path);
    bool isInited() const{return emuInited;}
    bool isRunning() const{return emuRunning;}
    bool isPaused() const{return emuPaused;}

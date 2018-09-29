@@ -105,7 +105,7 @@ void EmuWrapper::emuThreadRun(){
    }
 }
 
-uint32_t EmuWrapper::init(QString romPath, QString bootloaderPath, QString ramPath, QString sdCardPath, uint32_t features){
+uint32_t EmuWrapper::init(const QString& romPath, const QString& bootloaderPath, const QString& ramPath, const QString& sdCardPath, uint32_t features){
    if(!emuRunning && !emuInited){
       //start emu
       uint32_t error;
@@ -268,7 +268,7 @@ void EmuWrapper::resume(){
    }
 }
 
-uint32_t EmuWrapper::saveState(QString path){
+uint32_t EmuWrapper::saveState(const QString& path){
    bool wasPaused = isPaused();
    uint32_t error = EMU_ERROR_INVALID_PARAMETER;
    QFile stateFile(path);
@@ -296,7 +296,7 @@ uint32_t EmuWrapper::saveState(QString path){
    return error;
 }
 
-uint32_t EmuWrapper::loadState(QString path){
+uint32_t EmuWrapper::loadState(const QString& path){
    bool wasPaused = isPaused();
    uint32_t error = EMU_ERROR_INVALID_PARAMETER;
    QFile stateFile(path);

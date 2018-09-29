@@ -106,7 +106,7 @@ MainWindow::~MainWindow(){
    delete ui;
 }
 
-bool MainWindow::eventFilter(QObject *object, QEvent *event){
+bool MainWindow::eventFilter(QObject* object, QEvent* event){
    if(event->type() == QEvent::Resize){
       if(QString(object->metaObject()->className()) == "QPushButton"){
          QPushButton* button = (QPushButton*)object;
@@ -137,7 +137,7 @@ bool MainWindow::eventFilter(QObject *object, QEvent *event){
    return QMainWindow::eventFilter(object, event);
 }
 
-void MainWindow::createHomeDirectoryTree(QString path){
+void MainWindow::createHomeDirectoryTree(const QString& path){
    QDir homeDir(path);
 
    //creates directorys if not present, does nothing if they exist already
@@ -147,11 +147,11 @@ void MainWindow::createHomeDirectoryTree(QString path){
    homeDir.mkpath("./debugDumps");
 }
 
-void MainWindow::popupErrorDialog(QString error){
+void MainWindow::popupErrorDialog(const QString& error){
    QMessageBox::critical(this, "Mu", error, QMessageBox::Ok);
 }
 
-void MainWindow::popupInformationDialog(QString info){
+void MainWindow::popupInformationDialog(const QString& info){
    QMessageBox::information(this, "Mu", info, QMessageBox::Ok);
 }
 

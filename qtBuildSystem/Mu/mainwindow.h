@@ -29,12 +29,12 @@ public:
    ~MainWindow();
 
 private:
-   void createHomeDirectoryTree(QString path);
+   void createHomeDirectoryTree(const QString& path);
 
 private slots:
    bool eventFilter(QObject* object, QEvent* event);
-   void popupErrorDialog(QString error);
-   void popupInformationDialog(QString info);
+   void popupErrorDialog(const QString& error);
+   void popupInformationDialog(const QString& info);
    void selectHomePath();
 
    //display
