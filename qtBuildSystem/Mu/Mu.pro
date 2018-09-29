@@ -36,7 +36,6 @@ macx {
 windows {
     QMAKE_CFLAGS += -openmp
     QMAKE_CXXFLAGS += -openmp
-    QMAKE_LFLAGS += -openmp
     DEFINES += "_Pragma=__pragma"
     DEFINES += EMU_MULTITHREADED
 }

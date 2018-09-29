@@ -7,6 +7,7 @@ If there is no userdata-en-m515.ram on Android the emu won't create it(this is l
 Theres no auto ROM installer
 app install hack needs to be removed when SD card works
 double pressing power button issue
+QSettings is broken on Windows(this prevents loading the ROM)
 
 Fixed:
 When running OS commands through callFunction() it can crash
