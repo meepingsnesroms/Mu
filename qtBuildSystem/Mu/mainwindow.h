@@ -23,7 +23,7 @@ class MainWindow : public QMainWindow{
 
 public:
    EmuWrapper emu;
-   QSettings  settings;
+   QSettings* settings;
 
    explicit MainWindow(QWidget* parent = nullptr);
    ~MainWindow();

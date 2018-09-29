@@ -123,7 +123,7 @@ void DebugViewer::on_debug32Bit_clicked(){
 
 void DebugViewer::on_debugDump_clicked(){
    QString fileBuffer;
-   QFile fileOut(((MainWindow*)parentWidget())->settings.value("resourceDirectory", "").toString() + "/debugDumps/" + ui->debugFilePath->text());
+   QFile fileOut(((MainWindow*)parentWidget())->settings->value("resourceDirectory", "").toString() + "/debugDumps/" + ui->debugFilePath->text());
 
    for(int index = 0; index < ui->debugValueList->count(); index++){
       fileBuffer += ui->debugValueList->item(index)->text();

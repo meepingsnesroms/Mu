@@ -39,6 +39,7 @@ MainWindow::MainWindow(QWidget* parent) :
 #endif
    format.setSampleType(QAudioFormat::SignedInt);
 
+   settings = new QSettings(QDir::homePath() + "/MuCfg.txt", QSettings::IniFormat);//settings is public, create it first
    stateManager = new StateManager(this);
    emuDebugger = new DebugViewer(this);
    refreshDisplay = new QTimer(this);
@@ -69,7 +70,7 @@ MainWindow::MainWindow(QWidget* parent) :
    ui->stateManager->installEventFilter(this);
 
 
-   QString resourceDirPath = settings.value("resourceDirectory", "").toString();
+   QString resourceDirPath = settings->value("resourceDirectory", "").toString();
 
    //use default path if path not set
    if(resourceDirPath == ""){
@@ -80,7 +81,7 @@ MainWindow::MainWindow(QWidget* parent) :
 #else
       resourceDirPath = QDir::homePath() + "/Mu";
 #endif
-      settings.setValue("resourceDirectory", resourceDirPath);
+      settings->setValue("resourceDirectory", resourceDirPath);
    }
 
    //create directory tree, in case someone deleted it since the emu was last run
@@ -101,6 +102,7 @@ MainWindow::~MainWindow(){
    delete emuDebugger;
    delete refreshDisplay;
    delete audioDevice;
+   delete settings;//settings is public, destroy it last
    delete ui;
 }
 
@@ -157,7 +159,7 @@ void MainWindow::selectHomePath(){
    QString homeDirPath = QFileDialog::getOpenFileName(this, "New Home Directory(\"~/Mu\" is default)", QDir::root().path(), nullptr);
 
    createHomeDirectoryTree(homeDirPath);
-   settings.setValue("resourceDirectory", homeDirPath);
+   settings->setValue("resourceDirectory", homeDirPath);
 }
 
 //display
@@ -255,7 +257,7 @@ void MainWindow::on_right_released(){
 //emu control
 void MainWindow::on_ctrlBtn_clicked(){
    if(!emu.isInited()){
-      QString sysDir = settings.value("resourceDirectory", "").toString();
+      QString sysDir = settings->value("resourceDirectory", "").toString();
       uint32_t error = emu.init(sysDir + "/palmos41-en-m515.rom", QFile(sysDir + "/bootloader-en-m515.rom").exists() ? sysDir + "/bootloader-en-m515.rom" : "", sysDir + "/userdata-en-m515.ram", sysDir + "/sd-en-m515.img", FEATURE_DEBUG);
       if(error == EMU_ERROR_NONE){
          ui->calendar->setEnabled(true);
@@ -322,12 +324,12 @@ void MainWindow::on_debugger_clicked(){
 
 void MainWindow::on_screenshot_clicked(){
    if(emu.isInited()){
-      qlonglong screenshotNumber = settings.value("screenshotNum", 0).toLongLong();
-      QString screenshotPath = settings.value("resourceDirectory", "").toString() + "/screenshots/screenshot" + QString::number(screenshotNumber, 10) + ".png";
+      qlonglong screenshotNumber = settings->value("screenshotNum", 0).toLongLong();
+      QString screenshotPath = settings->value("resourceDirectory", "").toString() + "/screenshots/screenshot" + QString::number(screenshotNumber, 10) + ".png";
 
       emu.getFramebuffer().save(screenshotPath, "PNG", 100);
       screenshotNumber++;
-      settings.setValue("screenshotNum", screenshotNumber);
+      settings->setValue("screenshotNum", screenshotNumber);
    }
 }
 
