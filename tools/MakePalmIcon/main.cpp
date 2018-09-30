@@ -13,6 +13,7 @@
 
 
 #define BITMAP_HEADER_SIZE 16
+#define BITMAP_DIRECT_INFO_TYPE_SIZE 8
 #define MAX_PALM_BITMAP_SIZE (0xFFFF * 4)
 
 
@@ -41,6 +42,8 @@ static inline uint16_t getNextDepthOffset(int16_t width, int16_t height, uint8_t
    uint32_t nextDepthOffset = 0;
 
    nextDepthOffset += BITMAP_HEADER_SIZE;
+   if(bitsPerPixel == 16)
+      nextDepthOffset += BITMAP_DIRECT_INFO_TYPE_SIZE;
    //nextDepthOffset += 0xFF;//custom palette is not supported
    nextDepthOffset += getRowBytes(width, bitsPerPixel) * height;
 
@@ -138,7 +141,7 @@ uint32_t renderPalmIcon(const QString& svg, uint8_t* output, int16_t width, int1
    offset += sizeof(int16_t);
    writeBe16(output + offset, getRowBytes(width, bitsPerPixel));//rowBytes
    offset += sizeof(uint16_t);
-   writeBe16(output + offset, bitsPerPixel == 16 ? 0x0400 : 0x0000);//bitmapFlags, only directColor is implemented, not implemented, prevents using transparency and color tables
+   writeBe16(output + offset, (bitsPerPixel > 4 ? 0x2000 : 0x0000) | (bitsPerPixel == 16 ? 0x0400 : 0x0000));//bitmapFlags, only hasTransparency and directColor are implemented
    offset += sizeof(uint16_t);
    output[offset] = bitsPerPixel;//pixelSize
    offset += sizeof(uint8_t);
@@ -162,6 +165,27 @@ uint32_t renderPalmIcon(const QString& svg, uint8_t* output, int16_t width, int1
    offset += sizeof(uint8_t);
    output[offset] = 0x00;//reserved
    offset += sizeof(uint8_t);
+   if(bitsPerPixel == 16){
+      //add BitmapDirectInfoType
+      output[offset] = 0x05;//redBits
+      offset += sizeof(uint8_t);
+      output[offset] = 0x06;//greenBits
+      offset += sizeof(uint8_t);
+      output[offset] = 0x05;//blueBits
+      offset += sizeof(uint8_t);
+      output[offset] = 0x00;//reserved
+      offset += sizeof(uint8_t);
+
+      //RGBColorType transparentColor
+      output[offset] = 0xFF;//index
+      offset += sizeof(uint8_t);
+      output[offset] = 0x1F;//r
+      offset += sizeof(uint8_t);
+      output[offset] = 0x3F;//g
+      offset += sizeof(uint8_t);
+      output[offset] = 0x1F;//b
+      offset += sizeof(uint8_t);
+   }
    //0xFF look up table goes here when active, custom LUT is currently unsupported
    switch(bitsPerPixel){
       case 1:
