@@ -3,6 +3,7 @@
 #include <QPainter>
 #include <QImage>
 #include <QColor>
+#include <QRectF>
 #include <QFile>
 #include <QString>
 
@@ -50,8 +51,8 @@ void renderTo1Bit(uint8_t* data, const QImage& image){
    uint16_t rowBytes = getRowBytes(image.width(), 1);
 
    memset(data, 0x00, rowBytes * image.height());
-   for(int32_t y = 0; y < image.height(); y++){
-      for(int32_t x = 0; x < image.width(); x++){
+   for(int16_t y = 0; y < image.height(); y++){
+      for(int16_t x = 0; x < image.width(); x++){
          QColor pixel = QColor(image.pixel(x, y));
          bool pixelAveraged = (pixel.redF() + pixel.greenF() + pixel.blueF()) / 3.0 > 0.5;
 
@@ -65,8 +66,8 @@ void renderTo2Bits(uint8_t* data, const QImage& image){
    uint16_t rowBytes = getRowBytes(image.width(), 2);
 
    memset(data, 0x00, rowBytes * image.height());
-   for(int32_t y = 0; y < image.height(); y++){
-      for(int32_t x = 0; x < image.width(); x++){
+   for(int16_t y = 0; y < image.height(); y++){
+      for(int16_t x = 0; x < image.width(); x++){
          QColor pixel = QColor(image.pixel(x, y));
          uint8_t pixelAveraged = (pixel.redF() + pixel.greenF() + pixel.blueF()) / 3.0 * 4.0;
 
@@ -79,8 +80,8 @@ void renderTo4Bits(uint8_t* data, const QImage& image){
    uint16_t rowBytes = getRowBytes(image.width(), 4);
 
    memset(data, 0x00, rowBytes * image.height());
-   for(int32_t y = 0; y < image.height(); y++){
-      for(int32_t x = 0; x < image.width(); x++){
+   for(int16_t y = 0; y < image.height(); y++){
+      for(int16_t x = 0; x < image.width(); x++){
          QColor pixel = QColor(image.pixel(x, y));
          uint8_t pixelAveraged = (pixel.redF() + pixel.greenF() + pixel.blueF()) / 3.0 * 16.0;
 
@@ -89,17 +90,16 @@ void renderTo4Bits(uint8_t* data, const QImage& image){
    }
 }
 
-/*
 void renderTo8Bits(uint8_t* data, const QImage& image){
    uint16_t rowBytes = getRowBytes(image.width(), 8);
 
    memset(data, 0x00, rowBytes * image.height());
-   for(int32_t y = 0; y < image.height(); y++){
-      for(int32_t x = 0; x < image.width(); x++){
+   for(int16_t y = 0; y < image.height(); y++){
+      for(int16_t x = 0; x < image.width(); x++){
          QColor pixel = QColor(image.pixel(x, y));
-         uint8_t pixelAveraged = (pixel.redF() + pixel.greenF() + pixel.blueF()) / 3.0 * 4.0;
 
-         data[y * rowBytes + x / 4] |= pixelAveraged << 6 - x % 4 * 2;
+         //may need to dump the LUT from a Palm ROM
+         data[y * rowBytes + x] = (pixel.red() >> 5 & 0x07) << 5 | (pixel.green() >> 5 & 0x07) << 2 | (pixel.blue() >> 6 & 0x03);
       }
    }
 }
@@ -108,23 +108,25 @@ void renderTo16Bits(uint8_t* data, const QImage& image){
    uint16_t rowBytes = getRowBytes(image.width(), 16);
 
    memset(data, 0x00, rowBytes * image.height());
-   for(int32_t y = 0; y < image.height(); y++){
-      for(int32_t x = 0; x < image.width(); x++){
+   for(int16_t y = 0; y < image.height(); y++){
+      for(int16_t x = 0; x < image.width(); x++){
          QColor pixel = QColor(image.pixel(x, y));
-         uint8_t pixelAveraged = (pixel.redF() + pixel.greenF() + pixel.blueF()) / 3.0 * 4.0;
+         uint16_t pixel16 = (pixel.red() >> 3 & 0x001F) << 11 | (pixel.green() >> 2 & 0x003F) << 5 | (pixel.blue() >> 3 & 0x001F);
 
-         data[y * rowBytes + x / 4] |= pixelAveraged << 6 - x % 4 * 2;
+         writeBe16(data + y * rowBytes + x * 2, pixel16);
       }
    }
 }
-*/
 
-uint32_t renderPalmIcon(const QString& svg, uint8_t* output, int16_t width, int16_t height, uint8_t bitsPerPixel){
+uint32_t renderPalmIcon(const QString& svg, uint8_t* output, int16_t width, int16_t height, uint8_t bitsPerPixel, bool lastBitmap){
    QImage canvas(width, height, QImage::Format_RGB16);
    QPainter painter(&canvas);
    QSvgRenderer svgRenderer(svg);
    uint32_t offset = 0;
 
+   //clear buffer to white and render
+   for(int16_t count = 0; count < height; count++)
+      memset(canvas.scanLine(count), 0xFF, width * sizeof(uint16_t));
    svgRenderer.render(&painter);
 
    //write a Palm bitmap struct
@@ -136,16 +138,16 @@ uint32_t renderPalmIcon(const QString& svg, uint8_t* output, int16_t width, int1
    offset += sizeof(int16_t);
    writeBe16(output + offset, getRowBytes(width, bitsPerPixel));//rowBytes
    offset += sizeof(uint16_t);
-   writeBe16(output + offset, 0x0000);//bitmapFlags, not implemented, prevents using transparency and color tables
+   writeBe16(output + offset, bitsPerPixel == 16 ? 0x0400 : 0x0000);//bitmapFlags, only directColor is implemented, not implemented, prevents using transparency and color tables
    offset += sizeof(uint16_t);
    output[offset] = bitsPerPixel;//pixelSize
    offset += sizeof(uint8_t);
    output[offset] = bitmapVersion;//version
    offset += sizeof(uint8_t);
-   writeBe16(output + offset, getNextDepthOffset(width, height, bitsPerPixel));//nextDepthOffset
+   writeBe16(output + offset, lastBitmap ? 0 : getNextDepthOffset(width, height, bitsPerPixel));//nextDepthOffset
    offset += sizeof(uint16_t);
    if(bitmapVersion > 1){
-      output[offset] = 0x00;//transparentIndex, not implemented, will cause white icon borders on OS5 devices
+      output[offset] = 0xFF;//transparentIndex, white is transparent, not doing this causes issues on Palm OS5+
       offset += sizeof(uint8_t);
       output[offset] = 0xFF;//compressionType
       offset += sizeof(uint8_t);
@@ -175,11 +177,11 @@ uint32_t renderPalmIcon(const QString& svg, uint8_t* output, int16_t width, int1
          break;
 
       case 8:
-         //renderTo8Bits(output + offset, canvas);
+         renderTo8Bits(output + offset, canvas);
          break;
 
       case 16:
-         //renderTo16Bits(output + offset, canvas);
+         renderTo16Bits(output + offset, canvas);
          break;
    }
    offset += getRowBytes(width, bitsPerPixel) * height;
@@ -195,17 +197,17 @@ void convertToPalmIcons(const QString& svg, const QString& outputDirectory){
    uint32_t taib03E8Offset = 0;
    uint32_t taib03E9Offset = 0;
 
-   taib03E8Offset += renderPalmIcon(svg, taib03E8 + taib03E8Offset, 32, 32, 1);//1bpp, greyscale
-   taib03E8Offset += renderPalmIcon(svg, taib03E8 + taib03E8Offset, 32, 32, 2);//2bpp, greyscale
-   taib03E8Offset += renderPalmIcon(svg, taib03E8 + taib03E8Offset, 32, 32, 4);//4bpp, greyscale
-   taib03E8Offset += renderPalmIcon(svg, taib03E8 + taib03E8Offset, 32, 32, 8);//8bpp, color
-   taib03E8Offset += renderPalmIcon(svg, taib03E8 + taib03E8Offset, 32, 32, 16);//16bpp, color
+   taib03E8Offset += renderPalmIcon(svg, taib03E8 + taib03E8Offset, 32, 32, 1, false);//1bpp, greyscale
+   taib03E8Offset += renderPalmIcon(svg, taib03E8 + taib03E8Offset, 32, 32, 2, false);//2bpp, greyscale
+   taib03E8Offset += renderPalmIcon(svg, taib03E8 + taib03E8Offset, 32, 32, 4, false);//4bpp, greyscale
+   taib03E8Offset += renderPalmIcon(svg, taib03E8 + taib03E8Offset, 32, 32, 8, false);//8bpp, color
+   taib03E8Offset += renderPalmIcon(svg, taib03E8 + taib03E8Offset, 32, 32, 16, true);//16bpp, color
 
-   taib03E9Offset += renderPalmIcon(svg, taib03E9 + taib03E9Offset, 15, 9, 1);//1bpp, greyscale
-   taib03E9Offset += renderPalmIcon(svg, taib03E9 + taib03E9Offset, 15, 9, 2);//2bpp, greyscale
-   taib03E9Offset += renderPalmIcon(svg, taib03E9 + taib03E9Offset, 15, 9, 4);//4bpp, greyscale
-   taib03E9Offset += renderPalmIcon(svg, taib03E9 + taib03E9Offset, 15, 9, 8);//8bpp, color
-   taib03E9Offset += renderPalmIcon(svg, taib03E9 + taib03E9Offset, 15, 9, 16);//16bpp, color
+   taib03E9Offset += renderPalmIcon(svg, taib03E9 + taib03E9Offset, 15, 9, 1, false);//1bpp, greyscale
+   taib03E9Offset += renderPalmIcon(svg, taib03E9 + taib03E9Offset, 15, 9, 2, false);//2bpp, greyscale
+   taib03E9Offset += renderPalmIcon(svg, taib03E9 + taib03E9Offset, 15, 9, 4, false);//4bpp, greyscale
+   taib03E9Offset += renderPalmIcon(svg, taib03E9 + taib03E9Offset, 15, 9, 8, false);//8bpp, color
+   taib03E9Offset += renderPalmIcon(svg, taib03E9 + taib03E9Offset, 15, 9, 16, true);//16bpp, color
 
    if(taib03E8File.open(QFile::WriteOnly | QFile::Truncate)){
       taib03E8File.write((const char*)taib03E8, taib03E8Offset);
