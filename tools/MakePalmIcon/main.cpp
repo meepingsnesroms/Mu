@@ -61,7 +61,65 @@ void renderTo1Bit(uint8_t* data, const QImage& image){
    }
 }
 
-uint32_t renderPalmIcon(const QString& svg, uint8_t* output, int16_t width, int16_t height, uint8_t bitsPerPixel, bool color){
+void renderTo2Bits(uint8_t* data, const QImage& image){
+   uint16_t rowBytes = getRowBytes(image.width(), 2);
+
+   memset(data, 0x00, rowBytes * image.height());
+   for(int32_t y = 0; y < image.height(); y++){
+      for(int32_t x = 0; x < image.width(); x++){
+         QColor pixel = QColor(image.pixel(x, y));
+         uint8_t pixelAveraged = (pixel.redF() + pixel.greenF() + pixel.blueF()) / 3.0 * 4.0;
+
+         data[y * rowBytes + x / 4] |= pixelAveraged << 6 - x % 4 * 2;
+      }
+   }
+}
+
+void renderTo4Bits(uint8_t* data, const QImage& image){
+   uint16_t rowBytes = getRowBytes(image.width(), 4);
+
+   memset(data, 0x00, rowBytes * image.height());
+   for(int32_t y = 0; y < image.height(); y++){
+      for(int32_t x = 0; x < image.width(); x++){
+         QColor pixel = QColor(image.pixel(x, y));
+         uint8_t pixelAveraged = (pixel.redF() + pixel.greenF() + pixel.blueF()) / 3.0 * 16.0;
+
+         data[y * rowBytes + x / 2] |= pixelAveraged << (x % 2 ? 0 : 4);
+      }
+   }
+}
+
+/*
+void renderTo8Bits(uint8_t* data, const QImage& image){
+   uint16_t rowBytes = getRowBytes(image.width(), 8);
+
+   memset(data, 0x00, rowBytes * image.height());
+   for(int32_t y = 0; y < image.height(); y++){
+      for(int32_t x = 0; x < image.width(); x++){
+         QColor pixel = QColor(image.pixel(x, y));
+         uint8_t pixelAveraged = (pixel.redF() + pixel.greenF() + pixel.blueF()) / 3.0 * 4.0;
+
+         data[y * rowBytes + x / 4] |= pixelAveraged << 6 - x % 4 * 2;
+      }
+   }
+}
+
+void renderTo16Bits(uint8_t* data, const QImage& image){
+   uint16_t rowBytes = getRowBytes(image.width(), 16);
+
+   memset(data, 0x00, rowBytes * image.height());
+   for(int32_t y = 0; y < image.height(); y++){
+      for(int32_t x = 0; x < image.width(); x++){
+         QColor pixel = QColor(image.pixel(x, y));
+         uint8_t pixelAveraged = (pixel.redF() + pixel.greenF() + pixel.blueF()) / 3.0 * 4.0;
+
+         data[y * rowBytes + x / 4] |= pixelAveraged << 6 - x % 4 * 2;
+      }
+   }
+}
+*/
+
+uint32_t renderPalmIcon(const QString& svg, uint8_t* output, int16_t width, int16_t height, uint8_t bitsPerPixel){
    QImage canvas(width, height, QImage::Format_RGB16);
    QPainter painter(&canvas);
    QSvgRenderer svgRenderer(svg);
@@ -70,7 +128,7 @@ uint32_t renderPalmIcon(const QString& svg, uint8_t* output, int16_t width, int1
    svgRenderer.render(&painter);
 
    //write a Palm bitmap struct
-   uint8_t bitmapVersion = color ? 2 : 1;
+   uint8_t bitmapVersion = bitsPerPixel > 4 ? 2 : 1;
 
    writeBe16(output + offset, width);//width
    offset += sizeof(int16_t);
@@ -109,19 +167,19 @@ uint32_t renderPalmIcon(const QString& svg, uint8_t* output, int16_t width, int1
          break;
 
       case 2:
-         //renderTo2Bit(output + offset, canvas);
+         renderTo2Bits(output + offset, canvas);
          break;
 
       case 4:
-         //renderTo4Bit(output + offset, canvas);
+         renderTo4Bits(output + offset, canvas);
          break;
 
       case 8:
-         //renderTo8Bit(output + offset, canvas);
+         //renderTo8Bits(output + offset, canvas);
          break;
 
       case 16:
-         //renderTo16Bit(output + offset, canvas);
+         //renderTo16Bits(output + offset, canvas);
          break;
    }
    offset += getRowBytes(width, bitsPerPixel) * height;
@@ -132,24 +190,22 @@ uint32_t renderPalmIcon(const QString& svg, uint8_t* output, int16_t width, int1
 void convertToPalmIcons(const QString& svg, const QString& outputDirectory){
    QFile taib03E8File(outputDirectory + "/tAIB03E8.bin");
    QFile taib03E9File(outputDirectory + "/tAIB03E9.bin");
-   uint8_t* taib03E8 = new uint8_t[MAX_PALM_BITMAP_SIZE * 6];
-   uint8_t* taib03E9 = new uint8_t[MAX_PALM_BITMAP_SIZE * 6];
+   uint8_t* taib03E8 = new uint8_t[MAX_PALM_BITMAP_SIZE * 5];
+   uint8_t* taib03E9 = new uint8_t[MAX_PALM_BITMAP_SIZE * 5];
    uint32_t taib03E8Offset = 0;
    uint32_t taib03E9Offset = 0;
 
-   taib03E8Offset += renderPalmIcon(svg, taib03E8 + taib03E8Offset, 32, 32, 1, false);//1bpp, greyscale
-   taib03E8Offset += renderPalmIcon(svg, taib03E8 + taib03E8Offset, 32, 32, 2, false);//2bpp, greyscale
-   taib03E8Offset += renderPalmIcon(svg, taib03E8 + taib03E8Offset, 32, 32, 4, false);//4bpp, greyscale
-   taib03E8Offset += renderPalmIcon(svg, taib03E8 + taib03E8Offset, 32, 32, 8, false);//8bpp, greyscale
-   taib03E8Offset += renderPalmIcon(svg, taib03E8 + taib03E8Offset, 32, 32, 8, true);//8bpp, color
-   taib03E8Offset += renderPalmIcon(svg, taib03E8 + taib03E8Offset, 32, 32, 16, true);//16bpp, color
+   taib03E8Offset += renderPalmIcon(svg, taib03E8 + taib03E8Offset, 32, 32, 1);//1bpp, greyscale
+   taib03E8Offset += renderPalmIcon(svg, taib03E8 + taib03E8Offset, 32, 32, 2);//2bpp, greyscale
+   taib03E8Offset += renderPalmIcon(svg, taib03E8 + taib03E8Offset, 32, 32, 4);//4bpp, greyscale
+   taib03E8Offset += renderPalmIcon(svg, taib03E8 + taib03E8Offset, 32, 32, 8);//8bpp, color
+   taib03E8Offset += renderPalmIcon(svg, taib03E8 + taib03E8Offset, 32, 32, 16);//16bpp, color
 
-   taib03E9Offset += renderPalmIcon(svg, taib03E9 + taib03E9Offset, 15, 9, 1, false);//1bpp, greyscale
-   taib03E9Offset += renderPalmIcon(svg, taib03E9 + taib03E9Offset, 15, 9, 2, false);//2bpp, greyscale
-   taib03E9Offset += renderPalmIcon(svg, taib03E9 + taib03E9Offset, 15, 9, 4, false);//4bpp, greyscale
-   taib03E9Offset += renderPalmIcon(svg, taib03E9 + taib03E9Offset, 15, 9, 8, false);//8bpp, greyscale
-   taib03E9Offset += renderPalmIcon(svg, taib03E9 + taib03E9Offset, 15, 9, 8, true);//8bpp, color
-   taib03E9Offset += renderPalmIcon(svg, taib03E9 + taib03E9Offset, 15, 9, 16, true);//16bpp, color
+   taib03E9Offset += renderPalmIcon(svg, taib03E9 + taib03E9Offset, 15, 9, 1);//1bpp, greyscale
+   taib03E9Offset += renderPalmIcon(svg, taib03E9 + taib03E9Offset, 15, 9, 2);//2bpp, greyscale
+   taib03E9Offset += renderPalmIcon(svg, taib03E9 + taib03E9Offset, 15, 9, 4);//4bpp, greyscale
+   taib03E9Offset += renderPalmIcon(svg, taib03E9 + taib03E9Offset, 15, 9, 8);//8bpp, color
+   taib03E9Offset += renderPalmIcon(svg, taib03E9 + taib03E9Offset, 15, 9, 16);//16bpp, color
 
    if(taib03E8File.open(QFile::WriteOnly | QFile::Truncate)){
       taib03E8File.write((const char*)taib03E8, taib03E8Offset);
