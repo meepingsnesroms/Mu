@@ -2,14 +2,17 @@
 #include <QSvgRenderer>
 #include <QPainter>
 #include <QImage>
+#include <QColor>
 #include <QFile>
 #include <QString>
 
 #include <stdio.h>
 #include <stdint.h>
+#include <string.h>
 
 
-#define MAX_PALM_BITMAP_SIZE 0xFFFF
+#define BITMAP_HEADER_SIZE 16
+#define MAX_PALM_BITMAP_SIZE (0xFFFF * 4)
 
 
 static inline void writeBe16(uint8_t* data, uint16_t value){
@@ -26,15 +29,36 @@ static inline uint16_t getRowBytes(int16_t width, uint8_t bitsPerPixel){
    if(width * bitsPerPixel % 8 > 0)
       rowBytes += 1;
 
+   //Palm OS crashes from 16 bit accesses on odd addresses, so this is likely the same
+   if(rowBytes & 1)
+      rowBytes += 1;
+
    return rowBytes;
 }
 
-static inline uint16_t getBitmapFlags(uint8_t version){
+static inline uint16_t getNextDepthOffset(int16_t width, int16_t height, uint8_t bitsPerPixel){
+   uint32_t nextDepthOffset = 0;
 
+   nextDepthOffset += BITMAP_HEADER_SIZE;
+   //nextDepthOffset += 0xFF;//custom palette is not supported
+   nextDepthOffset += getRowBytes(width, bitsPerPixel) * height;
+
+   return nextDepthOffset / 4;
 }
 
-static inline uint16_t getNextDepthOffset(int16_t width, int16_t height, uint8_t bitsPerPixel){
+void renderTo1Bit(uint8_t* data, const QImage& image){
+   uint16_t rowBytes = getRowBytes(image.width(), 1);
 
+   memset(data, 0x00, rowBytes * image.height());
+   for(int32_t y = 0; y < image.height(); y++){
+      for(int32_t x = 0; x < image.width(); x++){
+         QColor pixel = QColor(image.pixel(x, y));
+         bool pixelAveraged = (pixel.redF() + pixel.greenF() + pixel.blueF()) / 3.0 > 0.5;
+
+         if(pixelAveraged)
+            data[y * rowBytes + x / 8] |= 1 << 7 - x % 8;
+      }
+   }
 }
 
 uint32_t renderPalmIcon(const QString& svg, uint8_t* output, int16_t width, int16_t height, uint8_t bitsPerPixel, bool color){
@@ -49,12 +73,12 @@ uint32_t renderPalmIcon(const QString& svg, uint8_t* output, int16_t width, int1
    uint8_t bitmapVersion = color ? 2 : 1;
 
    writeBe16(output + offset, width);//width
-   offset += sizeof(uint16_t);
+   offset += sizeof(int16_t);
    writeBe16(output + offset, height);//height
-   offset += sizeof(uint16_t);
+   offset += sizeof(int16_t);
    writeBe16(output + offset, getRowBytes(width, bitsPerPixel));//rowBytes
    offset += sizeof(uint16_t);
-   writeBe16(output + offset, getBitmapFlags(bitmapVersion));//bitmapFlags
+   writeBe16(output + offset, 0x0000);//bitmapFlags, not implemented, prevents using transparency and color tables
    offset += sizeof(uint16_t);
    output[offset] = bitsPerPixel;//pixelSize
    offset += sizeof(uint8_t);
@@ -63,7 +87,7 @@ uint32_t renderPalmIcon(const QString& svg, uint8_t* output, int16_t width, int1
    writeBe16(output + offset, getNextDepthOffset(width, height, bitsPerPixel));//nextDepthOffset
    offset += sizeof(uint16_t);
    if(bitmapVersion > 1){
-      output[offset] = 0x00;//transparentIndex, fixme
+      output[offset] = 0x00;//transparentIndex, not implemented, will cause white icon borders on OS5 devices
       offset += sizeof(uint8_t);
       output[offset] = 0xFF;//compressionType
       offset += sizeof(uint8_t);
@@ -78,6 +102,29 @@ uint32_t renderPalmIcon(const QString& svg, uint8_t* output, int16_t width, int1
    offset += sizeof(uint8_t);
    output[offset] = 0x00;//reserved
    offset += sizeof(uint8_t);
+   //0xFF look up table goes here when active, custom LUT is currently unsupported
+   switch(bitsPerPixel){
+      case 1:
+         renderTo1Bit(output + offset, canvas);
+         break;
+
+      case 2:
+         //renderTo2Bit(output + offset, canvas);
+         break;
+
+      case 4:
+         //renderTo4Bit(output + offset, canvas);
+         break;
+
+      case 8:
+         //renderTo8Bit(output + offset, canvas);
+         break;
+
+      case 16:
+         //renderTo16Bit(output + offset, canvas);
+         break;
+   }
+   offset += getRowBytes(width, bitsPerPixel) * height;
 
    return offset;
 }
@@ -123,6 +170,7 @@ int main(int argc, char* argv[]){
       //invalid parameters
       printf("MakePalmIcon v1.0\n");
       printf("A replacement for the pilrc bitmap converter, which seems to be broken on 64 bit systems.\n");
+      printf("Format:\"/path/to/image.svg\" \"/path/to/palm/application/directory\"\n");
       printf("Fleas have pet rabbits!\n");
    }
 
