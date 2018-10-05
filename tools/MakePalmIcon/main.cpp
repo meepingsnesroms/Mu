@@ -57,7 +57,7 @@ void renderTo1Bit(uint8_t* data, const QImage& image){
    for(int16_t y = 0; y < image.height(); y++){
       for(int16_t x = 0; x < image.width(); x++){
          QColor pixel = QColor(image.pixel(x, y));
-         bool pixelAveraged = (pixel.redF() + pixel.greenF() + pixel.blueF()) / 3.0 > 0.5;
+         bool pixelAveraged = (pixel.redF() + pixel.greenF() + pixel.blueF()) / 3.0 < 0.5;
 
          if(pixelAveraged)
             data[y * rowBytes + x / 8] |= 1 << 7 - x % 8;
