@@ -5,11 +5,11 @@
 	<key>CFBundleExecutable</key>
 	<string>Mu</string>
 	<key>CFBundleGetInfoString</key>
-        <string>Palm OS Emulator</string>
+	<string>Palm OS Emulator</string>
 	<key>CFBundleIconFile</key>
-	<string></string>
+	<string>Mu</string>
 	<key>CFBundleIdentifier</key>
-        <string>org.meepingsnesroms.Mu</string>
+	<string>org.meepingsnesroms.Mu</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleSignature</key>

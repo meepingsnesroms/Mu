@@ -29,12 +29,13 @@ DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000 # disables all the APIs depreca
 
 macx {
     CONFIG += sdk_no_version_check # using 10.14 SDK which Qt only unofficialy supports
+    ICON = macos/Mu.icns
     QMAKE_INFO_PLIST = macos/Info.plist
     DEFINES += EMU_MULTITHREADED
 }
 
 windows {
-    RC_ICONS = windows/palm.ico
+    RC_ICONS = windows/Mu.ico
     QMAKE_CFLAGS += -openmp
     QMAKE_CXXFLAGS += -openmp
     DEFINES += "_Pragma=__pragma"
