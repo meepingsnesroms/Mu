@@ -221,11 +221,11 @@ void convertToPalmIcons(const QString& svg, const QString& outputDirectory){
    uint32_t taib03E8Offset = 0;
    uint32_t taib03E9Offset = 0;
 
-   taib03E8Offset += renderPalmIcon(svg, taib03E8 + taib03E8Offset, 32, 32, 1, false);//1bpp, greyscale
-   taib03E8Offset += renderPalmIcon(svg, taib03E8 + taib03E8Offset, 32, 32, 2, false);//2bpp, greyscale
-   taib03E8Offset += renderPalmIcon(svg, taib03E8 + taib03E8Offset, 32, 32, 4, false);//4bpp, greyscale
-   taib03E8Offset += renderPalmIcon(svg, taib03E8 + taib03E8Offset, 32, 32, 8, false);//8bpp, color
-   taib03E8Offset += renderPalmIcon(svg, taib03E8 + taib03E8Offset, 32, 32, 16, true);//16bpp, color
+   taib03E8Offset += renderPalmIcon(svg, taib03E8 + taib03E8Offset, 22, 22, 1, false);//1bpp, greyscale
+   taib03E8Offset += renderPalmIcon(svg, taib03E8 + taib03E8Offset, 22, 22, 2, false);//2bpp, greyscale
+   taib03E8Offset += renderPalmIcon(svg, taib03E8 + taib03E8Offset, 22, 22, 4, false);//4bpp, greyscale
+   taib03E8Offset += renderPalmIcon(svg, taib03E8 + taib03E8Offset, 22, 22, 8, false);//8bpp, color
+   taib03E8Offset += renderPalmIcon(svg, taib03E8 + taib03E8Offset, 22, 22, 16, true);//16bpp, color
 
    taib03E9Offset += renderPalmIcon(svg, taib03E9 + taib03E9Offset, 15, 9, 1, false);//1bpp, greyscale
    taib03E9Offset += renderPalmIcon(svg, taib03E9 + taib03E9Offset, 15, 9, 2, false);//2bpp, greyscale
