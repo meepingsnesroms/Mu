@@ -4,16 +4,15 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 cd $DIR
 
-APPNAME="TstSuite"
-ICONTEXT="HWTests"
+APPNAME="MuExpDriver"
 
 if [ "$1" = "clean" ]; then
    rm -rf *.o *.a $APPNAME $APPNAME-sections.s $APPNAME-sections.ld $APPNAME.prc *.bin
    exit
 fi
 
-declare -a FILES=("testSuite" "viewer" "tools" "tests" "cpu" "emuFunctions" "ugui" "undocumentedApis")
-DEFINES="-DHW_TEST"
+declare -a FILES=("muExpDriver" "emuFunctions")
+DEFINES=""
 CFLAGS="-palmos4 -O3 $DEFINES"
 
 if [ "$1" = "debug" ]; then

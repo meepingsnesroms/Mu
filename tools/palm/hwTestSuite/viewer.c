@@ -263,6 +263,7 @@ var functionPicker(){
 
 void resetFunctionViewer(){
    var nullVar = makeVar(LENGTH_0, TYPE_NULL, 0);
+   uint8_t cpuType = getPhysicalCpuType();
    
    totalHwTests = 0;
    
@@ -282,11 +283,14 @@ void resetFunctionViewer(){
    hwTests[totalHwTests].testFunction = getPenPosition;
    totalHwTests++;
    
-   if(getPhysicalCpuType() & CPU_M68K){
+   if(cpuType & CPU_M68K){
       /*68k only functions*/
-      StrNCopy(hwTests[totalHwTests].name, "Dump Bootloader", TEST_NAME_LENGTH);
-      hwTests[totalHwTests].testFunction = dumpBootloaderToFile;
-      totalHwTests++;
+      if((cpuType & CPU_M68K_TYPES) != CPU_M68K_328){
+         /*original dragonball doesnt have a bootloader*/
+         StrNCopy(hwTests[totalHwTests].name, "Dump Bootloader", TEST_NAME_LENGTH);
+         hwTests[totalHwTests].testFunction = dumpBootloaderToFile;
+         totalHwTests++;
+      }
       
       StrNCopy(hwTests[totalHwTests].name, "List ROM Info/Dump ROM", TEST_NAME_LENGTH);
       hwTests[totalHwTests].testFunction = listRomInfo;
