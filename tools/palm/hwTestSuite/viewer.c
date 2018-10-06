@@ -275,6 +275,10 @@ void resetFunctionViewer(){
    hwTests[totalHwTests].testFunction = getTrapAddress;
    totalHwTests++;
    
+   StrNCopy(hwTests[totalHwTests].name, "Get CPU Info", TEST_NAME_LENGTH);
+   hwTests[totalHwTests].testFunction = getCpuInfo;
+   totalHwTests++;
+   
    StrNCopy(hwTests[totalHwTests].name, "Get Device Info", TEST_NAME_LENGTH);
    hwTests[totalHwTests].testFunction = getDeviceInfo;
    totalHwTests++;
@@ -322,10 +326,6 @@ void resetFunctionViewer(){
       
       StrNCopy(hwTests[totalHwTests].name, "Get CLK32 Freq", TEST_NAME_LENGTH);
       hwTests[totalHwTests].testFunction = getClk32Frequency;
-      totalHwTests++;
-      
-      StrNCopy(hwTests[totalHwTests].name, "Get CPU Info", TEST_NAME_LENGTH);
-      hwTests[totalHwTests].testFunction = getCpuInfo;
       totalHwTests++;
       
       StrNCopy(hwTests[totalHwTests].name, "Get Interrupt Info", TEST_NAME_LENGTH);

@@ -187,4 +187,9 @@ void m68328BusError(uint32_t address, bool isWrite){
    m68ki_push_16((isWrite ? MODE_WRITE : MODE_READ) | CPU_INSTR_MODE | FLAG_S | m68ki_get_address_space());
 
    m68ki_jump_vector(EXCEPTION_BUS_ERROR);
+   USE_CYCLES(CYC_EXCEPTION[EXCEPTION_BUS_ERROR] - CYC_INSTRUCTION[REG_IR]);
+}
+
+void m68328PrivilegeViolation(){
+   m68ki_exception_privilege_violation();
 }

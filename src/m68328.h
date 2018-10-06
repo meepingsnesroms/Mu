@@ -10,3 +10,4 @@ void m68328SaveState(uint8_t* data);
 void m68328LoadState(uint8_t* data);
 
 void m68328BusError(uint32_t address, bool isWrite);
+void m68328PrivilegeViolation();
