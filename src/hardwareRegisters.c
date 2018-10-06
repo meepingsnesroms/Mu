@@ -93,25 +93,25 @@ int32_t interruptAcknowledge(int32_t intLevel){
 void setBusErrorTimeOut(uint32_t address, bool isWrite){
    uint8_t scr = registerArrayRead8(SCR);
    debugLog("Bus error timeout, PC:0x%08X\n", m68k_get_reg(NULL, M68K_REG_PPC));
+   registerArrayWrite8(SCR, scr | 0x80);
    if(scr & 0x10)
       m68328BusError(address, isWrite);
-   registerArrayWrite8(SCR, scr | 0x80);
 }
 
 void setPrivilegeViolation(uint32_t address, bool isWrite){
    uint8_t scr = registerArrayRead8(SCR);
    debugLog("Privilege violation, PC:0x%08X\n", m68k_get_reg(NULL, M68K_REG_PPC));
+   registerArrayWrite8(SCR, scr | 0x20);
    if(scr & 0x10)
       m68328BusError(address, isWrite);
-   registerArrayWrite8(SCR, scr | 0x20);
 }
 
 void setWriteProtectViolation(uint32_t address){
    uint8_t scr = registerArrayRead8(SCR);
    debugLog("Write protect violation, PC:0x%08X\n", m68k_get_reg(NULL, M68K_REG_PPC));
+   registerArrayWrite8(SCR, scr | 0x40);
    if(scr & 0x10)
       m68328BusError(address, true);
-   registerArrayWrite8(SCR, scr | 0x40);
 }
 
 static void recalculateCpuSpeed(){

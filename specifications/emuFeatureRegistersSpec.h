@@ -21,6 +21,7 @@ These registers will do nothing it there corresponding feature bit is not set on
 #define FEATURE_EMU_HONEST 0x00000040/*tell the OS that its running in an emu, does nothing else*/
 #define FEATURE_EXT_KEYS   0x00000080/*enables the OS 5 buttons, left, right and select*/
 #define FEATURE_DEBUG      0x00000100/*enables the debug commands, used to call Palm OS functions like native C functions*/
+#define FEATURE_INVALID    0x00000200/*if this bit is set the returned data is invalid*/
 /*new features go here*/
 
 /*registers*/
