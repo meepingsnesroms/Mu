@@ -403,7 +403,7 @@ static bool installResourceToDevice(buffer_t resourceBuffer){
    error = callFunction(false, 0x00000000, DmCreateDatabaseFromImage, "w(p)", palmSideResourceData);//Err DmCreateDatabaseFromImage(MemPtr bufferP);//this looks best
    callFunction(false, 0x00000000, MemChunkFree, "w(p)", palmSideResourceData);
 
-   //dident install
+   //didnt install
    if(error != 0)
       return false;
 

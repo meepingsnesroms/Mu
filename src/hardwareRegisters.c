@@ -4,6 +4,7 @@
 
 #include "emulator.h"
 #include "specs/hardwareRegisterNames.h"
+#include "specs/emuFeatureRegistersSpec.h"
 #include "hardwareRegisters.h"
 #include "memoryAccess.h"
 #include "m68328.h"
@@ -1114,7 +1115,7 @@ void resetHwRegisters(){
    registerArrayWrite8(SCR, 0x1C);
    
    //CPU ID
-   registerArrayWrite32(IDR, 0x56010000);//value of IDR in POSE
+   registerArrayWrite32(IDR, 0x57000000);//value of IDR on actual hardware
    
    //I/O drive control //probably unused
    registerArrayWrite16(IODCR, 0x1FFF);

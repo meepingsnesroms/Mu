@@ -14,11 +14,20 @@ void showGui(){
    
 }
 
+Boolean isDeviceCompatible(){
+   
+}
+
+Boolean isEnabled(){
+   /*create a 1 byte database or check for its existance*/
+}
+
 DWord PilotMain(Word cmd, Ptr cmdBPB, Word launchFlags){
    if(cmd == sysAppLaunchCmdNormalLaunch)
       showGui();
    else if(cmd == sysAppLaunchCmdSystemReset)
-      installTrapHandlers();
+      if(isDeviceCompatible())
+         installTrapHandlers();
    
    return 0;
 }
