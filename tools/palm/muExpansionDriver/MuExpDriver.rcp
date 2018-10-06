@@ -1,0 +1,13 @@
+#include "MuExpDriverRsc.h"
+
+ALERT ID alt_incompatible
+ERROR
+BEGIN
+TITLE "Incompatible Device"
+MESSAGE "^1"
+
+BUTTONS "OK"
+END
+
+APPLICATION ID 1 "MuDv"
+VERSION ID 1 "1.00"

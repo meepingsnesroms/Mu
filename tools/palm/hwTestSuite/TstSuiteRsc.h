@@ -1,1 +1,1 @@
-#define alt_err     1000
+#define alt_err 1000

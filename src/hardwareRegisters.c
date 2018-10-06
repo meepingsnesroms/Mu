@@ -354,7 +354,7 @@ void printUnknownHwAccess(uint32_t address, uint32_t value, uint32_t size, bool 
       debugLog("CPU read %d bits from register 0x%03X, PC:0x%08X.\n", size, address, m68k_get_reg(NULL, M68K_REG_PPC));
 }
 
-static uint32_t getEmuRegister(uint32_t address){
+uint32_t getEmuRegister(uint32_t address){
    address &= 0xFFF;
    switch(address){
 
@@ -366,7 +366,7 @@ static uint32_t getEmuRegister(uint32_t address){
    return 0x00000000;
 }
 
-static void setEmuRegister(uint32_t address, uint32_t value){
+void setEmuRegister(uint32_t address, uint32_t value){
    address &= 0xFFF;
    switch(address){
       case EMU_CMD:
@@ -392,7 +392,6 @@ static void setEmuRegister(uint32_t address, uint32_t value){
 }
 
 uint8_t getHwRegister8(uint32_t address){
-   //not emu or hardware register, invalid access
    if((address & 0x0000F000) != 0x0000F000)
       return 0x00;
    
@@ -489,7 +488,6 @@ uint8_t getHwRegister8(uint32_t address){
 }
 
 uint16_t getHwRegister16(uint32_t address){
-   //not emu or hardware register, invalid access
    if((address & 0x0000F000) != 0x0000F000)
       return 0x0000;
    
@@ -570,12 +568,8 @@ uint16_t getHwRegister16(uint32_t address){
 }
 
 uint32_t getHwRegister32(uint32_t address){
-   //32 bit emu register read, valid
-   if((address & 0x0000F000) != 0x0000F000){
-      if((address & 0x0000F000) == 0x0000E000)
-         return getEmuRegister(address);
+   if((address & 0x0000F000) != 0x0000F000)
       return 0x00000000;
-   }
    
    address &= 0x00000FFF;
 
@@ -606,7 +600,6 @@ uint32_t getHwRegister32(uint32_t address){
 
 
 void setHwRegister8(uint32_t address, uint8_t value){
-   //not emu or hardware register, invalid access
    if((address & 0x0000F000) != 0x0000F000)
       return;
    
@@ -754,7 +747,6 @@ void setHwRegister8(uint32_t address, uint8_t value){
 }
 
 void setHwRegister16(uint32_t address, uint16_t value){
-   //not emu or hardware register, invalid access
    if((address & 0x0000F000) != 0x0000F000)
       return;
    
@@ -1034,12 +1026,8 @@ void setHwRegister16(uint32_t address, uint16_t value){
 }
 
 void setHwRegister32(uint32_t address, uint32_t value){
-   //32 bit emu register write, valid
-   if((address & 0x0000F000) != 0x0000F000){
-      if((address & 0x0000F000) == 0x0000E000)
-         setEmuRegister(address, value);
+   if((address & 0x0000F000) != 0x0000F000)
       return;
-   }
    
    address &= 0x00000FFF;
 

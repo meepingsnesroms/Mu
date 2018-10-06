@@ -9,9 +9,5 @@ MESSAGE "^1"
 BUTTONS "OK"
 END
 
-//ICONFAMILY "icon_1.bmp" "icon_2.bmp" "icon_4.bmp" "icon_8.bmp"
-//SMALLICON "icon_sm.bmp"  // icon for P3 list view
-//so fracking tired of the icon shit, it can be blank for now
-
 APPLICATION ID 1 "TstS"
 VERSION ID 1 "1.00"

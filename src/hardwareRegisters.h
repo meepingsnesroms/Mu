@@ -33,8 +33,9 @@ enum{
    CHIP_A0_ROM = 0,
    CHIP_A1_USB,
    CHIP_B0_SED,
-   //CHIP_CX_RAM, // CSC* is owned by CSD during normal operation
+   //CHIP_CX_RAM, //CSC* is owned by CSD during normal operation
    CHIP_DX_RAM,
+   CHIP_00_EMU, //used for EMUCS on hardware, used by the emu registers here
    CHIP_REGISTERS,
    CHIP_NONE,
    CHIP_END
@@ -89,9 +90,11 @@ void setWriteProtectViolation(uint32_t address);
 uint8_t getHwRegister8(uint32_t address);
 uint16_t getHwRegister16(uint32_t address);
 uint32_t getHwRegister32(uint32_t address);
+uint32_t getEmuRegister(uint32_t address);
 void setHwRegister8(uint32_t address, uint8_t value);
 void setHwRegister16(uint32_t address, uint16_t value);
 void setHwRegister32(uint32_t address, uint32_t value);
+void setEmuRegister(uint32_t address, uint32_t value);
 
 //config
 void resetHwRegisters();

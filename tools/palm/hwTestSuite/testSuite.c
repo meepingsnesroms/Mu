@@ -309,4 +309,3 @@ DWord PilotMain(Word cmd, Ptr cmdBPB, Word launchFlags){
    
    return 0;
 }
-

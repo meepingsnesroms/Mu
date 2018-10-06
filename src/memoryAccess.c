@@ -120,6 +120,9 @@ uint8_t m68k_read_memory_8(uint32_t address){
       case CHIP_DX_RAM:
          return ramRead8(address);
 
+      case CHIP_00_EMU:
+         return 0x00;
+
       case CHIP_REGISTERS:
          return getHwRegister8(address);
 
@@ -154,6 +157,9 @@ uint16_t m68k_read_memory_16(uint32_t address){
       case CHIP_DX_RAM:
          return ramRead16(address);
 
+      case CHIP_00_EMU:
+         return 0x0000;
+
       case CHIP_REGISTERS:
          return getHwRegister16(address);
 
@@ -187,6 +193,9 @@ uint32_t m68k_read_memory_32(uint32_t address){
 
       case CHIP_DX_RAM:
          return ramRead32(address);
+
+      case CHIP_00_EMU:
+         return getEmuRegister(address);
 
       case CHIP_REGISTERS:
          return getHwRegister32(address);
@@ -223,6 +232,9 @@ void m68k_write_memory_8(uint32_t address, uint8_t value){
 
       case CHIP_DX_RAM:
          ramWrite8(address, value);
+         break;
+
+      case CHIP_00_EMU:
          break;
 
       case CHIP_REGISTERS:
@@ -263,6 +275,9 @@ void m68k_write_memory_16(uint32_t address, uint16_t value){
          ramWrite16(address, value);
          break;
 
+      case CHIP_00_EMU:
+         break;
+
       case CHIP_REGISTERS:
          setHwRegister16(address, value);
          break;
@@ -301,6 +316,10 @@ void m68k_write_memory_32(uint32_t address, uint32_t value){
          ramWrite32(address, value);
          break;
 
+      case CHIP_00_EMU:
+         setEmuRegister(address, value);
+         break;
+
       case CHIP_REGISTERS:
          setHwRegister32(address, value);
          break;
@@ -329,22 +348,20 @@ uint32_t m68k_read_disassembler_32(uint32_t address){return m68k_read_memory_32(
 
 
 static uint8_t getProperBankType(uint32_t bank){
-   if(BANK_IN_RANGE(bank, REG_START_ADDRESS, REG_SIZE) || ((bank & 0x00FF) == 0x00FF && registersAreXXFFMapped())){
-      //registers have first priority, they cover 0xFFFFF000(and 0xXXFFF000 when DMAP enabled in SCR) even if a chip select overlaps this area or CHIP_A0_ROM is in boot mode
+   //registers have first priority, they cover 0xFFFFF000(and 0xXXFFF000 when DMAP enabled in SCR) even if a chip select overlaps this area or CHIP_A0_ROM is in boot mode
+   //EMUCS also cant be covered by normal chip selects
+   if(BANK_IN_RANGE(bank, REG_START_ADDRESS, REG_SIZE) || ((bank & 0x00FF) == 0x00FF && registersAreXXFFMapped()))
       return CHIP_REGISTERS;
-   }
-   else if(chips[CHIP_A0_ROM].inBootMode || (chips[CHIP_A0_ROM].enable && BANK_IN_RANGE(bank, chips[CHIP_A0_ROM].start, chips[CHIP_A0_ROM].lineSize))){
+   else if(BANK_IN_RANGE(bank, EMU_START_ADDRESS, EMU_SIZE))
+      return CHIP_00_EMU;
+   else if(chips[CHIP_A0_ROM].inBootMode || (chips[CHIP_A0_ROM].enable && BANK_IN_RANGE(bank, chips[CHIP_A0_ROM].start, chips[CHIP_A0_ROM].lineSize)))
       return CHIP_A0_ROM;
-   }
-   else if(chips[CHIP_A1_USB].enable && BANK_IN_RANGE(bank, chips[CHIP_A1_USB].start, chips[CHIP_A1_USB].lineSize)){
+   else if(chips[CHIP_A1_USB].enable && BANK_IN_RANGE(bank, chips[CHIP_A1_USB].start, chips[CHIP_A1_USB].lineSize))
       return CHIP_A1_USB;
-   }
-   else if(chips[CHIP_B0_SED].enable && BANK_IN_RANGE(bank, chips[CHIP_B0_SED].start, chips[CHIP_B0_SED].lineSize) && sed1376ClockConnected()){
+   else if(chips[CHIP_B0_SED].enable && BANK_IN_RANGE(bank, chips[CHIP_B0_SED].start, chips[CHIP_B0_SED].lineSize) && sed1376ClockConnected())
       return CHIP_B0_SED;
-   }
-   else if(chips[CHIP_DX_RAM].enable && BANK_IN_RANGE(bank, chips[CHIP_DX_RAM].start, chips[CHIP_DX_RAM].lineSize * 2)){
+   else if(chips[CHIP_DX_RAM].enable && BANK_IN_RANGE(bank, chips[CHIP_DX_RAM].start, chips[CHIP_DX_RAM].lineSize * 2))
       return CHIP_DX_RAM;
-   }
 
    return CHIP_NONE;
 }
