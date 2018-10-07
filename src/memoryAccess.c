@@ -352,7 +352,7 @@ static uint8_t getProperBankType(uint32_t bank){
    //EMUCS also cant be covered by normal chip selects
    if(BANK_IN_RANGE(bank, REG_START_ADDRESS, REG_SIZE) || ((bank & 0x00FF) == 0x00FF && registersAreXXFFMapped()))
       return CHIP_REGISTERS;
-   else if(palmSpecialFeatures != FEATURE_ACCURATE && BANK_IN_RANGE(bank, EMU_START_ADDRESS, EMU_SIZE))
+   else if(palmSpecialFeatures != FEATURE_ACCURATE && BANK_IN_RANGE(bank, EMUCS_START_ADDRESS, EMUCS_SIZE))
       return CHIP_00_EMU;
    else if(chips[CHIP_A0_ROM].inBootMode || (chips[CHIP_A0_ROM].enable && BANK_IN_RANGE(bank, chips[CHIP_A0_ROM].start, chips[CHIP_A0_ROM].lineSize)))
       return CHIP_A0_ROM;

@@ -29,8 +29,8 @@
 
 
 
-#ifndef M68KCONF__HEADER
-#define M68KCONF__HEADER
+#ifndef M68KCONF_HEADER
+#define M68KCONF_HEADER
 
 /* Configuration switches.
  * Use OPT_SPECIFY_HANDLER for configuration options that allow callbacks.
@@ -131,7 +131,7 @@
  * access a word or longword at an odd address.
  * NOTE: This is only emulated properly for 68000 mode.
  */
-#define M68K_EMULATE_ADDRESS_ERROR  OPT_OFF
+#define M68K_EMULATE_ADDRESS_ERROR  OPT_ON
 
 
 /* Turn ON to enable logging of illegal instruction calls.
@@ -172,4 +172,4 @@
 /* ============================== END OF FILE ============================= */
 /* ======================================================================== */
 
-#endif /* M68KCONF__HEADER */
+#endif /* M68KCONF_HEADER */

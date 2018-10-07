@@ -16,12 +16,12 @@
 //after boot RAM is at 0x00000000,
 //ROM is at 0x10000000
 //and the SED1376 is at 0x1FF80000(+ 0x20000 for framebuffer)
-#define EMU_START_ADDRESS 0xFFFC0000
+#define EMUCS_START_ADDRESS 0xFFFC0000
 #define REG_START_ADDRESS 0xFFFFF000
 #define SUPERMASSIVE_RAM_SIZE (128 * 0x100000)//128mb RAM
 #define RAM_SIZE (16 * 0x100000)//16mb RAM
 #define ROM_SIZE (4 * 0x100000)//4mb ROM
-#define EMU_SIZE 0x20000
+#define EMUCS_SIZE 0x20000
 #define REG_SIZE 0x1000//is actually 0xE00 without bootloader
 #define BOOTLOADER_SIZE 0x200
 #define SED1376_MR_BIT 0x20000

@@ -1,5 +1,5 @@
-#ifndef M68KOPS__HEADER
-#define M68KOPS__HEADER
+#ifndef M68KOPS_HEADER
+#define M68KOPS_HEADER
 
 #include <stdint.h>
 
@@ -1981,6 +1981,6 @@ extern uint8_t m68ki_cycles[][0x10000];
 /* ============================== END OF FILE ============================= */
 /* ======================================================================== */
 
-#endif /* M68KOPS__HEADER */
+#endif /* M68KOPS_HEADER */
 
 

@@ -173,23 +173,5 @@ void m68328LoadState(uint8_t* data){
 }
 
 void m68328BusError(uint32_t address, bool isWrite){
-   uint sr = m68ki_init_exception();
-
-   m68ki_push_32(REG_PC);
-   m68ki_push_16(sr);
-   m68ki_push_16(REG_IR);
-   m68ki_push_32(address);	/* access address */
-   /* 0 0 0 0 0 0 0 0 0 0 0 R/W I/N FC
-    * R/W  0 = write, 1 = read
-    * I/N  0 = instruction, 1 = not
-    * FC   3-bit function code
-    */
-   m68ki_push_16((isWrite ? MODE_WRITE : MODE_READ) | CPU_INSTR_MODE | FLAG_S | m68ki_get_address_space());
-
-   m68ki_jump_vector(EXCEPTION_BUS_ERROR);
-   USE_CYCLES(CYC_EXCEPTION[EXCEPTION_BUS_ERROR] - CYC_INSTRUCTION[REG_IR]);
-}
-
-void m68328PrivilegeViolation(){
-   m68ki_exception_privilege_violation();
+   m68ki_trigger_bus_error(address, isWrite ? MODE_WRITE : MODE_READ, FLAG_S | m68ki_get_address_space());
 }

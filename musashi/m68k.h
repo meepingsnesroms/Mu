@@ -27,8 +27,8 @@
  * THE SOFTWARE.
  */
 
-#ifndef M68K__HEADER
-#define M68K__HEADER
+#ifndef M68K_HEADER
+#define M68K_HEADER
 
 #include <stdint.h>
 
@@ -80,58 +80,58 @@
 /* CPU types for use in m68k_set_cpu_type() */
 enum
 {
-	M68K_CPU_TYPE_INVALID,
-	M68K_CPU_TYPE_68000,
-	M68K_CPU_TYPE_68010,
-	M68K_CPU_TYPE_68EC020,
-	M68K_CPU_TYPE_68020,
-	M68K_CPU_TYPE_68030,	/* Supported by disassembler ONLY */
-	M68K_CPU_TYPE_68040		/* Supported by disassembler ONLY */
+   M68K_CPU_TYPE_INVALID,
+   M68K_CPU_TYPE_68000,
+   M68K_CPU_TYPE_68010,
+   M68K_CPU_TYPE_68EC020,
+   M68K_CPU_TYPE_68020,
+   M68K_CPU_TYPE_68030,	/* Supported by disassembler ONLY */
+   M68K_CPU_TYPE_68040		/* Supported by disassembler ONLY */
 };
 
 /* Registers used by m68k_get_reg() and m68k_set_reg() */
 typedef enum
 {
-	/* Real registers */
-	M68K_REG_D0,		/* Data registers */
-	M68K_REG_D1,
-	M68K_REG_D2,
-	M68K_REG_D3,
-	M68K_REG_D4,
-	M68K_REG_D5,
-	M68K_REG_D6,
-	M68K_REG_D7,
-	M68K_REG_A0,		/* Address registers */
-	M68K_REG_A1,
-	M68K_REG_A2,
-	M68K_REG_A3,
-	M68K_REG_A4,
-	M68K_REG_A5,
-	M68K_REG_A6,
-	M68K_REG_A7,
-	M68K_REG_PC,		/* Program Counter */
-	M68K_REG_SR,		/* Status Register */
-	M68K_REG_SP,		/* The current Stack Pointer (located in A7) */
-	M68K_REG_USP,		/* User Stack Pointer */
-	M68K_REG_ISP,		/* Interrupt Stack Pointer */
-	M68K_REG_MSP,		/* Master Stack Pointer */
-	M68K_REG_SFC,		/* Source Function Code */
-	M68K_REG_DFC,		/* Destination Function Code */
-	M68K_REG_VBR,		/* Vector Base Register */
-	M68K_REG_CACR,		/* Cache Control Register */
-	M68K_REG_CAAR,		/* Cache Address Register */
+   /* Real registers */
+   M68K_REG_D0,		/* Data registers */
+   M68K_REG_D1,
+   M68K_REG_D2,
+   M68K_REG_D3,
+   M68K_REG_D4,
+   M68K_REG_D5,
+   M68K_REG_D6,
+   M68K_REG_D7,
+   M68K_REG_A0,		/* Address registers */
+   M68K_REG_A1,
+   M68K_REG_A2,
+   M68K_REG_A3,
+   M68K_REG_A4,
+   M68K_REG_A5,
+   M68K_REG_A6,
+   M68K_REG_A7,
+   M68K_REG_PC,		/* Program Counter */
+   M68K_REG_SR,		/* Status Register */
+   M68K_REG_SP,		/* The current Stack Pointer (located in A7) */
+   M68K_REG_USP,		/* User Stack Pointer */
+   M68K_REG_ISP,		/* Interrupt Stack Pointer */
+   M68K_REG_MSP,		/* Master Stack Pointer */
+   M68K_REG_SFC,		/* Source Function Code */
+   M68K_REG_DFC,		/* Destination Function Code */
+   M68K_REG_VBR,		/* Vector Base Register */
+   M68K_REG_CACR,		/* Cache Control Register */
+   M68K_REG_CAAR,		/* Cache Address Register */
 
-	/* Assumed registers */
-	/* These are cheat registers which emulate the 1-longword prefetch
-	 * present in the 68000 and 68010.
-	 */
-	M68K_REG_PREF_ADDR,	/* Last prefetch address */
-	M68K_REG_PREF_DATA,	/* Last prefetch data */
+   /* Assumed registers */
+   /* These are cheat registers which emulate the 1-longword prefetch
+    * present in the 68000 and 68010.
+    */
+   M68K_REG_PREF_ADDR,	/* Last prefetch address */
+   M68K_REG_PREF_DATA,	/* Last prefetch data */
 
-	/* Convenience registers */
-	M68K_REG_PPC,		/* Previous value in the program counter */
-	M68K_REG_IR,		/* Instruction register */
-	M68K_REG_CPU_TYPE	/* Type of CPU being run */
+   /* Convenience registers */
+   M68K_REG_PPC,		/* Previous value in the program counter */
+   M68K_REG_IR,		/* Instruction register */
+   M68K_REG_CPU_TYPE	/* Type of CPU being run */
 } m68k_register_t;
 
 /* ======================================================================== */
@@ -348,4 +348,4 @@ uint32_t m68k_disassemble(char* str_buff, uint32_t pc, uint32_t cpu_type);
 /* ============================== END OF FILE ============================= */
 /* ======================================================================== */
 
-#endif /* M68K__HEADER */
+#endif /* M68K_HEADER */

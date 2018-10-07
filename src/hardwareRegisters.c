@@ -103,7 +103,7 @@ void setPrivilegeViolation(uint32_t address, bool isWrite){
    debugLog("Privilege violation, PC:0x%08X\n", m68k_get_reg(NULL, M68K_REG_PPC));
    registerArrayWrite8(SCR, scr | 0x20);
    if(scr & 0x10)
-      m68328PrivilegeViolation();
+      m68328BusError(address, isWrite);
 }
 
 void setWriteProtectViolation(uint32_t address){
@@ -111,7 +111,7 @@ void setWriteProtectViolation(uint32_t address){
    debugLog("Write protect violation, PC:0x%08X\n", m68k_get_reg(NULL, M68K_REG_PPC));
    registerArrayWrite8(SCR, scr | 0x40);
    if(scr & 0x10)
-      m68328PrivilegeViolation();
+      m68328BusError(address, true);
 }
 
 static void recalculateCpuSpeed(){
