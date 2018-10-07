@@ -25,15 +25,17 @@ RxOverflow on SPI1, don't know if back or front of FIFO is overwritten on overfl
 ICR POL(1,2,3,6) may flip the pin value as well as the interrupt, POL5 does not flip the INT5 pin though, this was confirmed with a hardware test(it doesnt seem to but there is instability on the pin when the SD card is plugged in, this may have to do with card detect also being a data line on the SD pinout)
 edge triggered INT* don't clear on write to ISR when masked in IMR(at least that seems to be the reason)
 PWM1 FIFOAV is always set true
-if a sound interrupt is triggered while the button interrupt is disabled the button interrupt will still trigger(in galax game)()
+if a sound interrupt is triggered while the button interrupt is disabled the button interrupt will still trigger(in galax game)
+may need to force sound generation until buffer is adequately filled when sound is on(since SYSCLK precision is not possible)
 
 Debug tools:
-missing home screen icons
 ADS7846 channels can't be read in single reference mode in hwTestSuite
+
+MakePalmBitmap:
+8bpp bitmaps have corrupt palettes
 
 Memory:
 SD card can't be read or written to by Palm OS
-EMUCS memory range is unemulated
 unknown if DRAM bit expanded address space is used for CSC when its not an extension of CSD
 there is conflicting information on wether the DRAM bit effects CSC, needs a test made
 the unemulated chip selects(CSB1, CSC0/1) privilege violation interrupts will not be handled properly
@@ -49,6 +51,8 @@ in the edge case that SPICLK2 is disabled while using ADS7846 and a 1 was the la
 
 
 Fixed:
+missing home screen icons
+EMUCS memory range is unemulated(used for emu registers if enabled, invalid access otherwise)
 port g data bit 2 may need to be 0 to access ADS7846(it is)
 pen input
 pulling chip select low when high state likely resets the ADS7846 bit stream(this is currently being done when the SPI bus is enabled)(resetting on disable, that would make more sense because the chip needs to be read/written instantly once chip select is pulled low)

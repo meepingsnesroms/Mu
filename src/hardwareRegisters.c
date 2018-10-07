@@ -27,8 +27,6 @@ uint8_t  spi1RxReadPosition;
 uint8_t  spi1RxWritePosition;
 uint8_t  spi1TxReadPosition;
 uint8_t  spi1TxWritePosition;
-
-//warning: pwm1 is not in savestates yet!!!
 uint16_t pwm1ClocksToNextSample;
 uint8_t  pwm1Fifo[6];
 uint8_t  pwm1ReadPosition;
@@ -115,26 +113,12 @@ void setWriteProtectViolation(uint32_t address){
 }
 
 static void recalculateCpuSpeed(){
-   double newCpuSpeed;
+   double newCpuSpeed = sysclksPerClk32();
+   uint8_t pctlr = registerArrayRead8(PCTLR);
 
-   if(pllIsOn()){
-      uint16_t pllfsr = registerArrayRead16(PLLFSR);
-      uint8_t pctlr = registerArrayRead8(PCTLR);
-      double p = pllfsr & 0x00FF;
-      double q = (pllfsr & 0x0F00) >> 8;
-      newCpuSpeed = 2.0 * (14.0 * (p + 1.0) + q + 1.0);
-
-      //prescaler 1
-      if(registerArrayRead16(PLLCR) & 0x0080)
-         newCpuSpeed /= 2.0;
-
-      //power control burst mode
-      if(pctlr & 0x80)
-         newCpuSpeed *= (pctlr & 0x1F) / 31.0;
-   }
-   else{
-      newCpuSpeed = 0.0;
-   }
+   //power control burst mode
+   if(pctlr & 0x80)
+      newCpuSpeed *= (pctlr & 0x1F) / 31.0;
 
    /*
    if(newCpuSpeed != palmCrystalCycles){
@@ -246,6 +230,30 @@ static void checkPortDInterrupts(){
    uint16_t interruptControlRegister = registerArrayRead16(ICR);
    uint8_t triggeredIntXInterrupts = portDInputValuesWithPolarity & registerArrayRead8(PDIRQEN) & ~portDDir;
 
+   //On hardware PDIRQEG seems not to actually work at all(CPUID:0x57000000), unimplementedHardware.txt
+   //the correct behavior is not being used right now because it doesnt seem to happen on the actual device
+
+   if(triggeredIntXInterrupts & 0x01)
+      setIprIsrBit(INT_INT0);
+   else
+      clearIprIsrBit(INT_INT0);
+
+   if(triggeredIntXInterrupts & 0x02)
+      setIprIsrBit(INT_INT1);
+   else
+      clearIprIsrBit(INT_INT1);
+
+   if(triggeredIntXInterrupts & 0x04)
+      setIprIsrBit(INT_INT2);
+   else
+      clearIprIsrBit(INT_INT2);
+
+   if(triggeredIntXInterrupts & 0x08)
+      setIprIsrBit(INT_INT3);
+   else
+      clearIprIsrBit(INT_INT3);
+
+   /*
    if(triggeredIntXInterrupts & 0x01){
       if(!(portDEdgeTriggered & 0x01) || (!(interruptEdgeTriggered & INT_INT0) && pllIsOn()))
          setIprIsrBit(INT_INT0);
@@ -289,6 +297,7 @@ static void checkPortDInterrupts(){
          clearIprIsrBit(INT_INT3);
       interruptEdgeTriggered &= ~INT_INT3;
    }
+   */
 
    //IRQ1, polarity set in ICR
    if(portDIrqPins & ~portDDir & 0x10 && (bool)(portDInputValues & 0x10) == (bool)(interruptControlRegister & 0x8000)){

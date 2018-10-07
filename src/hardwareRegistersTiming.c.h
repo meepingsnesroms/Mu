@@ -17,7 +17,7 @@ static inline double dmaclksPerClk32(){
          dmaclks /= 2.0;
    }
    else{
-      dmaclks = 0;
+      dmaclks = 0.0;
    }
 
    return dmaclks;

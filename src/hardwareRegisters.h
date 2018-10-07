@@ -69,6 +69,10 @@ extern uint8_t  spi1RxReadPosition;
 extern uint8_t  spi1RxWritePosition;
 extern uint8_t  spi1TxReadPosition;
 extern uint8_t  spi1TxWritePosition;
+extern uint16_t pwm1ClocksToNextSample;
+extern uint8_t  pwm1Fifo[];
+extern uint8_t  pwm1ReadPosition;
+extern uint8_t  pwm1WritePosition;
 
 //timing
 void clk32();//also checks all interrupts

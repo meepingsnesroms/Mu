@@ -32,9 +32,8 @@ These registers will do nothing it there corresponding feature bit is not set on
 #define EMU_SIZE    0x010/*write only*/
 #define EMU_VALUE   0x014/*read/write*/
 #define EMU_CMD     0x018/*the command actually runs once this register is written with a value, write only*/
-#define EMU_KEYS    0x01C/*read only, stores the extra left/right/select keys that OS 4 palms lack*/
+#define EMU_KEYS    0x01C/*read only, stores the extra left/right/select keys that OS 4 Palms lack*/
 /*new registers go here*/
-
 
 /*commands*/
 #define EMU_CMD_KEY 0xF1EA/*must be the top 16 bits of command to trigger execution, prevents programs that are write testing this address space from executing commands*/
@@ -50,14 +49,14 @@ These registers will do nothing it there corresponding feature bit is not set on
 /*new HLE API cmds go here*/
 
 /*new system cmds go here*/
-#define CMD_EXECUTION_DONE 0xFFFB/*1 is written here at the end of a callback to indicate when execution is done*/
+#define CMD_SOUND          0xFFFA/*may be needed to work around the overhead of emulating SYSCLK, will be needed fo OS5 advanced sound*/
+#define CMD_EXECUTION_DONE 0xFFFB/*terminates execution, used when a function is called from outside the emulator*/
 #define CMD_IDLE_X_CLK32   0xFFFC/*used to remove idle loops*/
 #define CMD_RUN_AS_M68K    0xFFFD/*emulStateP is ignored, EMU_SRC = argsOnStackP, EMU_SIZE = argsSizeAndwantA0, EMU_VALUE = trapOrFunction, on exit EMU_VALUE = Call68KFuncType() return value*/
 #define CMD_RUN_AS_ARM     0xFFFE/*EMU_SRC = nativeFuncP, EMU_DST = userDataP, on exit EMU_VALUE = PceNativeCall() return value*/
 #define CMD_SET_CYCLE_COST 0xFFFF/*EMU_DST = HLE API number, EMU_VALUE = how many cycles it takes*/
 
 #define MAKE_EMU_CMD(cmd) ((EMU_CMD_KEY << 16) | cmd)
-
 
 /*buttons*/
 #define EXT_BUTTON_LEFT   0x01000000

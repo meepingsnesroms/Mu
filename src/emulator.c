@@ -51,7 +51,7 @@ double    palmClockMultiplier;//used by the emulator to overclock the emulated P
 uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t specialFeatures){
    if(emulatorInitialized)
       return EMU_ERROR_NONE;
-   
+
    if(!palmRomDump.data)
       return EMU_ERROR_INVALID_PARAMETER;
 
@@ -75,7 +75,7 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t spec
    //CPU
    m68328Init();
    palmCycleCounter = 0.0;
-   
+
    //memory
    memset(palmRam, 0x00, (specialFeatures & FEATURE_RAM_HUGE) ? SUPERMASSIVE_RAM_SIZE : RAM_SIZE);
    memcpy(palmRom, palmRomDump.data, uMin(palmRomDump.size, ROM_SIZE));
@@ -101,12 +101,12 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t spec
    ads7846Reset();
    pdiUsbD12Reset();
    sandboxInit();
-   
+
    memset(&palmInput, 0x00, sizeof(palmInput));
    memset(&palmSdCard, 0x00, sizeof(palmSdCard));
    memset(&palmMisc, 0x00, sizeof(palmMisc));
    palmMisc.batteryLevel = 100;
-   
+
    //config
    palmClockMultiplier = (specialFeatures & FEATURE_FAST_CPU) ? 2.0 : 1.0;//overclock
    //palmClockMultiplier *= 0.80;//run at 80% speed, 20% is likely memory waitstates
@@ -148,7 +148,7 @@ void emulatorSetRtc(uint16_t days, uint8_t hours, uint8_t minutes, uint8_t secon
 
 uint64_t emulatorGetStateSize(){
    uint64_t size = 0;
-   
+
    size += sizeof(uint32_t);//save state version
    size += sizeof(uint32_t);//palmSpecialFeatures
    size += sizeof(uint64_t);//palmSdCard.flashChip.size, needs to be done first to verify the malloc worked
@@ -172,12 +172,15 @@ uint64_t emulatorGetStateSize(){
    size += sizeof(uint16_t) * 9;//RX 8 * 16 SPI1 FIFO, 1 index is for FIFO full
    size += sizeof(uint16_t) * 9;//TX 8 * 16 SPI1 FIFO, 1 index is for FIFO full
    size += sizeof(uint8_t) * 4;//spi1(R/T)x(Read/Write)Position
+   size += sizeof(uint16_t);//pwm1ClocksToNextSample
+   size += sizeof(uint8_t) * 6;//pwm1Fifo[6]
+   size += sizeof(uint8_t) * 2;//pwm1(Read/Write)
    size += sizeof(uint8_t) * 7;//palmMisc
    size += sizeof(uint32_t);//palmSdCard.command
    size += sizeof(uint8_t) * 2;//palmSdCard.response / palmSdCard.commandBitsRemaining
    size += sizeof(palmSdCard.dataPacket);//palmSdCard.dataPacket
    size += palmSdCard.flashChip.size;//palmSdCard.flashChip.data
-   
+
    return size;
 }
 
@@ -186,7 +189,7 @@ bool emulatorSaveState(buffer_t buffer){
 
    if(buffer.size < emulatorGetStateSize())
       return false;//state cant fit
-   
+
    //state validation, wont load states that are not from the same state version
    writeStateValueUint32(buffer.data + offset, SAVE_STATE_VERSION);
    offset += sizeof(uint32_t);
@@ -198,7 +201,7 @@ bool emulatorSaveState(buffer_t buffer){
    //SD card size
    writeStateValueUint64(buffer.data + offset, palmSdCard.flashChip.size);
    offset += sizeof(uint64_t);
-   
+
    //chips
    m68328SaveState(buffer.data + offset);
    offset += m68328StateSize();
@@ -208,7 +211,7 @@ bool emulatorSaveState(buffer_t buffer){
    offset += ads7846StateSize();
    pdiUsbD12SaveState(buffer.data + offset);
    offset += pdiUsbD12StateSize();
-   
+
    //memory
    if(palmSpecialFeatures & FEATURE_RAM_HUGE){
       memcpy(buffer.data + offset, palmRam, SUPERMASSIVE_RAM_SIZE);
@@ -280,7 +283,19 @@ bool emulatorSaveState(buffer_t buffer){
    offset += sizeof(uint8_t);
    writeStateValueUint8(buffer.data + offset, spi1TxWritePosition);
    offset += sizeof(uint8_t);
-   
+
+   //PWM1, audio
+   writeStateValueUint16(buffer.data + offset, pwm1ClocksToNextSample);
+   offset += sizeof(uint16_t);
+   for(uint8_t fifoPosition = 0; fifoPosition < 6; fifoPosition++){
+      writeStateValueUint8(buffer.data + offset, pwm1Fifo[fifoPosition]);
+      offset += sizeof(uint8_t);
+   }
+   writeStateValueUint8(buffer.data + offset, pwm1ReadPosition);
+   offset += sizeof(uint8_t);
+   writeStateValueUint8(buffer.data + offset, pwm1WritePosition);
+   offset += sizeof(uint8_t);
+
    //misc
    writeStateValueBool(buffer.data + offset, palmMisc.powerButtonLed);
    offset += sizeof(uint8_t);
@@ -314,7 +329,7 @@ bool emulatorSaveState(buffer_t buffer){
 
 bool emulatorLoadState(buffer_t buffer){
    uint64_t offset = 0;
-   
+
    //state validation, wont load states that are not from the same state version
    if(readStateValueUint32(buffer.data + offset) != SAVE_STATE_VERSION)
       return false;
@@ -341,7 +356,7 @@ bool emulatorLoadState(buffer_t buffer){
    offset += ads7846StateSize();
    pdiUsbD12LoadState(buffer.data + offset);
    offset += pdiUsbD12StateSize();
-   
+
    //memory
    if(palmSpecialFeatures & FEATURE_RAM_HUGE){
       memcpy(palmRam, buffer.data + offset, SUPERMASSIVE_RAM_SIZE);
@@ -413,7 +428,19 @@ bool emulatorLoadState(buffer_t buffer){
    offset += sizeof(uint8_t);
    spi1TxWritePosition = readStateValueUint8(buffer.data + offset);
    offset += sizeof(uint8_t);
-   
+
+   //PWM1, audio
+   pwm1ClocksToNextSample = readStateValueUint16(buffer.data + offset);
+   offset += sizeof(uint16_t);
+   for(uint8_t fifoPosition = 0; fifoPosition < 6; fifoPosition++){
+      pwm1Fifo[fifoPosition] = readStateValueUint8(buffer.data + offset);
+      offset += sizeof(uint8_t);
+   }
+   pwm1ReadPosition = readStateValueUint8(buffer.data + offset);
+   offset += sizeof(uint8_t);
+   pwm1WritePosition = readStateValueUint8(buffer.data + offset);
+   offset += sizeof(uint8_t);
+
    //misc
    palmMisc.powerButtonLed = readStateValueBool(buffer.data + offset);
    offset += sizeof(uint8_t);
