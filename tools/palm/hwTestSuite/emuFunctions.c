@@ -13,19 +13,13 @@ enum{
 };
 
 
-static const uint16_t attemptBusError[4] = {
-   0x2039,/*move.l 0xFFFC0000, d0     ; move EMU_INFO to d0*/
-   EMU_REG_ADDR(EMU_INFO) >> 16,/*    ; location word 1 for above*/
-   EMU_REG_ADDR(EMU_INFO) & 0xFFFF,/* ; location word 2 for above*/
-   0x4E75/*rts                        ; return*/
-};
-
+/*this handler may not work if the opcode size that triggered the bus error isnt 4 bytes, I am currently depending on the compiler generating a 4 byte opcode for that access*/
 static const uint16_t skipBusError[5] = {
-   0x5C8F,/*addq.l #6,sp      ; remove error info from stack*/
-   0x548F,/*addq.l #2,sp      ; remove error info from stack*/
-   0x54AF,/*addq.l #2,2(sp)   ; skip over the invalid access, what ever was in the variable before the read should still be there*/
-   0x0002,/*                  ; displacement for above*/
-   0x4E73/*rte                ; return*/
+   0x5C8F,/*addq.l #6,sp    ; remove error info from stack*/
+   0x548F,/*addq.l #2,sp    ; remove error info from stack*/
+   0x54AF,/*addq.l #2,2(sp) ; skip over the invalid access, what ever was in the variable before the read should still be there*/
+   0x0002,/*                ; displacement for above*/
+   0x4E73/*rte              ; return*/
 };
 
 Boolean isEmulator(){
@@ -51,7 +45,7 @@ Boolean isEmulator(){
          palmSpecialFeatures = FEATURE_INVALID;
          
          /*everything is setup, now try to read invalid memory, success == its an emu*/
-         palmSpecialFeatures = readArbitraryMemory32(EMU_REG_ADDR(EMU_INFO));/*((uint32_t(*)())attemptBusError)();*/
+         palmSpecialFeatures = readArbitraryMemory32(EMU_REG_ADDR(EMU_INFO));
          
          if(palmSpecialFeatures == FEATURE_INVALID)
             emuStatus = EMU_STATE_FALSE;
