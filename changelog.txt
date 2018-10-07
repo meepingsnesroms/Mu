@@ -1,3 +1,15 @@
+------------------------------------------
+v0.9 to v0.9.5(Sept 22 2018 - *** ** 2018)
+
+Qt GUI:
+*added Mac OS icon
+*added Windows icon
+*now runs on Windows
+
+Core:
+*bus error and address error are now handled properly
+
+----------------------------------------
 v0.7 to v0.9(Jul 30 2018 - Sept 22 2018)
 
 Qt GUI:

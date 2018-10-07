@@ -46,6 +46,7 @@ These registers will do nothing it there corresponding feature bit is not set on
 #define CMD_STRNCPY      0x0004
 #define CMD_STRCMP       0x0005
 #define CMD_STRNCMP      0x0006
+#define CMD_PRINTF       0x0007
 /*new HLE API cmds go here*/
 
 /*new system cmds go here*/

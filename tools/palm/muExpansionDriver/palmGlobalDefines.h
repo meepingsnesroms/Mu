@@ -1,7 +1,14 @@
-#ifndef ARBITRARY_MEMORY_ACCESS_HEADER
-#define ARBITRARY_MEMORY_ACCESS_HEADER
+#ifndef PALM_GLOBAL_DEFINES_HEADER
+#define PALM_GLOBAL_DEFINES_HEADER
 
+#include <PalmOS.h>
 #include <stdint.h>
+
+#define CODE_SECTION(codeSection) __attribute__((section(codeSection)))
+#define ALIGN(size) __attribute__((aligned(size)))
+
+#define PalmOS35 sysMakeROMVersion(3, 5, 0, sysROMStageRelease, 0)
+#define PalmOS50 sysMakeROMVersion(5, 0, 0, sysROMStageRelease, 0)
 
 #define readArbitraryMemory8(address) (*((volatile uint8_t*)(address)))
 #define readArbitraryMemory16(address) (*((volatile uint16_t*)(address)))

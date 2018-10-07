@@ -173,5 +173,6 @@ void m68328LoadState(uint8_t* data){
 }
 
 void m68328BusError(uint32_t address, bool isWrite){
+   //never call outsize of a 68k opcode, behavior is undefined due to longjmp
    m68ki_trigger_bus_error(address, isWrite ? MODE_WRITE : MODE_READ, FLAG_S | m68ki_get_address_space());
 }

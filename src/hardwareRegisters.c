@@ -379,6 +379,12 @@ void setEmuRegister(uint32_t address, uint32_t value){
                      sandboxReturn();
                   break;
 
+               case CMD_PRINTF:
+                  if(palmSpecialFeatures & FEATURE_DEBUG){
+
+                  }
+                  break;
+
                default:
                   debugLog("Invalid emu command 0x%04X.\n", value);
                   break;

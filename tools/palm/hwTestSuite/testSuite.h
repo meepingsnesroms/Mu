@@ -22,21 +22,21 @@
 #define buttonBack   keyBitHard3
 #define buttonSelect keyBitHard4
 
-#define TYPE_NULL    0x00
-#define TYPE_BOOL    0x01
-#define TYPE_UINT    0x02
-#define TYPE_INT     0x03
-#define TYPE_FLOAT   0x04
-#define TYPE_PTR     0x05
-#define LENGTH_0     0x00/*for null*/
-#define LENGTH_1     0x10
-#define LENGTH_8     0x20
-#define LENGTH_16    0x30
-#define LENGTH_32    0x40
-#define LENGTH_64    0x50
-#define LENGTH_PTR   0x60/*first half of 64bit value is length, second is pointer*/
-#define LENGTH_ANY   0x70/*for pointers with a user defined end or no end*/
-#define LENGTH_STR   0xF0/*for pointers to string*/
+#define TYPE_NULL  0x00
+#define TYPE_BOOL  0x01
+#define TYPE_UINT  0x02
+#define TYPE_INT   0x03
+#define TYPE_FLOAT 0x04
+#define TYPE_PTR   0x05
+#define LENGTH_0   0x00/*for null*/
+#define LENGTH_1   0x10
+#define LENGTH_8   0x20
+#define LENGTH_16  0x30
+#define LENGTH_32  0x40
+#define LENGTH_64  0x50
+#define LENGTH_PTR 0x60/*first half of 64bit value is length, second is pointer*/
+#define LENGTH_ANY 0x70/*for pointers with a user defined end or no end*/
+#define LENGTH_STR 0xF0/*for pointers to string*/
 
 /*types*/
 typedef struct{
