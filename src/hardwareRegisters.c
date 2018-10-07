@@ -1070,7 +1070,6 @@ void setHwRegister32(uint32_t address, uint32_t value){
    }
 }
 
-
 void resetHwRegisters(){
    uint32_t oldRtc = registerArrayRead32(RTCTIME);//preserve RTCTIME
    uint16_t oldDayr = registerArrayRead16(DAYR);//preserve DAYR
@@ -1220,10 +1219,6 @@ void resetHwRegisters(){
 }
 
 void setRtc(uint16_t days, uint8_t hours, uint8_t minutes, uint8_t seconds){
-   uint32_t rtcTime;
-   rtcTime = seconds & 0x0000003F;
-   rtcTime |= minutes << 16 & 0x003F0000;
-   rtcTime |= hours << 24 & 0x1F000000;
-   registerArrayWrite32(RTCTIME, rtcTime);
+   registerArrayWrite32(RTCTIME, hours << 24 & 0x1F000000 | minutes << 16 & 0x003F0000 | seconds & 0x0000003F);
    registerArrayWrite16(DAYR, days & 0x01FF);
 }
