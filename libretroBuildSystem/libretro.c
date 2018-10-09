@@ -4,9 +4,12 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <stdbool.h>
+#include <stdlib.h>
 #include <time.h>
 
 #include "../src/emulator.h"
+#include "cursors.h"
 
 
 #ifndef PATH_MAX_LENGTH
@@ -28,19 +31,49 @@
 #define JOYSTICK_MULTIPLIER 1.0
 
 
-static retro_log_printf_t log_cb;
-static retro_video_refresh_t video_cb;
+static retro_log_printf_t         log_cb;
+static retro_video_refresh_t      video_cb;
 static retro_audio_sample_batch_t audio_cb;
-static retro_environment_t environ_cb;
-static retro_input_poll_t input_poll_cb;
-static retro_input_state_t input_state_cb;
+static retro_environment_t        environ_cb;
+static retro_input_poll_t         input_poll_cb;
+static retro_input_state_t        input_state_cb;
 
-static uint16_t screenWidth;
-static uint16_t screenHeight;
-static uint32_t emuFeatures;
-static bool     useJoystickAsMouse;
-static double   touchCursorX;
-static double   touchCursorY;
+static bool      screenHires;
+static uint16_t  screenWidth;
+static uint16_t  screenHeight;
+static uint16_t* screenData;
+static uint32_t  emuFeatures;
+static bool      useJoystickAsMouse;
+static double    touchCursorX;
+static double    touchCursorY;
+
+
+
+static void renderMouseCursor(int16_t screenX, int16_t screenY){
+   static const uint16_t* joystickCursor16 = cursor16x16;
+   static const uint16_t* joystickCursor32 = cursor32x32;
+   
+   if(screenHires){
+      //align cursor to side of image
+      screenX -= 6;
+      
+      for(int8_t y = 0; y < 32; y++)
+         for(int8_t x = 6; x < 26; x++)
+            if(screenX + x >= 0 && screenY + y >= 0 && screenX + x < 320 && screenY + y < 440)
+               if(joystickCursor32[y * 32 + x] != 0x0000)
+                  screenData[(screenY + y) * 320 + screenX + x] = joystickCursor32[y * 32 + x];
+   }
+   else{
+      //align cursor to side of image
+      screenX -= 3;
+      
+      for(int8_t y = 0; y < 16; y++)
+         for(int8_t x = 3; x < 13; x++)
+            if(screenX + x >= 0 && screenY + y >= 0 && screenX + x < 160 && screenY + y < 220)
+               if(joystickCursor16[y * 16 + x] != 0x0000)
+                  screenData[(screenY + y) * 160 + screenX + x] = joystickCursor16[y * 16 + x];
+   }
+}
 
 
 static void fallback_log(enum retro_log_level level, const char *fmt, ...)
@@ -224,8 +257,8 @@ void retro_run(void)
    
    //touchscreen
    if(useJoystickAsMouse){
-      touchCursorX += input_state_cb(0, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_LEFT, RETRO_DEVICE_ID_ANALOG_X) * JOYSTICK_MULTIPLIER;
-      touchCursorY += input_state_cb(0, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_LEFT, RETRO_DEVICE_ID_ANALOG_Y) * JOYSTICK_MULTIPLIER;
+      touchCursorX += input_state_cb(0, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_LEFT, RETRO_DEVICE_ID_ANALOG_X) * (screenHires ? JOYSTICK_MULTIPLIER * 2.0 : JOYSTICK_MULTIPLIER);
+      touchCursorY += input_state_cb(0, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_LEFT, RETRO_DEVICE_ID_ANALOG_Y) * (screenHires ? JOYSTICK_MULTIPLIER * 2.0 : JOYSTICK_MULTIPLIER);
       
       if(touchCursorX < 0)
          touchCursorX = 0;
@@ -263,13 +296,13 @@ void retro_run(void)
    
    //run emulator
    emulateFrame();
+   memcpy(screenData, screenHires ? palmExtendedFramebuffer : palmFramebuffer, screenWidth * screenHeight * sizeof(uint16_t));
    
    //draw mouse
-   if(useJoystickAsMouse){
-      //TODO make mouse cursor
-   }
+   if(useJoystickAsMouse)
+      renderMouseCursor(touchCursorX, touchCursorY);
    
-   video_cb(palmFramebuffer, screenWidth, screenHeight, screenWidth * sizeof(uint16_t));
+   video_cb(screenData, screenWidth, screenHeight, screenWidth * sizeof(uint16_t));
    audio_cb(palmAudio, AUDIO_SAMPLES);
 }
 
@@ -353,10 +386,15 @@ bool retro_load_game(const struct retro_game_info *info)
          return false;
    }
    
-   screenWidth = (emuFeatures & FEATURE_320x320) ? 320 : 160;
-   screenHeight = (emuFeatures & FEATURE_320x320) ? 440 : 220;
+   screenHires = emuFeatures & FEATURE_320x320;
+   screenWidth = screenHires ? 320 : 160;
+   screenHeight = screenHires ? 440 : 220;
+   screenData = malloc(screenWidth * screenHeight * sizeof(uint16_t));
    touchCursorX = screenWidth / 2;
    touchCursorY = screenHeight / 2;
+   
+   if(!screenData)
+      return false;
 
    return true;
 }
@@ -364,6 +402,8 @@ bool retro_load_game(const struct retro_game_info *info)
 void retro_unload_game(void)
 {
    emulatorExit();
+   if(screenData)
+      free(screenData);
 }
 
 unsigned retro_get_region(void)

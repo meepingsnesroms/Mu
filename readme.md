@@ -52,6 +52,7 @@ http://www.iconarchive.com/show/crystal-clear-icons-by-everaldo/App-palm-icon.ht
 http://tango.freedesktop.org/Tango_Icon_Library (Palm Action Buttons, All UI buttons)  
 https://www.iconfinder.com/icons/2317746/chip_computer_cpu_device_frequency_microchip_processor_icon (hwTestSuite Icon)  
 https://www.flaticon.com/free-icon/cow_235371#term=cow&page=1&position=13 (muExpDriver Icon)  
+https://findicons.com/icon/164302/cursor (Libretro Port Joystick Cursor)  
 Some main board photos by Reddit /u/KHRoN
 
 ## Building

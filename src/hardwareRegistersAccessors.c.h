@@ -601,8 +601,8 @@ static inline uint8_t getPortMValue(){
 static inline void samplePwmXClk32(){
    //call every clk32, adds samples to audio buffer
 
-   //clear PWM1 FIFO values corresponding to the amount of time that has passed
-   if(pwm1FifoEntrys() != 0){
+   //clear PWM1 FIFO values if enough time has passed
+   if(pwm1FifoEntrys() > 0){
       if(pwm1ClocksToNextSample > 0)
          pwm1ClocksToNextSample--;
       if(pwm1ClocksToNextSample == 0){
@@ -667,6 +667,10 @@ static inline void samplePwmXClk32(){
          palmAudioSampleIndex += 2;
       }
    }
+}
+
+static inline void samplePwm2(){
+
 }
 
 static inline uint16_t getPwmc1(){

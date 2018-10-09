@@ -4,4 +4,4 @@
 #define SILKSCREEN_HEIGHT  60
 #define SILKSCREEN_BPP     16
 
-extern unsigned char silkscreenData[];
+extern const unsigned char silkscreenData[];
