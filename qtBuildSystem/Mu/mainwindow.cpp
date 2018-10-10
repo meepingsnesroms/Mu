@@ -170,7 +170,7 @@ void MainWindow::updateDisplay(){
       ui->display->repaint();
 
       //audio
-      audioOut->write((const char*)emu.getAudioSamples(), AUDIO_SAMPLES * sizeof(int16_t));
+      audioOut->write((const char*)emu.getAudioSamples(), AUDIO_SAMPLES * 2/*channels*/ * sizeof(int16_t));
 
       //power LED
       ui->powerButtonLed->setStyleSheet(emu.getPowerButtonLed() ? "background: lime" : "");

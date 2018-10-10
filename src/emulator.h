@@ -112,12 +112,12 @@ typedef struct{
 }misc_hw_t;
 
 //config options
+#define EMU_FPS 60
 #define AUDIO_DUTY_CYCLE_SIZE 20//the amount of frequencys the PWM can play
 #define SAVE_STATE_VERSION 0
 
 //system constants
 #define CRYSTAL_FREQUENCY 32768
-#define EMU_FPS 60
 #define AUDIO_SAMPLES (CRYSTAL_FREQUENCY / EMU_FPS * AUDIO_DUTY_CYCLE_SIZE)
 
 //emulator data, some are GUI interface variables, some should be left alone
