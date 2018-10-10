@@ -5,7 +5,6 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include <stdlib.h>
 #include <time.h>
 
 #include "../src/emulator.h"
@@ -41,7 +40,7 @@ static retro_input_state_t        input_state_cb;
 static bool      screenHires;
 static uint16_t  screenWidth;
 static uint16_t  screenHeight;
-static uint16_t* screenData;
+static uint16_t  screenData[320 * 440];
 static uint32_t  emuFeatures;
 static bool      useJoystickAsMouse;
 static double    touchCursorX;
@@ -389,12 +388,8 @@ bool retro_load_game(const struct retro_game_info *info)
    screenHires = emuFeatures & FEATURE_320x320;
    screenWidth = screenHires ? 320 : 160;
    screenHeight = screenHires ? 440 : 220;
-   screenData = malloc(screenWidth * screenHeight * sizeof(uint16_t));
    touchCursorX = screenWidth / 2;
    touchCursorY = screenHeight / 2;
-   
-   if(!screenData)
-      return false;
 
    return true;
 }
@@ -402,8 +397,6 @@ bool retro_load_game(const struct retro_game_info *info)
 void retro_unload_game(void)
 {
    emulatorExit();
-   if(screenData)
-      free(screenData);
 }
 
 unsigned retro_get_region(void)

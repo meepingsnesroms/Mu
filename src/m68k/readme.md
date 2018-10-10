@@ -5,6 +5,7 @@ Due to some incompatibilitys with my main target platform Android, I am making a
 Features over default Musashi:  
 Fixed incompatiblity with Androids "typedef uint unsigned int;" in system headers  
 Mame stuff removed  
-Uses fixed width int types
+Uses fixed width int types  
+Supports bus error
 
 If you are looking for an accurate 68k emulator that has the most compatiblity, use this one.
