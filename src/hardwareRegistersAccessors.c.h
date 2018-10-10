@@ -669,10 +669,6 @@ static inline void samplePwmXClk32(){
    }
 }
 
-static inline void samplePwm2(){
-
-}
-
 static inline uint16_t getPwmc1(){
    uint16_t returnValue = registerArrayRead16(PWMC1);
 
