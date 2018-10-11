@@ -132,7 +132,7 @@ extern uint16_t* palmExtendedFramebuffer;//read allowed if FEATURE_320x320 is on
 extern int16_t   palmAudio[];//read allowed, 2 channel signed 16 bit audio
 extern uint32_t  palmAudioSampleIndex;//dont touch
 extern uint32_t  palmSpecialFeatures;//read allowed
-extern double    palmCrystalCycles;//dont touch
+extern double    palmSysclksPerClk32;//dont touch
 extern double    palmCycleCounter;//dont touch
 extern double    palmClockMultiplier;//read/write allowed
 

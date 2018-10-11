@@ -18,6 +18,7 @@
 chip_t   chips[CHIP_END];
 int32_t  pllWakeWait;
 uint32_t clk32Counter;
+double   pctlrCpuClockDivider;
 double   timerCycleCounter[2];
 uint16_t timerStatusReadAcknowledge[2];
 uint32_t interruptEdgeTriggered;
@@ -35,8 +36,8 @@ uint8_t  pwm1WritePosition;
 
 static void checkInterrupts();
 static void checkPortDInterrupts();
-static void recalculateCpuSpeed();
 static void pllWakeCpuIfOff();
+static double sysclksPerClk32();
 
 #include "hardwareRegistersAccessors.c.h"
 #include "hardwareRegistersTiming.c.h"
@@ -110,30 +111,6 @@ void setWriteProtectViolation(uint32_t address){
    registerArrayWrite8(SCR, scr | 0x40);
    if(scr & 0x10)
       m68328BusError(address, true);
-}
-
-static void recalculateCpuSpeed(){
-   double newCpuSpeed = sysclksPerClk32();
-   uint8_t pctlr = registerArrayRead8(PCTLR);
-
-   //power control burst mode
-   if(pctlr & 0x80)
-      newCpuSpeed *= (pctlr & 0x1F) / 31.0;
-
-   /*
-   if(newCpuSpeed != palmCrystalCycles){
-      debugLog("New CPU frequency of:%f cycles per second.\n", newCpuSpeed * CRYSTAL_FREQUENCY);
-      debugLog("New CLK32 cycle count of:%f.\n", newCpuSpeed);
-      if(newCpuSpeed == 0.0){
-         if(pllIsOn())
-            debugLog("CPU turned off with PCTLR.\n");
-         else
-            debugLog("CPU turned off with DISPLL bit.\n");
-      }
-   }
-   */
-
-   palmCrystalCycles = newCpuSpeed;
 }
 
 static void pllWakeCpuIfOff(){
@@ -214,7 +191,7 @@ static void checkInterrupts(){
    //even masked interrupts turn off PCTLR, Chapter 4.5.4 MC68VZ328UM.pdf
    if(intLevel > 0 && registerArrayRead8(PCTLR) & 0x80){
       registerArrayWrite8(PCTLR, registerArrayRead8(PCTLR) & 0x1F);
-      recalculateCpuSpeed();
+      pctlrCpuClockDivider = 1.0;
    }
 
    m68k_set_irq(intLevel);//should be called even if intLevel is 0, that is how the interrupt state gets cleared
@@ -647,7 +624,8 @@ void setHwRegister8(uint32_t address, uint8_t value){
 
       case PCTLR:
          registerArrayWrite8(address, value & 0x9F);
-         recalculateCpuSpeed();
+         if(value & 0x80)
+            pctlrCpuClockDivider = (value & 0x1F) / 31.0;
          break;
 
       case IVR:
@@ -836,7 +814,7 @@ void setHwRegister16(uint32_t address, uint16_t value){
       case PLLCR:
          //CLKEN is required for SED1376 operation
          registerArrayWrite16(PLLCR, value & 0x3FBB);
-         recalculateCpuSpeed();
+         palmSysclksPerClk32 = sysclksPerClk32();
          setSed1376Attached(sed1376ClockConnected());
 
          if(value & 0x0008){
@@ -1090,8 +1068,9 @@ void resetHwRegisters(){
    uint16_t oldDayr = registerArrayRead16(DAYR);//preserve DAYR
 
    memset(palmReg, 0x00, REG_SIZE - BOOTLOADER_SIZE);
-   palmCrystalCycles = 0.0;
+   palmSysclksPerClk32 = 0.0;
    clk32Counter = 0;
+   pctlrCpuClockDivider = 1.0;
    pllWakeWait = -1;
    timerCycleCounter[0] = 0.0;
    timerCycleCounter[1] = 0.0;
@@ -1230,7 +1209,7 @@ void resetHwRegisters(){
    updateAds7846ChipSelectStatus();
    updateBacklightAmplifierStatus();
 
-   recalculateCpuSpeed();
+   palmSysclksPerClk32 = sysclksPerClk32();
 }
 
 void setRtc(uint16_t days, uint8_t hours, uint8_t minutes, uint8_t seconds){

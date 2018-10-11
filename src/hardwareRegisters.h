@@ -28,11 +28,9 @@
 #define INT_SPI2   0x00000001//level 4
 
 //reasons a timer is triggered
-#define TIMER_REASON_STOP     0x0000
-#define TIMER_REASON_SYSCLK   0x0001
-#define TIMER_REASON_SYSCLK16 0x0002
-#define TIMER_REASON_TIN      0x0003
-#define TIMER_REASON_CLK32    0x0004
+#define TIMER_REASON_SYSCLK 0x0000
+#define TIMER_REASON_TIN    0x0001
+#define TIMER_REASON_CLK32  0x0002
 
 //chip names
 enum{
@@ -67,6 +65,7 @@ typedef struct{
 extern chip_t   chips[];
 extern int32_t  pllWakeWait;
 extern uint32_t clk32Counter;
+extern double   pctlrCpuClockDivider;
 extern double   timerCycleCounter[];
 extern uint16_t timerStatusReadAcknowledge[];
 extern uint32_t interruptEdgeTriggered;
@@ -82,7 +81,8 @@ extern uint8_t  pwm1ReadPosition;
 extern uint8_t  pwm1WritePosition;
 
 //timing
-void clk32();//also checks all interrupts
+void clk32();
+void sysclks(double value);
 
 //CPU
 bool pllIsOn();

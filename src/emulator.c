@@ -43,7 +43,7 @@ uint16_t* palmExtendedFramebuffer;
 int16_t   palmAudio[AUDIO_SAMPLES * 2];
 uint32_t  palmAudioSampleIndex;
 uint32_t  palmSpecialFeatures;
-double    palmCrystalCycles;//how many cycles before toggling the 32.768 kHz crystal
+double    palmSysclksPerClk32;//how many SYSCLK cycles before toggling the 32.768 kHz crystal
 double    palmCycleCounter;//can be greater then 0 if too many cycles where run
 double    palmClockMultiplier;//used by the emulator to overclock the emulated Palm
 
@@ -167,6 +167,7 @@ uint64_t emulatorGetStateSize(){
    size += sizeof(uint64_t) * 4;//32.32 fixed point double, timerXCycleCounter and CPU cycle timers
    size += sizeof(int32_t);//pllWakeWait
    size += sizeof(uint32_t);//clk32Counter
+   size += sizeof(uint64_t);//pctlrCpuClockDivider
    size += sizeof(uint16_t) * 2;//timerStatusReadAcknowledge
    size += sizeof(uint32_t);//interruptEdgeTriggered
    size += sizeof(uint16_t) * 9;//RX 8 * 16 SPI1 FIFO, 1 index is for FIFO full
@@ -247,7 +248,7 @@ bool emulatorSaveState(buffer_t buffer){
    }
 
    //timing
-   writeStateValueDouble(buffer.data + offset, palmCrystalCycles);
+   writeStateValueDouble(buffer.data + offset, palmSysclksPerClk32);
    offset += sizeof(uint64_t);
    writeStateValueDouble(buffer.data + offset, palmCycleCounter);
    offset += sizeof(uint64_t);
@@ -255,6 +256,8 @@ bool emulatorSaveState(buffer_t buffer){
    offset += sizeof(int32_t);
    writeStateValueUint32(buffer.data + offset, clk32Counter);
    offset += sizeof(uint32_t);
+   writeStateValueDouble(buffer.data + offset, pctlrCpuClockDivider);
+   offset += sizeof(uint64_t);
    writeStateValueDouble(buffer.data + offset, timerCycleCounter[0]);
    offset += sizeof(uint64_t);
    writeStateValueDouble(buffer.data + offset, timerCycleCounter[1]);
@@ -392,7 +395,7 @@ bool emulatorLoadState(buffer_t buffer){
    }
 
    //timing
-   palmCrystalCycles = readStateValueDouble(buffer.data + offset);
+   palmSysclksPerClk32 = readStateValueDouble(buffer.data + offset);
    offset += sizeof(uint64_t);
    palmCycleCounter = readStateValueDouble(buffer.data + offset);
    offset += sizeof(uint64_t);
@@ -400,6 +403,8 @@ bool emulatorLoadState(buffer_t buffer){
    offset += sizeof(int32_t);
    clk32Counter = readStateValueUint32(buffer.data + offset);
    offset += sizeof(uint32_t);
+   pctlrCpuClockDivider = readStateValueDouble(buffer.data + offset);
+   offset += sizeof(uint64_t);
    timerCycleCounter[0] = readStateValueDouble(buffer.data + offset);
    offset += sizeof(uint64_t);
    timerCycleCounter[1] = readStateValueDouble(buffer.data + offset);
@@ -525,8 +530,8 @@ void emulateFrame(){
    palmAudioSampleIndex = 0;
 
    while(palmCycleCounter < (double)CRYSTAL_FREQUENCY / EMU_FPS){
-      if(palmCrystalCycles > 0.0)
-         m68k_execute(palmCrystalCycles * palmClockMultiplier);
+      m68k_execute(palmSysclksPerClk32 * pctlrCpuClockDivider * palmClockMultiplier);
+      sysclks(palmSysclksPerClk32);
       clk32();
       palmCycleCounter += 1.0;
    }

@@ -230,7 +230,7 @@ static inline void setPllfsr(uint16_t value){
    if(!(oldPllfsr & 0x4000)){
       //frequency protect bit not set
       registerArrayWrite16(PLLFSR, (value & 0x4FFF) | (oldPllfsr & 0x8000));//preserve CLK32 bit
-      recalculateCpuSpeed();
+      palmSysclksPerClk32 = sysclksPerClk32();
    }
 }
 
