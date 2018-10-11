@@ -7,7 +7,7 @@ LAGFIX=1
 
 CORE_DIR := .
 BUILD_DIR = build
-OBJOUT = -o
+OBJOUT = -o 
 
 ifeq ($(platform),android_arm64-v8a)
 include $(BUILD_DIR)/Makefile.android_arm64-v8a
@@ -132,12 +132,9 @@ else ifeq ($(platform), osx)
 ifeq ($(arch),ppc)
 		CFLAGS += -D__ppc__ -DMSB_FIRST
 endif
-	OSXVER = $(shell sw_vers -productVersion | cut -d. -f 2)
-	OSX_GT_MOJAVE = $(shell (( $(OSXVER) >= 14)) && echo "YES")
-ifneq ($(OSX_GT_MOJAVE),YES)
-	#this breaks compiling on Mac OS Mojave
-	fpic += -mmacosx-version-min=10.1
-endif
+	OSXVER = `sw_vers -productVersion | cut -d. -f 2`
+	OSX_LT_MAVERICKS = `(( $(OSXVER) <= 9)) && echo "YES"`
+        fpic += -mmacosx-version-min=10.1
 	SHARED := -dynamiclib
 
 # iOS
@@ -274,7 +271,7 @@ else ifeq ($(platform), rpi2)
         CFLAGS += -marm -mcpu=cortex-a7 -mfpu=neon-vfpv4 -mfloat-abi=hard -funsafe-math-optimizations
         CFLAGS += -fomit-frame-pointer -ffast-math
         HAVE_NEON = 1
-
+        
 # Raspberry Pi 3
 else ifeq ($(platform), rpi3)
         TARGET := $(TARGET_NAME)_libretro.so
@@ -453,7 +450,7 @@ include $(BUILD_DIR)/Makefile.common
 
 OBJECTS := $(SOURCES_C:.c=.o)
 
-DEFINES = $(COREDEFINES)
+DEFINES = $(COREDEFINES) 
 
 ifeq ($(STATIC_LINKING),1)
 DEFINES += -DSTATIC_LINKING
@@ -487,8 +484,8 @@ else
 	LD = link.exe
 endif
 else
-	OBJOUT   = -o
-	LINKOUT  = -o
+	OBJOUT   = -o 
+	LINKOUT  = -o 
 	LD = $(CC)
 endif
 

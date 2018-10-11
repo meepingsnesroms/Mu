@@ -2,8 +2,8 @@
 # Works on hosts Windows
 # Install MSYS2
 
-##########################
-# Checks the host platform
+#########################
+# Check the host platform
 
 HOST_PLATFORM = linux
 ifeq ($(shell uname -a),)
@@ -16,15 +16,10 @@ else ifneq ($(findstring win,$(shell uname -a)),)
   HOST_PLATFORM = windows
 endif
 
+#########################
+# Set the target platform
 
-####################################
-# Variable setup for Makefile.common
-
-CORE_DIR  ?= ..
-BUILD_DIR ?= .
-INCLUDES   = 
-
-include $(BUILD_DIR)/Makefile.common
+TARGET_PLATFORM = mingw_x86_64
 
 #################
 # Toolchain setup
@@ -39,6 +34,7 @@ AR  = ar
 
 OBJEXT = .mingw_x86_64.o
 SOEXT  = .mingw_x86_64.dll
+LIBEXT = .mingw_x86_64.a
 
 ################
 # Platform setup
@@ -63,7 +59,7 @@ RETROLDXFLAGS =
 #################
 # Final variables
 
-DEFINES  = $(PLATDEFS) $(COREDEFINES) $(RETRODEFS)
+DEFINES  = $(PLATDEFS) $(RETRODEFS)
 CFLAGS   = $(PLATCFLAGS) $(RETROCFLAGS) $(DEFINES) $(INCLUDES)
 CXXFLAGS = $(PLATCXXFLAGS) $(RETROCXXFLAGS) $(DEFINES) $(INCLUDES)
 LDFLAGS  = $(PLATLDFLAGS) $(RETROLDFLAGS)
@@ -84,6 +80,15 @@ ifneq ($(LOG_PERFORMANCE),)
   CFLAGS   += -DLOG_PERFORMANCE
   CXXFLAGS += -DLOG_PERFORMANCE
 endif
+
+####################################
+# Variable setup for Makefile.common
+
+CORE_DIR  ?= ..
+BUILD_DIR ?= .
+INCLUDES   = 
+
+include $(BUILD_DIR)/Makefile.common
 
 ###############
 # Include rules

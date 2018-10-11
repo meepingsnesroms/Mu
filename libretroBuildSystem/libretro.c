@@ -27,7 +27,7 @@
 #define path_default_slash() "/"
 #endif
 
-#define JOYSTICK_MULTIPLIER 1.0
+#define JOYSTICK_MULTIPLIER 0.0001
 
 
 static retro_log_printf_t         log_cb;
@@ -45,7 +45,6 @@ static uint32_t  emuFeatures;
 static bool      useJoystickAsMouse;
 static double    touchCursorX;
 static double    touchCursorY;
-
 
 
 static void renderMouseCursor(int16_t screenX, int16_t screenY){
@@ -74,9 +73,7 @@ static void renderMouseCursor(int16_t screenX, int16_t screenY){
    }
 }
 
-
-static void fallback_log(enum retro_log_level level, const char *fmt, ...)
-{
+static void fallback_log(enum retro_log_level level, const char *fmt, ...){
    va_list va;
 
    (void)level;
@@ -86,8 +83,7 @@ static void fallback_log(enum retro_log_level level, const char *fmt, ...)
    va_end(va);
 }
 
-static void check_variables(bool booting)
-{
+static void check_variables(bool booting){
    struct retro_variable var = {0};
 
    if(booting){
@@ -143,32 +139,27 @@ static void check_variables(bool booting)
    }
 }
 
-void retro_init(void)
-{
+void retro_init(void){
    enum retro_pixel_format rgb565 = RETRO_PIXEL_FORMAT_RGB565;
    
    if(environ_cb(RETRO_ENVIRONMENT_SET_PIXEL_FORMAT, &rgb565))
       log_cb(RETRO_LOG_INFO, "Frontend supports RGB565 - will use that instead of XRGB1555.\n");
 }
 
-void retro_deinit(void)
-{
+void retro_deinit(void){
    
 }
 
-unsigned retro_api_version(void)
-{
+unsigned retro_api_version(void){
    return RETRO_API_VERSION;
 }
 
-void retro_set_controller_port_device(unsigned port, unsigned device)
-{
+void retro_set_controller_port_device(unsigned port, unsigned device){
    (void)port;
    (void)device;
 }
 
-void retro_get_system_info(struct retro_system_info *info)
-{
+void retro_get_system_info(struct retro_system_info *info){
    memset(info, 0, sizeof(*info));
    info->library_name     = "Mu";
 #ifndef GIT_VERSION
@@ -179,8 +170,7 @@ void retro_get_system_info(struct retro_system_info *info)
    info->valid_extensions = "prc|pdb|pqa";
 }
 
-void retro_get_system_av_info(struct retro_system_av_info *info)
-{
+void retro_get_system_av_info(struct retro_system_av_info *info){
    info->timing.fps = EMU_FPS;
    info->timing.sample_rate = CRYSTAL_FREQUENCY * AUDIO_DUTY_CYCLE_SIZE;
 
@@ -191,8 +181,7 @@ void retro_get_system_av_info(struct retro_system_av_info *info)
    info->geometry.aspect_ratio = 160.0 / 220.0;
 }
 
-void retro_set_environment(retro_environment_t cb)
-{
+void retro_set_environment(retro_environment_t cb){
    struct retro_log_callback logging;
    bool no_rom = true;
 
@@ -220,38 +209,31 @@ void retro_set_environment(retro_environment_t cb)
    environ_cb(RETRO_ENVIRONMENT_SET_VARIABLES, vars);
 }
 
-void retro_set_audio_sample(retro_audio_sample_t cb)
-{
+void retro_set_audio_sample(retro_audio_sample_t cb){
    
 }
 
-void retro_set_audio_sample_batch(retro_audio_sample_batch_t cb)
-{
+void retro_set_audio_sample_batch(retro_audio_sample_batch_t cb){
    audio_cb = cb;
 }
 
-void retro_set_input_poll(retro_input_poll_t cb)
-{
+void retro_set_input_poll(retro_input_poll_t cb){
    input_poll_cb = cb;
 }
 
-void retro_set_input_state(retro_input_state_t cb)
-{
+void retro_set_input_state(retro_input_state_t cb){
    input_state_cb = cb;
 }
 
-void retro_set_video_refresh(retro_video_refresh_t cb)
-{
+void retro_set_video_refresh(retro_video_refresh_t cb){
    video_cb = cb;
 }
 
-void retro_reset(void)
-{
+void retro_reset(void){
    emulatorReset();
 }
 
-void retro_run(void)
-{
+void retro_run(void){
    input_poll_cb();
    
    //touchscreen
@@ -305,8 +287,7 @@ void retro_run(void)
    audio_cb(palmAudio, AUDIO_SAMPLES);
 }
 
-bool retro_load_game(const struct retro_game_info *info)
-{
+bool retro_load_game(const struct retro_game_info *info){
    const char* systemDirectory;
    char palmRomPath[PATH_MAX_LENGTH];
    char palmBootloaderPath[PATH_MAX_LENGTH];
@@ -394,31 +375,26 @@ bool retro_load_game(const struct retro_game_info *info)
    return true;
 }
 
-void retro_unload_game(void)
-{
+void retro_unload_game(void){
    emulatorExit();
 }
 
-unsigned retro_get_region(void)
-{
+unsigned retro_get_region(void){
    return RETRO_REGION_NTSC;
 }
 
-bool retro_load_game_special(unsigned type, const struct retro_game_info *info, size_t num)
-{
+bool retro_load_game_special(unsigned type, const struct retro_game_info *info, size_t num){
    (void)type;
    (void)info;
    (void)num;
    return false;
 }
 
-size_t retro_serialize_size(void)
-{
+size_t retro_serialize_size(void){
    return emulatorGetStateSize();
 }
 
-bool retro_serialize(void *data, size_t size)
-{
+bool retro_serialize(void *data, size_t size){
    buffer_t saveBuffer;
    
    saveBuffer.data = (uint8_t*)data;
@@ -427,8 +403,7 @@ bool retro_serialize(void *data, size_t size)
    return emulatorSaveState(saveBuffer);
 }
 
-bool retro_unserialize(const void *data, size_t size)
-{
+bool retro_unserialize(const void *data, size_t size){
    buffer_t saveBuffer;
    
    saveBuffer.data = (uint8_t*)data;
@@ -437,23 +412,19 @@ bool retro_unserialize(const void *data, size_t size)
    return emulatorLoadState(saveBuffer);
 }
 
-void *retro_get_memory_data(unsigned id)
-{
+void *retro_get_memory_data(unsigned id){
    return emulatorGetRamBuffer().data;
 }
 
-size_t retro_get_memory_size(unsigned id)
-{
+size_t retro_get_memory_size(unsigned id){
    return emulatorGetRamBuffer().size;
 }
 
-void retro_cheat_reset(void)
-{
+void retro_cheat_reset(void){
    
 }
 
-void retro_cheat_set(unsigned index, bool enabled, const char *code)
-{
+void retro_cheat_set(unsigned index, bool enabled, const char *code){
    (void)index;
    (void)enabled;
    (void)code;
