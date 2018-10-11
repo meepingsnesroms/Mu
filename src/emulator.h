@@ -114,6 +114,7 @@ typedef struct{
 //config options
 #define EMU_FPS 60
 #define AUDIO_DUTY_CYCLE_SIZE 20//the amount of frequencys the PWM can play
+#define EMU_SYSCLK_PRECISION 200//the amount of cycles to run before adding SYSCLKs, higher = faster, higher values may skip timer events and lower audio accuracy
 #define SAVE_STATE_VERSION 0
 
 //system constants

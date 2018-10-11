@@ -172,6 +172,27 @@ void m68328LoadState(uint8_t* data){
    offset += sizeof(uint32_t);
 }
 
+void m68328Execute(){
+   double cyclesRemaining = palmSysclksPerClk32;
+
+   while(true){
+      if(palmSysclksPerClk32 < 1.0){
+         //PLL is turned off, abort
+         break;
+      }
+      else if(cyclesRemaining <= EMU_SYSCLK_PRECISION){
+         m68k_execute(cyclesRemaining * pctlrCpuClockDivider * palmClockMultiplier);
+         sysclk(cyclesRemaining);
+         break;
+      }
+      m68k_execute(EMU_SYSCLK_PRECISION * pctlrCpuClockDivider * palmClockMultiplier);
+      sysclk(EMU_SYSCLK_PRECISION);
+      cyclesRemaining -= EMU_SYSCLK_PRECISION;
+   }
+
+   clk32();
+}
+
 void m68328BusError(uint32_t address, bool isWrite){
    //never call outsize of a 68k opcode, behavior is undefined due to longjmp
    m68ki_trigger_bus_error(address, isWrite ? MODE_WRITE : MODE_READ, FLAG_S | m68ki_get_address_space());

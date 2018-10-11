@@ -86,12 +86,6 @@ static inline uint16_t pwm1FifoSampleDuration(){
    uint8_t prescaler = (pwmc1 >> 8 & 0x7F) + 1;
    uint8_t clockDivider = 2 << (pwmc1 & 0x03);
    uint8_t repeat = 1 << (pwmc1 >> 2 & 0x03);
-
-   //using SYSCLK as PWM1 clock
-   //if(!(pwmc1 & 0x8000))
-   //   return prescaler * clockDivider * repeat / sysclksPerClk32();
-
-   //just using CLK32
    return prescaler * clockDivider * repeat;
 }
 
@@ -598,19 +592,30 @@ static inline uint8_t getPortMValue(){
    return ((registerArrayRead8(PMDATA) & registerArrayRead8(PMDIR)) | (~registerArrayRead8(PMDIR) & 0x20)) & registerArrayRead8(PMSEL);
 }
 
-static inline void samplePwmXClk32(){
-   //call every clk32, adds samples to audio buffer
-
+static inline void samplePwm1(bool forClk32, double sysclks){
    //clear PWM1 FIFO values if enough time has passed
-   if(pwm1FifoEntrys() > 0){
-      if(pwm1ClocksToNextSample > 0)
-         pwm1ClocksToNextSample--;
-      if(pwm1ClocksToNextSample == 0){
-         uint16_t pwmc1 = registerArrayRead16(PWMC1);
+   uint16_t pwmc1 = registerArrayRead16(PWMC1);
+   int32_t decrement = forClk32 ? 1 : sysclks;
 
-         //switch out sample
-         pwm1FifoRemove();
-         pwm1ClocksToNextSample = pwm1FifoSampleDuration();
+   //validate mode
+   if(!forClk32)//hack, makes the glitchy audio still work
+      return;
+   //if(forClk32 != (bool)(pwmc1 & 0x8000))
+   //   return;
+
+   //add cycles
+   if(pwm1FifoEntrys() > 0){
+      pwm1ClocksToNextSample -= decrement;
+      if(pwm1ClocksToNextSample <= 0){
+         while(pwm1FifoEntrys() > 0 && pwm1ClocksToNextSample <= 0){
+            //switch out samples
+            pwm1FifoRemove();
+            pwm1ClocksToNextSample += pwm1FifoSampleDuration();
+         }
+
+         //dont carry negative cycles over when the FIFO runs out
+         if(pwm1FifoEntrys() == 0)
+            pwm1ClocksToNextSample = pwm1FifoSampleDuration();
 
          //set FIFOAV
          registerArrayWrite16(PWMC1, pwmc1 | 0x0020);
@@ -630,6 +635,7 @@ static inline void samplePwmXClk32(){
 
       //00 = PWM1, 01 = PWM2, 10 = PWM1 | PWM2, 11 = PWM1 & PWM2
       //the calculations for and/or of the 2 pins is too CPU intensive and will not be emulated
+      /*
       switch(audioMode){
          case 0x00:
             //PWM1 alone
@@ -645,19 +651,32 @@ static inline void samplePwmXClk32(){
             break;
 
          case 0x01:
-            //PWM2 alone
-            dutyCycle = (double)registerArrayRead16(PWMW2) / (registerArrayRead16(PWMP2) + 1);//0<->1
-            //cap at 100% duty cycle
-            if(dutyCycle > 1.0)
-               dutyCycle = 1.0;
-            break;
-
          case 0x02:
          case 0x03:
             debugLog("PCR audio mode:%d not supported\n", audioMode);
             dutyCycle = 0.0;
             break;
       }
+      */
+
+      //PWM1 alone
+      if(pwm1FifoEntrys() > 0){
+         dutyCycle = (double)pwm1FifoCurrentValue() / (registerArrayRead8(PWMP1) + 2);//0<->1
+         //cap at 100% duty cycle
+         if(dutyCycle > 1.0)
+            dutyCycle = 1.0;
+      }
+      else{
+         dutyCycle = 0.0;
+      }
+
+      /*
+      //PWM2 alone
+      dutyCycle = (double)registerArrayRead16(PWMW2) / (registerArrayRead16(PWMP2) + 1);//0<->1
+      //cap at 100% duty cycle
+      if(dutyCycle > 1.0)
+         dutyCycle = 1.0;
+      */
 
       //add samples to audio buffer
       firstLowSample = dutyCycle * AUDIO_DUTY_CYCLE_SIZE;

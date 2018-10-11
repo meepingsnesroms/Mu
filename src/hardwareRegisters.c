@@ -28,7 +28,7 @@ uint8_t  spi1RxReadPosition;
 uint8_t  spi1RxWritePosition;
 uint8_t  spi1TxReadPosition;
 uint8_t  spi1TxWritePosition;
-uint16_t pwm1ClocksToNextSample;
+int32_t  pwm1ClocksToNextSample;
 uint8_t  pwm1Fifo[6];
 uint8_t  pwm1ReadPosition;
 uint8_t  pwm1WritePosition;

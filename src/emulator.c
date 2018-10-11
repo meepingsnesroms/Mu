@@ -173,7 +173,7 @@ uint64_t emulatorGetStateSize(){
    size += sizeof(uint16_t) * 9;//RX 8 * 16 SPI1 FIFO, 1 index is for FIFO full
    size += sizeof(uint16_t) * 9;//TX 8 * 16 SPI1 FIFO, 1 index is for FIFO full
    size += sizeof(uint8_t) * 4;//spi1(R/T)x(Read/Write)Position
-   size += sizeof(uint16_t);//pwm1ClocksToNextSample
+   size += sizeof(int32_t);//pwm1ClocksToNextSample
    size += sizeof(uint8_t) * 6;//pwm1Fifo[6]
    size += sizeof(uint8_t) * 2;//pwm1(Read/Write)
    size += sizeof(uint8_t) * 7;//palmMisc
@@ -288,8 +288,8 @@ bool emulatorSaveState(buffer_t buffer){
    offset += sizeof(uint8_t);
 
    //PWM1, audio
-   writeStateValueUint16(buffer.data + offset, pwm1ClocksToNextSample);
-   offset += sizeof(uint16_t);
+   writeStateValueInt32(buffer.data + offset, pwm1ClocksToNextSample);
+   offset += sizeof(int32_t);
    for(uint8_t fifoPosition = 0; fifoPosition < 6; fifoPosition++){
       writeStateValueUint8(buffer.data + offset, pwm1Fifo[fifoPosition]);
       offset += sizeof(uint8_t);
@@ -435,8 +435,8 @@ bool emulatorLoadState(buffer_t buffer){
    offset += sizeof(uint8_t);
 
    //PWM1, audio
-   pwm1ClocksToNextSample = readStateValueUint16(buffer.data + offset);
-   offset += sizeof(uint16_t);
+   pwm1ClocksToNextSample = readStateValueInt32(buffer.data + offset);
+   offset += sizeof(int32_t);
    for(uint8_t fifoPosition = 0; fifoPosition < 6; fifoPosition++){
       pwm1Fifo[fifoPosition] = readStateValueUint8(buffer.data + offset);
       offset += sizeof(uint8_t);
@@ -529,12 +529,8 @@ void emulateFrame(){
    refreshInputState();
    palmAudioSampleIndex = 0;
 
-   while(palmCycleCounter < (double)CRYSTAL_FREQUENCY / EMU_FPS){
-      m68k_execute(palmSysclksPerClk32 * pctlrCpuClockDivider * palmClockMultiplier);
-      sysclks(palmSysclksPerClk32);
-      clk32();
-      palmCycleCounter += 1.0;
-   }
+   for(; palmCycleCounter < (double)CRYSTAL_FREQUENCY / EMU_FPS; palmCycleCounter += 1.0)
+      m68328Execute();
    palmCycleCounter -= (double)CRYSTAL_FREQUENCY / EMU_FPS;
 
    sed1376Render();

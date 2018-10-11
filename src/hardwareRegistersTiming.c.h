@@ -1,5 +1,5 @@
-static void timer1(uint8_t reason, double sysclks);
-static void timer2(uint8_t reason, double sysclks);
+static void timer1(uint8_t reason, double sysclk);
+static void timer2(uint8_t reason, double sysclk);
 
 static void timer1(uint8_t reason, double sysclks){
    uint16_t timer1Control = registerArrayRead16(TCTL1);
@@ -139,8 +139,8 @@ static double dmaclksPerClk32(){
    if(pllIsOn()){
       uint16_t pllcr = registerArrayRead16(PLLCR);
       uint16_t pllfsr = registerArrayRead16(PLLFSR);
-      double p = pllfsr & 0x00FF;
-      double q = (pllfsr & 0x0F00) >> 8;
+      uint8_t p = pllfsr & 0x00FF;
+      uint8_t q = pllfsr >> 8 & 0x000F;
       dmaclks = 2.0 * (14.0 * (p + 1.0) + q + 1.0);
 
       //prescaler 1 enabled, divide by 2
@@ -322,7 +322,7 @@ void clk32(){
 
    timer1(TIMER_REASON_CLK32, 0);
    timer2(TIMER_REASON_CLK32, 0);
-   samplePwmXClk32();
+   samplePwm1(true/*forClk32*/, 0.0);
 
    //PLLCR wake select wait
    if(pllWakeWait != -1){
@@ -338,7 +338,8 @@ void clk32(){
    checkInterrupts();
 }
 
-void sysclks(double count){
+void sysclk(double count){
    timer1(TIMER_REASON_SYSCLK, count);
    timer2(TIMER_REASON_SYSCLK, count);
+   samplePwm1(false/*forClk32*/, count);
 }
