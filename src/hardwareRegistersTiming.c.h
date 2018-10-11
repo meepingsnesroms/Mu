@@ -1,3 +1,6 @@
+static void timer1(uint8_t reason, double sysclks);
+static void timer2(uint8_t reason, double sysclks)
+
 static inline double dmaclksPerClk32(){
    double dmaclks;
 
@@ -75,6 +78,132 @@ static inline void rtiInterruptClk32(){
    if(triggeredRtiInterrupts){
       registerArrayWrite16(RTCISR, registerArrayRead16(RTCISR) | triggeredRtiInterrupts);
       setIprIsrBit(INT_RTI);
+   }
+}
+
+static void timer1(uint8_t reason, double sysclks){
+   uint16_t timer1Control = registerArrayRead16(TCTL1);
+   uint16_t timer1Compare = registerArrayRead16(TCMP1);
+   double timer1OldCount = timerCycleCounter[0];
+   double timer1Prescaler = (registerArrayRead16(TPRER1) & 0x00FF) + 1;
+   bool timer1Enabled = timer1Control & 0x0001;
+
+   if(timer1Enabled){
+      uint8_t timer1Source = (timer1Control & 0x000E) >> 1;
+
+      //all CLK32 modes compare to 0x0004
+      if(timer1Source > 0x0004)
+         timer1Source = TIMER_REASON_CLK32;
+
+      if(timer1Source != reason)
+         return;
+
+      switch(timer1Source){
+         case TIMER_REASON_STOP://stop counter
+            //do nothing
+            return;
+
+         case TIMER_REASON_SYSCLK://SYSCLK / timer prescaler
+            timerCycleCounter[0] += sysclks / timer1Prescaler;
+            break;
+
+         case TIMER_REASON_SYSCLK16://SYSCLK / 16 / timer prescaler
+            timerCycleCounter[0] += sysclks / 16.0 / timer1Prescaler;
+            break;
+
+         case TIMER_REASON_TIN://TIN/TOUT pin / timer prescaler, the other timer can be attached to TIN/TOUT
+         case TIMER_REASON_CLK32://CLK32 / timer prescaler
+            timerCycleCounter[0] += 1.0 / timer1Prescaler;
+            break;
+      }
+
+      if(timer1OldCount < timer1Compare && timerCycleCounter[0] >= timer1Compare){
+         //the comparison against the old value is to prevent an interrupt on every increment in free running mode
+         //the timer is not cycle accurate and may not hit the value in the compare register perfectly so check if it would have during in the emulated time
+         uint8_t pcrTinToutConfig = registerArrayRead8(PCR) & 0x03;//TIN/TOUT seems not to be physicaly connected but cascaded timers still need to be supported
+
+         //interrupt enabled
+         if(timer1Control & 0x0010)
+            setIprIsrBit(INT_TMR1);
+
+         //set timer triggered bit
+         registerArrayWrite16(TSTAT1, registerArrayRead16(TSTAT1) | 0x0001);
+         timerStatusReadAcknowledge[0] &= 0xFFFE;//lock bit until next read
+
+         if(pcrTinToutConfig == 0x03)
+            timer2(TIMER_REASON_TIN, 0);
+
+         //not free running, reset to 0, to prevent loss of ticks after compare event just subtract timerXCompare
+         if(!(timer1Control & 0x0100))
+            timerCycleCounter[0] -= timer1Compare;
+      }
+
+      if(timerCycleCounter[0] > 0xFFFF)
+         timerCycleCounter[0] -= 0xFFFF;
+      registerArrayWrite16(TCN1, (uint16_t)timerCycleCounter[0]);
+   }
+}
+
+static void timer2(uint8_t reason, double sysclks){
+   uint16_t timer2Control = registerArrayRead16(TCTL2);
+   uint16_t timer2Compare = registerArrayRead16(TCMP2);
+   double timer2OldCount = timerCycleCounter[1];
+   double timer2Prescaler = (registerArrayRead16(TPRER2) & 0x00FF) + 1;
+   bool timer2Enabled = timer2Control & 0x0001;
+
+   if(timer2Enabled){
+      uint8_t timer2Source = (timer2Control & 0x000E) >> 1;
+
+      //all CLK32 modes compare to 0x0004
+      if(timer2Source > 0x0004)
+         timer2Source = 0x0004;
+
+      if(timer2Source != reason)
+         return;
+
+      switch(timer2Source){
+         case TIMER_REASON_STOP://stop counter
+            //do nothing
+            return;
+
+         case TIMER_REASON_SYSCLK://SYSCLK / timer prescaler
+            timerCycleCounter[1] += sysclks / timer2Prescaler;
+            break;
+
+         case TIMER_REASON_SYSCLK16://SYSCLK / 16 / timer prescaler
+            timerCycleCounter[1] += sysclks / 16.0 / timer2Prescaler;
+            break;
+
+         case TIMER_REASON_TIN://TIN/TOUT pin / timer prescaler, the other timer can be attached to TIN/TOUT
+         case TIMER_REASON_CLK32://CLK32 / timer prescaler
+            timerCycleCounter[1] += 1.0 / timer2Prescaler;
+            break;
+      }
+
+      if(timer2OldCount < timer2Compare && timerCycleCounter[1] >= timer2Compare){
+         //the comparison against the old value is to prevent an interrupt on every increment in free running mode
+         //the timer is not cycle accurate and may not hit the value in the compare register perfectly so check if it would have during in the emulated time
+         uint8_t pcrTinToutConfig = registerArrayRead8(PCR) & 0x03;//TIN/TOUT seems not to be physicaly connected but cascaded timers still need to be supported
+
+         //interrupt enabled
+         if(timer2Control & 0x0010)
+            setIprIsrBit(INT_TMR2);
+
+         //set timer triggered bit
+         registerArrayWrite16(TSTAT2, registerArrayRead16(TSTAT2) | 0x0001);
+         timerStatusReadAcknowledge[1] &= 0xFFFE;//lock bit until next read
+
+         if(pcrTinToutConfig == 0x02)
+            timer1(TIMER_REASON_TIN, 0);
+
+         //not free running, reset to 0, to prevent loss of ticks after compare event just subtract timerXCompare
+         if(!(timer2Control & 0x0100))
+            timerCycleCounter[1] -= timer2Compare;
+      }
+
+      if(timerCycleCounter[1] > 0xFFFF)
+         timerCycleCounter[1] -= 0xFFFF;
+      registerArrayWrite16(TCN2, (uint16_t)timerCycleCounter[1]);
    }
 }
 

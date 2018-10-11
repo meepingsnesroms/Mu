@@ -27,6 +27,13 @@
 #define INT_TMR1   0x00000002//level 6
 #define INT_SPI2   0x00000001//level 4
 
+//reasons a timer is triggered
+#define TIMER_REASON_STOP     0x0000
+#define TIMER_REASON_SYSCLK   0x0001
+#define TIMER_REASON_SYSCLK16 0x0002
+#define TIMER_REASON_TIN      0x0003
+#define TIMER_REASON_CLK32    0x0004
+
 //chip names
 enum{
    CHIP_BEGIN = 0,
