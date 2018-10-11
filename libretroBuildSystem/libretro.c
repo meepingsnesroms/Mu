@@ -91,48 +91,48 @@ static void check_variables(bool booting){
       
       var.key = "palm_emu_feature_ram_huge";
       if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
-         if (!strcmp(var.value, "true"))
+         if (!strcmp(var.value, "enabled"))
             emuFeatures |= FEATURE_RAM_HUGE;
       
       var.key = "palm_emu_feature_fast_cpu";
       if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
-         if (!strcmp(var.value, "true"))
+         if (!strcmp(var.value, "enabled"))
             emuFeatures |= FEATURE_FAST_CPU;
       
       var.key = "palm_emu_feature_hybrid_cpu";
       if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
-         if (!strcmp(var.value, "true"))
+         if (!strcmp(var.value, "enabled"))
             emuFeatures |= FEATURE_HYBRID_CPU;
       
       var.key = "palm_emu_feature_320x320";
       if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
-         if (!strcmp(var.value, "true"))
+         if (!strcmp(var.value, "enabled"))
             emuFeatures |= FEATURE_320x320;
       
       var.key = "palm_emu_feature_synced_rtc";
       if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
-         if (!strcmp(var.value, "true"))
+         if (!strcmp(var.value, "enabled"))
             emuFeatures |= FEATURE_SYNCED_RTC;
       
       var.key = "palm_emu_feature_hle_apis";
       if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
-         if (!strcmp(var.value, "true"))
+         if (!strcmp(var.value, "enabled"))
             emuFeatures |= FEATURE_HLE_APIS;
       
       var.key = "palm_emu_feature_emu_honest";
       if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
-         if (!strcmp(var.value, "true"))
+         if (!strcmp(var.value, "enabled"))
             emuFeatures |= FEATURE_EMU_HONEST;
       
       var.key = "palm_emu_feature_ext_keys";
       if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
-         if (!strcmp(var.value, "true"))
+         if (!strcmp(var.value, "enabled"))
             emuFeatures |= FEATURE_EXT_KEYS;
    }
 
    var.key = "palm_emu_use_joystick_as_mouse";
    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value){
-      if (!strcmp(var.value, "true"))
+      if (!strcmp(var.value, "enabled"))
          useJoystickAsMouse = true;
       else
          useJoystickAsMouse = false;
@@ -195,15 +195,15 @@ void retro_set_environment(retro_environment_t cb){
       log_cb = fallback_log;
    
    struct retro_variable vars[] = {
-      { "palm_emu_feature_ram_huge", "Extra RAM Hack; false|true" },
-      { "palm_emu_feature_fast_cpu", "Overclock 2x; false|true" },
-      { "palm_emu_feature_hybrid_cpu", "Extra RAM Hack; false|true" },
-      { "palm_emu_feature_320x320", "Double Resolution; false|true" },
-      { "palm_emu_feature_synced_rtc", "Force Match System Clock; false|true" },
-      { "palm_emu_feature_hle_apis", "HLE API Implementations; false|true" },
-      { "palm_emu_feature_emu_honest", "Tell Programs Their In An Emulator(for test programs); false|true" },
-      { "palm_emu_feature_ext_keys", "Enable OS5 Keys; false|true" },
-      { "palm_emu_use_joystick_as_mouse", "Use Left Joystick As Mouse; false|true" },
+      { "palm_emu_feature_ram_huge", "Extra RAM Hack; disabled|enabled" },
+      { "palm_emu_feature_fast_cpu", "Overclock 2x; disabled|enabled" },
+      { "palm_emu_feature_hybrid_cpu", "Extra RAM Hack; disabled|enabled" },
+      { "palm_emu_feature_320x320", "Double Resolution; disabled|enabled" },
+      { "palm_emu_feature_synced_rtc", "Force Match System Clock; disabled|enabled" },
+      { "palm_emu_feature_hle_apis", "HLE API Implementations; disabled|enabled" },
+      { "palm_emu_feature_emu_honest", "Tell Programs They're In An Emulator(for test programs); disabled|enabled" },
+      { "palm_emu_feature_ext_keys", "Enable OS5 Keys; disabled|enabled" },
+      { "palm_emu_use_joystick_as_mouse", "Use Left Joystick As Mouse; disabled|enabled" },
       { 0 }
    };
    environ_cb(RETRO_ENVIRONMENT_SET_VARIABLES, vars);
