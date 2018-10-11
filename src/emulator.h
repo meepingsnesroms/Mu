@@ -118,7 +118,7 @@ typedef struct{
 
 //system constants
 #define CRYSTAL_FREQUENCY 32768
-#define AUDIO_SAMPLES (CRYSTAL_FREQUENCY / EMU_FPS * AUDIO_DUTY_CYCLE_SIZE)
+#define AUDIO_SAMPLES (CRYSTAL_FREQUENCY * AUDIO_DUTY_CYCLE_SIZE / EMU_FPS)
 
 //emulator data, some are GUI interface variables, some should be left alone
 extern uint8_t*  palmRam;//dont touch
