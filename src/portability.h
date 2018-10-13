@@ -26,6 +26,14 @@ static inline int64_t sMax(int64_t x, int64_t y){
    return x > y ? x : y;
 }
 
+static inline double dMin(double x, double y){
+   return x < y ? x : y;
+}
+
+static inline double dMax(double x, double y){
+   return x > y ? x : y;
+}
+
 
 static inline uint64_t getUint64FromDouble(double data){
    //1.32.31 fixed point

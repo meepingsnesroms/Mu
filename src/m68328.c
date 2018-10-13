@@ -175,19 +175,19 @@ void m68328LoadState(uint8_t* data){
 void m68328Execute(){
    double cyclesRemaining = palmSysclksPerClk32;
 
-   while(true){
-      if(palmSysclksPerClk32 < 1.0){
-         //PLL is turned off, abort
+   while(cyclesRemaining >= 1.0){
+      double sysclks = dMin(cyclesRemaining, EMU_SYSCLK_PRECISION);
+      int32_t cpuCycles = sysclks * pctlrCpuClockDivider * palmClockMultiplier;
+
+      if(cpuCycles > 0)
+         m68k_execute(cpuCycles);
+      sysclk(sysclks);
+
+      //abort if PLL disabled
+      if(palmSysclksPerClk32 < 1.0)
          break;
-      }
-      else if(cyclesRemaining <= EMU_SYSCLK_PRECISION){
-         m68k_execute(cyclesRemaining * pctlrCpuClockDivider * palmClockMultiplier);
-         sysclk(cyclesRemaining);
-         break;
-      }
-      m68k_execute(EMU_SYSCLK_PRECISION * pctlrCpuClockDivider * palmClockMultiplier);
-      sysclk(EMU_SYSCLK_PRECISION);
-      cyclesRemaining -= EMU_SYSCLK_PRECISION;
+
+      cyclesRemaining -= sysclks;
    }
 
    clk32();
