@@ -17,6 +17,94 @@
 #define MAX_PALM_BITMAP_SIZE (0xFFFF * 4)
 
 
+static const uint8_t palmPalette8Bpp[256][3] = {
+  { 255, 255, 255 }, { 255, 204, 255 }, { 255, 153, 255 }, { 255, 102, 255 },
+  { 255,  51, 255 }, { 255,   0, 255 }, { 255, 255, 204 }, { 255, 204, 204 },
+  { 255, 153, 204 }, { 255, 102, 204 }, { 255,  51, 204 }, { 255,   0, 204 },
+  { 255, 255, 153 }, { 255, 204, 153 }, { 255, 153, 153 }, { 255, 102, 153 },
+  { 255,  51, 153 }, { 255,   0, 153 }, { 204, 255, 255 }, { 204, 204, 255 },
+  { 204, 153, 255 }, { 204, 102, 255 }, { 204,  51, 255 }, { 204,   0, 255 },
+  { 204, 255, 204 }, { 204, 204, 204 }, { 204, 153, 204 }, { 204, 102, 204 },
+  { 204,  51, 204 }, { 204,   0, 204 }, { 204, 255, 153 }, { 204, 204, 153 },
+  { 204, 153, 153 }, { 204, 102, 153 }, { 204,  51, 153 }, { 204,   0, 153 },
+  { 153, 255, 255 }, { 153, 204, 255 }, { 153, 153, 255 }, { 153, 102, 255 },
+  { 153,  51, 255 }, { 153,   0, 255 }, { 153, 255, 204 }, { 153, 204, 204 },
+  { 153, 153, 204 }, { 153, 102, 204 }, { 153,  51, 204 }, { 153,   0, 204 },
+  { 153, 255, 153 }, { 153, 204, 153 }, { 153, 153, 153 }, { 153, 102, 153 },
+  { 153,  51, 153 }, { 153,   0, 153 }, { 102, 255, 255 }, { 102, 204, 255 },
+  { 102, 153, 255 }, { 102, 102, 255 }, { 102,  51, 255 }, { 102,   0, 255 },
+  { 102, 255, 204 }, { 102, 204, 204 }, { 102, 153, 204 }, { 102, 102, 204 },
+  { 102,  51, 204 }, { 102,   0, 204 }, { 102, 255, 153 }, { 102, 204, 153 },
+  { 102, 153, 153 }, { 102, 102, 153 }, { 102,  51, 153 }, { 102,   0, 153 },
+  {  51, 255, 255 }, {  51, 204, 255 }, {  51, 153, 255 }, {  51, 102, 255 },
+  {  51,  51, 255 }, {  51,   0, 255 }, {  51, 255, 204 }, {  51, 204, 204 },
+  {  51, 153, 204 }, {  51, 102, 204 }, {  51,  51, 204 }, {  51,   0, 204 },
+  {  51, 255, 153 }, {  51, 204, 153 }, {  51, 153, 153 }, {  51, 102, 153 },
+  {  51,  51, 153 }, {  51,   0, 153 }, {   0, 255, 255 }, {   0, 204, 255 },
+  {   0, 153, 255 }, {   0, 102, 255 }, {   0,  51, 255 }, {   0,   0, 255 },
+  {   0, 255, 204 }, {   0, 204, 204 }, {   0, 153, 204 }, {   0, 102, 204 },
+  {   0,  51, 204 }, {   0,   0, 204 }, {   0, 255, 153 }, {   0, 204, 153 },
+  {   0, 153, 153 }, {   0, 102, 153 }, {   0,  51, 153 }, {   0,   0, 153 },
+  { 255, 255, 102 }, { 255, 204, 102 }, { 255, 153, 102 }, { 255, 102, 102 },
+  { 255,  51, 102 }, { 255,   0, 102 }, { 255, 255,  51 }, { 255, 204,  51 },
+  { 255, 153,  51 }, { 255, 102,  51 }, { 255,  51,  51 }, { 255,   0,  51 },
+  { 255, 255,   0 }, { 255, 204,   0 }, { 255, 153,   0 }, { 255, 102,   0 },
+  { 255,  51,   0 }, { 255,   0,   0 }, { 204, 255, 102 }, { 204, 204, 102 },
+  { 204, 153, 102 }, { 204, 102, 102 }, { 204,  51, 102 }, { 204,   0, 102 },
+  { 204, 255,  51 }, { 204, 204,  51 }, { 204, 153,  51 }, { 204, 102,  51 },
+  { 204,  51,  51 }, { 204,   0,  51 }, { 204, 255,   0 }, { 204, 204,   0 },
+  { 204, 153,   0 }, { 204, 102,   0 }, { 204,  51,   0 }, { 204,   0,   0 },
+  { 153, 255, 102 }, { 153, 204, 102 }, { 153, 153, 102 }, { 153, 102, 102 },
+  { 153,  51, 102 }, { 153,   0, 102 }, { 153, 255,  51 }, { 153, 204,  51 },
+  { 153, 153,  51 }, { 153, 102,  51 }, { 153,  51,  51 }, { 153,   0,  51 },
+  { 153, 255,   0 }, { 153, 204,   0 }, { 153, 153,   0 }, { 153, 102,   0 },
+  { 153,  51,   0 }, { 153,   0,   0 }, { 102, 255, 102 }, { 102, 204, 102 },
+  { 102, 153, 102 }, { 102, 102, 102 }, { 102,  51, 102 }, { 102,   0, 102 },
+  { 102, 255,  51 }, { 102, 204,  51 }, { 102, 153,  51 }, { 102, 102,  51 },
+  { 102,  51,  51 }, { 102,   0,  51 }, { 102, 255,   0 }, { 102, 204,   0 },
+  { 102, 153,   0 }, { 102, 102,   0 }, { 102,  51,   0 }, { 102,   0,   0 },
+  {  51, 255, 102 }, {  51, 204, 102 }, {  51, 153, 102 }, {  51, 102, 102 },
+  {  51,  51, 102 }, {  51,   0, 102 }, {  51, 255,  51 }, {  51, 204,  51 },
+  {  51, 153,  51 }, {  51, 102,  51 }, {  51,  51,  51 }, {  51,   0,  51 },
+  {  51, 255,   0 }, {  51, 204,   0 }, {  51, 153,   0 }, {  51, 102,   0 },
+  {  51,  51,   0 }, {  51,   0,   0 }, {   0, 255, 102 }, {   0, 204, 102 },
+  {   0, 153, 102 }, {   0, 102, 102 }, {   0,  51, 102 }, {   0,   0, 102 },
+  {   0, 255,  51 }, {   0, 204,  51 }, {   0, 153,  51 }, {   0, 102,  51 },
+  {   0,  51,  51 }, {   0,   0,  51 }, {   0, 255,   0 }, {   0, 204,   0 },
+  {   0, 153,   0 }, {   0, 102,   0 }, {   0,  51,   0 }, {  17,  17,  17 },
+  {  34,  34,  34 }, {  68,  68,  68 }, {  85,  85,  85 }, { 119, 119, 119 },
+  { 136, 136, 136 }, { 170, 170, 170 }, { 187, 187, 187 }, { 221, 221, 221 },
+  { 238, 238, 238 }, { 192, 192, 192 }, { 128,   0,   0 }, { 128,   0, 128 },
+  {   0, 128,   0 }, {   0, 128, 128 }, {   0,   0,   0 }, {   0,   0,   0 },
+  {   0,   0,   0 }, {   0,   0,   0 }, {   0,   0,   0 }, {   0,   0,   0 },
+  {   0,   0,   0 }, {   0,   0,   0 }, {   0,   0,   0 }, {   0,   0,   0 },
+  {   0,   0,   0 }, {   0,   0,   0 }, {   0,   0,   0 }, {   0,   0,   0 },
+  {   0,   0,   0 }, {   0,   0,   0 }, {   0,   0,   0 }, {   0,   0,   0 },
+  {   0,   0,   0 }, {   0,   0,   0 }, {   0,   0,   0 }, {   0,   0,   0 },
+  {   0,   0,   0 }, {   0,   0,   0 }, {   0,   0,   0 }, {   0,   0,   0 }
+};
+
+
+static inline uint16_t getRgbDiff(uint8_t r1, uint8_t g1, uint8_t b1, uint8_t r2, uint8_t g2, uint8_t b2){
+   return qMax(r1, r2) - qMin(r1, r2) + qMax(g1, g2) - qMin(g1, g2) + qMax(b1, b2) - qMin(b1, b2);
+}
+
+static inline uint8_t getBest8BppIndex(uint8_t r, uint8_t g, uint8_t b){
+   uint16_t closeness = 0xFFFF;
+   uint8_t bestIndex;
+
+   for(uint16_t count = 0; count < 256; count++){
+      uint16_t thisDiff = getRgbDiff(r, g, b, palmPalette8Bpp[count][0], palmPalette8Bpp[count][1], palmPalette8Bpp[count][2]);
+
+      if(thisDiff < closeness){
+         closeness = thisDiff;
+         bestIndex = count;
+      }
+   }
+
+   return bestIndex;
+}
+
 static inline void writeBe16(uint8_t* data, uint16_t value){
 #if Q_BYTE_ORDER != Q_BIG_ENDIAN
    value = value >> 8 | value << 8;
@@ -44,7 +132,9 @@ static inline uint16_t getNextDepthOffset(int16_t width, int16_t height, uint8_t
    nextDepthOffset += BITMAP_HEADER_SIZE;
    if(bitsPerPixel == 16)
       nextDepthOffset += BITMAP_DIRECT_INFO_TYPE_SIZE;
-   //nextDepthOffset += 0xFF;//custom palette is not supported
+   //custom palette is not supported right now
+   //if(bitsPerPixel == 8)
+   //   nextDepthOffset += 0xFF;
    nextDepthOffset += getRowBytes(width, bitsPerPixel) * height;
 
    return nextDepthOffset / 4;
@@ -101,8 +191,10 @@ void renderTo8Bits(uint8_t* data, const QImage& image){
       for(int16_t x = 0; x < image.width(); x++){
          QColor pixel = QColor(image.pixel(x, y));
 
-         //may need to dump the LUT from a Palm ROM
-         data[y * rowBytes + x] = (pixel.red() >> 5 & 0x07) << 5 | (pixel.green() >> 5 & 0x07) << 2 | (pixel.blue() >> 6 & 0x03);
+         if(pixel.red() == 0xFF && pixel.green() == 0xFF && pixel.blue() == 0xFF)
+            data[y * rowBytes + x] = 0xFF;//transparentIndex
+         else
+            data[y * rowBytes + x] = getBest8BppIndex(pixel.red(), pixel.green(), pixel.blue());
       }
    }
 }
@@ -122,14 +214,13 @@ void renderTo16Bits(uint8_t* data, const QImage& image){
 }
 
 uint32_t renderPalmIcon(const QString& svg, uint8_t* output, int16_t width, int16_t height, uint8_t bitsPerPixel, bool lastBitmap){
-   QImage canvas(width, height, QImage::Format_RGB16);
+   QImage canvas(width, height, QImage::Format_RGB32);
    QPainter painter(&canvas);
    QSvgRenderer svgRenderer(svg);
    uint32_t offset = 0;
 
    //clear buffer to white and render
-   for(int16_t count = 0; count < height; count++)
-      memset(canvas.scanLine(count), 0xFF, width * sizeof(uint16_t));
+   canvas.fill(QColor(0xFF, 0xFF, 0xFF).rgb());
    svgRenderer.render(&painter);
 
    //write a Palm bitmap struct
@@ -152,7 +243,7 @@ uint32_t renderPalmIcon(const QString& svg, uint8_t* output, int16_t width, int1
    if(bitmapVersion > 1){
       output[offset] = 0xFF;//transparentIndex, white is transparent, not doing this causes issues on Palm OS5+
       offset += sizeof(uint8_t);
-      output[offset] = 0xFF;//compressionType
+      output[offset] = 0xFF;//compressionType, none
       offset += sizeof(uint8_t);
    }
    else{

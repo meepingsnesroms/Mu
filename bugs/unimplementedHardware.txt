@@ -32,7 +32,6 @@ Debug tools:
 ADS7846 channels can't be read in single reference mode in hwTestSuite
 
 MakePalmBitmap:
-8bpp bitmaps have corrupt palettes
 
 Memory:
 SD card can't be read or written to by Palm OS
@@ -51,6 +50,7 @@ in the edge case that SPICLK2 is disabled while using ADS7846 and a 1 was the la
 
 
 Fixed:
+MakePalmIcon 8bpp bitmaps have corrupt palettes
 missing home screen icons
 EMUCS memory range is unemulated(used for emu registers if enabled, invalid access otherwise)
 port g data bit 2 may need to be 0 to access ADS7846(it is)
