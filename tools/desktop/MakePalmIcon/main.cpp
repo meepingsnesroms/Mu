@@ -332,6 +332,9 @@ void convertToPalmIcons(const QString& svg, const QString& outputDirectory){
       taib03E9File.write((const char*)taib03E9, taib03E9Offset);
       taib03E9File.close();
    }
+
+   delete[] taib03E8;
+   delete[] taib03E9;
 }
 
 int main(int argc, char* argv[]){
