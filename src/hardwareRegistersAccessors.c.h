@@ -628,7 +628,7 @@ static inline void samplePwm1(bool forClk32, double sysclks){
       }
    }
 
-   if(palmAudioSampleIndex < AUDIO_SAMPLES * 2){
+   if(palmAudioSampleIndex + AUDIO_DUTY_CYCLE_SIZE * 2 < AUDIO_SAMPLES * 2){
       double dutyCycle;
       uint16_t firstLowSample;
       uint8_t audioMode = registerArrayRead8(PCR) >> 2 & 0x03;

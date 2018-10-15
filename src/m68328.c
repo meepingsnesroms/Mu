@@ -175,13 +175,15 @@ void m68328LoadState(uint8_t* data){
 void m68328Execute(){
    double cyclesRemaining = palmSysclksPerClk32;
 
+   beginClk32();
+
    while(cyclesRemaining >= 1.0){
       double sysclks = dMin(cyclesRemaining, EMU_SYSCLK_PRECISION);
       int32_t cpuCycles = sysclks * pctlrCpuClockDivider * palmClockMultiplier;
 
       if(cpuCycles > 0)
          m68k_execute(cpuCycles);
-      sysclk(sysclks);
+      addSysclks(sysclks);
 
       //abort if PLL disabled
       if(palmSysclksPerClk32 < 1.0)
@@ -190,7 +192,7 @@ void m68328Execute(){
       cyclesRemaining -= sysclks;
    }
 
-   clk32();
+   endClk32();
 }
 
 void m68328BusError(uint32_t address, bool isWrite){

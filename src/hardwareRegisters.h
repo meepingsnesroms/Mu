@@ -81,8 +81,9 @@ extern uint8_t  pwm1ReadPosition;
 extern uint8_t  pwm1WritePosition;
 
 //timing
-void clk32();
-void sysclk(double value);
+void beginClk32();
+void endClk32();
+void addSysclks(double value);//only call between begin/endClk32
 
 //CPU
 bool pllIsOn();

@@ -170,7 +170,7 @@ static double sysclksPerClk32(){
 }
 
 static inline void rtiInterruptClk32(){
-   //this function is part of clk32();
+   //this function is part of endClk32();
    uint16_t triggeredRtiInterrupts = 0x0000;
 
    if(clk32Counter % (CRYSTAL_FREQUENCY / 512) == 0){
@@ -214,7 +214,7 @@ static inline void rtiInterruptClk32(){
 }
 
 static inline void watchdogSecondTickClk32(){
-   //this function is part of clk32();
+   //this function is part of endClk32();
    uint16_t watchdogState = registerArrayRead16(WATCHDOG);
 
    if(watchdogState & 0x0001){
@@ -239,7 +239,7 @@ static inline void watchdogSecondTickClk32(){
 }
 
 static inline void rtcAddSecondClk32(){
-   //this function is part of clk32();
+   //this function is part of endClk32();
    if(registerArrayRead16(RTCCTL) & 0x0080){
       //RTC enable bit set
       uint16_t rtcInterruptEvents = 0x0000;
@@ -304,7 +304,11 @@ static inline void rtcAddSecondClk32(){
    watchdogSecondTickClk32();
 }
 
-void clk32(){
+void beginClk32(){
+   //nothing yet
+}
+
+void endClk32(){
    registerArrayWrite16(PLLFSR, registerArrayRead16(PLLFSR) ^ 0x8000);
 
    //second position counter
@@ -338,7 +342,7 @@ void clk32(){
    checkInterrupts();
 }
 
-void sysclk(double count){
+void addSysclks(double count){
    timer1(TIMER_REASON_SYSCLK, count);
    timer2(TIMER_REASON_SYSCLK, count);
    samplePwm1(false/*forClk32*/, count);
