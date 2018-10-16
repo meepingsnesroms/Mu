@@ -6,12 +6,11 @@ On hardware PDIRQEG seems not to actually work at all(CPUID:0x57000000)
 SCR privilege violation doesnt trigger the same as on hardware(likely has to do with not emulating the unused chip selects)
 
 CPU I/O:
-Peripheral Control Register, audio ppm mixing selection and timer cascade mode
+Peripheral Control Register, audio ppm mixing selection
 Setting the battery dead bit(PDDATA 0x80) if the emulated battery percent gets too low(don't know how low this is, a test will be slow and painful with how big the battery is on my device)
 DRAMC write enable
 Port M Infrared shutdown (PMDATA 0x20)
 some undocumented I/O might be on port e and port j
-if a timer triggers more than once per CLK32(> 32768 times a second) it will lose any triggers after the first and get out of sync
 SPI1, probably the SD card since SD cards use SPI for data transfer
 SPITEST SSTATUS is undocumented and therefore unemulated
 may need to trigger an interrupt if a IMR masked interrupt becomes unmasked and its bit is still set in IPR
@@ -26,7 +25,6 @@ ICR POL(1,2,3,6) may flip the pin value as well as the interrupt, POL5 does not 
 edge triggered INT* don't clear on write to ISR when masked in IMR(at least that seems to be the reason)
 PWM1 FIFOAV is always set true
 if a sound interrupt is triggered while the button interrupt is disabled the button interrupt will still trigger(in galax game)
-may need to force sound generation until buffer is adequately filled when sound is on(since SYSCLK precision is not possible)
 
 Debug tools:
 ADS7846 channels can't be read in single reference mode in hwTestSuite
@@ -50,6 +48,9 @@ in the edge case that SPICLK2 is disabled while using ADS7846 and a 1 was the la
 
 
 Fixed:
+may need to force sound generation until buffer is adequately filled when sound is on(not possible, INT_PWM1 is masked)
+if a timer triggers more than once per CLK32(> 32768 times a second) it will lose any triggers after the first and get out of sync(still not perfect but resolution is much higher)
+Peripheral Control Register, timer cascade mode
 MakePalmIcon 8bpp bitmaps have corrupt palettes
 missing home screen icons
 EMUCS memory range is unemulated(used for emu registers if enabled, invalid access otherwise)

@@ -10,6 +10,7 @@ extern "C" {
 #include <stdarg.h>
 #include <stdio.h>
 
+#include "audio/blip_buf.h"
 #include "memoryAccess.h"//for size macros
 #include "specs/emuFeatureRegistersSpec.h"//for feature names
 
@@ -130,6 +131,7 @@ extern sd_card_t palmSdCard;//dont touch
 extern misc_hw_t palmMisc;//read/write allowed
 extern uint16_t  palmFramebuffer[];//read allowed if FEATURE_320x320 is off, or else invalid data will be displayed
 extern uint16_t* palmExtendedFramebuffer;//read allowed if FEATURE_320x320 is on, or else SIGSEGV
+extern blip_t*   palmAudioResampler;//dont touch
 extern int16_t   palmAudio[];//read allowed, 2 channel signed 16 bit audio
 extern uint32_t  palmSpecialFeatures;//read allowed
 extern double    palmSysclksPerClk32;//dont touch

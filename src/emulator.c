@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "m68k/m68k.h"
+#include "audio/blip_buf.h"
 #include "m68328.h"
 #include "emulator.h"
 #include "hardwareRegisters.h"
@@ -40,6 +41,7 @@ sd_card_t palmSdCard;
 misc_hw_t palmMisc;
 uint16_t  palmFramebuffer[160 * (160 + 60)];//really 160*160, the extra pixels are the silkscreened digitizer area
 uint16_t* palmExtendedFramebuffer;
+blip_t*   palmAudioResampler;
 int16_t   palmAudio[AUDIO_SAMPLES_PER_FRAME * 2];
 uint32_t  palmSpecialFeatures;
 double    palmSysclksPerClk32;//how many SYSCLK cycles before toggling the 32.768 kHz crystal
@@ -57,15 +59,18 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t spec
    //allocate the buffers
    palmRam = malloc((specialFeatures & FEATURE_RAM_HUGE) ? SUPERMASSIVE_RAM_SIZE : RAM_SIZE);
    palmRom = malloc(ROM_SIZE);
+   palmAudioResampler = blip_new(AUDIO_SAMPLES_PER_FRAME);
    if(specialFeatures & FEATURE_320x320)
       palmExtendedFramebuffer = malloc(320 * (320 + 120) * sizeof(uint16_t));//really 320*320, the extra pixels are the silkscreened digitizer area
    else
       palmExtendedFramebuffer = NULL;
-   if(!palmRam || !palmRom || (!palmExtendedFramebuffer && (specialFeatures & FEATURE_320x320))){
+   if(!palmRam || !palmRom || !palmAudioResampler || (!palmExtendedFramebuffer && (specialFeatures & FEATURE_320x320))){
       if(palmRam)
          free(palmRam);
       if(palmRom)
          free(palmRom);
+      if(palmAudioResampler)
+         blip_delete(palmAudioResampler);
       if(palmExtendedFramebuffer)
          free(palmExtendedFramebuffer);
       return EMU_ERROR_OUT_OF_MEMORY;
@@ -124,6 +129,7 @@ void emulatorExit(){
    if(emulatorInitialized){
       free(palmRam);
       free(palmRom);
+      blip_delete(palmAudioResampler);
       if(palmSpecialFeatures & FEATURE_320x320)
          free(palmExtendedFramebuffer);
       if(palmSdCard.flashChip.data)
@@ -503,6 +509,11 @@ void emulateFrame(){
    for(; palmCycleCounter < (double)CRYSTAL_FREQUENCY / EMU_FPS; palmCycleCounter += 1.0)
       m68328Execute();
    palmCycleCounter -= (double)CRYSTAL_FREQUENCY / EMU_FPS;
+
+   //blip_end_frame(palmAudioResampler, 5);
+   //blip_read_samples(palmAudioResampler, palmAudio, AUDIO_SAMPLES_PER_FRAME, true);
+   //for(uint32_t samples = 0; samples < AUDIO_SAMPLES_PER_FRAME * 2; samples += 2)
+   //   palmAudio[samples + 1] = palmAudio[samples];
 
    sed1376Render();
 }

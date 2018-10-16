@@ -62,60 +62,62 @@ CONFIG += c++11
 INCLUDEPATH += $$PWD/qt-common/include
 
 SOURCES += \
+    debugviewer.cpp \
+    emuwrapper.cpp \
     main.cpp \
     mainwindow.cpp \
+    statemanager.cpp \
     touchscreen.cpp \
+    src/audio/blip_buf.c \
+    src/debug/sandbox.c \
     src/m68k/m68kcpu.c \
     src/m68k/m68kdasm.c \
     src/m68k/m68kopac.c \
     src/m68k/m68kopdm.c \
     src/m68k/m68kopnz.c \
     src/m68k/m68kops.c \
+    src/ads7846.c \
     src/emulator.c \
     src/hardwareRegisters.c \
+    src/m68328.c \
     src/memoryAccess.c \
+    src/pdiUsbD12.c \
     src/sdCard.c \
     src/sed1376.c \
-    src/silkscreen.c \
-    src/ads7846.c \
-    debugviewer.cpp \
-    emuwrapper.cpp \
-    src/debug/sandbox.c \
-    statemanager.cpp \
-    src/m68328.c \
-    src/pdiUsbD12.c
+    src/silkscreen.c
 
 HEADERS += \
+    src/audio/blip_buf.h \
+    src/debug/sandbox.h \
+    src/debug/sandboxTrapNumToName.c.h \
+    src/debug/trapNames.h \
     src/m68k/m68k.h \
     src/m68k/m68kconf.h \
     src/m68k/m68kcpu.h \
     src/m68k/m68kops.h \
+    src/specs/emuFeatureRegistersSpec.h \
+    src/specs/hardwareRegisterNames.h \
+    src/specs/pdiUsbD12Commands.h \
+    src/specs/sed1376RegisterNames.h \
+    src/ads7846.h \
     src/emulator.h \
+    src/endianness.h \
     src/hardwareRegisters.h \
+    src/hardwareRegistersAccessors.c.h \
+    src/hardwareRegistersTiming.c.h \
+    src/m68328.h \
     src/memoryAccess.h \
+    src/pdiUsbD12.h \
     src/portability.h \
     src/sdCard.h \
     src/sed1376.h \
-    src/silkscreen.h \
-    mainwindow.h \
-    touchscreen.h \
-    src/hardwareRegistersTiming.c.h \
     src/sed1376Accessors.c.h \
-    src/hardwareRegistersAccessors.c.h \
-    src/endianness.h \
-    src/ads7846.h \
+    src/silkscreen.h \
     debugviewer.h \
-    src/specs/emuFeatureRegistersSpec.h \
-    src/specs/hardwareRegisterNames.h \
-    src/specs/sed1376RegisterNames.h \
     emuwrapper.h \
-    src/debug/sandbox.h \
-    src/debug/sandboxTrapNumToName.c.h \
+    mainwindow.h \
     statemanager.h \
-    src/m68328.h \
-    src/pdiUsbD12.h \
-    src/specs/pdiUsbD12Commands.h \
-    src/debug/trapNames.h
+    touchscreen.h
 
 FORMS += \
     mainwindow.ui \
