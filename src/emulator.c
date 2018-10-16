@@ -40,8 +40,7 @@ sd_card_t palmSdCard;
 misc_hw_t palmMisc;
 uint16_t  palmFramebuffer[160 * (160 + 60)];//really 160*160, the extra pixels are the silkscreened digitizer area
 uint16_t* palmExtendedFramebuffer;
-int16_t   palmAudio[AUDIO_SAMPLES * 2];
-uint32_t  palmAudioSampleIndex;
+int16_t   palmAudio[AUDIO_SAMPLES_PER_FRAME * 2];
 uint32_t  palmSpecialFeatures;
 double    palmSysclksPerClk32;//how many SYSCLK cycles before toggling the 32.768 kHz crystal
 double    palmCycleCounter;//can be greater then 0 if too many cycles where run
@@ -95,7 +94,7 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t spec
       memset(palmExtendedFramebuffer, 0x00, 320 * 320 * sizeof(uint16_t));
       //add 320*320 silkscreen image later, 2xBRZ should be able to make 320*320 version of the 160*160 silkscreen
    }
-   memset(palmAudio, 0x00, AUDIO_SAMPLES * 2/*channels*/ * sizeof(int16_t));
+   memset(palmAudio, 0x00, AUDIO_SAMPLES_PER_FRAME * 2/*channels*/ * sizeof(int16_t));
    m68328Reset();
    sed1376Reset();
    ads7846Reset();
@@ -500,7 +499,6 @@ uint32_t emulatorInstallPrcPdb(buffer_t file){
 
 void emulateFrame(){
    refreshInputState();
-   palmAudioSampleIndex = 0;
 
    for(; palmCycleCounter < (double)CRYSTAL_FREQUENCY / EMU_FPS; palmCycleCounter += 1.0)
       m68328Execute();

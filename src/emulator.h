@@ -113,13 +113,13 @@ typedef struct{
 
 //config options
 #define EMU_FPS 60
-#define AUDIO_DUTY_CYCLE_SIZE 20//the amount of frequencys the PWM can play
 #define EMU_SYSCLK_PRECISION 200//the amount of cycles to run before adding SYSCLKs, higher = faster, higher values may skip timer events and lower audio accuracy
+#define AUDIO_SAMPLE_RATE 48000
 #define SAVE_STATE_VERSION 0
 
 //system constants
 #define CRYSTAL_FREQUENCY 32768
-#define AUDIO_SAMPLES (CRYSTAL_FREQUENCY * AUDIO_DUTY_CYCLE_SIZE / EMU_FPS)
+#define AUDIO_SAMPLES_PER_FRAME (AUDIO_SAMPLE_RATE / EMU_FPS)
 
 //emulator data, some are GUI interface variables, some should be left alone
 extern uint8_t*  palmRam;//dont touch
@@ -131,7 +131,6 @@ extern misc_hw_t palmMisc;//read/write allowed
 extern uint16_t  palmFramebuffer[];//read allowed if FEATURE_320x320 is off, or else invalid data will be displayed
 extern uint16_t* palmExtendedFramebuffer;//read allowed if FEATURE_320x320 is on, or else SIGSEGV
 extern int16_t   palmAudio[];//read allowed, 2 channel signed 16 bit audio
-extern uint32_t  palmAudioSampleIndex;//dont touch
 extern uint32_t  palmSpecialFeatures;//read allowed
 extern double    palmSysclksPerClk32;//dont touch
 extern double    palmCycleCounter;//dont touch

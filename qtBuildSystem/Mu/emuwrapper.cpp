@@ -93,7 +93,7 @@ void EmuWrapper::emuThreadRun(){
          emulateFrame();
          if(!emuNewFrameReady){
             memcpy(emuDoubleBufferVideo, emuVideoWidth == 320 ? palmExtendedFramebuffer : palmFramebuffer, emuVideoWidth * emuVideoHeight * sizeof(uint16_t));
-            memcpy(emuDoubleBufferAudio, palmAudio, AUDIO_SAMPLES * 2/*channels*/ * sizeof(int16_t));
+            memcpy(emuDoubleBufferAudio, palmAudio, AUDIO_SAMPLES_PER_FRAME * 2/*channels*/ * sizeof(int16_t));
             emuNewFrameReady = true;
          }
       }
@@ -207,7 +207,7 @@ uint32_t EmuWrapper::init(const QString& romPath, const QString& bootloaderPath,
          emuPaused = false;
          emuNewFrameReady = false;
          emuDoubleBufferVideo = new uint16_t[emuVideoWidth * emuVideoHeight];
-         emuDoubleBufferAudio = new int16_t[AUDIO_SAMPLES * 2/*channels*/];
+         emuDoubleBufferAudio = new int16_t[AUDIO_SAMPLES_PER_FRAME * 2/*channels*/];
          emuThread = std::thread(&EmuWrapper::emuThreadRun, this);
       }
       else{

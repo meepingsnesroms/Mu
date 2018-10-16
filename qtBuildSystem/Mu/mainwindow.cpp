@@ -28,7 +28,7 @@ MainWindow::MainWindow(QWidget* parent) :
    ui->setupUi(this);
 
    QAudioFormat format;
-   format.setSampleRate(CRYSTAL_FREQUENCY);
+   format.setSampleRate(AUDIO_SAMPLE_RATE);
    format.setChannelCount(2);
    format.setSampleSize(16);
    format.setCodec("audio/pcm");
@@ -170,7 +170,7 @@ void MainWindow::updateDisplay(){
       ui->display->repaint();
 
       //audio
-      audioOut->write((const char*)emu.getAudioSamples(), AUDIO_SAMPLES * 2/*channels*/ * sizeof(int16_t));
+      audioOut->write((const char*)emu.getAudioSamples(), AUDIO_SAMPLES_PER_FRAME * 2/*channels*/ * sizeof(int16_t));
 
       //power LED
       ui->powerButtonLed->setStyleSheet(emu.getPowerButtonLed() ? "background: lime" : "");
