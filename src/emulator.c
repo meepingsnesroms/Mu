@@ -47,6 +47,8 @@ uint32_t  palmSpecialFeatures;
 double    palmSysclksPerClk32;//how many SYSCLK cycles before toggling the 32.768 kHz crystal
 double    palmCycleCounter;//can be greater then 0 if too many cycles where run
 double    palmClockMultiplier;//used by the emulator to overclock the emulated Palm
+uint32_t  palmFrameClk32s;//how many CLK32s have happened in the current frame
+double    palmClk32Sysclks;//how many SYSCLKs have happened in the current CLK32
 
 
 uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t specialFeatures){
@@ -100,6 +102,7 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t spec
       //add 320*320 silkscreen image later, 2xBRZ should be able to make 320*320 version of the 160*160 silkscreen
    }
    memset(palmAudio, 0x00, AUDIO_SAMPLES_PER_FRAME * 2/*channels*/ * sizeof(int16_t));
+   blip_set_rates(palmAudioResampler, AUDIO_END_OF_FRAME, AUDIO_SAMPLES_PER_FRAME);
    m68328Reset();
    sed1376Reset();
    ads7846Reset();
@@ -504,16 +507,23 @@ uint32_t emulatorInstallPrcPdb(buffer_t file){
 }
 
 void emulateFrame(){
+   //I/O
    refreshInputState();
 
-   for(; palmCycleCounter < (double)CRYSTAL_FREQUENCY / EMU_FPS; palmCycleCounter += 1.0)
+   //CPU
+   palmFrameClk32s = 0;
+   for(; palmCycleCounter < (double)CRYSTAL_FREQUENCY / EMU_FPS; palmCycleCounter += 1.0){
       m68328Execute();
+      palmFrameClk32s++;
+   }
    palmCycleCounter -= (double)CRYSTAL_FREQUENCY / EMU_FPS;
 
-   //blip_end_frame(palmAudioResampler, 5);
-   //blip_read_samples(palmAudioResampler, palmAudio, AUDIO_SAMPLES_PER_FRAME, true);
-   //for(uint32_t samples = 0; samples < AUDIO_SAMPLES_PER_FRAME * 2; samples += 2)
-   //   palmAudio[samples + 1] = palmAudio[samples];
+   //audio
+   blip_end_frame(palmAudioResampler, AUDIO_END_OF_FRAME);
+   blip_read_samples(palmAudioResampler, palmAudio, AUDIO_SAMPLES_PER_FRAME, true);
+   for(uint32_t samples = 0; samples < AUDIO_SAMPLES_PER_FRAME * 2; samples += 2)
+      palmAudio[samples + 1] = palmAudio[samples];
 
+   //video
    sed1376Render();
 }

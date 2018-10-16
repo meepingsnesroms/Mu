@@ -305,7 +305,7 @@ static inline void rtcAddSecondClk32(){
 }
 
 void beginClk32(){
-   //nothing yet
+   palmClk32Sysclks = 0.0;
 }
 
 void endClk32(){
@@ -342,6 +342,21 @@ void endClk32(){
 }
 
 void addSysclks(double count){
+   palmClk32Sysclks += count;
    timer1(TIMER_REASON_SYSCLK, count);
    timer2(TIMER_REASON_SYSCLK, count);
+}
+
+static inline uint32_t audioGetFramePercentIncrementFromClk32s(uint32_t count){
+   return count / ((double)CRYSTAL_FREQUENCY / EMU_FPS) * AUDIO_END_OF_FRAME;
+}
+
+static inline uint32_t audioGetFramePercentIncrementFromSysclks(double count){
+   return count / palmSysclksPerClk32 / ((double)CRYSTAL_FREQUENCY / EMU_FPS) * AUDIO_END_OF_FRAME;
+}
+
+uint32_t audioGetFramePercentage(){
+   //returns how much of the frame has executed
+   //0% = 0, 100% = AUDIO_END_OF_FRAME
+   return audioGetFramePercentIncrementFromClk32s(palmFrameClk32s) + audioGetFramePercentIncrementFromSysclks(palmClk32Sysclks);
 }

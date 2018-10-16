@@ -605,6 +605,15 @@ void setHwRegister8(uint32_t address, uint8_t value){
       case PWMS1 + 1:
          //write only if PWM1 and FIFOAV are set and a slot is available
          if((registerArrayRead16(PWMC1) & 0x0030) == 0x0030){
+            /*
+            uint32_t audioNow = audioGetFramePercentage();
+            uint32_t audioSampleDuration = 0;
+            uint32_t audioDutyCycle = 0;
+
+            for(uint8_t times = 0; times < repeat; times++){
+               blip_add_delta(palmAudioResampler, audioGetFramePercentage())
+            }
+            */
             //empty
          }
          break;

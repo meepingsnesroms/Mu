@@ -121,6 +121,7 @@ typedef struct{
 //system constants
 #define CRYSTAL_FREQUENCY 32768
 #define AUDIO_SAMPLES_PER_FRAME (AUDIO_SAMPLE_RATE / EMU_FPS)
+#define AUDIO_END_OF_FRAME 1000000000//used to convert the variable timing of SYSCLK and CLK32 to a fixed location in the current frame 0<->AUDIO_END_OF_FRAME
 
 //emulator data, some are GUI interface variables, some should be left alone
 extern uint8_t*  palmRam;//dont touch
@@ -137,6 +138,8 @@ extern uint32_t  palmSpecialFeatures;//read allowed
 extern double    palmSysclksPerClk32;//dont touch
 extern double    palmCycleCounter;//dont touch
 extern double    palmClockMultiplier;//read/write allowed
+extern uint32_t  palmFrameClk32s;//dont touch
+extern double    palmClk32Sysclks;//dont touch
 
 //functions
 uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t specialFeatures);//calling any emulator functions before emulatorInit results in undefined behavior
