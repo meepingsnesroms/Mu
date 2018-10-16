@@ -55,40 +55,6 @@ static inline uint8_t spi1TxFifoEntrys(){
    return spi1TxWritePosition - spi1TxReadPosition;
 }
 
-//PWM1 FIFO
-static inline uint8_t pwm1FifoCurrentValue(){
-   return pwm1Fifo[pwm1ReadPosition];
-}
-
-static inline void pwm1FifoRemove(){
-   pwm1ReadPosition = (pwm1ReadPosition + 1) % 6;
-}
-
-static inline void pwm1FifoWrite(uint8_t value){
-   pwm1Fifo[pwm1WritePosition] = value;
-   pwm1WritePosition = (pwm1WritePosition + 1) % 6;
-}
-
-static inline void pwm1FifoFlush(){
-   pwm1ReadPosition = 0;
-   pwm1WritePosition = 0;
-}
-
-static inline uint8_t pwm1FifoEntrys(){
-   //check for wraparound
-   if(pwm1WritePosition < pwm1ReadPosition)
-      return pwm1WritePosition + 6 - pwm1ReadPosition;
-   return pwm1WritePosition - pwm1ReadPosition;
-}
-
-static inline uint16_t pwm1FifoSampleDuration(){
-   uint16_t pwmc1 = registerArrayRead16(PWMC1);
-   uint8_t prescaler = (pwmc1 >> 8 & 0x7F) + 1;
-   uint8_t clockDivider = 2 << (pwmc1 & 0x03);
-   uint8_t repeat = 1 << (pwmc1 >> 2 & 0x03);
-   return prescaler * clockDivider * repeat;
-}
-
 //register setters
 static inline void setIprIsrBit(uint32_t interruptBit){
    //allows for setting an interrupt with masking by IMR and logging in IPR
@@ -413,10 +379,8 @@ static inline void setPwmc1(uint16_t value){
    value |= 0x0020;
 
    //PWM1 enabled, set IRQ and FIFOAV bit to fill FIFO
-   if(!(oldPwmc1 & 0x0010) && value & 0x0010){
+   if(!(oldPwmc1 & 0x0010) && value & 0x0010)
       value |= 0x00A0;
-      pwm1ClocksToNextSample = pwm1FifoSampleDuration();
-   }
 
    //clear interrupt by write(reading can also clear the interrupt)
    if(oldPwmc1 & 0x0080 && !(value & 0x0080)){
@@ -432,10 +396,8 @@ static inline void setPwmc1(uint16_t value){
    }
 
    //PWM1 disabled
-   if(oldPwmc1 & 0x0010 && !(value & 0x0010)){
+   if(oldPwmc1 & 0x0010 && !(value & 0x0010))
       value &= 0x80FF;//clear PWM prescaler value
-      pwm1FifoFlush();
-   }
 
    registerArrayWrite16(PWMC1, value);
 }
@@ -590,102 +552,6 @@ static inline uint8_t getPortKValue(){
 static inline uint8_t getPortMValue(){
    //bit 5 has a pull up not pull down, bits 4-0 have a pull down, bit 7-6 are not active at all
    return ((registerArrayRead8(PMDATA) & registerArrayRead8(PMDIR)) | (~registerArrayRead8(PMDIR) & 0x20)) & registerArrayRead8(PMSEL);
-}
-
-static inline void samplePwm1(bool forClk32, double sysclks){
-   //clear PWM1 FIFO values if enough time has passed
-   uint16_t pwmc1 = registerArrayRead16(PWMC1);
-   int32_t decrement = forClk32 ? 1 : sysclks;
-
-   //validate mode
-   if(!forClk32)//hack, makes the glitchy audio still work
-      return;
-   //if(forClk32 != (bool)(pwmc1 & 0x8000))
-   //   return;
-
-   //add cycles
-   if(pwm1FifoEntrys() > 0){
-      pwm1ClocksToNextSample -= decrement;
-      if(pwm1ClocksToNextSample <= 0){
-         while(pwm1FifoEntrys() > 0 && pwm1ClocksToNextSample <= 0){
-            //switch out samples
-            pwm1FifoRemove();
-            pwm1ClocksToNextSample += pwm1FifoSampleDuration();
-         }
-
-         //dont carry negative cycles over when the FIFO runs out
-         if(pwm1FifoEntrys() == 0)
-            pwm1ClocksToNextSample = pwm1FifoSampleDuration();
-
-         //set FIFOAV
-         registerArrayWrite16(PWMC1, pwmc1 | 0x0020);
-
-         //interrupt to fill FIFO
-         if(pwm1FifoEntrys() < 2 && (pwmc1 & 0x00C0) == 0x0040){
-            setIprIsrBit(INT_PWM1);
-            checkInterrupts();
-         }
-      }
-   }
-
-   if(palmAudioSampleIndex + AUDIO_DUTY_CYCLE_SIZE * 2 < AUDIO_SAMPLES * 2){
-      double dutyCycle;
-      uint16_t firstLowSample;
-      uint8_t audioMode = registerArrayRead8(PCR) >> 2 & 0x03;
-
-      //00 = PWM1, 01 = PWM2, 10 = PWM1 | PWM2, 11 = PWM1 & PWM2
-      //the calculations for and/or of the 2 pins is too CPU intensive and will not be emulated
-      /*
-      switch(audioMode){
-         case 0x00:
-            //PWM1 alone
-            if(pwm1FifoEntrys() != 0){
-               dutyCycle = (double)pwm1FifoCurrentValue() / (registerArrayRead8(PWMP1) + 2);//0<->1
-               //cap at 100% duty cycle
-               if(dutyCycle > 1.0)
-                  dutyCycle = 1.0;
-            }
-            else{
-               dutyCycle = 0.0;
-            }
-            break;
-
-         case 0x01:
-         case 0x02:
-         case 0x03:
-            debugLog("PCR audio mode:%d not supported\n", audioMode);
-            dutyCycle = 0.0;
-            break;
-      }
-      */
-
-      //PWM1 alone
-      if(pwm1FifoEntrys() > 0){
-         dutyCycle = (double)pwm1FifoCurrentValue() / (registerArrayRead8(PWMP1) + 2);//0<->1
-         //cap at 100% duty cycle
-         if(dutyCycle > 1.0)
-            dutyCycle = 1.0;
-      }
-      else{
-         dutyCycle = 0.0;
-      }
-
-      /*
-      //PWM2 alone
-      dutyCycle = (double)registerArrayRead16(PWMW2) / (registerArrayRead16(PWMP2) + 1);//0<->1
-      //cap at 100% duty cycle
-      if(dutyCycle > 1.0)
-         dutyCycle = 1.0;
-      */
-
-      //add samples to audio buffer
-      firstLowSample = dutyCycle * AUDIO_DUTY_CYCLE_SIZE;
-      for(uint16_t count = 0; count < AUDIO_DUTY_CYCLE_SIZE; count++){
-         palmAudio[palmAudioSampleIndex] = (count < firstLowSample) ? 0x6666 : -0x6666;//not full volume, leave 20% for audio spikes
-         palmAudio[palmAudioSampleIndex + 1] = palmAudio[palmAudioSampleIndex];
-         palmAudioSampleIndex += 2;
-      }
-   }
 }
 
 static inline uint16_t getPwmc1(){

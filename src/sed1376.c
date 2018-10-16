@@ -28,6 +28,8 @@
 #define SED1376_FB_SIZE  0x20000//actual size is 0x14000, but that cant be masked off by address lines so size is increased to prevent buffer overflow
 
 
+uint8_t sed1376Framebuffer[SED1376_FB_SIZE];
+
 static uint8_t  sed1376Registers[SED1376_REG_SIZE];
 static uint8_t  sed1376RLut[SED1376_LUT_SIZE];
 static uint8_t  sed1376GLut[SED1376_LUT_SIZE];
@@ -36,8 +38,6 @@ static uint16_t sed1376OutputLut[SED1376_LUT_SIZE];//used to speed up pixel conv
 static uint32_t screenStartAddress;
 static uint16_t lineSize;
 static uint16_t (*renderPixel)(uint16_t x, uint16_t y);
-
-uint8_t sed1376Framebuffer[SED1376_FB_SIZE];
 
 
 #include "sed1376Accessors.c.h"

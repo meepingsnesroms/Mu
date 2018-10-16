@@ -173,9 +173,6 @@ uint64_t emulatorGetStateSize(){
    size += sizeof(uint16_t) * 9;//RX 8 * 16 SPI1 FIFO, 1 index is for FIFO full
    size += sizeof(uint16_t) * 9;//TX 8 * 16 SPI1 FIFO, 1 index is for FIFO full
    size += sizeof(uint8_t) * 4;//spi1(R/T)x(Read/Write)Position
-   size += sizeof(int32_t);//pwm1ClocksToNextSample
-   size += sizeof(uint8_t) * 6;//pwm1Fifo[6]
-   size += sizeof(uint8_t) * 2;//pwm1(Read/Write)
    size += sizeof(uint8_t) * 7;//palmMisc
    size += sizeof(uint32_t);//palmSdCard.command
    size += sizeof(uint8_t) * 2;//palmSdCard.response / palmSdCard.commandBitsRemaining
@@ -285,18 +282,6 @@ bool emulatorSaveState(buffer_t buffer){
    writeStateValueUint8(buffer.data + offset, spi1TxReadPosition);
    offset += sizeof(uint8_t);
    writeStateValueUint8(buffer.data + offset, spi1TxWritePosition);
-   offset += sizeof(uint8_t);
-
-   //PWM1, audio
-   writeStateValueInt32(buffer.data + offset, pwm1ClocksToNextSample);
-   offset += sizeof(int32_t);
-   for(uint8_t fifoPosition = 0; fifoPosition < 6; fifoPosition++){
-      writeStateValueUint8(buffer.data + offset, pwm1Fifo[fifoPosition]);
-      offset += sizeof(uint8_t);
-   }
-   writeStateValueUint8(buffer.data + offset, pwm1ReadPosition);
-   offset += sizeof(uint8_t);
-   writeStateValueUint8(buffer.data + offset, pwm1WritePosition);
    offset += sizeof(uint8_t);
 
    //misc
@@ -432,18 +417,6 @@ bool emulatorLoadState(buffer_t buffer){
    spi1TxReadPosition = readStateValueUint8(buffer.data + offset);
    offset += sizeof(uint8_t);
    spi1TxWritePosition = readStateValueUint8(buffer.data + offset);
-   offset += sizeof(uint8_t);
-
-   //PWM1, audio
-   pwm1ClocksToNextSample = readStateValueInt32(buffer.data + offset);
-   offset += sizeof(int32_t);
-   for(uint8_t fifoPosition = 0; fifoPosition < 6; fifoPosition++){
-      pwm1Fifo[fifoPosition] = readStateValueUint8(buffer.data + offset);
-      offset += sizeof(uint8_t);
-   }
-   pwm1ReadPosition = readStateValueUint8(buffer.data + offset);
-   offset += sizeof(uint8_t);
-   pwm1WritePosition = readStateValueUint8(buffer.data + offset);
    offset += sizeof(uint8_t);
 
    //misc
