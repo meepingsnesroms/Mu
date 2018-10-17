@@ -45,16 +45,19 @@ int64_t DebugViewer::numberFromString(QString str, bool negativeAllowed){
 }
 
 QString DebugViewer::stringFromNumber(int64_t number, bool hex, uint32_t forcedZeros){
-   if(hex){
-      QString hexString;
+   QString numString;
 
-      hexString += QString::number(number, 16).toUpper();
-      while(hexString.length() < (int)forcedZeros)hexString.push_front("0");
-      hexString.push_front("0x");
-      return hexString;
+   if(hex){
+      numString += QString::number(number, 16).toUpper();
+      while(numString.length() < (int)forcedZeros)numString.push_front("0");
+      numString.push_front("0x");
+   }
+   else{
+      numString += QString::number(number, 10);
+      while(numString.length() < (int)forcedZeros)numString.push_front("0");
    }
 
-   return QString::number(number, 10);
+   return numString;
 }
 
 void DebugViewer::debugRadioButtonHandler(){
@@ -135,6 +138,15 @@ void DebugViewer::on_debugDump_clicked(){
       fileOut.write(fileBuffer.toStdString().c_str());
       fileOut.close();
    }
+}
+
+void DebugViewer::on_debugPrintAudioBuffer_clicked(){
+   EmuWrapper& emu = ((MainWindow*)parentWidget())->emu;
+   const int16_t* samples = emu.getAudioSamples();
+
+   ui->debugValueList->clear();
+   for(uint32_t index = 0; index < AUDIO_SAMPLES_PER_FRAME * 2; index++)
+      ui->debugValueList->addItem(stringFromNumber(index, false, 5) + ":" + stringFromNumber(samples[index], false, 5));
 }
 
 void DebugViewer::on_debugShowRegisters_clicked(){

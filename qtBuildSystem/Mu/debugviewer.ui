@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>578</width>
-    <height>359</height>
+    <width>548</width>
+    <height>393</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -45,23 +45,6 @@
       </sizepolicy>
      </property>
      <layout class="QGridLayout" name="gridLayout_2">
-      <item row="2" column="2">
-       <widget class="QRadioButton" name="debug16Bit">
-        <property name="text">
-         <string>16bit</string>
-        </property>
-       </widget>
-      </item>
-      <item row="6" column="1" colspan="3">
-       <widget class="QPushButton" name="debugShowRegisters">
-        <property name="text">
-         <string>Show Registers</string>
-        </property>
-        <property name="autoDefault">
-         <bool>false</bool>
-        </property>
-       </widget>
-      </item>
       <item row="5" column="1" colspan="3">
        <widget class="QPushButton" name="debugGetHexValues">
         <property name="text">
@@ -72,7 +55,24 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="0" rowspan="10">
+      <item row="2" column="2">
+       <widget class="QRadioButton" name="debug16Bit">
+        <property name="text">
+         <string>16bit</string>
+        </property>
+       </widget>
+      </item>
+      <item row="7" column="1" colspan="3">
+       <widget class="QPushButton" name="debugShowRegisters">
+        <property name="text">
+         <string>Show Registers</string>
+        </property>
+        <property name="autoDefault">
+         <bool>false</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0" rowspan="11">
        <widget class="QListWidget" name="debugValueList"/>
       </item>
       <item row="4" column="1" colspan="3">
@@ -82,7 +82,7 @@
         </property>
        </widget>
       </item>
-      <item row="7" column="1" colspan="3">
+      <item row="8" column="1" colspan="3">
        <widget class="QPushButton" name="debugPrintDebugLogs">
         <property name="text">
          <string>Print Debug Logs</string>
@@ -92,7 +92,7 @@
         </property>
        </widget>
       </item>
-      <item row="8" column="1" colspan="3">
+      <item row="9" column="1" colspan="3">
        <widget class="QPushButton" name="debugEraseDebugLogs">
         <property name="text">
          <string>Erase Debug Logs</string>
@@ -102,7 +102,7 @@
         </property>
        </widget>
       </item>
-      <item row="9" column="1" colspan="3">
+      <item row="10" column="1" colspan="3">
        <widget class="QPushButton" name="debugDump">
         <property name="text">
          <string>Dump To File</string>
@@ -137,6 +137,13 @@
        <widget class="QRadioButton" name="debug8Bit">
         <property name="text">
          <string>8bit</string>
+        </property>
+       </widget>
+      </item>
+      <item row="6" column="1" colspan="3">
+       <widget class="QPushButton" name="debugPrintAudioBuffer">
+        <property name="text">
+         <string>Print Last Frame Audio Buffer</string>
         </property>
        </widget>
       </item>
