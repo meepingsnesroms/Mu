@@ -619,8 +619,8 @@ void setHwRegister8(uint32_t address, uint8_t value){
                uint32_t audioDutyCycle = audioSampleDuration * dutyCycle;
 
                for(uint8_t times = 0; times < repeat; times++){
-                  blip_add_delta(palmAudioResampler, audioNow, 0x6666);
-                  blip_add_delta(palmAudioResampler, audioNow + audioDutyCycle, -0x6666);
+                  blip_add_delta(palmAudioResampler, audioNow, 0x9999);
+                  blip_add_delta(palmAudioResampler, audioNow + audioDutyCycle, -0x9999);
                   audioNow += audioSampleDuration;
                }
             }

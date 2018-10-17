@@ -172,7 +172,7 @@ void retro_get_system_info(struct retro_system_info *info){
 
 void retro_get_system_av_info(struct retro_system_av_info *info){
    info->timing.fps = EMU_FPS;
-   info->timing.sample_rate = CRYSTAL_FREQUENCY * AUDIO_DUTY_CYCLE_SIZE;
+   info->timing.sample_rate = AUDIO_SAMPLE_RATE;
 
    info->geometry.base_width   = 160;
    info->geometry.base_height  = 220;
@@ -284,7 +284,7 @@ void retro_run(void){
       renderMouseCursor(touchCursorX, touchCursorY);
    
    video_cb(screenData, screenWidth, screenHeight, screenWidth * sizeof(uint16_t));
-   audio_cb(palmAudio, AUDIO_SAMPLES);
+   audio_cb(palmAudio, AUDIO_SAMPLES_PER_FRAME);
 }
 
 bool retro_load_game(const struct retro_game_info *info){
