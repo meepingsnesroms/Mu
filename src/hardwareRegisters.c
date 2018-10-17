@@ -615,7 +615,7 @@ void setHwRegister8(uint32_t address, uint8_t value){
 
                double dutyCycle = dMin((double)value / (registerArrayRead8(PWMP1) + 2), 1.0);
                uint32_t audioNow = audioGetFramePercentage();
-               uint32_t audioSampleDuration = prescaler * clockDivider;
+               uint32_t audioSampleDuration = audioGetFramePercentIncrementFromSysclks(prescaler * clockDivider);
                uint32_t audioDutyCycle = audioSampleDuration * dutyCycle;
 
                for(uint8_t times = 0; times < repeat; times++){
