@@ -90,8 +90,10 @@ void pwm1FifoRunSample(int32_t clocksBehind){
    int32_t audioDutyCycle = audioSampleDuration * dutyCycle;
 
    for(uint8_t times = 0; times < repeat; times++){
-      blip_add_delta(palmAudioResampler, audioNow, AUDIO_AMPLITUDE);
-      blip_add_delta(palmAudioResampler, audioNow + audioDutyCycle, -AUDIO_AMPLITUDE);
+      if(audioNow >= 0){
+         blip_add_delta(palmAudioResampler, audioNow, AUDIO_AMPLITUDE);
+         blip_add_delta(palmAudioResampler, audioNow + audioDutyCycle, -AUDIO_AMPLITUDE);
+      }
       audioNow += audioSampleDuration;
    }
 
@@ -108,10 +110,9 @@ void pwm1FifoRunSample(int32_t clocksBehind){
       uint16_t pwmc1 = registerArrayRead16(PWMC1);
 
       //trigger interrupt if enabled
-      if(pwmc1 & 0x0040){
+      if(pwmc1 & 0x0040)
          setIprIsrBit(INT_PWM1);
-         checkInterrupts();
-      }
+      //checkInterrupts() is run when the clock that called this function is finished
 
       registerArrayWrite16(PWMC1, pwmc1 | 0x0080);//set IRQ bit
    }

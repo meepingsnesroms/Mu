@@ -1,6 +1,5 @@
 This is like unimplementedHardware.txt but only lists things that have functionality issues not accuracy issues.
 
-Sound(those cute little PWM beeps)
 Holding the buttons emulates pressing them like a turbo button(may be caused by the lack of sound emulation, a sound plays on app switch and may block the CPU while waiting for the button to release)(also may be because the minimum length of a button press is a whole frame)
 State manager goes bezerk and crashes when saving on android, also can't close the window or it won't open again(also only on Android)
 If there is no userdata-en-m515.ram on Android the emu won't create it(this is likely because theres no graceful exit being done on Android only goto home menu and kill process)
@@ -9,6 +8,7 @@ app install hack needs to be removed when SD card works
 double pressing power button issue
 
 Fixed:
+Sound(those cute little PWM beeps)
 Mac Qt build has no icons
 QSettings is broken on Windows(this prevents loading the ROM)
 Windows Qt build has no icons

@@ -48,6 +48,7 @@ static void timer1(uint8_t reason, double sysclks){
          //interrupt enabled
          if(timer1Control & 0x0010)
             setIprIsrBit(INT_TMR1);
+         //checkInterrupts() is run when the clock that called this function is finished
 
          //set timer triggered bit
          registerArrayWrite16(TSTAT1, registerArrayRead16(TSTAT1) | 0x0001);
@@ -114,6 +115,7 @@ static void timer2(uint8_t reason, double sysclks){
          //interrupt enabled
          if(timer2Control & 0x0010)
             setIprIsrBit(INT_TMR2);
+         //checkInterrupts() is run when the clock that called this function is finished
 
          //set timer triggered bit
          registerArrayWrite16(TSTAT2, registerArrayRead16(TSTAT2) | 0x0001);
@@ -347,6 +349,8 @@ void addSysclks(double count){
    timer1(TIMER_REASON_SYSCLK, count);
    timer2(TIMER_REASON_SYSCLK, count);
    samplePwm1(false/*forClk32*/, count);
+
+   checkInterrupts();
    palmClk32Sysclks += count;
 }
 

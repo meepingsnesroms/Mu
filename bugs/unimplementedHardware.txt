@@ -23,7 +23,6 @@ power button must be pushed twice to turn the CPU back on(when debugging it work
 RxOverflow on SPI1, don't know if back or front of FIFO is overwritten on overflow(currently losing oldest entry)
 ICR POL(1,2,3,6) may flip the pin value as well as the interrupt, POL5 does not flip the INT5 pin though, this was confirmed with a hardware test(it doesnt seem to but there is instability on the pin when the SD card is plugged in, this may have to do with card detect also being a data line on the SD pinout)
 edge triggered INT* don't clear on write to ISR when masked in IMR(at least that seems to be the reason)
-PWM1 FIFOAV is always set true
 if a sound interrupt is triggered while the button interrupt is disabled the button interrupt will still trigger(in galax game)
 
 Debug tools:
@@ -48,6 +47,7 @@ in the edge case that SPICLK2 is disabled while using ADS7846 and a 1 was the la
 
 
 Fixed:
+PWM1 FIFOAV is always set true
 may need to force sound generation until buffer is adequately filled when sound is on(not possible, INT_PWM1 is masked)
 if a timer triggers more than once per CLK32(> 32768 times a second) it will lose any triggers after the first and get out of sync(still not perfect but resolution is much higher)
 Peripheral Control Register, timer cascade mode
