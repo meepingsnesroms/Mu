@@ -38,9 +38,9 @@ static void checkInterrupts();
 static void checkPortDInterrupts();
 static void pllWakeCpuIfOff();
 static double sysclksPerClk32();
-static uint32_t audioGetFramePercentIncrementFromClk32s(uint32_t count);
-static uint32_t audioGetFramePercentIncrementFromSysclks(double count);
-static uint32_t audioGetFramePercentage();
+static int32_t audioGetFramePercentIncrementFromClk32s(int32_t count);
+static int32_t audioGetFramePercentIncrementFromSysclks(double count);
+static int32_t audioGetFramePercentage();
 
 #include "hardwareRegistersAccessors.c.h"
 #include "hardwareRegistersTiming.c.h"

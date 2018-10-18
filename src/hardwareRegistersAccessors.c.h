@@ -78,27 +78,21 @@ static inline uint8_t pwm1FifoEntrys(){
 }
 
 void pwm1FifoRunSample(int32_t clocksBehind){
-   uint16_t pwmc1 = registerArrayRead16(PWMC1);
    uint8_t sample = pwm1Fifo[pwm1ReadPosition];
+   uint16_t pwmc1 = registerArrayRead16(PWMC1);
+   bool usingClk32 = pwmc1 & 0x8000;
+   uint8_t prescaler = (pwmc1 >> 8 & 0x7F) + 1;
+   uint8_t clockDivider = 2 << (pwmc1 & 0x03);
+   uint8_t repeat = 1 << (pwmc1 >> 2 & 0x03);
+   double dutyCycle = dMin((double)sample / (registerArrayRead8(PWMP1) + 2), 1.0);
+   int32_t audioNow = audioGetFramePercentage() + (usingClk32 ? audioGetFramePercentIncrementFromClk32s(clocksBehind) : audioGetFramePercentIncrementFromSysclks(clocksBehind));
+   int32_t audioSampleDuration = usingClk32 ? audioGetFramePercentIncrementFromClk32s(prescaler * clockDivider) : audioGetFramePercentIncrementFromSysclks(prescaler * clockDivider);
+   int32_t audioDutyCycle = audioSampleDuration * dutyCycle;
 
-   if(!(pwmc1 & 0x8000)){
-      //SYSCLK
-      uint8_t prescaler = (pwmc1 >> 8 & 0x7F) + 1;
-      uint8_t clockDivider = 2 << (pwmc1 & 0x03);
-      uint8_t repeat = 1 << (pwmc1 >> 2 & 0x03);
-      double dutyCycle = dMin((double)sample / (registerArrayRead8(PWMP1) + 2), 1.0);
-      uint32_t audioNow = audioGetFramePercentage();
-      uint32_t audioSampleDuration = audioGetFramePercentIncrementFromSysclks(prescaler * clockDivider);
-      uint32_t audioDutyCycle = audioSampleDuration * dutyCycle;
-
-      for(uint8_t times = 0; times < repeat; times++){
-         blip_add_delta(palmAudioResampler, audioNow, AUDIO_AMPLITUDE);
-         blip_add_delta(palmAudioResampler, audioNow + audioDutyCycle, -AUDIO_AMPLITUDE);
-         audioNow += audioSampleDuration;
-      }
-   }
-   else{
-      //CLK32
+   for(uint8_t times = 0; times < repeat; times++){
+      blip_add_delta(palmAudioResampler, audioNow, AUDIO_AMPLITUDE);
+      blip_add_delta(palmAudioResampler, audioNow + audioDutyCycle, -AUDIO_AMPLITUDE);
+      audioNow += audioSampleDuration;
    }
 
    //remove used entry
