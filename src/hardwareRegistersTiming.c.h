@@ -1,3 +1,4 @@
+//both timer functions can call eachother define them here
 static void timer1(uint8_t reason, double sysclk);
 static void timer2(uint8_t reason, double sysclk);
 
@@ -355,7 +356,7 @@ static inline uint32_t audioGetFramePercentIncrementFromSysclks(double count){
    return count / palmSysclksPerClk32 / ((double)CRYSTAL_FREQUENCY / EMU_FPS) * AUDIO_END_OF_FRAME;
 }
 
-uint32_t audioGetFramePercentage(){
+static inline uint32_t audioGetFramePercentage(){
    //returns how much of the frame has executed
    //0% = 0, 100% = AUDIO_END_OF_FRAME
    return audioGetFramePercentIncrementFromClk32s(palmFrameClk32s) + audioGetFramePercentIncrementFromSysclks(palmClk32Sysclks);

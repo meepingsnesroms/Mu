@@ -61,7 +61,7 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t spec
    //allocate the buffers
    palmRam = malloc((specialFeatures & FEATURE_RAM_HUGE) ? SUPERMASSIVE_RAM_SIZE : RAM_SIZE);
    palmRom = malloc(ROM_SIZE);
-   palmAudioResampler = blip_new(AUDIO_SAMPLES_PER_FRAME);
+   palmAudioResampler = blip_new(AUDIO_SAMPLES_PER_FRAME * 2);//have more than one frame of samples in case its written to at the end of the frame
    if(specialFeatures & FEATURE_320x320)
       palmExtendedFramebuffer = malloc(320 * (320 + 120) * sizeof(uint16_t));//really 320*320, the extra pixels are the silkscreened digitizer area
    else
@@ -116,6 +116,7 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t spec
 
    //config
    palmClockMultiplier = (specialFeatures & FEATURE_FAST_CPU) ? 2.0 : 1.0;//overclock
+   //palmClockMultiplier *= 1.3;
    //palmClockMultiplier *= 0.80;//run at 80% speed, 20% is likely memory waitstates
    palmSpecialFeatures = specialFeatures;
    setRtc(0,0,0,0);//RTCTIME and DAYR are not cleared by reset, clear them manually in case the frontend doesnt set the RTC

@@ -34,6 +34,9 @@ static void checkInterrupts();
 static void checkPortDInterrupts();
 static void pllWakeCpuIfOff();
 static double sysclksPerClk32();
+static inline uint32_t audioGetFramePercentIncrementFromClk32s(uint32_t count);
+static inline uint32_t audioGetFramePercentIncrementFromSysclks(double count);
+static inline uint32_t audioGetFramePercentage();
 
 #include "hardwareRegistersAccessors.c.h"
 #include "hardwareRegistersTiming.c.h"
@@ -619,8 +622,8 @@ void setHwRegister8(uint32_t address, uint8_t value){
                uint32_t audioDutyCycle = audioSampleDuration * dutyCycle;
 
                for(uint8_t times = 0; times < repeat; times++){
-                  blip_add_delta(palmAudioResampler, audioNow, 0x9999);
-                  blip_add_delta(palmAudioResampler, audioNow + audioDutyCycle, -0x9999);
+                  blip_add_delta(palmAudioResampler, audioNow, AUDIO_AMPLITUDE);
+                  blip_add_delta(palmAudioResampler, audioNow + audioDutyCycle, -AUDIO_AMPLITUDE);
                   audioNow += audioSampleDuration;
                }
             }
