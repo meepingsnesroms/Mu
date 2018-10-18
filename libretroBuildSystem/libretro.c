@@ -27,6 +27,7 @@
 #define path_default_slash() "/"
 #endif
 
+#define JOYSTICK_DEADZONE 4000
 #define JOYSTICK_MULTIPLIER 0.0001
 
 
@@ -238,8 +239,14 @@ void retro_run(void){
    
    //touchscreen
    if(useJoystickAsMouse){
-      touchCursorX += input_state_cb(0, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_LEFT, RETRO_DEVICE_ID_ANALOG_X) * (screenHires ? JOYSTICK_MULTIPLIER * 2.0 : JOYSTICK_MULTIPLIER);
-      touchCursorY += input_state_cb(0, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_LEFT, RETRO_DEVICE_ID_ANALOG_Y) * (screenHires ? JOYSTICK_MULTIPLIER * 2.0 : JOYSTICK_MULTIPLIER);
+      int16_t x = input_state_cb(0, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_LEFT, RETRO_DEVICE_ID_ANALOG_X);
+      int16_t y = input_state_cb(0, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_LEFT, RETRO_DEVICE_ID_ANALOG_Y);
+      
+      if(x > JOYSTICK_DEADZONE || x < -JOYSTICK_DEADZONE)
+         touchCursorX += x * (screenHires ? JOYSTICK_MULTIPLIER * 2.0 : JOYSTICK_MULTIPLIER);
+      
+      if(y > JOYSTICK_DEADZONE || y < -JOYSTICK_DEADZONE)
+         touchCursorY += y * (screenHires ? JOYSTICK_MULTIPLIER * 2.0 : JOYSTICK_MULTIPLIER);
       
       if(touchCursorX < 0)
          touchCursorX = 0;

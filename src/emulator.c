@@ -119,7 +119,7 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t spec
    //palmClockMultiplier *= 1.5;
    //palmClockMultiplier *= 0.80;//run at 80% speed, 20% is likely memory waitstates
    palmSpecialFeatures = specialFeatures;
-   setRtc(0,0,0,0);//RTCTIME and DAYR are not cleared by reset, clear them manually in case the frontend doesnt set the RTC
+   setRtc(0, 0, 0, 0);//RTCTIME and DAYR are not cleared by reset, clear them manually in case the frontend doesnt set the RTC
 
    emulatorInitialized = true;
 
