@@ -77,23 +77,47 @@ static inline uint8_t pwm1FifoEntrys(){
    return pwm1WritePosition - pwm1ReadPosition;
 }
 
-static inline uint8_t pwm1FifoCurrentValue(){
-   return pwm1Fifo[pwm1ReadPosition];
-}
+void pwm1FifoRunSample(int32_t clocksBehind){
+   uint16_t pwmc1 = registerArrayRead16(PWMC1);
+   uint8_t sample = pwm1Fifo[pwm1ReadPosition];
 
-static inline void pwm1FifoRemove(){
+   if(!(pwmc1 & 0x8000)){
+      //SYSCLK
+      uint8_t prescaler = (pwmc1 >> 8 & 0x7F) + 1;
+      uint8_t clockDivider = 2 << (pwmc1 & 0x03);
+      uint8_t repeat = 1 << (pwmc1 >> 2 & 0x03);
+      double dutyCycle = dMin((double)sample / (registerArrayRead8(PWMP1) + 2), 1.0);
+      uint32_t audioNow = audioGetFramePercentage();
+      uint32_t audioSampleDuration = audioGetFramePercentIncrementFromSysclks(prescaler * clockDivider);
+      uint32_t audioDutyCycle = audioSampleDuration * dutyCycle;
+
+      for(uint8_t times = 0; times < repeat; times++){
+         blip_add_delta(palmAudioResampler, audioNow, AUDIO_AMPLITUDE);
+         blip_add_delta(palmAudioResampler, audioNow + audioDutyCycle, -AUDIO_AMPLITUDE);
+         audioNow += audioSampleDuration;
+      }
+   }
+   else{
+      //CLK32
+   }
+
+   //remove used entry
    if(pwm1FifoEntrys() > 0){
       pwm1ReadPosition = (pwm1ReadPosition + 1) % 6;
 
       //set FIFOAV
       registerArrayWrite16(PWMC1, registerArrayRead16(PWMC1) | 0x0020);
    }
+
+   //check for interrupt
    if(pwm1FifoEntrys() < 2){
       uint16_t pwmc1 = registerArrayRead16(PWMC1);
 
       //trigger interrupt if enabled
-      if(pwmc1 & 0x0040)
+      if(pwmc1 & 0x0040){
          setIprIsrBit(INT_PWM1);
+         checkInterrupts();
+      }
 
       registerArrayWrite16(PWMC1, pwmc1 | 0x0080);//set IRQ bit
    }
@@ -632,24 +656,14 @@ static inline void samplePwm1(bool forClk32, double sysclks){
       pwm1ClocksToNextSample -= decrement;
       if(pwm1ClocksToNextSample <= 0){
          while(pwm1FifoEntrys() > 0 && pwm1ClocksToNextSample <= 0){
-            //switch out samples
-            runPwm1Sample(pwm1FifoCurrentValue());
-            pwm1FifoRemove();
+            //switch out samples until waiting(pwm1ClocksToNextSample is positive)
+            pwm1FifoRunSample(pwm1ClocksToNextSample);
             pwm1ClocksToNextSample += pwm1FifoSampleDuration();
          }
 
          //dont carry negative cycles over when the FIFO runs out
          if(pwm1FifoEntrys() == 0 && pwm1ClocksToNextSample < 0)
             pwm1ClocksToNextSample = 0;
-
-         /*
-         //interrupt to fill FIFO
-         if(pwm1FifoEntrys() < 2 && (pwmc1 & 0x00C0) == 0x0040){
-            registerArrayWrite16(PWMC1, pwmc1 | 0x0080);//set IRQ bit
-            setIprIsrBit(INT_PWM1);
-            checkInterrupts();
-         }
-         */
       }
    }
    else{
