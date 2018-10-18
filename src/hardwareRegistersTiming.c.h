@@ -327,6 +327,7 @@ void endClk32(){
 
    timer1(TIMER_REASON_CLK32, 0);
    timer2(TIMER_REASON_CLK32, 0);
+   samplePwm1(true/*forClk32*/, 0.0);
 
    //PLLCR wake select wait
    if(pllWakeWait != -1){
@@ -343,9 +344,10 @@ void endClk32(){
 }
 
 void addSysclks(double count){
-   palmClk32Sysclks += count;
    timer1(TIMER_REASON_SYSCLK, count);
    timer2(TIMER_REASON_SYSCLK, count);
+   samplePwm1(false/*forClk32*/, count);
+   palmClk32Sysclks += count;
 }
 
 static inline uint32_t audioGetFramePercentIncrementFromClk32s(uint32_t count){

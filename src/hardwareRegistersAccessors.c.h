@@ -18,7 +18,21 @@ static inline void registerArrayWrite8(uint32_t address, uint8_t value){BUFFER_W
 static inline void registerArrayWrite16(uint32_t address, uint16_t value){BUFFER_WRITE_16(palmReg, address, 0xFFF, value);}
 static inline void registerArrayWrite32(uint32_t address, uint32_t value){BUFFER_WRITE_32(palmReg, address, 0xFFF, value);}
 
-//SPI1 FIFO accessors, this doesnt quite belong here but it is a memory accessor so its ok for now
+//interrupt setters
+static inline void setIprIsrBit(uint32_t interruptBit){
+   //allows for setting an interrupt with masking by IMR and logging in IPR
+   uint32_t newIpr = registerArrayRead32(IPR) | interruptBit;
+   registerArrayWrite32(IPR, newIpr);
+   registerArrayWrite32(ISR, newIpr & ~registerArrayRead32(IMR));
+}
+
+static inline void clearIprIsrBit(uint32_t interruptBit){
+   uint32_t newIpr = registerArrayRead32(IPR) & ~interruptBit;
+   registerArrayWrite32(IPR, newIpr);
+   registerArrayWrite32(ISR, newIpr & ~registerArrayRead32(IMR));
+}
+
+//SPI1 FIFO accessors
 static inline uint16_t spi1RxFifoRead(){
    uint16_t value = spi1RxFifo[spi1RxReadPosition];
    spi1RxReadPosition = (spi1RxReadPosition + 1) % 9;
@@ -55,20 +69,64 @@ static inline uint8_t spi1TxFifoEntrys(){
    return spi1TxWritePosition - spi1TxReadPosition;
 }
 
+//PWM1 FIFO accessors
+static inline uint8_t pwm1FifoEntrys(){
+   //check for wraparound
+   if(pwm1WritePosition < pwm1ReadPosition)
+      return pwm1WritePosition + 6 - pwm1ReadPosition;
+   return pwm1WritePosition - pwm1ReadPosition;
+}
+
+static inline uint8_t pwm1FifoCurrentValue(){
+   return pwm1Fifo[pwm1ReadPosition];
+}
+
+static inline void pwm1FifoRemove(){
+   if(pwm1FifoEntrys() > 0){
+      pwm1ReadPosition = (pwm1ReadPosition + 1) % 6;
+
+      //set FIFOAV
+      registerArrayWrite16(PWMC1, registerArrayRead16(PWMC1) | 0x0020);
+   }
+   if(pwm1FifoEntrys() < 2){
+      uint16_t pwmc1 = registerArrayRead16(PWMC1);
+
+      //trigger interrupt if enabled
+      if(pwmc1 & 0x0040)
+         setIprIsrBit(INT_PWM1);
+
+      registerArrayWrite16(PWMC1, pwmc1 | 0x0080);//set IRQ bit
+   }
+}
+
+static inline void pwm1FifoWrite(uint8_t value){
+   if(pwm1FifoEntrys() < 5){
+      pwm1Fifo[pwm1WritePosition] = value;
+      pwm1WritePosition = (pwm1WritePosition + 1) % 6;
+
+      //clear FIFOAV if full
+      if(pwm1FifoEntrys() == 5)
+         registerArrayWrite16(PWMC1, registerArrayRead16(PWMC1) & 0xFFDF);
+   }
+}
+
+static inline void pwm1FifoFlush(){
+   pwm1ReadPosition = 0;
+   pwm1WritePosition = 0;
+
+   //set FIFOAV
+   registerArrayWrite16(PWMC1, registerArrayRead16(PWMC1) | 0x0020);
+}
+
+static inline uint16_t pwm1FifoSampleDuration(){
+   uint16_t pwmc1 = registerArrayRead16(PWMC1);
+   uint8_t prescaler = (pwmc1 >> 8 & 0x7F) + 1;
+   uint8_t clockDivider = 2 << (pwmc1 & 0x03);
+   uint8_t repeat = 1 << (pwmc1 >> 2 & 0x03);
+   return prescaler * clockDivider * repeat;
+}
+
 //register setters
-static inline void setIprIsrBit(uint32_t interruptBit){
-   //allows for setting an interrupt with masking by IMR and logging in IPR
-   uint32_t newIpr = registerArrayRead32(IPR) | interruptBit;
-   registerArrayWrite32(IPR, newIpr);
-   registerArrayWrite32(ISR, newIpr & ~registerArrayRead32(IMR));
-}
-
-static inline void clearIprIsrBit(uint32_t interruptBit){
-   uint32_t newIpr = registerArrayRead32(IPR) & ~interruptBit;
-   registerArrayWrite32(IPR, newIpr);
-   registerArrayWrite32(ISR, newIpr & ~registerArrayRead32(IMR));
-}
-
 static inline void setCsa(uint16_t value){
    chips[CHIP_A0_ROM].enable = value & 0x0001;
    chips[CHIP_A0_ROM].readOnly = value & 0x8000;
@@ -376,11 +434,14 @@ static inline void setPwmc1(uint16_t value){
    uint16_t oldPwmc1 = registerArrayRead16(PWMC1);
 
    //always have FIFOAV set right now, hack
-   value |= 0x0020;
+   if(pwm1FifoEntrys() < 5)
+      value |= 0x0020;
 
-   //PWM1 enabled, set IRQ and FIFOAV bit to fill FIFO
-   if(!(oldPwmc1 & 0x0010) && value & 0x0010)
-      value |= 0x00A0;
+   //PWM1 enabled, set IRQ
+   if(!(oldPwmc1 & 0x0010) && value & 0x0010){
+      value |= 0x0080;//enable IRQ
+      pwm1ClocksToNextSample = 0;//when first sample is written output it immediatly
+   }
 
    //clear interrupt by write(reading can also clear the interrupt)
    if(oldPwmc1 & 0x0080 && !(value & 0x0080)){
@@ -396,8 +457,11 @@ static inline void setPwmc1(uint16_t value){
    }
 
    //PWM1 disabled
-   if(oldPwmc1 & 0x0010 && !(value & 0x0010))
+   if(oldPwmc1 & 0x0010 && !(value & 0x0010)){
+      pwm1FifoFlush();
+      value |= 0x0020;//set FIFOAV since FIFO is now empty, should be set by pwm1FifoFlush()
       value &= 0x80FF;//clear PWM prescaler value
+   }
 
    registerArrayWrite16(PWMC1, value);
 }
@@ -552,6 +616,46 @@ static inline uint8_t getPortKValue(){
 static inline uint8_t getPortMValue(){
    //bit 5 has a pull up not pull down, bits 4-0 have a pull down, bit 7-6 are not active at all
    return ((registerArrayRead8(PMDATA) & registerArrayRead8(PMDIR)) | (~registerArrayRead8(PMDIR) & 0x20)) & registerArrayRead8(PMSEL);
+}
+
+static inline void samplePwm1(bool forClk32, double sysclks){
+   //clear PWM1 FIFO values if enough time has passed
+   uint16_t pwmc1 = registerArrayRead16(PWMC1);
+   int32_t decrement = forClk32 ? 1 : sysclks;
+
+   //check if enabled and validate clock mode
+   if(!(pwmc1 & 0x0010) || forClk32 != (bool)(pwmc1 & 0x8000))
+      return;
+
+   //add cycles
+   if(pwm1FifoEntrys() > 0){
+      pwm1ClocksToNextSample -= decrement;
+      if(pwm1ClocksToNextSample <= 0){
+         while(pwm1FifoEntrys() > 0 && pwm1ClocksToNextSample <= 0){
+            //switch out samples
+            runPwm1Sample(pwm1FifoCurrentValue());
+            pwm1FifoRemove();
+            pwm1ClocksToNextSample += pwm1FifoSampleDuration();
+         }
+
+         //dont carry negative cycles over when the FIFO runs out
+         if(pwm1FifoEntrys() == 0 && pwm1ClocksToNextSample < 0)
+            pwm1ClocksToNextSample = 0;
+
+         /*
+         //interrupt to fill FIFO
+         if(pwm1FifoEntrys() < 2 && (pwmc1 & 0x00C0) == 0x0040){
+            registerArrayWrite16(PWMC1, pwmc1 | 0x0080);//set IRQ bit
+            setIprIsrBit(INT_PWM1);
+            checkInterrupts();
+         }
+         */
+      }
+   }
+   else{
+      //still allow the sample timer to run out but cap a 0
+      pwm1ClocksToNextSample = sMax(pwm1ClocksToNextSample - decrement, 0);
+   }
 }
 
 static inline uint16_t getPwmc1(){

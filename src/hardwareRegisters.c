@@ -28,6 +28,10 @@ uint8_t  spi1RxReadPosition;
 uint8_t  spi1RxWritePosition;
 uint8_t  spi1TxReadPosition;
 uint8_t  spi1TxWritePosition;
+int32_t  pwm1ClocksToNextSample;
+uint8_t  pwm1Fifo[6];
+uint8_t  pwm1ReadPosition;
+uint8_t  pwm1WritePosition;
 
 
 static void checkInterrupts();
@@ -37,9 +41,35 @@ static double sysclksPerClk32();
 static inline uint32_t audioGetFramePercentIncrementFromClk32s(uint32_t count);
 static inline uint32_t audioGetFramePercentIncrementFromSysclks(double count);
 static inline uint32_t audioGetFramePercentage();
+void runPwm1Sample(uint8_t sample);//fixme
 
 #include "hardwareRegistersAccessors.c.h"
 #include "hardwareRegistersTiming.c.h"
+
+//this needs to be moved later!!!
+void runPwm1Sample(uint8_t sample){
+   uint16_t pwmc1 = registerArrayRead16(PWMC1);
+
+   if(!(pwmc1 & 0x8000)){
+      //SYSCLK
+      uint8_t prescaler = (pwmc1 >> 8 & 0x7F) + 1;
+      uint8_t clockDivider = 2 << (pwmc1 & 0x03);
+      uint8_t repeat = 1 << (pwmc1 >> 2 & 0x03);
+      double dutyCycle = dMin((double)sample / (registerArrayRead8(PWMP1) + 2), 1.0);
+      uint32_t audioNow = audioGetFramePercentage();
+      uint32_t audioSampleDuration = audioGetFramePercentIncrementFromSysclks(prescaler * clockDivider);
+      uint32_t audioDutyCycle = audioSampleDuration * dutyCycle;
+
+      for(uint8_t times = 0; times < repeat; times++){
+         blip_add_delta(palmAudioResampler, audioNow, AUDIO_AMPLITUDE);
+         blip_add_delta(palmAudioResampler, audioNow + audioDutyCycle, -AUDIO_AMPLITUDE);
+         audioNow += audioSampleDuration;
+      }
+   }
+   else{
+      //CLK32
+   }
+}
 
 bool pllIsOn(){
    return !(registerArrayRead16(PLLCR) & 0x0008);
@@ -607,30 +637,8 @@ void setHwRegister8(uint32_t address, uint8_t value){
 
       case PWMS1 + 1:
          //write only if PWM1 and FIFOAV are set and a slot is available
-         if((registerArrayRead16(PWMC1) & 0x0030) == 0x0030){
-            uint16_t pwmc1 = registerArrayRead16(PWMC1);
-
-            if(!(pwmc1 & 0x8000)){
-               //SYSCLK
-               uint8_t prescaler = (pwmc1 >> 8 & 0x7F) + 1;
-               uint8_t clockDivider = 2 << (pwmc1 & 0x03);
-               uint8_t repeat = 1 << (pwmc1 >> 2 & 0x03);
-
-               double dutyCycle = dMin((double)value / (registerArrayRead8(PWMP1) + 2), 1.0);
-               uint32_t audioNow = audioGetFramePercentage();
-               uint32_t audioSampleDuration = audioGetFramePercentIncrementFromSysclks(prescaler * clockDivider);
-               uint32_t audioDutyCycle = audioSampleDuration * dutyCycle;
-
-               for(uint8_t times = 0; times < repeat; times++){
-                  blip_add_delta(palmAudioResampler, audioNow, AUDIO_AMPLITUDE);
-                  blip_add_delta(palmAudioResampler, audioNow + audioDutyCycle, -AUDIO_AMPLITUDE);
-                  audioNow += audioSampleDuration;
-               }
-            }
-            else{
-               //CLK32
-            }
-         }
+         if((registerArrayRead16(PWMC1) & 0x0030) == 0x0030)
+            pwm1FifoWrite(value);
          break;
 
       case PWMP1:
@@ -1004,7 +1012,8 @@ void setHwRegister16(uint32_t address, uint16_t value){
       case PWMS1:
          //write only if PWM1 and FIFOAV are set and a slot is available
          if((registerArrayRead16(PWMC1) & 0x0030) == 0x0030){
-            //empty
+            pwm1FifoWrite(value >> 8);
+            pwm1FifoWrite(value & 0xFF);
          }
          break;
 
