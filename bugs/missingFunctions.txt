@@ -8,6 +8,7 @@ app install hack needs to be removed when SD card works
 double pressing power button issue
 
 Fixed:
+device runs at around half speed for some reason(the SYSCLK divider was not scaled properly)
 Sound(those cute little PWM beeps)
 Mac Qt build has no icons
 QSettings is broken on Windows(this prevents loading the ROM)

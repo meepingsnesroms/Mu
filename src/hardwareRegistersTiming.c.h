@@ -162,10 +162,10 @@ static double dmaclksPerClk32(){
 }
 
 static double sysclksPerClk32(){
-   uint8_t sysclkSelect = registerArrayRead16(PLLCR) >> 8 & 0x0003;
+   uint8_t sysclkSelect = registerArrayRead16(PLLCR) >> 8 & 0x0007;
 
-   //> 4 means run at full speed, no divider
-   if(sysclkSelect > 4)
+   //>= 4 means run at full speed, no divider
+   if(sysclkSelect >= 4)
       return dmaclksPerClk32();
 
    //divide DMACLK by 2 to the power of PLLCR SYSCLKSEL
