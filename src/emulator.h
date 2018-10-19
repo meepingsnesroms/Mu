@@ -123,6 +123,7 @@ typedef struct{
 #define AUDIO_AMPLITUDE 750000
 #define AUDIO_SAMPLES_PER_FRAME (AUDIO_SAMPLE_RATE / EMU_FPS)
 #define AUDIO_END_OF_FRAME 2000000000//used to convert the variable timing of SYSCLK and CLK32 to a fixed location in the current frame 0<->AUDIO_END_OF_FRAME
+#define AUDIO_WAIT_FOR_SAMPLE INT32_MIN
 
 //emulator data, some are GUI interface variables, some should be left alone
 extern uint8_t*  palmRam;//dont touch

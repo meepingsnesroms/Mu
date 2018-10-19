@@ -79,23 +79,28 @@ static inline uint8_t pwm1FifoEntrys(){
 
 void pwm1FifoRunSample(int32_t clocksBehind){
    uint8_t sample = pwm1Fifo[pwm1ReadPosition];
+   uint8_t period = registerArrayRead8(PWMP1);
    uint16_t pwmc1 = registerArrayRead16(PWMC1);
    bool usingClk32 = pwmc1 & 0x8000;
    uint8_t prescaler = (pwmc1 >> 8 & 0x7F) + 1;
    uint8_t clockDivider = 2 << (pwmc1 & 0x03);
    uint8_t repeat = 1 << (pwmc1 >> 2 & 0x03);
-   double dutyCycle = dMin((double)sample / (registerArrayRead8(PWMP1) + 2), 1.0);
+   double dutyCycle = dMin((double)sample / (period + 2), 1.0);
+
+   //int32_t dbgNow = audioGetFramePercentage();
+   //int32_t dbgOffset = usingClk32 ? audioGetFramePercentIncrementFromClk32s(clocksBehind) : audioGetFramePercentIncrementFromSysclks(clocksBehind);
+
    int32_t audioNow = audioGetFramePercentage() + (usingClk32 ? audioGetFramePercentIncrementFromClk32s(clocksBehind) : audioGetFramePercentIncrementFromSysclks(clocksBehind));
    int32_t audioSampleDuration = usingClk32 ? audioGetFramePercentIncrementFromClk32s(prescaler * clockDivider) : audioGetFramePercentIncrementFromSysclks(prescaler * clockDivider);
    int32_t audioDutyCycle = audioSampleDuration * dutyCycle;
 
    for(uint8_t times = 0; times < repeat; times++){
-      //if(audioNow >= 0){
-         blip_add_delta(palmAudioResampler, audioNow, AUDIO_AMPLITUDE);
-         blip_add_delta(palmAudioResampler, audioNow + audioDutyCycle, -AUDIO_AMPLITUDE);
-         //blip_add_delta(palmAudioResampler, audioNow + audioDutyCycle, AUDIO_AMPLITUDE);
-         //blip_add_delta(palmAudioResampler, audioNow + audioSampleDuration, -AUDIO_AMPLITUDE);
-      //}
+      //At the beginning of a sample period cycle, the PWMO pin is set to 1 and the counter begins counting up from 0x00.
+      //The sample value is compared on each count of the prescaler clock.
+      //When the sample and count values match, the PWMO signal is cleared to 0.
+      //MC68VZ328UM.pdf
+      blip_add_delta(palmAudioResampler, audioNow, AUDIO_AMPLITUDE);
+      blip_add_delta(palmAudioResampler, audioNow + audioDutyCycle, -AUDIO_AMPLITUDE);
       audioNow += audioSampleDuration;
    }
 
@@ -105,8 +110,6 @@ void pwm1FifoRunSample(int32_t clocksBehind){
 
    //check for interrupt
    if(pwm1FifoEntrys() < 2){
-      //uint16_t pwmc1 = registerArrayRead16(PWMC1);
-
       //trigger interrupt if enabled
       if(pwmc1 & 0x0040)
          setIprIsrBit(INT_PWM1);
@@ -128,13 +131,14 @@ static inline void pwm1FifoFlush(){
    pwm1WritePosition = 0;
 }
 
-static inline uint16_t pwm1FifoSampleDuration(){
+static inline uint32_t pwm1FifoSampleDuration(){
    uint16_t pwmc1 = registerArrayRead16(PWMC1);
-   uint8_t prescaler = (pwmc1 >> 8 & 0x7F) + 1;//max:127
+   //uint8_t period = registerArrayRead8(PWMP1);//max:255 + 2 ???
+   uint8_t prescaler = (pwmc1 >> 8 & 0x7F) + 1;//max:128
    uint8_t clockDivider = 2 << (pwmc1 & 0x03);//max:16
    uint8_t repeat = 1 << (pwmc1 >> 2 & 0x03);//max:8
 
-   return prescaler * clockDivider * repeat;
+   return prescaler * clockDivider * repeat/* / (period + 2)*/;
 }
 
 //register setters
@@ -450,7 +454,7 @@ static inline void setPwmc1(uint16_t value){
    //PWM1 enabled, set IRQ
    if(!(oldPwmc1 & 0x0010) && value & 0x0010){
       value |= 0x0080;//enable IRQ
-      pwm1ClocksToNextSample = 0;//when first sample is written output it immediatly
+      pwm1ClocksToNextSample = AUDIO_WAIT_FOR_SAMPLE;//when first sample is written output it immediatly
    }
 
    //clear interrupt by write(reading can also clear the interrupt)
@@ -637,23 +641,28 @@ static inline void samplePwm1(bool forClk32, double sysclks){
       return;
 
    //add cycles
-   if(pwm1FifoEntrys() > 0){
+   if(pwm1ClocksToNextSample != AUDIO_WAIT_FOR_SAMPLE)
       pwm1ClocksToNextSample -= decrement;
-      if(pwm1ClocksToNextSample <= 0){
-         while(pwm1FifoEntrys() > 0 && pwm1ClocksToNextSample <= 0){
-            //switch out samples until waiting(pwm1ClocksToNextSample is positive)
+
+   //use samples
+   if(pwm1ClocksToNextSample <= 0){
+      while(pwm1FifoEntrys() > 0 && pwm1ClocksToNextSample <= 0){
+         //switch out samples until waiting(pwm1ClocksToNextSample is positive)
+         if(pwm1ClocksToNextSample == AUDIO_WAIT_FOR_SAMPLE){
+            //got first sample in a while
+            pwm1FifoRunSample(0);
+            pwm1ClocksToNextSample = pwm1FifoSampleDuration();
+         }
+         else{
+            //continue processing existing sample stream
             pwm1FifoRunSample(pwm1ClocksToNextSample);
             pwm1ClocksToNextSample += pwm1FifoSampleDuration();
          }
-
-         //dont carry negative cycles over when the FIFO runs out
-         if(pwm1FifoEntrys() == 0 && pwm1ClocksToNextSample < 0)
-            pwm1ClocksToNextSample = 0;
       }
-   }
-   else{
-      //still allow the sample timer to run out but cap a 0
-      pwm1ClocksToNextSample = sMax(pwm1ClocksToNextSample - decrement, 0);
+
+      //all samples used and its still negative, wait for next sample
+      if(pwm1ClocksToNextSample <= 0)
+         pwm1ClocksToNextSample = AUDIO_WAIT_FOR_SAMPLE;
    }
 }
 

@@ -1076,7 +1076,7 @@ void resetHwRegisters(){
    spi1RxWritePosition = 0;
    spi1TxReadPosition = 0;
    spi1TxWritePosition = 0;
-   pwm1ClocksToNextSample = 0;
+   pwm1ClocksToNextSample = AUDIO_WAIT_FOR_SAMPLE;
    memset(pwm1Fifo, 0x00, sizeof(pwm1Fifo));
    pwm1ReadPosition = 0;
    pwm1WritePosition = 0;
