@@ -1076,6 +1076,10 @@ void resetHwRegisters(){
    spi1RxWritePosition = 0;
    spi1TxReadPosition = 0;
    spi1TxWritePosition = 0;
+   pwm1ClocksToNextSample = 0;
+   memset(pwm1Fifo, 0x00, sizeof(pwm1Fifo));
+   pwm1ReadPosition = 0;
+   pwm1WritePosition = 0;
 
    memset(chips, 0x00, sizeof(chips));
    //all chip selects are disabled at boot and CSA0 is mapped to 0x00000000 and covers the entire address range until CSA is set enabled

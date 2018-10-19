@@ -93,7 +93,7 @@ MainWindow::MainWindow(QWidget* parent) :
 #endif
 
    connect(refreshDisplay, SIGNAL(timeout()), this, SLOT(updateDisplay()));
-   refreshDisplay->start(16);//update display every 16.67miliseconds = 60 * second
+   refreshDisplay->start(1000 / EMU_FPS);//update display every X milliseconds
 }
 
 MainWindow::~MainWindow(){

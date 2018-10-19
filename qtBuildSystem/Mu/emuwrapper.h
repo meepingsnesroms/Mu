@@ -24,8 +24,6 @@ private:
    uint16_t          emuVideoWidth;
    uint16_t          emuVideoHeight;
    std::atomic<bool> emuNewFrameReady;
-   uint16_t*         emuDoubleBufferVideo;
-   int16_t*          emuDoubleBufferAudio;
    QString           emuRamFilePath;
    QString           emuSdCardFilePath;
 
@@ -56,9 +54,11 @@ public:
    uint16_t screenWidth() const{return emuVideoWidth;}
    uint16_t screenHeight() const{return emuVideoHeight;}
    bool newFrameReady() const{return emuNewFrameReady;}
-   const QPixmap getFramebuffer(){return QPixmap::fromImage(QImage((uchar*)emuDoubleBufferVideo, emuVideoWidth, emuVideoHeight, emuVideoWidth * sizeof(uint16_t), QImage::Format_RGB16));}
-   const int16_t* getAudioSamples(){return emuDoubleBufferAudio;}
    void frameHandled(){emuNewFrameReady = false;}
+
+   //calling these while newFrameReady() == false is undefined behavior, the other thread may be writing to them
+   const QPixmap getFramebuffer(){return QPixmap::fromImage(QImage((uchar*)(emuVideoWidth == 320 ? palmExtendedFramebuffer : palmFramebuffer), emuVideoWidth, emuVideoHeight, emuVideoWidth * sizeof(uint16_t), QImage::Format_RGB16));}
+   const int16_t* getAudioSamples() const{return palmAudio;}
    bool getPowerButtonLed() const{return palmMisc.powerButtonLed;}
 
    uint64_t getEmulatorMemory(uint32_t address, uint8_t size);
