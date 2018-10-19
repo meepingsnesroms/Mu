@@ -90,10 +90,6 @@ void pwm1FifoRunSample(int32_t clocksBehind){
    int32_t audioDutyCycle = audioSampleDuration * dutyCycle;
 
    for(uint8_t times = 0; times < repeat; times++){
-      if(audioNow < 0){
-         bool breakpoint = true;
-      }
-
       if(audioNow >= 0){
          //blip_add_delta(palmAudioResampler, audioNow, AUDIO_AMPLITUDE);
          //blip_add_delta(palmAudioResampler, audioNow + audioDutyCycle, -AUDIO_AMPLITUDE);
