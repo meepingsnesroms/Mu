@@ -355,11 +355,11 @@ void addSysclks(double count){
 }
 
 static int32_t audioGetFramePercentIncrementFromClk32s(int32_t count){
-   return count / ((double)CRYSTAL_FREQUENCY / EMU_FPS) * AUDIO_END_OF_FRAME;
+   return (double)count / ((double)CRYSTAL_FREQUENCY / EMU_FPS) * AUDIO_END_OF_FRAME;
 }
 
 static int32_t audioGetFramePercentIncrementFromSysclks(double count){
-   return count / palmSysclksPerClk32 / ((double)CRYSTAL_FREQUENCY / EMU_FPS) * AUDIO_END_OF_FRAME;
+   return count / (palmSysclksPerClk32 * ((double)CRYSTAL_FREQUENCY / EMU_FPS)) * AUDIO_END_OF_FRAME;
 }
 
 static int32_t audioGetFramePercentage(){

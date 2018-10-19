@@ -53,8 +53,10 @@ QString DebugViewer::stringFromNumber(int64_t number, bool hex, uint32_t forcedZ
       numString.push_front("0x");
    }
    else{
-      numString += QString::number(number, 10);
+      numString += QString::number(qAbs(number), 10);
       while(numString.length() < (int)forcedZeros)numString.push_front("0");
+      if(number < 0)
+         numString.push_front("-");
    }
 
    return numString;

@@ -79,19 +79,19 @@ static inline uint8_t pwm1FifoEntrys(){
 
 void pwm1FifoRunSample(int32_t clocksBehind){
    uint8_t sample = pwm1Fifo[pwm1ReadPosition];
-   uint8_t period = registerArrayRead8(PWMP1);
+   uint16_t period = registerArrayRead8(PWMP1) + 2;
    uint16_t pwmc1 = registerArrayRead16(PWMC1);
    bool usingClk32 = pwmc1 & 0x8000;
    uint8_t prescaler = (pwmc1 >> 8 & 0x7F) + 1;
    uint8_t clockDivider = 2 << (pwmc1 & 0x03);
    uint8_t repeat = 1 << (pwmc1 >> 2 & 0x03);
-   double dutyCycle = dMin((double)sample / (period + 2), 1.0);
+   double dutyCycle = dMin((double)sample / period, 1.0);
 
    //int32_t dbgNow = audioGetFramePercentage();
    //int32_t dbgOffset = usingClk32 ? audioGetFramePercentIncrementFromClk32s(clocksBehind) : audioGetFramePercentIncrementFromSysclks(clocksBehind);
 
    int32_t audioNow = audioGetFramePercentage() + (usingClk32 ? audioGetFramePercentIncrementFromClk32s(clocksBehind) : audioGetFramePercentIncrementFromSysclks(clocksBehind));
-   int32_t audioSampleDuration = usingClk32 ? audioGetFramePercentIncrementFromClk32s(prescaler * clockDivider) : audioGetFramePercentIncrementFromSysclks(prescaler * clockDivider);
+   int32_t audioSampleDuration = usingClk32 ? audioGetFramePercentIncrementFromClk32s(period * prescaler * clockDivider) : audioGetFramePercentIncrementFromSysclks(period * prescaler * clockDivider);
    int32_t audioDutyCycle = audioSampleDuration * dutyCycle;
 
    for(uint8_t times = 0; times < repeat; times++){
@@ -133,12 +133,12 @@ static inline void pwm1FifoFlush(){
 
 static inline uint32_t pwm1FifoSampleDuration(){
    uint16_t pwmc1 = registerArrayRead16(PWMC1);
-   //uint8_t period = registerArrayRead8(PWMP1);//max:255 + 2 ???
+   uint16_t period = registerArrayRead8(PWMP1) + 2;//max:257
    uint8_t prescaler = (pwmc1 >> 8 & 0x7F) + 1;//max:128
    uint8_t clockDivider = 2 << (pwmc1 & 0x03);//max:16
    uint8_t repeat = 1 << (pwmc1 >> 2 & 0x03);//max:8
 
-   return prescaler * clockDivider * repeat/* / (period + 2)*/;
+   return period * prescaler * clockDivider * repeat;
 }
 
 //register setters
