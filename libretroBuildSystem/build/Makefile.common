@@ -4,6 +4,10 @@ COREDEFINES =
 
 INCFLAGS := -I$(LIBRETRO_COMM_DIR)/include
 
+ifeq ($(DEBUG), 1)
+   COREDEFINES += -DEMU_DEBUG -DEMU_SANDBOX
+endif
+
 ifneq (,$(findstring msvc2003,$(platform)))
    INCFLAGS += -I$(LIBRETRO_COMM_DIR)/include/compat/msvc
 endif
@@ -12,4 +16,9 @@ include $(EMU_PATH)/makefile.all
 
 SOURCES_C := $(CORE_DIR)/libretro.c \
    $(CORE_DIR)/cursors.c \
+   $(LIBRETRO_COMM_DIR)/compat/compat_strcasestr.c \
+   $(LIBRETRO_COMM_DIR)/compat/compat_strl.c \
+   $(LIBRETRO_COMM_DIR)/encodings/encoding_utf.c \
+   $(LIBRETRO_COMM_DIR)/file/file_path.c \
+   $(LIBRETRO_COMM_DIR)/string/stdstring.c \
    $(EMU_SOURCES_C)

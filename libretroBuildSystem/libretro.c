@@ -7,25 +7,13 @@
 #include <stdbool.h>
 #include <time.h>
 
+#include <compat/strl.h>
+#include <file/file_path.h>
+#include <retro_miscellaneous.h>
+
 #include "../src/emulator.h"
 #include "cursors.h"
 
-
-#ifndef PATH_MAX_LENGTH
-#if defined(__CELLOS_LV2__)
-#define PATH_MAX_LENGTH CELL_FS_MAX_FS_PATH_LENGTH
-#elif defined(_XBOX1) || defined(_3DS) || defined(PSP) || defined(GEKKO)|| defined(WIIU)
-#define PATH_MAX_LENGTH 512
-#else
-#define PATH_MAX_LENGTH 4096
-#endif
-#endif
-
-#ifdef _WIN32
-#define path_default_slash() "\\"
-#else
-#define path_default_slash() "/"
-#endif
 
 #define JOYSTICK_DEADZONE 4000
 #define JOYSTICK_MULTIPLIER 0.0001
@@ -168,7 +156,7 @@ void retro_get_system_info(struct retro_system_info *info){
 #endif
    info->library_version  = "0.86+" GIT_VERSION;
    info->need_fullpath    = false;
-   info->valid_extensions = "prc|pdb|pqa";
+   info->valid_extensions = "ram";//"prc|pdb|pqa";
 }
 
 void retro_get_system_av_info(struct retro_system_av_info *info){
@@ -326,14 +314,12 @@ bool retro_load_game(const struct retro_game_info *info){
    environ_cb(RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS, desc);
    
    environ_cb(RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY, &systemDirectory);
-   strncpy(palmRomPath, systemDirectory, PATH_MAX_LENGTH);
-   palmRomPath[PATH_MAX_LENGTH - 1] = '\0';
-   strncat(palmRomPath, path_default_slash(), PATH_MAX_LENGTH - strlen(palmRomPath));
-   strncat(palmRomPath, "palmos41-en-m515.rom", PATH_MAX_LENGTH - strlen(palmRomPath));
-   strncpy(palmBootloaderPath, systemDirectory, PATH_MAX_LENGTH);
-   palmBootloaderPath[PATH_MAX_LENGTH - 1] = '\0';
-   strncat(palmBootloaderPath, path_default_slash(), PATH_MAX_LENGTH - strlen(palmBootloaderPath));
-   strncat(palmBootloaderPath, "bootloader-en-m515.rom", PATH_MAX_LENGTH - strlen(palmBootloaderPath));
+   strlcpy(palmRomPath, systemDirectory, PATH_MAX_LENGTH);
+   strlcat(palmRomPath, path_default_slash(), PATH_MAX_LENGTH);
+   strlcat(palmRomPath, "palmos41-en-m515.rom", PATH_MAX_LENGTH);
+   strlcpy(palmBootloaderPath, systemDirectory, PATH_MAX_LENGTH);
+   strlcat(palmBootloaderPath, path_default_slash(), PATH_MAX_LENGTH);
+   strlcat(palmBootloaderPath, "bootloader-en-m515.rom", PATH_MAX_LENGTH);
    
    romFile = fopen(palmRomPath, "rb");
    if(romFile == NULL)
@@ -364,6 +350,11 @@ bool retro_load_game(const struct retro_game_info *info){
    timeInfo = localtime(&rawTime);
    emulatorSetRtc(timeInfo->tm_yday, timeInfo->tm_hour, timeInfo->tm_min, timeInfo->tm_sec);
    
+   buffer_t ramBuffer = emulatorGetRamBuffer();
+   if(ramBuffer.size >= info->size)
+      memcpy(ramBuffer.data, (uint8_t*)info->data, info->size);
+   
+   /*
    if(info != NULL){
       buffer_t prc;
       prc.data = (uint8_t*)info->data;
@@ -372,6 +363,7 @@ bool retro_load_game(const struct retro_game_info *info){
       if(prcSuccess != EMU_ERROR_NONE)
          return false;
    }
+   */
    
    screenHires = emuFeatures & FEATURE_320x320;
    screenWidth = screenHires ? 320 : 160;
