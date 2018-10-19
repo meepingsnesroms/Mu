@@ -90,26 +90,22 @@ void pwm1FifoRunSample(int32_t clocksBehind){
    int32_t audioDutyCycle = audioSampleDuration * dutyCycle;
 
    for(uint8_t times = 0; times < repeat; times++){
-      if(audioNow >= 0){
+      //if(audioNow >= 0){
          blip_add_delta(palmAudioResampler, audioNow, AUDIO_AMPLITUDE);
          blip_add_delta(palmAudioResampler, audioNow + audioDutyCycle, -AUDIO_AMPLITUDE);
          //blip_add_delta(palmAudioResampler, audioNow + audioDutyCycle, AUDIO_AMPLITUDE);
          //blip_add_delta(palmAudioResampler, audioNow + audioSampleDuration, -AUDIO_AMPLITUDE);
-      }
+      //}
       audioNow += audioSampleDuration;
    }
 
    //remove used entry
-   if(pwm1FifoEntrys() > 0){
+   if(pwm1FifoEntrys() > 0)
       pwm1ReadPosition = (pwm1ReadPosition + 1) % 6;
-
-      //set FIFOAV
-      registerArrayWrite16(PWMC1, registerArrayRead16(PWMC1) | 0x0020);
-   }
 
    //check for interrupt
    if(pwm1FifoEntrys() < 2){
-      uint16_t pwmc1 = registerArrayRead16(PWMC1);
+      //uint16_t pwmc1 = registerArrayRead16(PWMC1);
 
       //trigger interrupt if enabled
       if(pwmc1 & 0x0040)
@@ -124,26 +120,20 @@ static inline void pwm1FifoWrite(uint8_t value){
    if(pwm1FifoEntrys() < 5){
       pwm1Fifo[pwm1WritePosition] = value;
       pwm1WritePosition = (pwm1WritePosition + 1) % 6;
-
-      //clear FIFOAV if full
-      if(pwm1FifoEntrys() == 5)
-         registerArrayWrite16(PWMC1, registerArrayRead16(PWMC1) & 0xFFDF);
    }
 }
 
 static inline void pwm1FifoFlush(){
    pwm1ReadPosition = 0;
    pwm1WritePosition = 0;
-
-   //set FIFOAV
-   registerArrayWrite16(PWMC1, registerArrayRead16(PWMC1) | 0x0020);
 }
 
 static inline uint16_t pwm1FifoSampleDuration(){
    uint16_t pwmc1 = registerArrayRead16(PWMC1);
-   uint8_t prescaler = (pwmc1 >> 8 & 0x7F) + 1;
-   uint8_t clockDivider = 2 << (pwmc1 & 0x03);
-   uint8_t repeat = 1 << (pwmc1 >> 2 & 0x03);
+   uint8_t prescaler = (pwmc1 >> 8 & 0x7F) + 1;//max:127
+   uint8_t clockDivider = 2 << (pwmc1 & 0x03);//max:16
+   uint8_t repeat = 1 << (pwmc1 >> 2 & 0x03);//max:8
+
    return prescaler * clockDivider * repeat;
 }
 
@@ -454,9 +444,8 @@ static inline void setTstat2(uint16_t value){
 static inline void setPwmc1(uint16_t value){
    uint16_t oldPwmc1 = registerArrayRead16(PWMC1);
 
-   //always have FIFOAV set right now, hack
-   if(pwm1FifoEntrys() < 5)
-      value |= 0x0020;
+   //dont allow manually setting FIFOAV
+   value &= 0xFFDF;
 
    //PWM1 enabled, set IRQ
    if(!(oldPwmc1 & 0x0010) && value & 0x0010){
@@ -480,7 +469,6 @@ static inline void setPwmc1(uint16_t value){
    //PWM1 disabled
    if(oldPwmc1 & 0x0010 && !(value & 0x0010)){
       pwm1FifoFlush();
-      value |= 0x0020;//set FIFOAV since FIFO is now empty, should be set by pwm1FifoFlush()
       value &= 0x80FF;//clear PWM prescaler value
    }
 
@@ -671,6 +659,10 @@ static inline void samplePwm1(bool forClk32, double sysclks){
 
 static inline uint16_t getPwmc1(){
    uint16_t returnValue = registerArrayRead16(PWMC1);
+
+   //have FIFOAV set if a slot is available
+   if(pwm1FifoEntrys() < 5)
+      returnValue |= 0x0020;
 
    //clear INT_PWM1 if active
    if(returnValue & 0x0080){

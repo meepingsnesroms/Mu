@@ -610,8 +610,8 @@ void setHwRegister8(uint32_t address, uint8_t value){
          break;
 
       case PWMS1 + 1:
-         //write only if PWM1 and FIFOAV are set and a slot is available
-         if((registerArrayRead16(PWMC1) & 0x0030) == 0x0030)
+         //write only if PWM1 enabled
+         if(registerArrayRead16(PWMC1) & 0x0010)
             pwm1FifoWrite(value);
          break;
 
@@ -984,8 +984,8 @@ void setHwRegister16(uint32_t address, uint16_t value){
          break;
 
       case PWMS1:
-         //write only if PWM1 and FIFOAV are set and a slot is available
-         if((registerArrayRead16(PWMC1) & 0x0030) == 0x0030){
+         //write only if PWM1 enabled
+         if(registerArrayRead16(PWMC1) & 0x0001){
             pwm1FifoWrite(value >> 8);
             pwm1FifoWrite(value & 0xFF);
          }
@@ -1164,7 +1164,7 @@ void resetHwRegisters(){
    registerArrayWrite8(PMSEL, 0x3F);
 
    //pulse width modulation control
-   registerArrayWrite16(PWMC1, 0x0020);
+   //registerArrayWrite16(PWMC1, 0x0020);//FIFOAV is controlled by getPwmc1()
    registerArrayWrite8(PWMP1, 0xFE);
 
    //timers
