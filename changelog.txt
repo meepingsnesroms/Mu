@@ -1,12 +1,19 @@
 ------------------------------------------
-v0.9 to v0.9.5(Sept 22 2018 - *** ** 2018)
+v0.9 to v0.9.5(Sept 22 2018 - Oct 18 2018)
+
+RetroArch GUI:
+*add audio(sounds weird/not piezo buzzy enough but data stream seems correct)
+*add on screen mouse
+*allow loading ".ram" files
 
 Qt GUI:
+*add audio(thread data exchange screws it up though currently)
 *added Mac OS icon
 *added Windows icon
 *now runs on Windows
 
 Core:
+*add audio
 *bus error and address error are now handled properly
 
 ----------------------------------------

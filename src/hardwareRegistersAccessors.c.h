@@ -91,10 +91,10 @@ void pwm1FifoRunSample(int32_t clocksBehind){
 
    for(uint8_t times = 0; times < repeat; times++){
       if(audioNow >= 0){
-         //blip_add_delta(palmAudioResampler, audioNow, AUDIO_AMPLITUDE);
-         //blip_add_delta(palmAudioResampler, audioNow + audioDutyCycle, -AUDIO_AMPLITUDE);
-         blip_add_delta(palmAudioResampler, audioNow + audioDutyCycle, AUDIO_AMPLITUDE);
-         blip_add_delta(palmAudioResampler, audioNow + audioSampleDuration, -AUDIO_AMPLITUDE);
+         blip_add_delta(palmAudioResampler, audioNow, AUDIO_AMPLITUDE);
+         blip_add_delta(palmAudioResampler, audioNow + audioDutyCycle, -AUDIO_AMPLITUDE);
+         //blip_add_delta(palmAudioResampler, audioNow + audioDutyCycle, AUDIO_AMPLITUDE);
+         //blip_add_delta(palmAudioResampler, audioNow + audioSampleDuration, -AUDIO_AMPLITUDE);
       }
       audioNow += audioSampleDuration;
    }
