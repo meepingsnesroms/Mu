@@ -85,19 +85,19 @@ int32_t pwm1FifoRunSample(int32_t now, int32_t clockOffset){
    uint8_t prescaler = (pwmc1 >> 8 & 0x7F) + 1;
    uint8_t clockDivider = 2 << (pwmc1 & 0x03);
    uint8_t repeat = 1 << (pwmc1 >> 2 & 0x03);
-   double dutyCycle = dMin((double)sample / period, 1.0);
    int32_t audioStart = now + clockOffset;
    int32_t audioNow = audioStart;
    int32_t audioSampleDuration = usingClk32 ? audioGetFramePercentIncrementFromClk32s(period * prescaler * clockDivider) : audioGetFramePercentIncrementFromSysclks(period * prescaler * clockDivider);
-   int32_t audioDutyCycle = audioSampleDuration * dutyCycle;
+   int32_t audioDeew = dMin((double)sample / period, 1.0)/*dutyCycle*/ * AUDIO_AMPLITUDE;
 
    for(uint8_t times = 0; times < repeat; times++){
       //At the beginning of a sample period cycle, the PWMO pin is set to 1 and the counter begins counting up from 0x00.
       //The sample value is compared on each count of the prescaler clock.
       //When the sample and count values match, the PWMO signal is cleared to 0.
       //MC68VZ328UM.pdf
-      blip_add_delta(palmAudioResampler, audioNow, AUDIO_AMPLITUDE);
-      blip_add_delta(palmAudioResampler, audioNow + audioDutyCycle, -AUDIO_AMPLITUDE);
+      //debugLog("Audio sample played, dutyCycle:%f, start:%d, end:%d\n", dutyCycle, audioNow, audioNow + audioDutyCycle);
+      blip_add_delta(palmAudioResampler, audioNow, audioDeew);
+      blip_add_delta(palmAudioResampler, audioNow + audioSampleDuration, -audioDeew);
       audioNow += audioSampleDuration;
    }
 
