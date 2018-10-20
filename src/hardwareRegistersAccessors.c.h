@@ -77,7 +77,7 @@ static inline uint8_t pwm1FifoEntrys(){
    return pwm1WritePosition - pwm1ReadPosition;
 }
 
-void pwm1FifoRunSample(int32_t clocksBehind){
+int32_t pwm1FifoRunSample(int32_t now, int32_t clockOffset){
    uint8_t sample = pwm1Fifo[pwm1ReadPosition];
    uint16_t period = registerArrayRead8(PWMP1) + 2;
    uint16_t pwmc1 = registerArrayRead16(PWMC1);
@@ -86,11 +86,8 @@ void pwm1FifoRunSample(int32_t clocksBehind){
    uint8_t clockDivider = 2 << (pwmc1 & 0x03);
    uint8_t repeat = 1 << (pwmc1 >> 2 & 0x03);
    double dutyCycle = dMin((double)sample / period, 1.0);
-
-   //int32_t dbgNow = audioGetFramePercentage();
-   //int32_t dbgOffset = usingClk32 ? audioGetFramePercentIncrementFromClk32s(clocksBehind) : audioGetFramePercentIncrementFromSysclks(clocksBehind);
-
-   int32_t audioNow = audioGetFramePercentage() + (usingClk32 ? audioGetFramePercentIncrementFromClk32s(clocksBehind) : audioGetFramePercentIncrementFromSysclks(clocksBehind));
+   int32_t audioStart = now + clockOffset;
+   int32_t audioNow = audioStart;
    int32_t audioSampleDuration = usingClk32 ? audioGetFramePercentIncrementFromClk32s(period * prescaler * clockDivider) : audioGetFramePercentIncrementFromSysclks(period * prescaler * clockDivider);
    int32_t audioDutyCycle = audioSampleDuration * dutyCycle;
 
@@ -117,6 +114,8 @@ void pwm1FifoRunSample(int32_t clocksBehind){
 
       registerArrayWrite16(PWMC1, pwmc1 | 0x0080);//set IRQ bit
    }
+
+   return audioNow - audioStart;
 }
 
 static inline void pwm1FifoWrite(uint8_t value){
@@ -634,7 +633,6 @@ static inline uint8_t getPortMValue(){
 static inline void samplePwm1(bool forClk32, double sysclks){
    //clear PWM1 FIFO values if enough time has passed
    uint16_t pwmc1 = registerArrayRead16(PWMC1);
-   int32_t decrement = forClk32 ? 1 : sysclks;
 
    //check if enabled and validate clock mode
    if(!(pwmc1 & 0x0010) || forClk32 != (bool)(pwmc1 & 0x8000))
@@ -642,22 +640,27 @@ static inline void samplePwm1(bool forClk32, double sysclks){
 
    //add cycles
    if(pwm1ClocksToNextSample != AUDIO_WAIT_FOR_SAMPLE)
-      pwm1ClocksToNextSample -= decrement;
+      pwm1ClocksToNextSample -= forClk32 ? audioGetFramePercentIncrementFromClk32s(1) : audioGetFramePercentIncrementFromSysclks(sysclks);
 
    //use samples
    if(pwm1ClocksToNextSample <= 0){
       while(pwm1FifoEntrys() > 0 && pwm1ClocksToNextSample <= 0){
+         int32_t audioNow = audioGetFramePercentage();
+         int32_t audioUsed;
+
          //switch out samples until waiting(pwm1ClocksToNextSample is positive)
          if(pwm1ClocksToNextSample == AUDIO_WAIT_FOR_SAMPLE){
             //got first sample in a while
-            pwm1FifoRunSample(0);
-            pwm1ClocksToNextSample = pwm1FifoSampleDuration();
+            audioUsed = pwm1FifoRunSample(audioNow, 0);
+            pwm1ClocksToNextSample = audioUsed;
          }
          else{
             //continue processing existing sample stream
-            pwm1FifoRunSample(pwm1ClocksToNextSample);
-            pwm1ClocksToNextSample += pwm1FifoSampleDuration();
+            audioUsed += pwm1FifoRunSample(audioNow, pwm1ClocksToNextSample);
+            pwm1ClocksToNextSample += audioUsed;
          }
+
+         audioNow += audioUsed;
       }
 
       //all samples used and its still negative, wait for next sample
