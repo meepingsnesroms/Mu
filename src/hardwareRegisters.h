@@ -79,6 +79,7 @@ extern int32_t  pwm1ClocksToNextSample;
 extern uint8_t  pwm1Fifo[];
 extern uint8_t  pwm1ReadPosition;
 extern uint8_t  pwm1WritePosition;
+extern int32_t  pwm1LastSampleDelta;
 
 //timing
 void beginClk32();

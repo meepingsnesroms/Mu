@@ -32,6 +32,7 @@ int32_t  pwm1ClocksToNextSample;
 uint8_t  pwm1Fifo[6];
 uint8_t  pwm1ReadPosition;
 uint8_t  pwm1WritePosition;
+int32_t  pwm1LastSampleDelta;
 
 
 static void checkInterrupts();
@@ -1080,6 +1081,7 @@ void resetHwRegisters(){
    memset(pwm1Fifo, 0x00, sizeof(pwm1Fifo));
    pwm1ReadPosition = 0;
    pwm1WritePosition = 0;
+   pwm1LastSampleDelta = 0;
 
    memset(chips, 0x00, sizeof(chips));
    //all chip selects are disabled at boot and CSA0 is mapped to 0x00000000 and covers the entire address range until CSA is set enabled

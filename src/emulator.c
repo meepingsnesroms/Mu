@@ -184,6 +184,7 @@ uint64_t emulatorGetStateSize(){
    size += sizeof(int32_t);//pwm1ClocksToNextSample
    size += sizeof(uint8_t) * 6;//pwm1Fifo[6]
    size += sizeof(uint8_t) * 2;//pwm1(Read/Write)
+   size += sizeof(int32_t);//pwm1LastSampleDelta
    size += sizeof(uint8_t) * 7;//palmMisc
    size += sizeof(uint32_t);//palmSdCard.command
    size += sizeof(uint8_t) * 2;//palmSdCard.response / palmSdCard.commandBitsRemaining
@@ -306,6 +307,8 @@ bool emulatorSaveState(buffer_t buffer){
    offset += sizeof(uint8_t);
    writeStateValueUint8(buffer.data + offset, pwm1WritePosition);
    offset += sizeof(uint8_t);
+   writeStateValueInt32(buffer.data + offset, pwm1LastSampleDelta);
+   offset += sizeof(int32_t);
 
    //misc
    writeStateValueBool(buffer.data + offset, palmMisc.powerButtonLed);
@@ -453,6 +456,10 @@ bool emulatorLoadState(buffer_t buffer){
    offset += sizeof(uint8_t);
    pwm1WritePosition = readStateValueUint8(buffer.data + offset);
    offset += sizeof(uint8_t);
+   blip_add_delta(palmAudioResampler, 0, -pwm1LastSampleDelta);
+   pwm1LastSampleDelta = readStateValueInt32(buffer.data + offset);
+   offset += sizeof(int32_t);
+   blip_add_delta(palmAudioResampler, 0, pwm1LastSampleDelta);
 
    //misc
    palmMisc.powerButtonLed = readStateValueBool(buffer.data + offset);
