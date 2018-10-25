@@ -63,7 +63,8 @@ typedef struct{
 
 //variables
 extern chip_t   chips[];
-extern int32_t  pllWakeWait;
+extern int8_t   pllSleepWait;
+extern int8_t   pllWakeWait;
 extern uint32_t clk32Counter;
 extern double   pctlrCpuClockDivider;
 extern double   timerCycleCounter[];

@@ -137,26 +137,19 @@ static void timer2(uint8_t reason, double sysclks){
 }
 
 static double dmaclksPerClk32(){
-   double dmaclks;
+   uint16_t pllcr = registerArrayRead16(PLLCR);
+   uint16_t pllfsr = registerArrayRead16(PLLFSR);
+   uint8_t p = pllfsr & 0x00FF;
+   uint8_t q = pllfsr >> 8 & 0x000F;
+   double dmaclks = 2.0 * (14.0 * (p + 1.0) + q + 1.0);
 
-   if(pllIsOn()){
-      uint16_t pllcr = registerArrayRead16(PLLCR);
-      uint16_t pllfsr = registerArrayRead16(PLLFSR);
-      uint8_t p = pllfsr & 0x00FF;
-      uint8_t q = pllfsr >> 8 & 0x000F;
-      dmaclks = 2.0 * (14.0 * (p + 1.0) + q + 1.0);
+   //prescaler 1 enabled, divide by 2
+   if(pllcr & 0x0080)
+      dmaclks /= 2.0;
 
-      //prescaler 1 enabled, divide by 2
-      if(pllcr & 0x0080)
-         dmaclks /= 2.0;
-
-      //prescaler 2 enabled, divides value from prescaler 1 by 2
-      if(pllcr & 0x0020)
-         dmaclks /= 2.0;
-   }
-   else{
-      dmaclks = 0.0;
-   }
+   //prescaler 2 enabled, divides value from prescaler 1 by 2
+   if(pllcr & 0x0020)
+      dmaclks /= 2.0;
 
    return dmaclks;
 }
@@ -330,6 +323,16 @@ void endClk32(){
    timer1(TIMER_REASON_CLK32, 0);
    timer2(TIMER_REASON_CLK32, 0);
    samplePwm1(true/*forClk32*/, 0.0);
+
+   //PLLCR sleep wait
+   if(pllSleepWait != -1){
+      if(pllSleepWait == 0){
+         //disable PLL and CPU
+         palmSysclksPerClk32 = 0.0;
+         debugLog("PLL disabled, CPU is off!\n");
+      }
+      pllSleepWait--;
+   }
 
    //PLLCR wake select wait
    if(pllWakeWait != -1){

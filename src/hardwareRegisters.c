@@ -16,7 +16,8 @@
 
 
 chip_t   chips[CHIP_END];
-int32_t  pllWakeWait;
+int8_t   pllSleepWait;
+int8_t   pllWakeWait;
 uint32_t clk32Counter;
 double   pctlrCpuClockDivider;
 double   timerCycleCounter[2];
@@ -47,7 +48,7 @@ static int32_t audioGetFramePercentage();
 #include "hardwareRegistersTiming.c.h"
 
 bool pllIsOn(){
-   return !(registerArrayRead16(PLLCR) & 0x0008);
+   return !(palmSysclksPerClk32 < 1.0);
 }
 
 bool backlightAmplifierState(){
@@ -120,7 +121,7 @@ void setWriteProtectViolation(uint32_t address){
 static void pllWakeCpuIfOff(){
    if(!pllIsOn() && pllWakeWait == -1){
       //PLL is off and not already in the process of waking up
-      uint8_t pllWaitTable[4] = {32, 48, 64, 96};
+      int8_t pllWaitTable[4] = {32, 48, 64, 96};
       pllWakeWait = pllWaitTable[registerArrayRead16(PLLCR) & 0x0003];
    }
 }
@@ -817,11 +818,10 @@ void setHwRegister16(uint32_t address, uint16_t value){
          palmSysclksPerClk32 = sysclksPerClk32();
          setSed1376Attached(sed1376ClockConnected());
 
-         if(value & 0x0008){
-            //The PLL shuts down 30 clock cycles of SYSCLK after the DISPLL bit is set in the PLLCR
-            m68k_modify_timeslice(-m68k_cycles_remaining() + 30);
-            debugLog("Disable PLL set, CPU off in 30 cycles!\n");
-         }
+         if(value & 0x0008)
+            pllSleepWait = 30;//The PLL shuts down 30 clocks of CLK32 after the DISPLL bit is set in the PLLCR
+         else
+            pllSleepWait = -1;//allow the CPU to cancel the shut down
          break;
 
       case ICR:
@@ -1065,6 +1065,7 @@ void resetHwRegisters(){
    palmSysclksPerClk32 = 0.0;
    clk32Counter = 0;
    pctlrCpuClockDivider = 1.0;
+   pllSleepWait = -1;
    pllWakeWait = -1;
    timerCycleCounter[0] = 0.0;
    timerCycleCounter[1] = 0.0;

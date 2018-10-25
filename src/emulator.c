@@ -144,6 +144,7 @@ void emulatorExit(){
 void emulatorReset(){
    //reset doesnt clear RAM or SD card, all programs are stored in RAM or on SD card
    debugLog("Reset triggered, PC:0x%08X\n", m68k_get_reg(NULL, M68K_REG_PPC));
+   blip_add_delta(palmAudioResampler, 0, -pwm1LastSampleDelta);
    m68328Reset();
    sed1376Reset();
    ads7846Reset();
@@ -173,7 +174,8 @@ uint64_t emulatorGetStateSize(){
    size += sizeof(uint32_t) * 4 * CHIP_END;//chip select states
    size += sizeof(uint8_t) * 5 * CHIP_END;//chip select states
    size += sizeof(uint64_t) * 4;//32.32 fixed point double, timerXCycleCounter and CPU cycle timers
-   size += sizeof(int32_t);//pllWakeWait
+   size += sizeof(int8_t);//pllSleepWait
+   size += sizeof(int8_t);//pllWakeWait
    size += sizeof(uint32_t);//clk32Counter
    size += sizeof(uint64_t);//pctlrCpuClockDivider
    size += sizeof(uint16_t) * 2;//timerStatusReadAcknowledge
@@ -261,8 +263,10 @@ bool emulatorSaveState(buffer_t buffer){
    offset += sizeof(uint64_t);
    writeStateValueDouble(buffer.data + offset, palmCycleCounter);
    offset += sizeof(uint64_t);
-   writeStateValueInt32(buffer.data + offset, pllWakeWait);
-   offset += sizeof(int32_t);
+   writeStateValueInt8(buffer.data + offset, pllSleepWait);
+   offset += sizeof(int8_t);
+   writeStateValueInt8(buffer.data + offset, pllWakeWait);
+   offset += sizeof(int8_t);
    writeStateValueUint32(buffer.data + offset, clk32Counter);
    offset += sizeof(uint32_t);
    writeStateValueDouble(buffer.data + offset, pctlrCpuClockDivider);
@@ -410,8 +414,10 @@ bool emulatorLoadState(buffer_t buffer){
    offset += sizeof(uint64_t);
    palmCycleCounter = readStateValueDouble(buffer.data + offset);
    offset += sizeof(uint64_t);
-   pllWakeWait = readStateValueInt32(buffer.data + offset);
-   offset += sizeof(int32_t);
+   pllSleepWait = readStateValueInt8(buffer.data + offset);
+   offset += sizeof(int8_t);
+   pllWakeWait = readStateValueInt8(buffer.data + offset);
+   offset += sizeof(int8_t);
    clk32Counter = readStateValueUint32(buffer.data + offset);
    offset += sizeof(uint32_t);
    pctlrCpuClockDivider = readStateValueDouble(buffer.data + offset);

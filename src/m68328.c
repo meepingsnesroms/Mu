@@ -185,10 +185,6 @@ void m68328Execute(){
          m68k_execute(cpuCycles);
       addSysclks(sysclks);
 
-      //abort if PLL disabled
-      if(palmSysclksPerClk32 < 1.0)
-         break;
-
       cyclesRemaining -= sysclks;
    }
 
