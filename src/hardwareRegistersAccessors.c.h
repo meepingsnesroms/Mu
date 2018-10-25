@@ -86,12 +86,10 @@ int32_t pwm1FifoRunSample(int32_t now, int32_t clockOffset){
    uint8_t clockDivider = 2 << (pwmc1 & 0x03);
    uint8_t repeat = 1 << (pwmc1 >> 2 & 0x03);
    int32_t audioStart = now + clockOffset;
-   //int32_t audioNow = audioStart;
    int32_t audioSampleDuration = usingClk32 ? audioGetFramePercentIncrementFromClk32s(period * prescaler * clockDivider * repeat) : audioGetFramePercentIncrementFromSysclks(period * prescaler * clockDivider * repeat);
    int32_t audioDeew = dMin((double)sample / period, 1.0)/*dutyCycle*/ * AUDIO_AMPLITUDE;
 
    blip_add_delta(palmAudioResampler, audioStart, audioDeew - pwm1LastSampleDelta);
-   //audioNow += audioSampleDuration;
    pwm1LastSampleDelta = audioDeew;
 
    //remove used entry

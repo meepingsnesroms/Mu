@@ -24,6 +24,7 @@ RxOverflow on SPI1, don't know if back or front of FIFO is overwritten on overfl
 ICR POL(1,2,3,6) may flip the pin value as well as the interrupt, POL5 does not flip the INT5 pin though, this was confirmed with a hardware test(it doesnt seem to but there is instability on the pin when the SD card is plugged in, this may have to do with card detect also being a data line on the SD pinout)
 edge triggered INT* don't clear on write to ISR when masked in IMR(at least that seems to be the reason)
 if a sound interrupt is triggered while the button interrupt is disabled the button interrupt will still trigger(in galax game)
+PWM1 output value is not a direct range cast of 0<->255 to 0<->32767, its additive, see properPwmSineWave.png
 
 Debug tools:
 ADS7846 channels can't be read in single reference mode in hwTestSuite
