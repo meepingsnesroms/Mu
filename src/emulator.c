@@ -556,7 +556,7 @@ void emulateFrame(){
    blip_end_frame(palmAudioResampler, AUDIO_END_OF_FRAME);
    //printf("There are %d audio samples available\n", blip_samples_avail(palmAudioResampler));
    blip_read_samples(palmAudioResampler, palmAudio, AUDIO_SAMPLES_PER_FRAME, true);
-   for(uint32_t samples = 0; samples < AUDIO_SAMPLES_PER_FRAME * 2; samples += 2)
+   MULTITHREAD_LOOP for(uint32_t samples = 0; samples < AUDIO_SAMPLES_PER_FRAME * 2; samples += 2)
       palmAudio[samples + 1] = palmAudio[samples];
 
    //video

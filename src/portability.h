@@ -18,6 +18,11 @@ static inline uint64_t uMax(uint64_t x, uint64_t y){
    return x > y ? x : y;
 }
 
+static inline uint64_t uClamp(uint64_t x, uint64_t y, uint64_t z){
+   //x must always be less than z!
+   return (y < x ? x : y) > z ? z : y;
+}
+
 static inline int64_t sMin(int64_t x, int64_t y){
    return x < y ? x : y;
 }
@@ -26,12 +31,22 @@ static inline int64_t sMax(int64_t x, int64_t y){
    return x > y ? x : y;
 }
 
+static inline int64_t sClamp(int64_t x, int64_t y, int64_t z){
+   //x must always be less than z!
+   return (y < x ? x : y) > z ? z : y;
+}
+
 static inline double dMin(double x, double y){
    return x < y ? x : y;
 }
 
 static inline double dMax(double x, double y){
    return x > y ? x : y;
+}
+
+static inline double dClamp(double x, double y, double z){
+   //x must always be less than z!
+   return (y < x ? x : y) > z ? z : y;
 }
 
 
