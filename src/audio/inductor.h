@@ -3,8 +3,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-extern int32_t inductorCurrentCharge;
-extern int32_t inductorLastAudioSample;
+extern double inductorCurrentCharge;
+extern double inductorChargeAtLastSample;
 
 void inductorReset();
 

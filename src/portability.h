@@ -18,9 +18,9 @@ static inline uint64_t uMax(uint64_t x, uint64_t y){
    return x > y ? x : y;
 }
 
-static inline uint64_t uClamp(uint64_t x, uint64_t y, uint64_t z){
+static inline uint64_t uClamp(uint64_t low, uint64_t value, uint64_t high){
    //x must always be less than z!
-   return (y < x ? x : y) > z ? z : y;
+   return uMax(low, uMin(value, high));
 }
 
 static inline int64_t sMin(int64_t x, int64_t y){
@@ -31,9 +31,9 @@ static inline int64_t sMax(int64_t x, int64_t y){
    return x > y ? x : y;
 }
 
-static inline int64_t sClamp(int64_t x, int64_t y, int64_t z){
+static inline int64_t sClamp(int64_t low, int64_t value, int64_t high){
    //x must always be less than z!
-   return (y < x ? x : y) > z ? z : y;
+   return sMax(low, sMin(value, high));
 }
 
 static inline double dMin(double x, double y){
@@ -44,9 +44,9 @@ static inline double dMax(double x, double y){
    return x > y ? x : y;
 }
 
-static inline double dClamp(double x, double y, double z){
+static inline double dClamp(double low, double value, double high){
    //x must always be less than z!
-   return (y < x ? x : y) > z ? z : y;
+   return dMax(low, dMin(value, high));
 }
 
 
@@ -61,7 +61,7 @@ static inline uint64_t getUint64FromDouble(double data){
 
    fixedPointDouble |= (uint64_t)data << 31;
    data -= (uint64_t)data;
-   data *= 1000000000.0;
+   data *= (double)0x7FFFFFFF;
    fixedPointDouble |= (uint64_t)data;
    
    return fixedPointDouble;
@@ -72,7 +72,7 @@ static inline double getDoubleFromUint64(uint64_t data){
    double floatingPointDouble;
 
    floatingPointDouble = (double)(data & 0x000000007FFFFFFF);
-   floatingPointDouble /= 1000000000.0;
+   floatingPointDouble /= (double)0x7FFFFFFF;
    floatingPointDouble += (double)(data >> 31 & 0xFFFFFFFF);
    if(data & 0x8000000000000000)
       floatingPointDouble = -floatingPointDouble;
