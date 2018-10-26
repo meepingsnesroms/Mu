@@ -84,7 +84,8 @@ SOURCES += \
     src/pdiUsbD12.c \
     src/sdCard.c \
     src/sed1376.c \
-    src/silkscreen.c
+    src/silkscreen.c \
+    src/audio/inductor.c
 
 HEADERS += \
     src/audio/blip_buf.h \
@@ -117,7 +118,8 @@ HEADERS += \
     emuwrapper.h \
     mainwindow.h \
     statemanager.h \
-    touchscreen.h
+    touchscreen.h \
+    src/audio/inductor.h
 
 FORMS += \
     mainwindow.ui \

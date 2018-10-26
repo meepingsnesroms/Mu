@@ -85,12 +85,18 @@ int32_t pwm1FifoRunSample(int32_t now, int32_t clockOffset){
    uint8_t prescaler = (pwmc1 >> 8 & 0x7F) + 1;
    uint8_t clockDivider = 2 << (pwmc1 & 0x03);
    uint8_t repeat = 1 << (pwmc1 >> 2 & 0x03);
-   int32_t audioStart = now + clockOffset;
-   int32_t audioSampleDuration = usingClk32 ? audioGetFramePercentIncrementFromClk32s(period * prescaler * clockDivider * repeat) : audioGetFramePercentIncrementFromSysclks(period * prescaler * clockDivider * repeat);
-   int32_t audioDeew = dMin((double)sample / period, 1.0)/*dutyCycle*/ * AUDIO_AMPLITUDE;
+   int32_t audioNow = now + clockOffset;
+   int32_t audioSampleDuration = usingClk32 ? audioGetFramePercentIncrementFromClk32s(period * prescaler * clockDivider) : audioGetFramePercentIncrementFromSysclks(period * prescaler * clockDivider);
+   int32_t audioDutyCycle = dMin((double)sample / period, 1.0)/*dutyCycle*/ * audioSampleDuration;
 
-   blip_add_delta(palmAudioResampler, audioStart, audioDeew - pwm1LastSampleDelta);
-   pwm1LastSampleDelta = audioDeew;
+   //relay all the samples to the inductor
+   for(uint8_t index = 0; index < repeat; index++){
+      inductorAddClocks(audioDutyCycle, true);
+      inductorSampleAudio(audioNow + audioDutyCycle);
+      inductorAddClocks(audioSampleDuration - audioDutyCycle, false);
+      inductorSampleAudio(audioNow + audioSampleDuration);
+      audioNow += audioSampleDuration;
+   }
 
    //remove used entry
    if(pwm1FifoEntrys() > 0)
@@ -106,12 +112,7 @@ int32_t pwm1FifoRunSample(int32_t now, int32_t clockOffset){
       registerArrayWrite16(PWMC1, pwmc1 | 0x0080);//set IRQ bit
    }
 
-   return audioSampleDuration;
-}
-
-static inline void pwm1FifoFinished(int32_t now){
-   blip_add_delta(palmAudioResampler, now, -pwm1LastSampleDelta);
-   pwm1LastSampleDelta = 0;
+   return audioSampleDuration * repeat;
 }
 
 static inline void pwm1FifoWrite(uint8_t value){
@@ -619,18 +620,23 @@ static inline uint8_t getPortMValue(){
 static inline void samplePwm1(bool forClk32, double sysclks){
    //clear PWM1 FIFO values if enough time has passed
    uint16_t pwmc1 = registerArrayRead16(PWMC1);
+   int32_t audioClocks;
 
    //check if enabled and validate clock mode
    if(!(pwmc1 & 0x0010) || forClk32 != (bool)(pwmc1 & 0x8000))
       return;
 
+   //this calculation is fairly heavy, only do it after we know the clock mode is valid
+   audioClocks = forClk32 ? audioGetFramePercentIncrementFromClk32s(1) : audioGetFramePercentIncrementFromSysclks(sysclks);
+
    //add cycles
    if(pwm1ClocksToNextSample != AUDIO_WAIT_FOR_SAMPLE)
-      pwm1ClocksToNextSample -= forClk32 ? audioGetFramePercentIncrementFromClk32s(1) : audioGetFramePercentIncrementFromSysclks(sysclks);
+      pwm1ClocksToNextSample -= audioClocks;
 
    //use samples
    if(pwm1ClocksToNextSample <= 0){
       int32_t audioNow = audioGetFramePercentage();
+      int32_t audioClocksLeft = audioClocks;
 
       while(pwm1FifoEntrys() > 0 && pwm1ClocksToNextSample <= 0){
          int32_t audioUsed;
@@ -648,12 +654,17 @@ static inline void samplePwm1(bool forClk32, double sysclks){
          }
 
          audioNow += audioUsed;
+         audioClocksLeft -= audioUsed;//goes negative when extra clocks are used
       }
 
       //all samples used and its still negative, wait for next sample
-      if(pwm1ClocksToNextSample != AUDIO_WAIT_FOR_SAMPLE && pwm1ClocksToNextSample <= 0){
-         pwm1FifoFinished(audioNow);
+      if(pwm1ClocksToNextSample <= 0)
          pwm1ClocksToNextSample = AUDIO_WAIT_FOR_SAMPLE;
+
+      //add 0 cycles to inductor when theres no samples
+      if(audioClocksLeft > 0){
+         inductorAddClocks(audioClocksLeft, false);
+         inductorSampleAudio(audioNow + audioClocksLeft);
       }
    }
 }

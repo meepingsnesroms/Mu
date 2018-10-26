@@ -25,6 +25,7 @@ ICR POL(1,2,3,6) may flip the pin value as well as the interrupt, POL5 does not 
 edge triggered INT* don't clear on write to ISR when masked in IMR(at least that seems to be the reason)
 if a sound interrupt is triggered while the button interrupt is disabled the button interrupt will still trigger(in galax game)
 PWM1 output value is not a direct range cast of 0<->255 to 0<->32767, its additive, see properPwmSineWave.png
+inductor dosent properly drain when PWM1 gets disabled
 
 Debug tools:
 ADS7846 channels can't be read in single reference mode in hwTestSuite

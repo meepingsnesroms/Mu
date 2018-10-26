@@ -5,6 +5,7 @@
 
 #include "m68k/m68k.h"
 #include "audio/blip_buf.h"
+#include "audio/inductor.h"
 #include "m68328.h"
 #include "emulator.h"
 #include "hardwareRegisters.h"
@@ -107,6 +108,7 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t spec
    sed1376Reset();
    ads7846Reset();
    pdiUsbD12Reset();
+   inductorReset();
    sandboxInit();
 
    memset(&palmInput, 0x00, sizeof(palmInput));
@@ -144,11 +146,11 @@ void emulatorExit(){
 void emulatorReset(){
    //reset doesnt clear RAM or SD card, all programs are stored in RAM or on SD card
    debugLog("Reset triggered, PC:0x%08X\n", m68k_get_reg(NULL, M68K_REG_PPC));
-   blip_add_delta(palmAudioResampler, 0, -pwm1LastSampleDelta);
    m68328Reset();
    sed1376Reset();
    ads7846Reset();
    pdiUsbD12Reset();
+   inductorReset();
 }
 
 void emulatorSetRtc(uint16_t days, uint8_t hours, uint8_t minutes, uint8_t seconds){
@@ -186,7 +188,7 @@ uint64_t emulatorGetStateSize(){
    size += sizeof(int32_t);//pwm1ClocksToNextSample
    size += sizeof(uint8_t) * 6;//pwm1Fifo[6]
    size += sizeof(uint8_t) * 2;//pwm1(Read/Write)
-   size += sizeof(int32_t);//pwm1LastSampleDelta
+   size += sizeof(int32_t) * 2;//inductorCurrentCharge / inductorLastAudioSample
    size += sizeof(uint8_t) * 7;//palmMisc
    size += sizeof(uint32_t);//palmSdCard.command
    size += sizeof(uint8_t) * 2;//palmSdCard.response / palmSdCard.commandBitsRemaining
@@ -311,7 +313,9 @@ bool emulatorSaveState(buffer_t buffer){
    offset += sizeof(uint8_t);
    writeStateValueUint8(buffer.data + offset, pwm1WritePosition);
    offset += sizeof(uint8_t);
-   writeStateValueInt32(buffer.data + offset, pwm1LastSampleDelta);
+   writeStateValueInt32(buffer.data + offset, inductorCurrentCharge);
+   offset += sizeof(int32_t);
+   writeStateValueInt32(buffer.data + offset, inductorLastAudioSample);
    offset += sizeof(int32_t);
 
    //misc
@@ -462,10 +466,10 @@ bool emulatorLoadState(buffer_t buffer){
    offset += sizeof(uint8_t);
    pwm1WritePosition = readStateValueUint8(buffer.data + offset);
    offset += sizeof(uint8_t);
-   blip_add_delta(palmAudioResampler, 0, -pwm1LastSampleDelta);
-   pwm1LastSampleDelta = readStateValueInt32(buffer.data + offset);
+   inductorCurrentCharge = readStateValueInt32(buffer.data + offset);
    offset += sizeof(int32_t);
-   blip_add_delta(palmAudioResampler, 0, pwm1LastSampleDelta);
+   inductorLastAudioSample = readStateValueInt32(buffer.data + offset);
+   offset += sizeof(int32_t);
 
    //misc
    palmMisc.powerButtonLed = readStateValueBool(buffer.data + offset);
