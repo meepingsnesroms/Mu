@@ -429,10 +429,15 @@ uint8_t getHwRegister8(uint32_t address){
       case PMDATA:
          return getPortMValue();
 
+      case PWMCNT1:
+         debugLog("PWMCNT1 not implimented\n");
+         break;
+
       //basic non GPIO functions
       case SCR:
       case LCKCON:
       case IVR:
+      case PWMP1:
 
       //port d special functions
       case PDPOL:

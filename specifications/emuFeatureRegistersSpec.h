@@ -22,6 +22,7 @@ These registers will do nothing it there corresponding feature bit is not set on
 #define FEATURE_EXT_KEYS   0x00000080/*enables the OS 5 buttons, left, right and select*/
 #define FEATURE_DEBUG      0x00000100/*enables the debug commands, used to call Palm OS functions like native C functions*/
 #define FEATURE_INVALID    0x00000200/*if this bit is set the returned data is invalid*/
+#define FEATURE_SHELL      0x00000400/*allows executing code on the host machine, is a huge securty hole and is compiled out in releases*/
 /*new features go here*/
 
 /*registers*/
@@ -49,6 +50,7 @@ These registers will do nothing it there corresponding feature bit is not set on
 /*new HLE API cmds go here*/
 
 /*new system cmds go here*/
+#define CMD_SHELL_EXECUTE  0xFFF9/*execute shell commands from inside the emulator, will be used for a cool web project*/
 #define CMD_SOUND          0xFFFA/*may be needed to work around the overhead of emulating SYSCLK, will be needed fo OS5 advanced sound*/
 #define CMD_EXECUTION_DONE 0xFFFB/*terminates execution, used when a function is called from outside the emulator*/
 #define CMD_IDLE_X_CLK32   0xFFFC/*used to remove idle loops*/
