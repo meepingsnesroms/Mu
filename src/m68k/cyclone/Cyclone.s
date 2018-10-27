@@ -144,6 +144,7 @@ CycloneResetJT:
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call (r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   str r0,[r7,#0x3c] ;@ Stack pointer
   mov r0,#0
   str r0,[r7,#0x60] ;@ Membase
@@ -153,6 +154,7 @@ CycloneResetJT:
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call (r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov lr,pc
   ldr pc,[r7,#0x64] ;@ Call checkpc()
   str r0,[r7,#0x40] ;@ PC + base
@@ -315,6 +317,7 @@ CycloneDoInterrupt:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 ;@ Push old SR:
   ldr r0,[r7,#0x4c]   ;@ X bit
   mov r1,r10,lsr #28  ;@ ____NZCV
@@ -328,6 +331,7 @@ CycloneDoInterrupt:
   str r0,[r7,#0x3c] ;@ Save A7
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r11,r8,lsr #29
   mov r0,r11
@@ -349,6 +353,7 @@ CycloneDoInterrupt:
 ;@ Read IRQ Vector:
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   tst r0,r0 ;@ uninitialized int vector?
   moveq r0,#0x3c
   moveq lr,pc
@@ -395,6 +400,7 @@ Exception:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 ;@ Push old SR:
   ldr r0,[r7,#0x4c]   ;@ X bit
   mov r1,r10,lsr #28  ;@ ____NZCV
@@ -409,12 +415,14 @@ Exception:
   str r0,[r7,#0x3c] ;@ Save A7
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Read Exception Vector:
   mov r0,r8,lsr #24
   mov r0,r0,lsl #2
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   ldr r3,[r7,#0x60] ;@ Get Memory base
   add lr,pc,#4
   add r0,r0,r3 ;@ r0 = Memory Base + New PC
@@ -494,6 +502,7 @@ ExceptionAddressError:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 ;@ Push old SR:
   ldr r0,[r7,#0x4c]   ;@ X bit
   mov r1,r10,ror #28  ;@ ____NZCV
@@ -508,6 +517,7 @@ ExceptionAddressError:
   str r0,[r7,#0x3c] ;@ Save A7
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 ;@ Push IR:
   ldr r0,[r7,#0x3c] ;@ A7
   mov r1,r8
@@ -515,6 +525,7 @@ ExceptionAddressError:
   str r0,[r7,#0x3c] ;@ Save A7
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 ;@ Push address:
   ldr r0,[r7,#0x3c] ;@ A7
   mov r1,r11
@@ -522,6 +533,7 @@ ExceptionAddressError:
   str r0,[r7,#0x3c] ;@ Save A7
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 ;@ Push info word:
   ldr r0,[r7,#0x3c] ;@ A7
   mov r1,r6
@@ -529,11 +541,13 @@ ExceptionAddressError:
   str r0,[r7,#0x3c] ;@ Save A7
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Read Exception Vector:
   mov r0,#0x0c
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   ldr r3,[r7,#0x60] ;@ Get Memory base
   add lr,pc,#4
   add r0,r0,r3 ;@ r0 = Memory Base + New PC
@@ -711,8 +725,10 @@ Op4a38:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r0,r0,asl #24
 
   and r10,r0,#0x80000000 ;@ r10=N_flag
@@ -759,11 +775,13 @@ Op4a79:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r0,r0,asl #16
 
   and r10,r0,#0x80000000 ;@ r10=N_flag
@@ -806,11 +824,13 @@ Op2038:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -832,11 +852,13 @@ Opb0b8:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -884,11 +906,13 @@ Op30c0:
   add r3,r0,#2 ;@ Post-increment An
   str r3,[r7,r2,lsr #7]
 ;@ EaWrite: Write r1 into '(a0)+' (address in r0):
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#8 ;@ Subtract cycles
@@ -903,11 +927,13 @@ Op3028:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -958,11 +984,13 @@ Op0c79:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -981,11 +1009,13 @@ Op4e75:
   ldr r0,[r7,#0x3c]
   add r1,r0,#4 ;@ Postincrement A7
   str r1,[r7,#0x3c] ;@ Save A7
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call (r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   ldr r1,[r7,#0x60] ;@ Get Memory base
   add r0,r0,r1 ;@ Memory Base+PC
 
@@ -1048,8 +1078,10 @@ Op0839:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -1106,8 +1138,10 @@ Op0838:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -1124,8 +1158,10 @@ Op4a39:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r0,r0,asl #24
 
   and r10,r0,#0x80000000 ;@ r10=N_flag
@@ -1144,11 +1180,13 @@ Op33d8:
   add r3,r0,#2 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -1160,11 +1198,13 @@ Op33d8:
   orr r0,r0,r2,lsl #16
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
   mov r1,r1,lsr #16
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -1205,8 +1245,10 @@ Opb038:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -1233,11 +1275,13 @@ Op3039:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -1286,11 +1330,13 @@ Op6102:
 ;@ Push r1 onto stack
   sub r0,r2,#4 ;@ Predecrement A7
   str r0,[r7,#0x3c] ;@ Save A7
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   add r4,r4,r11,asr #24 ;@ r4 = New PC
 
@@ -1312,11 +1358,13 @@ Op6100:
 ;@ Push r1 onto stack
   sub r0,r2,#4 ;@ Predecrement A7
   str r0,[r7,#0x3c] ;@ Save A7
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   add r0,r4,r11 ;@ New PC
 ;@ Check Memory Base+pc
@@ -1364,8 +1412,10 @@ Op1039:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -1400,11 +1450,13 @@ Op20c0:
   add r3,r0,#4 ;@ Post-increment An
   str r3,[r7,r2,lsr #7]
 ;@ EaWrite: Write r1 into '(a0)+' (address in r0):
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -1419,8 +1471,10 @@ Op1018:
   add r3,r0,#1 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -1444,11 +1498,13 @@ Op30d0:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -1466,6 +1522,7 @@ Op30d0:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -1488,11 +1545,13 @@ Op3080:
   and r2,r8,#0x1e00
   ldr r0,[r7,r2,lsr #7]
 ;@ EaWrite: Write r1 into '(a0)' (address in r0):
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#8 ;@ Subtract cycles
@@ -1507,11 +1566,13 @@ Op3018:
   add r3,r0,#2 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -1586,11 +1647,13 @@ Op3180:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -1605,8 +1668,10 @@ Op1198:
   add r3,r0,#1 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -1629,8 +1694,10 @@ Op1198:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
   mov r1,r1,lsr #24
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -1738,8 +1805,10 @@ Op4a28:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r0,r0,asl #24
 
   and r10,r0,#0x80000000 ;@ r10=N_flag
@@ -1768,8 +1837,10 @@ Op0828:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -1823,8 +1894,10 @@ Op10c0:
   add r3,r0,#1 ;@ Post-increment An
   str r3,[r7,r2,lsr #7]
 ;@ EaWrite: Write r1 into '(a0)+' (address in r0):
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#8 ;@ Subtract cycles
@@ -1839,8 +1912,10 @@ Op10d8:
   add r3,r0,#1 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -1855,6 +1930,7 @@ Op10d8:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -1898,9 +1974,11 @@ Op0010:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -1913,6 +1991,7 @@ Op0010:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -1931,9 +2010,11 @@ Op0018:
   add r3,r11,#1 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -1946,6 +2027,7 @@ Op0018:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -1963,9 +2045,11 @@ Op001f:
   add r3,r11,#2 ;@ Post-increment An
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '(a7)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -1978,6 +2062,7 @@ Op001f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -1997,9 +2082,11 @@ Op0020:
   sub r11,r11,#1 ;@ Pre-decrement An
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -2012,6 +2099,7 @@ Op0020:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -2029,9 +2117,11 @@ Op0027:
   sub r11,r11,#2 ;@ Pre-decrement An
   str r11,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '-(a7)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -2044,6 +2134,7 @@ Op0027:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -2062,9 +2153,11 @@ Op0028:
   ldr r2,[r7,r2,lsl #2]
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -2077,6 +2170,7 @@ Op0028:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -2104,9 +2198,11 @@ Op0030:
   ldr r2,[r7,r2,lsl #2]
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -2119,6 +2215,7 @@ Op0030:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -2134,9 +2231,11 @@ Op0038:
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -2149,6 +2248,7 @@ Op0038:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -2166,9 +2266,11 @@ Op0039:
   ldrh r0,[r4],#2
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -2181,6 +2283,7 @@ Op0039:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -2244,6 +2347,7 @@ Op0050:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -2251,6 +2355,7 @@ Op0050:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -2263,6 +2368,7 @@ Op0050:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -2281,6 +2387,7 @@ Op0058:
   add r3,r11,#2 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -2288,6 +2395,7 @@ Op0058:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -2300,6 +2408,7 @@ Op0058:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -2319,6 +2428,7 @@ Op0060:
   sub r11,r11,#2 ;@ Pre-decrement An
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -2326,6 +2436,7 @@ Op0060:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -2338,6 +2449,7 @@ Op0060:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -2356,6 +2468,7 @@ Op0068:
   ldr r2,[r7,r2,lsl #2]
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -2363,6 +2476,7 @@ Op0068:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -2375,6 +2489,7 @@ Op0068:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -2402,6 +2517,7 @@ Op0070:
   ldr r2,[r7,r2,lsl #2]
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -2409,6 +2525,7 @@ Op0070:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -2421,6 +2538,7 @@ Op0070:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -2436,6 +2554,7 @@ Op0078:
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -2443,6 +2562,7 @@ Op0078:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -2455,6 +2575,7 @@ Op0078:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -2472,6 +2593,7 @@ Op0079:
   ldrh r0,[r4],#2
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -2479,6 +2601,7 @@ Op0079:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -2491,6 +2614,7 @@ Op0079:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -2567,6 +2691,7 @@ Op0090:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -2574,6 +2699,7 @@ Op0090:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   orrs r1,r10,r0
@@ -2584,6 +2710,7 @@ Op0090:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -2604,6 +2731,7 @@ Op0098:
   add r3,r11,#4 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -2611,6 +2739,7 @@ Op0098:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   orrs r1,r10,r0
@@ -2621,6 +2750,7 @@ Op0098:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -2642,6 +2772,7 @@ Op00a0:
   sub r11,r11,#4 ;@ Pre-decrement An
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -2649,6 +2780,7 @@ Op00a0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   orrs r1,r10,r0
@@ -2659,6 +2791,7 @@ Op00a0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#30 ;@ Subtract cycles
@@ -2679,6 +2812,7 @@ Op00a8:
   ldr r2,[r7,r2,lsl #2]
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -2686,6 +2820,7 @@ Op00a8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   orrs r1,r10,r0
@@ -2696,6 +2831,7 @@ Op00a8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#32 ;@ Subtract cycles
@@ -2725,6 +2861,7 @@ Op00b0:
   ldr r2,[r7,r2,lsl #2]
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -2732,6 +2869,7 @@ Op00b0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   orrs r1,r10,r0
@@ -2742,6 +2880,7 @@ Op00b0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#34 ;@ Subtract cycles
@@ -2759,6 +2898,7 @@ Op00b8:
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -2766,6 +2906,7 @@ Op00b8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   orrs r1,r10,r0
@@ -2776,6 +2917,7 @@ Op00b8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#32 ;@ Subtract cycles
@@ -2795,6 +2937,7 @@ Op00b9:
   ldrh r0,[r4],#2
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -2802,6 +2945,7 @@ Op00b9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   orrs r1,r10,r0
@@ -2812,6 +2956,7 @@ Op00b9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#36 ;@ Subtract cycles
@@ -2850,15 +2995,18 @@ Op0108:
   ldr r2,[r7,r2,lsl #2]
   add r6,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r6) into r11:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r11,r0,asl #24
 
   add r0,r6,#2
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r1:
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r1,r0,asl #24
 
   orr r1,r11,r1,lsr #8 ;@ second byte
@@ -2887,8 +3035,10 @@ Op0110:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -2915,8 +3065,10 @@ Op0118:
   add r3,r0,#1 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -2942,8 +3094,10 @@ Op011f:
   add r3,r0,#2 ;@ Post-increment An
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '(a7)+' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -2971,8 +3125,10 @@ Op0120:
   sub r0,r0,#1 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -2998,8 +3154,10 @@ Op0127:
   sub r0,r0,#2 ;@ Pre-decrement An
   str r0,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '-(a7)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -3026,8 +3184,10 @@ Op0128:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -3063,8 +3223,10 @@ Op0130:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -3088,8 +3250,10 @@ Op0138:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -3115,8 +3279,10 @@ Op0139:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -3143,8 +3309,10 @@ Op013a:
   ldrsh r2,[r4],#2 ;@ Fetch extension
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x80] ;@ Call fetch8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -3179,8 +3347,10 @@ Op013b:
   add r2,r2,r3,asr #24 ;@ r2=Disp+Rn
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x80] ;@ Call fetch8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -3254,15 +3424,18 @@ Op0148:
   ldr r2,[r7,r2,lsl #2]
   add r6,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r6) into r11:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r11,r0,asl #24
 
   add r0,r6,#2
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r1:
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r1,r0,asl #24
 
   orr r11,r11,r1,lsr #8 ;@ second byte
@@ -3270,6 +3443,7 @@ Op0148:
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r1:
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r1,r0,asl #24
 
   orr r11,r11,r1,lsr #16 ;@ third byte
@@ -3277,6 +3451,7 @@ Op0148:
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r1:
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r1,r0,asl #24
 
   orr r1,r11,r1,lsr #24 ;@ fourth byte
@@ -3303,9 +3478,11 @@ Op0150:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r8,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r8) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -3321,6 +3498,7 @@ Op0150:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -3340,9 +3518,11 @@ Op0158:
   add r3,r8,#1 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r8) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -3358,6 +3538,7 @@ Op0158:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -3376,9 +3557,11 @@ Op015f:
   add r3,r8,#2 ;@ Post-increment An
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '(a7)+' (address in r8) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -3394,6 +3577,7 @@ Op015f:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -3414,9 +3598,11 @@ Op0160:
   sub r8,r8,#1 ;@ Pre-decrement An
   str r8,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r8) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -3432,6 +3618,7 @@ Op0160:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -3450,9 +3637,11 @@ Op0167:
   sub r8,r8,#2 ;@ Pre-decrement An
   str r8,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '-(a7)' (address in r8) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -3468,6 +3657,7 @@ Op0167:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -3487,9 +3677,11 @@ Op0168:
   ldr r2,[r7,r2,lsl #2]
   add r8,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r8) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -3505,6 +3697,7 @@ Op0168:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -3533,9 +3726,11 @@ Op0170:
   ldr r2,[r7,r2,lsl #2]
   add r8,r2,r3 ;@ r8=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r8) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -3551,6 +3746,7 @@ Op0170:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -3567,9 +3763,11 @@ Op0178:
 ;@ EaCalc : Get '$3333.w' into r8:
   ldrsh r8,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r8) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -3585,6 +3783,7 @@ Op0178:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -3603,9 +3802,11 @@ Op0179:
   ldrh r0,[r4],#2
   orr r8,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r8) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -3621,6 +3822,7 @@ Op0179:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -3672,8 +3874,10 @@ Op0188:
   mov r1,r11,lsr #8 ;@ first or third byte
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   add r0,r8,#2
   and r1,r11,#0xff
@@ -3681,6 +3885,7 @@ Op0188:
   and r1,r1,#0xff
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -3699,9 +3904,11 @@ Op0190:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r8,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r8) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -3717,6 +3924,7 @@ Op0190:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -3736,9 +3944,11 @@ Op0198:
   add r3,r8,#1 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r8) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -3754,6 +3964,7 @@ Op0198:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -3772,9 +3983,11 @@ Op019f:
   add r3,r8,#2 ;@ Post-increment An
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '(a7)+' (address in r8) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -3790,6 +4003,7 @@ Op019f:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -3810,9 +4024,11 @@ Op01a0:
   sub r8,r8,#1 ;@ Pre-decrement An
   str r8,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r8) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -3828,6 +4044,7 @@ Op01a0:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -3846,9 +4063,11 @@ Op01a7:
   sub r8,r8,#2 ;@ Pre-decrement An
   str r8,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '-(a7)' (address in r8) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -3864,6 +4083,7 @@ Op01a7:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -3883,9 +4103,11 @@ Op01a8:
   ldr r2,[r7,r2,lsl #2]
   add r8,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r8) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -3901,6 +4123,7 @@ Op01a8:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -3929,9 +4152,11 @@ Op01b0:
   ldr r2,[r7,r2,lsl #2]
   add r8,r2,r3 ;@ r8=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r8) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -3947,6 +4172,7 @@ Op01b0:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -3963,9 +4189,11 @@ Op01b8:
 ;@ EaCalc : Get '$3333.w' into r8:
   ldrsh r8,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r8) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -3981,6 +4209,7 @@ Op01b8:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -3999,9 +4228,11 @@ Op01b9:
   ldrh r0,[r4],#2
   orr r8,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r8) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -4017,6 +4248,7 @@ Op01b9:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -4067,9 +4299,11 @@ Op01c8:
   mov r1,r11,lsr #24 ;@ first byte
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r8):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   add r0,r8,#2
   mov r1,r11,lsr #16 ;@ second byte
@@ -4077,6 +4311,7 @@ Op01c8:
   and r1,r1,#0xff
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   add r0,r8,#4
   mov r1,r11,lsr #8 ;@ first or third byte
@@ -4084,6 +4319,7 @@ Op01c8:
   and r1,r1,#0xff
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   add r0,r8,#6
   and r1,r11,#0xff
@@ -4091,6 +4327,7 @@ Op01c8:
   and r1,r1,#0xff
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -4109,9 +4346,11 @@ Op01d0:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r8,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r8) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -4127,6 +4366,7 @@ Op01d0:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -4146,9 +4386,11 @@ Op01d8:
   add r3,r8,#1 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r8) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -4164,6 +4406,7 @@ Op01d8:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -4182,9 +4425,11 @@ Op01df:
   add r3,r8,#2 ;@ Post-increment An
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '(a7)+' (address in r8) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -4200,6 +4445,7 @@ Op01df:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -4220,9 +4466,11 @@ Op01e0:
   sub r8,r8,#1 ;@ Pre-decrement An
   str r8,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r8) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -4238,6 +4486,7 @@ Op01e0:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -4256,9 +4505,11 @@ Op01e7:
   sub r8,r8,#2 ;@ Pre-decrement An
   str r8,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '-(a7)' (address in r8) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -4274,6 +4525,7 @@ Op01e7:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -4293,9 +4545,11 @@ Op01e8:
   ldr r2,[r7,r2,lsl #2]
   add r8,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r8) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -4311,6 +4565,7 @@ Op01e8:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -4339,9 +4594,11 @@ Op01f0:
   ldr r2,[r7,r2,lsl #2]
   add r8,r2,r3 ;@ r8=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r8) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -4357,6 +4614,7 @@ Op01f0:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -4373,9 +4631,11 @@ Op01f8:
 ;@ EaCalc : Get '$3333.w' into r8:
   ldrsh r8,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r8) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -4391,6 +4651,7 @@ Op01f8:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -4409,9 +4670,11 @@ Op01f9:
   ldrh r0,[r4],#2
   orr r8,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r8) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -4427,6 +4690,7 @@ Op01f9:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -4470,9 +4734,11 @@ Op0210:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -4485,6 +4751,7 @@ Op0210:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -4503,9 +4770,11 @@ Op0218:
   add r3,r11,#1 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -4518,6 +4787,7 @@ Op0218:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -4535,9 +4805,11 @@ Op021f:
   add r3,r11,#2 ;@ Post-increment An
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '(a7)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -4550,6 +4822,7 @@ Op021f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -4569,9 +4842,11 @@ Op0220:
   sub r11,r11,#1 ;@ Pre-decrement An
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -4584,6 +4859,7 @@ Op0220:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -4601,9 +4877,11 @@ Op0227:
   sub r11,r11,#2 ;@ Pre-decrement An
   str r11,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '-(a7)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -4616,6 +4894,7 @@ Op0227:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -4634,9 +4913,11 @@ Op0228:
   ldr r2,[r7,r2,lsl #2]
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -4649,6 +4930,7 @@ Op0228:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -4676,9 +4958,11 @@ Op0230:
   ldr r2,[r7,r2,lsl #2]
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -4691,6 +4975,7 @@ Op0230:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -4706,9 +4991,11 @@ Op0238:
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -4721,6 +5008,7 @@ Op0238:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -4738,9 +5026,11 @@ Op0239:
   ldrh r0,[r4],#2
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -4753,6 +5043,7 @@ Op0239:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -4789,6 +5080,7 @@ Op0250:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -4796,6 +5088,7 @@ Op0250:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -4808,6 +5101,7 @@ Op0250:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -4826,6 +5120,7 @@ Op0258:
   add r3,r11,#2 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -4833,6 +5128,7 @@ Op0258:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -4845,6 +5141,7 @@ Op0258:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -4864,6 +5161,7 @@ Op0260:
   sub r11,r11,#2 ;@ Pre-decrement An
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -4871,6 +5169,7 @@ Op0260:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -4883,6 +5182,7 @@ Op0260:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -4901,6 +5201,7 @@ Op0268:
   ldr r2,[r7,r2,lsl #2]
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -4908,6 +5209,7 @@ Op0268:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -4920,6 +5222,7 @@ Op0268:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -4947,6 +5250,7 @@ Op0270:
   ldr r2,[r7,r2,lsl #2]
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -4954,6 +5258,7 @@ Op0270:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -4966,6 +5271,7 @@ Op0270:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -4981,6 +5287,7 @@ Op0278:
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -4988,6 +5295,7 @@ Op0278:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -5000,6 +5308,7 @@ Op0278:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -5017,6 +5326,7 @@ Op0279:
   ldrh r0,[r4],#2
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -5024,6 +5334,7 @@ Op0279:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -5036,6 +5347,7 @@ Op0279:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -5125,6 +5437,7 @@ Op0290:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -5132,6 +5445,7 @@ Op0290:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   ands r1,r10,r0
@@ -5142,6 +5456,7 @@ Op0290:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -5162,6 +5477,7 @@ Op0298:
   add r3,r11,#4 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -5169,6 +5485,7 @@ Op0298:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   ands r1,r10,r0
@@ -5179,6 +5496,7 @@ Op0298:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -5200,6 +5518,7 @@ Op02a0:
   sub r11,r11,#4 ;@ Pre-decrement An
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -5207,6 +5526,7 @@ Op02a0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   ands r1,r10,r0
@@ -5217,6 +5537,7 @@ Op02a0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#30 ;@ Subtract cycles
@@ -5237,6 +5558,7 @@ Op02a8:
   ldr r2,[r7,r2,lsl #2]
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -5244,6 +5566,7 @@ Op02a8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   ands r1,r10,r0
@@ -5254,6 +5577,7 @@ Op02a8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#32 ;@ Subtract cycles
@@ -5283,6 +5607,7 @@ Op02b0:
   ldr r2,[r7,r2,lsl #2]
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -5290,6 +5615,7 @@ Op02b0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   ands r1,r10,r0
@@ -5300,6 +5626,7 @@ Op02b0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#34 ;@ Subtract cycles
@@ -5317,6 +5644,7 @@ Op02b8:
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -5324,6 +5652,7 @@ Op02b8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   ands r1,r10,r0
@@ -5334,6 +5663,7 @@ Op02b8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#32 ;@ Subtract cycles
@@ -5353,6 +5683,7 @@ Op02b9:
   ldrh r0,[r4],#2
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -5360,6 +5691,7 @@ Op02b9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   ands r1,r10,r0
@@ -5370,6 +5702,7 @@ Op02b9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#36 ;@ Subtract cycles
@@ -5414,9 +5747,11 @@ Op0410:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -5430,6 +5765,7 @@ Op0410:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -5448,9 +5784,11 @@ Op0418:
   add r3,r11,#1 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -5464,6 +5802,7 @@ Op0418:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -5481,9 +5820,11 @@ Op041f:
   add r3,r11,#2 ;@ Post-increment An
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '(a7)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -5497,6 +5838,7 @@ Op041f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -5516,9 +5858,11 @@ Op0420:
   sub r11,r11,#1 ;@ Pre-decrement An
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -5532,6 +5876,7 @@ Op0420:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -5549,9 +5894,11 @@ Op0427:
   sub r11,r11,#2 ;@ Pre-decrement An
   str r11,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '-(a7)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -5565,6 +5912,7 @@ Op0427:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -5583,9 +5931,11 @@ Op0428:
   ldr r2,[r7,r2,lsl #2]
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -5599,6 +5949,7 @@ Op0428:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -5626,9 +5977,11 @@ Op0430:
   ldr r2,[r7,r2,lsl #2]
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -5642,6 +5995,7 @@ Op0430:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -5657,9 +6011,11 @@ Op0438:
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -5673,6 +6029,7 @@ Op0438:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -5690,9 +6047,11 @@ Op0439:
   ldrh r0,[r4],#2
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -5706,6 +6065,7 @@ Op0439:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -5751,6 +6111,7 @@ Op0450:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -5758,6 +6119,7 @@ Op0450:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -5771,6 +6133,7 @@ Op0450:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -5789,6 +6152,7 @@ Op0458:
   add r3,r11,#2 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -5796,6 +6160,7 @@ Op0458:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -5809,6 +6174,7 @@ Op0458:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -5828,6 +6194,7 @@ Op0460:
   sub r11,r11,#2 ;@ Pre-decrement An
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -5835,6 +6202,7 @@ Op0460:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -5848,6 +6216,7 @@ Op0460:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -5866,6 +6235,7 @@ Op0468:
   ldr r2,[r7,r2,lsl #2]
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -5873,6 +6243,7 @@ Op0468:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -5886,6 +6257,7 @@ Op0468:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -5913,6 +6285,7 @@ Op0470:
   ldr r2,[r7,r2,lsl #2]
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -5920,6 +6293,7 @@ Op0470:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -5933,6 +6307,7 @@ Op0470:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -5948,6 +6323,7 @@ Op0478:
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -5955,6 +6331,7 @@ Op0478:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -5968,6 +6345,7 @@ Op0478:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -5985,6 +6363,7 @@ Op0479:
   ldrh r0,[r4],#2
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -5992,6 +6371,7 @@ Op0479:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -6005,6 +6385,7 @@ Op0479:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -6051,6 +6432,7 @@ Op0490:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -6058,6 +6440,7 @@ Op0490:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   rsbs r1,r10,r0 ;@ Defines NZCV
@@ -6069,6 +6452,7 @@ Op0490:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -6089,6 +6473,7 @@ Op0498:
   add r3,r11,#4 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -6096,6 +6481,7 @@ Op0498:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   rsbs r1,r10,r0 ;@ Defines NZCV
@@ -6107,6 +6493,7 @@ Op0498:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -6128,6 +6515,7 @@ Op04a0:
   sub r11,r11,#4 ;@ Pre-decrement An
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -6135,6 +6523,7 @@ Op04a0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   rsbs r1,r10,r0 ;@ Defines NZCV
@@ -6146,6 +6535,7 @@ Op04a0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#30 ;@ Subtract cycles
@@ -6166,6 +6556,7 @@ Op04a8:
   ldr r2,[r7,r2,lsl #2]
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -6173,6 +6564,7 @@ Op04a8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   rsbs r1,r10,r0 ;@ Defines NZCV
@@ -6184,6 +6576,7 @@ Op04a8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#32 ;@ Subtract cycles
@@ -6213,6 +6606,7 @@ Op04b0:
   ldr r2,[r7,r2,lsl #2]
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -6220,6 +6614,7 @@ Op04b0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   rsbs r1,r10,r0 ;@ Defines NZCV
@@ -6231,6 +6626,7 @@ Op04b0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#34 ;@ Subtract cycles
@@ -6248,6 +6644,7 @@ Op04b8:
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -6255,6 +6652,7 @@ Op04b8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   rsbs r1,r10,r0 ;@ Defines NZCV
@@ -6266,6 +6664,7 @@ Op04b8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#32 ;@ Subtract cycles
@@ -6285,6 +6684,7 @@ Op04b9:
   ldrh r0,[r4],#2
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -6292,6 +6692,7 @@ Op04b9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   rsbs r1,r10,r0 ;@ Defines NZCV
@@ -6303,6 +6704,7 @@ Op04b9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#36 ;@ Subtract cycles
@@ -6346,9 +6748,11 @@ Op0610:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -6361,6 +6765,7 @@ Op0610:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -6379,9 +6784,11 @@ Op0618:
   add r3,r11,#1 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -6394,6 +6801,7 @@ Op0618:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -6411,9 +6819,11 @@ Op061f:
   add r3,r11,#2 ;@ Post-increment An
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '(a7)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -6426,6 +6836,7 @@ Op061f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -6445,9 +6856,11 @@ Op0620:
   sub r11,r11,#1 ;@ Pre-decrement An
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -6460,6 +6873,7 @@ Op0620:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -6477,9 +6891,11 @@ Op0627:
   sub r11,r11,#2 ;@ Pre-decrement An
   str r11,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '-(a7)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -6492,6 +6908,7 @@ Op0627:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -6510,9 +6927,11 @@ Op0628:
   ldr r2,[r7,r2,lsl #2]
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -6525,6 +6944,7 @@ Op0628:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -6552,9 +6972,11 @@ Op0630:
   ldr r2,[r7,r2,lsl #2]
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -6567,6 +6989,7 @@ Op0630:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -6582,9 +7005,11 @@ Op0638:
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -6597,6 +7022,7 @@ Op0638:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -6614,9 +7040,11 @@ Op0639:
   ldrh r0,[r4],#2
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -6629,6 +7057,7 @@ Op0639:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -6646,6 +7075,7 @@ Op0650:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -6653,6 +7083,7 @@ Op0650:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -6665,6 +7096,7 @@ Op0650:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -6683,6 +7115,7 @@ Op0658:
   add r3,r11,#2 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -6690,6 +7123,7 @@ Op0658:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -6702,6 +7136,7 @@ Op0658:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -6721,6 +7156,7 @@ Op0660:
   sub r11,r11,#2 ;@ Pre-decrement An
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -6728,6 +7164,7 @@ Op0660:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -6740,6 +7177,7 @@ Op0660:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -6758,6 +7196,7 @@ Op0668:
   ldr r2,[r7,r2,lsl #2]
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -6765,6 +7204,7 @@ Op0668:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -6777,6 +7217,7 @@ Op0668:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -6804,6 +7245,7 @@ Op0670:
   ldr r2,[r7,r2,lsl #2]
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -6811,6 +7253,7 @@ Op0670:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -6823,6 +7266,7 @@ Op0670:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -6838,6 +7282,7 @@ Op0678:
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -6845,6 +7290,7 @@ Op0678:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -6857,6 +7303,7 @@ Op0678:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -6874,6 +7321,7 @@ Op0679:
   ldrh r0,[r4],#2
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -6881,6 +7329,7 @@ Op0679:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -6893,6 +7342,7 @@ Op0679:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -6938,6 +7388,7 @@ Op0690:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -6945,6 +7396,7 @@ Op0690:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   adds r1,r10,r0 ;@ Defines NZCV
@@ -6955,6 +7407,7 @@ Op0690:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -6975,6 +7428,7 @@ Op0698:
   add r3,r11,#4 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -6982,6 +7436,7 @@ Op0698:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   adds r1,r10,r0 ;@ Defines NZCV
@@ -6992,6 +7447,7 @@ Op0698:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -7013,6 +7469,7 @@ Op06a0:
   sub r11,r11,#4 ;@ Pre-decrement An
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -7020,6 +7477,7 @@ Op06a0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   adds r1,r10,r0 ;@ Defines NZCV
@@ -7030,6 +7488,7 @@ Op06a0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#30 ;@ Subtract cycles
@@ -7050,6 +7509,7 @@ Op06a8:
   ldr r2,[r7,r2,lsl #2]
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -7057,6 +7517,7 @@ Op06a8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   adds r1,r10,r0 ;@ Defines NZCV
@@ -7067,6 +7528,7 @@ Op06a8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#32 ;@ Subtract cycles
@@ -7096,6 +7558,7 @@ Op06b0:
   ldr r2,[r7,r2,lsl #2]
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -7103,6 +7566,7 @@ Op06b0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   adds r1,r10,r0 ;@ Defines NZCV
@@ -7113,6 +7577,7 @@ Op06b0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#34 ;@ Subtract cycles
@@ -7130,6 +7595,7 @@ Op06b8:
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -7137,6 +7603,7 @@ Op06b8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   adds r1,r10,r0 ;@ Defines NZCV
@@ -7147,6 +7614,7 @@ Op06b8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#32 ;@ Subtract cycles
@@ -7166,6 +7634,7 @@ Op06b9:
   ldrh r0,[r4],#2
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -7173,6 +7642,7 @@ Op06b9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   adds r1,r10,r0 ;@ Defines NZCV
@@ -7183,6 +7653,7 @@ Op06b9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#36 ;@ Subtract cycles
@@ -7231,8 +7702,10 @@ Op0810:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -7260,8 +7733,10 @@ Op0818:
   add r3,r0,#1 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -7288,8 +7763,10 @@ Op081f:
   add r3,r0,#2 ;@ Post-increment An
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '(a7)+' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -7318,8 +7795,10 @@ Op0820:
   sub r0,r0,#1 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -7346,8 +7825,10 @@ Op0827:
   sub r0,r0,#2 ;@ Pre-decrement An
   str r0,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '-(a7)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -7384,8 +7865,10 @@ Op0830:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -7413,8 +7896,10 @@ Op083a:
   ldrsh r2,[r4],#2 ;@ Fetch extension
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x80] ;@ Call fetch8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -7450,8 +7935,10 @@ Op083b:
   add r2,r2,r3,asr #24 ;@ r2=Disp+Rn
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x80] ;@ Call fetch8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -7508,9 +7995,11 @@ Op0850:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r8,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r8) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -7522,6 +8011,7 @@ Op0850:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -7546,9 +8036,11 @@ Op0858:
   add r3,r8,#1 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r8) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -7560,6 +8052,7 @@ Op0858:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -7583,9 +8076,11 @@ Op085f:
   add r3,r8,#2 ;@ Post-increment An
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '(a7)+' (address in r8) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -7597,6 +8092,7 @@ Op085f:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -7622,9 +8118,11 @@ Op0860:
   sub r8,r8,#1 ;@ Pre-decrement An
   str r8,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r8) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -7636,6 +8134,7 @@ Op0860:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -7659,9 +8158,11 @@ Op0867:
   sub r8,r8,#2 ;@ Pre-decrement An
   str r8,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '-(a7)' (address in r8) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -7673,6 +8174,7 @@ Op0867:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -7697,9 +8199,11 @@ Op0868:
   ldr r2,[r7,r2,lsl #2]
   add r8,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r8) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -7711,6 +8215,7 @@ Op0868:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -7744,9 +8249,11 @@ Op0870:
   ldr r2,[r7,r2,lsl #2]
   add r8,r2,r3 ;@ r8=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r8) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -7758,6 +8265,7 @@ Op0870:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -7779,9 +8287,11 @@ Op0878:
 ;@ EaCalc : Get '$3333.w' into r8:
   ldrsh r8,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r8) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -7793,6 +8303,7 @@ Op0878:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -7816,9 +8327,11 @@ Op0879:
   ldrh r0,[r4],#2
   orr r8,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r8) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -7830,6 +8343,7 @@ Op0879:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -7883,9 +8397,11 @@ Op0890:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r8,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r8) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -7897,6 +8413,7 @@ Op0890:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -7921,9 +8438,11 @@ Op0898:
   add r3,r8,#1 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r8) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -7935,6 +8454,7 @@ Op0898:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -7958,9 +8478,11 @@ Op089f:
   add r3,r8,#2 ;@ Post-increment An
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '(a7)+' (address in r8) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -7972,6 +8494,7 @@ Op089f:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -7997,9 +8520,11 @@ Op08a0:
   sub r8,r8,#1 ;@ Pre-decrement An
   str r8,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r8) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -8011,6 +8536,7 @@ Op08a0:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -8034,9 +8560,11 @@ Op08a7:
   sub r8,r8,#2 ;@ Pre-decrement An
   str r8,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '-(a7)' (address in r8) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -8048,6 +8576,7 @@ Op08a7:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -8072,9 +8601,11 @@ Op08a8:
   ldr r2,[r7,r2,lsl #2]
   add r8,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r8) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -8086,6 +8617,7 @@ Op08a8:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -8119,9 +8651,11 @@ Op08b0:
   ldr r2,[r7,r2,lsl #2]
   add r8,r2,r3 ;@ r8=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r8) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -8133,6 +8667,7 @@ Op08b0:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -8154,9 +8689,11 @@ Op08b8:
 ;@ EaCalc : Get '$3333.w' into r8:
   ldrsh r8,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r8) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -8168,6 +8705,7 @@ Op08b8:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -8191,9 +8729,11 @@ Op08b9:
   ldrh r0,[r4],#2
   orr r8,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r8) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -8205,6 +8745,7 @@ Op08b9:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -8258,9 +8799,11 @@ Op08d0:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r8,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r8) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -8272,6 +8815,7 @@ Op08d0:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -8296,9 +8840,11 @@ Op08d8:
   add r3,r8,#1 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r8) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -8310,6 +8856,7 @@ Op08d8:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -8333,9 +8880,11 @@ Op08df:
   add r3,r8,#2 ;@ Post-increment An
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '(a7)+' (address in r8) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -8347,6 +8896,7 @@ Op08df:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -8372,9 +8922,11 @@ Op08e0:
   sub r8,r8,#1 ;@ Pre-decrement An
   str r8,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r8) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -8386,6 +8938,7 @@ Op08e0:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -8409,9 +8962,11 @@ Op08e7:
   sub r8,r8,#2 ;@ Pre-decrement An
   str r8,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '-(a7)' (address in r8) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -8423,6 +8978,7 @@ Op08e7:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -8447,9 +9003,11 @@ Op08e8:
   ldr r2,[r7,r2,lsl #2]
   add r8,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r8) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -8461,6 +9019,7 @@ Op08e8:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -8494,9 +9053,11 @@ Op08f0:
   ldr r2,[r7,r2,lsl #2]
   add r8,r2,r3 ;@ r8=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r8) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -8508,6 +9069,7 @@ Op08f0:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -8529,9 +9091,11 @@ Op08f8:
 ;@ EaCalc : Get '$3333.w' into r8:
   ldrsh r8,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r8) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -8543,6 +9107,7 @@ Op08f8:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -8566,9 +9131,11 @@ Op08f9:
   ldrh r0,[r4],#2
   orr r8,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r8) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -8580,6 +9147,7 @@ Op08f9:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -8623,9 +9191,11 @@ Op0a10:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -8638,6 +9208,7 @@ Op0a10:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -8656,9 +9227,11 @@ Op0a18:
   add r3,r11,#1 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -8671,6 +9244,7 @@ Op0a18:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -8688,9 +9262,11 @@ Op0a1f:
   add r3,r11,#2 ;@ Post-increment An
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '(a7)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -8703,6 +9279,7 @@ Op0a1f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -8722,9 +9299,11 @@ Op0a20:
   sub r11,r11,#1 ;@ Pre-decrement An
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -8737,6 +9316,7 @@ Op0a20:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -8754,9 +9334,11 @@ Op0a27:
   sub r11,r11,#2 ;@ Pre-decrement An
   str r11,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '-(a7)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -8769,6 +9351,7 @@ Op0a27:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -8787,9 +9370,11 @@ Op0a28:
   ldr r2,[r7,r2,lsl #2]
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -8802,6 +9387,7 @@ Op0a28:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -8829,9 +9415,11 @@ Op0a30:
   ldr r2,[r7,r2,lsl #2]
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -8844,6 +9432,7 @@ Op0a30:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -8859,9 +9448,11 @@ Op0a38:
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -8874,6 +9465,7 @@ Op0a38:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -8891,9 +9483,11 @@ Op0a39:
   ldrh r0,[r4],#2
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -8906,6 +9500,7 @@ Op0a39:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -8969,6 +9564,7 @@ Op0a50:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -8976,6 +9572,7 @@ Op0a50:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -8988,6 +9585,7 @@ Op0a50:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -9006,6 +9604,7 @@ Op0a58:
   add r3,r11,#2 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -9013,6 +9612,7 @@ Op0a58:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -9025,6 +9625,7 @@ Op0a58:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -9044,6 +9645,7 @@ Op0a60:
   sub r11,r11,#2 ;@ Pre-decrement An
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -9051,6 +9653,7 @@ Op0a60:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -9063,6 +9666,7 @@ Op0a60:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -9081,6 +9685,7 @@ Op0a68:
   ldr r2,[r7,r2,lsl #2]
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -9088,6 +9693,7 @@ Op0a68:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -9100,6 +9706,7 @@ Op0a68:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -9127,6 +9734,7 @@ Op0a70:
   ldr r2,[r7,r2,lsl #2]
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -9134,6 +9742,7 @@ Op0a70:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -9146,6 +9755,7 @@ Op0a70:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -9161,6 +9771,7 @@ Op0a78:
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -9168,6 +9779,7 @@ Op0a78:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -9180,6 +9792,7 @@ Op0a78:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -9197,6 +9810,7 @@ Op0a79:
   ldrh r0,[r4],#2
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -9204,6 +9818,7 @@ Op0a79:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -9216,6 +9831,7 @@ Op0a79:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -9310,6 +9926,7 @@ Op0a90:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -9317,6 +9934,7 @@ Op0a90:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   eors r1,r10,r0
@@ -9327,6 +9945,7 @@ Op0a90:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -9347,6 +9966,7 @@ Op0a98:
   add r3,r11,#4 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -9354,6 +9974,7 @@ Op0a98:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   eors r1,r10,r0
@@ -9364,6 +9985,7 @@ Op0a98:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -9385,6 +10007,7 @@ Op0aa0:
   sub r11,r11,#4 ;@ Pre-decrement An
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -9392,6 +10015,7 @@ Op0aa0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   eors r1,r10,r0
@@ -9402,6 +10026,7 @@ Op0aa0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#30 ;@ Subtract cycles
@@ -9422,6 +10047,7 @@ Op0aa8:
   ldr r2,[r7,r2,lsl #2]
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -9429,6 +10055,7 @@ Op0aa8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   eors r1,r10,r0
@@ -9439,6 +10066,7 @@ Op0aa8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#32 ;@ Subtract cycles
@@ -9468,6 +10096,7 @@ Op0ab0:
   ldr r2,[r7,r2,lsl #2]
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -9475,6 +10104,7 @@ Op0ab0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   eors r1,r10,r0
@@ -9485,6 +10115,7 @@ Op0ab0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#34 ;@ Subtract cycles
@@ -9502,6 +10133,7 @@ Op0ab8:
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -9509,6 +10141,7 @@ Op0ab8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   eors r1,r10,r0
@@ -9519,6 +10152,7 @@ Op0ab8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#32 ;@ Subtract cycles
@@ -9538,6 +10172,7 @@ Op0ab9:
   ldrh r0,[r4],#2
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -9545,6 +10180,7 @@ Op0ab9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   eors r1,r10,r0
@@ -9555,6 +10191,7 @@ Op0ab9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#36 ;@ Subtract cycles
@@ -9594,8 +10231,10 @@ Op0c10:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -9620,8 +10259,10 @@ Op0c18:
   add r3,r0,#1 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -9645,8 +10286,10 @@ Op0c1f:
   add r3,r0,#2 ;@ Post-increment An
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '(a7)+' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -9672,8 +10315,10 @@ Op0c20:
   sub r0,r0,#1 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -9697,8 +10342,10 @@ Op0c27:
   sub r0,r0,#2 ;@ Pre-decrement An
   str r0,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '-(a7)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -9723,8 +10370,10 @@ Op0c28:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -9758,8 +10407,10 @@ Op0c30:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -9781,8 +10432,10 @@ Op0c38:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -9806,8 +10459,10 @@ Op0c39:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -9831,11 +10486,13 @@ Op0c50:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -9860,11 +10517,13 @@ Op0c58:
   add r3,r0,#2 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -9890,11 +10549,13 @@ Op0c60:
   sub r0,r0,#2 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -9919,11 +10580,13 @@ Op0c68:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -9957,11 +10620,13 @@ Op0c70:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -9983,11 +10648,13 @@ Op0c78:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -10036,11 +10703,13 @@ Op0c90:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   rsbs r1,r10,r0 ;@ Defines NZCV
@@ -10066,11 +10735,13 @@ Op0c98:
   add r3,r0,#4 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   rsbs r1,r10,r0 ;@ Defines NZCV
@@ -10097,11 +10768,13 @@ Op0ca0:
   sub r0,r0,#4 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   rsbs r1,r10,r0 ;@ Defines NZCV
@@ -10127,11 +10800,13 @@ Op0ca8:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   rsbs r1,r10,r0 ;@ Defines NZCV
@@ -10166,11 +10841,13 @@ Op0cb0:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   rsbs r1,r10,r0 ;@ Defines NZCV
@@ -10193,11 +10870,13 @@ Op0cb8:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   rsbs r1,r10,r0 ;@ Defines NZCV
@@ -10222,11 +10901,13 @@ Op0cb9:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   rsbs r1,r10,r0 ;@ Defines NZCV
@@ -10266,8 +10947,10 @@ Op1010:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -10291,8 +10974,10 @@ Op101f:
   add r3,r0,#2 ;@ Post-increment An
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '(a7)+' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -10318,8 +11003,10 @@ Op1020:
   sub r0,r0,#1 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -10343,8 +11030,10 @@ Op1027:
   sub r0,r0,#2 ;@ Pre-decrement An
   str r0,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '-(a7)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -10369,8 +11058,10 @@ Op1028:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -10404,8 +11095,10 @@ Op1030:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -10427,8 +11120,10 @@ Op1038:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -10453,8 +11148,10 @@ Op103a:
   ldrsh r2,[r4],#2 ;@ Fetch extension
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x80] ;@ Call fetch8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -10487,8 +11184,10 @@ Op103b:
   add r2,r2,r3,asr #24 ;@ r2=Disp+Rn
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x80] ;@ Call fetch8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -10541,8 +11240,10 @@ Op1080:
   and r2,r8,#0x1e00
   ldr r0,[r7,r2,lsr #7]
 ;@ EaWrite: Write r1 into '(a0)' (address in r0):
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#8 ;@ Subtract cycles
@@ -10556,8 +11257,10 @@ Op1090:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -10570,6 +11273,7 @@ Op1090:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -10584,8 +11288,10 @@ Op1098:
   add r3,r0,#1 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -10598,6 +11304,7 @@ Op1098:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -10611,8 +11318,10 @@ Op109f:
   add r3,r0,#2 ;@ Post-increment An
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '(a7)+' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -10625,6 +11334,7 @@ Op109f:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -10640,8 +11350,10 @@ Op10a0:
   sub r0,r0,#1 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -10654,6 +11366,7 @@ Op10a0:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -10667,8 +11380,10 @@ Op10a7:
   sub r0,r0,#2 ;@ Pre-decrement An
   str r0,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '-(a7)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -10681,6 +11396,7 @@ Op10a7:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -10695,8 +11411,10 @@ Op10a8:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -10709,6 +11427,7 @@ Op10a8:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -10732,8 +11451,10 @@ Op10b0:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -10746,6 +11467,7 @@ Op10b0:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -10757,8 +11479,10 @@ Op10b8:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -10771,6 +11495,7 @@ Op10b8:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -10784,8 +11509,10 @@ Op10b9:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -10798,6 +11525,7 @@ Op10b9:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -10812,8 +11540,10 @@ Op10ba:
   ldrsh r2,[r4],#2 ;@ Fetch extension
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x80] ;@ Call fetch8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -10826,6 +11556,7 @@ Op10ba:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -10848,8 +11579,10 @@ Op10bb:
   add r2,r2,r3,asr #24 ;@ r2=Disp+Rn
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x80] ;@ Call fetch8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -10862,6 +11595,7 @@ Op10bb:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -10883,8 +11617,10 @@ Op10bc:
   ldr r0,[r7,r2,lsr #7]
 ;@ EaWrite: Write r1 into '(a0)' (address in r0):
   mov r1,r1,lsr #24
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -10898,8 +11634,10 @@ Op10d0:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -10914,6 +11652,7 @@ Op10d0:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -10927,8 +11666,10 @@ Op10df:
   add r3,r0,#2 ;@ Post-increment An
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '(a7)+' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -10943,6 +11684,7 @@ Op10df:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -10958,8 +11700,10 @@ Op10e0:
   sub r0,r0,#1 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -10974,6 +11718,7 @@ Op10e0:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -10987,8 +11732,10 @@ Op10e7:
   sub r0,r0,#2 ;@ Pre-decrement An
   str r0,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '-(a7)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -11003,6 +11750,7 @@ Op10e7:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -11017,8 +11765,10 @@ Op10e8:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -11033,6 +11783,7 @@ Op10e8:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -11056,8 +11807,10 @@ Op10f0:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -11072,6 +11825,7 @@ Op10f0:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -11083,8 +11837,10 @@ Op10f8:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -11099,6 +11855,7 @@ Op10f8:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -11112,8 +11869,10 @@ Op10f9:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -11128,6 +11887,7 @@ Op10f9:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -11142,8 +11902,10 @@ Op10fa:
   ldrsh r2,[r4],#2 ;@ Fetch extension
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x80] ;@ Call fetch8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -11158,6 +11920,7 @@ Op10fa:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -11180,8 +11943,10 @@ Op10fb:
   add r2,r2,r3,asr #24 ;@ r2=Disp+Rn
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x80] ;@ Call fetch8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -11196,6 +11961,7 @@ Op10fb:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -11219,8 +11985,10 @@ Op10fc:
   str r3,[r7,r2,lsr #7]
 ;@ EaWrite: Write r1 into '(a0)+' (address in r0):
   mov r1,r1,lsr #24
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -11244,8 +12012,10 @@ Op1100:
   sub r0,r0,#1 ;@ Pre-decrement An
   str r0,[r7,r2,lsr #7]
 ;@ EaWrite: Write r1 into '-(a0)' (address in r0):
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#8 ;@ Subtract cycles
@@ -11259,8 +12029,10 @@ Op1110:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -11275,6 +12047,7 @@ Op1110:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -11289,8 +12062,10 @@ Op1118:
   add r3,r0,#1 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -11305,6 +12080,7 @@ Op1118:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -11318,8 +12094,10 @@ Op111f:
   add r3,r0,#2 ;@ Post-increment An
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '(a7)+' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -11334,6 +12112,7 @@ Op111f:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -11349,8 +12128,10 @@ Op1120:
   sub r0,r0,#1 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -11365,6 +12146,7 @@ Op1120:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -11378,8 +12160,10 @@ Op1127:
   sub r0,r0,#2 ;@ Pre-decrement An
   str r0,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '-(a7)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -11394,6 +12178,7 @@ Op1127:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -11408,8 +12193,10 @@ Op1128:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -11424,6 +12211,7 @@ Op1128:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -11447,8 +12235,10 @@ Op1130:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -11463,6 +12253,7 @@ Op1130:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -11474,8 +12265,10 @@ Op1138:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -11490,6 +12283,7 @@ Op1138:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -11503,8 +12297,10 @@ Op1139:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -11519,6 +12315,7 @@ Op1139:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -11533,8 +12330,10 @@ Op113a:
   ldrsh r2,[r4],#2 ;@ Fetch extension
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x80] ;@ Call fetch8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -11549,6 +12348,7 @@ Op113a:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -11571,8 +12371,10 @@ Op113b:
   add r2,r2,r3,asr #24 ;@ r2=Disp+Rn
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x80] ;@ Call fetch8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -11587,6 +12389,7 @@ Op113b:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -11610,8 +12413,10 @@ Op113c:
   str r0,[r7,r2,lsr #7]
 ;@ EaWrite: Write r1 into '-(a0)' (address in r0):
   mov r1,r1,lsr #24
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -11636,8 +12441,10 @@ Op1140:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -11651,8 +12458,10 @@ Op1150:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -11666,8 +12475,10 @@ Op1150:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
   mov r1,r1,lsr #24
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -11682,8 +12493,10 @@ Op1158:
   add r3,r0,#1 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -11697,8 +12510,10 @@ Op1158:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
   mov r1,r1,lsr #24
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -11712,8 +12527,10 @@ Op115f:
   add r3,r0,#2 ;@ Post-increment An
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '(a7)+' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -11727,8 +12544,10 @@ Op115f:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
   mov r1,r1,lsr #24
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -11744,8 +12563,10 @@ Op1160:
   sub r0,r0,#1 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -11759,8 +12580,10 @@ Op1160:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
   mov r1,r1,lsr #24
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -11774,8 +12597,10 @@ Op1167:
   sub r0,r0,#2 ;@ Pre-decrement An
   str r0,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '-(a7)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -11789,8 +12614,10 @@ Op1167:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
   mov r1,r1,lsr #24
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -11805,8 +12632,10 @@ Op1168:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -11820,8 +12649,10 @@ Op1168:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
   mov r1,r1,lsr #24
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -11845,8 +12676,10 @@ Op1170:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -11860,8 +12693,10 @@ Op1170:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
   mov r1,r1,lsr #24
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -11873,8 +12708,10 @@ Op1178:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -11888,8 +12725,10 @@ Op1178:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
   mov r1,r1,lsr #24
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -11903,8 +12742,10 @@ Op1179:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -11918,8 +12759,10 @@ Op1179:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
   mov r1,r1,lsr #24
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -11934,8 +12777,10 @@ Op117a:
   ldrsh r2,[r4],#2 ;@ Fetch extension
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x80] ;@ Call fetch8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -11949,8 +12794,10 @@ Op117a:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
   mov r1,r1,lsr #24
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -11973,8 +12820,10 @@ Op117b:
   add r2,r2,r3,asr #24 ;@ r2=Disp+Rn
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x80] ;@ Call fetch8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -11988,8 +12837,10 @@ Op117b:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
   mov r1,r1,lsr #24
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -12014,8 +12865,10 @@ Op117c:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
   mov r1,r1,lsr #24
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -12049,8 +12902,10 @@ Op1180:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -12064,8 +12919,10 @@ Op1190:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -12088,8 +12945,10 @@ Op1190:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
   mov r1,r1,lsr #24
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -12103,8 +12962,10 @@ Op119f:
   add r3,r0,#2 ;@ Post-increment An
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '(a7)+' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -12127,8 +12988,10 @@ Op119f:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
   mov r1,r1,lsr #24
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -12144,8 +13007,10 @@ Op11a0:
   sub r0,r0,#1 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -12168,8 +13033,10 @@ Op11a0:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
   mov r1,r1,lsr #24
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -12183,8 +13050,10 @@ Op11a7:
   sub r0,r0,#2 ;@ Pre-decrement An
   str r0,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '-(a7)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -12207,8 +13076,10 @@ Op11a7:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
   mov r1,r1,lsr #24
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -12223,8 +13094,10 @@ Op11a8:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -12247,8 +13120,10 @@ Op11a8:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
   mov r1,r1,lsr #24
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -12272,8 +13147,10 @@ Op11b0:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -12296,8 +13173,10 @@ Op11b0:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
   mov r1,r1,lsr #24
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -12309,8 +13188,10 @@ Op11b8:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -12333,8 +13214,10 @@ Op11b8:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
   mov r1,r1,lsr #24
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -12348,8 +13231,10 @@ Op11b9:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -12372,8 +13257,10 @@ Op11b9:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
   mov r1,r1,lsr #24
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#26 ;@ Subtract cycles
@@ -12388,8 +13275,10 @@ Op11ba:
   ldrsh r2,[r4],#2 ;@ Fetch extension
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x80] ;@ Call fetch8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -12412,8 +13301,10 @@ Op11ba:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
   mov r1,r1,lsr #24
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -12436,8 +13327,10 @@ Op11bb:
   add r2,r2,r3,asr #24 ;@ r2=Disp+Rn
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x80] ;@ Call fetch8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -12460,8 +13353,10 @@ Op11bb:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
   mov r1,r1,lsr #24
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -12495,8 +13390,10 @@ Op11bc:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
   mov r1,r1,lsr #24
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -12517,8 +13414,10 @@ Op11c0:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -12532,8 +13431,10 @@ Op11d0:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -12543,8 +13444,10 @@ Op11d0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
   mov r1,r1,lsr #24
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -12559,8 +13462,10 @@ Op11d8:
   add r3,r0,#1 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -12570,8 +13475,10 @@ Op11d8:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
   mov r1,r1,lsr #24
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -12585,8 +13492,10 @@ Op11df:
   add r3,r0,#2 ;@ Post-increment An
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '(a7)+' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -12596,8 +13505,10 @@ Op11df:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
   mov r1,r1,lsr #24
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -12613,8 +13524,10 @@ Op11e0:
   sub r0,r0,#1 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -12624,8 +13537,10 @@ Op11e0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
   mov r1,r1,lsr #24
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -12639,8 +13554,10 @@ Op11e7:
   sub r0,r0,#2 ;@ Pre-decrement An
   str r0,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '-(a7)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -12650,8 +13567,10 @@ Op11e7:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
   mov r1,r1,lsr #24
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -12666,8 +13585,10 @@ Op11e8:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -12677,8 +13598,10 @@ Op11e8:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
   mov r1,r1,lsr #24
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -12702,8 +13625,10 @@ Op11f0:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -12713,8 +13638,10 @@ Op11f0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
   mov r1,r1,lsr #24
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -12726,8 +13653,10 @@ Op11f8:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -12737,8 +13666,10 @@ Op11f8:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
   mov r1,r1,lsr #24
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -12752,8 +13683,10 @@ Op11f9:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -12763,8 +13696,10 @@ Op11f9:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
   mov r1,r1,lsr #24
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -12779,8 +13714,10 @@ Op11fa:
   ldrsh r2,[r4],#2 ;@ Fetch extension
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x80] ;@ Call fetch8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -12790,8 +13727,10 @@ Op11fa:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
   mov r1,r1,lsr #24
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -12814,8 +13753,10 @@ Op11fb:
   add r2,r2,r3,asr #24 ;@ r2=Disp+Rn
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x80] ;@ Call fetch8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -12825,8 +13766,10 @@ Op11fb:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
   mov r1,r1,lsr #24
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -12847,8 +13790,10 @@ Op11fc:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
   mov r1,r1,lsr #24
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -12871,8 +13816,10 @@ Op13c0:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -12886,8 +13833,10 @@ Op13d0:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -12899,8 +13848,10 @@ Op13d0:
   orr r0,r0,r2,lsl #16
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
   mov r1,r1,lsr #24
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -12915,8 +13866,10 @@ Op13d8:
   add r3,r0,#1 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -12928,8 +13881,10 @@ Op13d8:
   orr r0,r0,r2,lsl #16
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
   mov r1,r1,lsr #24
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -12943,8 +13898,10 @@ Op13df:
   add r3,r0,#2 ;@ Post-increment An
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '(a7)+' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -12956,8 +13913,10 @@ Op13df:
   orr r0,r0,r2,lsl #16
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
   mov r1,r1,lsr #24
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -12973,8 +13932,10 @@ Op13e0:
   sub r0,r0,#1 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -12986,8 +13947,10 @@ Op13e0:
   orr r0,r0,r2,lsl #16
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
   mov r1,r1,lsr #24
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -13001,8 +13964,10 @@ Op13e7:
   sub r0,r0,#2 ;@ Pre-decrement An
   str r0,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '-(a7)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -13014,8 +13979,10 @@ Op13e7:
   orr r0,r0,r2,lsl #16
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
   mov r1,r1,lsr #24
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -13030,8 +13997,10 @@ Op13e8:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -13043,8 +14012,10 @@ Op13e8:
   orr r0,r0,r2,lsl #16
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
   mov r1,r1,lsr #24
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -13068,8 +14039,10 @@ Op13f0:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -13081,8 +14054,10 @@ Op13f0:
   orr r0,r0,r2,lsl #16
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
   mov r1,r1,lsr #24
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#26 ;@ Subtract cycles
@@ -13094,8 +14069,10 @@ Op13f8:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -13107,8 +14084,10 @@ Op13f8:
   orr r0,r0,r2,lsl #16
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
   mov r1,r1,lsr #24
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -13122,8 +14101,10 @@ Op13f9:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -13135,8 +14116,10 @@ Op13f9:
   orr r0,r0,r2,lsl #16
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
   mov r1,r1,lsr #24
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -13151,8 +14134,10 @@ Op13fa:
   ldrsh r2,[r4],#2 ;@ Fetch extension
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x80] ;@ Call fetch8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -13164,8 +14149,10 @@ Op13fa:
   orr r0,r0,r2,lsl #16
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
   mov r1,r1,lsr #24
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -13188,8 +14175,10 @@ Op13fb:
   add r2,r2,r3,asr #24 ;@ r2=Disp+Rn
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x80] ;@ Call fetch8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -13201,8 +14190,10 @@ Op13fb:
   orr r0,r0,r2,lsl #16
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
   mov r1,r1,lsr #24
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#26 ;@ Subtract cycles
@@ -13225,8 +14216,10 @@ Op13fc:
   orr r0,r0,r2,lsl #16
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
   mov r1,r1,lsr #24
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -13249,8 +14242,10 @@ Op1ec0:
   add r3,r0,#2 ;@ Post-increment An
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '(a7)+' (address in r0):
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#8 ;@ Subtract cycles
@@ -13264,8 +14259,10 @@ Op1ed0:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -13279,6 +14276,7 @@ Op1ed0:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -13293,8 +14291,10 @@ Op1ed8:
   add r3,r0,#1 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -13308,6 +14308,7 @@ Op1ed8:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -13321,8 +14322,10 @@ Op1edf:
   add r3,r0,#2 ;@ Post-increment An
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '(a7)+' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -13336,6 +14339,7 @@ Op1edf:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -13351,8 +14355,10 @@ Op1ee0:
   sub r0,r0,#1 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -13366,6 +14372,7 @@ Op1ee0:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -13379,8 +14386,10 @@ Op1ee7:
   sub r0,r0,#2 ;@ Pre-decrement An
   str r0,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '-(a7)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -13394,6 +14403,7 @@ Op1ee7:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -13408,8 +14418,10 @@ Op1ee8:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -13423,6 +14435,7 @@ Op1ee8:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -13446,8 +14459,10 @@ Op1ef0:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -13461,6 +14476,7 @@ Op1ef0:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -13472,8 +14488,10 @@ Op1ef8:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -13487,6 +14505,7 @@ Op1ef8:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -13500,8 +14519,10 @@ Op1ef9:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -13515,6 +14536,7 @@ Op1ef9:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -13529,8 +14551,10 @@ Op1efa:
   ldrsh r2,[r4],#2 ;@ Fetch extension
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x80] ;@ Call fetch8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -13544,6 +14568,7 @@ Op1efa:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -13566,8 +14591,10 @@ Op1efb:
   add r2,r2,r3,asr #24 ;@ r2=Disp+Rn
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x80] ;@ Call fetch8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -13581,6 +14608,7 @@ Op1efb:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -13603,8 +14631,10 @@ Op1efc:
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '(a7)+' (address in r0):
   mov r1,r1,lsr #24
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -13627,8 +14657,10 @@ Op1f00:
   sub r0,r0,#2 ;@ Pre-decrement An
   str r0,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '-(a7)' (address in r0):
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#8 ;@ Subtract cycles
@@ -13642,8 +14674,10 @@ Op1f10:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -13657,6 +14691,7 @@ Op1f10:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -13671,8 +14706,10 @@ Op1f18:
   add r3,r0,#1 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -13686,6 +14723,7 @@ Op1f18:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -13699,8 +14737,10 @@ Op1f1f:
   add r3,r0,#2 ;@ Post-increment An
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '(a7)+' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -13714,6 +14754,7 @@ Op1f1f:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -13729,8 +14770,10 @@ Op1f20:
   sub r0,r0,#1 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -13744,6 +14787,7 @@ Op1f20:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -13757,8 +14801,10 @@ Op1f27:
   sub r0,r0,#2 ;@ Pre-decrement An
   str r0,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '-(a7)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -13772,6 +14818,7 @@ Op1f27:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -13786,8 +14833,10 @@ Op1f28:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -13801,6 +14850,7 @@ Op1f28:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -13824,8 +14874,10 @@ Op1f30:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -13839,6 +14891,7 @@ Op1f30:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -13850,8 +14903,10 @@ Op1f38:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -13865,6 +14920,7 @@ Op1f38:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -13878,8 +14934,10 @@ Op1f39:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -13893,6 +14951,7 @@ Op1f39:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -13907,8 +14966,10 @@ Op1f3a:
   ldrsh r2,[r4],#2 ;@ Fetch extension
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x80] ;@ Call fetch8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -13922,6 +14983,7 @@ Op1f3a:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -13944,8 +15006,10 @@ Op1f3b:
   add r2,r2,r3,asr #24 ;@ r2=Disp+Rn
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x80] ;@ Call fetch8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -13959,6 +15023,7 @@ Op1f3b:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -13981,8 +15046,10 @@ Op1f3c:
   str r0,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '-(a7)' (address in r0):
   mov r1,r1,lsr #24
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -14017,11 +15084,13 @@ Op2010:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -14045,11 +15114,13 @@ Op2018:
   add r3,r0,#4 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -14074,11 +15145,13 @@ Op2020:
   sub r0,r0,#4 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -14102,11 +15175,13 @@ Op2028:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -14139,11 +15214,13 @@ Op2030:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -14166,11 +15243,13 @@ Op2039:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -14194,11 +15273,13 @@ Op203a:
   ldrsh r2,[r4],#2 ;@ Fetch extension
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -14230,11 +15311,13 @@ Op203b:
   add r2,r2,r3,asr #24 ;@ r2=Disp+Rn
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -14297,11 +15380,13 @@ Op2050:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r1,r0
 
 ;@ EaCalc : Get register index into r0:
@@ -14323,11 +15408,13 @@ Op2058:
   add r3,r0,#4 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r1,r0
 
 ;@ EaCalc : Get register index into r0:
@@ -14350,11 +15437,13 @@ Op2060:
   sub r0,r0,#4 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r1,r0
 
 ;@ EaCalc : Get register index into r0:
@@ -14376,11 +15465,13 @@ Op2068:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r1,r0
 
 ;@ EaCalc : Get register index into r0:
@@ -14411,11 +15502,13 @@ Op2070:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r1,r0
 
 ;@ EaCalc : Get register index into r0:
@@ -14434,11 +15527,13 @@ Op2078:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r1,r0
 
 ;@ EaCalc : Get register index into r0:
@@ -14459,11 +15554,13 @@ Op2079:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r1,r0
 
 ;@ EaCalc : Get register index into r0:
@@ -14485,11 +15582,13 @@ Op207a:
   ldrsh r2,[r4],#2 ;@ Fetch extension
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r1,r0
 
 ;@ EaCalc : Get register index into r0:
@@ -14519,11 +15618,13 @@ Op207b:
   add r2,r2,r3,asr #24 ;@ r2=Disp+Rn
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r1,r0
 
 ;@ EaCalc : Get register index into r0:
@@ -14572,11 +15673,13 @@ Op2080:
   orr r2,r2,#0x1000 ;@ A0-7
   ldr r0,[r7,r2,lsr #7]
 ;@ EaWrite: Write r1 into '(a0)' (address in r0):
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -14590,11 +15693,13 @@ Op2090:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -14610,6 +15715,7 @@ Op2090:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -14624,11 +15730,13 @@ Op2098:
   add r3,r0,#4 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -14644,6 +15752,7 @@ Op2098:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -14659,11 +15768,13 @@ Op20a0:
   sub r0,r0,#4 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -14679,6 +15790,7 @@ Op20a0:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -14693,11 +15805,13 @@ Op20a8:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -14713,6 +15827,7 @@ Op20a8:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -14736,11 +15851,13 @@ Op20b0:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -14756,6 +15873,7 @@ Op20b0:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#26 ;@ Subtract cycles
@@ -14767,11 +15885,13 @@ Op20b8:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -14787,6 +15907,7 @@ Op20b8:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -14800,11 +15921,13 @@ Op20b9:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -14820,6 +15943,7 @@ Op20b9:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -14834,11 +15958,13 @@ Op20ba:
   ldrsh r2,[r4],#2 ;@ Fetch extension
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -14854,6 +15980,7 @@ Op20ba:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -14876,11 +16003,13 @@ Op20bb:
   add r2,r2,r3,asr #24 ;@ r2=Disp+Rn
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -14896,6 +16025,7 @@ Op20bb:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#26 ;@ Subtract cycles
@@ -14919,11 +16049,13 @@ Op20bc:
   orr r2,r2,#0x1000 ;@ A0-7
   ldr r0,[r7,r2,lsr #7]
 ;@ EaWrite: Write r1 into '(a0)' (address in r0):
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -14937,11 +16069,13 @@ Op20d0:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -14959,6 +16093,7 @@ Op20d0:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -14973,11 +16108,13 @@ Op20d8:
   add r3,r0,#4 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -14995,6 +16132,7 @@ Op20d8:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -15010,11 +16148,13 @@ Op20e0:
   sub r0,r0,#4 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -15032,6 +16172,7 @@ Op20e0:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -15046,11 +16187,13 @@ Op20e8:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -15068,6 +16211,7 @@ Op20e8:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -15091,11 +16235,13 @@ Op20f0:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -15113,6 +16259,7 @@ Op20f0:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#26 ;@ Subtract cycles
@@ -15124,11 +16271,13 @@ Op20f8:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -15146,6 +16295,7 @@ Op20f8:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -15159,11 +16309,13 @@ Op20f9:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -15181,6 +16333,7 @@ Op20f9:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -15195,11 +16348,13 @@ Op20fa:
   ldrsh r2,[r4],#2 ;@ Fetch extension
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -15217,6 +16372,7 @@ Op20fa:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -15239,11 +16395,13 @@ Op20fb:
   add r2,r2,r3,asr #24 ;@ r2=Disp+Rn
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -15261,6 +16419,7 @@ Op20fb:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#26 ;@ Subtract cycles
@@ -15286,11 +16445,13 @@ Op20fc:
   add r3,r0,#4 ;@ Post-increment An
   str r3,[r7,r2,lsr #7]
 ;@ EaWrite: Write r1 into '(a0)+' (address in r0):
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -15318,17 +16479,20 @@ Op2100:
   add r0,r8,#2
 ;@ EaWrite: Write r1 into '-(a0)' (address in r0):
   uxth r1,r1 ;@ zero extend
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call 0íþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call 0Áþìþ(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaWrite: Write r11 into '-(a0)' (address in r8):
   mov r1,r11,lsr #16
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -15342,11 +16506,13 @@ Op2110:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -15366,13 +16532,15 @@ Op2110:
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call 0íþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call 0Áþìþ(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaWrite: Write r11 into '-(a0)' (address in r8):
   mov r1,r11,lsr #16
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -15387,11 +16555,13 @@ Op2118:
   add r3,r0,#4 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -15411,13 +16581,15 @@ Op2118:
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call 0íþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call 0Áþìþ(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaWrite: Write r11 into '-(a0)' (address in r8):
   mov r1,r11,lsr #16
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -15433,11 +16605,13 @@ Op2120:
   sub r0,r0,#4 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -15457,13 +16631,15 @@ Op2120:
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call 0íþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call 0Áþìþ(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaWrite: Write r11 into '-(a0)' (address in r8):
   mov r1,r11,lsr #16
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -15478,11 +16654,13 @@ Op2128:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -15502,13 +16680,15 @@ Op2128:
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call 0íþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call 0Áþìþ(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaWrite: Write r11 into '-(a0)' (address in r8):
   mov r1,r11,lsr #16
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -15532,11 +16712,13 @@ Op2130:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -15556,13 +16738,15 @@ Op2130:
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call 0íþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call 0Áþìþ(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaWrite: Write r11 into '-(a0)' (address in r8):
   mov r1,r11,lsr #16
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#26 ;@ Subtract cycles
@@ -15574,11 +16758,13 @@ Op2138:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -15598,13 +16784,15 @@ Op2138:
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call 0íþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call 0Áþìþ(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaWrite: Write r11 into '-(a0)' (address in r8):
   mov r1,r11,lsr #16
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -15618,11 +16806,13 @@ Op2139:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -15642,13 +16832,15 @@ Op2139:
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call 0íþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call 0Áþìþ(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaWrite: Write r11 into '-(a0)' (address in r8):
   mov r1,r11,lsr #16
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -15663,11 +16855,13 @@ Op213a:
   ldrsh r2,[r4],#2 ;@ Fetch extension
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -15687,13 +16881,15 @@ Op213a:
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call 0íþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call 0Áþìþ(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaWrite: Write r11 into '-(a0)' (address in r8):
   mov r1,r11,lsr #16
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -15716,11 +16912,13 @@ Op213b:
   add r2,r2,r3,asr #24 ;@ r2=Disp+Rn
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -15740,13 +16938,15 @@ Op213b:
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call 0íþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call 0Áþìþ(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaWrite: Write r11 into '-(a0)' (address in r8):
   mov r1,r11,lsr #16
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#26 ;@ Subtract cycles
@@ -15775,17 +16975,20 @@ Op213c:
   add r0,r8,#2
 ;@ EaWrite: Write r1 into '-(a0)' (address in r0):
   uxth r1,r1 ;@ zero extend
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call 0íþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call 0Áþìþ(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaWrite: Write r11 into '-(a0)' (address in r8):
   mov r1,r11,lsr #16
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -15811,11 +17014,13 @@ Op2140:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -15829,11 +17034,13 @@ Op2150:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -15847,11 +17054,13 @@ Op2150:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -15866,11 +17075,13 @@ Op2158:
   add r3,r0,#4 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -15884,11 +17095,13 @@ Op2158:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -15904,11 +17117,13 @@ Op2160:
   sub r0,r0,#4 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -15922,11 +17137,13 @@ Op2160:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#26 ;@ Subtract cycles
@@ -15941,11 +17158,13 @@ Op2168:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -15959,11 +17178,13 @@ Op2168:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -15987,11 +17208,13 @@ Op2170:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -16005,11 +17228,13 @@ Op2170:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#30 ;@ Subtract cycles
@@ -16021,11 +17246,13 @@ Op2178:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -16039,11 +17266,13 @@ Op2178:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -16057,11 +17286,13 @@ Op2179:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -16075,11 +17306,13 @@ Op2179:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#32 ;@ Subtract cycles
@@ -16094,11 +17327,13 @@ Op217a:
   ldrsh r2,[r4],#2 ;@ Fetch extension
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -16112,11 +17347,13 @@ Op217a:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -16139,11 +17376,13 @@ Op217b:
   add r2,r2,r3,asr #24 ;@ r2=Disp+Rn
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -16157,11 +17396,13 @@ Op217b:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#30 ;@ Subtract cycles
@@ -16188,11 +17429,13 @@ Op217c:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -16226,11 +17469,13 @@ Op2180:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -16244,11 +17489,13 @@ Op2190:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -16270,11 +17517,13 @@ Op2190:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#26 ;@ Subtract cycles
@@ -16289,11 +17538,13 @@ Op2198:
   add r3,r0,#4 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -16315,11 +17566,13 @@ Op2198:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#26 ;@ Subtract cycles
@@ -16335,11 +17588,13 @@ Op21a0:
   sub r0,r0,#4 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -16361,11 +17616,13 @@ Op21a0:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -16380,11 +17637,13 @@ Op21a8:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -16406,11 +17665,13 @@ Op21a8:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#30 ;@ Subtract cycles
@@ -16434,11 +17695,13 @@ Op21b0:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -16460,11 +17723,13 @@ Op21b0:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#32 ;@ Subtract cycles
@@ -16476,11 +17741,13 @@ Op21b8:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -16502,11 +17769,13 @@ Op21b8:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#30 ;@ Subtract cycles
@@ -16520,11 +17789,13 @@ Op21b9:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -16546,11 +17817,13 @@ Op21b9:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#34 ;@ Subtract cycles
@@ -16565,11 +17838,13 @@ Op21ba:
   ldrsh r2,[r4],#2 ;@ Fetch extension
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -16591,11 +17866,13 @@ Op21ba:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#30 ;@ Subtract cycles
@@ -16618,11 +17895,13 @@ Op21bb:
   add r2,r2,r3,asr #24 ;@ r2=Disp+Rn
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -16644,11 +17923,13 @@ Op21bb:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#32 ;@ Subtract cycles
@@ -16683,11 +17964,13 @@ Op21bc:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#26 ;@ Subtract cycles
@@ -16708,11 +17991,13 @@ Op21c0:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -16726,11 +18011,13 @@ Op21d0:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -16739,11 +18026,13 @@ Op21d0:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -16758,11 +18047,13 @@ Op21d8:
   add r3,r0,#4 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -16771,11 +18062,13 @@ Op21d8:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -16791,11 +18084,13 @@ Op21e0:
   sub r0,r0,#4 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -16804,11 +18099,13 @@ Op21e0:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#26 ;@ Subtract cycles
@@ -16823,11 +18120,13 @@ Op21e8:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -16836,11 +18135,13 @@ Op21e8:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -16864,11 +18165,13 @@ Op21f0:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -16877,11 +18180,13 @@ Op21f0:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#30 ;@ Subtract cycles
@@ -16893,11 +18198,13 @@ Op21f8:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -16906,11 +18213,13 @@ Op21f8:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -16924,11 +18233,13 @@ Op21f9:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -16937,11 +18248,13 @@ Op21f9:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#32 ;@ Subtract cycles
@@ -16956,11 +18269,13 @@ Op21fa:
   ldrsh r2,[r4],#2 ;@ Fetch extension
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -16969,11 +18284,13 @@ Op21fa:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -16996,11 +18313,13 @@ Op21fb:
   add r2,r2,r3,asr #24 ;@ r2=Disp+Rn
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -17009,11 +18328,13 @@ Op21fb:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#30 ;@ Subtract cycles
@@ -17035,11 +18356,13 @@ Op21fc:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -17062,11 +18385,13 @@ Op23c0:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -17080,11 +18405,13 @@ Op23d0:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -17095,11 +18422,13 @@ Op23d0:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -17114,11 +18443,13 @@ Op23d8:
   add r3,r0,#4 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -17129,11 +18460,13 @@ Op23d8:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -17149,11 +18482,13 @@ Op23e0:
   sub r0,r0,#4 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -17164,11 +18499,13 @@ Op23e0:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#30 ;@ Subtract cycles
@@ -17183,11 +18520,13 @@ Op23e8:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -17198,11 +18537,13 @@ Op23e8:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#32 ;@ Subtract cycles
@@ -17226,11 +18567,13 @@ Op23f0:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -17241,11 +18584,13 @@ Op23f0:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#34 ;@ Subtract cycles
@@ -17257,11 +18602,13 @@ Op23f8:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -17272,11 +18619,13 @@ Op23f8:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#32 ;@ Subtract cycles
@@ -17290,11 +18639,13 @@ Op23f9:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -17305,11 +18656,13 @@ Op23f9:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#36 ;@ Subtract cycles
@@ -17324,11 +18677,13 @@ Op23fa:
   ldrsh r2,[r4],#2 ;@ Fetch extension
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -17339,11 +18694,13 @@ Op23fa:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#32 ;@ Subtract cycles
@@ -17366,11 +18723,13 @@ Op23fb:
   add r2,r2,r3,asr #24 ;@ r2=Disp+Rn
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -17381,11 +18740,13 @@ Op23fb:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#34 ;@ Subtract cycles
@@ -17409,11 +18770,13 @@ Op23fc:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -17436,11 +18799,13 @@ Op2ec0:
   add r3,r0,#4 ;@ Post-increment An
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '(a7)+' (address in r0):
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -17454,11 +18819,13 @@ Op2ed0:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -17474,6 +18841,7 @@ Op2ed0:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -17488,11 +18856,13 @@ Op2ed8:
   add r3,r0,#4 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -17508,6 +18878,7 @@ Op2ed8:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -17523,11 +18894,13 @@ Op2ee0:
   sub r0,r0,#4 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -17543,6 +18916,7 @@ Op2ee0:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -17557,11 +18931,13 @@ Op2ee8:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -17577,6 +18953,7 @@ Op2ee8:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -17600,11 +18977,13 @@ Op2ef0:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -17620,6 +18999,7 @@ Op2ef0:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#26 ;@ Subtract cycles
@@ -17631,11 +19011,13 @@ Op2ef8:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -17651,6 +19033,7 @@ Op2ef8:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -17664,11 +19047,13 @@ Op2ef9:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -17684,6 +19069,7 @@ Op2ef9:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -17698,11 +19084,13 @@ Op2efa:
   ldrsh r2,[r4],#2 ;@ Fetch extension
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -17718,6 +19106,7 @@ Op2efa:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -17740,11 +19129,13 @@ Op2efb:
   add r2,r2,r3,asr #24 ;@ r2=Disp+Rn
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -17760,6 +19151,7 @@ Op2efb:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#26 ;@ Subtract cycles
@@ -17783,11 +19175,13 @@ Op2efc:
   add r3,r0,#4 ;@ Post-increment An
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '(a7)+' (address in r0):
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -17813,17 +19207,20 @@ Op2f00:
   add r0,r8,#2
 ;@ EaWrite: Write r1 into '-(a7)' (address in r0):
   uxth r1,r1 ;@ zero extend
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call 0íþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call 0Áþìþ(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaWrite: Write r11 into '-(a7)' (address in r8):
   mov r1,r11,lsr #16
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -17837,11 +19234,13 @@ Op2f10:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -17859,13 +19258,15 @@ Op2f10:
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call 0íþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call 0Áþìþ(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaWrite: Write r11 into '-(a7)' (address in r8):
   mov r1,r11,lsr #16
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -17880,11 +19281,13 @@ Op2f18:
   add r3,r0,#4 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -17902,13 +19305,15 @@ Op2f18:
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call 0íþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call 0Áþìþ(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaWrite: Write r11 into '-(a7)' (address in r8):
   mov r1,r11,lsr #16
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -17924,11 +19329,13 @@ Op2f20:
   sub r0,r0,#4 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -17946,13 +19353,15 @@ Op2f20:
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call 0íþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call 0Áþìþ(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaWrite: Write r11 into '-(a7)' (address in r8):
   mov r1,r11,lsr #16
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -17967,11 +19376,13 @@ Op2f28:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -17989,13 +19400,15 @@ Op2f28:
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call 0íþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call 0Áþìþ(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaWrite: Write r11 into '-(a7)' (address in r8):
   mov r1,r11,lsr #16
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -18019,11 +19432,13 @@ Op2f30:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -18041,13 +19456,15 @@ Op2f30:
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call 0íþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call 0Áþìþ(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaWrite: Write r11 into '-(a7)' (address in r8):
   mov r1,r11,lsr #16
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#26 ;@ Subtract cycles
@@ -18059,11 +19476,13 @@ Op2f38:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -18081,13 +19500,15 @@ Op2f38:
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call 0íþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call 0Áþìþ(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaWrite: Write r11 into '-(a7)' (address in r8):
   mov r1,r11,lsr #16
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -18101,11 +19522,13 @@ Op2f39:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -18123,13 +19546,15 @@ Op2f39:
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call 0íþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call 0Áþìþ(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaWrite: Write r11 into '-(a7)' (address in r8):
   mov r1,r11,lsr #16
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -18144,11 +19569,13 @@ Op2f3a:
   ldrsh r2,[r4],#2 ;@ Fetch extension
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -18166,13 +19593,15 @@ Op2f3a:
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call 0íþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call 0Áþìþ(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaWrite: Write r11 into '-(a7)' (address in r8):
   mov r1,r11,lsr #16
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -18195,11 +19624,13 @@ Op2f3b:
   add r2,r2,r3,asr #24 ;@ r2=Disp+Rn
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -18217,13 +19648,15 @@ Op2f3b:
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call 0íþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call 0Áþìþ(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaWrite: Write r11 into '-(a7)' (address in r8):
   mov r1,r11,lsr #16
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#26 ;@ Subtract cycles
@@ -18250,17 +19683,20 @@ Op2f3c:
   add r0,r8,#2
 ;@ EaWrite: Write r1 into '-(a7)' (address in r0):
   uxth r1,r1 ;@ zero extend
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call 0íþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call 0Áþìþ(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaWrite: Write r11 into '-(a7)' (address in r8):
   mov r1,r11,lsr #16
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -18274,11 +19710,13 @@ Op3010:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -18305,11 +19743,13 @@ Op3020:
   sub r0,r0,#2 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -18344,11 +19784,13 @@ Op3030:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -18371,11 +19813,13 @@ Op3038:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -18401,11 +19845,13 @@ Op303a:
   ldrsh r2,[r4],#2 ;@ Fetch extension
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -18439,11 +19885,13 @@ Op303b:
   add r2,r2,r3,asr #24 ;@ r2=Disp+Rn
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -18490,11 +19938,13 @@ Op3050:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   sxth r1,r0 ;@ sign extend
 
 ;@ EaCalc : Get register index into r0:
@@ -18515,11 +19965,13 @@ Op3058:
   add r3,r0,#2 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   sxth r1,r0 ;@ sign extend
 
 ;@ EaCalc : Get register index into r0:
@@ -18541,11 +19993,13 @@ Op3060:
   sub r0,r0,#2 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   sxth r1,r0 ;@ sign extend
 
 ;@ EaCalc : Get register index into r0:
@@ -18566,11 +20020,13 @@ Op3068:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   sxth r1,r0 ;@ sign extend
 
 ;@ EaCalc : Get register index into r0:
@@ -18600,11 +20056,13 @@ Op3070:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   sxth r1,r0 ;@ sign extend
 
 ;@ EaCalc : Get register index into r0:
@@ -18622,11 +20080,13 @@ Op3078:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   sxth r1,r0 ;@ sign extend
 
 ;@ EaCalc : Get register index into r0:
@@ -18646,11 +20106,13 @@ Op3079:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   sxth r1,r0 ;@ sign extend
 
 ;@ EaCalc : Get register index into r0:
@@ -18671,11 +20133,13 @@ Op307a:
   ldrsh r2,[r4],#2 ;@ Fetch extension
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   sxth r1,r0 ;@ sign extend
 
 ;@ EaCalc : Get register index into r0:
@@ -18704,11 +20168,13 @@ Op307b:
   add r2,r2,r3,asr #24 ;@ r2=Disp+Rn
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   sxth r1,r0 ;@ sign extend
 
 ;@ EaCalc : Get register index into r0:
@@ -18744,11 +20210,13 @@ Op3090:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -18764,6 +20232,7 @@ Op3090:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -18778,11 +20247,13 @@ Op3098:
   add r3,r0,#2 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -18798,6 +20269,7 @@ Op3098:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -18813,11 +20285,13 @@ Op30a0:
   sub r0,r0,#2 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -18833,6 +20307,7 @@ Op30a0:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -18847,11 +20322,13 @@ Op30a8:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -18867,6 +20344,7 @@ Op30a8:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -18890,11 +20368,13 @@ Op30b0:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -18910,6 +20390,7 @@ Op30b0:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -18921,11 +20402,13 @@ Op30b8:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -18941,6 +20424,7 @@ Op30b8:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -18954,11 +20438,13 @@ Op30b9:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -18974,6 +20460,7 @@ Op30b9:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -18988,11 +20475,13 @@ Op30ba:
   ldrsh r2,[r4],#2 ;@ Fetch extension
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -19008,6 +20497,7 @@ Op30ba:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -19030,11 +20520,13 @@ Op30bb:
   add r2,r2,r3,asr #24 ;@ r2=Disp+Rn
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -19050,6 +20542,7 @@ Op30bb:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -19071,11 +20564,13 @@ Op30bc:
   ldr r0,[r7,r2,lsr #7]
 ;@ EaWrite: Write r1 into '(a0)' (address in r0):
   mov r1,r1,lsr #16
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -19090,11 +20585,13 @@ Op30d8:
   add r3,r0,#2 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -19112,6 +20609,7 @@ Op30d8:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -19127,11 +20625,13 @@ Op30e0:
   sub r0,r0,#2 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -19149,6 +20649,7 @@ Op30e0:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -19163,11 +20664,13 @@ Op30e8:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -19185,6 +20688,7 @@ Op30e8:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -19208,11 +20712,13 @@ Op30f0:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -19230,6 +20736,7 @@ Op30f0:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -19241,11 +20748,13 @@ Op30f8:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -19263,6 +20772,7 @@ Op30f8:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -19276,11 +20786,13 @@ Op30f9:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -19298,6 +20810,7 @@ Op30f9:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -19312,11 +20825,13 @@ Op30fa:
   ldrsh r2,[r4],#2 ;@ Fetch extension
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -19334,6 +20849,7 @@ Op30fa:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -19356,11 +20872,13 @@ Op30fb:
   add r2,r2,r3,asr #24 ;@ r2=Disp+Rn
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -19378,6 +20896,7 @@ Op30fb:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -19401,11 +20920,13 @@ Op30fc:
   str r3,[r7,r2,lsr #7]
 ;@ EaWrite: Write r1 into '(a0)+' (address in r0):
   mov r1,r1,lsr #16
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -19430,11 +20951,13 @@ Op3100:
   sub r0,r0,#2 ;@ Pre-decrement An
   str r0,[r7,r2,lsr #7]
 ;@ EaWrite: Write r1 into '-(a0)' (address in r0):
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#8 ;@ Subtract cycles
@@ -19448,11 +20971,13 @@ Op3110:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -19470,6 +20995,7 @@ Op3110:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -19484,11 +21010,13 @@ Op3118:
   add r3,r0,#2 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -19506,6 +21034,7 @@ Op3118:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -19521,11 +21050,13 @@ Op3120:
   sub r0,r0,#2 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -19543,6 +21074,7 @@ Op3120:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -19557,11 +21089,13 @@ Op3128:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -19579,6 +21113,7 @@ Op3128:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -19602,11 +21137,13 @@ Op3130:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -19624,6 +21161,7 @@ Op3130:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -19635,11 +21173,13 @@ Op3138:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -19657,6 +21197,7 @@ Op3138:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -19670,11 +21211,13 @@ Op3139:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -19692,6 +21235,7 @@ Op3139:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -19706,11 +21250,13 @@ Op313a:
   ldrsh r2,[r4],#2 ;@ Fetch extension
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -19728,6 +21274,7 @@ Op313a:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -19750,11 +21297,13 @@ Op313b:
   add r2,r2,r3,asr #24 ;@ r2=Disp+Rn
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -19772,6 +21321,7 @@ Op313b:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -19795,11 +21345,13 @@ Op313c:
   str r0,[r7,r2,lsr #7]
 ;@ EaWrite: Write r1 into '-(a0)' (address in r0):
   mov r1,r1,lsr #16
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -19825,11 +21377,13 @@ Op3140:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -19843,11 +21397,13 @@ Op3150:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -19861,11 +21417,13 @@ Op3150:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
   mov r1,r1,lsr #16
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -19880,11 +21438,13 @@ Op3158:
   add r3,r0,#2 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -19898,11 +21458,13 @@ Op3158:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
   mov r1,r1,lsr #16
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -19918,11 +21480,13 @@ Op3160:
   sub r0,r0,#2 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -19936,11 +21500,13 @@ Op3160:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
   mov r1,r1,lsr #16
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -19955,11 +21521,13 @@ Op3168:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -19973,11 +21541,13 @@ Op3168:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
   mov r1,r1,lsr #16
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -20001,11 +21571,13 @@ Op3170:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -20019,11 +21591,13 @@ Op3170:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
   mov r1,r1,lsr #16
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -20035,11 +21609,13 @@ Op3178:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -20053,11 +21629,13 @@ Op3178:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
   mov r1,r1,lsr #16
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -20071,11 +21649,13 @@ Op3179:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -20089,11 +21669,13 @@ Op3179:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
   mov r1,r1,lsr #16
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -20108,11 +21690,13 @@ Op317a:
   ldrsh r2,[r4],#2 ;@ Fetch extension
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -20126,11 +21710,13 @@ Op317a:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
   mov r1,r1,lsr #16
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -20153,11 +21739,13 @@ Op317b:
   add r2,r2,r3,asr #24 ;@ r2=Disp+Rn
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -20171,11 +21759,13 @@ Op317b:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
   mov r1,r1,lsr #16
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -20200,11 +21790,13 @@ Op317c:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
   mov r1,r1,lsr #16
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -20218,11 +21810,13 @@ Op3190:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -20245,11 +21839,13 @@ Op3190:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
   mov r1,r1,lsr #16
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -20264,11 +21860,13 @@ Op3198:
   add r3,r0,#2 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -20291,11 +21889,13 @@ Op3198:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
   mov r1,r1,lsr #16
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -20311,11 +21911,13 @@ Op31a0:
   sub r0,r0,#2 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -20338,11 +21940,13 @@ Op31a0:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
   mov r1,r1,lsr #16
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -20357,11 +21961,13 @@ Op31a8:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -20384,11 +21990,13 @@ Op31a8:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
   mov r1,r1,lsr #16
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -20412,11 +22020,13 @@ Op31b0:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -20439,11 +22049,13 @@ Op31b0:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
   mov r1,r1,lsr #16
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -20455,11 +22067,13 @@ Op31b8:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -20482,11 +22096,13 @@ Op31b8:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
   mov r1,r1,lsr #16
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -20500,11 +22116,13 @@ Op31b9:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -20527,11 +22145,13 @@ Op31b9:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
   mov r1,r1,lsr #16
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#26 ;@ Subtract cycles
@@ -20546,11 +22166,13 @@ Op31ba:
   ldrsh r2,[r4],#2 ;@ Fetch extension
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -20573,11 +22195,13 @@ Op31ba:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
   mov r1,r1,lsr #16
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -20600,11 +22224,13 @@ Op31bb:
   add r2,r2,r3,asr #24 ;@ r2=Disp+Rn
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -20627,11 +22253,13 @@ Op31bb:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
   mov r1,r1,lsr #16
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -20665,11 +22293,13 @@ Op31bc:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
   mov r1,r1,lsr #16
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -20691,11 +22321,13 @@ Op31c0:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -20709,11 +22341,13 @@ Op31d0:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -20723,11 +22357,13 @@ Op31d0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
   mov r1,r1,lsr #16
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -20742,11 +22378,13 @@ Op31d8:
   add r3,r0,#2 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -20756,11 +22394,13 @@ Op31d8:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
   mov r1,r1,lsr #16
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -20776,11 +22416,13 @@ Op31e0:
   sub r0,r0,#2 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -20790,11 +22432,13 @@ Op31e0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
   mov r1,r1,lsr #16
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -20809,11 +22453,13 @@ Op31e8:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -20823,11 +22469,13 @@ Op31e8:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
   mov r1,r1,lsr #16
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -20851,11 +22499,13 @@ Op31f0:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -20865,11 +22515,13 @@ Op31f0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
   mov r1,r1,lsr #16
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -20881,11 +22533,13 @@ Op31f8:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -20895,11 +22549,13 @@ Op31f8:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
   mov r1,r1,lsr #16
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -20913,11 +22569,13 @@ Op31f9:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -20927,11 +22585,13 @@ Op31f9:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
   mov r1,r1,lsr #16
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -20946,11 +22606,13 @@ Op31fa:
   ldrsh r2,[r4],#2 ;@ Fetch extension
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -20960,11 +22622,13 @@ Op31fa:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
   mov r1,r1,lsr #16
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -20987,11 +22651,13 @@ Op31fb:
   add r2,r2,r3,asr #24 ;@ r2=Disp+Rn
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -21001,11 +22667,13 @@ Op31fb:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
   mov r1,r1,lsr #16
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -21026,11 +22694,13 @@ Op31fc:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
   mov r1,r1,lsr #16
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -21054,11 +22724,13 @@ Op33c0:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -21072,11 +22744,13 @@ Op33d0:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -21088,11 +22762,13 @@ Op33d0:
   orr r0,r0,r2,lsl #16
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
   mov r1,r1,lsr #16
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -21108,11 +22784,13 @@ Op33e0:
   sub r0,r0,#2 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -21124,11 +22802,13 @@ Op33e0:
   orr r0,r0,r2,lsl #16
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
   mov r1,r1,lsr #16
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -21143,11 +22823,13 @@ Op33e8:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -21159,11 +22841,13 @@ Op33e8:
   orr r0,r0,r2,lsl #16
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
   mov r1,r1,lsr #16
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -21187,11 +22871,13 @@ Op33f0:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -21203,11 +22889,13 @@ Op33f0:
   orr r0,r0,r2,lsl #16
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
   mov r1,r1,lsr #16
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#26 ;@ Subtract cycles
@@ -21219,11 +22907,13 @@ Op33f8:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -21235,11 +22925,13 @@ Op33f8:
   orr r0,r0,r2,lsl #16
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
   mov r1,r1,lsr #16
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -21253,11 +22945,13 @@ Op33f9:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -21269,11 +22963,13 @@ Op33f9:
   orr r0,r0,r2,lsl #16
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
   mov r1,r1,lsr #16
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -21288,11 +22984,13 @@ Op33fa:
   ldrsh r2,[r4],#2 ;@ Fetch extension
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -21304,11 +23002,13 @@ Op33fa:
   orr r0,r0,r2,lsl #16
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
   mov r1,r1,lsr #16
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -21331,11 +23031,13 @@ Op33fb:
   add r2,r2,r3,asr #24 ;@ r2=Disp+Rn
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -21347,11 +23049,13 @@ Op33fb:
   orr r0,r0,r2,lsl #16
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
   mov r1,r1,lsr #16
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#26 ;@ Subtract cycles
@@ -21374,11 +23078,13 @@ Op33fc:
   orr r0,r0,r2,lsl #16
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
   mov r1,r1,lsr #16
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -21402,11 +23108,13 @@ Op3ec0:
   add r3,r0,#2 ;@ Post-increment An
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '(a7)+' (address in r0):
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#8 ;@ Subtract cycles
@@ -21420,11 +23128,13 @@ Op3ed0:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -21441,6 +23151,7 @@ Op3ed0:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -21455,11 +23166,13 @@ Op3ed8:
   add r3,r0,#2 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -21476,6 +23189,7 @@ Op3ed8:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -21491,11 +23205,13 @@ Op3ee0:
   sub r0,r0,#2 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -21512,6 +23228,7 @@ Op3ee0:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -21526,11 +23243,13 @@ Op3ee8:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -21547,6 +23266,7 @@ Op3ee8:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -21570,11 +23290,13 @@ Op3ef0:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -21591,6 +23313,7 @@ Op3ef0:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -21602,11 +23325,13 @@ Op3ef8:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -21623,6 +23348,7 @@ Op3ef8:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -21636,11 +23362,13 @@ Op3ef9:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -21657,6 +23385,7 @@ Op3ef9:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -21671,11 +23400,13 @@ Op3efa:
   ldrsh r2,[r4],#2 ;@ Fetch extension
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -21692,6 +23423,7 @@ Op3efa:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -21714,11 +23446,13 @@ Op3efb:
   add r2,r2,r3,asr #24 ;@ r2=Disp+Rn
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -21735,6 +23469,7 @@ Op3efb:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -21757,11 +23492,13 @@ Op3efc:
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '(a7)+' (address in r0):
   mov r1,r1,lsr #16
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -21785,11 +23522,13 @@ Op3f00:
   sub r0,r0,#2 ;@ Pre-decrement An
   str r0,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '-(a7)' (address in r0):
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#8 ;@ Subtract cycles
@@ -21803,11 +23542,13 @@ Op3f10:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -21824,6 +23565,7 @@ Op3f10:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -21838,11 +23580,13 @@ Op3f18:
   add r3,r0,#2 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -21859,6 +23603,7 @@ Op3f18:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -21874,11 +23619,13 @@ Op3f20:
   sub r0,r0,#2 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -21895,6 +23642,7 @@ Op3f20:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -21909,11 +23657,13 @@ Op3f28:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -21930,6 +23680,7 @@ Op3f28:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -21953,11 +23704,13 @@ Op3f30:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -21974,6 +23727,7 @@ Op3f30:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -21985,11 +23739,13 @@ Op3f38:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -22006,6 +23762,7 @@ Op3f38:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -22019,11 +23776,13 @@ Op3f39:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -22040,6 +23799,7 @@ Op3f39:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -22054,11 +23814,13 @@ Op3f3a:
   ldrsh r2,[r4],#2 ;@ Fetch extension
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -22075,6 +23837,7 @@ Op3f3a:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -22097,11 +23860,13 @@ Op3f3b:
   add r2,r2,r3,asr #24 ;@ r2=Disp+Rn
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -22118,6 +23883,7 @@ Op3f3b:
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -22140,11 +23906,13 @@ Op3f3c:
   str r0,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '-(a7)' (address in r0):
   mov r1,r1,lsr #16
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -22189,9 +23957,11 @@ Op4010:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Negx:
 ;@ Get X bit:
@@ -22214,6 +23984,7 @@ Op4010:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -22228,9 +23999,11 @@ Op4018:
   add r3,r11,#1 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Negx:
 ;@ Get X bit:
@@ -22253,6 +24026,7 @@ Op4018:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -22266,9 +24040,11 @@ Op401f:
   add r3,r11,#2 ;@ Post-increment An
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '(a7)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Negx:
 ;@ Get X bit:
@@ -22291,6 +24067,7 @@ Op401f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -22306,9 +24083,11 @@ Op4020:
   sub r11,r11,#1 ;@ Pre-decrement An
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Negx:
 ;@ Get X bit:
@@ -22331,6 +24110,7 @@ Op4020:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -22344,9 +24124,11 @@ Op4027:
   sub r11,r11,#2 ;@ Pre-decrement An
   str r11,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '-(a7)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Negx:
 ;@ Get X bit:
@@ -22369,6 +24151,7 @@ Op4027:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -22383,9 +24166,11 @@ Op4028:
   ldr r2,[r7,r2,lsl #2]
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Negx:
 ;@ Get X bit:
@@ -22408,6 +24193,7 @@ Op4028:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -22431,9 +24217,11 @@ Op4030:
   ldr r2,[r7,r2,lsl #2]
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Negx:
 ;@ Get X bit:
@@ -22456,6 +24244,7 @@ Op4030:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -22467,9 +24256,11 @@ Op4038:
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Negx:
 ;@ Get X bit:
@@ -22492,6 +24283,7 @@ Op4038:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -22505,9 +24297,11 @@ Op4039:
   ldrh r0,[r4],#2
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Negx:
 ;@ Get X bit:
@@ -22530,6 +24324,7 @@ Op4039:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -22575,6 +24370,7 @@ Op4050:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -22582,6 +24378,7 @@ Op4050:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Negx:
 ;@ Get X bit:
@@ -22604,6 +24401,7 @@ Op4050:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -22618,6 +24416,7 @@ Op4058:
   add r3,r11,#2 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -22625,6 +24424,7 @@ Op4058:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Negx:
 ;@ Get X bit:
@@ -22647,6 +24447,7 @@ Op4058:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -22662,6 +24463,7 @@ Op4060:
   sub r11,r11,#2 ;@ Pre-decrement An
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -22669,6 +24471,7 @@ Op4060:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Negx:
 ;@ Get X bit:
@@ -22691,6 +24494,7 @@ Op4060:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -22705,6 +24509,7 @@ Op4068:
   ldr r2,[r7,r2,lsl #2]
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -22712,6 +24517,7 @@ Op4068:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Negx:
 ;@ Get X bit:
@@ -22734,6 +24540,7 @@ Op4068:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -22757,6 +24564,7 @@ Op4070:
   ldr r2,[r7,r2,lsl #2]
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -22764,6 +24572,7 @@ Op4070:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Negx:
 ;@ Get X bit:
@@ -22786,6 +24595,7 @@ Op4070:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -22797,6 +24607,7 @@ Op4078:
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -22804,6 +24615,7 @@ Op4078:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Negx:
 ;@ Get X bit:
@@ -22826,6 +24638,7 @@ Op4078:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -22839,6 +24652,7 @@ Op4079:
   ldrh r0,[r4],#2
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -22846,6 +24660,7 @@ Op4079:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Negx:
 ;@ Get X bit:
@@ -22868,6 +24683,7 @@ Op4079:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -22909,6 +24725,7 @@ Op4090:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -22916,6 +24733,7 @@ Op4090:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Negx:
 ;@ Get X bit:
@@ -22934,6 +24752,7 @@ Op4090:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -22948,6 +24767,7 @@ Op4098:
   add r3,r11,#4 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -22955,6 +24775,7 @@ Op4098:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Negx:
 ;@ Get X bit:
@@ -22973,6 +24794,7 @@ Op4098:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -22988,6 +24810,7 @@ Op40a0:
   sub r11,r11,#4 ;@ Pre-decrement An
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -22995,6 +24818,7 @@ Op40a0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Negx:
 ;@ Get X bit:
@@ -23013,6 +24837,7 @@ Op40a0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -23027,6 +24852,7 @@ Op40a8:
   ldr r2,[r7,r2,lsl #2]
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -23034,6 +24860,7 @@ Op40a8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Negx:
 ;@ Get X bit:
@@ -23052,6 +24879,7 @@ Op40a8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -23075,6 +24903,7 @@ Op40b0:
   ldr r2,[r7,r2,lsl #2]
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -23082,6 +24911,7 @@ Op40b0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Negx:
 ;@ Get X bit:
@@ -23100,6 +24930,7 @@ Op40b0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#26 ;@ Subtract cycles
@@ -23111,6 +24942,7 @@ Op40b8:
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -23118,6 +24950,7 @@ Op40b8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Negx:
 ;@ Get X bit:
@@ -23136,6 +24969,7 @@ Op40b8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -23149,6 +24983,7 @@ Op40b9:
   ldrh r0,[r4],#2
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -23156,6 +24991,7 @@ Op40b9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Negx:
 ;@ Get X bit:
@@ -23174,6 +25010,7 @@ Op40b9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -23223,11 +25060,13 @@ Op40d0:
   ldr r0,[r7,r2,lsl #2]
 ;@ EaWrite: Write r1 into '(a0)' (address in r0):
   uxth r1,r1 ;@ zero extend
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call Píþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call PÁþìþ(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -23254,11 +25093,13 @@ Op40d8:
   str r3,[r7,r2,lsl #2]
 ;@ EaWrite: Write r1 into '(a0)+' (address in r0):
   uxth r1,r1 ;@ zero extend
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call Píþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call PÁþìþ(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -23286,11 +25127,13 @@ Op40e0:
   str r0,[r7,r2,lsl #2]
 ;@ EaWrite: Write r1 into '-(a0)' (address in r0):
   uxth r1,r1 ;@ zero extend
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call Píþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call PÁþìþ(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -23317,11 +25160,13 @@ Op40e8:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
   uxth r1,r1 ;@ zero extend
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call Píþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call PÁþìþ(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -23357,11 +25202,13 @@ Op40f0:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
   uxth r1,r1 ;@ zero extend
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call Píþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call PÁþìþ(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -23385,11 +25232,13 @@ Op40f8:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
   uxth r1,r1 ;@ zero extend
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call Píþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call PÁþìþ(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -23415,11 +25264,13 @@ Op40f9:
   orr r0,r0,r2,lsl #16
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
   uxth r1,r1 ;@ zero extend
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call Píþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call PÁþìþ(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -23475,11 +25326,13 @@ Op4190:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -23523,11 +25376,13 @@ Op4198:
   add r3,r0,#2 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -23572,11 +25427,13 @@ Op41a0:
   sub r0,r0,#2 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -23620,11 +25477,13 @@ Op41a8:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -23677,11 +25536,13 @@ Op41b0:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -23722,11 +25583,13 @@ Op41b8:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -23769,11 +25632,13 @@ Op41b9:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -23817,11 +25682,13 @@ Op41ba:
   ldrsh r2,[r4],#2 ;@ Fetch extension
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -23873,11 +25740,13 @@ Op41bb:
   add r2,r2,r3,asr #24 ;@ r2=Disp+Rn
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -24093,9 +25962,11 @@ Op4210:
 
 ;@ EaWrite: Write r1 into '(a0)' (address in r11):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -24116,9 +25987,11 @@ Op4218:
 
 ;@ EaWrite: Write r1 into '(a0)+' (address in r11):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -24138,9 +26011,11 @@ Op421f:
 
 ;@ EaWrite: Write r1 into '(a7)+' (address in r11):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -24162,9 +26037,11 @@ Op4220:
 
 ;@ EaWrite: Write r1 into '-(a0)' (address in r11):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -24184,9 +26061,11 @@ Op4227:
 
 ;@ EaWrite: Write r1 into '-(a7)' (address in r11):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -24207,9 +26086,11 @@ Op4228:
 
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r11):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -24239,9 +26120,11 @@ Op4230:
 
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r11):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -24259,9 +26142,11 @@ Op4238:
 
 ;@ EaWrite: Write r1 into '$3333.w' (address in r11):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -24281,9 +26166,11 @@ Op4239:
 
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r11):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -24321,13 +26208,15 @@ Op4250:
 
 ;@ EaWrite: Write r1 into '(a0)' (address in r11):
   uxth r1,r1 ;@ zero extend
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x78] ;@ Call Píþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call PÁþìþ(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -24348,13 +26237,15 @@ Op4258:
 
 ;@ EaWrite: Write r1 into '(a0)+' (address in r11):
   uxth r1,r1 ;@ zero extend
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x78] ;@ Call Píþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call PÁþìþ(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -24376,13 +26267,15 @@ Op4260:
 
 ;@ EaWrite: Write r1 into '-(a0)' (address in r11):
   uxth r1,r1 ;@ zero extend
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x78] ;@ Call Píþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call PÁþìþ(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -24403,13 +26296,15 @@ Op4268:
 
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r11):
   uxth r1,r1 ;@ zero extend
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x78] ;@ Call Píþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call PÁþìþ(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -24439,13 +26334,15 @@ Op4270:
 
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r11):
   uxth r1,r1 ;@ zero extend
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x78] ;@ Call Píþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call PÁþìþ(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -24463,13 +26360,15 @@ Op4278:
 
 ;@ EaWrite: Write r1 into '$3333.w' (address in r11):
   uxth r1,r1 ;@ zero extend
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x78] ;@ Call Píþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call PÁþìþ(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -24489,13 +26388,15 @@ Op4279:
 
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r11):
   uxth r1,r1 ;@ zero extend
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x78] ;@ Call Píþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call PÁþìþ(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -24531,6 +26432,7 @@ Op4290:
   mov r10,#0x40000000 ;@ NZCV=0100
 
 ;@ EaWrite: Write r1 into '(a0)' (address in r11):
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -24538,6 +26440,7 @@ Op4290:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -24557,6 +26460,7 @@ Op4298:
   mov r10,#0x40000000 ;@ NZCV=0100
 
 ;@ EaWrite: Write r1 into '(a0)+' (address in r11):
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -24564,6 +26468,7 @@ Op4298:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -24584,6 +26489,7 @@ Op42a0:
   mov r10,#0x40000000 ;@ NZCV=0100
 
 ;@ EaWrite: Write r1 into '-(a0)' (address in r11):
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -24591,6 +26497,7 @@ Op42a0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -24610,6 +26517,7 @@ Op42a8:
   mov r10,#0x40000000 ;@ NZCV=0100
 
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r11):
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -24617,6 +26525,7 @@ Op42a8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -24645,6 +26554,7 @@ Op42b0:
   mov r10,#0x40000000 ;@ NZCV=0100
 
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r11):
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -24652,6 +26562,7 @@ Op42b0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#26 ;@ Subtract cycles
@@ -24668,6 +26579,7 @@ Op42b8:
   mov r10,#0x40000000 ;@ NZCV=0100
 
 ;@ EaWrite: Write r1 into '$3333.w' (address in r11):
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -24675,6 +26587,7 @@ Op42b8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -24693,6 +26606,7 @@ Op42b9:
   mov r10,#0x40000000 ;@ NZCV=0100
 
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r11):
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -24700,6 +26614,7 @@ Op42b9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -24736,9 +26651,11 @@ Op4410:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Neg:
   mov r0,r0,asl #24
@@ -24753,6 +26670,7 @@ Op4410:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -24767,9 +26685,11 @@ Op4418:
   add r3,r11,#1 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Neg:
   mov r0,r0,asl #24
@@ -24784,6 +26704,7 @@ Op4418:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -24797,9 +26718,11 @@ Op441f:
   add r3,r11,#2 ;@ Post-increment An
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '(a7)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Neg:
   mov r0,r0,asl #24
@@ -24814,6 +26737,7 @@ Op441f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -24829,9 +26753,11 @@ Op4420:
   sub r11,r11,#1 ;@ Pre-decrement An
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Neg:
   mov r0,r0,asl #24
@@ -24846,6 +26772,7 @@ Op4420:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -24859,9 +26786,11 @@ Op4427:
   sub r11,r11,#2 ;@ Pre-decrement An
   str r11,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '-(a7)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Neg:
   mov r0,r0,asl #24
@@ -24876,6 +26805,7 @@ Op4427:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -24890,9 +26820,11 @@ Op4428:
   ldr r2,[r7,r2,lsl #2]
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Neg:
   mov r0,r0,asl #24
@@ -24907,6 +26839,7 @@ Op4428:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -24930,9 +26863,11 @@ Op4430:
   ldr r2,[r7,r2,lsl #2]
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Neg:
   mov r0,r0,asl #24
@@ -24947,6 +26882,7 @@ Op4430:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -24958,9 +26894,11 @@ Op4438:
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Neg:
   mov r0,r0,asl #24
@@ -24975,6 +26913,7 @@ Op4438:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -24988,9 +26927,11 @@ Op4439:
   ldrh r0,[r4],#2
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Neg:
   mov r0,r0,asl #24
@@ -25005,6 +26946,7 @@ Op4439:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -25042,6 +26984,7 @@ Op4450:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -25049,6 +26992,7 @@ Op4450:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Neg:
   mov r0,r0,asl #16
@@ -25063,6 +27007,7 @@ Op4450:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -25077,6 +27022,7 @@ Op4458:
   add r3,r11,#2 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -25084,6 +27030,7 @@ Op4458:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Neg:
   mov r0,r0,asl #16
@@ -25098,6 +27045,7 @@ Op4458:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -25113,6 +27061,7 @@ Op4460:
   sub r11,r11,#2 ;@ Pre-decrement An
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -25120,6 +27069,7 @@ Op4460:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Neg:
   mov r0,r0,asl #16
@@ -25134,6 +27084,7 @@ Op4460:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -25148,6 +27099,7 @@ Op4468:
   ldr r2,[r7,r2,lsl #2]
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -25155,6 +27107,7 @@ Op4468:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Neg:
   mov r0,r0,asl #16
@@ -25169,6 +27122,7 @@ Op4468:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -25192,6 +27146,7 @@ Op4470:
   ldr r2,[r7,r2,lsl #2]
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -25199,6 +27154,7 @@ Op4470:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Neg:
   mov r0,r0,asl #16
@@ -25213,6 +27169,7 @@ Op4470:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -25224,6 +27181,7 @@ Op4478:
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -25231,6 +27189,7 @@ Op4478:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Neg:
   mov r0,r0,asl #16
@@ -25245,6 +27204,7 @@ Op4478:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -25258,6 +27218,7 @@ Op4479:
   ldrh r0,[r4],#2
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -25265,6 +27226,7 @@ Op4479:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Neg:
   mov r0,r0,asl #16
@@ -25279,6 +27241,7 @@ Op4479:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -25313,6 +27276,7 @@ Op4490:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -25320,6 +27284,7 @@ Op4490:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Neg:
   rsbs r1,r0,#0
@@ -25331,6 +27296,7 @@ Op4490:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -25345,6 +27311,7 @@ Op4498:
   add r3,r11,#4 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -25352,6 +27319,7 @@ Op4498:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Neg:
   rsbs r1,r0,#0
@@ -25363,6 +27331,7 @@ Op4498:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -25378,6 +27347,7 @@ Op44a0:
   sub r11,r11,#4 ;@ Pre-decrement An
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -25385,6 +27355,7 @@ Op44a0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Neg:
   rsbs r1,r0,#0
@@ -25396,6 +27367,7 @@ Op44a0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -25410,6 +27382,7 @@ Op44a8:
   ldr r2,[r7,r2,lsl #2]
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -25417,6 +27390,7 @@ Op44a8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Neg:
   rsbs r1,r0,#0
@@ -25428,6 +27402,7 @@ Op44a8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -25451,6 +27426,7 @@ Op44b0:
   ldr r2,[r7,r2,lsl #2]
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -25458,6 +27434,7 @@ Op44b0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Neg:
   rsbs r1,r0,#0
@@ -25469,6 +27446,7 @@ Op44b0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#26 ;@ Subtract cycles
@@ -25480,6 +27458,7 @@ Op44b8:
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -25487,6 +27466,7 @@ Op44b8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Neg:
   rsbs r1,r0,#0
@@ -25498,6 +27478,7 @@ Op44b8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -25511,6 +27492,7 @@ Op44b9:
   ldrh r0,[r4],#2
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -25518,6 +27500,7 @@ Op44b9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Neg:
   rsbs r1,r0,#0
@@ -25529,6 +27512,7 @@ Op44b9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -25561,11 +27545,13 @@ Op44d0:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   eor r1,r0,r0,ror #1 ;@ Bit 0=C^V
   mov r2,r0,lsl #25
@@ -25587,11 +27573,13 @@ Op44d8:
   add r3,r0,#2 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   eor r1,r0,r0,ror #1 ;@ Bit 0=C^V
   mov r2,r0,lsl #25
@@ -25614,11 +27602,13 @@ Op44e0:
   sub r0,r0,#2 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   eor r1,r0,r0,ror #1 ;@ Bit 0=C^V
   mov r2,r0,lsl #25
@@ -25640,11 +27630,13 @@ Op44e8:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   eor r1,r0,r0,ror #1 ;@ Bit 0=C^V
   mov r2,r0,lsl #25
@@ -25675,11 +27667,13 @@ Op44f0:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   eor r1,r0,r0,ror #1 ;@ Bit 0=C^V
   mov r2,r0,lsl #25
@@ -25698,11 +27692,13 @@ Op44f8:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   eor r1,r0,r0,ror #1 ;@ Bit 0=C^V
   mov r2,r0,lsl #25
@@ -25723,11 +27719,13 @@ Op44f9:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   eor r1,r0,r0,ror #1 ;@ Bit 0=C^V
   mov r2,r0,lsl #25
@@ -25749,11 +27747,13 @@ Op44fa:
   ldrsh r2,[r4],#2 ;@ Fetch extension
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   eor r1,r0,r0,ror #1 ;@ Bit 0=C^V
   mov r2,r0,lsl #25
@@ -25783,11 +27783,13 @@ Op44fb:
   add r2,r2,r3,asr #24 ;@ r2=Disp+Rn
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   eor r1,r0,r0,ror #1 ;@ Bit 0=C^V
   mov r2,r0,lsl #25
@@ -25847,9 +27849,11 @@ Op4610:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Not:
   mov r0,r0,asl #24
@@ -25862,6 +27866,7 @@ Op4610:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -25876,9 +27881,11 @@ Op4618:
   add r3,r11,#1 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Not:
   mov r0,r0,asl #24
@@ -25891,6 +27898,7 @@ Op4618:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -25904,9 +27912,11 @@ Op461f:
   add r3,r11,#2 ;@ Post-increment An
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '(a7)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Not:
   mov r0,r0,asl #24
@@ -25919,6 +27929,7 @@ Op461f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -25934,9 +27945,11 @@ Op4620:
   sub r11,r11,#1 ;@ Pre-decrement An
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Not:
   mov r0,r0,asl #24
@@ -25949,6 +27962,7 @@ Op4620:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -25962,9 +27976,11 @@ Op4627:
   sub r11,r11,#2 ;@ Pre-decrement An
   str r11,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '-(a7)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Not:
   mov r0,r0,asl #24
@@ -25977,6 +27993,7 @@ Op4627:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -25991,9 +28008,11 @@ Op4628:
   ldr r2,[r7,r2,lsl #2]
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Not:
   mov r0,r0,asl #24
@@ -26006,6 +28025,7 @@ Op4628:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -26029,9 +28049,11 @@ Op4630:
   ldr r2,[r7,r2,lsl #2]
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Not:
   mov r0,r0,asl #24
@@ -26044,6 +28066,7 @@ Op4630:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -26055,9 +28078,11 @@ Op4638:
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Not:
   mov r0,r0,asl #24
@@ -26070,6 +28095,7 @@ Op4638:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -26083,9 +28109,11 @@ Op4639:
   ldrh r0,[r4],#2
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Not:
   mov r0,r0,asl #24
@@ -26098,6 +28126,7 @@ Op4639:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -26133,6 +28162,7 @@ Op4650:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -26140,6 +28170,7 @@ Op4650:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Not:
   mov r0,r0,asl #16
@@ -26152,6 +28183,7 @@ Op4650:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -26166,6 +28198,7 @@ Op4658:
   add r3,r11,#2 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -26173,6 +28206,7 @@ Op4658:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Not:
   mov r0,r0,asl #16
@@ -26185,6 +28219,7 @@ Op4658:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -26200,6 +28235,7 @@ Op4660:
   sub r11,r11,#2 ;@ Pre-decrement An
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -26207,6 +28243,7 @@ Op4660:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Not:
   mov r0,r0,asl #16
@@ -26219,6 +28256,7 @@ Op4660:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -26233,6 +28271,7 @@ Op4668:
   ldr r2,[r7,r2,lsl #2]
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -26240,6 +28279,7 @@ Op4668:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Not:
   mov r0,r0,asl #16
@@ -26252,6 +28292,7 @@ Op4668:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -26275,6 +28316,7 @@ Op4670:
   ldr r2,[r7,r2,lsl #2]
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -26282,6 +28324,7 @@ Op4670:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Not:
   mov r0,r0,asl #16
@@ -26294,6 +28337,7 @@ Op4670:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -26305,6 +28349,7 @@ Op4678:
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -26312,6 +28357,7 @@ Op4678:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Not:
   mov r0,r0,asl #16
@@ -26324,6 +28370,7 @@ Op4678:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -26337,6 +28384,7 @@ Op4679:
   ldrh r0,[r4],#2
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -26344,6 +28392,7 @@ Op4679:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Not:
   mov r0,r0,asl #16
@@ -26356,6 +28405,7 @@ Op4679:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -26389,6 +28439,7 @@ Op4690:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -26396,6 +28447,7 @@ Op4690:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Not:
   mvns r1,r0
@@ -26406,6 +28458,7 @@ Op4690:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -26420,6 +28473,7 @@ Op4698:
   add r3,r11,#4 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -26427,6 +28481,7 @@ Op4698:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Not:
   mvns r1,r0
@@ -26437,6 +28492,7 @@ Op4698:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -26452,6 +28508,7 @@ Op46a0:
   sub r11,r11,#4 ;@ Pre-decrement An
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -26459,6 +28516,7 @@ Op46a0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Not:
   mvns r1,r0
@@ -26469,6 +28527,7 @@ Op46a0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -26483,6 +28542,7 @@ Op46a8:
   ldr r2,[r7,r2,lsl #2]
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -26490,6 +28550,7 @@ Op46a8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Not:
   mvns r1,r0
@@ -26500,6 +28561,7 @@ Op46a8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -26523,6 +28585,7 @@ Op46b0:
   ldr r2,[r7,r2,lsl #2]
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -26530,6 +28593,7 @@ Op46b0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Not:
   mvns r1,r0
@@ -26540,6 +28604,7 @@ Op46b0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#26 ;@ Subtract cycles
@@ -26551,6 +28616,7 @@ Op46b8:
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -26558,6 +28624,7 @@ Op46b8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Not:
   mvns r1,r0
@@ -26568,6 +28635,7 @@ Op46b8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -26581,6 +28649,7 @@ Op46b9:
   ldrh r0,[r4],#2
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -26588,6 +28657,7 @@ Op46b9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Not:
   mvns r1,r0
@@ -26598,6 +28668,7 @@ Op46b9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -26663,11 +28734,13 @@ Op46d0:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   eor r1,r0,r0,ror #1 ;@ Bit 0=C^V
   mov r2,r0,lsl #25
@@ -26718,11 +28791,13 @@ Op46d8:
   add r3,r0,#2 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   eor r1,r0,r0,ror #1 ;@ Bit 0=C^V
   mov r2,r0,lsl #25
@@ -26774,11 +28849,13 @@ Op46e0:
   sub r0,r0,#2 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   eor r1,r0,r0,ror #1 ;@ Bit 0=C^V
   mov r2,r0,lsl #25
@@ -26829,11 +28906,13 @@ Op46e8:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   eor r1,r0,r0,ror #1 ;@ Bit 0=C^V
   mov r2,r0,lsl #25
@@ -26893,11 +28972,13 @@ Op46f0:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   eor r1,r0,r0,ror #1 ;@ Bit 0=C^V
   mov r2,r0,lsl #25
@@ -26945,11 +29026,13 @@ Op46f8:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   eor r1,r0,r0,ror #1 ;@ Bit 0=C^V
   mov r2,r0,lsl #25
@@ -26999,11 +29082,13 @@ Op46f9:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   eor r1,r0,r0,ror #1 ;@ Bit 0=C^V
   mov r2,r0,lsl #25
@@ -27054,11 +29139,13 @@ Op46fa:
   ldrsh r2,[r4],#2 ;@ Fetch extension
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   eor r1,r0,r0,ror #1 ;@ Bit 0=C^V
   mov r2,r0,lsl #25
@@ -27117,11 +29204,13 @@ Op46fb:
   add r2,r2,r3,asr #24 ;@ r2=Disp+Rn
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   eor r1,r0,r0,ror #1 ;@ Bit 0=C^V
   mov r2,r0,lsl #25
@@ -27253,9 +29342,11 @@ Op4810:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldr r2,[r7,#0x4c]
   bic r10,r10,#0xb0000000 ;@ clear all flags, except Z
@@ -27281,6 +29372,7 @@ Op4810:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 finish4810:
   str r10,[r7,#0x4c] ;@ Save X
@@ -27299,9 +29391,11 @@ Op4818:
   add r3,r11,#1 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldr r2,[r7,#0x4c]
   bic r10,r10,#0xb0000000 ;@ clear all flags, except Z
@@ -27327,6 +29421,7 @@ Op4818:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 finish4818:
   str r10,[r7,#0x4c] ;@ Save X
@@ -27344,9 +29439,11 @@ Op481f:
   add r3,r11,#2 ;@ Post-increment An
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '(a7)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldr r2,[r7,#0x4c]
   bic r10,r10,#0xb0000000 ;@ clear all flags, except Z
@@ -27372,6 +29469,7 @@ Op481f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 finish481f:
   str r10,[r7,#0x4c] ;@ Save X
@@ -27391,9 +29489,11 @@ Op4820:
   sub r11,r11,#1 ;@ Pre-decrement An
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldr r2,[r7,#0x4c]
   bic r10,r10,#0xb0000000 ;@ clear all flags, except Z
@@ -27419,6 +29519,7 @@ Op4820:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 finish4820:
   str r10,[r7,#0x4c] ;@ Save X
@@ -27436,9 +29537,11 @@ Op4827:
   sub r11,r11,#2 ;@ Pre-decrement An
   str r11,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '-(a7)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldr r2,[r7,#0x4c]
   bic r10,r10,#0xb0000000 ;@ clear all flags, except Z
@@ -27464,6 +29567,7 @@ Op4827:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 finish4827:
   str r10,[r7,#0x4c] ;@ Save X
@@ -27482,9 +29586,11 @@ Op4828:
   ldr r2,[r7,r2,lsl #2]
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldr r2,[r7,#0x4c]
   bic r10,r10,#0xb0000000 ;@ clear all flags, except Z
@@ -27510,6 +29616,7 @@ Op4828:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 finish4828:
   str r10,[r7,#0x4c] ;@ Save X
@@ -27537,9 +29644,11 @@ Op4830:
   ldr r2,[r7,r2,lsl #2]
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldr r2,[r7,#0x4c]
   bic r10,r10,#0xb0000000 ;@ clear all flags, except Z
@@ -27565,6 +29674,7 @@ Op4830:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 finish4830:
   str r10,[r7,#0x4c] ;@ Save X
@@ -27580,9 +29690,11 @@ Op4838:
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldr r2,[r7,#0x4c]
   bic r10,r10,#0xb0000000 ;@ clear all flags, except Z
@@ -27608,6 +29720,7 @@ Op4838:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 finish4838:
   str r10,[r7,#0x4c] ;@ Save X
@@ -27625,9 +29738,11 @@ Op4839:
   ldrh r0,[r4],#2
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldr r2,[r7,#0x4c]
   bic r10,r10,#0xb0000000 ;@ clear all flags, except Z
@@ -27653,6 +29768,7 @@ Op4839:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 finish4839:
   str r10,[r7,#0x4c] ;@ Save X
@@ -27674,11 +29790,13 @@ Op4850:
   sub r0,r11,#4 ;@ Predecrement A7
   str r0,[r7,#0x3c] ;@ Save A7
 
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -27697,11 +29815,13 @@ Op4868:
   sub r0,r11,#4 ;@ Predecrement A7
   str r0,[r7,#0x3c] ;@ Save A7
 
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -27729,11 +29849,13 @@ Op4870:
   sub r0,r11,#4 ;@ Predecrement A7
   str r0,[r7,#0x3c] ;@ Save A7
 
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -27749,11 +29871,13 @@ Op4878:
   sub r0,r11,#4 ;@ Predecrement A7
   str r0,[r7,#0x3c] ;@ Save A7
 
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -27771,11 +29895,13 @@ Op4879:
   sub r0,r11,#4 ;@ Predecrement A7
   str r0,[r7,#0x3c] ;@ Save A7
 
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -27794,11 +29920,13 @@ Op487a:
   sub r0,r11,#4 ;@ Predecrement A7
   str r0,[r7,#0x3c] ;@ Save A7
 
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -27825,11 +29953,13 @@ Op487b:
   sub r0,r11,#4 ;@ Predecrement A7
   str r0,[r7,#0x3c] ;@ Save A7
 
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -27889,6 +30019,7 @@ Movemloop4890:
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   add r6,r6,#2 ;@ Post-increment address
   sub r5,r5,#4 ;@ Take some cycles
@@ -27938,6 +30069,7 @@ Movemloop48a0:
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   sub r5,r5,#4 ;@ Take some cycles
   tst r11,r11
@@ -27993,6 +30125,7 @@ Movemloop48a8:
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   add r6,r6,#2 ;@ Post-increment address
   sub r5,r5,#4 ;@ Take some cycles
@@ -28051,6 +30184,7 @@ Movemloop48b0:
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   add r6,r6,#2 ;@ Post-increment address
   sub r5,r5,#4 ;@ Take some cycles
@@ -28097,6 +30231,7 @@ Movemloop48b8:
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   add r6,r6,#2 ;@ Post-increment address
   sub r5,r5,#4 ;@ Take some cycles
@@ -28145,6 +30280,7 @@ Movemloop48b9:
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   add r6,r6,#2 ;@ Post-increment address
   sub r5,r5,#4 ;@ Take some cycles
@@ -28212,6 +30348,7 @@ Movemloop48d0:
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   add r6,r6,#4 ;@ Post-increment address
   sub r5,r5,#8 ;@ Take some cycles
@@ -28261,6 +30398,7 @@ Movemloop48e0:
   uxth r1,r1 ;@ zero extend
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldr r1,[r7,r4] ;@ Load value from Dn/An
   mov r0,r6
@@ -28268,6 +30406,7 @@ Movemloop48e0:
   mov r1,r1,lsr #16
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   sub r5,r5,#8 ;@ Take some cycles
   tst r11,r11
@@ -28322,6 +30461,7 @@ Movemloop48e8:
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   add r6,r6,#4 ;@ Post-increment address
   sub r5,r5,#8 ;@ Take some cycles
@@ -28379,6 +30519,7 @@ Movemloop48f0:
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   add r6,r6,#4 ;@ Post-increment address
   sub r5,r5,#8 ;@ Take some cycles
@@ -28424,6 +30565,7 @@ Movemloop48f8:
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   add r6,r6,#4 ;@ Post-increment address
   sub r5,r5,#8 ;@ Take some cycles
@@ -28471,6 +30613,7 @@ Movemloop48f9:
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   add r6,r6,#4 ;@ Post-increment address
   sub r5,r5,#8 ;@ Take some cycles
@@ -28510,8 +30653,10 @@ Op4a10:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r0,r0,asl #24
 
   and r10,r0,#0x80000000 ;@ r10=N_flag
@@ -28530,8 +30675,10 @@ Op4a18:
   add r3,r0,#1 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r0,r0,asl #24
 
   and r10,r0,#0x80000000 ;@ r10=N_flag
@@ -28549,8 +30696,10 @@ Op4a1f:
   add r3,r0,#2 ;@ Post-increment An
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '(a7)+' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r0,r0,asl #24
 
   and r10,r0,#0x80000000 ;@ r10=N_flag
@@ -28570,8 +30719,10 @@ Op4a20:
   sub r0,r0,#1 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r0,r0,asl #24
 
   and r10,r0,#0x80000000 ;@ r10=N_flag
@@ -28589,8 +30740,10 @@ Op4a27:
   sub r0,r0,#2 ;@ Pre-decrement An
   str r0,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '-(a7)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r0,r0,asl #24
 
   and r10,r0,#0x80000000 ;@ r10=N_flag
@@ -28618,8 +30771,10 @@ Op4a30:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r0,r0,asl #24
 
   and r10,r0,#0x80000000 ;@ r10=N_flag
@@ -28654,11 +30809,13 @@ Op4a50:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r0,r0,asl #16
 
   and r10,r0,#0x80000000 ;@ r10=N_flag
@@ -28677,11 +30834,13 @@ Op4a58:
   add r3,r0,#2 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r0,r0,asl #16
 
   and r10,r0,#0x80000000 ;@ r10=N_flag
@@ -28701,11 +30860,13 @@ Op4a60:
   sub r0,r0,#2 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r0,r0,asl #16
 
   and r10,r0,#0x80000000 ;@ r10=N_flag
@@ -28724,11 +30885,13 @@ Op4a68:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r0,r0,asl #16
 
   and r10,r0,#0x80000000 ;@ r10=N_flag
@@ -28756,11 +30919,13 @@ Op4a70:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r0,r0,asl #16
 
   and r10,r0,#0x80000000 ;@ r10=N_flag
@@ -28776,11 +30941,13 @@ Op4a78:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r0,r0,asl #16
 
   and r10,r0,#0x80000000 ;@ r10=N_flag
@@ -28814,11 +30981,13 @@ Op4a90:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   tst r0,r0
 
   and r10,r0,#0x80000000 ;@ r10=N_flag
@@ -28837,11 +31006,13 @@ Op4a98:
   add r3,r0,#4 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   tst r0,r0
 
   and r10,r0,#0x80000000 ;@ r10=N_flag
@@ -28861,11 +31032,13 @@ Op4aa0:
   sub r0,r0,#4 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   tst r0,r0
 
   and r10,r0,#0x80000000 ;@ r10=N_flag
@@ -28884,11 +31057,13 @@ Op4aa8:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   tst r0,r0
 
   and r10,r0,#0x80000000 ;@ r10=N_flag
@@ -28916,11 +31091,13 @@ Op4ab0:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   tst r0,r0
 
   and r10,r0,#0x80000000 ;@ r10=N_flag
@@ -28936,11 +31113,13 @@ Op4ab8:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   tst r0,r0
 
   and r10,r0,#0x80000000 ;@ r10=N_flag
@@ -28958,11 +31137,13 @@ Op4ab9:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   tst r0,r0
 
   and r10,r0,#0x80000000 ;@ r10=N_flag
@@ -29001,9 +31182,11 @@ Op4ad0:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -29015,6 +31198,7 @@ Op4ad0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -29029,9 +31213,11 @@ Op4ad8:
   add r3,r11,#1 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -29043,6 +31229,7 @@ Op4ad8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -29056,9 +31243,11 @@ Op4adf:
   add r3,r11,#2 ;@ Post-increment An
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '(a7)+' (address in r11) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -29070,6 +31259,7 @@ Op4adf:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -29085,9 +31275,11 @@ Op4ae0:
   sub r11,r11,#1 ;@ Pre-decrement An
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -29099,6 +31291,7 @@ Op4ae0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -29112,9 +31305,11 @@ Op4ae7:
   sub r11,r11,#2 ;@ Pre-decrement An
   str r11,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '-(a7)' (address in r11) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -29126,6 +31321,7 @@ Op4ae7:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -29140,9 +31336,11 @@ Op4ae8:
   ldr r2,[r7,r2,lsl #2]
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -29154,6 +31352,7 @@ Op4ae8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -29177,9 +31376,11 @@ Op4af0:
   ldr r2,[r7,r2,lsl #2]
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -29191,6 +31392,7 @@ Op4af0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -29202,9 +31404,11 @@ Op4af8:
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -29216,6 +31420,7 @@ Op4af8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -29229,9 +31434,11 @@ Op4af9:
   ldrh r0,[r4],#2
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r1:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -29243,6 +31450,7 @@ Op4af9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#26 ;@ Subtract cycles
@@ -29279,6 +31487,7 @@ Movemloop4c90:
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   sxth r0,r0 ;@ sign extend
 
   str r0,[r7,r4] ;@ Save value into Dn/An
@@ -29326,6 +31535,7 @@ Movemloop4c98:
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   sxth r0,r0 ;@ sign extend
 
   str r0,[r7,r4] ;@ Save value into Dn/An
@@ -29381,6 +31591,7 @@ Movemloop4ca8:
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   sxth r0,r0 ;@ sign extend
 
   str r0,[r7,r4] ;@ Save value into Dn/An
@@ -29439,6 +31650,7 @@ Movemloop4cb0:
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   sxth r0,r0 ;@ sign extend
 
   str r0,[r7,r4] ;@ Save value into Dn/An
@@ -29485,6 +31697,7 @@ Movemloop4cb8:
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   sxth r0,r0 ;@ sign extend
 
   str r0,[r7,r4] ;@ Save value into Dn/An
@@ -29533,6 +31746,7 @@ Movemloop4cb9:
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   sxth r0,r0 ;@ sign extend
 
   str r0,[r7,r4] ;@ Save value into Dn/An
@@ -29582,6 +31796,7 @@ Movemloop4cba:
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   sxth r0,r0 ;@ sign extend
 
   str r0,[r7,r4] ;@ Save value into Dn/An
@@ -29639,6 +31854,7 @@ Movemloop4cbb:
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   sxth r0,r0 ;@ sign extend
 
   str r0,[r7,r4] ;@ Save value into Dn/An
@@ -29687,6 +31903,7 @@ Movemloop4cd0:
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   str r0,[r7,r4] ;@ Save value into Dn/An
   add r6,r6,#4 ;@ Post-increment address
@@ -29733,6 +31950,7 @@ Movemloop4cd8:
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   str r0,[r7,r4] ;@ Save value into Dn/An
   add r6,r6,#4 ;@ Post-increment address
@@ -29787,6 +32005,7 @@ Movemloop4ce8:
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   str r0,[r7,r4] ;@ Save value into Dn/An
   add r6,r6,#4 ;@ Post-increment address
@@ -29844,6 +32063,7 @@ Movemloop4cf0:
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   str r0,[r7,r4] ;@ Save value into Dn/An
   add r6,r6,#4 ;@ Post-increment address
@@ -29889,6 +32109,7 @@ Movemloop4cf8:
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   str r0,[r7,r4] ;@ Save value into Dn/An
   add r6,r6,#4 ;@ Post-increment address
@@ -29936,6 +32157,7 @@ Movemloop4cf9:
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   str r0,[r7,r4] ;@ Save value into Dn/An
   add r6,r6,#4 ;@ Post-increment address
@@ -29984,6 +32206,7 @@ Movemloop4cfa:
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   str r0,[r7,r4] ;@ Save value into Dn/An
   add r6,r6,#4 ;@ Post-increment address
@@ -30040,6 +32263,7 @@ Movemloop4cfb:
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   str r0,[r7,r4] ;@ Save value into Dn/An
   add r6,r6,#4 ;@ Post-increment address
@@ -30082,11 +32306,13 @@ Op4e50:
   mov r8,r0 ;@ abuse r8
 
 ;@ Write An to Stack
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 ;@ Save to An
 ;@ EaWrite: r8 into register[r11]:
   str r8,[r7,r11,lsl #2]
@@ -30112,11 +32338,13 @@ Op4e57:
   mov r1,r0
 
 ;@ Write An to Stack
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 ;@ Save to An
 ;@ Get offset:
 ;@ EaCalc : Get '#$3333' into r0:
@@ -30142,11 +32370,13 @@ Op4e58:
   add r8,r0,#4 ;@ A7+=4, abuse r8
 
 ;@ Pop An from stack:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call (r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   str r8,[r7,#0x3c] ;@ Save A7
 
@@ -30269,11 +32499,13 @@ Op4e73:
   ldr r0,[r7,#0x3c]
   add r1,r0,#2 ;@ Postincrement A7
   str r1,[r7,#0x3c] ;@ Save A7
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call (r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   eor r1,r0,r0,ror #1 ;@ Bit 0=C^V
   mov r2,r0,lsl #25
@@ -30294,6 +32526,7 @@ Op4e73:
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call (r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   ldr r1,[r7,#0x60] ;@ Get Memory base
   add r0,r0,r1 ;@ Memory Base+PC
 
@@ -30352,11 +32585,13 @@ Op4e77:
   ldr r0,[r7,#0x3c]
   add r1,r0,#2 ;@ Postincrement A7
   str r1,[r7,#0x3c] ;@ Save A7
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call (r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   eor r1,r0,r0,ror #1 ;@ Bit 0=C^V
   mov r2,r0,lsl #25
@@ -30374,6 +32609,7 @@ Op4e77:
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call (r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   ldr r1,[r7,#0x60] ;@ Get Memory base
   add r0,r0,r1 ;@ Memory Base+PC
 
@@ -30412,11 +32648,13 @@ Op4e90:
 ;@ Push old PC onto stack
   sub r0,r2,#4 ;@ Predecrement A7
   str r0,[r7,#0x3c] ;@ Save A7
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
   ldrgt pc,[r6,r8,asl #2] ;@ Jump to opcode handler
@@ -30446,11 +32684,13 @@ Op4ea8:
 ;@ Push old PC onto stack
   sub r0,r2,#4 ;@ Predecrement A7
   str r0,[r7,#0x3c] ;@ Save A7
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
   ldrgt pc,[r6,r8,asl #2] ;@ Jump to opcode handler
@@ -30489,11 +32729,13 @@ Op4eb0:
 ;@ Push old PC onto stack
   sub r0,r2,#4 ;@ Predecrement A7
   str r0,[r7,#0x3c] ;@ Save A7
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
   ldrgt pc,[r6,r8,asl #2] ;@ Jump to opcode handler
@@ -30520,11 +32762,13 @@ Op4eb8:
 ;@ Push old PC onto stack
   sub r0,r2,#4 ;@ Predecrement A7
   str r0,[r7,#0x3c] ;@ Save A7
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
   ldrgt pc,[r6,r8,asl #2] ;@ Jump to opcode handler
@@ -30553,11 +32797,13 @@ Op4eb9:
 ;@ Push old PC onto stack
   sub r0,r2,#4 ;@ Predecrement A7
   str r0,[r7,#0x3c] ;@ Save A7
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
   ldrgt pc,[r6,r8,asl #2] ;@ Jump to opcode handler
@@ -30587,11 +32833,13 @@ Op4eba:
 ;@ Push old PC onto stack
   sub r0,r2,#4 ;@ Predecrement A7
   str r0,[r7,#0x3c] ;@ Save A7
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
   ldrgt pc,[r6,r8,asl #2] ;@ Jump to opcode handler
@@ -30629,11 +32877,13 @@ Op4ebb:
 ;@ Push old PC onto stack
   sub r0,r2,#4 ;@ Predecrement A7
   str r0,[r7,#0x3c] ;@ Save A7
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
   ldrgt pc,[r6,r8,asl #2] ;@ Jump to opcode handler
@@ -30848,9 +33098,11 @@ Op5010:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #24
 
@@ -30863,6 +33115,7 @@ Op5010:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -30877,9 +33130,11 @@ Op5018:
   add r3,r11,#1 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #24
 
@@ -30892,6 +33147,7 @@ Op5018:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -30905,9 +33161,11 @@ Op501f:
   add r3,r11,#2 ;@ Post-increment An
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '(a7)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #24
 
@@ -30920,6 +33178,7 @@ Op501f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -30935,9 +33194,11 @@ Op5020:
   sub r11,r11,#1 ;@ Pre-decrement An
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #24
 
@@ -30950,6 +33211,7 @@ Op5020:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -30963,9 +33225,11 @@ Op5027:
   sub r11,r11,#2 ;@ Pre-decrement An
   str r11,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '-(a7)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #24
 
@@ -30978,6 +33242,7 @@ Op5027:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -30992,9 +33257,11 @@ Op5028:
   ldr r2,[r7,r2,lsl #2]
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #24
 
@@ -31007,6 +33274,7 @@ Op5028:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -31030,9 +33298,11 @@ Op5030:
   ldr r2,[r7,r2,lsl #2]
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #24
 
@@ -31045,6 +33315,7 @@ Op5030:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -31056,9 +33327,11 @@ Op5038:
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #24
 
@@ -31071,6 +33344,7 @@ Op5038:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -31084,9 +33358,11 @@ Op5039:
   ldrh r0,[r4],#2
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #24
 
@@ -31099,6 +33375,7 @@ Op5039:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -31152,6 +33429,7 @@ Op5050:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -31159,6 +33437,7 @@ Op5050:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #16
 
@@ -31171,6 +33450,7 @@ Op5050:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -31185,6 +33465,7 @@ Op5058:
   add r3,r11,#2 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -31192,6 +33473,7 @@ Op5058:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #16
 
@@ -31204,6 +33486,7 @@ Op5058:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -31219,6 +33502,7 @@ Op5060:
   sub r11,r11,#2 ;@ Pre-decrement An
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -31226,6 +33510,7 @@ Op5060:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #16
 
@@ -31238,6 +33523,7 @@ Op5060:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -31252,6 +33538,7 @@ Op5068:
   ldr r2,[r7,r2,lsl #2]
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -31259,6 +33546,7 @@ Op5068:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #16
 
@@ -31271,6 +33559,7 @@ Op5068:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -31294,6 +33583,7 @@ Op5070:
   ldr r2,[r7,r2,lsl #2]
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -31301,6 +33591,7 @@ Op5070:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #16
 
@@ -31313,6 +33604,7 @@ Op5070:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -31324,6 +33616,7 @@ Op5078:
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -31331,6 +33624,7 @@ Op5078:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #16
 
@@ -31343,6 +33637,7 @@ Op5078:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -31356,6 +33651,7 @@ Op5079:
   ldrh r0,[r4],#2
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -31363,6 +33659,7 @@ Op5079:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #16
 
@@ -31375,6 +33672,7 @@ Op5079:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -31424,6 +33722,7 @@ Op5090:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -31431,6 +33730,7 @@ Op5090:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   adds r1,r0,#0x0008
   mrs r10,cpsr ;@ r10=flags
@@ -31440,6 +33740,7 @@ Op5090:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -31454,6 +33755,7 @@ Op5098:
   add r3,r11,#4 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -31461,6 +33763,7 @@ Op5098:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   adds r1,r0,#0x0008
   mrs r10,cpsr ;@ r10=flags
@@ -31470,6 +33773,7 @@ Op5098:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -31485,6 +33789,7 @@ Op50a0:
   sub r11,r11,#4 ;@ Pre-decrement An
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -31492,6 +33797,7 @@ Op50a0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   adds r1,r0,#0x0008
   mrs r10,cpsr ;@ r10=flags
@@ -31501,6 +33807,7 @@ Op50a0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -31515,6 +33822,7 @@ Op50a8:
   ldr r2,[r7,r2,lsl #2]
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -31522,6 +33830,7 @@ Op50a8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   adds r1,r0,#0x0008
   mrs r10,cpsr ;@ r10=flags
@@ -31531,6 +33840,7 @@ Op50a8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -31554,6 +33864,7 @@ Op50b0:
   ldr r2,[r7,r2,lsl #2]
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -31561,6 +33872,7 @@ Op50b0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   adds r1,r0,#0x0008
   mrs r10,cpsr ;@ r10=flags
@@ -31570,6 +33882,7 @@ Op50b0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#26 ;@ Subtract cycles
@@ -31581,6 +33894,7 @@ Op50b8:
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -31588,6 +33902,7 @@ Op50b8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   adds r1,r0,#0x0008
   mrs r10,cpsr ;@ r10=flags
@@ -31597,6 +33912,7 @@ Op50b8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -31610,6 +33926,7 @@ Op50b9:
   ldrh r0,[r4],#2
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -31617,6 +33934,7 @@ Op50b9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   adds r1,r0,#0x0008
   mrs r10,cpsr ;@ r10=flags
@@ -31626,6 +33944,7 @@ Op50b9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -31667,8 +33986,10 @@ Op50d0:
   ldr r0,[r7,r2,lsl #2]
 ;@ EaWrite: Write r1 into '(a0)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -31686,8 +34007,10 @@ Op50d8:
   str r3,[r7,r2,lsl #2]
 ;@ EaWrite: Write r1 into '(a0)+' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -31704,8 +34027,10 @@ Op50df:
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '(a7)+' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -31724,8 +34049,10 @@ Op50e0:
   str r0,[r7,r2,lsl #2]
 ;@ EaWrite: Write r1 into '-(a0)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -31742,8 +34069,10 @@ Op50e7:
   str r0,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '-(a7)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -31761,8 +34090,10 @@ Op50e8:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -31789,8 +34120,10 @@ Op50f0:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -31805,8 +34138,10 @@ Op50f8:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -31823,8 +34158,10 @@ Op50f9:
   orr r0,r0,r2,lsl #16
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -31861,9 +34198,11 @@ Op5110:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #24
 
@@ -31877,6 +34216,7 @@ Op5110:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -31891,9 +34231,11 @@ Op5118:
   add r3,r11,#1 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #24
 
@@ -31907,6 +34249,7 @@ Op5118:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -31920,9 +34263,11 @@ Op511f:
   add r3,r11,#2 ;@ Post-increment An
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '(a7)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #24
 
@@ -31936,6 +34281,7 @@ Op511f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -31951,9 +34297,11 @@ Op5120:
   sub r11,r11,#1 ;@ Pre-decrement An
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #24
 
@@ -31967,6 +34315,7 @@ Op5120:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -31980,9 +34329,11 @@ Op5127:
   sub r11,r11,#2 ;@ Pre-decrement An
   str r11,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '-(a7)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #24
 
@@ -31996,6 +34347,7 @@ Op5127:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -32010,9 +34362,11 @@ Op5128:
   ldr r2,[r7,r2,lsl #2]
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #24
 
@@ -32026,6 +34380,7 @@ Op5128:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -32049,9 +34404,11 @@ Op5130:
   ldr r2,[r7,r2,lsl #2]
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #24
 
@@ -32065,6 +34422,7 @@ Op5130:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -32076,9 +34434,11 @@ Op5138:
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #24
 
@@ -32092,6 +34452,7 @@ Op5138:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -32105,9 +34466,11 @@ Op5139:
   ldrh r0,[r4],#2
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #24
 
@@ -32121,6 +34484,7 @@ Op5139:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -32175,6 +34539,7 @@ Op5150:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -32182,6 +34547,7 @@ Op5150:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #16
 
@@ -32195,6 +34561,7 @@ Op5150:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -32209,6 +34576,7 @@ Op5158:
   add r3,r11,#2 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -32216,6 +34584,7 @@ Op5158:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #16
 
@@ -32229,6 +34598,7 @@ Op5158:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -32244,6 +34614,7 @@ Op5160:
   sub r11,r11,#2 ;@ Pre-decrement An
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -32251,6 +34622,7 @@ Op5160:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #16
 
@@ -32264,6 +34636,7 @@ Op5160:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -32278,6 +34651,7 @@ Op5168:
   ldr r2,[r7,r2,lsl #2]
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -32285,6 +34659,7 @@ Op5168:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #16
 
@@ -32298,6 +34673,7 @@ Op5168:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -32321,6 +34697,7 @@ Op5170:
   ldr r2,[r7,r2,lsl #2]
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -32328,6 +34705,7 @@ Op5170:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #16
 
@@ -32341,6 +34719,7 @@ Op5170:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -32352,6 +34731,7 @@ Op5178:
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -32359,6 +34739,7 @@ Op5178:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #16
 
@@ -32372,6 +34753,7 @@ Op5178:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -32385,6 +34767,7 @@ Op5179:
   ldrh r0,[r4],#2
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -32392,6 +34775,7 @@ Op5179:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #16
 
@@ -32405,6 +34789,7 @@ Op5179:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -32455,6 +34840,7 @@ Op5190:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -32462,6 +34848,7 @@ Op5190:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   subs r1,r0,#0x0008
   mrs r10,cpsr ;@ r10=flags
@@ -32472,6 +34859,7 @@ Op5190:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -32486,6 +34874,7 @@ Op5198:
   add r3,r11,#4 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -32493,6 +34882,7 @@ Op5198:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   subs r1,r0,#0x0008
   mrs r10,cpsr ;@ r10=flags
@@ -32503,6 +34893,7 @@ Op5198:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -32518,6 +34909,7 @@ Op51a0:
   sub r11,r11,#4 ;@ Pre-decrement An
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -32525,6 +34917,7 @@ Op51a0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   subs r1,r0,#0x0008
   mrs r10,cpsr ;@ r10=flags
@@ -32535,6 +34928,7 @@ Op51a0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -32549,6 +34943,7 @@ Op51a8:
   ldr r2,[r7,r2,lsl #2]
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -32556,6 +34951,7 @@ Op51a8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   subs r1,r0,#0x0008
   mrs r10,cpsr ;@ r10=flags
@@ -32566,6 +34962,7 @@ Op51a8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -32589,6 +34986,7 @@ Op51b0:
   ldr r2,[r7,r2,lsl #2]
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -32596,6 +34994,7 @@ Op51b0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   subs r1,r0,#0x0008
   mrs r10,cpsr ;@ r10=flags
@@ -32606,6 +35005,7 @@ Op51b0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#26 ;@ Subtract cycles
@@ -32617,6 +35017,7 @@ Op51b8:
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -32624,6 +35025,7 @@ Op51b8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   subs r1,r0,#0x0008
   mrs r10,cpsr ;@ r10=flags
@@ -32634,6 +35036,7 @@ Op51b8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -32647,6 +35050,7 @@ Op51b9:
   ldrh r0,[r4],#2
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -32654,6 +35058,7 @@ Op51b9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   subs r1,r0,#0x0008
   mrs r10,cpsr ;@ r10=flags
@@ -32664,6 +35069,7 @@ Op51b9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -32694,8 +35100,10 @@ Op51d0:
   ldr r0,[r7,r2,lsl #2]
 ;@ EaWrite: Write r1 into '(a0)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -32713,8 +35121,10 @@ Op51d8:
   str r3,[r7,r2,lsl #2]
 ;@ EaWrite: Write r1 into '(a0)+' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -32731,8 +35141,10 @@ Op51df:
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '(a7)+' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -32751,8 +35163,10 @@ Op51e0:
   str r0,[r7,r2,lsl #2]
 ;@ EaWrite: Write r1 into '-(a0)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -32769,8 +35183,10 @@ Op51e7:
   str r0,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '-(a7)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -32788,8 +35204,10 @@ Op51e8:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -32816,8 +35234,10 @@ Op51f0:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -32832,8 +35252,10 @@ Op51f8:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -32850,8 +35272,10 @@ Op51f9:
   orr r0,r0,r2,lsl #16
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -32921,8 +35345,10 @@ Op52d0:
   ldr r0,[r7,r2,lsl #2]
 ;@ EaWrite: Write r1 into '(a0)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -32942,8 +35368,10 @@ Op52d8:
   str r3,[r7,r2,lsl #2]
 ;@ EaWrite: Write r1 into '(a0)+' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -32962,8 +35390,10 @@ Op52df:
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '(a7)+' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -32984,8 +35414,10 @@ Op52e0:
   str r0,[r7,r2,lsl #2]
 ;@ EaWrite: Write r1 into '-(a0)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -33004,8 +35436,10 @@ Op52e7:
   str r0,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '-(a7)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -33025,8 +35459,10 @@ Op52e8:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -33055,8 +35491,10 @@ Op52f0:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -33073,8 +35511,10 @@ Op52f8:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -33093,8 +35533,10 @@ Op52f9:
   orr r0,r0,r2,lsl #16
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -33164,8 +35606,10 @@ Op53d0:
   ldr r0,[r7,r2,lsl #2]
 ;@ EaWrite: Write r1 into '(a0)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -33185,8 +35629,10 @@ Op53d8:
   str r3,[r7,r2,lsl #2]
 ;@ EaWrite: Write r1 into '(a0)+' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -33205,8 +35651,10 @@ Op53df:
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '(a7)+' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -33227,8 +35675,10 @@ Op53e0:
   str r0,[r7,r2,lsl #2]
 ;@ EaWrite: Write r1 into '-(a0)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -33247,8 +35697,10 @@ Op53e7:
   str r0,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '-(a7)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -33268,8 +35720,10 @@ Op53e8:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -33298,8 +35752,10 @@ Op53f0:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -33316,8 +35772,10 @@ Op53f8:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -33336,8 +35794,10 @@ Op53f9:
   orr r0,r0,r2,lsl #16
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -33407,8 +35867,10 @@ Op54d0:
   ldr r0,[r7,r2,lsl #2]
 ;@ EaWrite: Write r1 into '(a0)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -33428,8 +35890,10 @@ Op54d8:
   str r3,[r7,r2,lsl #2]
 ;@ EaWrite: Write r1 into '(a0)+' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -33448,8 +35912,10 @@ Op54df:
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '(a7)+' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -33470,8 +35936,10 @@ Op54e0:
   str r0,[r7,r2,lsl #2]
 ;@ EaWrite: Write r1 into '-(a0)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -33490,8 +35958,10 @@ Op54e7:
   str r0,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '-(a7)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -33511,8 +35981,10 @@ Op54e8:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -33541,8 +36013,10 @@ Op54f0:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -33559,8 +36033,10 @@ Op54f8:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -33579,8 +36055,10 @@ Op54f9:
   orr r0,r0,r2,lsl #16
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -33650,8 +36128,10 @@ Op55d0:
   ldr r0,[r7,r2,lsl #2]
 ;@ EaWrite: Write r1 into '(a0)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -33671,8 +36151,10 @@ Op55d8:
   str r3,[r7,r2,lsl #2]
 ;@ EaWrite: Write r1 into '(a0)+' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -33691,8 +36173,10 @@ Op55df:
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '(a7)+' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -33713,8 +36197,10 @@ Op55e0:
   str r0,[r7,r2,lsl #2]
 ;@ EaWrite: Write r1 into '-(a0)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -33733,8 +36219,10 @@ Op55e7:
   str r0,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '-(a7)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -33754,8 +36242,10 @@ Op55e8:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -33784,8 +36274,10 @@ Op55f0:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -33802,8 +36294,10 @@ Op55f8:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -33822,8 +36316,10 @@ Op55f9:
   orr r0,r0,r2,lsl #16
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -33893,8 +36389,10 @@ Op56d0:
   ldr r0,[r7,r2,lsl #2]
 ;@ EaWrite: Write r1 into '(a0)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -33914,8 +36412,10 @@ Op56d8:
   str r3,[r7,r2,lsl #2]
 ;@ EaWrite: Write r1 into '(a0)+' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -33934,8 +36434,10 @@ Op56df:
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '(a7)+' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -33956,8 +36458,10 @@ Op56e0:
   str r0,[r7,r2,lsl #2]
 ;@ EaWrite: Write r1 into '-(a0)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -33976,8 +36480,10 @@ Op56e7:
   str r0,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '-(a7)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -33997,8 +36503,10 @@ Op56e8:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -34027,8 +36535,10 @@ Op56f0:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -34045,8 +36555,10 @@ Op56f8:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -34065,8 +36577,10 @@ Op56f9:
   orr r0,r0,r2,lsl #16
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -34136,8 +36650,10 @@ Op57d0:
   ldr r0,[r7,r2,lsl #2]
 ;@ EaWrite: Write r1 into '(a0)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -34157,8 +36673,10 @@ Op57d8:
   str r3,[r7,r2,lsl #2]
 ;@ EaWrite: Write r1 into '(a0)+' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -34177,8 +36695,10 @@ Op57df:
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '(a7)+' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -34199,8 +36719,10 @@ Op57e0:
   str r0,[r7,r2,lsl #2]
 ;@ EaWrite: Write r1 into '-(a0)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -34219,8 +36741,10 @@ Op57e7:
   str r0,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '-(a7)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -34240,8 +36764,10 @@ Op57e8:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -34270,8 +36796,10 @@ Op57f0:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -34288,8 +36816,10 @@ Op57f8:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -34308,8 +36838,10 @@ Op57f9:
   orr r0,r0,r2,lsl #16
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -34379,8 +36911,10 @@ Op58d0:
   ldr r0,[r7,r2,lsl #2]
 ;@ EaWrite: Write r1 into '(a0)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -34400,8 +36934,10 @@ Op58d8:
   str r3,[r7,r2,lsl #2]
 ;@ EaWrite: Write r1 into '(a0)+' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -34420,8 +36956,10 @@ Op58df:
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '(a7)+' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -34442,8 +36980,10 @@ Op58e0:
   str r0,[r7,r2,lsl #2]
 ;@ EaWrite: Write r1 into '-(a0)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -34462,8 +37002,10 @@ Op58e7:
   str r0,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '-(a7)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -34483,8 +37025,10 @@ Op58e8:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -34513,8 +37057,10 @@ Op58f0:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -34531,8 +37077,10 @@ Op58f8:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -34551,8 +37099,10 @@ Op58f9:
   orr r0,r0,r2,lsl #16
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -34622,8 +37172,10 @@ Op59d0:
   ldr r0,[r7,r2,lsl #2]
 ;@ EaWrite: Write r1 into '(a0)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -34643,8 +37195,10 @@ Op59d8:
   str r3,[r7,r2,lsl #2]
 ;@ EaWrite: Write r1 into '(a0)+' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -34663,8 +37217,10 @@ Op59df:
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '(a7)+' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -34685,8 +37241,10 @@ Op59e0:
   str r0,[r7,r2,lsl #2]
 ;@ EaWrite: Write r1 into '-(a0)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -34705,8 +37263,10 @@ Op59e7:
   str r0,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '-(a7)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -34726,8 +37286,10 @@ Op59e8:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -34756,8 +37318,10 @@ Op59f0:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -34774,8 +37338,10 @@ Op59f8:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -34794,8 +37360,10 @@ Op59f9:
   orr r0,r0,r2,lsl #16
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -34865,8 +37433,10 @@ Op5ad0:
   ldr r0,[r7,r2,lsl #2]
 ;@ EaWrite: Write r1 into '(a0)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -34886,8 +37456,10 @@ Op5ad8:
   str r3,[r7,r2,lsl #2]
 ;@ EaWrite: Write r1 into '(a0)+' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -34906,8 +37478,10 @@ Op5adf:
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '(a7)+' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -34928,8 +37502,10 @@ Op5ae0:
   str r0,[r7,r2,lsl #2]
 ;@ EaWrite: Write r1 into '-(a0)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -34948,8 +37524,10 @@ Op5ae7:
   str r0,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '-(a7)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -34969,8 +37547,10 @@ Op5ae8:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -34999,8 +37579,10 @@ Op5af0:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -35017,8 +37599,10 @@ Op5af8:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -35037,8 +37621,10 @@ Op5af9:
   orr r0,r0,r2,lsl #16
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -35108,8 +37694,10 @@ Op5bd0:
   ldr r0,[r7,r2,lsl #2]
 ;@ EaWrite: Write r1 into '(a0)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -35129,8 +37717,10 @@ Op5bd8:
   str r3,[r7,r2,lsl #2]
 ;@ EaWrite: Write r1 into '(a0)+' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -35149,8 +37739,10 @@ Op5bdf:
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '(a7)+' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -35171,8 +37763,10 @@ Op5be0:
   str r0,[r7,r2,lsl #2]
 ;@ EaWrite: Write r1 into '-(a0)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -35191,8 +37785,10 @@ Op5be7:
   str r0,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '-(a7)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -35212,8 +37808,10 @@ Op5be8:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -35242,8 +37840,10 @@ Op5bf0:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -35260,8 +37860,10 @@ Op5bf8:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -35280,8 +37882,10 @@ Op5bf9:
   orr r0,r0,r2,lsl #16
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -35351,8 +37955,10 @@ Op5cd0:
   ldr r0,[r7,r2,lsl #2]
 ;@ EaWrite: Write r1 into '(a0)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -35372,8 +37978,10 @@ Op5cd8:
   str r3,[r7,r2,lsl #2]
 ;@ EaWrite: Write r1 into '(a0)+' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -35392,8 +38000,10 @@ Op5cdf:
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '(a7)+' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -35414,8 +38024,10 @@ Op5ce0:
   str r0,[r7,r2,lsl #2]
 ;@ EaWrite: Write r1 into '-(a0)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -35434,8 +38046,10 @@ Op5ce7:
   str r0,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '-(a7)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -35455,8 +38069,10 @@ Op5ce8:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -35485,8 +38101,10 @@ Op5cf0:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -35503,8 +38121,10 @@ Op5cf8:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -35523,8 +38143,10 @@ Op5cf9:
   orr r0,r0,r2,lsl #16
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -35594,8 +38216,10 @@ Op5dd0:
   ldr r0,[r7,r2,lsl #2]
 ;@ EaWrite: Write r1 into '(a0)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -35615,8 +38239,10 @@ Op5dd8:
   str r3,[r7,r2,lsl #2]
 ;@ EaWrite: Write r1 into '(a0)+' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -35635,8 +38261,10 @@ Op5ddf:
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '(a7)+' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -35657,8 +38285,10 @@ Op5de0:
   str r0,[r7,r2,lsl #2]
 ;@ EaWrite: Write r1 into '-(a0)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -35677,8 +38307,10 @@ Op5de7:
   str r0,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '-(a7)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -35698,8 +38330,10 @@ Op5de8:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -35728,8 +38362,10 @@ Op5df0:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -35746,8 +38382,10 @@ Op5df8:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -35766,8 +38404,10 @@ Op5df9:
   orr r0,r0,r2,lsl #16
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -35805,9 +38445,11 @@ Op5e10:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -35822,6 +38464,7 @@ Op5e10:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -35836,9 +38479,11 @@ Op5e18:
   add r3,r11,#1 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -35853,6 +38498,7 @@ Op5e18:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -35866,9 +38512,11 @@ Op5e1f:
   add r3,r11,#2 ;@ Post-increment An
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '(a7)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -35883,6 +38531,7 @@ Op5e1f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -35898,9 +38547,11 @@ Op5e20:
   sub r11,r11,#1 ;@ Pre-decrement An
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -35915,6 +38566,7 @@ Op5e20:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -35928,9 +38580,11 @@ Op5e27:
   sub r11,r11,#2 ;@ Pre-decrement An
   str r11,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '-(a7)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -35945,6 +38599,7 @@ Op5e27:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -35959,9 +38614,11 @@ Op5e28:
   ldr r2,[r7,r2,lsl #2]
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -35976,6 +38633,7 @@ Op5e28:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -35999,9 +38657,11 @@ Op5e30:
   ldr r2,[r7,r2,lsl #2]
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -36016,6 +38676,7 @@ Op5e30:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -36027,9 +38688,11 @@ Op5e38:
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -36044,6 +38707,7 @@ Op5e38:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -36057,9 +38721,11 @@ Op5e39:
   ldrh r0,[r4],#2
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -36074,6 +38740,7 @@ Op5e39:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -36106,6 +38773,7 @@ Op5e50:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -36113,6 +38781,7 @@ Op5e50:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -36127,6 +38796,7 @@ Op5e50:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -36141,6 +38811,7 @@ Op5e58:
   add r3,r11,#2 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -36148,6 +38819,7 @@ Op5e58:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -36162,6 +38834,7 @@ Op5e58:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -36177,6 +38850,7 @@ Op5e60:
   sub r11,r11,#2 ;@ Pre-decrement An
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -36184,6 +38858,7 @@ Op5e60:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -36198,6 +38873,7 @@ Op5e60:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -36212,6 +38888,7 @@ Op5e68:
   ldr r2,[r7,r2,lsl #2]
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -36219,6 +38896,7 @@ Op5e68:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -36233,6 +38911,7 @@ Op5e68:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -36256,6 +38935,7 @@ Op5e70:
   ldr r2,[r7,r2,lsl #2]
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -36263,6 +38943,7 @@ Op5e70:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -36277,6 +38958,7 @@ Op5e70:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -36288,6 +38970,7 @@ Op5e78:
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -36295,6 +38978,7 @@ Op5e78:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -36309,6 +38993,7 @@ Op5e78:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -36322,6 +39007,7 @@ Op5e79:
   ldrh r0,[r4],#2
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -36329,6 +39015,7 @@ Op5e79:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -36343,6 +39030,7 @@ Op5e79:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -36396,6 +39084,7 @@ Op5e90:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -36403,6 +39092,7 @@ Op5e90:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -36414,6 +39104,7 @@ Op5e90:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -36428,6 +39119,7 @@ Op5e98:
   add r3,r11,#4 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -36435,6 +39127,7 @@ Op5e98:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -36446,6 +39139,7 @@ Op5e98:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -36461,6 +39155,7 @@ Op5ea0:
   sub r11,r11,#4 ;@ Pre-decrement An
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -36468,6 +39163,7 @@ Op5ea0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -36479,6 +39175,7 @@ Op5ea0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -36493,6 +39190,7 @@ Op5ea8:
   ldr r2,[r7,r2,lsl #2]
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -36500,6 +39198,7 @@ Op5ea8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -36511,6 +39210,7 @@ Op5ea8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -36534,6 +39234,7 @@ Op5eb0:
   ldr r2,[r7,r2,lsl #2]
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -36541,6 +39242,7 @@ Op5eb0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -36552,6 +39254,7 @@ Op5eb0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#26 ;@ Subtract cycles
@@ -36563,6 +39266,7 @@ Op5eb8:
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -36570,6 +39274,7 @@ Op5eb8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -36581,6 +39286,7 @@ Op5eb8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -36594,6 +39300,7 @@ Op5eb9:
   ldrh r0,[r4],#2
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -36601,6 +39308,7 @@ Op5eb9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -36612,6 +39320,7 @@ Op5eb9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -36684,8 +39393,10 @@ Op5ed0:
   ldr r0,[r7,r2,lsl #2]
 ;@ EaWrite: Write r1 into '(a0)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -36706,8 +39417,10 @@ Op5ed8:
   str r3,[r7,r2,lsl #2]
 ;@ EaWrite: Write r1 into '(a0)+' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -36727,8 +39440,10 @@ Op5edf:
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '(a7)+' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -36750,8 +39465,10 @@ Op5ee0:
   str r0,[r7,r2,lsl #2]
 ;@ EaWrite: Write r1 into '-(a0)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -36771,8 +39488,10 @@ Op5ee7:
   str r0,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '-(a7)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -36793,8 +39512,10 @@ Op5ee8:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -36824,8 +39545,10 @@ Op5ef0:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -36843,8 +39566,10 @@ Op5ef8:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -36864,8 +39589,10 @@ Op5ef9:
   orr r0,r0,r2,lsl #16
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -36904,9 +39631,11 @@ Op5f10:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -36922,6 +39651,7 @@ Op5f10:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -36936,9 +39666,11 @@ Op5f18:
   add r3,r11,#1 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -36954,6 +39686,7 @@ Op5f18:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -36967,9 +39700,11 @@ Op5f1f:
   add r3,r11,#2 ;@ Post-increment An
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '(a7)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -36985,6 +39720,7 @@ Op5f1f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -37000,9 +39736,11 @@ Op5f20:
   sub r11,r11,#1 ;@ Pre-decrement An
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -37018,6 +39756,7 @@ Op5f20:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -37031,9 +39770,11 @@ Op5f27:
   sub r11,r11,#2 ;@ Pre-decrement An
   str r11,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '-(a7)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -37049,6 +39790,7 @@ Op5f27:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -37063,9 +39805,11 @@ Op5f28:
   ldr r2,[r7,r2,lsl #2]
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -37081,6 +39825,7 @@ Op5f28:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -37104,9 +39849,11 @@ Op5f30:
   ldr r2,[r7,r2,lsl #2]
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -37122,6 +39869,7 @@ Op5f30:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -37133,9 +39881,11 @@ Op5f38:
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -37151,6 +39901,7 @@ Op5f38:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -37164,9 +39915,11 @@ Op5f39:
   ldrh r0,[r4],#2
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -37182,6 +39935,7 @@ Op5f39:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -37240,6 +39994,7 @@ Op5f50:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -37247,6 +40002,7 @@ Op5f50:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -37262,6 +40018,7 @@ Op5f50:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -37276,6 +40033,7 @@ Op5f58:
   add r3,r11,#2 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -37283,6 +40041,7 @@ Op5f58:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -37298,6 +40057,7 @@ Op5f58:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -37313,6 +40073,7 @@ Op5f60:
   sub r11,r11,#2 ;@ Pre-decrement An
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -37320,6 +40081,7 @@ Op5f60:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -37335,6 +40097,7 @@ Op5f60:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -37349,6 +40112,7 @@ Op5f68:
   ldr r2,[r7,r2,lsl #2]
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -37356,6 +40120,7 @@ Op5f68:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -37371,6 +40136,7 @@ Op5f68:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -37394,6 +40160,7 @@ Op5f70:
   ldr r2,[r7,r2,lsl #2]
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -37401,6 +40168,7 @@ Op5f70:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -37416,6 +40184,7 @@ Op5f70:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -37427,6 +40196,7 @@ Op5f78:
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -37434,6 +40204,7 @@ Op5f78:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -37449,6 +40220,7 @@ Op5f78:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -37462,6 +40234,7 @@ Op5f79:
   ldrh r0,[r4],#2
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -37469,6 +40242,7 @@ Op5f79:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -37484,6 +40258,7 @@ Op5f79:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -37538,6 +40313,7 @@ Op5f90:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -37545,6 +40321,7 @@ Op5f90:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -37557,6 +40334,7 @@ Op5f90:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -37571,6 +40349,7 @@ Op5f98:
   add r3,r11,#4 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -37578,6 +40357,7 @@ Op5f98:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -37590,6 +40370,7 @@ Op5f98:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -37605,6 +40386,7 @@ Op5fa0:
   sub r11,r11,#4 ;@ Pre-decrement An
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -37612,6 +40394,7 @@ Op5fa0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -37624,6 +40407,7 @@ Op5fa0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -37638,6 +40422,7 @@ Op5fa8:
   ldr r2,[r7,r2,lsl #2]
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -37645,6 +40430,7 @@ Op5fa8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -37657,6 +40443,7 @@ Op5fa8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -37680,6 +40467,7 @@ Op5fb0:
   ldr r2,[r7,r2,lsl #2]
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -37687,6 +40475,7 @@ Op5fb0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -37699,6 +40488,7 @@ Op5fb0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#26 ;@ Subtract cycles
@@ -37710,6 +40500,7 @@ Op5fb8:
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -37717,6 +40508,7 @@ Op5fb8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -37729,6 +40521,7 @@ Op5fb8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -37742,6 +40535,7 @@ Op5fb9:
   ldrh r0,[r4],#2
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -37749,6 +40543,7 @@ Op5fb9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -37761,6 +40556,7 @@ Op5fb9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -37833,8 +40629,10 @@ Op5fd0:
   ldr r0,[r7,r2,lsl #2]
 ;@ EaWrite: Write r1 into '(a0)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -37855,8 +40653,10 @@ Op5fd8:
   str r3,[r7,r2,lsl #2]
 ;@ EaWrite: Write r1 into '(a0)+' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -37876,8 +40676,10 @@ Op5fdf:
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '(a7)+' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -37899,8 +40701,10 @@ Op5fe0:
   str r0,[r7,r2,lsl #2]
 ;@ EaWrite: Write r1 into '-(a0)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -37920,8 +40724,10 @@ Op5fe7:
   str r0,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '-(a7)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -37942,8 +40748,10 @@ Op5fe8:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -37973,8 +40781,10 @@ Op5ff0:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -37992,8 +40802,10 @@ Op5ff8:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -38013,8 +40825,10 @@ Op5ff9:
   orr r0,r0,r2,lsl #16
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
   and r1,r1,#0xff
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -38065,11 +40879,13 @@ Op6103:
 ;@ Push r1 onto stack
   sub r0,r2,#4 ;@ Predecrement A7
   str r0,[r7,#0x3c] ;@ Save A7
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_w_data
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call (r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   add r4,r4,r11,asr #24 ;@ r4 = New PC
   b ExceptionAddressError_r_prg_r4
@@ -38731,8 +41547,10 @@ Op8010:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -38763,8 +41581,10 @@ Op8018:
   add r3,r0,#1 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -38794,8 +41614,10 @@ Op801f:
   add r3,r0,#2 ;@ Post-increment An
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '(a7)+' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -38827,8 +41649,10 @@ Op8020:
   sub r0,r0,#1 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -38858,8 +41682,10 @@ Op8027:
   sub r0,r0,#2 ;@ Pre-decrement An
   str r0,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '-(a7)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -38890,8 +41716,10 @@ Op8028:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -38931,8 +41759,10 @@ Op8030:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -38960,8 +41790,10 @@ Op8038:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -38991,8 +41823,10 @@ Op8039:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -39023,8 +41857,10 @@ Op803a:
   ldrsh r2,[r4],#2 ;@ Fetch extension
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x80] ;@ Call fetch8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -39063,8 +41899,10 @@ Op803b:
   add r2,r2,r3,asr #24 ;@ r2=Disp+Rn
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x80] ;@ Call fetch8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -39150,11 +41988,13 @@ Op8050:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -39186,11 +42026,13 @@ Op8058:
   add r3,r0,#2 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -39223,11 +42065,13 @@ Op8060:
   sub r0,r0,#2 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -39259,11 +42103,13 @@ Op8068:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -39304,11 +42150,13 @@ Op8070:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -39337,11 +42185,13 @@ Op8078:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -39372,11 +42222,13 @@ Op8079:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -39408,11 +42260,13 @@ Op807a:
   ldrsh r2,[r4],#2 ;@ Fetch extension
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -39452,11 +42306,13 @@ Op807b:
   add r2,r2,r3,asr #24 ;@ r2=Disp+Rn
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -39541,11 +42397,13 @@ Op8090:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -39574,11 +42432,13 @@ Op8098:
   add r3,r0,#4 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -39608,11 +42468,13 @@ Op80a0:
   sub r0,r0,#4 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -39641,11 +42503,13 @@ Op80a8:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -39683,11 +42547,13 @@ Op80b0:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -39713,11 +42579,13 @@ Op80b8:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -39745,11 +42613,13 @@ Op80b9:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -39778,11 +42648,13 @@ Op80ba:
   ldrsh r2,[r4],#2 ;@ Fetch extension
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -39819,11 +42691,13 @@ Op80bb:
   add r2,r2,r3,asr #24 ;@ r2=Disp+Rn
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -39942,11 +42816,13 @@ Op80d0:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -40013,11 +42889,13 @@ Op80d8:
   add r3,r0,#2 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -40085,11 +42963,13 @@ Op80e0:
   sub r0,r0,#2 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -40156,11 +43036,13 @@ Op80e8:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -40236,11 +43118,13 @@ Op80f0:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -40304,11 +43188,13 @@ Op80f8:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -40374,11 +43260,13 @@ Op80f9:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -40445,11 +43333,13 @@ Op80fa:
   ldrsh r2,[r4],#2 ;@ Fetch extension
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -40524,11 +43414,13 @@ Op80fb:
   add r2,r2,r3,asr #24 ;@ r2=Disp+Rn
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -40709,8 +43601,10 @@ Op8108:
   sub r0,r0,#1 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r6:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r6,r0
 
 ;@ EaCalc : Get '-(a0)' into r11:
@@ -40723,6 +43617,7 @@ Op8108:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   bic r10,r10,#0xb1000000 ;@ clear all flags except old Z
   ldr r1,[r7,#0x4c] ;@ Get X bit
@@ -40756,6 +43651,7 @@ Op8108:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldr r6,[r7,#0x54]
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -40771,8 +43667,10 @@ Op810f:
   sub r0,r0,#2 ;@ Pre-decrement An
   str r0,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '-(a7)' (address in r0) into r6:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r6,r0
 
 ;@ EaCalc : Get '-(a0)' into r11:
@@ -40785,6 +43683,7 @@ Op810f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   bic r10,r10,#0xb1000000 ;@ clear all flags except old Z
   ldr r1,[r7,#0x4c] ;@ Get X bit
@@ -40818,6 +43717,7 @@ Op810f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldr r6,[r7,#0x54]
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -40832,9 +43732,11 @@ Op8110:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -40854,6 +43756,7 @@ Op8110:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -40868,9 +43771,11 @@ Op8118:
   add r3,r11,#1 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -40890,6 +43795,7 @@ Op8118:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -40903,9 +43809,11 @@ Op811f:
   add r3,r11,#2 ;@ Post-increment An
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '(a7)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -40925,6 +43833,7 @@ Op811f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -40940,9 +43849,11 @@ Op8120:
   sub r11,r11,#1 ;@ Pre-decrement An
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -40962,6 +43873,7 @@ Op8120:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -40975,9 +43887,11 @@ Op8127:
   sub r11,r11,#2 ;@ Pre-decrement An
   str r11,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '-(a7)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -40997,6 +43911,7 @@ Op8127:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -41011,9 +43926,11 @@ Op8128:
   ldr r2,[r7,r2,lsl #2]
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -41033,6 +43950,7 @@ Op8128:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -41056,9 +43974,11 @@ Op8130:
   ldr r2,[r7,r2,lsl #2]
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -41078,6 +43998,7 @@ Op8130:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -41089,9 +44010,11 @@ Op8138:
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -41111,6 +44034,7 @@ Op8138:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -41124,9 +44048,11 @@ Op8139:
   ldrh r0,[r4],#2
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -41146,6 +44072,7 @@ Op8139:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -41159,6 +44086,7 @@ Op8150:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -41166,6 +44094,7 @@ Op8150:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -41185,6 +44114,7 @@ Op8150:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -41199,6 +44129,7 @@ Op8158:
   add r3,r11,#2 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -41206,6 +44137,7 @@ Op8158:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -41225,6 +44157,7 @@ Op8158:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -41240,6 +44173,7 @@ Op8160:
   sub r11,r11,#2 ;@ Pre-decrement An
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -41247,6 +44181,7 @@ Op8160:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -41266,6 +44201,7 @@ Op8160:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -41280,6 +44216,7 @@ Op8168:
   ldr r2,[r7,r2,lsl #2]
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -41287,6 +44224,7 @@ Op8168:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -41306,6 +44244,7 @@ Op8168:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -41329,6 +44268,7 @@ Op8170:
   ldr r2,[r7,r2,lsl #2]
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -41336,6 +44276,7 @@ Op8170:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -41355,6 +44296,7 @@ Op8170:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -41366,6 +44308,7 @@ Op8178:
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -41373,6 +44316,7 @@ Op8178:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -41392,6 +44336,7 @@ Op8178:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -41405,6 +44350,7 @@ Op8179:
   ldrh r0,[r4],#2
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -41412,6 +44358,7 @@ Op8179:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -41431,6 +44378,7 @@ Op8179:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -41444,6 +44392,7 @@ Op8190:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -41451,6 +44400,7 @@ Op8190:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -41467,6 +44417,7 @@ Op8190:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -41481,6 +44432,7 @@ Op8198:
   add r3,r11,#4 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -41488,6 +44440,7 @@ Op8198:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -41504,6 +44457,7 @@ Op8198:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -41519,6 +44473,7 @@ Op81a0:
   sub r11,r11,#4 ;@ Pre-decrement An
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -41526,6 +44481,7 @@ Op81a0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -41542,6 +44498,7 @@ Op81a0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -41556,6 +44513,7 @@ Op81a8:
   ldr r2,[r7,r2,lsl #2]
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -41563,6 +44521,7 @@ Op81a8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -41579,6 +44538,7 @@ Op81a8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -41602,6 +44562,7 @@ Op81b0:
   ldr r2,[r7,r2,lsl #2]
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -41609,6 +44570,7 @@ Op81b0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -41625,6 +44587,7 @@ Op81b0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#26 ;@ Subtract cycles
@@ -41636,6 +44599,7 @@ Op81b8:
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -41643,6 +44607,7 @@ Op81b8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -41659,6 +44624,7 @@ Op81b8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -41672,6 +44638,7 @@ Op81b9:
   ldrh r0,[r4],#2
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -41679,6 +44646,7 @@ Op81b9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -41695,6 +44663,7 @@ Op81b9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -41792,11 +44761,13 @@ Op81d0:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -41883,11 +44854,13 @@ Op81d8:
   add r3,r0,#2 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -41975,11 +44948,13 @@ Op81e0:
   sub r0,r0,#2 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -42066,11 +45041,13 @@ Op81e8:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -42166,11 +45143,13 @@ Op81f0:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -42254,11 +45233,13 @@ Op81f8:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -42344,11 +45325,13 @@ Op81f9:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -42435,11 +45418,13 @@ Op81fa:
   ldrsh r2,[r4],#2 ;@ Fetch extension
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -42534,11 +45519,13 @@ Op81fb:
   add r2,r2,r3,asr #24 ;@ r2=Disp+Rn
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -42709,8 +45696,10 @@ Op8f08:
   sub r0,r0,#1 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r6:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r6,r0
 
 ;@ EaCalc : Get '-(a7)' into r11:
@@ -42721,6 +45710,7 @@ Op8f08:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   bic r10,r10,#0xb1000000 ;@ clear all flags except old Z
   ldr r1,[r7,#0x4c] ;@ Get X bit
@@ -42754,6 +45744,7 @@ Op8f08:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldr r6,[r7,#0x54]
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -42769,8 +45760,10 @@ Op8f0f:
   sub r0,r0,#2 ;@ Pre-decrement An
   str r0,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '-(a7)' (address in r0) into r6:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r6,r0
 
 ;@ EaCalc : Get '-(a7)' into r11:
@@ -42781,6 +45774,7 @@ Op8f0f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   bic r10,r10,#0xb1000000 ;@ clear all flags except old Z
   ldr r1,[r7,#0x4c] ;@ Get X bit
@@ -42814,6 +45808,7 @@ Op8f0f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldr r6,[r7,#0x54]
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -42857,8 +45852,10 @@ Op9010:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -42890,8 +45887,10 @@ Op9018:
   add r3,r0,#1 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -42922,8 +45921,10 @@ Op901f:
   add r3,r0,#2 ;@ Post-increment An
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '(a7)+' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -42956,8 +45957,10 @@ Op9020:
   sub r0,r0,#1 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -42988,8 +45991,10 @@ Op9027:
   sub r0,r0,#2 ;@ Pre-decrement An
   str r0,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '-(a7)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -43021,8 +46026,10 @@ Op9028:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -43063,8 +46070,10 @@ Op9030:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -43093,8 +46102,10 @@ Op9038:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -43125,8 +46136,10 @@ Op9039:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -43158,8 +46171,10 @@ Op903a:
   ldrsh r2,[r4],#2 ;@ Fetch extension
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x80] ;@ Call fetch8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -43199,8 +46214,10 @@ Op903b:
   add r2,r2,r3,asr #24 ;@ r2=Disp+Rn
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x80] ;@ Call fetch8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -43289,11 +46306,13 @@ Op9050:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -43326,11 +46345,13 @@ Op9058:
   add r3,r0,#2 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -43364,11 +46385,13 @@ Op9060:
   sub r0,r0,#2 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -43401,11 +46424,13 @@ Op9068:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -43447,11 +46472,13 @@ Op9070:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -43481,11 +46508,13 @@ Op9078:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -43517,11 +46546,13 @@ Op9079:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -43554,11 +46585,13 @@ Op907a:
   ldrsh r2,[r4],#2 ;@ Fetch extension
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -43599,11 +46632,13 @@ Op907b:
   add r2,r2,r3,asr #24 ;@ r2=Disp+Rn
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -43691,11 +46726,13 @@ Op9090:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -43725,11 +46762,13 @@ Op9098:
   add r3,r0,#4 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -43760,11 +46799,13 @@ Op90a0:
   sub r0,r0,#4 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -43794,11 +46835,13 @@ Op90a8:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -43837,11 +46880,13 @@ Op90b0:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -43868,11 +46913,13 @@ Op90b8:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -43901,11 +46948,13 @@ Op90b9:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -43935,11 +46984,13 @@ Op90ba:
   ldrsh r2,[r4],#2 ;@ Fetch extension
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -43977,11 +47028,13 @@ Op90bb:
   add r2,r2,r3,asr #24 ;@ r2=Disp+Rn
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -44062,11 +47115,13 @@ Op90d0:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -44093,11 +47148,13 @@ Op90d8:
   add r3,r0,#2 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -44125,11 +47182,13 @@ Op90e0:
   sub r0,r0,#2 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -44156,11 +47215,13 @@ Op90e8:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -44196,11 +47257,13 @@ Op90f0:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -44224,11 +47287,13 @@ Op90f8:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -44254,11 +47319,13 @@ Op90f9:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -44285,11 +47352,13 @@ Op90fa:
   ldrsh r2,[r4],#2 ;@ Fetch extension
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -44324,11 +47393,13 @@ Op90fb:
   add r2,r2,r3,asr #24 ;@ r2=Disp+Rn
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -44420,8 +47491,10 @@ Op9108:
   sub r0,r0,#1 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r6:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r6,r0,asl #24
 
 ;@ EaCalc : Get '-(a0)' into r11:
@@ -44433,6 +47506,7 @@ Op9108:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
 ;@ Get X bit:
@@ -44455,6 +47529,7 @@ Op9108:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldr r6,[r7,#0x54]
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -44470,8 +47545,10 @@ Op910f:
   sub r0,r0,#2 ;@ Pre-decrement An
   str r0,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '-(a7)' (address in r0) into r6:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r6,r0,asl #24
 
 ;@ EaCalc : Get '-(a0)' into r11:
@@ -44483,6 +47560,7 @@ Op910f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
 ;@ Get X bit:
@@ -44505,6 +47583,7 @@ Op910f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldr r6,[r7,#0x54]
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -44519,9 +47598,11 @@ Op9110:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -44542,6 +47623,7 @@ Op9110:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -44556,9 +47638,11 @@ Op9118:
   add r3,r11,#1 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -44579,6 +47663,7 @@ Op9118:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -44592,9 +47677,11 @@ Op911f:
   add r3,r11,#2 ;@ Post-increment An
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '(a7)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -44615,6 +47702,7 @@ Op911f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -44630,9 +47718,11 @@ Op9120:
   sub r11,r11,#1 ;@ Pre-decrement An
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -44653,6 +47743,7 @@ Op9120:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -44666,9 +47757,11 @@ Op9127:
   sub r11,r11,#2 ;@ Pre-decrement An
   str r11,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '-(a7)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -44689,6 +47782,7 @@ Op9127:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -44703,9 +47797,11 @@ Op9128:
   ldr r2,[r7,r2,lsl #2]
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -44726,6 +47822,7 @@ Op9128:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -44749,9 +47846,11 @@ Op9130:
   ldr r2,[r7,r2,lsl #2]
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -44772,6 +47871,7 @@ Op9130:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -44783,9 +47883,11 @@ Op9138:
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -44806,6 +47908,7 @@ Op9138:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -44819,9 +47922,11 @@ Op9139:
   ldrh r0,[r4],#2
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -44842,6 +47947,7 @@ Op9139:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -44899,11 +48005,13 @@ Op9148:
   sub r0,r0,#2 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r6:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r6,r0,asl #16
 
 ;@ EaCalc : Get '-(a0)' into r11:
@@ -44919,6 +48027,7 @@ Op9148:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
 ;@ Get X bit:
@@ -44941,6 +48050,7 @@ Op9148:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldr r6,[r7,#0x54]
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -44955,6 +48065,7 @@ Op9150:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -44962,6 +48073,7 @@ Op9150:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -44982,6 +48094,7 @@ Op9150:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -44996,6 +48109,7 @@ Op9158:
   add r3,r11,#2 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -45003,6 +48117,7 @@ Op9158:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -45023,6 +48138,7 @@ Op9158:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -45038,6 +48154,7 @@ Op9160:
   sub r11,r11,#2 ;@ Pre-decrement An
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -45045,6 +48162,7 @@ Op9160:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -45065,6 +48183,7 @@ Op9160:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -45079,6 +48198,7 @@ Op9168:
   ldr r2,[r7,r2,lsl #2]
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -45086,6 +48206,7 @@ Op9168:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -45106,6 +48227,7 @@ Op9168:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -45129,6 +48251,7 @@ Op9170:
   ldr r2,[r7,r2,lsl #2]
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -45136,6 +48259,7 @@ Op9170:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -45156,6 +48280,7 @@ Op9170:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -45167,6 +48292,7 @@ Op9178:
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -45174,6 +48300,7 @@ Op9178:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -45194,6 +48321,7 @@ Op9178:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -45207,6 +48335,7 @@ Op9179:
   ldrh r0,[r4],#2
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -45214,6 +48343,7 @@ Op9179:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -45234,6 +48364,7 @@ Op9179:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -45285,11 +48416,13 @@ Op9188:
   sub r0,r0,#4 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r6:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r6,r0
 
 ;@ EaCalc : Get '-(a0)' into r11:
@@ -45305,6 +48438,7 @@ Op9188:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
 ;@ Get X bit:
@@ -45324,6 +48458,7 @@ Op9188:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldr r6,[r7,#0x54]
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -45338,6 +48473,7 @@ Op9190:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -45345,6 +48481,7 @@ Op9190:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -45362,6 +48499,7 @@ Op9190:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -45376,6 +48514,7 @@ Op9198:
   add r3,r11,#4 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -45383,6 +48522,7 @@ Op9198:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -45400,6 +48540,7 @@ Op9198:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -45415,6 +48556,7 @@ Op91a0:
   sub r11,r11,#4 ;@ Pre-decrement An
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -45422,6 +48564,7 @@ Op91a0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -45439,6 +48582,7 @@ Op91a0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -45453,6 +48597,7 @@ Op91a8:
   ldr r2,[r7,r2,lsl #2]
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -45460,6 +48605,7 @@ Op91a8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -45477,6 +48623,7 @@ Op91a8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -45500,6 +48647,7 @@ Op91b0:
   ldr r2,[r7,r2,lsl #2]
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -45507,6 +48655,7 @@ Op91b0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -45524,6 +48673,7 @@ Op91b0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#26 ;@ Subtract cycles
@@ -45535,6 +48685,7 @@ Op91b8:
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -45542,6 +48693,7 @@ Op91b8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -45559,6 +48711,7 @@ Op91b8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -45572,6 +48725,7 @@ Op91b9:
   ldrh r0,[r4],#2
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -45579,6 +48733,7 @@ Op91b9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -45596,6 +48751,7 @@ Op91b9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -45631,11 +48787,13 @@ Op91d0:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -45660,11 +48818,13 @@ Op91d8:
   add r3,r0,#4 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -45690,11 +48850,13 @@ Op91e0:
   sub r0,r0,#4 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -45719,11 +48881,13 @@ Op91e8:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -45757,11 +48921,13 @@ Op91f0:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -45783,11 +48949,13 @@ Op91f8:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -45811,11 +48979,13 @@ Op91f9:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -45840,11 +49010,13 @@ Op91fa:
   ldrsh r2,[r4],#2 ;@ Fetch extension
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -45877,11 +49049,13 @@ Op91fb:
   add r2,r2,r3,asr #24 ;@ r2=Disp+Rn
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -45930,8 +49104,10 @@ Op9f08:
   sub r0,r0,#1 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r6:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r6,r0,asl #24
 
 ;@ EaCalc : Get '-(a7)' into r11:
@@ -45942,6 +49118,7 @@ Op9f08:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
 ;@ Get X bit:
@@ -45964,6 +49141,7 @@ Op9f08:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldr r6,[r7,#0x54]
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -45979,8 +49157,10 @@ Op9f0f:
   sub r0,r0,#2 ;@ Pre-decrement An
   str r0,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '-(a7)' (address in r0) into r6:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r6,r0,asl #24
 
 ;@ EaCalc : Get '-(a7)' into r11:
@@ -45991,6 +49171,7 @@ Op9f0f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
 ;@ Get X bit:
@@ -46013,6 +49194,7 @@ Op9f0f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldr r6,[r7,#0x54]
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -46054,8 +49236,10 @@ Opb010:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -46084,8 +49268,10 @@ Opb018:
   add r3,r0,#1 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -46113,8 +49299,10 @@ Opb01f:
   add r3,r0,#2 ;@ Post-increment An
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '(a7)+' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -46144,8 +49332,10 @@ Opb020:
   sub r0,r0,#1 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -46173,8 +49363,10 @@ Opb027:
   sub r0,r0,#2 ;@ Pre-decrement An
   str r0,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '-(a7)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -46203,8 +49395,10 @@ Opb028:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -46242,8 +49436,10 @@ Opb030:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -46271,8 +49467,10 @@ Opb039:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -46301,8 +49499,10 @@ Opb03a:
   ldrsh r2,[r4],#2 ;@ Fetch extension
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x80] ;@ Call fetch8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -46339,8 +49539,10 @@ Opb03b:
   add r2,r2,r3,asr #24 ;@ r2=Disp+Rn
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x80] ;@ Call fetch8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -46419,11 +49621,13 @@ Opb050:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -46452,11 +49656,13 @@ Opb058:
   add r3,r0,#2 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -46486,11 +49692,13 @@ Opb060:
   sub r0,r0,#2 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -46519,11 +49727,13 @@ Opb068:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -46561,11 +49771,13 @@ Opb070:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -46591,11 +49803,13 @@ Opb078:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -46623,11 +49837,13 @@ Opb079:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -46656,11 +49872,13 @@ Opb07a:
   ldrsh r2,[r4],#2 ;@ Fetch extension
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -46697,11 +49915,13 @@ Opb07b:
   add r2,r2,r3,asr #24 ;@ r2=Disp+Rn
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -46778,11 +49998,13 @@ Opb090:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -46809,11 +50031,13 @@ Opb098:
   add r3,r0,#4 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -46841,11 +50065,13 @@ Opb0a0:
   sub r0,r0,#4 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -46872,11 +50098,13 @@ Opb0a8:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -46912,11 +50140,13 @@ Opb0b0:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -46942,11 +50172,13 @@ Opb0b9:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -46973,11 +50205,13 @@ Opb0ba:
   ldrsh r2,[r4],#2 ;@ Fetch extension
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -47012,11 +50246,13 @@ Opb0bb:
   add r2,r2,r3,asr #24 ;@ r2=Disp+Rn
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -47089,11 +50325,13 @@ Opb0d0:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x1e00
@@ -47119,11 +50357,13 @@ Opb0d8:
   add r3,r0,#2 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x1e00
@@ -47150,11 +50390,13 @@ Opb0e0:
   sub r0,r0,#2 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x1e00
@@ -47180,11 +50422,13 @@ Opb0e8:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x1e00
@@ -47219,11 +50463,13 @@ Opb0f0:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x1e00
@@ -47246,11 +50492,13 @@ Opb0f8:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x1e00
@@ -47275,11 +50523,13 @@ Opb0f9:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x1e00
@@ -47305,11 +50555,13 @@ Opb0fa:
   ldrsh r2,[r4],#2 ;@ Fetch extension
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x1e00
@@ -47343,11 +50595,13 @@ Opb0fb:
   add r2,r2,r3,asr #24 ;@ r2=Disp+Rn
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x1e00
@@ -47426,8 +50680,10 @@ Opb108:
   add r3,r0,#1 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r11:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r11,r0,asl #24
 
 ;@ Get dst operand into r0:
@@ -47439,6 +50695,7 @@ Opb108:
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   rsbs r0,r11,r0,asl #24
   mrs r10,cpsr ;@ r10=flags
@@ -47457,8 +50714,10 @@ Opb10f:
   add r3,r0,#2 ;@ Post-increment An
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '(a7)+' (address in r0) into r11:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r11,r0,asl #24
 
 ;@ Get dst operand into r0:
@@ -47470,6 +50729,7 @@ Opb10f:
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   rsbs r0,r11,r0,asl #24
   mrs r10,cpsr ;@ r10=flags
@@ -47488,9 +50748,11 @@ Opb110:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -47510,6 +50772,7 @@ Opb110:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -47525,9 +50788,11 @@ Opb118:
   add r3,r11,#1 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -47547,6 +50812,7 @@ Opb118:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -47561,9 +50827,11 @@ Opb11f:
   add r3,r11,#2 ;@ Post-increment An
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '(a7)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -47583,6 +50851,7 @@ Opb11f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -47599,9 +50868,11 @@ Opb120:
   sub r11,r11,#1 ;@ Pre-decrement An
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -47621,6 +50892,7 @@ Opb120:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -47635,9 +50907,11 @@ Opb127:
   sub r11,r11,#2 ;@ Pre-decrement An
   str r11,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '-(a7)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -47657,6 +50931,7 @@ Opb127:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -47672,9 +50947,11 @@ Opb128:
   ldr r2,[r7,r2,lsl #2]
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -47694,6 +50971,7 @@ Opb128:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -47718,9 +50996,11 @@ Opb130:
   ldr r2,[r7,r2,lsl #2]
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -47740,6 +51020,7 @@ Opb130:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -47752,9 +51033,11 @@ Opb138:
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -47774,6 +51057,7 @@ Opb138:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -47788,9 +51072,11 @@ Opb139:
   ldrh r0,[r4],#2
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -47810,6 +51096,7 @@ Opb139:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -47856,11 +51143,13 @@ Opb148:
   add r3,r0,#2 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r11:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r11,r0,asl #16
 
 ;@ Get dst operand into r0:
@@ -47875,6 +51164,7 @@ Opb148:
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   rsbs r0,r11,r0,asl #16
   mrs r10,cpsr ;@ r10=flags
@@ -47893,6 +51183,7 @@ Opb150:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -47900,6 +51191,7 @@ Opb150:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -47919,6 +51211,7 @@ Opb150:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -47934,6 +51227,7 @@ Opb158:
   add r3,r11,#2 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -47941,6 +51235,7 @@ Opb158:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -47960,6 +51255,7 @@ Opb158:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -47976,6 +51272,7 @@ Opb160:
   sub r11,r11,#2 ;@ Pre-decrement An
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -47983,6 +51280,7 @@ Opb160:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -48002,6 +51300,7 @@ Opb160:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -48017,6 +51316,7 @@ Opb168:
   ldr r2,[r7,r2,lsl #2]
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -48024,6 +51324,7 @@ Opb168:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -48043,6 +51344,7 @@ Opb168:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -48067,6 +51369,7 @@ Opb170:
   ldr r2,[r7,r2,lsl #2]
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -48074,6 +51377,7 @@ Opb170:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -48093,6 +51397,7 @@ Opb170:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -48105,6 +51410,7 @@ Opb178:
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -48112,6 +51418,7 @@ Opb178:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -48131,6 +51438,7 @@ Opb178:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -48145,6 +51453,7 @@ Opb179:
   ldrh r0,[r4],#2
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -48152,6 +51461,7 @@ Opb179:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -48171,6 +51481,7 @@ Opb179:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -48213,11 +51524,13 @@ Opb188:
   add r3,r0,#4 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r11:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r11,r0
 
 ;@ Get dst operand into r0:
@@ -48232,6 +51545,7 @@ Opb188:
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   rsbs r0,r11,r0
   mrs r10,cpsr ;@ r10=flags
@@ -48250,6 +51564,7 @@ Opb190:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -48257,6 +51572,7 @@ Opb190:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -48273,6 +51589,7 @@ Opb190:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -48288,6 +51605,7 @@ Opb198:
   add r3,r11,#4 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -48295,6 +51613,7 @@ Opb198:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -48311,6 +51630,7 @@ Opb198:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -48327,6 +51647,7 @@ Opb1a0:
   sub r11,r11,#4 ;@ Pre-decrement An
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -48334,6 +51655,7 @@ Opb1a0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -48350,6 +51672,7 @@ Opb1a0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -48365,6 +51688,7 @@ Opb1a8:
   ldr r2,[r7,r2,lsl #2]
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -48372,6 +51696,7 @@ Opb1a8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -48388,6 +51713,7 @@ Opb1a8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -48412,6 +51738,7 @@ Opb1b0:
   ldr r2,[r7,r2,lsl #2]
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -48419,6 +51746,7 @@ Opb1b0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -48435,6 +51763,7 @@ Opb1b0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#26 ;@ Subtract cycles
@@ -48447,6 +51776,7 @@ Opb1b8:
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -48454,6 +51784,7 @@ Opb1b8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -48470,6 +51801,7 @@ Opb1b8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -48484,6 +51816,7 @@ Opb1b9:
   ldrh r0,[r4],#2
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -48491,6 +51824,7 @@ Opb1b9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -48507,6 +51841,7 @@ Opb1b9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -48541,11 +51876,13 @@ Opb1d0:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x1e00
@@ -48569,11 +51906,13 @@ Opb1d8:
   add r3,r0,#4 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x1e00
@@ -48598,11 +51937,13 @@ Opb1e0:
   sub r0,r0,#4 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x1e00
@@ -48626,11 +51967,13 @@ Opb1e8:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x1e00
@@ -48663,11 +52006,13 @@ Opb1f0:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x1e00
@@ -48688,11 +52033,13 @@ Opb1f8:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x1e00
@@ -48715,11 +52062,13 @@ Opb1f9:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x1e00
@@ -48743,11 +52092,13 @@ Opb1fa:
   ldrsh r2,[r4],#2 ;@ Fetch extension
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x1e00
@@ -48779,11 +52130,13 @@ Opb1fb:
   add r2,r2,r3,asr #24 ;@ r2=Disp+Rn
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x1e00
@@ -48830,8 +52183,10 @@ Opbf08:
   add r3,r0,#1 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r11:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r11,r0,asl #24
 
 ;@ Get dst operand into r0:
@@ -48842,6 +52197,7 @@ Opbf08:
 ;@ EaRead : Read '(a7)+' (address in r0) into r0:
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   rsbs r0,r11,r0,asl #24
   mrs r10,cpsr ;@ r10=flags
@@ -48860,8 +52216,10 @@ Opbf0f:
   add r3,r0,#2 ;@ Post-increment An
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '(a7)+' (address in r0) into r11:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r11,r0,asl #24
 
 ;@ Get dst operand into r0:
@@ -48872,6 +52230,7 @@ Opbf0f:
 ;@ EaRead : Read '(a7)+' (address in r0) into r0:
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   rsbs r0,r11,r0,asl #24
   mrs r10,cpsr ;@ r10=flags
@@ -48917,8 +52276,10 @@ Opc010:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -48949,8 +52310,10 @@ Opc018:
   add r3,r0,#1 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -48980,8 +52343,10 @@ Opc01f:
   add r3,r0,#2 ;@ Post-increment An
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '(a7)+' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -49013,8 +52378,10 @@ Opc020:
   sub r0,r0,#1 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -49044,8 +52411,10 @@ Opc027:
   sub r0,r0,#2 ;@ Pre-decrement An
   str r0,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '-(a7)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -49076,8 +52445,10 @@ Opc028:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -49117,8 +52488,10 @@ Opc030:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -49146,8 +52519,10 @@ Opc038:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -49177,8 +52552,10 @@ Opc039:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -49209,8 +52586,10 @@ Opc03a:
   ldrsh r2,[r4],#2 ;@ Fetch extension
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x80] ;@ Call fetch8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -49249,8 +52628,10 @@ Opc03b:
   add r2,r2,r3,asr #24 ;@ r2=Disp+Rn
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x80] ;@ Call fetch8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -49307,11 +52688,13 @@ Opc050:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -49343,11 +52726,13 @@ Opc058:
   add r3,r0,#2 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -49380,11 +52765,13 @@ Opc060:
   sub r0,r0,#2 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -49416,11 +52803,13 @@ Opc068:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -49461,11 +52850,13 @@ Opc070:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -49494,11 +52885,13 @@ Opc078:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -49529,11 +52922,13 @@ Opc079:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -49565,11 +52960,13 @@ Opc07a:
   ldrsh r2,[r4],#2 ;@ Fetch extension
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -49609,11 +53006,13 @@ Opc07b:
   add r2,r2,r3,asr #24 ;@ r2=Disp+Rn
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -49698,11 +53097,13 @@ Opc090:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -49731,11 +53132,13 @@ Opc098:
   add r3,r0,#4 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -49765,11 +53168,13 @@ Opc0a0:
   sub r0,r0,#4 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -49798,11 +53203,13 @@ Opc0a8:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -49840,11 +53247,13 @@ Opc0b0:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -49870,11 +53279,13 @@ Opc0b8:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -49902,11 +53313,13 @@ Opc0b9:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -49935,11 +53348,13 @@ Opc0ba:
   ldrsh r2,[r4],#2 ;@ Fetch extension
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -49976,11 +53391,13 @@ Opc0bb:
   add r2,r2,r3,asr #24 ;@ r2=Disp+Rn
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -50065,11 +53482,13 @@ Opc0d0:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -50102,11 +53521,13 @@ Opc0d8:
   add r3,r0,#2 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -50140,11 +53561,13 @@ Opc0e0:
   sub r0,r0,#2 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -50177,11 +53600,13 @@ Opc0e8:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -50223,11 +53648,13 @@ Opc0f0:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -50257,11 +53684,13 @@ Opc0f8:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -50293,11 +53722,13 @@ Opc0f9:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -50330,11 +53761,13 @@ Opc0fa:
   ldrsh r2,[r4],#2 ;@ Fetch extension
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -50375,11 +53808,13 @@ Opc0fb:
   add r2,r2,r3,asr #24 ;@ r2=Disp+Rn
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -50489,8 +53924,10 @@ Opc108:
   sub r0,r0,#1 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r6:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r6,r0
 
 ;@ EaCalc : Get '-(a0)' into r11:
@@ -50503,6 +53940,7 @@ Opc108:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   bic r10,r10,#0xb1000000 ;@ clear all flags except old Z
   ldr r1,[r7,#0x4c] ;@ Get X bit
@@ -50533,6 +53971,7 @@ Opc108:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldr r6,[r7,#0x54]
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -50548,8 +53987,10 @@ Opc10f:
   sub r0,r0,#2 ;@ Pre-decrement An
   str r0,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '-(a7)' (address in r0) into r6:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r6,r0
 
 ;@ EaCalc : Get '-(a0)' into r11:
@@ -50562,6 +54003,7 @@ Opc10f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   bic r10,r10,#0xb1000000 ;@ clear all flags except old Z
   ldr r1,[r7,#0x4c] ;@ Get X bit
@@ -50592,6 +54034,7 @@ Opc10f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldr r6,[r7,#0x54]
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -50606,9 +54049,11 @@ Opc110:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -50628,6 +54073,7 @@ Opc110:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -50642,9 +54088,11 @@ Opc118:
   add r3,r11,#1 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -50664,6 +54112,7 @@ Opc118:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -50677,9 +54126,11 @@ Opc11f:
   add r3,r11,#2 ;@ Post-increment An
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '(a7)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -50699,6 +54150,7 @@ Opc11f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -50714,9 +54166,11 @@ Opc120:
   sub r11,r11,#1 ;@ Pre-decrement An
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -50736,6 +54190,7 @@ Opc120:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -50749,9 +54204,11 @@ Opc127:
   sub r11,r11,#2 ;@ Pre-decrement An
   str r11,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '-(a7)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -50771,6 +54228,7 @@ Opc127:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -50785,9 +54243,11 @@ Opc128:
   ldr r2,[r7,r2,lsl #2]
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -50807,6 +54267,7 @@ Opc128:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -50830,9 +54291,11 @@ Opc130:
   ldr r2,[r7,r2,lsl #2]
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -50852,6 +54315,7 @@ Opc130:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -50863,9 +54327,11 @@ Opc138:
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -50885,6 +54351,7 @@ Opc138:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -50898,9 +54365,11 @@ Opc139:
   ldrh r0,[r4],#2
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -50920,6 +54389,7 @@ Opc139:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -50966,6 +54436,7 @@ Opc150:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -50973,6 +54444,7 @@ Opc150:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -50992,6 +54464,7 @@ Opc150:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -51006,6 +54479,7 @@ Opc158:
   add r3,r11,#2 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -51013,6 +54487,7 @@ Opc158:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -51032,6 +54507,7 @@ Opc158:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -51047,6 +54523,7 @@ Opc160:
   sub r11,r11,#2 ;@ Pre-decrement An
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -51054,6 +54531,7 @@ Opc160:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -51073,6 +54551,7 @@ Opc160:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -51087,6 +54566,7 @@ Opc168:
   ldr r2,[r7,r2,lsl #2]
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -51094,6 +54574,7 @@ Opc168:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -51113,6 +54594,7 @@ Opc168:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -51136,6 +54618,7 @@ Opc170:
   ldr r2,[r7,r2,lsl #2]
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -51143,6 +54626,7 @@ Opc170:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -51162,6 +54646,7 @@ Opc170:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -51173,6 +54658,7 @@ Opc178:
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -51180,6 +54666,7 @@ Opc178:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -51199,6 +54686,7 @@ Opc178:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -51212,6 +54700,7 @@ Opc179:
   ldrh r0,[r4],#2
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -51219,6 +54708,7 @@ Opc179:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -51238,6 +54728,7 @@ Opc179:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -51267,6 +54758,7 @@ Opc190:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -51274,6 +54766,7 @@ Opc190:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -51290,6 +54783,7 @@ Opc190:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -51304,6 +54798,7 @@ Opc198:
   add r3,r11,#4 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -51311,6 +54806,7 @@ Opc198:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -51327,6 +54823,7 @@ Opc198:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -51342,6 +54839,7 @@ Opc1a0:
   sub r11,r11,#4 ;@ Pre-decrement An
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -51349,6 +54847,7 @@ Opc1a0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -51365,6 +54864,7 @@ Opc1a0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -51379,6 +54879,7 @@ Opc1a8:
   ldr r2,[r7,r2,lsl #2]
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -51386,6 +54887,7 @@ Opc1a8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -51402,6 +54904,7 @@ Opc1a8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -51425,6 +54928,7 @@ Opc1b0:
   ldr r2,[r7,r2,lsl #2]
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -51432,6 +54936,7 @@ Opc1b0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -51448,6 +54953,7 @@ Opc1b0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#26 ;@ Subtract cycles
@@ -51459,6 +54965,7 @@ Opc1b8:
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -51466,6 +54973,7 @@ Opc1b8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -51482,6 +54990,7 @@ Opc1b8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -51495,6 +55004,7 @@ Opc1b9:
   ldrh r0,[r4],#2
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -51502,6 +55012,7 @@ Opc1b9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -51518,6 +55029,7 @@ Opc1b9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -51561,11 +55073,13 @@ Opc1d0:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -51598,11 +55112,13 @@ Opc1d8:
   add r3,r0,#2 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -51636,11 +55152,13 @@ Opc1e0:
   sub r0,r0,#2 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -51673,11 +55191,13 @@ Opc1e8:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -51719,11 +55239,13 @@ Opc1f0:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -51753,11 +55275,13 @@ Opc1f8:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -51789,11 +55313,13 @@ Opc1f9:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -51826,11 +55352,13 @@ Opc1fa:
   ldrsh r2,[r4],#2 ;@ Fetch extension
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -51871,11 +55399,13 @@ Opc1fb:
   add r2,r2,r3,asr #24 ;@ r2=Disp+Rn
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -51938,8 +55468,10 @@ Opcf08:
   sub r0,r0,#1 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r6:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r6,r0
 
 ;@ EaCalc : Get '-(a7)' into r11:
@@ -51950,6 +55482,7 @@ Opcf08:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   bic r10,r10,#0xb1000000 ;@ clear all flags except old Z
   ldr r1,[r7,#0x4c] ;@ Get X bit
@@ -51980,6 +55513,7 @@ Opcf08:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldr r6,[r7,#0x54]
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -51995,8 +55529,10 @@ Opcf0f:
   sub r0,r0,#2 ;@ Pre-decrement An
   str r0,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '-(a7)' (address in r0) into r6:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r6,r0
 
 ;@ EaCalc : Get '-(a7)' into r11:
@@ -52007,6 +55543,7 @@ Opcf0f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   bic r10,r10,#0xb1000000 ;@ clear all flags except old Z
   ldr r1,[r7,#0x4c] ;@ Get X bit
@@ -52037,6 +55574,7 @@ Opcf0f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldr r6,[r7,#0x54]
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -52079,8 +55617,10 @@ Opd010:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -52111,8 +55651,10 @@ Opd018:
   add r3,r0,#1 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -52142,8 +55684,10 @@ Opd01f:
   add r3,r0,#2 ;@ Post-increment An
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '(a7)+' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -52175,8 +55719,10 @@ Opd020:
   sub r0,r0,#1 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -52206,8 +55752,10 @@ Opd027:
   sub r0,r0,#2 ;@ Pre-decrement An
   str r0,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '-(a7)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -52238,8 +55786,10 @@ Opd028:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -52279,8 +55829,10 @@ Opd030:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -52308,8 +55860,10 @@ Opd038:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -52339,8 +55893,10 @@ Opd039:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -52371,8 +55927,10 @@ Opd03a:
   ldrsh r2,[r4],#2 ;@ Fetch extension
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x80] ;@ Call fetch8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -52411,8 +55969,10 @@ Opd03b:
   add r2,r2,r3,asr #24 ;@ r2=Disp+Rn
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x80] ;@ Call fetch8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -52469,11 +56029,13 @@ Opd050:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -52505,11 +56067,13 @@ Opd058:
   add r3,r0,#2 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -52542,11 +56106,13 @@ Opd060:
   sub r0,r0,#2 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -52578,11 +56144,13 @@ Opd068:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -52623,11 +56191,13 @@ Opd070:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -52656,11 +56226,13 @@ Opd078:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -52691,11 +56263,13 @@ Opd079:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -52727,11 +56301,13 @@ Opd07a:
   ldrsh r2,[r4],#2 ;@ Fetch extension
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -52771,11 +56347,13 @@ Opd07b:
   add r2,r2,r3,asr #24 ;@ r2=Disp+Rn
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -52860,11 +56438,13 @@ Opd090:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -52893,11 +56473,13 @@ Opd098:
   add r3,r0,#4 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -52927,11 +56509,13 @@ Opd0a0:
   sub r0,r0,#4 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -52960,11 +56544,13 @@ Opd0a8:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -53002,11 +56588,13 @@ Opd0b0:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -53032,11 +56620,13 @@ Opd0b8:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -53064,11 +56654,13 @@ Opd0b9:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -53097,11 +56689,13 @@ Opd0ba:
   ldrsh r2,[r4],#2 ;@ Fetch extension
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -53138,11 +56732,13 @@ Opd0bb:
   add r2,r2,r3,asr #24 ;@ r2=Disp+Rn
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -53221,11 +56817,13 @@ Opd0d0:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -53252,11 +56850,13 @@ Opd0d8:
   add r3,r0,#2 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -53284,11 +56884,13 @@ Opd0e0:
   sub r0,r0,#2 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -53315,11 +56917,13 @@ Opd0e8:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -53355,11 +56959,13 @@ Opd0f0:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -53383,11 +56989,13 @@ Opd0f8:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -53413,11 +57021,13 @@ Opd0f9:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -53444,11 +57054,13 @@ Opd0fa:
   ldrsh r2,[r4],#2 ;@ Fetch extension
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -53483,11 +57095,13 @@ Opd0fb:
   add r2,r2,r3,asr #24 ;@ r2=Disp+Rn
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -53581,8 +57195,10 @@ Opd108:
   sub r0,r0,#1 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r6:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r6,r0,asl #24
 
 ;@ EaCalc : Get '-(a0)' into r11:
@@ -53594,6 +57210,7 @@ Opd108:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
 ;@ Get X bit:
@@ -53618,6 +57235,7 @@ Opd108:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldr r6,[r7,#0x54]
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -53633,8 +57251,10 @@ Opd10f:
   sub r0,r0,#2 ;@ Pre-decrement An
   str r0,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '-(a7)' (address in r0) into r6:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r6,r0,asl #24
 
 ;@ EaCalc : Get '-(a0)' into r11:
@@ -53646,6 +57266,7 @@ Opd10f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
 ;@ Get X bit:
@@ -53670,6 +57291,7 @@ Opd10f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldr r6,[r7,#0x54]
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -53684,9 +57306,11 @@ Opd110:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -53706,6 +57330,7 @@ Opd110:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -53720,9 +57345,11 @@ Opd118:
   add r3,r11,#1 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -53742,6 +57369,7 @@ Opd118:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -53755,9 +57383,11 @@ Opd11f:
   add r3,r11,#2 ;@ Post-increment An
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '(a7)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -53777,6 +57407,7 @@ Opd11f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -53792,9 +57423,11 @@ Opd120:
   sub r11,r11,#1 ;@ Pre-decrement An
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -53814,6 +57447,7 @@ Opd120:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -53827,9 +57461,11 @@ Opd127:
   sub r11,r11,#2 ;@ Pre-decrement An
   str r11,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '-(a7)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -53849,6 +57485,7 @@ Opd127:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -53863,9 +57500,11 @@ Opd128:
   ldr r2,[r7,r2,lsl #2]
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -53885,6 +57524,7 @@ Opd128:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -53908,9 +57548,11 @@ Opd130:
   ldr r2,[r7,r2,lsl #2]
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -53930,6 +57572,7 @@ Opd130:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -53941,9 +57584,11 @@ Opd138:
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -53963,6 +57608,7 @@ Opd138:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -53976,9 +57622,11 @@ Opd139:
   ldrh r0,[r4],#2
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -53998,6 +57646,7 @@ Opd139:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -54057,11 +57706,13 @@ Opd148:
   sub r0,r0,#2 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r6:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r6,r0,asl #16
 
 ;@ EaCalc : Get '-(a0)' into r11:
@@ -54077,6 +57728,7 @@ Opd148:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
 ;@ Get X bit:
@@ -54101,6 +57753,7 @@ Opd148:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldr r6,[r7,#0x54]
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -54115,6 +57768,7 @@ Opd150:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -54122,6 +57776,7 @@ Opd150:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -54141,6 +57796,7 @@ Opd150:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -54155,6 +57811,7 @@ Opd158:
   add r3,r11,#2 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -54162,6 +57819,7 @@ Opd158:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -54181,6 +57839,7 @@ Opd158:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -54196,6 +57855,7 @@ Opd160:
   sub r11,r11,#2 ;@ Pre-decrement An
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -54203,6 +57863,7 @@ Opd160:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -54222,6 +57883,7 @@ Opd160:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -54236,6 +57898,7 @@ Opd168:
   ldr r2,[r7,r2,lsl #2]
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -54243,6 +57906,7 @@ Opd168:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -54262,6 +57926,7 @@ Opd168:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -54285,6 +57950,7 @@ Opd170:
   ldr r2,[r7,r2,lsl #2]
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -54292,6 +57958,7 @@ Opd170:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -54311,6 +57978,7 @@ Opd170:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -54322,6 +57990,7 @@ Opd178:
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -54329,6 +57998,7 @@ Opd178:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -54348,6 +58018,7 @@ Opd178:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -54361,6 +58032,7 @@ Opd179:
   ldrh r0,[r4],#2
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -54368,6 +58040,7 @@ Opd179:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -54387,6 +58060,7 @@ Opd179:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -54436,11 +58110,13 @@ Opd188:
   sub r0,r0,#4 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r6:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r6,r0
 
 ;@ EaCalc : Get '-(a0)' into r11:
@@ -54456,6 +58132,7 @@ Opd188:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
 ;@ Get X bit:
@@ -54473,6 +58150,7 @@ Opd188:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldr r6,[r7,#0x54]
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -54487,6 +58165,7 @@ Opd190:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -54494,6 +58173,7 @@ Opd190:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -54510,6 +58190,7 @@ Opd190:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -54524,6 +58205,7 @@ Opd198:
   add r3,r11,#4 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -54531,6 +58213,7 @@ Opd198:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -54547,6 +58230,7 @@ Opd198:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -54562,6 +58246,7 @@ Opd1a0:
   sub r11,r11,#4 ;@ Pre-decrement An
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -54569,6 +58254,7 @@ Opd1a0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -54585,6 +58271,7 @@ Opd1a0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -54599,6 +58286,7 @@ Opd1a8:
   ldr r2,[r7,r2,lsl #2]
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -54606,6 +58294,7 @@ Opd1a8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -54622,6 +58311,7 @@ Opd1a8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -54645,6 +58335,7 @@ Opd1b0:
   ldr r2,[r7,r2,lsl #2]
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -54652,6 +58343,7 @@ Opd1b0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -54668,6 +58360,7 @@ Opd1b0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#26 ;@ Subtract cycles
@@ -54679,6 +58372,7 @@ Opd1b8:
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -54686,6 +58380,7 @@ Opd1b8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -54702,6 +58397,7 @@ Opd1b8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -54715,6 +58411,7 @@ Opd1b9:
   ldrh r0,[r4],#2
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -54722,6 +58419,7 @@ Opd1b9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -54738,6 +58436,7 @@ Opd1b9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -54773,11 +58472,13 @@ Opd1d0:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -54802,11 +58503,13 @@ Opd1d8:
   add r3,r0,#4 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -54832,11 +58535,13 @@ Opd1e0:
   sub r0,r0,#4 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -54861,11 +58566,13 @@ Opd1e8:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -54899,11 +58606,13 @@ Opd1f0:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -54925,11 +58634,13 @@ Opd1f8:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -54953,11 +58664,13 @@ Opd1f9:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_data
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -54982,11 +58695,13 @@ Opd1fa:
   ldrsh r2,[r4],#2 ;@ Fetch extension
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -55019,11 +58734,13 @@ Opd1fb:
   add r2,r2,r3,asr #24 ;@ r2=Disp+Rn
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*2
   tst r0,#1 ;@ address error?
   bne ExceptionAddressError_r_prg
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -55072,8 +58789,10 @@ Opdf08:
   sub r0,r0,#1 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r6:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r6,r0,asl #24
 
 ;@ EaCalc : Get '-(a7)' into r11:
@@ -55084,6 +58803,7 @@ Opdf08:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
 ;@ Get X bit:
@@ -55108,6 +58828,7 @@ Opdf08:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldr r6,[r7,#0x54]
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -55123,8 +58844,10 @@ Opdf0f:
   sub r0,r0,#2 ;@ Pre-decrement An
   str r0,[r7,#0x3c] ;@ A7
 ;@ EaRead : Read '-(a7)' (address in r0) into r6:
+  str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r6,r0,asl #24
 
 ;@ EaCalc : Get '-(a7)' into r11:
@@ -55135,6 +58858,7 @@ Opdf0f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
 ;@ Get X bit:
@@ -55159,6 +58883,7 @@ Opdf0f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldr r6,[r7,#0x54]
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -55971,6 +59696,7 @@ Ope0d0:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -55978,6 +59704,7 @@ Ope0d0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
 ;@ For shift right, use loworder bits for the operation:
@@ -55996,6 +59723,7 @@ Ope0d0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -56010,6 +59738,7 @@ Ope0d8:
   add r3,r11,#2 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -56017,6 +59746,7 @@ Ope0d8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
 ;@ For shift right, use loworder bits for the operation:
@@ -56035,6 +59765,7 @@ Ope0d8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -56050,6 +59781,7 @@ Ope0e0:
   sub r11,r11,#2 ;@ Pre-decrement An
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -56057,6 +59789,7 @@ Ope0e0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
 ;@ For shift right, use loworder bits for the operation:
@@ -56075,6 +59808,7 @@ Ope0e0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -56089,6 +59823,7 @@ Ope0e8:
   ldr r2,[r7,r2,lsl #2]
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -56096,6 +59831,7 @@ Ope0e8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
 ;@ For shift right, use loworder bits for the operation:
@@ -56114,6 +59850,7 @@ Ope0e8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -56137,6 +59874,7 @@ Ope0f0:
   ldr r2,[r7,r2,lsl #2]
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -56144,6 +59882,7 @@ Ope0f0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
 ;@ For shift right, use loworder bits for the operation:
@@ -56162,6 +59901,7 @@ Ope0f0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -56173,6 +59913,7 @@ Ope0f8:
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -56180,6 +59921,7 @@ Ope0f8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
 ;@ For shift right, use loworder bits for the operation:
@@ -56198,6 +59940,7 @@ Ope0f8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -56211,6 +59954,7 @@ Ope0f9:
   ldrh r0,[r4],#2
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -56218,6 +59962,7 @@ Ope0f9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
 ;@ For shift right, use loworder bits for the operation:
@@ -56236,6 +59981,7 @@ Ope0f9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -57076,6 +60822,7 @@ Ope1d0:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -57083,6 +60830,7 @@ Ope1d0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
   adds r3,r0,#0 ;@ save old value for V flag calculation, also clear V
@@ -57104,6 +60852,7 @@ Ope1d0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -57118,6 +60867,7 @@ Ope1d8:
   add r3,r11,#2 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -57125,6 +60875,7 @@ Ope1d8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
   adds r3,r0,#0 ;@ save old value for V flag calculation, also clear V
@@ -57146,6 +60897,7 @@ Ope1d8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -57161,6 +60913,7 @@ Ope1e0:
   sub r11,r11,#2 ;@ Pre-decrement An
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -57168,6 +60921,7 @@ Ope1e0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
   adds r3,r0,#0 ;@ save old value for V flag calculation, also clear V
@@ -57189,6 +60943,7 @@ Ope1e0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -57203,6 +60958,7 @@ Ope1e8:
   ldr r2,[r7,r2,lsl #2]
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -57210,6 +60966,7 @@ Ope1e8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
   adds r3,r0,#0 ;@ save old value for V flag calculation, also clear V
@@ -57231,6 +60988,7 @@ Ope1e8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -57254,6 +61012,7 @@ Ope1f0:
   ldr r2,[r7,r2,lsl #2]
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -57261,6 +61020,7 @@ Ope1f0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
   adds r3,r0,#0 ;@ save old value for V flag calculation, also clear V
@@ -57282,6 +61042,7 @@ Ope1f0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -57293,6 +61054,7 @@ Ope1f8:
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -57300,6 +61062,7 @@ Ope1f8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
   adds r3,r0,#0 ;@ save old value for V flag calculation, also clear V
@@ -57321,6 +61084,7 @@ Ope1f8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -57334,6 +61098,7 @@ Ope1f9:
   ldrh r0,[r4],#2
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -57341,6 +61106,7 @@ Ope1f9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
   adds r3,r0,#0 ;@ save old value for V flag calculation, also clear V
@@ -57362,6 +61128,7 @@ Ope1f9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -57453,6 +61220,7 @@ Ope2d0:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -57460,6 +61228,7 @@ Ope2d0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
 ;@ For shift right, use loworder bits for the operation:
@@ -57479,6 +61248,7 @@ Ope2d0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -57493,6 +61263,7 @@ Ope2d8:
   add r3,r11,#2 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -57500,6 +61271,7 @@ Ope2d8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
 ;@ For shift right, use loworder bits for the operation:
@@ -57519,6 +61291,7 @@ Ope2d8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -57534,6 +61307,7 @@ Ope2e0:
   sub r11,r11,#2 ;@ Pre-decrement An
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -57541,6 +61315,7 @@ Ope2e0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
 ;@ For shift right, use loworder bits for the operation:
@@ -57560,6 +61335,7 @@ Ope2e0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -57574,6 +61350,7 @@ Ope2e8:
   ldr r2,[r7,r2,lsl #2]
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -57581,6 +61358,7 @@ Ope2e8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
 ;@ For shift right, use loworder bits for the operation:
@@ -57600,6 +61378,7 @@ Ope2e8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -57623,6 +61402,7 @@ Ope2f0:
   ldr r2,[r7,r2,lsl #2]
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -57630,6 +61410,7 @@ Ope2f0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
 ;@ For shift right, use loworder bits for the operation:
@@ -57649,6 +61430,7 @@ Ope2f0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -57660,6 +61442,7 @@ Ope2f8:
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -57667,6 +61450,7 @@ Ope2f8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
 ;@ For shift right, use loworder bits for the operation:
@@ -57686,6 +61470,7 @@ Ope2f8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -57699,6 +61484,7 @@ Ope2f9:
   ldrh r0,[r4],#2
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -57706,6 +61492,7 @@ Ope2f9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
 ;@ For shift right, use loworder bits for the operation:
@@ -57725,6 +61512,7 @@ Ope2f9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -57812,6 +61600,7 @@ Ope3d0:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -57819,6 +61608,7 @@ Ope3d0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
 ;@ Shift register:
@@ -57831,6 +61621,7 @@ Ope3d0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -57845,6 +61636,7 @@ Ope3d8:
   add r3,r11,#2 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -57852,6 +61644,7 @@ Ope3d8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
 ;@ Shift register:
@@ -57864,6 +61657,7 @@ Ope3d8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -57879,6 +61673,7 @@ Ope3e0:
   sub r11,r11,#2 ;@ Pre-decrement An
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -57886,6 +61681,7 @@ Ope3e0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
 ;@ Shift register:
@@ -57898,6 +61694,7 @@ Ope3e0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -57912,6 +61709,7 @@ Ope3e8:
   ldr r2,[r7,r2,lsl #2]
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -57919,6 +61717,7 @@ Ope3e8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
 ;@ Shift register:
@@ -57931,6 +61730,7 @@ Ope3e8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -57954,6 +61754,7 @@ Ope3f0:
   ldr r2,[r7,r2,lsl #2]
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -57961,6 +61762,7 @@ Ope3f0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
 ;@ Shift register:
@@ -57973,6 +61775,7 @@ Ope3f0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -57984,6 +61787,7 @@ Ope3f8:
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -57991,6 +61795,7 @@ Ope3f8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
 ;@ Shift register:
@@ -58003,6 +61808,7 @@ Ope3f8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -58016,6 +61822,7 @@ Ope3f9:
   ldrh r0,[r4],#2
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -58023,6 +61830,7 @@ Ope3f9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
 ;@ Shift register:
@@ -58035,6 +61843,7 @@ Ope3f9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -58048,6 +61857,7 @@ Ope4d0:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -58055,6 +61865,7 @@ Ope4d0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
   orr r0,r0,r0,lsr #16
@@ -58072,6 +61883,7 @@ Ope4d0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -58086,6 +61898,7 @@ Ope4d8:
   add r3,r11,#2 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -58093,6 +61906,7 @@ Ope4d8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
   orr r0,r0,r0,lsr #16
@@ -58110,6 +61924,7 @@ Ope4d8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -58125,6 +61940,7 @@ Ope4e0:
   sub r11,r11,#2 ;@ Pre-decrement An
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -58132,6 +61948,7 @@ Ope4e0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
   orr r0,r0,r0,lsr #16
@@ -58149,6 +61966,7 @@ Ope4e0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -58163,6 +61981,7 @@ Ope4e8:
   ldr r2,[r7,r2,lsl #2]
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -58170,6 +61989,7 @@ Ope4e8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
   orr r0,r0,r0,lsr #16
@@ -58187,6 +62007,7 @@ Ope4e8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -58210,6 +62031,7 @@ Ope4f0:
   ldr r2,[r7,r2,lsl #2]
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -58217,6 +62039,7 @@ Ope4f0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
   orr r0,r0,r0,lsr #16
@@ -58234,6 +62057,7 @@ Ope4f0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -58245,6 +62069,7 @@ Ope4f8:
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -58252,6 +62077,7 @@ Ope4f8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
   orr r0,r0,r0,lsr #16
@@ -58269,6 +62095,7 @@ Ope4f8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -58282,6 +62109,7 @@ Ope4f9:
   ldrh r0,[r4],#2
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -58289,6 +62117,7 @@ Ope4f9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
   orr r0,r0,r0,lsr #16
@@ -58306,6 +62135,7 @@ Ope4f9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -58319,6 +62149,7 @@ Ope5d0:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -58326,6 +62157,7 @@ Ope5d0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
   ldr r3,[r7,#0x4c]
@@ -58341,6 +62173,7 @@ Ope5d0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -58355,6 +62188,7 @@ Ope5d8:
   add r3,r11,#2 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -58362,6 +62196,7 @@ Ope5d8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
   ldr r3,[r7,#0x4c]
@@ -58377,6 +62212,7 @@ Ope5d8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -58392,6 +62228,7 @@ Ope5e0:
   sub r11,r11,#2 ;@ Pre-decrement An
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -58399,6 +62236,7 @@ Ope5e0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
   ldr r3,[r7,#0x4c]
@@ -58414,6 +62252,7 @@ Ope5e0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -58428,6 +62267,7 @@ Ope5e8:
   ldr r2,[r7,r2,lsl #2]
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -58435,6 +62275,7 @@ Ope5e8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
   ldr r3,[r7,#0x4c]
@@ -58450,6 +62291,7 @@ Ope5e8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -58473,6 +62315,7 @@ Ope5f0:
   ldr r2,[r7,r2,lsl #2]
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -58480,6 +62323,7 @@ Ope5f0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
   ldr r3,[r7,#0x4c]
@@ -58495,6 +62339,7 @@ Ope5f0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -58506,6 +62351,7 @@ Ope5f8:
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -58513,6 +62359,7 @@ Ope5f8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
   ldr r3,[r7,#0x4c]
@@ -58528,6 +62375,7 @@ Ope5f8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -58541,6 +62389,7 @@ Ope5f9:
   ldrh r0,[r4],#2
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -58548,6 +62397,7 @@ Ope5f9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
   ldr r3,[r7,#0x4c]
@@ -58563,6 +62413,7 @@ Ope5f9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -58576,6 +62427,7 @@ Ope6d0:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -58583,6 +62435,7 @@ Ope6d0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
 ;@ Mirror value in whole 32 bits:
@@ -58598,6 +62451,7 @@ Ope6d0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -58612,6 +62466,7 @@ Ope6d8:
   add r3,r11,#2 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -58619,6 +62474,7 @@ Ope6d8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
 ;@ Mirror value in whole 32 bits:
@@ -58634,6 +62490,7 @@ Ope6d8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -58649,6 +62506,7 @@ Ope6e0:
   sub r11,r11,#2 ;@ Pre-decrement An
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -58656,6 +62514,7 @@ Ope6e0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
 ;@ Mirror value in whole 32 bits:
@@ -58671,6 +62530,7 @@ Ope6e0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -58685,6 +62545,7 @@ Ope6e8:
   ldr r2,[r7,r2,lsl #2]
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -58692,6 +62553,7 @@ Ope6e8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
 ;@ Mirror value in whole 32 bits:
@@ -58707,6 +62569,7 @@ Ope6e8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -58730,6 +62593,7 @@ Ope6f0:
   ldr r2,[r7,r2,lsl #2]
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -58737,6 +62601,7 @@ Ope6f0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
 ;@ Mirror value in whole 32 bits:
@@ -58752,6 +62617,7 @@ Ope6f0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -58763,6 +62629,7 @@ Ope6f8:
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -58770,6 +62637,7 @@ Ope6f8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
 ;@ Mirror value in whole 32 bits:
@@ -58785,6 +62653,7 @@ Ope6f8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -58798,6 +62667,7 @@ Ope6f9:
   ldrh r0,[r4],#2
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -58805,6 +62675,7 @@ Ope6f9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
 ;@ Mirror value in whole 32 bits:
@@ -58820,6 +62691,7 @@ Ope6f9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -58833,6 +62705,7 @@ Ope7d0:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -58840,6 +62713,7 @@ Ope7d0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
 ;@ Mirror value in whole 32 bits:
@@ -58858,6 +62732,7 @@ Ope7d0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -58872,6 +62747,7 @@ Ope7d8:
   add r3,r11,#2 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -58879,6 +62755,7 @@ Ope7d8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
 ;@ Mirror value in whole 32 bits:
@@ -58897,6 +62774,7 @@ Ope7d8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -58912,6 +62790,7 @@ Ope7e0:
   sub r11,r11,#2 ;@ Pre-decrement An
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -58919,6 +62798,7 @@ Ope7e0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
 ;@ Mirror value in whole 32 bits:
@@ -58937,6 +62817,7 @@ Ope7e0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -58951,6 +62832,7 @@ Ope7e8:
   ldr r2,[r7,r2,lsl #2]
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -58958,6 +62840,7 @@ Ope7e8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
 ;@ Mirror value in whole 32 bits:
@@ -58976,6 +62859,7 @@ Ope7e8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -58999,6 +62883,7 @@ Ope7f0:
   ldr r2,[r7,r2,lsl #2]
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -59006,6 +62891,7 @@ Ope7f0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
 ;@ Mirror value in whole 32 bits:
@@ -59024,6 +62910,7 @@ Ope7f0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -59035,6 +62922,7 @@ Ope7f8:
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -59042,6 +62930,7 @@ Ope7f8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
 ;@ Mirror value in whole 32 bits:
@@ -59060,6 +62949,7 @@ Ope7f8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -59073,6 +62963,7 @@ Ope7f9:
   ldrh r0,[r4],#2
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
+  str r4,[r7,#0x40] ;@ Save PC
   add lr,pc,#4*3
   mov r0,r11
   tst r0,#1 ;@ address error?
@@ -59080,6 +62971,7 @@ Ope7f9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
 ;@ Mirror value in whole 32 bits:
@@ -59098,6 +62990,7 @@ Ope7f9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
+  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles

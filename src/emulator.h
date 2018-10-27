@@ -16,6 +16,8 @@ extern "C" {
 
 //DEFINE INFO!!!
 //define EMU_MULTITHREADED to speed up long loops
+//define EMU_OPTIMIZE_FOR_ARM to use ASM CPU core
+//define EMU_NO_SAFETY to remove all safety checks
 //to enable degguging define EMU_DEBUG, all options below do nothing unless EMU_DEBUG is defined
 //to enable sandbox debugging define EMU_SANDBOX
 //to enable opcode level debugging define EMU_SANDBOX_OPCODE_LEVEL_DEBUG

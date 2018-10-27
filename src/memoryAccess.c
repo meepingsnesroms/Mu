@@ -105,8 +105,10 @@ static inline bool probeWrite(uint8_t bank, uint32_t address){
 unsigned int m68k_read_memory_8(unsigned int address){
    uint8_t addressType = bankType[START_BANK(address)];
 
+#if !defined(EMU_NO_SAFETY)
    if(!probeRead(addressType, address))
       return 0x00;
+#endif
 
    switch(addressType){
       case CHIP_A0_ROM:
@@ -142,8 +144,10 @@ unsigned int m68k_read_memory_8(unsigned int address){
 unsigned int m68k_read_memory_16(unsigned int address){
    uint8_t addressType = bankType[START_BANK(address)];
 
+#if !defined(EMU_NO_SAFETY)
    if(!probeRead(addressType, address))
       return 0x0000;
+#endif
 
    switch(addressType){
       case CHIP_A0_ROM:
@@ -179,8 +183,10 @@ unsigned int m68k_read_memory_16(unsigned int address){
 unsigned int m68k_read_memory_32(unsigned int address){
    uint8_t addressType = bankType[START_BANK(address)];
 
+#if !defined(EMU_NO_SAFETY)
    if(!probeRead(addressType, address))
       return 0x00000000;
+#endif
 
    switch(addressType){
       case CHIP_A0_ROM:
@@ -216,8 +222,10 @@ unsigned int m68k_read_memory_32(unsigned int address){
 void m68k_write_memory_8(unsigned int address, unsigned char value){
    uint8_t addressType = bankType[START_BANK(address)];
 
+#if !defined(EMU_NO_SAFETY)
    if(!probeWrite(addressType, address))
       return;
+#endif
 
    switch(addressType){
       case CHIP_A0_ROM:
@@ -257,8 +265,10 @@ void m68k_write_memory_8(unsigned int address, unsigned char value){
 void m68k_write_memory_16(unsigned int address, unsigned short value){
    uint8_t addressType = bankType[START_BANK(address)];
 
+#if !defined(EMU_NO_SAFETY)
    if(!probeWrite(addressType, address))
       return;
+#endif
 
    switch(addressType){
       case CHIP_A0_ROM:
@@ -298,8 +308,10 @@ void m68k_write_memory_16(unsigned int address, unsigned short value){
 void m68k_write_memory_32(unsigned int address, unsigned int value){
    uint8_t addressType = bankType[START_BANK(address)];
 
+#if !defined(EMU_NO_SAFETY)
    if(!probeWrite(addressType, address))
       return;
+#endif
 
    switch(addressType){
       case CHIP_A0_ROM:
@@ -382,4 +394,5 @@ void setSed1376Attached(bool attached){
 void resetAddressSpace(){
    MULTITHREAD_LOOP for(uint32_t bank = 0; bank < TOTAL_MEMORY_BANKS; bank++)
       bankType[bank] = getProperBankType(bank);
+   flx68000RefreshAddressing();
 }

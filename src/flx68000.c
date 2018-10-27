@@ -27,12 +27,16 @@ extern void m68k_write_memory_32(unsigned int address, unsigned int value);
 unsigned int checkPc(unsigned int pc){
    pc -= cycloneCpu.membase;//Get the real program counter
 
-   if(chips[CHIP_A0_ROM].inBootMode || pc >= chips[CHIP_A0_ROM].start && pc < chips[CHIP_A0_ROM].start + chips[CHIP_A0_ROM].lineSize)cycloneCpu.membase = (int)palmRom;
-   else if(pc >= chips[CHIP_DX_RAM].start && pc < chips[CHIP_DX_RAM].start + chips[CHIP_DX_RAM].lineSize)cycloneCpu.membase = (int)palmRam;
+   if(chips[CHIP_A0_ROM].inBootMode || pc >= chips[CHIP_A0_ROM].start && pc < chips[CHIP_A0_ROM].start + chips[CHIP_A0_ROM].lineSize)
+      cycloneCpu.membase = (int)palmRom - (pc & ~chips[CHIP_A0_ROM].mask);
+   else if(pc >= chips[CHIP_DX_RAM].start && pc < chips[CHIP_DX_RAM].start + chips[CHIP_DX_RAM].lineSize)
+      cycloneCpu.membase = (int)palmRam - (pc & ~chips[CHIP_DX_RAM].mask);
    else{
       //really shouldnt be executing from anywhere else
       bool breakpoint = true;
    }
+
+   //unsigned int membse = cycloneCpu.membase;
 
    return cycloneCpu.membase + pc;//New program counter
 }
@@ -54,6 +58,8 @@ void flx68000Init(){
       cycloneCpu.write16 = m68k_write_memory_16;
       cycloneCpu.write32 = m68k_write_memory_32;
       cycloneCpu.checkpc = checkPc;
+      cycloneCpu.IrqCallback = interruptAcknowledge;
+      cycloneCpu.ResetCallback = emulatorReset;
 #else
       m68k_init();
       m68k_set_cpu_type(M68K_CPU_TYPE_68000);
@@ -143,6 +149,14 @@ void flx68000SetIrq(uint8_t irqLevel){
    CycloneFlushIrq(&cycloneCpu);
 #else
    m68k_set_irq(irqLevel);
+#endif
+}
+
+void flx68000RefreshAddressing(){
+#if defined(EMU_OPTIMIZE_FOR_ARM)
+   cycloneCpu.pc = cycloneCpu.checkpc(cycloneCpu.pc);
+#else
+   //C implimentation doesnt cache address information
 #endif
 }
 
