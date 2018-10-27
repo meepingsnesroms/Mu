@@ -12,7 +12,7 @@
 #include "ads7846.h"
 #include "sdCard.h"
 #include "m68k/m68k.h"
-#include "audio/blip_buf.h"
+#include "audio/inductor.h"
 #include "debug/sandbox.h"
 
 
