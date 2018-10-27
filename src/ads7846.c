@@ -2,7 +2,6 @@
 
 #include "emulator.h"
 #include "portability.h"
-#include "m68k/m68k.h"//only used for debugLog
 
 
 bool     ads7846PenIrqEnabled;
@@ -110,7 +109,7 @@ bool ads7846ExchangeBit(bool bitIn){
       uint8_t channel = (ads7846ControlByte & 0x70) >> 4;
       uint8_t powerSave = ads7846ControlByte & 0x03;
 
-      //debugLog("Accessed ADS7846 Ch:%d, %d bits, %s Mode, Power Save:%d, PC:0x%08X.\n", channel, bitMode ? 8 : 12, differentialMode ? "Diff" : "Normal", ads7846ControlByte & 0x03, m68k_get_reg(NULL, M68K_REG_PPC));
+      //debugLog("Accessed ADS7846 Ch:%d, %d bits, %s Mode, Power Save:%d, PC:0x%08X.\n", channel, bitMode ? 8 : 12, differentialMode ? "Diff" : "Normal", ads7846ControlByte & 0x03, m68328GetPc());
 
       //check if ADC is on, PENIRQ is handled in refreshInputState() in hardwareRegisters.c
       switch(powerSave){

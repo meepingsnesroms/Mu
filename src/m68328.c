@@ -191,6 +191,22 @@ void m68328Execute(){
    endClk32();
 }
 
+void m68328SetIrq(uint8_t irqLevel){
+   m68k_set_irq(irqLevel);
+}
+
+bool m68328IsSupervisor(){
+   return m68k_get_reg(NULL, M68K_REG_SR) & 0x2000;
+}
+
+uint32_t m68328GetRegister(uint8_t reg){
+   return m68k_get_reg(NULL, reg);
+}
+
+uint32_t m68328GetPc(){
+   return m68k_get_reg(NULL, M68K_REG_PPC);
+}
+
 void m68328BusError(uint32_t address, bool isWrite){
    //never call outsize of a 68k opcode, behavior is undefined due to longjmp
    m68ki_trigger_bus_error(address, isWrite ? MODE_WRITE : MODE_READ, FLAG_S | m68ki_get_address_space());

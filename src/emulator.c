@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "m68k/m68k.h"
 #include "audio/blip_buf.h"
 #include "audio/inductor.h"
 #include "m68328.h"
@@ -145,7 +144,7 @@ void emulatorExit(){
 
 void emulatorReset(){
    //reset doesnt clear RAM or SD card, all programs are stored in RAM or on SD card
-   debugLog("Reset triggered, PC:0x%08X\n", m68k_get_reg(NULL, M68K_REG_PPC));
+   debugLog("Reset triggered, PC:0x%08X\n", m68328GetPc());
    m68328Reset();
    sed1376Reset();
    ads7846Reset();

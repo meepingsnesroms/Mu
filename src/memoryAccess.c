@@ -4,7 +4,7 @@
 #include "emulator.h"
 #include "hardwareRegisters.h"
 #include "memoryAccess.h"
-#include "m68k/m68k.h"
+#include "m68328.h"
 #include "sed1376.h"
 #include "pdiUsbD12.h"
 
@@ -72,7 +72,7 @@ static inline void sed1376Write32(uint32_t address, uint32_t value){
 static inline bool probeRead(uint8_t bank, uint32_t address){
    if(chips[bank].supervisorOnlyProtectedMemory){
       uint32_t index = address - chips[bank].start;
-      if(index >= chips[bank].unprotectedSize && !(m68k_get_reg(NULL, M68K_REG_SR) & 0x2000)){
+      if(index >= chips[bank].unprotectedSize && !m68328IsSupervisor()){
          setPrivilegeViolation(address, false);
          return false;
       }
@@ -88,7 +88,7 @@ static inline bool probeWrite(uint8_t bank, uint32_t address){
    else if(chips[bank].supervisorOnlyProtectedMemory || chips[bank].readOnlyForProtectedMemory){
       uint32_t index = address - chips[bank].start;
       if(index >= chips[bank].unprotectedSize){
-         if(chips[bank].supervisorOnlyProtectedMemory && !(m68k_get_reg(NULL, M68K_REG_SR) & 0x2000)){
+         if(chips[bank].supervisorOnlyProtectedMemory && !m68328IsSupervisor()){
             setPrivilegeViolation(address, true);
             return false;
          }

@@ -313,7 +313,7 @@ static inline void setSpiCont1(uint16_t value){
 
    if(!(value & 0x0400) && value & 0x0200){
       //slave mode and enabled, mode is irrelevent fo SPI is off, dont know what to do
-      debugLog("SPI1 set to slave mode, PC:0x%08X\n", m68k_get_reg(NULL, M68K_REG_PPC));
+      debugLog("SPI1 set to slave mode, PC:0x%08X\n", m68328GetPc());
    }
 
    //do a transfer
@@ -322,7 +322,7 @@ static inline void setSpiCont1(uint16_t value){
       uint8_t bitCount = (value & 0x000F) + 1;
       uint16_t startBit = 1 << (bitCount - 1);
 
-      debugLog("SPI1 transfer, PC:0x%08X\n", m68k_get_reg(NULL, M68K_REG_PPC));
+      debugLog("SPI1 transfer, PC:0x%08X\n", m68328GetPc());
 
       while(spi1TxFifoEntrys() > 0){
          uint16_t currentTxFifoEntry = spi1TxFifoRead();
