@@ -29,8 +29,9 @@
 
 
 
-#ifndef M68KCONF_HEADER
-#define M68KCONF_HEADER
+#ifndef M68KCONF__HEADER
+#define M68KCONF__HEADER
+
 
 /* Configuration switches.
  * Use OPT_SPECIFY_HANDLER for configuration options that allow callbacks.
@@ -44,13 +45,28 @@
 
 
 /* ======================================================================== */
+/* ============================== MAME STUFF ============================== */
+/* ======================================================================== */
+
+/* If you're compiling this for MAME, only change M68K_COMPILE_FOR_MAME
+ * to OPT_ON and use m68kmame.h to configure the 68k core.
+ */
+#ifndef M68K_COMPILE_FOR_MAME
+#define M68K_COMPILE_FOR_MAME      OPT_OFF
+#endif /* M68K_COMPILE_FOR_MAME */
+
+
+#if M68K_COMPILE_FOR_MAME == OPT_OFF
+
+
+/* ======================================================================== */
 /* ============================= CONFIGURATION ============================ */
 /* ======================================================================== */
 
 /* Turn ON if you want to use the following M68K variants */
-#define M68K_EMULATE_010            OPT_OFF
-#define M68K_EMULATE_EC020          OPT_OFF
-#define M68K_EMULATE_020            OPT_OFF
+#define M68K_EMULATE_010            OPT_ON
+#define M68K_EMULATE_EC020          OPT_ON
+#define M68K_EMULATE_020            OPT_ON
 
 
 /* If ON, the CPU will call m68k_read_immediate_xx() for immediate addressing
@@ -64,7 +80,7 @@
  * To simulate real 68k behavior, m68k_write_32_pd() must first write the high
  * word to [address+2], and then write the low word to [address].
  */
-#define M68K_SIMULATE_PD_WRITES     OPT_ON
+#define M68K_SIMULATE_PD_WRITES     OPT_OFF
 
 /* If ON, CPU will call the interrupt acknowledge callback when it services an
  * interrupt.
@@ -115,11 +131,7 @@
 /* If ON, CPU will call the instruction hook callback before every
  * instruction.
  */
-#if defined(EMU_DEBUG) && defined(EMU_SANDBOX) && defined(EMU_SANDBOX_OPCODE_LEVEL_DEBUG)
-#define M68K_INSTRUCTION_HOOK       OPT_ON
-#else
 #define M68K_INSTRUCTION_HOOK       OPT_OFF
-#endif
 #define M68K_INSTRUCTION_CALLBACK() your_instruction_hook_function()
 
 
@@ -154,8 +166,6 @@
  * operations.
  */
 #define M68K_USE_64_BIT  OPT_OFF
-//it seems MASK_OUT_ABOVE_32 is has to be called on every 32 bit operation when using this option,
-//possibly even making the speed worse than with just 32 bits
 
 
 /* Set to your compiler's static inline keyword to enable it, or
@@ -167,9 +177,11 @@
 #define INLINE static inline
 #endif /* INLINE */
 
+#endif /* M68K_COMPILE_FOR_MAME */
+
 
 /* ======================================================================== */
 /* ============================== END OF FILE ============================= */
 /* ======================================================================== */
 
-#endif /* M68KCONF_HEADER */
+#endif /* M68KCONF__HEADER */

@@ -75,7 +75,7 @@ void refreshInputState(){
    checkPortDInterrupts();//this calls checkInterrupts() so it doesnt need to be called above
 }
 
-int32_t interruptAcknowledge(int32_t intLevel){
+int interruptAcknowledge(int intLevel){
    uint8_t vectorOffset = registerArrayRead8(IVR);
    int32_t vector;
 

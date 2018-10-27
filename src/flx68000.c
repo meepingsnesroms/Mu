@@ -15,8 +15,28 @@
 
 #if defined(EMU_OPTIMIZE_FOR_ARM)
 static struct Cyclone cycloneCpu;
-#endif
 
+
+extern unsigned int m68k_read_memory_8(unsigned int address);
+extern unsigned int m68k_read_memory_16(unsigned int address);
+extern unsigned int m68k_read_memory_32(unsigned int address);
+extern void m68k_write_memory_8(unsigned int address, unsigned char value);
+extern void m68k_write_memory_16(unsigned int address, unsigned short value);
+extern void m68k_write_memory_32(unsigned int address, unsigned int value);
+
+unsigned int checkPc(unsigned int pc){
+   pc -= cycloneCpu.membase;//Get the real program counter
+
+   if(chips[CHIP_A0_ROM].inBootMode || pc >= chips[CHIP_A0_ROM].start && pc < chips[CHIP_A0_ROM].start + chips[CHIP_A0_ROM].lineSize)cycloneCpu.membase = (int)palmRom;
+   else if(pc >= chips[CHIP_DX_RAM].start && pc < chips[CHIP_DX_RAM].start + chips[CHIP_DX_RAM].lineSize)cycloneCpu.membase = (int)palmRam;
+   else{
+      //really shouldnt be executing from anywhere else
+      bool breakpoint = true;
+   }
+
+   return cycloneCpu.membase + pc;//New program counter
+}
+#endif
 
 void flx68000Init(){
    static bool inited = false;
@@ -24,6 +44,16 @@ void flx68000Init(){
    if(!inited){
 #if defined(EMU_OPTIMIZE_FOR_ARM)
       CycloneInit();
+      cycloneCpu.read8 = m68k_read_memory_8;
+      cycloneCpu.read16 = m68k_read_memory_16;
+      cycloneCpu.read32 = m68k_read_memory_32;
+      cycloneCpu.fetch8 = m68k_read_memory_8;
+      cycloneCpu.fetch16 = m68k_read_memory_16;
+      cycloneCpu.fetch32 = m68k_read_memory_32;
+      cycloneCpu.write8 = m68k_write_memory_8;
+      cycloneCpu.write16 = m68k_write_memory_16;
+      cycloneCpu.write32 = m68k_write_memory_32;
+      cycloneCpu.checkpc = checkPc;
 #else
       m68k_init();
       m68k_set_cpu_type(M68K_CPU_TYPE_68000);

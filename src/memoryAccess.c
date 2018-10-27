@@ -102,7 +102,7 @@ static inline bool probeWrite(uint8_t bank, uint32_t address){
    return true;
 }
 
-uint8_t m68k_read_memory_8(uint32_t address){
+unsigned int m68k_read_memory_8(unsigned int address){
    uint8_t addressType = bankType[START_BANK(address)];
 
    if(!probeRead(addressType, address))
@@ -139,7 +139,7 @@ uint8_t m68k_read_memory_8(uint32_t address){
    return 0x00;
 }
 
-uint16_t m68k_read_memory_16(uint32_t address){
+unsigned int m68k_read_memory_16(unsigned int address){
    uint8_t addressType = bankType[START_BANK(address)];
 
    if(!probeRead(addressType, address))
@@ -176,7 +176,7 @@ uint16_t m68k_read_memory_16(uint32_t address){
    return 0x0000;
 }
 
-uint32_t m68k_read_memory_32(uint32_t address){
+unsigned int m68k_read_memory_32(unsigned int address){
    uint8_t addressType = bankType[START_BANK(address)];
 
    if(!probeRead(addressType, address))
@@ -213,7 +213,7 @@ uint32_t m68k_read_memory_32(uint32_t address){
    return 0x00000000;
 }
 
-void m68k_write_memory_8(uint32_t address, uint8_t value){
+void m68k_write_memory_8(unsigned int address, unsigned char value){
    uint8_t addressType = bankType[START_BANK(address)];
 
    if(!probeWrite(addressType, address))
@@ -254,7 +254,7 @@ void m68k_write_memory_8(uint32_t address, uint8_t value){
    return;
 }
 
-void m68k_write_memory_16(uint32_t address, uint16_t value){
+void m68k_write_memory_16(unsigned int address, unsigned short value){
    uint8_t addressType = bankType[START_BANK(address)];
 
    if(!probeWrite(addressType, address))
@@ -295,7 +295,7 @@ void m68k_write_memory_16(uint32_t address, uint16_t value){
    return;
 }
 
-void m68k_write_memory_32(uint32_t address, uint32_t value){
+void m68k_write_memory_32(unsigned int address, unsigned int value){
    uint8_t addressType = bankType[START_BANK(address)];
 
    if(!probeWrite(addressType, address))
@@ -335,11 +335,6 @@ void m68k_write_memory_32(uint32_t address, uint32_t value){
    }
 
    return;
-}
-
-void m68k_write_memory_32_pd(uint32_t address, uint32_t value){
-   //musashi says to write 2 16 bit words, but for now I am just writing a 32 bit long since RAM cycles are unemulated
-   m68k_write_memory_32(address, value >> 16 | value << 16);
 }
 
 //memory access for the disassembler
