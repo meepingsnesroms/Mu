@@ -117,8 +117,9 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t spec
    palmMisc.batteryLevel = 100;
 
    //config
-   palmClockMultiplier = (specialFeatures & FEATURE_FAST_CPU) ? 2.0 : 1.0;//overclock
+   palmClockMultiplier = (specialFeatures & FEATURE_FAST_CPU) ? 2.00 : 1.00;//overclock
    //palmClockMultiplier *= 0.80;//run at 80% speed, 20% is likely memory waitstates
+   //palmClockMultiplier *= 0.50;//for slow devices
    palmSpecialFeatures = specialFeatures;
    setRtc(0, 0, 0, 0);//RTCTIME and DAYR are not cleared by reset, clear them manually in case the frontend doesnt set the RTC
 

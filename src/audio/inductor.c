@@ -23,6 +23,6 @@ void inductorAddClocks(int32_t clocks, bool charge){
 }
 
 void inductorSampleAudio(int32_t now){
-   blip_add_delta(palmAudioResampler, now, (inductorCurrentCharge - inductorChargeAtLastSample) * AUDIO_VOLUME);
+   blip_add_delta_fast(palmAudioResampler, now, (inductorCurrentCharge - inductorChargeAtLastSample) * AUDIO_VOLUME);
    inductorChargeAtLastSample = inductorCurrentCharge;
 }

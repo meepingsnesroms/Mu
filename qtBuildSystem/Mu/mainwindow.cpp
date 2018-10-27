@@ -20,6 +20,7 @@
 #include <stdint.h>
 
 #include "debugviewer.h"
+#include "statemanager.h"
 
 
 MainWindow::MainWindow(QWidget* parent) :

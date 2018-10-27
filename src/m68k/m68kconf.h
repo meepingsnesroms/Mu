@@ -150,9 +150,9 @@
  */
 
 
-/* If ON, the enulation core will use 64-bit integers to speed up some
+/* If ON, the emulation core will use 64-bit integers to speed up some
  * operations.
-*/
+ */
 #define M68K_USE_64_BIT  OPT_OFF
 //it seems MASK_OUT_ABOVE_32 is has to be called on every 32 bit operation when using this option,
 //possibly even making the speed worse than with just 32 bits
