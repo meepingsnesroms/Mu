@@ -8,7 +8,7 @@
 #include "hardwareRegisters.h"
 #include "memoryAccess.h"
 #include "portability.h"
-#include "m68328.h"
+#include "flx68000.h"
 #include "ads7846.h"
 #include "sdCard.h"
 #include "audio/inductor.h"
@@ -95,26 +95,26 @@ int32_t interruptAcknowledge(int32_t intLevel){
 
 void setBusErrorTimeOut(uint32_t address, bool isWrite){
    uint8_t scr = registerArrayRead8(SCR);
-   debugLog("Bus error timeout, PC:0x%08X\n", m68328GetPc());
+   debugLog("Bus error timeout, PC:0x%08X\n", flx68000GetPc());
    registerArrayWrite8(SCR, scr | 0x80);
    if(scr & 0x10)
-      m68328BusError(address, isWrite);
+      flx68000BusError(address, isWrite);
 }
 
 void setPrivilegeViolation(uint32_t address, bool isWrite){
    uint8_t scr = registerArrayRead8(SCR);
-   debugLog("Privilege violation, PC:0x%08X\n", m68328GetPc());
+   debugLog("Privilege violation, PC:0x%08X\n", flx68000GetPc());
    registerArrayWrite8(SCR, scr | 0x20);
    if(scr & 0x10)
-      m68328BusError(address, isWrite);
+      flx68000BusError(address, isWrite);
 }
 
 void setWriteProtectViolation(uint32_t address){
    uint8_t scr = registerArrayRead8(SCR);
-   debugLog("Write protect violation, PC:0x%08X\n", m68328GetPc());
+   debugLog("Write protect violation, PC:0x%08X\n", flx68000GetPc());
    registerArrayWrite8(SCR, scr | 0x40);
    if(scr & 0x10)
-      m68328BusError(address, true);
+      flx68000BusError(address, true);
 }
 
 static void pllWakeCpuIfOff(){
@@ -198,7 +198,7 @@ static void checkInterrupts(){
       pctlrCpuClockDivider = 1.0;
    }
 
-   m68328SetIrq(intLevel);//should be called even if intLevel is 0, that is how the interrupt state gets cleared
+   flx68000SetIrq(intLevel);//should be called even if intLevel is 0, that is how the interrupt state gets cleared
 }
 
 static void checkPortDInterrupts(){
@@ -340,9 +340,9 @@ static void checkPortDInterrupts(){
 
 void printUnknownHwAccess(uint32_t address, uint32_t value, uint32_t size, bool isWrite){
    if(isWrite)
-      debugLog("CPU wrote %d bits of 0x%08X to register 0x%03X, PC:0x%08X.\n", size, value, address, m68328GetPc());
+      debugLog("CPU wrote %d bits of 0x%08X to register 0x%03X, PC:0x%08X.\n", size, value, address, flx68000GetPc());
    else
-      debugLog("CPU read %d bits from register 0x%03X, PC:0x%08X.\n", size, address, m68328GetPc());
+      debugLog("CPU read %d bits from register 0x%03X, PC:0x%08X.\n", size, address, flx68000GetPc());
 }
 
 uint32_t getEmuRegister(uint32_t address){
@@ -842,7 +842,7 @@ void setHwRegister16(uint32_t address, uint16_t value){
       case DRAMC:
          //somewhat unemulated
          //missing bit 7 and 6
-         //debugLog("Set DRAMC, old value:0x%04X, new value:0x%04X, PC:0x%08X\n", registerArrayRead16(address), value, m68328GetPc());
+         //debugLog("Set DRAMC, old value:0x%04X, new value:0x%04X, PC:0x%08X\n", registerArrayRead16(address), value, flx68000GetPc());
          registerArrayWrite16(address, value & 0xFF3F);
          updateCsdAddressLines();//the EDO bit can disable SDRAM access
          break;
@@ -854,7 +854,7 @@ void setHwRegister16(uint32_t address, uint16_t value){
 
       case SDCTRL:
          //missing bits 13, 9, 8 and 7
-         //debugLog("Set SDCTRL, old value:0x%04X, new value:0x%04X, PC:0x%08X\n", registerArrayRead16(address), value, m68328GetPc());
+         //debugLog("Set SDCTRL, old value:0x%04X, new value:0x%04X, PC:0x%08X\n", registerArrayRead16(address), value, flx68000GetPc());
          registerArrayWrite16(address, value & 0xDC7F);
          updateCsdAddressLines();
          break;

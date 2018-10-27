@@ -10,8 +10,8 @@
 #include <stdarg.h>
 #include <time.h>
 
-#include "../m68k/m68k.h"
-#include "../m68k/m68kcpu.h"
+#include "../m68k/musashi/m68k.h"
+#include "../m68k/musashi/m68kcpu.h"
 #include "../emulator.h"
 #include "../ads7846.h"
 #include "../hardwareRegisters.h"

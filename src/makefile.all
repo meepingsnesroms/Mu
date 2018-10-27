@@ -1,3 +1,5 @@
+EMU_DEFINES :=
+EMU_SOURCES_ASM :=
 EMU_SOURCES_C := $(EMU_PATH)/emulator.c \
       $(EMU_PATH)/memoryAccess.c \
       $(EMU_PATH)/hardwareRegisters.c \
@@ -6,13 +8,19 @@ EMU_SOURCES_C := $(EMU_PATH)/emulator.c \
       $(EMU_PATH)/pdiUsbD12.c \
       $(EMU_PATH)/sdCard.c \
       $(EMU_PATH)/silkscreen.c \
-      $(EMU_PATH)/m68328.c \
-      $(EMU_PATH)/m68k/m68kops.c \
-      $(EMU_PATH)/m68k/m68kopnz.c \
-      $(EMU_PATH)/m68k/m68kopdm.c \
-      $(EMU_PATH)/m68k/m68kopac.c \
-      $(EMU_PATH)/m68k/m68kdasm.c \
-      $(EMU_PATH)/m68k/m68kcpu.c \
+      $(EMU_PATH)/flx68000.c \
       $(EMU_PATH)/audio/blip_buf.c \
       $(EMU_PATH)/audio/inductor.c \
       $(EMU_PATH)/debug/sandbox.c
+
+ifeq ($(EMU_OPTIMIZE_FOR_ARM), 1)
+   EMU_DEFINES += -DEMU_OPTIMIZE_FOR_ARM
+   EMU_SOURCES_ASM += $(EMU_PATH)/m68k/cyclone/Cyclone.s
+else
+   EMU_SOURCES_C += $(EMU_PATH)/m68k/musashi/m68kops.c \
+      $(EMU_PATH)/m68k/musashi/m68kopnz.c \
+      $(EMU_PATH)/m68k/musashi/m68kopdm.c \
+      $(EMU_PATH)/m68k/musashi/m68kopac.c \
+      $(EMU_PATH)/m68k/musashi/m68kdasm.c \
+      $(EMU_PATH)/m68k/musashi/m68kcpu.c
+endif

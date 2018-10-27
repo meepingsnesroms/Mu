@@ -14,6 +14,8 @@ extern "C" {
 #include "memoryAccess.h"//for size macros
 #include "specs/emuFeatureRegistersSpec.h"//for feature names
 
+//DEFINE INFO!!!
+//define EMU_MULTITHREADED to speed up long loops
 //to enable degguging define EMU_DEBUG, all options below do nothing unless EMU_DEBUG is defined
 //to enable sandbox debugging define EMU_SANDBOX
 //to enable opcode level debugging define EMU_SANDBOX_OPCODE_LEVEL_DEBUG
@@ -34,15 +36,6 @@ void frontendHandleDebugClearLogs();
 #endif
 #else
 #define debugLog(...)
-#endif
-
-//threads
-#if defined(EMU_MULTITHREADED)
-#define MULTITHREAD_LOOP _Pragma("omp parallel for")
-#define MULTITHREAD_DOUBLE_LOOP _Pragma("omp parallel for collapse(2)")
-#else
-#define MULTITHREAD_LOOP
-#define MULTITHREAD_DOUBLE_LOOP
 #endif
 
 //emu errors

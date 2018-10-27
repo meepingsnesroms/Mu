@@ -22,24 +22,30 @@ DEFINES += QT_DEPRECATED_WARNINGS
 # You can also select to disable deprecated APIs only up to a certain version of Qt.
 DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000 # disables all the APIs deprecated before Qt 6.0.0
 
-# ios {
-#     QMAKE_INFO_PLIST = ios/Info.plist
-#     DEFINES += EMU_MULTITHREADED
-# }
-
-macx {
-    CONFIG += sdk_no_version_check # using 10.14 SDK which Qt only unofficialy supports
-    ICON = macos/Mu.icns
-    QMAKE_INFO_PLIST = macos/Info.plist
-    DEFINES += EMU_MULTITHREADED
-}
-
 windows {
     RC_ICONS = windows/Mu.ico
     QMAKE_CFLAGS += -openmp
     QMAKE_CXXFLAGS += -openmp
     DEFINES += "_Pragma=__pragma"
     DEFINES += EMU_MULTITHREADED
+    CONFIG += use_c_68k
+}
+
+macx {
+    CONFIG += sdk_no_version_check # using 10.14 SDK which Qt only unofficialy supports
+    ICON = macos/Mu.icns
+    QMAKE_INFO_PLIST = macos/Info.plist
+    DEFINES += EMU_MULTITHREADED
+    CONFIG += use_c_68k
+}
+
+linux-g++ {
+    message(This really shouldent trigger yet!)
+    QMAKE_CFLAGS += -fopenmp
+    QMAKE_CXXFLAGS += -fopenmp
+    QMAKE_LFLAGS += -fopenmp
+    DEFINES += EMU_MULTITHREADED
+    CONFIG += use_c_68k
 }
 
 android {
@@ -47,7 +53,15 @@ android {
     QMAKE_CXXFLAGS += -fopenmp
     QMAKE_LFLAGS += -fopenmp
     DEFINES += EMU_MULTITHREADED
+    CONFIG += use_arm_asm_68k # for now, later this will check if building for arm
 }
+
+ios {
+    QMAKE_INFO_PLIST = ios/Info.plist
+    DEFINES += EMU_MULTITHREADED
+    CONFIG += use_arm_asm_68k
+}
+
 
 CONFIG(debug, debug|release){
     DEFINES += EMU_DEBUG EMU_CUSTOM_DEBUG_LOG_HANDLER
@@ -61,6 +75,20 @@ CONFIG += c++11
 
 INCLUDEPATH += $$PWD/qt-common/include
 
+use_arm_asm_68k {
+    SOURCES += src/m68k/cyclone/Cyclone.s
+    DEFINES += EMU_OPTIMIZE_FOR_ARM
+}
+
+use_c_68k {
+    SOURCES += src/m68k/musashi/m68kcpu.c \
+        src/m68k/musashi/m68kdasm.c \
+        src/m68k/musashi/m68kopac.c \
+        src/m68k/musashi/m68kopdm.c \
+        src/m68k/musashi/m68kopnz.c \
+        src/m68k/musashi/m68kops.c
+}
+
 SOURCES += \
     debugviewer.cpp \
     emuwrapper.cpp \
@@ -69,33 +97,29 @@ SOURCES += \
     statemanager.cpp \
     touchscreen.cpp \
     src/audio/blip_buf.c \
+    src/audio/inductor.c \
     src/debug/sandbox.c \
-    src/m68k/m68kcpu.c \
-    src/m68k/m68kdasm.c \
-    src/m68k/m68kopac.c \
-    src/m68k/m68kopdm.c \
-    src/m68k/m68kopnz.c \
-    src/m68k/m68kops.c \
     src/ads7846.c \
     src/emulator.c \
+    src/flx68000.c \
     src/hardwareRegisters.c \
-    src/m68328.c \
     src/memoryAccess.c \
     src/pdiUsbD12.c \
     src/sdCard.c \
     src/sed1376.c \
-    src/silkscreen.c \
-    src/audio/inductor.c
+    src/silkscreen.c
 
 HEADERS += \
     src/audio/blip_buf.h \
+    src/audio/inductor.h \
     src/debug/sandbox.h \
     src/debug/sandboxTrapNumToName.c.h \
     src/debug/trapNames.h \
-    src/m68k/m68k.h \
-    src/m68k/m68kconf.h \
-    src/m68k/m68kcpu.h \
-    src/m68k/m68kops.h \
+    src/m68k/cyclone/Cyclone.h \
+    src/m68k/musashi/m68k.h \
+    src/m68k/musashi/m68kconf.h \
+    src/m68k/musashi/m68kcpu.h \
+    src/m68k/musashi/m68kops.h \
     src/specs/emuFeatureRegistersSpec.h \
     src/specs/hardwareRegisterNames.h \
     src/specs/pdiUsbD12Commands.h \
@@ -103,10 +127,10 @@ HEADERS += \
     src/ads7846.h \
     src/emulator.h \
     src/endianness.h \
+    src/flx68000.h \
     src/hardwareRegisters.h \
     src/hardwareRegistersAccessors.c.h \
     src/hardwareRegistersTiming.c.h \
-    src/m68328.h \
     src/memoryAccess.h \
     src/pdiUsbD12.h \
     src/portability.h \
@@ -118,8 +142,7 @@ HEADERS += \
     emuwrapper.h \
     mainwindow.h \
     statemanager.h \
-    touchscreen.h \
-    src/audio/inductor.h
+    touchscreen.h
 
 FORMS += \
     mainwindow.ui \

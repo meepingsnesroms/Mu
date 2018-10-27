@@ -4,7 +4,8 @@
 #include "emulator.h"
 #include "hardwareRegisters.h"
 #include "memoryAccess.h"
-#include "m68328.h"
+#include "portability.h"
+#include "flx68000.h"
 #include "sed1376.h"
 #include "pdiUsbD12.h"
 
@@ -72,7 +73,7 @@ static inline void sed1376Write32(uint32_t address, uint32_t value){
 static inline bool probeRead(uint8_t bank, uint32_t address){
    if(chips[bank].supervisorOnlyProtectedMemory){
       uint32_t index = address - chips[bank].start;
-      if(index >= chips[bank].unprotectedSize && !m68328IsSupervisor()){
+      if(index >= chips[bank].unprotectedSize && !flx68000IsSupervisor()){
          setPrivilegeViolation(address, false);
          return false;
       }
@@ -88,7 +89,7 @@ static inline bool probeWrite(uint8_t bank, uint32_t address){
    else if(chips[bank].supervisorOnlyProtectedMemory || chips[bank].readOnlyForProtectedMemory){
       uint32_t index = address - chips[bank].start;
       if(index >= chips[bank].unprotectedSize){
-         if(chips[bank].supervisorOnlyProtectedMemory && !m68328IsSupervisor()){
+         if(chips[bank].supervisorOnlyProtectedMemory && !flx68000IsSupervisor()){
             setPrivilegeViolation(address, true);
             return false;
          }

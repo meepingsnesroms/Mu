@@ -451,7 +451,7 @@ endif
 
 include $(BUILD_DIR)/Makefile.common
 
-OBJECTS := $(SOURCES_C:.c=.o)
+OBJECTS := $(SOURCES_C:.c=.o) $(SOURCES_ASM:.s=.o)
 
 DEFINES = $(COREDEFINES)
 
@@ -495,7 +495,7 @@ endif
 ifeq ($(platform), theos_ios)
 COMMON_FLAGS := -DIOS -DARM $(COMMON_DEFINES) $(INCFLAGS) -I$(THEOS_INCLUDE_PATH) -Wno-error
 $(LIBRARY_NAME)_CFLAGS += $(COMMON_FLAGS)
-${LIBRARY_NAME}_FILES = $(SOURCES_CXX) $(SOURCES_C)
+${LIBRARY_NAME}_FILES = $(SOURCES_CXX) $(SOURCES_C) $(SOURCES_ASM)
 include $(THEOS_MAKE_PATH)/library.mk
 else
 all: $(TARGET)

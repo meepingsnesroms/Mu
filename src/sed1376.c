@@ -4,7 +4,7 @@
 #include "emulator.h"
 #include "portability.h"
 #include "hardwareRegisters.h"
-#include "m68328.h"//for m68328GetPc()
+#include "flx68000.h"//for flx68000GetPc()
 #include "specs/sed1376RegisterNames.h"
 #include "debug/sandbox.h"
 
@@ -178,7 +178,7 @@ uint8_t sed1376GetRegister(uint8_t address){
    //returning 0x00 on power save mode is done in the sed1376ReadXX functions
 
    if(sandboxRunning())
-      debugLog("SED1376 register read from 0x%02X, PC 0x%08X.\n", address, m68328GetPc());
+      debugLog("SED1376 register read from 0x%02X, PC 0x%08X.\n", address, flx68000GetPc());
 
    switch(address){
       case LUT_READ_LOC:
@@ -218,7 +218,7 @@ uint8_t sed1376GetRegister(uint8_t address){
 void sed1376SetRegister(uint8_t address, uint8_t value){
 
    if(sandboxRunning())
-      debugLog("SED1376 register write 0x%02X to 0x%02X, PC 0x%08X.\n", value, address, m68328GetPc());
+      debugLog("SED1376 register write 0x%02X to 0x%02X, PC 0x%08X.\n", value, address, flx68000GetPc());
 
    switch(address){
       case PWR_SAVE_CFG:

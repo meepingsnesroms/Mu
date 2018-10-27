@@ -18,7 +18,7 @@
 #include "src/emulator.h"
 
 extern "C"{
-#include "src/m68k/m68k.h"
+#include "src/flx68000.h"
 #include "src/memoryAccess.h"
 #include "src/hardwareRegisters.h"
 }
@@ -353,33 +353,11 @@ std::vector<uint64_t>& EmuWrapper::getDuplicateCallCount(){
 std::vector<uint32_t> EmuWrapper::getCpuRegisters(){
    std::vector<uint32_t> registers;
 
-   for(uint8_t reg = M68K_REG_D0; reg <= M68K_REG_SR; reg++)
-      registers.push_back(m68k_get_reg(NULL, (m68k_register_t)reg));
+   for(uint8_t reg = 0; reg <= 17; reg++)
+      registers.push_back(flx68000GetRegister(reg));
    return registers;
 }
 
 uint64_t EmuWrapper::getEmulatorMemory(uint32_t address, uint8_t size){
-   uint64_t data = UINT64_MAX;//invalid access
-
-   //until SPI and UART destructive reads are implemented all reads to mapped addresses are safe, SPI is now implemented, this needs to be fixed
-   if(bankType[START_BANK(address)] != CHIP_NONE){
-      uint16_t m68kSr = m68k_get_reg(NULL, M68K_REG_SR);
-      m68k_set_reg(M68K_REG_SR, 0x2000);//prevent privilege violations
-      switch(size){
-         case 8:
-            data = m68k_read_memory_8(address);
-            break;
-
-         case 16:
-            data = m68k_read_memory_16(address);
-            break;
-
-         case 32:
-            data = m68k_read_memory_32(address);
-            break;
-      }
-      m68k_set_reg(M68K_REG_SR, m68kSr);
-   }
-
-   return data;
+   return flx68000ReadArbitraryMemory(address, size);
 }

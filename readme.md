@@ -47,7 +47,8 @@ Bonus:        Has Adware(Addit)
 The lack of ARM CPU will be fixed in my emulator see "OS improvements".
 
 ## Credits
-Musashi v3.4(last version that builds outside of mame) (68k core)  
+Musashi v3.4 (last version that builds outside of mame)(68k core)  
+Cyclone 68000 (68k core)  
 http://www.iconarchive.com/show/crystal-clear-icons-by-everaldo/App-palm-icon.html (Desktop Icon)  
 http://tango.freedesktop.org/Tango_Icon_Library (Palm Action Buttons, All UI buttons)  
 https://www.iconfinder.com/icons/2317746/chip_computer_cpu_device_frequency_microchip_processor_icon (hwTestSuite Icon)  

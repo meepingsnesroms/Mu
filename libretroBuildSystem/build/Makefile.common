@@ -14,6 +14,8 @@ endif
 
 include $(EMU_PATH)/makefile.all
 
+COREDEFINES += $(EMU_DEFINES)
+
 SOURCES_C := $(CORE_DIR)/libretro.c \
    $(CORE_DIR)/cursors.c \
    $(LIBRETRO_COMM_DIR)/compat/compat_posix_string.c \
@@ -23,3 +25,5 @@ SOURCES_C := $(CORE_DIR)/libretro.c \
    $(LIBRETRO_COMM_DIR)/file/file_path.c \
    $(LIBRETRO_COMM_DIR)/string/stdstring.c \
    $(EMU_SOURCES_C)
+
+SOURCES_ASM := $(EMU_SOURCES_ASM)

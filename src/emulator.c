@@ -5,7 +5,7 @@
 
 #include "audio/blip_buf.h"
 #include "audio/inductor.h"
-#include "m68328.h"
+#include "flx68000.h"
 #include "emulator.h"
 #include "hardwareRegisters.h"
 #include "memoryAccess.h"
@@ -79,7 +79,7 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t spec
    }
 
    //CPU
-   m68328Init();
+   flx68000Init();
    palmCycleCounter = 0.0;
 
    //memory
@@ -103,7 +103,7 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t spec
    }
    memset(palmAudio, 0x00, AUDIO_SAMPLES_PER_FRAME * 2/*channels*/ * sizeof(int16_t));
    blip_set_rates(palmAudioResampler, AUDIO_END_OF_FRAME, AUDIO_SAMPLES_PER_FRAME);
-   m68328Reset();
+   flx68000Reset();
    sed1376Reset();
    ads7846Reset();
    pdiUsbD12Reset();
@@ -144,8 +144,8 @@ void emulatorExit(){
 
 void emulatorReset(){
    //reset doesnt clear RAM or SD card, all programs are stored in RAM or on SD card
-   debugLog("Reset triggered, PC:0x%08X\n", m68328GetPc());
-   m68328Reset();
+   debugLog("Reset triggered, PC:0x%08X\n", flx68000GetPc());
+   flx68000Reset();
    sed1376Reset();
    ads7846Reset();
    pdiUsbD12Reset();
@@ -162,7 +162,7 @@ uint64_t emulatorGetStateSize(){
    size += sizeof(uint32_t);//save state version
    size += sizeof(uint32_t);//palmSpecialFeatures
    size += sizeof(uint64_t);//palmSdCard.flashChip.size, needs to be done first to verify the malloc worked
-   size += m68328StateSize();
+   size += flx68000StateSize();
    size += sed1376StateSize();
    size += ads7846StateSize();
    size += pdiUsbD12StateSize();
@@ -216,8 +216,8 @@ bool emulatorSaveState(buffer_t buffer){
    offset += sizeof(uint64_t);
 
    //chips
-   m68328SaveState(buffer.data + offset);
-   offset += m68328StateSize();
+   flx68000SaveState(buffer.data + offset);
+   offset += flx68000StateSize();
    sed1376SaveState(buffer.data + offset);
    offset += sed1376StateSize();
    ads7846SaveState(buffer.data + offset);
@@ -369,8 +369,8 @@ bool emulatorLoadState(buffer_t buffer){
    offset += sizeof(uint64_t);
 
    //chips
-   m68328LoadState(buffer.data + offset);
-   offset += m68328StateSize();
+   flx68000LoadState(buffer.data + offset);
+   offset += flx68000StateSize();
    sed1376LoadState(buffer.data + offset);
    offset += sed1376StateSize();
    ads7846LoadState(buffer.data + offset);
@@ -556,7 +556,7 @@ void emulateFrame(){
    //CPU
    palmFrameClk32s = 0;
    for(; palmCycleCounter < (double)CRYSTAL_FREQUENCY / EMU_FPS; palmCycleCounter += 1.0){
-      m68328Execute();
+      flx68000Execute();
       palmFrameClk32s++;
    }
    palmCycleCounter -= (double)CRYSTAL_FREQUENCY / EMU_FPS;
