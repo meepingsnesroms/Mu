@@ -44,6 +44,6 @@ include $(CORE_DIR)/build/Makefile.common
 
 LOCAL_SRC_FILES    += $(SOURCES_C) $(SOURCES_ASM)
 LOCAL_CFLAGS += -O3 -std=gnu99 -funroll-loops -D__LIBRETRO__ -DFRONTEND_SUPPORTS_RGB565 -DGIT_VERSION=\"$(GIT_VERSION)\" $(INCFLAGS)
-#LOCAL_CFLAGS += -ffast-math
+#LOCAL_CFLAGS += -ffast-math #this emu uses doubles to track all the speed ratio calculations, this flag breaks things
 
 include $(BUILD_SHARED_LIBRARY)
