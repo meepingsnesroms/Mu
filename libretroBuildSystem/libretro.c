@@ -156,7 +156,7 @@ void retro_get_system_info(struct retro_system_info *info){
 #endif
    info->library_version  = "0.86+" GIT_VERSION;
    info->need_fullpath    = false;
-   info->valid_extensions = "ram";//"prc|pdb|pqa";
+   info->valid_extensions = "rom";
 }
 
 void retro_get_system_av_info(struct retro_system_av_info *info){
@@ -172,11 +172,8 @@ void retro_get_system_av_info(struct retro_system_av_info *info){
 
 void retro_set_environment(retro_environment_t cb){
    struct retro_log_callback logging;
-   bool no_rom = true;
 
    environ_cb = cb;
-
-   environ_cb(RETRO_ENVIRONMENT_SET_SUPPORT_NO_GAME, &no_rom);
 
    if (environ_cb(RETRO_ENVIRONMENT_GET_LOG_INTERFACE, &logging))
       log_cb = logging.log;
@@ -230,10 +227,10 @@ void retro_run(void){
       int16_t x = input_state_cb(0, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_LEFT, RETRO_DEVICE_ID_ANALOG_X);
       int16_t y = input_state_cb(0, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_LEFT, RETRO_DEVICE_ID_ANALOG_Y);
       
-      if(x > JOYSTICK_DEADZONE || x < -JOYSTICK_DEADZONE)
+      if(x < -JOYSTICK_DEADZONE || x > JOYSTICK_DEADZONE)
          touchCursorX += x * (screenHires ? JOYSTICK_MULTIPLIER * 2.0 : JOYSTICK_MULTIPLIER);
       
-      if(y > JOYSTICK_DEADZONE || y < -JOYSTICK_DEADZONE)
+      if(y < -JOYSTICK_DEADZONE || y > JOYSTICK_DEADZONE)
          touchCursorY += y * (screenHires ? JOYSTICK_MULTIPLIER * 2.0 : JOYSTICK_MULTIPLIER);
       
       if(touchCursorX < 0)
@@ -283,19 +280,11 @@ void retro_run(void){
 }
 
 bool retro_load_game(const struct retro_game_info *info){
-   const char* systemDirectory;
-   char palmRomPath[PATH_MAX_LENGTH];
-   char palmBootloaderPath[PATH_MAX_LENGTH];
-   uint8_t palmRom[ROM_SIZE];
-   uint8_t palmBootloader[BOOTLOADER_SIZE];
    buffer_t rom;
-   buffer_t bootloader;
-   FILE* romFile;
-   FILE* bootloaderFile;
    time_t rawTime;
    struct tm* timeInfo;
    
-   struct retro_input_descriptor desc[] = {
+   struct retro_input_descriptor input_desc[] = {
       { 0, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_LEFT, RETRO_DEVICE_ID_ANALOG_X, "Touchscreen Mouse X" },
       { 0, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_LEFT, RETRO_DEVICE_ID_ANALOG_Y, "Touchscreen Mouse Y" },
       { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R2,     "Touchscreen Mouse Click" },
@@ -311,59 +300,24 @@ bool retro_load_game(const struct retro_game_info *info){
       { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_Y,      "Calender" },
       { 0 }
    };
-   environ_cb(RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS, desc);
+   environ_cb(RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS, input_desc);
    
-   environ_cb(RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY, &systemDirectory);
-   strlcpy(palmRomPath, systemDirectory, PATH_MAX_LENGTH);
-   strlcat(palmRomPath, path_default_slash(), PATH_MAX_LENGTH);
-   strlcat(palmRomPath, "palmos41-en-m515.rom", PATH_MAX_LENGTH);
-   strlcpy(palmBootloaderPath, systemDirectory, PATH_MAX_LENGTH);
-   strlcat(palmBootloaderPath, path_default_slash(), PATH_MAX_LENGTH);
-   strlcat(palmBootloaderPath, "bootloader-en-m515.rom", PATH_MAX_LENGTH);
-   
-   romFile = fopen(palmRomPath, "rb");
-   if(romFile == NULL)
+   if(info == NULL)
       return false;
-   rom.size = fread(palmRom, 1, ROM_SIZE, romFile);
-   fclose(romFile);
-   rom.data = palmRom;
    
-   bootloaderFile = fopen(palmBootloaderPath, "rb");
-   if(bootloaderFile != NULL){
-      bootloader.size = fread(palmBootloader, 1, BOOTLOADER_SIZE, bootloaderFile);
-      fclose(bootloaderFile);
-      bootloader.data = palmBootloader;
-   }
-   else{
-      bootloader.data = NULL;
-      bootloader.size = 0;
-   }
+   rom.data = info.data;
+   rom.size = info.size;
    
    //updates the emulator configuration
    check_variables(true);
    
-   uint32_t error = emulatorInit(rom, bootloader, emuFeatures);
+   uint32_t error = emulatorInit(rom, NULL/*bootloader*/, emuFeatures);
    if(error != EMU_ERROR_NONE)
       return false;
    
    time(&rawTime);
    timeInfo = localtime(&rawTime);
    emulatorSetRtc(timeInfo->tm_yday, timeInfo->tm_hour, timeInfo->tm_min, timeInfo->tm_sec);
-   
-   buffer_t ramBuffer = emulatorGetRamBuffer();
-   if(ramBuffer.size >= info->size)
-      memcpy(ramBuffer.data, (uint8_t*)info->data, info->size);
-   
-   /*
-   if(info != NULL){
-      buffer_t prc;
-      prc.data = (uint8_t*)info->data;
-      prc.size = info->size;
-      uint32_t prcSuccess = emulatorInstallPrcPdb(prc);
-      if(prcSuccess != EMU_ERROR_NONE)
-         return false;
-   }
-   */
    
    screenHires = emuFeatures & FEATURE_320x320;
    screenWidth = screenHires ? 320 : 160;
@@ -411,12 +365,17 @@ bool retro_unserialize(const void *data, size_t size){
    return emulatorLoadState(saveBuffer);
 }
 
-void *retro_get_memory_data(unsigned id){
-   return emulatorGetRamBuffer().data;
+void* retro_get_memory_data(unsigned id){
+   //will not work between platforms of different endian, this is a bug
+   if(id == RETRO_MEMORY_SAVE_RAM)
+      return palmRam;
+   
+   return NULL;
 }
 
 size_t retro_get_memory_size(unsigned id){
-   return emulatorGetRamBuffer().size;
+   if(id == RETRO_MEMORY_SAVE_RAM)
+      return emulatorGetRamSize();
 }
 
 void retro_cheat_reset(void){

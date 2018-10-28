@@ -1,11 +1,13 @@
 //data access
 static uint32_t handlePanelDataSwaps(uint32_t address){
+#if !defined(EMU_NO_SAFETY)
    //word swap
    if(sed1376Registers[SPECIAL_EFFECT] & 0x80)
       address ^= 0x00000002;
    //byte swap
    if(sed1376Registers[SPECIAL_EFFECT] & 0x40)
       address ^= 0x00000001;
+#endif
    return address;
 }
 
