@@ -4,6 +4,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <stdbool.h>
 #include <time.h>
 
@@ -12,6 +13,7 @@
 #include <retro_miscellaneous.h>
 
 #include "../src/emulator.h"
+#include "../src/portability.h"
 #include "cursors.h"
 
 
@@ -25,15 +27,16 @@ static retro_audio_sample_batch_t audio_cb;
 static retro_environment_t        environ_cb;
 static retro_input_poll_t         input_poll_cb;
 static retro_input_state_t        input_state_cb;
+static struct retro_vfs_interface vfs_interface;
 
-static bool      screenHires;
-static uint16_t  screenWidth;
-static uint16_t  screenHeight;
-static uint16_t  screenData[320 * 440];
-static uint32_t  emuFeatures;
-static bool      useJoystickAsMouse;
-static double    touchCursorX;
-static double    touchCursorY;
+static bool     screenHires;
+static uint16_t screenWidth;
+static uint16_t screenHeight;
+static uint16_t screenData[320 * 440];
+static uint32_t emuFeatures;
+static bool     useJoystickAsMouse;
+static double   touchCursorX;
+static double   touchCursorY;
 
 
 static void renderMouseCursor(int16_t screenX, int16_t screenY){
@@ -172,6 +175,7 @@ void retro_get_system_av_info(struct retro_system_av_info *info){
 
 void retro_set_environment(retro_environment_t cb){
    struct retro_log_callback logging;
+   struct retro_vfs_interface_info vfs_getter = { 1, &vfs_interface};
 
    environ_cb = cb;
 
@@ -179,6 +183,8 @@ void retro_set_environment(retro_environment_t cb){
       log_cb = logging.log;
    else
       log_cb = fallback_log;
+   
+   environ_cb(RETRO_ENVIRONMENT_GET_VFS_INTERFACE, &vfs_getter);
    
    struct retro_variable vars[] = {
       { "palm_emu_feature_ram_huge", "Extra RAM Hack; disabled|enabled" },
@@ -193,6 +199,24 @@ void retro_set_environment(retro_environment_t cb){
       { 0 }
    };
    environ_cb(RETRO_ENVIRONMENT_SET_VARIABLES, vars);
+   
+   struct retro_input_descriptor input_desc[] = {
+      { 0, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_LEFT, RETRO_DEVICE_ID_ANALOG_X, "Touchscreen Mouse X" },
+      { 0, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_LEFT, RETRO_DEVICE_ID_ANALOG_Y, "Touchscreen Mouse Y" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R2,     "Touchscreen Mouse Click" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT,   "Dpad Left" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP,     "Dpad Up" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN,   "Dpad Down" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_RIGHT,  "Dpad Right" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R,      "Dpad Middle" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_START,  "Power" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_A,      "Notes" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_B,      "Todo" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_X,      "Address Book" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_Y,      "Calender" },
+      { 0 }
+   };
+   environ_cb(RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS, input_desc);
 }
 
 void retro_set_audio_sample(retro_audio_sample_t cb){
@@ -281,33 +305,44 @@ void retro_run(void){
 
 bool retro_load_game(const struct retro_game_info *info){
    buffer_t rom;
-   buffer_t bootloader = {NULL, 0};//no bootloader support yet
+   buffer_t bootloader;
+   char bootloaderPath[PATH_MAX];
+   char saveRamPath[PATH_MAX];
+   struct retro_vfs_file_handle* bootloaderFile;
+   struct retro_vfs_file_handle* saveRamFile;
+   const char* systemDir;
+   const char* saveDir;
    time_t rawTime;
    struct tm* timeInfo;
-   
-   struct retro_input_descriptor input_desc[] = {
-      { 0, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_LEFT, RETRO_DEVICE_ID_ANALOG_X, "Touchscreen Mouse X" },
-      { 0, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_LEFT, RETRO_DEVICE_ID_ANALOG_Y, "Touchscreen Mouse Y" },
-      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R2,     "Touchscreen Mouse Click" },
-      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT,   "Dpad Left" },
-      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP,     "Dpad Up" },
-      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN,   "Dpad Down" },
-      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_RIGHT,  "Dpad Right" },
-      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R,      "Dpad Middle" },
-      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_START,  "Power" },
-      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_A,      "Notes" },
-      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_B,      "Todo" },
-      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_X,      "Address Book" },
-      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_Y,      "Calender" },
-      { 0 }
-   };
-   environ_cb(RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS, input_desc);
    
    if(info == NULL)
       return false;
    
+   environ_cb(RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY, &saveDir);
+   environ_cb(RETRO_ENVIRONMENT_GET_SAVE_DIRECTORY, &saveDir);
+   
    rom.data = info->data;
    rom.size = info->size;
+   
+   //bootloader
+   strlcpy(bootloaderPath, systemDir, PATH_MAX);
+   strlcat(bootloaderPath, "/bootloader-en-m515.rom", PATH_MAX);
+   bootloaderFile = vfs_interface.open(bootloaderPath, RETRO_VFS_FILE_ACCESS_READ, RETRO_VFS_FILE_ACCESS_HINT_NONE);
+   
+   if(bootloaderFile){
+      bootloader.size = vfs_interface.size(bootloaderPath);
+      bootloader.data = malloc(bootloader.size);
+      
+      if(bootloader.data)
+         vfs_interface.read(bootloaderFile, bootloader.data, bootloader.size);
+      else
+         bootloader.size = 0;
+      vfs_interface.close(bootloaderFile);
+   }
+   else{
+      bootloader.data = NULL;
+      bootloader.size = 0;
+   }
    
    //updates the emulator configuration
    check_variables(true);
@@ -316,6 +351,23 @@ bool retro_load_game(const struct retro_game_info *info){
    if(error != EMU_ERROR_NONE)
       return false;
    
+   if(bootloader.data)
+      free(bootloader.data);
+   
+   //save RAM
+   strlcpy(saveRamPath, saveDir, PATH_MAX);
+   strlcat(saveRamPath, "/userdata-en-m515.ram", PATH_MAX);
+   saveRamFile = vfs_interface.open(saveRamPath, RETRO_VFS_FILE_ACCESS_READ, RETRO_VFS_FILE_ACCESS_HINT_NONE);
+   
+   if(saveRamFile){
+      if(vfs_interface.size(saveRamFile) == emulatorGetRamSize()){
+         vfs_interface.read(saveRamFile, palmRam, vfs_interface.size(saveRamFile));
+         swap16_buffer_if_little(palmRam, vfs_interface.size(saveRamFile) / 2);
+      }
+      vfs_interface.close(saveRamFile);
+   }
+   
+   //set RTC
    time(&rawTime);
    timeInfo = localtime(&rawTime);
    emulatorSetRtc(timeInfo->tm_yday, timeInfo->tm_hour, timeInfo->tm_min, timeInfo->tm_sec);
@@ -330,6 +382,23 @@ bool retro_load_game(const struct retro_game_info *info){
 }
 
 void retro_unload_game(void){
+   const char* saveDir;
+   char saveRamPath[PATH_MAX];
+   struct retro_vfs_file_handle* saveRamFile;
+   
+   environ_cb(RETRO_ENVIRONMENT_GET_SAVE_DIRECTORY, &saveDir);
+   
+   //save RAM
+   strlcpy(saveRamPath, saveDir, PATH_MAX);
+   strlcat(saveRamPath, "/userdata-en-m515.ram", PATH_MAX);
+   saveRamFile = vfs_interface.open(saveRamPath, RETRO_VFS_FILE_ACCESS_WRITE, RETRO_VFS_FILE_ACCESS_HINT_NONE);
+   
+   if(saveRamFile){
+      swap16_buffer_if_little(palmRam, emulatorGetRamSize() / 2);//this will no longer be used, so its ok to destroy it when swapping
+      vfs_interface.write(saveRamFile, palmRam, emulatorGetRamSize());
+      vfs_interface.close(saveRamFile);
+   }
+   
    emulatorExit();
 }
 
@@ -367,17 +436,10 @@ bool retro_unserialize(const void *data, size_t size){
 }
 
 void* retro_get_memory_data(unsigned id){
-   //will not work between platforms of different endian, this is a bug
-   if(id == RETRO_MEMORY_SAVE_RAM)
-      return palmRam;
-   
    return NULL;
 }
 
 size_t retro_get_memory_size(unsigned id){
-   if(id == RETRO_MEMORY_SAVE_RAM)
-      return emulatorGetRamSize();
-   
    return 0;
 }
 
