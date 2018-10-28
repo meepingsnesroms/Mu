@@ -139,21 +139,15 @@ CycloneResetJT:
   mov r1,#0x27 ;@ Supervisor mode
   strb r1,[r7,#0x44] ;@ set SR high
   strb r0,[r7,#0x47] ;@ IRQ
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call (r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   str r0,[r7,#0x3c] ;@ Stack pointer
   mov r0,#0
   str r0,[r7,#0x60] ;@ Membase
   mov r0,#4
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call (r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov lr,pc
   ldr pc,[r7,#0x64] ;@ Call checkpc()
@@ -312,11 +306,8 @@ CycloneDoInterrupt:
 ;@ Push old PC onto stack
   sub r0,r11,#4 ;@ Predecremented A7
   sub r1,r4,r1 ;@ r1 = Old PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 ;@ Push old SR:
   ldr r0,[r7,#0x4c]   ;@ X bit
@@ -395,11 +386,8 @@ Exception:
   sub r0,r0,#4 ;@ Predecremented A7
   str r0,[r7,#0x3c] ;@ Save A7
   sub r1,r4,r1 ;@ r1 = Old PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 ;@ Push old SR:
   ldr r0,[r7,#0x4c]   ;@ X bit
@@ -497,11 +485,8 @@ ExceptionAddressError:
   sub r0,r0,#4 ;@ Predecremented A7
   sub r1,r4,r1 ;@ r1 = Old PC
   str r0,[r7,#0x3c] ;@ Save A7
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 ;@ Push old SR:
   ldr r0,[r7,#0x4c]   ;@ X bit
@@ -776,11 +761,8 @@ Op4a79:
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r0,r0,asl #16
 
@@ -825,11 +807,8 @@ Op2038:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -853,11 +832,8 @@ Opb0b8:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
@@ -907,11 +883,8 @@ Op30c0:
   str r3,[r7,r2,lsr #7]
 ;@ EaWrite: Write r1 into '(a0)+' (address in r0):
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -928,11 +901,8 @@ Op3028:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -985,11 +955,8 @@ Op0c79:
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
@@ -1010,11 +977,8 @@ Op4e75:
   add r1,r0,#4 ;@ Postincrement A7
   str r1,[r7,#0x3c] ;@ Save A7
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call (r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   ldr r1,[r7,#0x60] ;@ Get Memory base
   add r0,r0,r1 ;@ Memory Base+PC
@@ -1181,11 +1145,8 @@ Op33d8:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -1199,11 +1160,8 @@ Op33d8:
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
   mov r1,r1,lsr #16
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -1276,11 +1234,8 @@ Op3039:
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -1331,11 +1286,8 @@ Op6102:
   sub r0,r2,#4 ;@ Predecrement A7
   str r0,[r7,#0x3c] ;@ Save A7
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   add r4,r4,r11,asr #24 ;@ r4 = New PC
@@ -1359,11 +1311,8 @@ Op6100:
   sub r0,r2,#4 ;@ Predecrement A7
   str r0,[r7,#0x3c] ;@ Save A7
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   add r0,r4,r11 ;@ New PC
@@ -1451,11 +1400,8 @@ Op20c0:
   str r3,[r7,r2,lsr #7]
 ;@ EaWrite: Write r1 into '(a0)+' (address in r0):
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -1499,11 +1445,8 @@ Op30d0:
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -1517,11 +1460,8 @@ Op30d0:
   str r3,[r7,r2,lsr #7]
 ;@ EaWrite: Write r1 into '(a0)+' (address in r0):
   mov r1,r1,lsr #16
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -1546,11 +1486,8 @@ Op3080:
   ldr r0,[r7,r2,lsr #7]
 ;@ EaWrite: Write r1 into '(a0)' (address in r0):
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -1567,11 +1504,8 @@ Op3018:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -1648,11 +1582,8 @@ Op3180:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -2348,13 +2279,9 @@ Op0050:
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
@@ -2388,13 +2315,9 @@ Op0058:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
@@ -2429,13 +2352,9 @@ Op0060:
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
@@ -2469,13 +2388,9 @@ Op0068:
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
@@ -2518,13 +2433,9 @@ Op0070:
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
@@ -2555,13 +2466,9 @@ Op0078:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
@@ -2594,13 +2501,9 @@ Op0079:
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
@@ -2692,13 +2595,9 @@ Op0090:
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
@@ -2732,13 +2631,9 @@ Op0098:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
@@ -2773,13 +2668,9 @@ Op00a0:
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
@@ -2813,13 +2704,9 @@ Op00a8:
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
@@ -2862,13 +2749,9 @@ Op00b0:
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
@@ -2899,13 +2782,9 @@ Op00b8:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
@@ -2938,13 +2817,9 @@ Op00b9:
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
@@ -5081,13 +4956,9 @@ Op0250:
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
@@ -5121,13 +4992,9 @@ Op0258:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
@@ -5162,13 +5029,9 @@ Op0260:
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
@@ -5202,13 +5065,9 @@ Op0268:
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
@@ -5251,13 +5110,9 @@ Op0270:
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
@@ -5288,13 +5143,9 @@ Op0278:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
@@ -5327,13 +5178,9 @@ Op0279:
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
@@ -5438,13 +5285,9 @@ Op0290:
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
@@ -5478,13 +5321,9 @@ Op0298:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
@@ -5519,13 +5358,9 @@ Op02a0:
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
@@ -5559,13 +5394,9 @@ Op02a8:
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
@@ -5608,13 +5439,9 @@ Op02b0:
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
@@ -5645,13 +5472,9 @@ Op02b8:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
@@ -5684,13 +5507,9 @@ Op02b9:
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
@@ -6112,13 +5931,9 @@ Op0450:
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
@@ -6153,13 +5968,9 @@ Op0458:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
@@ -6195,13 +6006,9 @@ Op0460:
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
@@ -6236,13 +6043,9 @@ Op0468:
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
@@ -6286,13 +6089,9 @@ Op0470:
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
@@ -6324,13 +6123,9 @@ Op0478:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
@@ -6364,13 +6159,9 @@ Op0479:
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
@@ -6433,13 +6224,9 @@ Op0490:
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
@@ -6474,13 +6261,9 @@ Op0498:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
@@ -6516,13 +6299,9 @@ Op04a0:
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
@@ -6557,13 +6336,9 @@ Op04a8:
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
@@ -6607,13 +6382,9 @@ Op04b0:
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
@@ -6645,13 +6416,9 @@ Op04b8:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
@@ -6685,13 +6452,9 @@ Op04b9:
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
@@ -7076,13 +6839,9 @@ Op0650:
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
@@ -7116,13 +6875,9 @@ Op0658:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
@@ -7157,13 +6912,9 @@ Op0660:
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
@@ -7197,13 +6948,9 @@ Op0668:
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
@@ -7246,13 +6993,9 @@ Op0670:
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
@@ -7283,13 +7026,9 @@ Op0678:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
@@ -7322,13 +7061,9 @@ Op0679:
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
@@ -7389,13 +7124,9 @@ Op0690:
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
@@ -7429,13 +7160,9 @@ Op0698:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
@@ -7470,13 +7197,9 @@ Op06a0:
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
@@ -7510,13 +7233,9 @@ Op06a8:
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
@@ -7559,13 +7278,9 @@ Op06b0:
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
@@ -7596,13 +7311,9 @@ Op06b8:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
@@ -7635,13 +7346,9 @@ Op06b9:
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
@@ -9565,13 +9272,9 @@ Op0a50:
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
@@ -9605,13 +9308,9 @@ Op0a58:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
@@ -9646,13 +9345,9 @@ Op0a60:
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
@@ -9686,13 +9381,9 @@ Op0a68:
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
@@ -9735,13 +9426,9 @@ Op0a70:
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
@@ -9772,13 +9459,9 @@ Op0a78:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
@@ -9811,13 +9494,9 @@ Op0a79:
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
@@ -9927,13 +9606,9 @@ Op0a90:
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
@@ -9967,13 +9642,9 @@ Op0a98:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
@@ -10008,13 +9679,9 @@ Op0aa0:
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
@@ -10048,13 +9715,9 @@ Op0aa8:
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
@@ -10097,13 +9760,9 @@ Op0ab0:
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
@@ -10134,13 +9793,9 @@ Op0ab8:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
@@ -10173,13 +9828,9 @@ Op0ab9:
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
@@ -10487,11 +10138,8 @@ Op0c50:
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
@@ -10518,11 +10166,8 @@ Op0c58:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
@@ -10550,11 +10195,8 @@ Op0c60:
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
@@ -10581,11 +10223,8 @@ Op0c68:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
@@ -10621,11 +10260,8 @@ Op0c70:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
@@ -10649,11 +10285,8 @@ Op0c78:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
@@ -10704,11 +10337,8 @@ Op0c90:
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
@@ -10736,11 +10366,8 @@ Op0c98:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
@@ -10769,11 +10396,8 @@ Op0ca0:
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
@@ -10801,11 +10425,8 @@ Op0ca8:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
@@ -10842,11 +10463,8 @@ Op0cb0:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
@@ -10871,11 +10489,8 @@ Op0cb8:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
@@ -10902,11 +10517,8 @@ Op0cb9:
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
@@ -15085,11 +14697,8 @@ Op2010:
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -15115,11 +14724,8 @@ Op2018:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -15146,11 +14752,8 @@ Op2020:
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -15176,11 +14779,8 @@ Op2028:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -15215,11 +14815,8 @@ Op2030:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -15244,11 +14841,8 @@ Op2039:
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -15274,11 +14868,8 @@ Op203a:
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -15312,11 +14903,8 @@ Op203b:
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -15381,11 +14969,8 @@ Op2050:
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r1,r0
 
@@ -15409,11 +14994,8 @@ Op2058:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r1,r0
 
@@ -15438,11 +15020,8 @@ Op2060:
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r1,r0
 
@@ -15466,11 +15045,8 @@ Op2068:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r1,r0
 
@@ -15503,11 +15079,8 @@ Op2070:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r1,r0
 
@@ -15528,11 +15101,8 @@ Op2078:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r1,r0
 
@@ -15555,11 +15125,8 @@ Op2079:
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r1,r0
 
@@ -15583,11 +15150,8 @@ Op207a:
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r1,r0
 
@@ -15619,11 +15183,8 @@ Op207b:
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r1,r0
 
@@ -15674,11 +15235,8 @@ Op2080:
   ldr r0,[r7,r2,lsr #7]
 ;@ EaWrite: Write r1 into '(a0)' (address in r0):
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -15694,11 +15252,8 @@ Op2090:
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -15710,11 +15265,8 @@ Op2090:
   orr r2,r2,#0x1000 ;@ A0-7
   ldr r0,[r7,r2,lsr #7]
 ;@ EaWrite: Write r1 into '(a0)' (address in r0):
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -15731,11 +15283,8 @@ Op2098:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -15747,11 +15296,8 @@ Op2098:
   orr r2,r2,#0x1000 ;@ A0-7
   ldr r0,[r7,r2,lsr #7]
 ;@ EaWrite: Write r1 into '(a0)' (address in r0):
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -15769,11 +15315,8 @@ Op20a0:
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -15785,11 +15328,8 @@ Op20a0:
   orr r2,r2,#0x1000 ;@ A0-7
   ldr r0,[r7,r2,lsr #7]
 ;@ EaWrite: Write r1 into '(a0)' (address in r0):
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -15806,11 +15346,8 @@ Op20a8:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -15822,11 +15359,8 @@ Op20a8:
   orr r2,r2,#0x1000 ;@ A0-7
   ldr r0,[r7,r2,lsr #7]
 ;@ EaWrite: Write r1 into '(a0)' (address in r0):
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -15852,11 +15386,8 @@ Op20b0:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -15868,11 +15399,8 @@ Op20b0:
   orr r2,r2,#0x1000 ;@ A0-7
   ldr r0,[r7,r2,lsr #7]
 ;@ EaWrite: Write r1 into '(a0)' (address in r0):
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -15886,11 +15414,8 @@ Op20b8:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -15902,11 +15427,8 @@ Op20b8:
   orr r2,r2,#0x1000 ;@ A0-7
   ldr r0,[r7,r2,lsr #7]
 ;@ EaWrite: Write r1 into '(a0)' (address in r0):
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -15922,11 +15444,8 @@ Op20b9:
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -15938,11 +15457,8 @@ Op20b9:
   orr r2,r2,#0x1000 ;@ A0-7
   ldr r0,[r7,r2,lsr #7]
 ;@ EaWrite: Write r1 into '(a0)' (address in r0):
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -15959,11 +15475,8 @@ Op20ba:
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -15975,11 +15488,8 @@ Op20ba:
   orr r2,r2,#0x1000 ;@ A0-7
   ldr r0,[r7,r2,lsr #7]
 ;@ EaWrite: Write r1 into '(a0)' (address in r0):
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -16004,11 +15514,8 @@ Op20bb:
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -16020,11 +15527,8 @@ Op20bb:
   orr r2,r2,#0x1000 ;@ A0-7
   ldr r0,[r7,r2,lsr #7]
 ;@ EaWrite: Write r1 into '(a0)' (address in r0):
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -16050,11 +15554,8 @@ Op20bc:
   ldr r0,[r7,r2,lsr #7]
 ;@ EaWrite: Write r1 into '(a0)' (address in r0):
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -16070,11 +15571,8 @@ Op20d0:
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -16088,11 +15586,8 @@ Op20d0:
   add r3,r0,#4 ;@ Post-increment An
   str r3,[r7,r2,lsr #7]
 ;@ EaWrite: Write r1 into '(a0)+' (address in r0):
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -16109,11 +15604,8 @@ Op20d8:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -16127,11 +15619,8 @@ Op20d8:
   add r3,r0,#4 ;@ Post-increment An
   str r3,[r7,r2,lsr #7]
 ;@ EaWrite: Write r1 into '(a0)+' (address in r0):
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -16149,11 +15638,8 @@ Op20e0:
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -16167,11 +15653,8 @@ Op20e0:
   add r3,r0,#4 ;@ Post-increment An
   str r3,[r7,r2,lsr #7]
 ;@ EaWrite: Write r1 into '(a0)+' (address in r0):
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -16188,11 +15671,8 @@ Op20e8:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -16206,11 +15686,8 @@ Op20e8:
   add r3,r0,#4 ;@ Post-increment An
   str r3,[r7,r2,lsr #7]
 ;@ EaWrite: Write r1 into '(a0)+' (address in r0):
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -16236,11 +15713,8 @@ Op20f0:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -16254,11 +15728,8 @@ Op20f0:
   add r3,r0,#4 ;@ Post-increment An
   str r3,[r7,r2,lsr #7]
 ;@ EaWrite: Write r1 into '(a0)+' (address in r0):
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -16272,11 +15743,8 @@ Op20f8:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -16290,11 +15758,8 @@ Op20f8:
   add r3,r0,#4 ;@ Post-increment An
   str r3,[r7,r2,lsr #7]
 ;@ EaWrite: Write r1 into '(a0)+' (address in r0):
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -16310,11 +15775,8 @@ Op20f9:
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -16328,11 +15790,8 @@ Op20f9:
   add r3,r0,#4 ;@ Post-increment An
   str r3,[r7,r2,lsr #7]
 ;@ EaWrite: Write r1 into '(a0)+' (address in r0):
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -16349,11 +15808,8 @@ Op20fa:
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -16367,11 +15823,8 @@ Op20fa:
   add r3,r0,#4 ;@ Post-increment An
   str r3,[r7,r2,lsr #7]
 ;@ EaWrite: Write r1 into '(a0)+' (address in r0):
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -16396,11 +15849,8 @@ Op20fb:
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -16414,11 +15864,8 @@ Op20fb:
   add r3,r0,#4 ;@ Post-increment An
   str r3,[r7,r2,lsr #7]
 ;@ EaWrite: Write r1 into '(a0)+' (address in r0):
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -16446,11 +15893,8 @@ Op20fc:
   str r3,[r7,r2,lsr #7]
 ;@ EaWrite: Write r1 into '(a0)+' (address in r0):
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -16480,11 +15924,8 @@ Op2100:
 ;@ EaWrite: Write r1 into '-(a0)' (address in r0):
   uxth r1,r1 ;@ zero extend
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call 0Áþìþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaWrite: Write r11 into '-(a0)' (address in r8):
@@ -16507,11 +15948,8 @@ Op2110:
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -16528,11 +15966,8 @@ Op2110:
   add r0,r8,#2
 ;@ EaWrite: Write r1 into '-(a0)' (address in r0):
   uxth r1,r1 ;@ zero extend
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call 0Áþìþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaWrite: Write r11 into '-(a0)' (address in r8):
@@ -16556,11 +15991,8 @@ Op2118:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -16577,11 +16009,8 @@ Op2118:
   add r0,r8,#2
 ;@ EaWrite: Write r1 into '-(a0)' (address in r0):
   uxth r1,r1 ;@ zero extend
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call 0Áþìþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaWrite: Write r11 into '-(a0)' (address in r8):
@@ -16606,11 +16035,8 @@ Op2120:
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -16627,11 +16053,8 @@ Op2120:
   add r0,r8,#2
 ;@ EaWrite: Write r1 into '-(a0)' (address in r0):
   uxth r1,r1 ;@ zero extend
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call 0Áþìþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaWrite: Write r11 into '-(a0)' (address in r8):
@@ -16655,11 +16078,8 @@ Op2128:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -16676,11 +16096,8 @@ Op2128:
   add r0,r8,#2
 ;@ EaWrite: Write r1 into '-(a0)' (address in r0):
   uxth r1,r1 ;@ zero extend
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call 0Áþìþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaWrite: Write r11 into '-(a0)' (address in r8):
@@ -16713,11 +16130,8 @@ Op2130:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -16734,11 +16148,8 @@ Op2130:
   add r0,r8,#2
 ;@ EaWrite: Write r1 into '-(a0)' (address in r0):
   uxth r1,r1 ;@ zero extend
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call 0Áþìþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaWrite: Write r11 into '-(a0)' (address in r8):
@@ -16759,11 +16170,8 @@ Op2138:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -16780,11 +16188,8 @@ Op2138:
   add r0,r8,#2
 ;@ EaWrite: Write r1 into '-(a0)' (address in r0):
   uxth r1,r1 ;@ zero extend
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call 0Áþìþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaWrite: Write r11 into '-(a0)' (address in r8):
@@ -16807,11 +16212,8 @@ Op2139:
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -16828,11 +16230,8 @@ Op2139:
   add r0,r8,#2
 ;@ EaWrite: Write r1 into '-(a0)' (address in r0):
   uxth r1,r1 ;@ zero extend
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call 0Áþìþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaWrite: Write r11 into '-(a0)' (address in r8):
@@ -16856,11 +16255,8 @@ Op213a:
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -16877,11 +16273,8 @@ Op213a:
   add r0,r8,#2
 ;@ EaWrite: Write r1 into '-(a0)' (address in r0):
   uxth r1,r1 ;@ zero extend
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call 0Áþìþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaWrite: Write r11 into '-(a0)' (address in r8):
@@ -16913,11 +16306,8 @@ Op213b:
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -16934,11 +16324,8 @@ Op213b:
   add r0,r8,#2
 ;@ EaWrite: Write r1 into '-(a0)' (address in r0):
   uxth r1,r1 ;@ zero extend
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call 0Áþìþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaWrite: Write r11 into '-(a0)' (address in r8):
@@ -16976,11 +16363,8 @@ Op213c:
 ;@ EaWrite: Write r1 into '-(a0)' (address in r0):
   uxth r1,r1 ;@ zero extend
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call 0Áþìþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaWrite: Write r11 into '-(a0)' (address in r8):
@@ -17015,11 +16399,8 @@ Op2140:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -17035,11 +16416,8 @@ Op2150:
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -17055,11 +16433,8 @@ Op2150:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -17076,11 +16451,8 @@ Op2158:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -17096,11 +16468,8 @@ Op2158:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -17118,11 +16487,8 @@ Op2160:
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -17138,11 +16504,8 @@ Op2160:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -17159,11 +16522,8 @@ Op2168:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -17179,11 +16539,8 @@ Op2168:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -17209,11 +16566,8 @@ Op2170:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -17229,11 +16583,8 @@ Op2170:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -17247,11 +16598,8 @@ Op2178:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -17267,11 +16615,8 @@ Op2178:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -17287,11 +16632,8 @@ Op2179:
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -17307,11 +16649,8 @@ Op2179:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -17328,11 +16667,8 @@ Op217a:
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -17348,11 +16684,8 @@ Op217a:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -17377,11 +16710,8 @@ Op217b:
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -17397,11 +16727,8 @@ Op217b:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -17430,11 +16757,8 @@ Op217c:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -17470,11 +16794,8 @@ Op2180:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -17490,11 +16811,8 @@ Op2190:
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -17518,11 +16836,8 @@ Op2190:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -17539,11 +16854,8 @@ Op2198:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -17567,11 +16879,8 @@ Op2198:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -17589,11 +16898,8 @@ Op21a0:
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -17617,11 +16923,8 @@ Op21a0:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -17638,11 +16941,8 @@ Op21a8:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -17666,11 +16966,8 @@ Op21a8:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -17696,11 +16993,8 @@ Op21b0:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -17724,11 +17018,8 @@ Op21b0:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -17742,11 +17033,8 @@ Op21b8:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -17770,11 +17058,8 @@ Op21b8:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -17790,11 +17075,8 @@ Op21b9:
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -17818,11 +17100,8 @@ Op21b9:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -17839,11 +17118,8 @@ Op21ba:
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -17867,11 +17143,8 @@ Op21ba:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -17896,11 +17169,8 @@ Op21bb:
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -17924,11 +17194,8 @@ Op21bb:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -17965,11 +17232,8 @@ Op21bc:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -17992,11 +17256,8 @@ Op21c0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -18012,11 +17273,8 @@ Op21d0:
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -18027,11 +17285,8 @@ Op21d0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -18048,11 +17303,8 @@ Op21d8:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -18063,11 +17315,8 @@ Op21d8:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -18085,11 +17334,8 @@ Op21e0:
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -18100,11 +17346,8 @@ Op21e0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -18121,11 +17364,8 @@ Op21e8:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -18136,11 +17376,8 @@ Op21e8:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -18166,11 +17403,8 @@ Op21f0:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -18181,11 +17415,8 @@ Op21f0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -18199,11 +17430,8 @@ Op21f8:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -18214,11 +17442,8 @@ Op21f8:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -18234,11 +17459,8 @@ Op21f9:
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -18249,11 +17471,8 @@ Op21f9:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -18270,11 +17489,8 @@ Op21fa:
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -18285,11 +17501,8 @@ Op21fa:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -18314,11 +17527,8 @@ Op21fb:
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -18329,11 +17539,8 @@ Op21fb:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -18357,11 +17564,8 @@ Op21fc:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -18386,11 +17590,8 @@ Op23c0:
   orr r0,r0,r2,lsl #16
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -18406,11 +17607,8 @@ Op23d0:
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -18423,11 +17621,8 @@ Op23d0:
   orr r0,r0,r2,lsl #16
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -18444,11 +17639,8 @@ Op23d8:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -18461,11 +17653,8 @@ Op23d8:
   orr r0,r0,r2,lsl #16
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -18483,11 +17672,8 @@ Op23e0:
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -18500,11 +17686,8 @@ Op23e0:
   orr r0,r0,r2,lsl #16
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -18521,11 +17704,8 @@ Op23e8:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -18538,11 +17718,8 @@ Op23e8:
   orr r0,r0,r2,lsl #16
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -18568,11 +17745,8 @@ Op23f0:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -18585,11 +17759,8 @@ Op23f0:
   orr r0,r0,r2,lsl #16
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -18603,11 +17774,8 @@ Op23f8:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -18620,11 +17788,8 @@ Op23f8:
   orr r0,r0,r2,lsl #16
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -18640,11 +17805,8 @@ Op23f9:
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -18657,11 +17819,8 @@ Op23f9:
   orr r0,r0,r2,lsl #16
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -18678,11 +17837,8 @@ Op23fa:
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -18695,11 +17851,8 @@ Op23fa:
   orr r0,r0,r2,lsl #16
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -18724,11 +17877,8 @@ Op23fb:
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -18741,11 +17891,8 @@ Op23fb:
   orr r0,r0,r2,lsl #16
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -18771,11 +17918,8 @@ Op23fc:
   orr r0,r0,r2,lsl #16
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -18800,11 +17944,8 @@ Op2ec0:
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '(a7)+' (address in r0):
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -18820,11 +17961,8 @@ Op2ed0:
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -18836,11 +17974,8 @@ Op2ed0:
   add r3,r0,#4 ;@ Post-increment An
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '(a7)+' (address in r0):
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -18857,11 +17992,8 @@ Op2ed8:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -18873,11 +18005,8 @@ Op2ed8:
   add r3,r0,#4 ;@ Post-increment An
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '(a7)+' (address in r0):
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -18895,11 +18024,8 @@ Op2ee0:
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -18911,11 +18037,8 @@ Op2ee0:
   add r3,r0,#4 ;@ Post-increment An
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '(a7)+' (address in r0):
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -18932,11 +18055,8 @@ Op2ee8:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -18948,11 +18068,8 @@ Op2ee8:
   add r3,r0,#4 ;@ Post-increment An
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '(a7)+' (address in r0):
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -18978,11 +18095,8 @@ Op2ef0:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -18994,11 +18108,8 @@ Op2ef0:
   add r3,r0,#4 ;@ Post-increment An
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '(a7)+' (address in r0):
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -19012,11 +18123,8 @@ Op2ef8:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -19028,11 +18136,8 @@ Op2ef8:
   add r3,r0,#4 ;@ Post-increment An
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '(a7)+' (address in r0):
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -19048,11 +18153,8 @@ Op2ef9:
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -19064,11 +18166,8 @@ Op2ef9:
   add r3,r0,#4 ;@ Post-increment An
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '(a7)+' (address in r0):
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -19085,11 +18184,8 @@ Op2efa:
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -19101,11 +18197,8 @@ Op2efa:
   add r3,r0,#4 ;@ Post-increment An
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '(a7)+' (address in r0):
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -19130,11 +18223,8 @@ Op2efb:
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -19146,11 +18236,8 @@ Op2efb:
   add r3,r0,#4 ;@ Post-increment An
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '(a7)+' (address in r0):
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -19176,11 +18263,8 @@ Op2efc:
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '(a7)+' (address in r0):
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -19208,11 +18292,8 @@ Op2f00:
 ;@ EaWrite: Write r1 into '-(a7)' (address in r0):
   uxth r1,r1 ;@ zero extend
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call 0Áþìþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaWrite: Write r11 into '-(a7)' (address in r8):
@@ -19235,11 +18316,8 @@ Op2f10:
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -19254,11 +18332,8 @@ Op2f10:
   add r0,r8,#2
 ;@ EaWrite: Write r1 into '-(a7)' (address in r0):
   uxth r1,r1 ;@ zero extend
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call 0Áþìþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaWrite: Write r11 into '-(a7)' (address in r8):
@@ -19282,11 +18357,8 @@ Op2f18:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -19301,11 +18373,8 @@ Op2f18:
   add r0,r8,#2
 ;@ EaWrite: Write r1 into '-(a7)' (address in r0):
   uxth r1,r1 ;@ zero extend
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call 0Áþìþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaWrite: Write r11 into '-(a7)' (address in r8):
@@ -19330,11 +18399,8 @@ Op2f20:
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -19349,11 +18415,8 @@ Op2f20:
   add r0,r8,#2
 ;@ EaWrite: Write r1 into '-(a7)' (address in r0):
   uxth r1,r1 ;@ zero extend
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call 0Áþìþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaWrite: Write r11 into '-(a7)' (address in r8):
@@ -19377,11 +18440,8 @@ Op2f28:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -19396,11 +18456,8 @@ Op2f28:
   add r0,r8,#2
 ;@ EaWrite: Write r1 into '-(a7)' (address in r0):
   uxth r1,r1 ;@ zero extend
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call 0Áþìþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaWrite: Write r11 into '-(a7)' (address in r8):
@@ -19433,11 +18490,8 @@ Op2f30:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -19452,11 +18506,8 @@ Op2f30:
   add r0,r8,#2
 ;@ EaWrite: Write r1 into '-(a7)' (address in r0):
   uxth r1,r1 ;@ zero extend
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call 0Áþìþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaWrite: Write r11 into '-(a7)' (address in r8):
@@ -19477,11 +18528,8 @@ Op2f38:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -19496,11 +18544,8 @@ Op2f38:
   add r0,r8,#2
 ;@ EaWrite: Write r1 into '-(a7)' (address in r0):
   uxth r1,r1 ;@ zero extend
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call 0Áþìþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaWrite: Write r11 into '-(a7)' (address in r8):
@@ -19523,11 +18568,8 @@ Op2f39:
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -19542,11 +18584,8 @@ Op2f39:
   add r0,r8,#2
 ;@ EaWrite: Write r1 into '-(a7)' (address in r0):
   uxth r1,r1 ;@ zero extend
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call 0Áþìþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaWrite: Write r11 into '-(a7)' (address in r8):
@@ -19570,11 +18609,8 @@ Op2f3a:
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -19589,11 +18625,8 @@ Op2f3a:
   add r0,r8,#2
 ;@ EaWrite: Write r1 into '-(a7)' (address in r0):
   uxth r1,r1 ;@ zero extend
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call 0Áþìþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaWrite: Write r11 into '-(a7)' (address in r8):
@@ -19625,11 +18658,8 @@ Op2f3b:
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
@@ -19644,11 +18674,8 @@ Op2f3b:
   add r0,r8,#2
 ;@ EaWrite: Write r1 into '-(a7)' (address in r0):
   uxth r1,r1 ;@ zero extend
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call 0Áþìþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaWrite: Write r11 into '-(a7)' (address in r8):
@@ -19684,11 +18711,8 @@ Op2f3c:
 ;@ EaWrite: Write r1 into '-(a7)' (address in r0):
   uxth r1,r1 ;@ zero extend
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call 0Áþìþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaWrite: Write r11 into '-(a7)' (address in r8):
@@ -19711,11 +18735,8 @@ Op3010:
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -19744,11 +18765,8 @@ Op3020:
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -19785,11 +18803,8 @@ Op3030:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -19814,11 +18829,8 @@ Op3038:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -19846,11 +18858,8 @@ Op303a:
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -19886,11 +18895,8 @@ Op303b:
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -19939,11 +18945,8 @@ Op3050:
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   sxth r1,r0 ;@ sign extend
 
@@ -19966,11 +18969,8 @@ Op3058:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   sxth r1,r0 ;@ sign extend
 
@@ -19994,11 +18994,8 @@ Op3060:
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   sxth r1,r0 ;@ sign extend
 
@@ -20021,11 +19018,8 @@ Op3068:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   sxth r1,r0 ;@ sign extend
 
@@ -20057,11 +19051,8 @@ Op3070:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   sxth r1,r0 ;@ sign extend
 
@@ -20081,11 +19072,8 @@ Op3078:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   sxth r1,r0 ;@ sign extend
 
@@ -20107,11 +19095,8 @@ Op3079:
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   sxth r1,r0 ;@ sign extend
 
@@ -20134,11 +19119,8 @@ Op307a:
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   sxth r1,r0 ;@ sign extend
 
@@ -20169,11 +19151,8 @@ Op307b:
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   sxth r1,r0 ;@ sign extend
 
@@ -20211,11 +19190,8 @@ Op3090:
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -20227,11 +19203,8 @@ Op3090:
   ldr r0,[r7,r2,lsr #7]
 ;@ EaWrite: Write r1 into '(a0)' (address in r0):
   mov r1,r1,lsr #16
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -20248,11 +19221,8 @@ Op3098:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -20264,11 +19234,8 @@ Op3098:
   ldr r0,[r7,r2,lsr #7]
 ;@ EaWrite: Write r1 into '(a0)' (address in r0):
   mov r1,r1,lsr #16
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -20286,11 +19253,8 @@ Op30a0:
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -20302,11 +19266,8 @@ Op30a0:
   ldr r0,[r7,r2,lsr #7]
 ;@ EaWrite: Write r1 into '(a0)' (address in r0):
   mov r1,r1,lsr #16
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -20323,11 +19284,8 @@ Op30a8:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -20339,11 +19297,8 @@ Op30a8:
   ldr r0,[r7,r2,lsr #7]
 ;@ EaWrite: Write r1 into '(a0)' (address in r0):
   mov r1,r1,lsr #16
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -20369,11 +19324,8 @@ Op30b0:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -20385,11 +19337,8 @@ Op30b0:
   ldr r0,[r7,r2,lsr #7]
 ;@ EaWrite: Write r1 into '(a0)' (address in r0):
   mov r1,r1,lsr #16
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -20403,11 +19352,8 @@ Op30b8:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -20419,11 +19365,8 @@ Op30b8:
   ldr r0,[r7,r2,lsr #7]
 ;@ EaWrite: Write r1 into '(a0)' (address in r0):
   mov r1,r1,lsr #16
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -20439,11 +19382,8 @@ Op30b9:
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -20455,11 +19395,8 @@ Op30b9:
   ldr r0,[r7,r2,lsr #7]
 ;@ EaWrite: Write r1 into '(a0)' (address in r0):
   mov r1,r1,lsr #16
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -20476,11 +19413,8 @@ Op30ba:
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -20492,11 +19426,8 @@ Op30ba:
   ldr r0,[r7,r2,lsr #7]
 ;@ EaWrite: Write r1 into '(a0)' (address in r0):
   mov r1,r1,lsr #16
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -20521,11 +19452,8 @@ Op30bb:
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -20537,11 +19465,8 @@ Op30bb:
   ldr r0,[r7,r2,lsr #7]
 ;@ EaWrite: Write r1 into '(a0)' (address in r0):
   mov r1,r1,lsr #16
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -20565,11 +19490,8 @@ Op30bc:
 ;@ EaWrite: Write r1 into '(a0)' (address in r0):
   mov r1,r1,lsr #16
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -20586,11 +19508,8 @@ Op30d8:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -20604,11 +19523,8 @@ Op30d8:
   str r3,[r7,r2,lsr #7]
 ;@ EaWrite: Write r1 into '(a0)+' (address in r0):
   mov r1,r1,lsr #16
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -20626,11 +19542,8 @@ Op30e0:
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -20644,11 +19557,8 @@ Op30e0:
   str r3,[r7,r2,lsr #7]
 ;@ EaWrite: Write r1 into '(a0)+' (address in r0):
   mov r1,r1,lsr #16
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -20665,11 +19575,8 @@ Op30e8:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -20683,11 +19590,8 @@ Op30e8:
   str r3,[r7,r2,lsr #7]
 ;@ EaWrite: Write r1 into '(a0)+' (address in r0):
   mov r1,r1,lsr #16
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -20713,11 +19617,8 @@ Op30f0:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -20731,11 +19632,8 @@ Op30f0:
   str r3,[r7,r2,lsr #7]
 ;@ EaWrite: Write r1 into '(a0)+' (address in r0):
   mov r1,r1,lsr #16
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -20749,11 +19647,8 @@ Op30f8:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -20767,11 +19662,8 @@ Op30f8:
   str r3,[r7,r2,lsr #7]
 ;@ EaWrite: Write r1 into '(a0)+' (address in r0):
   mov r1,r1,lsr #16
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -20787,11 +19679,8 @@ Op30f9:
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -20805,11 +19694,8 @@ Op30f9:
   str r3,[r7,r2,lsr #7]
 ;@ EaWrite: Write r1 into '(a0)+' (address in r0):
   mov r1,r1,lsr #16
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -20826,11 +19712,8 @@ Op30fa:
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -20844,11 +19727,8 @@ Op30fa:
   str r3,[r7,r2,lsr #7]
 ;@ EaWrite: Write r1 into '(a0)+' (address in r0):
   mov r1,r1,lsr #16
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -20873,11 +19753,8 @@ Op30fb:
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -20891,11 +19768,8 @@ Op30fb:
   str r3,[r7,r2,lsr #7]
 ;@ EaWrite: Write r1 into '(a0)+' (address in r0):
   mov r1,r1,lsr #16
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -20921,11 +19795,8 @@ Op30fc:
 ;@ EaWrite: Write r1 into '(a0)+' (address in r0):
   mov r1,r1,lsr #16
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -20952,11 +19823,8 @@ Op3100:
   str r0,[r7,r2,lsr #7]
 ;@ EaWrite: Write r1 into '-(a0)' (address in r0):
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -20972,11 +19840,8 @@ Op3110:
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -20990,11 +19855,8 @@ Op3110:
   str r0,[r7,r2,lsr #7]
 ;@ EaWrite: Write r1 into '-(a0)' (address in r0):
   mov r1,r1,lsr #16
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -21011,11 +19873,8 @@ Op3118:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -21029,11 +19888,8 @@ Op3118:
   str r0,[r7,r2,lsr #7]
 ;@ EaWrite: Write r1 into '-(a0)' (address in r0):
   mov r1,r1,lsr #16
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -21051,11 +19907,8 @@ Op3120:
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -21069,11 +19922,8 @@ Op3120:
   str r0,[r7,r2,lsr #7]
 ;@ EaWrite: Write r1 into '-(a0)' (address in r0):
   mov r1,r1,lsr #16
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -21090,11 +19940,8 @@ Op3128:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -21108,11 +19955,8 @@ Op3128:
   str r0,[r7,r2,lsr #7]
 ;@ EaWrite: Write r1 into '-(a0)' (address in r0):
   mov r1,r1,lsr #16
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -21138,11 +19982,8 @@ Op3130:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -21156,11 +19997,8 @@ Op3130:
   str r0,[r7,r2,lsr #7]
 ;@ EaWrite: Write r1 into '-(a0)' (address in r0):
   mov r1,r1,lsr #16
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -21174,11 +20012,8 @@ Op3138:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -21192,11 +20027,8 @@ Op3138:
   str r0,[r7,r2,lsr #7]
 ;@ EaWrite: Write r1 into '-(a0)' (address in r0):
   mov r1,r1,lsr #16
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -21212,11 +20044,8 @@ Op3139:
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -21230,11 +20059,8 @@ Op3139:
   str r0,[r7,r2,lsr #7]
 ;@ EaWrite: Write r1 into '-(a0)' (address in r0):
   mov r1,r1,lsr #16
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -21251,11 +20077,8 @@ Op313a:
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -21269,11 +20092,8 @@ Op313a:
   str r0,[r7,r2,lsr #7]
 ;@ EaWrite: Write r1 into '-(a0)' (address in r0):
   mov r1,r1,lsr #16
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -21298,11 +20118,8 @@ Op313b:
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -21316,11 +20133,8 @@ Op313b:
   str r0,[r7,r2,lsr #7]
 ;@ EaWrite: Write r1 into '-(a0)' (address in r0):
   mov r1,r1,lsr #16
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -21346,11 +20160,8 @@ Op313c:
 ;@ EaWrite: Write r1 into '-(a0)' (address in r0):
   mov r1,r1,lsr #16
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -21378,11 +20189,8 @@ Op3140:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -21398,11 +20206,8 @@ Op3150:
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -21418,11 +20223,8 @@ Op3150:
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
   mov r1,r1,lsr #16
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -21439,11 +20241,8 @@ Op3158:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -21459,11 +20258,8 @@ Op3158:
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
   mov r1,r1,lsr #16
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -21481,11 +20277,8 @@ Op3160:
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -21501,11 +20294,8 @@ Op3160:
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
   mov r1,r1,lsr #16
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -21522,11 +20312,8 @@ Op3168:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -21542,11 +20329,8 @@ Op3168:
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
   mov r1,r1,lsr #16
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -21572,11 +20356,8 @@ Op3170:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -21592,11 +20373,8 @@ Op3170:
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
   mov r1,r1,lsr #16
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -21610,11 +20388,8 @@ Op3178:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -21630,11 +20405,8 @@ Op3178:
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
   mov r1,r1,lsr #16
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -21650,11 +20422,8 @@ Op3179:
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -21670,11 +20439,8 @@ Op3179:
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
   mov r1,r1,lsr #16
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -21691,11 +20457,8 @@ Op317a:
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -21711,11 +20474,8 @@ Op317a:
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
   mov r1,r1,lsr #16
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -21740,11 +20500,8 @@ Op317b:
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -21760,11 +20517,8 @@ Op317b:
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
   mov r1,r1,lsr #16
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -21791,11 +20545,8 @@ Op317c:
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
   mov r1,r1,lsr #16
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -21811,11 +20562,8 @@ Op3190:
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -21840,11 +20588,8 @@ Op3190:
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
   mov r1,r1,lsr #16
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -21861,11 +20606,8 @@ Op3198:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -21890,11 +20632,8 @@ Op3198:
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
   mov r1,r1,lsr #16
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -21912,11 +20651,8 @@ Op31a0:
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -21941,11 +20677,8 @@ Op31a0:
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
   mov r1,r1,lsr #16
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -21962,11 +20695,8 @@ Op31a8:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -21991,11 +20721,8 @@ Op31a8:
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
   mov r1,r1,lsr #16
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -22021,11 +20748,8 @@ Op31b0:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -22050,11 +20774,8 @@ Op31b0:
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
   mov r1,r1,lsr #16
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -22068,11 +20789,8 @@ Op31b8:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -22097,11 +20815,8 @@ Op31b8:
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
   mov r1,r1,lsr #16
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -22117,11 +20832,8 @@ Op31b9:
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -22146,11 +20858,8 @@ Op31b9:
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
   mov r1,r1,lsr #16
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -22167,11 +20876,8 @@ Op31ba:
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -22196,11 +20902,8 @@ Op31ba:
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
   mov r1,r1,lsr #16
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -22225,11 +20928,8 @@ Op31bb:
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -22254,11 +20954,8 @@ Op31bb:
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
   mov r1,r1,lsr #16
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -22294,11 +20991,8 @@ Op31bc:
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
   mov r1,r1,lsr #16
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -22322,11 +21016,8 @@ Op31c0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -22342,11 +21033,8 @@ Op31d0:
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -22358,11 +21046,8 @@ Op31d0:
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
   mov r1,r1,lsr #16
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -22379,11 +21064,8 @@ Op31d8:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -22395,11 +21077,8 @@ Op31d8:
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
   mov r1,r1,lsr #16
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -22417,11 +21096,8 @@ Op31e0:
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -22433,11 +21109,8 @@ Op31e0:
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
   mov r1,r1,lsr #16
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -22454,11 +21127,8 @@ Op31e8:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -22470,11 +21140,8 @@ Op31e8:
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
   mov r1,r1,lsr #16
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -22500,11 +21167,8 @@ Op31f0:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -22516,11 +21180,8 @@ Op31f0:
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
   mov r1,r1,lsr #16
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -22534,11 +21195,8 @@ Op31f8:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -22550,11 +21208,8 @@ Op31f8:
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
   mov r1,r1,lsr #16
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -22570,11 +21225,8 @@ Op31f9:
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -22586,11 +21238,8 @@ Op31f9:
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
   mov r1,r1,lsr #16
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -22607,11 +21256,8 @@ Op31fa:
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -22623,11 +21269,8 @@ Op31fa:
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
   mov r1,r1,lsr #16
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -22652,11 +21295,8 @@ Op31fb:
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -22668,11 +21308,8 @@ Op31fb:
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
   mov r1,r1,lsr #16
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -22695,11 +21332,8 @@ Op31fc:
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
   mov r1,r1,lsr #16
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -22725,11 +21359,8 @@ Op33c0:
   orr r0,r0,r2,lsl #16
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -22745,11 +21376,8 @@ Op33d0:
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -22763,11 +21391,8 @@ Op33d0:
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
   mov r1,r1,lsr #16
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -22785,11 +21410,8 @@ Op33e0:
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -22803,11 +21425,8 @@ Op33e0:
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
   mov r1,r1,lsr #16
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -22824,11 +21443,8 @@ Op33e8:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -22842,11 +21458,8 @@ Op33e8:
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
   mov r1,r1,lsr #16
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -22872,11 +21485,8 @@ Op33f0:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -22890,11 +21500,8 @@ Op33f0:
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
   mov r1,r1,lsr #16
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -22908,11 +21515,8 @@ Op33f8:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -22926,11 +21530,8 @@ Op33f8:
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
   mov r1,r1,lsr #16
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -22946,11 +21547,8 @@ Op33f9:
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -22964,11 +21562,8 @@ Op33f9:
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
   mov r1,r1,lsr #16
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -22985,11 +21580,8 @@ Op33fa:
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -23003,11 +21595,8 @@ Op33fa:
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
   mov r1,r1,lsr #16
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -23032,11 +21621,8 @@ Op33fb:
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -23050,11 +21636,8 @@ Op33fb:
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
   mov r1,r1,lsr #16
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -23079,11 +21662,8 @@ Op33fc:
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
   mov r1,r1,lsr #16
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -23109,11 +21689,8 @@ Op3ec0:
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '(a7)+' (address in r0):
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -23129,11 +21706,8 @@ Op3ed0:
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -23146,11 +21720,8 @@ Op3ed0:
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '(a7)+' (address in r0):
   mov r1,r1,lsr #16
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -23167,11 +21738,8 @@ Op3ed8:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -23184,11 +21752,8 @@ Op3ed8:
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '(a7)+' (address in r0):
   mov r1,r1,lsr #16
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -23206,11 +21771,8 @@ Op3ee0:
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -23223,11 +21785,8 @@ Op3ee0:
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '(a7)+' (address in r0):
   mov r1,r1,lsr #16
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -23244,11 +21803,8 @@ Op3ee8:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -23261,11 +21817,8 @@ Op3ee8:
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '(a7)+' (address in r0):
   mov r1,r1,lsr #16
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -23291,11 +21844,8 @@ Op3ef0:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -23308,11 +21858,8 @@ Op3ef0:
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '(a7)+' (address in r0):
   mov r1,r1,lsr #16
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -23326,11 +21873,8 @@ Op3ef8:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -23343,11 +21887,8 @@ Op3ef8:
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '(a7)+' (address in r0):
   mov r1,r1,lsr #16
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -23363,11 +21904,8 @@ Op3ef9:
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -23380,11 +21918,8 @@ Op3ef9:
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '(a7)+' (address in r0):
   mov r1,r1,lsr #16
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -23401,11 +21936,8 @@ Op3efa:
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -23418,11 +21950,8 @@ Op3efa:
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '(a7)+' (address in r0):
   mov r1,r1,lsr #16
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -23447,11 +21976,8 @@ Op3efb:
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -23464,11 +21990,8 @@ Op3efb:
   str r3,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '(a7)+' (address in r0):
   mov r1,r1,lsr #16
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -23493,11 +22016,8 @@ Op3efc:
 ;@ EaWrite: Write r1 into '(a7)+' (address in r0):
   mov r1,r1,lsr #16
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -23523,11 +22043,8 @@ Op3f00:
   str r0,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '-(a7)' (address in r0):
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -23543,11 +22060,8 @@ Op3f10:
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -23560,11 +22074,8 @@ Op3f10:
   str r0,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '-(a7)' (address in r0):
   mov r1,r1,lsr #16
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -23581,11 +22092,8 @@ Op3f18:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -23598,11 +22106,8 @@ Op3f18:
   str r0,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '-(a7)' (address in r0):
   mov r1,r1,lsr #16
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -23620,11 +22125,8 @@ Op3f20:
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -23637,11 +22139,8 @@ Op3f20:
   str r0,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '-(a7)' (address in r0):
   mov r1,r1,lsr #16
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -23658,11 +22157,8 @@ Op3f28:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -23675,11 +22171,8 @@ Op3f28:
   str r0,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '-(a7)' (address in r0):
   mov r1,r1,lsr #16
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -23705,11 +22198,8 @@ Op3f30:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -23722,11 +22212,8 @@ Op3f30:
   str r0,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '-(a7)' (address in r0):
   mov r1,r1,lsr #16
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -23740,11 +22227,8 @@ Op3f38:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -23757,11 +22241,8 @@ Op3f38:
   str r0,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '-(a7)' (address in r0):
   mov r1,r1,lsr #16
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -23777,11 +22258,8 @@ Op3f39:
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -23794,11 +22272,8 @@ Op3f39:
   str r0,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '-(a7)' (address in r0):
   mov r1,r1,lsr #16
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -23815,11 +22290,8 @@ Op3f3a:
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -23832,11 +22304,8 @@ Op3f3a:
   str r0,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '-(a7)' (address in r0):
   mov r1,r1,lsr #16
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -23861,11 +22330,8 @@ Op3f3b:
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
@@ -23878,11 +22344,8 @@ Op3f3b:
   str r0,[r7,#0x3c] ;@ A7
 ;@ EaWrite: Write r1 into '-(a7)' (address in r0):
   mov r1,r1,lsr #16
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -23907,11 +22370,8 @@ Op3f3c:
 ;@ EaWrite: Write r1 into '-(a7)' (address in r0):
   mov r1,r1,lsr #16
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -24371,13 +22831,9 @@ Op4050:
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Negx:
@@ -24417,13 +22873,9 @@ Op4058:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Negx:
@@ -24464,13 +22916,9 @@ Op4060:
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Negx:
@@ -24510,13 +22958,9 @@ Op4068:
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Negx:
@@ -24565,13 +23009,9 @@ Op4070:
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Negx:
@@ -24608,13 +23048,9 @@ Op4078:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Negx:
@@ -24653,13 +23089,9 @@ Op4079:
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Negx:
@@ -24726,13 +23158,9 @@ Op4090:
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Negx:
@@ -24768,13 +23196,9 @@ Op4098:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Negx:
@@ -24811,13 +23235,9 @@ Op40a0:
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Negx:
@@ -24853,13 +23273,9 @@ Op40a8:
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Negx:
@@ -24904,13 +23320,9 @@ Op40b0:
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Negx:
@@ -24943,13 +23355,9 @@ Op40b8:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Negx:
@@ -24984,13 +23392,9 @@ Op40b9:
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Negx:
@@ -25061,11 +23465,8 @@ Op40d0:
 ;@ EaWrite: Write r1 into '(a0)' (address in r0):
   uxth r1,r1 ;@ zero extend
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call PÁþìþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -25094,11 +23495,8 @@ Op40d8:
 ;@ EaWrite: Write r1 into '(a0)+' (address in r0):
   uxth r1,r1 ;@ zero extend
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call PÁþìþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -25128,11 +23526,8 @@ Op40e0:
 ;@ EaWrite: Write r1 into '-(a0)' (address in r0):
   uxth r1,r1 ;@ zero extend
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call PÁþìþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -25161,11 +23556,8 @@ Op40e8:
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
   uxth r1,r1 ;@ zero extend
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call PÁþìþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -25203,11 +23595,8 @@ Op40f0:
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
   uxth r1,r1 ;@ zero extend
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call PÁþìþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -25233,11 +23622,8 @@ Op40f8:
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
   uxth r1,r1 ;@ zero extend
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call PÁþìþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -25265,11 +23651,8 @@ Op40f9:
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
   uxth r1,r1 ;@ zero extend
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x78] ;@ Call PÁþìþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -25327,11 +23710,8 @@ Op4190:
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
@@ -25377,11 +23757,8 @@ Op4198:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
@@ -25428,11 +23805,8 @@ Op41a0:
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
@@ -25478,11 +23852,8 @@ Op41a8:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
@@ -25537,11 +23908,8 @@ Op41b0:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
@@ -25584,11 +23952,8 @@ Op41b8:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
@@ -25633,11 +23998,8 @@ Op41b9:
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
@@ -25683,11 +24045,8 @@ Op41ba:
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
@@ -25741,11 +24100,8 @@ Op41bb:
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
@@ -26209,13 +24565,9 @@ Op4250:
 ;@ EaWrite: Write r1 into '(a0)' (address in r11):
   uxth r1,r1 ;@ zero extend
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x78] ;@ Call PÁþìþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -26238,13 +24590,9 @@ Op4258:
 ;@ EaWrite: Write r1 into '(a0)+' (address in r11):
   uxth r1,r1 ;@ zero extend
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x78] ;@ Call PÁþìþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -26268,13 +24616,9 @@ Op4260:
 ;@ EaWrite: Write r1 into '-(a0)' (address in r11):
   uxth r1,r1 ;@ zero extend
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x78] ;@ Call PÁþìþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -26297,13 +24641,9 @@ Op4268:
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r11):
   uxth r1,r1 ;@ zero extend
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x78] ;@ Call PÁþìþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -26335,13 +24675,9 @@ Op4270:
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r11):
   uxth r1,r1 ;@ zero extend
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x78] ;@ Call PÁþìþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -26361,13 +24697,9 @@ Op4278:
 ;@ EaWrite: Write r1 into '$3333.w' (address in r11):
   uxth r1,r1 ;@ zero extend
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x78] ;@ Call PÁþìþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -26389,13 +24721,9 @@ Op4279:
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r11):
   uxth r1,r1 ;@ zero extend
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x78] ;@ Call PÁþìþ(r0,r1) handler
+  ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -26433,13 +24761,9 @@ Op4290:
 
 ;@ EaWrite: Write r1 into '(a0)' (address in r11):
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -26461,13 +24785,9 @@ Op4298:
 
 ;@ EaWrite: Write r1 into '(a0)+' (address in r11):
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -26490,13 +24810,9 @@ Op42a0:
 
 ;@ EaWrite: Write r1 into '-(a0)' (address in r11):
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -26518,13 +24834,9 @@ Op42a8:
 
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r11):
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -26555,13 +24867,9 @@ Op42b0:
 
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r11):
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -26580,13 +24888,9 @@ Op42b8:
 
 ;@ EaWrite: Write r1 into '$3333.w' (address in r11):
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -26607,13 +24911,9 @@ Op42b9:
 
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r11):
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x7c] ;@ Call 2(r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -26985,13 +25285,9 @@ Op4450:
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Neg:
@@ -27023,13 +25319,9 @@ Op4458:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Neg:
@@ -27062,13 +25354,9 @@ Op4460:
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Neg:
@@ -27100,13 +25388,9 @@ Op4468:
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Neg:
@@ -27147,13 +25431,9 @@ Op4470:
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Neg:
@@ -27182,13 +25462,9 @@ Op4478:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Neg:
@@ -27219,13 +25495,9 @@ Op4479:
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Neg:
@@ -27277,13 +25549,9 @@ Op4490:
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Neg:
@@ -27312,13 +25580,9 @@ Op4498:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Neg:
@@ -27348,13 +25612,9 @@ Op44a0:
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Neg:
@@ -27383,13 +25643,9 @@ Op44a8:
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Neg:
@@ -27427,13 +25683,9 @@ Op44b0:
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Neg:
@@ -27459,13 +25711,9 @@ Op44b8:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Neg:
@@ -27493,13 +25741,9 @@ Op44b9:
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Neg:
@@ -27546,11 +25790,8 @@ Op44d0:
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   eor r1,r0,r0,ror #1 ;@ Bit 0=C^V
@@ -27574,11 +25815,8 @@ Op44d8:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   eor r1,r0,r0,ror #1 ;@ Bit 0=C^V
@@ -27603,11 +25841,8 @@ Op44e0:
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   eor r1,r0,r0,ror #1 ;@ Bit 0=C^V
@@ -27631,11 +25866,8 @@ Op44e8:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   eor r1,r0,r0,ror #1 ;@ Bit 0=C^V
@@ -27668,11 +25900,8 @@ Op44f0:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   eor r1,r0,r0,ror #1 ;@ Bit 0=C^V
@@ -27693,11 +25922,8 @@ Op44f8:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   eor r1,r0,r0,ror #1 ;@ Bit 0=C^V
@@ -27720,11 +25946,8 @@ Op44f9:
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   eor r1,r0,r0,ror #1 ;@ Bit 0=C^V
@@ -27748,11 +25971,8 @@ Op44fa:
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   eor r1,r0,r0,ror #1 ;@ Bit 0=C^V
@@ -27784,11 +26004,8 @@ Op44fb:
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   eor r1,r0,r0,ror #1 ;@ Bit 0=C^V
@@ -28163,13 +26380,9 @@ Op4650:
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Not:
@@ -28199,13 +26412,9 @@ Op4658:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Not:
@@ -28236,13 +26445,9 @@ Op4660:
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Not:
@@ -28272,13 +26477,9 @@ Op4668:
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Not:
@@ -28317,13 +26518,9 @@ Op4670:
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Not:
@@ -28350,13 +26547,9 @@ Op4678:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Not:
@@ -28385,13 +26578,9 @@ Op4679:
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Not:
@@ -28440,13 +26629,9 @@ Op4690:
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Not:
@@ -28474,13 +26659,9 @@ Op4698:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Not:
@@ -28509,13 +26690,9 @@ Op46a0:
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Not:
@@ -28543,13 +26720,9 @@ Op46a8:
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Not:
@@ -28586,13 +26759,9 @@ Op46b0:
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Not:
@@ -28617,13 +26786,9 @@ Op46b8:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Not:
@@ -28650,13 +26815,9 @@ Op46b9:
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Not:
@@ -28735,11 +26896,8 @@ Op46d0:
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   eor r1,r0,r0,ror #1 ;@ Bit 0=C^V
@@ -28792,11 +26950,8 @@ Op46d8:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   eor r1,r0,r0,ror #1 ;@ Bit 0=C^V
@@ -28850,11 +27005,8 @@ Op46e0:
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   eor r1,r0,r0,ror #1 ;@ Bit 0=C^V
@@ -28907,11 +27059,8 @@ Op46e8:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   eor r1,r0,r0,ror #1 ;@ Bit 0=C^V
@@ -28973,11 +27122,8 @@ Op46f0:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   eor r1,r0,r0,ror #1 ;@ Bit 0=C^V
@@ -29027,11 +27173,8 @@ Op46f8:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   eor r1,r0,r0,ror #1 ;@ Bit 0=C^V
@@ -29083,11 +27226,8 @@ Op46f9:
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   eor r1,r0,r0,ror #1 ;@ Bit 0=C^V
@@ -29140,11 +27280,8 @@ Op46fa:
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   eor r1,r0,r0,ror #1 ;@ Bit 0=C^V
@@ -29205,11 +27342,8 @@ Op46fb:
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   eor r1,r0,r0,ror #1 ;@ Bit 0=C^V
@@ -29791,11 +27925,8 @@ Op4850:
   str r0,[r7,#0x3c] ;@ Save A7
 
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -29816,11 +27947,8 @@ Op4868:
   str r0,[r7,#0x3c] ;@ Save A7
 
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -29850,11 +27978,8 @@ Op4870:
   str r0,[r7,#0x3c] ;@ Save A7
 
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -29872,11 +27997,8 @@ Op4878:
   str r0,[r7,#0x3c] ;@ Save A7
 
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -29896,11 +28018,8 @@ Op4879:
   str r0,[r7,#0x3c] ;@ Save A7
 
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -29921,11 +28040,8 @@ Op487a:
   str r0,[r7,#0x3c] ;@ Save A7
 
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -29954,11 +28070,8 @@ Op487b:
   str r0,[r7,#0x3c] ;@ Save A7
 
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -30002,10 +28115,6 @@ Op4890:
 
   tst r11,r11
   beq NoRegs4890
-
-  tst r6,#1 ;@ address error?
-  movne r0,r6
-  bne ExceptionAddressError_w_data
 
 Movemloop4890:
   add r4,r4,#4 ;@ r4=Next Register
@@ -30051,10 +28160,6 @@ Op48a0:
 
   tst r11,r11
   beq NoRegs48a0
-
-  tst r6,#1 ;@ address error?
-  movne r0,r6
-  bne ExceptionAddressError_w_data
 
 Movemloop48a0:
   add r4,r4,#-4 ;@ r4=Next Register
@@ -30108,10 +28213,6 @@ Op48a8:
 
   tst r11,r11
   beq NoRegs48a8
-
-  tst r6,#1 ;@ address error?
-  movne r0,r6
-  bne ExceptionAddressError_w_data
 
 Movemloop48a8:
   add r4,r4,#4 ;@ r4=Next Register
@@ -30168,10 +28269,6 @@ Op48b0:
   tst r11,r11
   beq NoRegs48b0
 
-  tst r6,#1 ;@ address error?
-  movne r0,r6
-  bne ExceptionAddressError_w_data
-
 Movemloop48b0:
   add r4,r4,#4 ;@ r4=Next Register
   movs r11,r11,lsr #1
@@ -30214,10 +28311,6 @@ Op48b8:
 
   tst r11,r11
   beq NoRegs48b8
-
-  tst r6,#1 ;@ address error?
-  movne r0,r6
-  bne ExceptionAddressError_w_data
 
 Movemloop48b8:
   add r4,r4,#4 ;@ r4=Next Register
@@ -30263,10 +28356,6 @@ Op48b9:
 
   tst r11,r11
   beq NoRegs48b9
-
-  tst r6,#1 ;@ address error?
-  movne r0,r6
-  bne ExceptionAddressError_w_data
 
 Movemloop48b9:
   add r4,r4,#4 ;@ r4=Next Register
@@ -30333,10 +28422,6 @@ Op48d0:
   tst r11,r11
   beq NoRegs48d0
 
-  tst r6,#1 ;@ address error?
-  movne r0,r6
-  bne ExceptionAddressError_w_data
-
 Movemloop48d0:
   add r4,r4,#4 ;@ r4=Next Register
   movs r11,r11,lsr #1
@@ -30380,10 +28465,6 @@ Op48e0:
 
   tst r11,r11
   beq NoRegs48e0
-
-  tst r6,#1 ;@ address error?
-  movne r0,r6
-  bne ExceptionAddressError_w_data
 
 Movemloop48e0:
   add r4,r4,#-4 ;@ r4=Next Register
@@ -30446,10 +28527,6 @@ Op48e8:
   tst r11,r11
   beq NoRegs48e8
 
-  tst r6,#1 ;@ address error?
-  movne r0,r6
-  bne ExceptionAddressError_w_data
-
 Movemloop48e8:
   add r4,r4,#4 ;@ r4=Next Register
   movs r11,r11,lsr #1
@@ -30504,10 +28581,6 @@ Op48f0:
   tst r11,r11
   beq NoRegs48f0
 
-  tst r6,#1 ;@ address error?
-  movne r0,r6
-  bne ExceptionAddressError_w_data
-
 Movemloop48f0:
   add r4,r4,#4 ;@ r4=Next Register
   movs r11,r11,lsr #1
@@ -30549,10 +28622,6 @@ Op48f8:
 
   tst r11,r11
   beq NoRegs48f8
-
-  tst r6,#1 ;@ address error?
-  movne r0,r6
-  bne ExceptionAddressError_w_data
 
 Movemloop48f8:
   add r4,r4,#4 ;@ r4=Next Register
@@ -30597,10 +28666,6 @@ Op48f9:
 
   tst r11,r11
   beq NoRegs48f9
-
-  tst r6,#1 ;@ address error?
-  movne r0,r6
-  bne ExceptionAddressError_w_data
 
 Movemloop48f9:
   add r4,r4,#4 ;@ r4=Next Register
@@ -30810,11 +28875,8 @@ Op4a50:
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r0,r0,asl #16
 
@@ -30835,11 +28897,8 @@ Op4a58:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r0,r0,asl #16
 
@@ -30861,11 +28920,8 @@ Op4a60:
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r0,r0,asl #16
 
@@ -30886,11 +28942,8 @@ Op4a68:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r0,r0,asl #16
 
@@ -30920,11 +28973,8 @@ Op4a70:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r0,r0,asl #16
 
@@ -30942,11 +28992,8 @@ Op4a78:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   movs r0,r0,asl #16
 
@@ -30982,11 +29029,8 @@ Op4a90:
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   tst r0,r0
 
@@ -31007,11 +29051,8 @@ Op4a98:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   tst r0,r0
 
@@ -31033,11 +29074,8 @@ Op4aa0:
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   tst r0,r0
 
@@ -31058,11 +29096,8 @@ Op4aa8:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   tst r0,r0
 
@@ -31092,11 +29127,8 @@ Op4ab0:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   tst r0,r0
 
@@ -31114,11 +29146,8 @@ Op4ab8:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   tst r0,r0
 
@@ -31138,11 +29167,8 @@ Op4ab9:
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   tst r0,r0
 
@@ -31473,10 +29499,6 @@ Op4c90:
   tst r11,r11
   beq NoRegs4c90
 
-  tst r6,#1 ;@ address error?
-  movne r0,r6
-  bne ExceptionAddressError_r_data
-
 Movemloop4c90:
   add r4,r4,#4 ;@ r4=Next Register
   movs r11,r11,lsr #1
@@ -31520,10 +29542,6 @@ Op4c98:
 
   tst r11,r11
   beq NoRegs4c98
-
-  tst r6,#1 ;@ address error?
-  movne r0,r6
-  bne ExceptionAddressError_r_data
 
 Movemloop4c98:
   add r4,r4,#4 ;@ r4=Next Register
@@ -31576,10 +29594,6 @@ Op4ca8:
 
   tst r11,r11
   beq NoRegs4ca8
-
-  tst r6,#1 ;@ address error?
-  movne r0,r6
-  bne ExceptionAddressError_r_data
 
 Movemloop4ca8:
   add r4,r4,#4 ;@ r4=Next Register
@@ -31636,10 +29650,6 @@ Op4cb0:
   tst r11,r11
   beq NoRegs4cb0
 
-  tst r6,#1 ;@ address error?
-  movne r0,r6
-  bne ExceptionAddressError_r_data
-
 Movemloop4cb0:
   add r4,r4,#4 ;@ r4=Next Register
   movs r11,r11,lsr #1
@@ -31682,10 +29692,6 @@ Op4cb8:
 
   tst r11,r11
   beq NoRegs4cb8
-
-  tst r6,#1 ;@ address error?
-  movne r0,r6
-  bne ExceptionAddressError_r_data
 
 Movemloop4cb8:
   add r4,r4,#4 ;@ r4=Next Register
@@ -31732,10 +29738,6 @@ Op4cb9:
   tst r11,r11
   beq NoRegs4cb9
 
-  tst r6,#1 ;@ address error?
-  movne r0,r6
-  bne ExceptionAddressError_r_data
-
 Movemloop4cb9:
   add r4,r4,#4 ;@ r4=Next Register
   movs r11,r11,lsr #1
@@ -31781,10 +29783,6 @@ Op4cba:
 
   tst r11,r11
   beq NoRegs4cba
-
-  tst r6,#1 ;@ address error?
-  movne r0,r6
-  bne ExceptionAddressError_r_data
 
 Movemloop4cba:
   add r4,r4,#4 ;@ r4=Next Register
@@ -31840,10 +29838,6 @@ Op4cbb:
   tst r11,r11
   beq NoRegs4cbb
 
-  tst r6,#1 ;@ address error?
-  movne r0,r6
-  bne ExceptionAddressError_r_data
-
 Movemloop4cbb:
   add r4,r4,#4 ;@ r4=Next Register
   movs r11,r11,lsr #1
@@ -31889,10 +29883,6 @@ Op4cd0:
   tst r11,r11
   beq NoRegs4cd0
 
-  tst r6,#1 ;@ address error?
-  movne r0,r6
-  bne ExceptionAddressError_r_data
-
 Movemloop4cd0:
   add r4,r4,#4 ;@ r4=Next Register
   movs r11,r11,lsr #1
@@ -31935,10 +29925,6 @@ Op4cd8:
 
   tst r11,r11
   beq NoRegs4cd8
-
-  tst r6,#1 ;@ address error?
-  movne r0,r6
-  bne ExceptionAddressError_r_data
 
 Movemloop4cd8:
   add r4,r4,#4 ;@ r4=Next Register
@@ -31990,10 +29976,6 @@ Op4ce8:
 
   tst r11,r11
   beq NoRegs4ce8
-
-  tst r6,#1 ;@ address error?
-  movne r0,r6
-  bne ExceptionAddressError_r_data
 
 Movemloop4ce8:
   add r4,r4,#4 ;@ r4=Next Register
@@ -32049,10 +30031,6 @@ Op4cf0:
   tst r11,r11
   beq NoRegs4cf0
 
-  tst r6,#1 ;@ address error?
-  movne r0,r6
-  bne ExceptionAddressError_r_data
-
 Movemloop4cf0:
   add r4,r4,#4 ;@ r4=Next Register
   movs r11,r11,lsr #1
@@ -32094,10 +30072,6 @@ Op4cf8:
 
   tst r11,r11
   beq NoRegs4cf8
-
-  tst r6,#1 ;@ address error?
-  movne r0,r6
-  bne ExceptionAddressError_r_data
 
 Movemloop4cf8:
   add r4,r4,#4 ;@ r4=Next Register
@@ -32143,10 +30117,6 @@ Op4cf9:
   tst r11,r11
   beq NoRegs4cf9
 
-  tst r6,#1 ;@ address error?
-  movne r0,r6
-  bne ExceptionAddressError_r_data
-
 Movemloop4cf9:
   add r4,r4,#4 ;@ r4=Next Register
   movs r11,r11,lsr #1
@@ -32191,10 +30161,6 @@ Op4cfa:
 
   tst r11,r11
   beq NoRegs4cfa
-
-  tst r6,#1 ;@ address error?
-  movne r0,r6
-  bne ExceptionAddressError_r_data
 
 Movemloop4cfa:
   add r4,r4,#4 ;@ r4=Next Register
@@ -32248,10 +30214,6 @@ Op4cfb:
 
   tst r11,r11
   beq NoRegs4cfb
-
-  tst r6,#1 ;@ address error?
-  movne r0,r6
-  bne ExceptionAddressError_r_data
 
 Movemloop4cfb:
   add r4,r4,#4 ;@ r4=Next Register
@@ -32307,11 +30269,8 @@ Op4e50:
 
 ;@ Write An to Stack
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 ;@ Save to An
 ;@ EaWrite: r8 into register[r11]:
@@ -32339,11 +30298,8 @@ Op4e57:
 
 ;@ Write An to Stack
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 ;@ Save to An
 ;@ Get offset:
@@ -32371,11 +30327,8 @@ Op4e58:
 
 ;@ Pop An from stack:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call (r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   str r8,[r7,#0x3c] ;@ Save A7
@@ -32500,11 +30453,8 @@ Op4e73:
   add r1,r0,#2 ;@ Postincrement A7
   str r1,[r7,#0x3c] ;@ Save A7
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call (r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   eor r1,r0,r0,ror #1 ;@ Bit 0=C^V
@@ -32521,11 +30471,8 @@ Op4e73:
   ldr r0,[r7,#0x3c]
   add r1,r0,#4 ;@ Postincrement A7
   str r1,[r7,#0x3c] ;@ Save A7
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call (r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   ldr r1,[r7,#0x60] ;@ Get Memory base
   add r0,r0,r1 ;@ Memory Base+PC
@@ -32586,11 +30533,8 @@ Op4e77:
   add r1,r0,#2 ;@ Postincrement A7
   str r1,[r7,#0x3c] ;@ Save A7
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call (r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   eor r1,r0,r0,ror #1 ;@ Bit 0=C^V
@@ -32604,11 +30548,8 @@ Op4e77:
   ldr r0,[r7,#0x3c]
   add r1,r0,#4 ;@ Postincrement A7
   str r1,[r7,#0x3c] ;@ Save A7
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call (r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   ldr r1,[r7,#0x60] ;@ Get Memory base
   add r0,r0,r1 ;@ Memory Base+PC
@@ -32649,11 +30590,8 @@ Op4e90:
   sub r0,r2,#4 ;@ Predecrement A7
   str r0,[r7,#0x3c] ;@ Save A7
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -32685,11 +30623,8 @@ Op4ea8:
   sub r0,r2,#4 ;@ Predecrement A7
   str r0,[r7,#0x3c] ;@ Save A7
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -32730,11 +30665,8 @@ Op4eb0:
   sub r0,r2,#4 ;@ Predecrement A7
   str r0,[r7,#0x3c] ;@ Save A7
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -32763,11 +30695,8 @@ Op4eb8:
   sub r0,r2,#4 ;@ Predecrement A7
   str r0,[r7,#0x3c] ;@ Save A7
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -32798,11 +30727,8 @@ Op4eb9:
   sub r0,r2,#4 ;@ Predecrement A7
   str r0,[r7,#0x3c] ;@ Save A7
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -32834,11 +30760,8 @@ Op4eba:
   sub r0,r2,#4 ;@ Predecrement A7
   str r0,[r7,#0x3c] ;@ Save A7
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -32878,11 +30801,8 @@ Op4ebb:
   sub r0,r2,#4 ;@ Predecrement A7
   str r0,[r7,#0x3c] ;@ Save A7
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -33430,13 +31350,9 @@ Op5050:
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #16
@@ -33466,13 +31382,9 @@ Op5058:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #16
@@ -33503,13 +31415,9 @@ Op5060:
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #16
@@ -33539,13 +31447,9 @@ Op5068:
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #16
@@ -33584,13 +31488,9 @@ Op5070:
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #16
@@ -33617,13 +31517,9 @@ Op5078:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #16
@@ -33652,13 +31548,9 @@ Op5079:
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #16
@@ -33723,13 +31615,9 @@ Op5090:
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   adds r1,r0,#0x0008
@@ -33756,13 +31644,9 @@ Op5098:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   adds r1,r0,#0x0008
@@ -33790,13 +31674,9 @@ Op50a0:
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   adds r1,r0,#0x0008
@@ -33823,13 +31703,9 @@ Op50a8:
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   adds r1,r0,#0x0008
@@ -33865,13 +31741,9 @@ Op50b0:
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   adds r1,r0,#0x0008
@@ -33895,13 +31767,9 @@ Op50b8:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   adds r1,r0,#0x0008
@@ -33927,13 +31795,9 @@ Op50b9:
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   adds r1,r0,#0x0008
@@ -34540,13 +32404,9 @@ Op5150:
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #16
@@ -34577,13 +32437,9 @@ Op5158:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #16
@@ -34615,13 +32471,9 @@ Op5160:
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #16
@@ -34652,13 +32504,9 @@ Op5168:
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #16
@@ -34698,13 +32546,9 @@ Op5170:
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #16
@@ -34732,13 +32576,9 @@ Op5178:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #16
@@ -34768,13 +32608,9 @@ Op5179:
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #16
@@ -34841,13 +32677,9 @@ Op5190:
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   subs r1,r0,#0x0008
@@ -34875,13 +32707,9 @@ Op5198:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   subs r1,r0,#0x0008
@@ -34910,13 +32738,9 @@ Op51a0:
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   subs r1,r0,#0x0008
@@ -34944,13 +32768,9 @@ Op51a8:
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   subs r1,r0,#0x0008
@@ -34987,13 +32807,9 @@ Op51b0:
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   subs r1,r0,#0x0008
@@ -35018,13 +32834,9 @@ Op51b8:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   subs r1,r0,#0x0008
@@ -35051,13 +32863,9 @@ Op51b9:
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   subs r1,r0,#0x0008
@@ -38774,13 +36582,9 @@ Op5e50:
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
@@ -38812,13 +36616,9 @@ Op5e58:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
@@ -38851,13 +36651,9 @@ Op5e60:
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
@@ -38889,13 +36685,9 @@ Op5e68:
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
@@ -38936,13 +36728,9 @@ Op5e70:
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
@@ -38971,13 +36759,9 @@ Op5e78:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
@@ -39008,13 +36792,9 @@ Op5e79:
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
@@ -39085,13 +36865,9 @@ Op5e90:
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
@@ -39120,13 +36896,9 @@ Op5e98:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
@@ -39156,13 +36928,9 @@ Op5ea0:
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
@@ -39191,13 +36959,9 @@ Op5ea8:
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
@@ -39235,13 +36999,9 @@ Op5eb0:
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
@@ -39267,13 +37027,9 @@ Op5eb8:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
@@ -39301,13 +37057,9 @@ Op5eb9:
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
@@ -39995,13 +37747,9 @@ Op5f50:
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
@@ -40034,13 +37782,9 @@ Op5f58:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
@@ -40074,13 +37818,9 @@ Op5f60:
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
@@ -40113,13 +37853,9 @@ Op5f68:
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
@@ -40161,13 +37897,9 @@ Op5f70:
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
@@ -40197,13 +37929,9 @@ Op5f78:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
@@ -40235,13 +37963,9 @@ Op5f79:
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
@@ -40314,13 +38038,9 @@ Op5f90:
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
@@ -40350,13 +38070,9 @@ Op5f98:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
@@ -40387,13 +38103,9 @@ Op5fa0:
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
@@ -40423,13 +38135,9 @@ Op5fa8:
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
@@ -40468,13 +38176,9 @@ Op5fb0:
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
@@ -40501,13 +38205,9 @@ Op5fb8:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
@@ -40536,13 +38236,9 @@ Op5fb9:
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
@@ -40880,11 +38576,8 @@ Op6103:
   sub r0,r2,#4 ;@ Predecrement A7
   str r0,[r7,#0x3c] ;@ Save A7
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_w_data
   mov lr,pc
-  ldr pc,[r7,#0x7c] ;@ Call (r0,r1) handler
+  ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   add r4,r4,r11,asr #24 ;@ r4 = New PC
@@ -41989,11 +39682,8 @@ Op8050:
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -42027,11 +39717,8 @@ Op8058:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -42066,11 +39753,8 @@ Op8060:
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -42104,11 +39788,8 @@ Op8068:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -42151,11 +39832,8 @@ Op8070:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -42186,11 +39864,8 @@ Op8078:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -42223,11 +39898,8 @@ Op8079:
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -42261,11 +39933,8 @@ Op807a:
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -42307,11 +39976,8 @@ Op807b:
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -42398,11 +40064,8 @@ Op8090:
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -42433,11 +40096,8 @@ Op8098:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -42469,11 +40129,8 @@ Op80a0:
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -42504,11 +40161,8 @@ Op80a8:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -42548,11 +40202,8 @@ Op80b0:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -42580,11 +40231,8 @@ Op80b8:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -42614,11 +40262,8 @@ Op80b9:
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -42649,11 +40294,8 @@ Op80ba:
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -42692,11 +40334,8 @@ Op80bb:
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -42817,11 +40456,8 @@ Op80d0:
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -42890,11 +40526,8 @@ Op80d8:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -42964,11 +40597,8 @@ Op80e0:
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -43037,11 +40667,8 @@ Op80e8:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -43119,11 +40746,8 @@ Op80f0:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -43189,11 +40813,8 @@ Op80f8:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -43261,11 +40882,8 @@ Op80f9:
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -43334,11 +40952,8 @@ Op80fa:
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -43415,11 +41030,8 @@ Op80fb:
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -44087,13 +41699,9 @@ Op8150:
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -44130,13 +41738,9 @@ Op8158:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -44174,13 +41778,9 @@ Op8160:
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -44217,13 +41817,9 @@ Op8168:
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -44269,13 +41865,9 @@ Op8170:
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -44309,13 +41901,9 @@ Op8178:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -44351,13 +41939,9 @@ Op8179:
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -44393,13 +41977,9 @@ Op8190:
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -44433,13 +42013,9 @@ Op8198:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -44474,13 +42050,9 @@ Op81a0:
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -44514,13 +42086,9 @@ Op81a8:
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -44563,13 +42131,9 @@ Op81b0:
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -44600,13 +42164,9 @@ Op81b8:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -44639,13 +42199,9 @@ Op81b9:
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -44762,11 +42318,8 @@ Op81d0:
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -44855,11 +42408,8 @@ Op81d8:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -44949,11 +42499,8 @@ Op81e0:
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -45042,11 +42589,8 @@ Op81e8:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -45144,11 +42688,8 @@ Op81f0:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -45234,11 +42775,8 @@ Op81f8:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -45326,11 +42864,8 @@ Op81f9:
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -45419,11 +42954,8 @@ Op81fa:
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -45520,11 +43052,8 @@ Op81fb:
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -46307,11 +43836,8 @@ Op9050:
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -46346,11 +43872,8 @@ Op9058:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -46386,11 +43909,8 @@ Op9060:
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -46425,11 +43945,8 @@ Op9068:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -46473,11 +43990,8 @@ Op9070:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -46509,11 +44023,8 @@ Op9078:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -46547,11 +44058,8 @@ Op9079:
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -46586,11 +44094,8 @@ Op907a:
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -46633,11 +44138,8 @@ Op907b:
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -46727,11 +44229,8 @@ Op9090:
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -46763,11 +44262,8 @@ Op9098:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -46800,11 +44296,8 @@ Op90a0:
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -46836,11 +44329,8 @@ Op90a8:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -46881,11 +44371,8 @@ Op90b0:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -46914,11 +44401,8 @@ Op90b8:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -46949,11 +44433,8 @@ Op90b9:
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -46985,11 +44466,8 @@ Op90ba:
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -47029,11 +44507,8 @@ Op90bb:
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -47116,11 +44591,8 @@ Op90d0:
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -47149,11 +44621,8 @@ Op90d8:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -47183,11 +44652,8 @@ Op90e0:
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -47216,11 +44682,8 @@ Op90e8:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -47258,11 +44721,8 @@ Op90f0:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -47288,11 +44748,8 @@ Op90f8:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -47320,11 +44777,8 @@ Op90f9:
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -47353,11 +44807,8 @@ Op90fa:
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -47394,11 +44845,8 @@ Op90fb:
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -48006,11 +45454,8 @@ Op9148:
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r6:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r6,r0,asl #16
 
@@ -48020,13 +45465,9 @@ Op9148:
   sub r11,r11,#2 ;@ Pre-decrement An
   str r11,[r7,r2,lsr #7]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
@@ -48066,13 +45507,9 @@ Op9150:
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -48110,13 +45547,9 @@ Op9158:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -48155,13 +45588,9 @@ Op9160:
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -48199,13 +45628,9 @@ Op9168:
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -48252,13 +45677,9 @@ Op9170:
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -48293,13 +45714,9 @@ Op9178:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -48336,13 +45753,9 @@ Op9179:
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -48417,11 +45830,8 @@ Op9188:
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r6:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r6,r0
 
@@ -48431,13 +45841,9 @@ Op9188:
   sub r11,r11,#4 ;@ Pre-decrement An
   str r11,[r7,r2,lsr #7]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
@@ -48474,13 +45880,9 @@ Op9190:
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -48515,13 +45917,9 @@ Op9198:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -48557,13 +45955,9 @@ Op91a0:
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -48598,13 +45992,9 @@ Op91a8:
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -48648,13 +46038,9 @@ Op91b0:
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -48686,13 +46072,9 @@ Op91b8:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -48726,13 +46108,9 @@ Op91b9:
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -48788,11 +46166,8 @@ Op91d0:
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -48819,11 +46194,8 @@ Op91d8:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -48851,11 +46223,8 @@ Op91e0:
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -48882,11 +46251,8 @@ Op91e8:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -48922,11 +46288,8 @@ Op91f0:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -48950,11 +46313,8 @@ Op91f8:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -48980,11 +46340,8 @@ Op91f9:
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -49011,11 +46368,8 @@ Op91fa:
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -49050,11 +46404,8 @@ Op91fb:
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -49622,11 +46973,8 @@ Opb050:
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
@@ -49657,11 +47005,8 @@ Opb058:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
@@ -49693,11 +47038,8 @@ Opb060:
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
@@ -49728,11 +47070,8 @@ Opb068:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
@@ -49772,11 +47111,8 @@ Opb070:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
@@ -49804,11 +47140,8 @@ Opb078:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
@@ -49838,11 +47171,8 @@ Opb079:
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
@@ -49873,11 +47203,8 @@ Opb07a:
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
@@ -49916,11 +47243,8 @@ Opb07b:
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
@@ -49999,11 +47323,8 @@ Opb090:
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
@@ -50032,11 +47353,8 @@ Opb098:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
@@ -50066,11 +47384,8 @@ Opb0a0:
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
@@ -50099,11 +47414,8 @@ Opb0a8:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
@@ -50141,11 +47453,8 @@ Opb0b0:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
@@ -50173,11 +47482,8 @@ Opb0b9:
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
@@ -50206,11 +47512,8 @@ Opb0ba:
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
@@ -50247,11 +47550,8 @@ Opb0bb:
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
@@ -50326,11 +47626,8 @@ Opb0d0:
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -50358,11 +47655,8 @@ Opb0d8:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -50391,11 +47685,8 @@ Opb0e0:
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -50423,11 +47714,8 @@ Opb0e8:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -50464,11 +47752,8 @@ Opb0f0:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -50493,11 +47778,8 @@ Opb0f8:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -50524,11 +47806,8 @@ Opb0f9:
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -50556,11 +47835,8 @@ Opb0fa:
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -50596,11 +47872,8 @@ Opb0fb:
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -51144,11 +48417,8 @@ Opb148:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r11:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r11,r0,asl #16
 
@@ -51159,11 +48429,8 @@ Opb148:
   add r3,r0,#2 ;@ Post-increment An
   str r3,[r7,r2,lsr #7]
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   rsbs r0,r11,r0,asl #16
@@ -51184,13 +48451,9 @@ Opb150:
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
@@ -51228,13 +48491,9 @@ Opb158:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
@@ -51273,13 +48532,9 @@ Opb160:
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
@@ -51317,13 +48572,9 @@ Opb168:
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
@@ -51370,13 +48621,9 @@ Opb170:
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
@@ -51411,13 +48658,9 @@ Opb178:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
@@ -51454,13 +48697,9 @@ Opb179:
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
@@ -51525,11 +48764,8 @@ Opb188:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r11:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r11,r0
 
@@ -51540,11 +48776,8 @@ Opb188:
   add r3,r0,#4 ;@ Post-increment An
   str r3,[r7,r2,lsr #7]
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
   rsbs r0,r11,r0
@@ -51565,13 +48798,9 @@ Opb190:
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
@@ -51606,13 +48835,9 @@ Opb198:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
@@ -51648,13 +48873,9 @@ Opb1a0:
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
@@ -51689,13 +48910,9 @@ Opb1a8:
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
@@ -51739,13 +48956,9 @@ Opb1b0:
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
@@ -51777,13 +48990,9 @@ Opb1b8:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
@@ -51817,13 +49026,9 @@ Opb1b9:
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
@@ -51877,11 +49082,8 @@ Opb1d0:
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -51907,11 +49109,8 @@ Opb1d8:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -51938,11 +49137,8 @@ Opb1e0:
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -51968,11 +49164,8 @@ Opb1e8:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -52007,11 +49200,8 @@ Opb1f0:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -52034,11 +49224,8 @@ Opb1f8:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -52063,11 +49250,8 @@ Opb1f9:
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -52093,11 +49277,8 @@ Opb1fa:
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -52131,11 +49312,8 @@ Opb1fb:
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -52689,11 +49867,8 @@ Opc050:
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -52727,11 +49902,8 @@ Opc058:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -52766,11 +49938,8 @@ Opc060:
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -52804,11 +49973,8 @@ Opc068:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -52851,11 +50017,8 @@ Opc070:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -52886,11 +50049,8 @@ Opc078:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -52923,11 +50083,8 @@ Opc079:
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -52961,11 +50118,8 @@ Opc07a:
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -53007,11 +50161,8 @@ Opc07b:
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -53098,11 +50249,8 @@ Opc090:
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -53133,11 +50281,8 @@ Opc098:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -53169,11 +50314,8 @@ Opc0a0:
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -53204,11 +50346,8 @@ Opc0a8:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -53248,11 +50387,8 @@ Opc0b0:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -53280,11 +50416,8 @@ Opc0b8:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -53314,11 +50447,8 @@ Opc0b9:
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -53349,11 +50479,8 @@ Opc0ba:
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -53392,11 +50519,8 @@ Opc0bb:
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -53483,11 +50607,8 @@ Opc0d0:
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -53522,11 +50643,8 @@ Opc0d8:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -53562,11 +50680,8 @@ Opc0e0:
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -53601,11 +50716,8 @@ Opc0e8:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -53649,11 +50761,8 @@ Opc0f0:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -53685,11 +50794,8 @@ Opc0f8:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -53723,11 +50829,8 @@ Opc0f9:
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -53762,11 +50865,8 @@ Opc0fa:
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -53809,11 +50909,8 @@ Opc0fb:
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -54437,13 +51534,9 @@ Opc150:
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -54480,13 +51573,9 @@ Opc158:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -54524,13 +51613,9 @@ Opc160:
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -54567,13 +51652,9 @@ Opc168:
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -54619,13 +51700,9 @@ Opc170:
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -54659,13 +51736,9 @@ Opc178:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -54701,13 +51774,9 @@ Opc179:
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -54759,13 +51828,9 @@ Opc190:
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -54799,13 +51864,9 @@ Opc198:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -54840,13 +51901,9 @@ Opc1a0:
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -54880,13 +51937,9 @@ Opc1a8:
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -54929,13 +51982,9 @@ Opc1b0:
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -54966,13 +52015,9 @@ Opc1b8:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -55005,13 +52050,9 @@ Opc1b9:
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -55074,11 +52115,8 @@ Opc1d0:
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -55113,11 +52151,8 @@ Opc1d8:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -55153,11 +52188,8 @@ Opc1e0:
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -55192,11 +52224,8 @@ Opc1e8:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -55240,11 +52269,8 @@ Opc1f0:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -55276,11 +52302,8 @@ Opc1f8:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -55314,11 +52337,8 @@ Opc1f9:
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -55353,11 +52373,8 @@ Opc1fa:
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -55400,11 +52417,8 @@ Opc1fb:
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -56030,11 +53044,8 @@ Opd050:
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -56068,11 +53079,8 @@ Opd058:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -56107,11 +53115,8 @@ Opd060:
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -56145,11 +53150,8 @@ Opd068:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -56192,11 +53194,8 @@ Opd070:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -56227,11 +53226,8 @@ Opd078:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -56264,11 +53260,8 @@ Opd079:
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -56302,11 +53295,8 @@ Opd07a:
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -56348,11 +53338,8 @@ Opd07b:
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -56439,11 +53426,8 @@ Opd090:
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -56474,11 +53458,8 @@ Opd098:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -56510,11 +53491,8 @@ Opd0a0:
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -56545,11 +53523,8 @@ Opd0a8:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -56589,11 +53564,8 @@ Opd0b0:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -56621,11 +53593,8 @@ Opd0b8:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -56655,11 +53624,8 @@ Opd0b9:
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -56690,11 +53656,8 @@ Opd0ba:
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -56733,11 +53696,8 @@ Opd0bb:
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -56818,11 +53778,8 @@ Opd0d0:
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -56851,11 +53808,8 @@ Opd0d8:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -56885,11 +53839,8 @@ Opd0e0:
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -56918,11 +53869,8 @@ Opd0e8:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -56960,11 +53908,8 @@ Opd0f0:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -56990,11 +53935,8 @@ Opd0f8:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -57022,11 +53964,8 @@ Opd0f9:
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -57055,11 +53994,8 @@ Opd0fa:
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -57096,11 +54032,8 @@ Opd0fb:
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x84] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -57707,11 +54640,8 @@ Opd148:
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r6:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r6,r0,asl #16
 
@@ -57721,13 +54651,9 @@ Opd148:
   sub r11,r11,#2 ;@ Pre-decrement An
   str r11,[r7,r2,lsr #7]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
@@ -57769,13 +54695,9 @@ Opd150:
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -57812,13 +54734,9 @@ Opd158:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -57856,13 +54774,9 @@ Opd160:
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -57899,13 +54813,9 @@ Opd168:
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -57951,13 +54861,9 @@ Opd170:
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -57991,13 +54897,9 @@ Opd178:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -58033,13 +54935,9 @@ Opd179:
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -58111,11 +55009,8 @@ Opd188:
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r6:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r6,r0
 
@@ -58125,13 +55020,9 @@ Opd188:
   sub r11,r11,#4 ;@ Pre-decrement An
   str r11,[r7,r2,lsr #7]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
@@ -58166,13 +55057,9 @@ Opd190:
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -58206,13 +55093,9 @@ Opd198:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -58247,13 +55130,9 @@ Opd1a0:
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -58287,13 +55166,9 @@ Opd1a8:
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -58336,13 +55211,9 @@ Opd1b0:
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -58373,13 +55244,9 @@ Opd1b8:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -58412,13 +55279,9 @@ Opd1b9:
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
@@ -58473,11 +55336,8 @@ Opd1d0:
   ldr r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -58504,11 +55364,8 @@ Opd1d8:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -58536,11 +55393,8 @@ Opd1e0:
   str r0,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -58567,11 +55421,8 @@ Opd1e8:
   add r0,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -58607,11 +55458,8 @@ Opd1f0:
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -58635,11 +55483,8 @@ Opd1f8:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -58665,11 +55510,8 @@ Opd1f9:
   orr r0,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   mov lr,pc
-  ldr pc,[r7,#0x70] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -58696,11 +55538,8 @@ Opd1fa:
   add r0,r2,r0 ;@ ($nn,PC)
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -58735,11 +55574,8 @@ Opd1fb:
   add r0,r2,r0 ;@ r0=Disp+PC+Rn
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*2
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_prg
   mov lr,pc
-  ldr pc,[r7,#0x88] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
@@ -59697,13 +56533,9 @@ Ope0d0:
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
@@ -59739,13 +56571,9 @@ Ope0d8:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
@@ -59782,13 +56610,9 @@ Ope0e0:
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
@@ -59824,13 +56648,9 @@ Ope0e8:
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
@@ -59875,13 +56695,9 @@ Ope0f0:
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
@@ -59914,13 +56730,9 @@ Ope0f8:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
@@ -59955,13 +56767,9 @@ Ope0f9:
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
@@ -60823,13 +57631,9 @@ Ope1d0:
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
@@ -60868,13 +57672,9 @@ Ope1d8:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
@@ -60914,13 +57714,9 @@ Ope1e0:
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
@@ -60959,13 +57755,9 @@ Ope1e8:
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
@@ -61013,13 +57805,9 @@ Ope1f0:
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
@@ -61055,13 +57843,9 @@ Ope1f8:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
@@ -61099,13 +57883,9 @@ Ope1f9:
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
@@ -61221,13 +58001,9 @@ Ope2d0:
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
@@ -61264,13 +58040,9 @@ Ope2d8:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
@@ -61308,13 +58080,9 @@ Ope2e0:
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
@@ -61351,13 +58119,9 @@ Ope2e8:
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
@@ -61403,13 +58167,9 @@ Ope2f0:
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
@@ -61443,13 +58203,9 @@ Ope2f8:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
@@ -61485,13 +58241,9 @@ Ope2f9:
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
@@ -61601,13 +58353,9 @@ Ope3d0:
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
@@ -61637,13 +58385,9 @@ Ope3d8:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
@@ -61674,13 +58418,9 @@ Ope3e0:
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
@@ -61710,13 +58450,9 @@ Ope3e8:
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
@@ -61755,13 +58491,9 @@ Ope3f0:
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
@@ -61788,13 +58520,9 @@ Ope3f8:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
@@ -61823,13 +58551,9 @@ Ope3f9:
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
@@ -61858,13 +58582,9 @@ Ope4d0:
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
@@ -61899,13 +58619,9 @@ Ope4d8:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
@@ -61941,13 +58657,9 @@ Ope4e0:
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
@@ -61982,13 +58694,9 @@ Ope4e8:
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
@@ -62032,13 +58740,9 @@ Ope4f0:
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
@@ -62070,13 +58774,9 @@ Ope4f8:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
@@ -62110,13 +58810,9 @@ Ope4f9:
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
@@ -62150,13 +58846,9 @@ Ope5d0:
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
@@ -62189,13 +58881,9 @@ Ope5d8:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
@@ -62229,13 +58917,9 @@ Ope5e0:
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
@@ -62268,13 +58952,9 @@ Ope5e8:
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
@@ -62316,13 +58996,9 @@ Ope5f0:
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
@@ -62352,13 +59028,9 @@ Ope5f8:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
@@ -62390,13 +59062,9 @@ Ope5f9:
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
@@ -62428,13 +59096,9 @@ Ope6d0:
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
@@ -62467,13 +59131,9 @@ Ope6d8:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
@@ -62507,13 +59167,9 @@ Ope6e0:
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
@@ -62546,13 +59202,9 @@ Ope6e8:
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
@@ -62594,13 +59246,9 @@ Ope6f0:
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
@@ -62630,13 +59278,9 @@ Ope6f8:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
@@ -62668,13 +59312,9 @@ Ope6f9:
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
@@ -62706,13 +59346,9 @@ Ope7d0:
   ldr r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
@@ -62748,13 +59384,9 @@ Ope7d8:
   str r3,[r7,r2,lsl #2]
 ;@ EaRead : Read '(a0)+' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
@@ -62791,13 +59423,9 @@ Ope7e0:
   str r11,[r7,r2,lsl #2]
 ;@ EaRead : Read '-(a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
@@ -62833,13 +59461,9 @@ Ope7e8:
   add r11,r0,r2 ;@ Add on offset
 ;@ EaRead : Read '($3333,a0)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
@@ -62884,13 +59508,9 @@ Ope7f0:
   add r11,r2,r3 ;@ r11=Disp+An+Rn
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
@@ -62923,13 +59543,9 @@ Ope7f8:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
@@ -62964,13 +59580,9 @@ Ope7f9:
   orr r11,r0,r2,lsl #16
 ;@ EaRead : Read '$33333333.l' (address in r11) into r0:
   str r4,[r7,#0x40] ;@ Save PC
-  add lr,pc,#4*3
-  mov r0,r11
-  tst r0,#1 ;@ address error?
-  bne ExceptionAddressError_r_data
   add lr,pc,#4
   mov r0,r11
-  ldr pc,[r7,#0x6c] ;@ Call 1(r0) handler
+  ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
   ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 

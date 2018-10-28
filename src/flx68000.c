@@ -25,20 +25,30 @@ extern void m68k_write_memory_16(unsigned int address, unsigned short value);
 extern void m68k_write_memory_32(unsigned int address, unsigned int value);
 
 unsigned int checkPc(unsigned int pc){
-   pc -= cycloneCpu.membase;//Get the real program counter
+   unsigned int dataBuffer;
+   unsigned int dataBufferAddress;
+   unsigned int windowSize;
 
-   if(chips[CHIP_A0_ROM].inBootMode || pc >= chips[CHIP_A0_ROM].start && pc < chips[CHIP_A0_ROM].start + chips[CHIP_A0_ROM].lineSize)
-      cycloneCpu.membase = (int)palmRom - (pc & ~chips[CHIP_A0_ROM].mask);
-   else if(pc >= chips[CHIP_DX_RAM].start && pc < chips[CHIP_DX_RAM].start + chips[CHIP_DX_RAM].lineSize)
-      cycloneCpu.membase = (int)palmRam - (pc & ~chips[CHIP_DX_RAM].mask);
+   pc -= cycloneCpu.membase;//get the real program counter
+
+   if(chips[CHIP_A0_ROM].inBootMode || pc >= chips[CHIP_A0_ROM].start && pc < chips[CHIP_A0_ROM].start + chips[CHIP_A0_ROM].lineSize){
+      dataBuffer = (unsigned int)palmRom;
+      dataBufferAddress = chips[CHIP_A0_ROM].start;
+      windowSize = chips[CHIP_A0_ROM].mask + 1;
+   }
+   else if(pc >= chips[CHIP_DX_RAM].start && pc < chips[CHIP_DX_RAM].start + chips[CHIP_DX_RAM].lineSize){
+      dataBuffer = (unsigned int)palmRam;
+      dataBufferAddress = chips[CHIP_DX_RAM].start;
+      windowSize = chips[CHIP_DX_RAM].mask + 1;
+   }
    else{
-      //really shouldnt be executing from anywhere else
-      bool breakpoint = true;
+      //executing from anywhere else is not supported
+      exit(1);
    }
 
-   //unsigned int membse = cycloneCpu.membase;
+   cycloneCpu.membase = dataBuffer - dataBufferAddress - windowSize * ((pc - dataBufferAddress) / windowSize);
 
-   return cycloneCpu.membase + pc;//New program counter
+   return cycloneCpu.membase + pc;//new program counter
 }
 #endif
 
@@ -154,7 +164,7 @@ void flx68000SetIrq(uint8_t irqLevel){
 
 void flx68000RefreshAddressing(){
 #if defined(EMU_OPTIMIZE_FOR_ARM)
-   cycloneCpu.pc = cycloneCpu.checkpc(cycloneCpu.pc);
+   //cycloneCpu.pc = cycloneCpu.checkpc(cycloneCpu.pc);
 #else
    //C implimentation doesnt cache address information
 #endif
@@ -170,7 +180,7 @@ bool flx68000IsSupervisor(){
 
 void flx68000BusError(uint32_t address, bool isWrite){
 #if defined(EMU_OPTIMIZE_FOR_ARM)
-   //no bus error yet
+   //no bus error callback
 #else
    //never call outsize of a 68k opcode, behavior is undefined due to longjmp
    m68ki_trigger_bus_error(address, isWrite ? MODE_WRITE : MODE_READ, FLAG_S | m68ki_get_address_space());

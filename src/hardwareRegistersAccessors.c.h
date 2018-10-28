@@ -1,68 +1,68 @@
 //declare I/O port functions in advance
-static inline uint8_t getPortAValue();
-static inline uint8_t getPortBValue();
-static inline uint8_t getPortCValue();
-static inline uint8_t getPortDValue();
-static inline uint8_t getPortEValue();
-static inline uint8_t getPortFValue();
-static inline uint8_t getPortGValue();
-static inline uint8_t getPortJValue();
-static inline uint8_t getPortKValue();
-static inline uint8_t getPortMValue();
+static uint8_t getPortAValue();
+static uint8_t getPortBValue();
+static uint8_t getPortCValue();
+static uint8_t getPortDValue();
+static uint8_t getPortEValue();
+static uint8_t getPortFValue();
+static uint8_t getPortGValue();
+static uint8_t getPortJValue();
+static uint8_t getPortKValue();
+static uint8_t getPortMValue();
 
 //basic accessors
-static inline uint8_t registerArrayRead8(uint32_t address){return BUFFER_READ_8(palmReg, address, 0xFFF);}
-static inline uint16_t registerArrayRead16(uint32_t address){return BUFFER_READ_16(palmReg, address, 0xFFF);}
-static inline uint32_t registerArrayRead32(uint32_t address){return BUFFER_READ_32(palmReg, address, 0xFFF);}
-static inline void registerArrayWrite8(uint32_t address, uint8_t value){BUFFER_WRITE_8(palmReg, address, 0xFFF, value);}
-static inline void registerArrayWrite16(uint32_t address, uint16_t value){BUFFER_WRITE_16(palmReg, address, 0xFFF, value);}
-static inline void registerArrayWrite32(uint32_t address, uint32_t value){BUFFER_WRITE_32(palmReg, address, 0xFFF, value);}
+static uint8_t registerArrayRead8(uint32_t address){return BUFFER_READ_8(palmReg, address, 0xFFF);}
+static uint16_t registerArrayRead16(uint32_t address){return BUFFER_READ_16(palmReg, address, 0xFFF);}
+static uint32_t registerArrayRead32(uint32_t address){return BUFFER_READ_32(palmReg, address, 0xFFF);}
+static void registerArrayWrite8(uint32_t address, uint8_t value){BUFFER_WRITE_8(palmReg, address, 0xFFF, value);}
+static void registerArrayWrite16(uint32_t address, uint16_t value){BUFFER_WRITE_16(palmReg, address, 0xFFF, value);}
+static void registerArrayWrite32(uint32_t address, uint32_t value){BUFFER_WRITE_32(palmReg, address, 0xFFF, value);}
 
 //interrupt setters
-static inline void setIprIsrBit(uint32_t interruptBit){
+static void setIprIsrBit(uint32_t interruptBit){
    //allows for setting an interrupt with masking by IMR and logging in IPR
    uint32_t newIpr = registerArrayRead32(IPR) | interruptBit;
    registerArrayWrite32(IPR, newIpr);
    registerArrayWrite32(ISR, newIpr & ~registerArrayRead32(IMR));
 }
 
-static inline void clearIprIsrBit(uint32_t interruptBit){
+static void clearIprIsrBit(uint32_t interruptBit){
    uint32_t newIpr = registerArrayRead32(IPR) & ~interruptBit;
    registerArrayWrite32(IPR, newIpr);
    registerArrayWrite32(ISR, newIpr & ~registerArrayRead32(IMR));
 }
 
 //SPI1 FIFO accessors
-static inline uint16_t spi1RxFifoRead(){
+static uint16_t spi1RxFifoRead(){
    uint16_t value = spi1RxFifo[spi1RxReadPosition];
    spi1RxReadPosition = (spi1RxReadPosition + 1) % 9;
    return value;
 }
 
-static inline void spi1RxFifoWrite(uint16_t value){
+static void spi1RxFifoWrite(uint16_t value){
    spi1RxFifo[spi1RxWritePosition] = value;
    spi1RxWritePosition = (spi1RxWritePosition + 1) % 9;
 }
 
-static inline uint8_t spi1RxFifoEntrys(){
+static uint8_t spi1RxFifoEntrys(){
    //check for wraparound
    if(spi1RxWritePosition < spi1RxReadPosition)
       return spi1RxWritePosition + 9 - spi1RxReadPosition;
    return spi1RxWritePosition - spi1RxReadPosition;
 }
 
-static inline uint16_t spi1TxFifoRead(){
+static uint16_t spi1TxFifoRead(){
    uint16_t value = spi1TxFifo[spi1TxReadPosition];
    spi1TxReadPosition = (spi1TxReadPosition + 1) % 9;
    return value;
 }
 
-static inline void spi1TxFifoWrite(uint16_t value){
+static void spi1TxFifoWrite(uint16_t value){
    spi1TxFifo[spi1TxWritePosition] = value;
    spi1TxWritePosition = (spi1TxWritePosition + 1) % 9;
 }
 
-static inline uint8_t spi1TxFifoEntrys(){
+static uint8_t spi1TxFifoEntrys(){
    //check for wraparound
    if(spi1TxWritePosition < spi1TxReadPosition)
       return spi1TxWritePosition + 9 - spi1TxReadPosition;
@@ -70,7 +70,7 @@ static inline uint8_t spi1TxFifoEntrys(){
 }
 
 //PWM1 FIFO accessors
-static inline uint8_t pwm1FifoEntrys(){
+static uint8_t pwm1FifoEntrys(){
    //check for wraparound
    if(pwm1WritePosition < pwm1ReadPosition)
       return pwm1WritePosition + 6 - pwm1ReadPosition;
@@ -115,20 +115,20 @@ int32_t pwm1FifoRunSample(int32_t now, int32_t clockOffset){
    return audioSampleDuration * repeat;
 }
 
-static inline void pwm1FifoWrite(uint8_t value){
+static void pwm1FifoWrite(uint8_t value){
    if(pwm1FifoEntrys() < 5){
       pwm1Fifo[pwm1WritePosition] = value;
       pwm1WritePosition = (pwm1WritePosition + 1) % 6;
    }
 }
 
-static inline void pwm1FifoFlush(){
+static void pwm1FifoFlush(){
    pwm1ReadPosition = 0;
    pwm1WritePosition = 0;
 }
 
 //register setters
-static inline void setCsa(uint16_t value){
+static void setCsa(uint16_t value){
    chips[CHIP_A0_ROM].enable = value & 0x0001;
    chips[CHIP_A0_ROM].readOnly = value & 0x8000;
    chips[CHIP_A0_ROM].lineSize = 0x20000/*128kb*/ << (value >> 1 & 0x0007);
@@ -145,7 +145,7 @@ static inline void setCsa(uint16_t value){
    registerArrayWrite16(CSA, value & 0x81FF);
 }
 
-static inline void setCsb(uint16_t value){
+static void setCsb(uint16_t value){
    uint16_t csControl1 = registerArrayRead16(CSCTRL1);
 
    chips[CHIP_B0_SED].enable = value & 0x0001;
@@ -163,7 +163,7 @@ static inline void setCsb(uint16_t value){
    registerArrayWrite16(CSB, value & 0xF9FF);
 }
 
-static inline void setCsd(uint16_t value){
+static void setCsd(uint16_t value){
    uint16_t csControl1 = registerArrayRead16(CSCTRL1);
 
    chips[CHIP_DX_RAM].enable = value & 0x0001;
@@ -184,7 +184,7 @@ static inline void setCsd(uint16_t value){
    registerArrayWrite16(CSD, value);
 }
 
-static inline void setCsgba(uint16_t value){
+static void setCsgba(uint16_t value){
    uint16_t csugba = registerArrayRead16(CSUGBA);
 
    //add extra address bits if enabled
@@ -198,7 +198,7 @@ static inline void setCsgba(uint16_t value){
    registerArrayWrite16(CSGBA, value & 0xFFFE);
 }
 
-static inline void setCsgbb(uint16_t value){
+static void setCsgbb(uint16_t value){
    uint16_t csugba = registerArrayRead16(CSUGBA);
 
    //add extra address bits if enabled
@@ -210,7 +210,7 @@ static inline void setCsgbb(uint16_t value){
    registerArrayWrite16(CSGBB, value & 0xFFFE);
 }
 
-static inline void setCsgbd(uint16_t value){
+static void setCsgbd(uint16_t value){
    uint16_t csugba = registerArrayRead16(CSUGBA);
 
    //add extra address bits if enabled
@@ -222,7 +222,7 @@ static inline void setCsgbd(uint16_t value){
    registerArrayWrite16(CSGBD, value & 0xFFFE);
 }
 
-static inline void updateCsdAddressLines(){
+static void updateCsdAddressLines(){
    uint16_t dramc = registerArrayRead16(DRAMC);
    uint16_t sdctrl = registerArrayRead16(SDCTRL);
 
@@ -244,7 +244,7 @@ static inline void updateCsdAddressLines(){
    }
 }
 
-static inline void setPllfsr(uint16_t value){
+static void setPllfsr(uint16_t value){
    uint16_t oldPllfsr = registerArrayRead16(PLLFSR);
    if(!(oldPllfsr & 0x4000)){
       //frequency protect bit not set
@@ -253,7 +253,7 @@ static inline void setPllfsr(uint16_t value){
    }
 }
 
-static inline void setScr(uint8_t value){
+static void setScr(uint8_t value){
    uint8_t oldScr = registerArrayRead8(SCR);
    uint8_t newScr = value & 0x1F;
 
@@ -274,7 +274,7 @@ static inline void setScr(uint8_t value){
    }
 }
 
-static inline void setIlcr(uint16_t value){
+static void setIlcr(uint16_t value){
    uint16_t oldIlcr = registerArrayRead16(ILCR);
    uint16_t newIlcr = 0;
 
@@ -305,7 +305,7 @@ static inline void setIlcr(uint16_t value){
    registerArrayWrite16(ILCR, newIlcr);
 }
 
-static inline void setSpiCont1(uint16_t value){
+static void setSpiCont1(uint16_t value){
    //only master mode is implemented!!!
    uint16_t oldSpiCont1 = registerArrayRead16(SPICONT1);
 
@@ -346,7 +346,7 @@ static inline void setSpiCont1(uint16_t value){
    registerArrayWrite16(SPICONT1, value);
 }
 
-static inline void setSpiCont2(uint16_t value){
+static void setSpiCont2(uint16_t value){
    //the ENABLE bit must be set before the transfer and in the transfer command
    //important bits are ENABLE, XCH, IRQ, IRQEN and BITCOUNT
    uint16_t oldSpiCont2 = registerArrayRead16(SPICONT2);
@@ -401,7 +401,7 @@ static inline void setSpiCont2(uint16_t value){
    registerArrayWrite16(SPICONT2, value & 0xE3FF);
 }
 
-static inline void setTstat1(uint16_t value){
+static void setTstat1(uint16_t value){
    uint16_t oldTstat1 = registerArrayRead16(TSTAT1);
    uint16_t newTstat1 = (value & timerStatusReadAcknowledge[0]) | (oldTstat1 & ~timerStatusReadAcknowledge[0]);
 
@@ -416,7 +416,7 @@ static inline void setTstat1(uint16_t value){
    registerArrayWrite16(TSTAT1, newTstat1);
 }
 
-static inline void setTstat2(uint16_t value){
+static void setTstat2(uint16_t value){
    uint16_t oldTstat2 = registerArrayRead16(TSTAT2);
    uint16_t newTstat2 = (value & timerStatusReadAcknowledge[1]) | (oldTstat2 & ~timerStatusReadAcknowledge[1]);
 
@@ -431,7 +431,7 @@ static inline void setTstat2(uint16_t value){
    registerArrayWrite16(TSTAT2, newTstat2);
 }
 
-static inline void setPwmc1(uint16_t value){
+static void setPwmc1(uint16_t value){
    uint16_t oldPwmc1 = registerArrayRead16(PWMC1);
 
    //dont allow manually setting FIFOAV
@@ -465,7 +465,7 @@ static inline void setPwmc1(uint16_t value){
    registerArrayWrite16(PWMC1, value);
 }
 
-static inline void setIsr(uint32_t value, bool useTopWord, bool useBottomWord){
+static void setIsr(uint32_t value, bool useTopWord, bool useBottomWord){
    //Palm OS uses this 32 bit register as 2 16 bit registers
 
    //prevent any internal hardware interrupts from being cleared
@@ -508,7 +508,7 @@ static inline void setIsr(uint32_t value, bool useTopWord, bool useBottomWord){
 }
 
 //register getters
-static inline uint8_t getPortDInputPinValues(){
+static uint8_t getPortDInputPinValues(){
    uint8_t requestedRow = ~getPortKValue();
    uint8_t portDInputValues = 0x00;
 
@@ -533,21 +533,21 @@ static inline uint8_t getPortDInputPinValues(){
    return ~portDInputValues;
 }
 
-static inline uint8_t getPortAValue(){
+static uint8_t getPortAValue(){
    //not attached, used as data lines
    return 0x00;
 }
 
-static inline uint8_t getPortBValue(){
+static uint8_t getPortBValue(){
    return ((registerArrayRead8(PBDATA) & registerArrayRead8(PBDIR)) | ~registerArrayRead8(PBDIR)) & registerArrayRead8(PBSEL);
 }
 
-static inline uint8_t getPortCValue(){
+static uint8_t getPortCValue(){
    //port c uses pull downs not pull ups
    return registerArrayRead8(PCDATA) & registerArrayRead8(PCDIR) & registerArrayRead8(PCSEL);
 }
 
-static inline uint8_t getPortDValue(){
+static uint8_t getPortDValue(){
    uint8_t portDValue = getPortDInputPinValues();
    uint8_t portDData = registerArrayRead8(PDDATA);
    uint8_t portDDir = registerArrayRead8(PDDIR);
@@ -560,11 +560,11 @@ static inline uint8_t getPortDValue(){
    return portDValue;
 }
 
-static inline uint8_t getPortEValue(){
+static uint8_t getPortEValue(){
    return ((registerArrayRead8(PEDATA) & registerArrayRead8(PEDIR)) | ~registerArrayRead8(PEDIR)) & registerArrayRead8(PESEL);
 }
 
-static inline uint8_t getPortFValue(){
+static uint8_t getPortFValue(){
    uint8_t portFValue = 0x00;
    uint8_t portFData = registerArrayRead8(PKDATA);
    uint8_t portFDir = registerArrayRead8(PKDIR);
@@ -579,7 +579,7 @@ static inline uint8_t getPortFValue(){
    return portFValue;
 }
 
-static inline uint8_t getPortGValue(){
+static uint8_t getPortGValue(){
    //port g only has 6 pins not 8
    uint8_t portGValue = 0x00;
    uint8_t portGData = registerArrayRead8(PGDATA);
@@ -594,11 +594,11 @@ static inline uint8_t getPortGValue(){
    return portGValue;
 }
 
-static inline uint8_t getPortJValue(){
+static uint8_t getPortJValue(){
    return ((registerArrayRead8(PJDATA) & registerArrayRead8(PJDIR)) | ~registerArrayRead8(PJDIR)) & registerArrayRead8(PJSEL);
 }
 
-static inline uint8_t getPortKValue(){
+static uint8_t getPortKValue(){
    uint8_t portKValue = 0x00;
    uint8_t portKData = registerArrayRead8(PKDATA);
    uint8_t portKDir = registerArrayRead8(PKDIR);
@@ -612,12 +612,12 @@ static inline uint8_t getPortKValue(){
    return portKValue;
 }
 
-static inline uint8_t getPortMValue(){
+static uint8_t getPortMValue(){
    //bit 5 has a pull up not pull down, bits 4-0 have a pull down, bit 7-6 are not active at all
    return ((registerArrayRead8(PMDATA) & registerArrayRead8(PMDIR)) | (~registerArrayRead8(PMDIR) & 0x20)) & registerArrayRead8(PMSEL);
 }
 
-static inline void samplePwm1(bool forClk32, double sysclks){
+static void samplePwm1(bool forClk32, double sysclks){
    //clear PWM1 FIFO values if enough time has passed
    uint16_t pwmc1 = registerArrayRead16(PWMC1);
    int32_t audioNow;
@@ -677,7 +677,7 @@ static inline void samplePwm1(bool forClk32, double sysclks){
    }
 }
 
-static inline uint16_t getPwmc1(){
+static uint16_t getPwmc1(){
    uint16_t returnValue = registerArrayRead16(PWMC1);
 
    //have FIFOAV set if a slot is available
@@ -698,23 +698,23 @@ static inline uint16_t getPwmc1(){
 }
 
 //updaters
-static inline void updatePowerButtonLedStatus(){
+static void updatePowerButtonLedStatus(){
    palmMisc.powerButtonLed = (bool)(getPortBValue() & 0x40) != palmMisc.batteryCharging;
 }
 
-static inline void updateVibratorStatus(){
+static void updateVibratorStatus(){
    palmMisc.vibratorOn = getPortKValue() & 0x10;
 }
 
-static inline void updateAds7846ChipSelectStatus(){
+static void updateAds7846ChipSelectStatus(){
    ads7846SetChipSelect(getPortGValue() & 0x04);
 }
 
-static inline void updateBacklightAmplifierStatus(){
+static void updateBacklightAmplifierStatus(){
    palmMisc.backlightLevel = (palmMisc.backlightLevel > 0) ? (1 + backlightAmplifierState()) : 0;
 }
 
-static inline void updateTouchState(){
+static void updateTouchState(){
    if(!(registerArrayRead8(PFSEL) & 0x02)){
       uint16_t icr = registerArrayRead16(ICR);
       bool penIrqPin = !(ads7846PenIrqEnabled && palmInput.touchscreenTouched);//penIrqPin pulled low on touch

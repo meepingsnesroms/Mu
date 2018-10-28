@@ -18,6 +18,7 @@ extern "C" {
 //define EMU_MULTITHREADED to speed up long loops
 //define EMU_OPTIMIZE_FOR_ARM to use ASM CPU core
 //define EMU_NO_SAFETY to remove all safety checks
+//define EMU_BIG_ENDIAN on big endian systems
 //to enable degguging define EMU_DEBUG, all options below do nothing unless EMU_DEBUG is defined
 //to enable sandbox debugging define EMU_SANDBOX
 //to enable opcode level debugging define EMU_SANDBOX_OPCODE_LEVEL_DEBUG
@@ -146,7 +147,9 @@ void emulatorSetRtc(uint16_t days, uint8_t hours, uint8_t minutes, uint8_t secon
 uint64_t emulatorGetStateSize();
 bool emulatorSaveState(buffer_t buffer);//true = success
 bool emulatorLoadState(buffer_t buffer);//true = success
-buffer_t emulatorGetRamBuffer();//this is a direct pointer to RAM, do not free it
+uint64_t emulatorGetRamSize();
+bool emulatorSaveRam(buffer_t buffer);//true = success
+bool emulatorLoadRam(buffer_t buffer);//true = success
 buffer_t emulatorGetSdCardBuffer();//this is a direct pointer to the SD card data, do not free it
 uint32_t emulatorInsertSdCard(buffer_t image);//use (NULL, desired size) to create a new empty SD card
 void emulatorEjectSdCard();

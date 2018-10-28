@@ -42,7 +42,7 @@ static uint16_t (*renderPixel)(uint16_t x, uint16_t y);
 
 #include "sed1376Accessors.c.h"
 
-static inline uint32_t getBufferStartAddress(){
+static uint32_t getBufferStartAddress(){
    uint32_t screenStartAddress = sed1376Registers[DISP_ADDR_2] << 16 | sed1376Registers[DISP_ADDR_1] << 8 | sed1376Registers[DISP_ADDR_0];
    switch((sed1376Registers[SPECIAL_EFFECT] & 0x03) * 90){
       case 0:
@@ -74,7 +74,7 @@ static inline uint32_t getBufferStartAddress(){
    return screenStartAddress;
 }
 
-static inline uint32_t getPipStartAddress(){
+static uint32_t getPipStartAddress(){
    uint32_t pipStartAddress = sed1376Registers[PIP_ADDR_2] << 16 | sed1376Registers[PIP_ADDR_1] << 8 | sed1376Registers[PIP_ADDR_0];
    switch((sed1376Registers[SPECIAL_EFFECT] & 0x03) * 90){
       case 0:

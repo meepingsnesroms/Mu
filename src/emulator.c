@@ -87,10 +87,12 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t spec
    memcpy(palmRom, palmRomDump.data, uMin(palmRomDump.size, ROM_SIZE));
    if(palmRomDump.size < ROM_SIZE)
       memset(palmRom + palmRomDump.size, 0x00, ROM_SIZE - palmRomDump.size);
+   swap16_buffer_if_little(palmRom, ROM_SIZE / 2);
    if(palmBootDump.data){
       memcpy(palmReg + REG_SIZE - 1 - BOOTLOADER_SIZE, palmBootDump.data, uMin(palmBootDump.size, BOOTLOADER_SIZE));
       if(palmBootDump.size < BOOTLOADER_SIZE)
          memset(palmReg + REG_SIZE - 1 - BOOTLOADER_SIZE + palmBootDump.size, 0x00, BOOTLOADER_SIZE - palmBootDump.size);
+      swap16_buffer_if_little(palmReg + REG_SIZE - 1 - BOOTLOADER_SIZE, BOOTLOADER_SIZE / 2);
    }
    else{
       memset(palmReg + REG_SIZE - 1 - BOOTLOADER_SIZE, 0x00, BOOTLOADER_SIZE);
@@ -228,13 +230,16 @@ bool emulatorSaveState(buffer_t buffer){
    //memory
    if(palmSpecialFeatures & FEATURE_RAM_HUGE){
       memcpy(buffer.data + offset, palmRam, SUPERMASSIVE_RAM_SIZE);
+   swap16_buffer_if_little(buffer.data + offset, SUPERMASSIVE_RAM_SIZE / 2);
       offset += SUPERMASSIVE_RAM_SIZE;
    }
    else{
       memcpy(buffer.data + offset, palmRam, RAM_SIZE);
+   swap16_buffer_if_little(buffer.data + offset, RAM_SIZE / 2);
       offset += RAM_SIZE;
    }
    memcpy(buffer.data + offset, palmReg, REG_SIZE);
+   swap16_buffer_if_little(buffer.data + offset, REG_SIZE / 2);
    offset += REG_SIZE;
    memcpy(buffer.data + offset, bankType, TOTAL_MEMORY_BANKS);
    offset += TOTAL_MEMORY_BANKS;
@@ -381,13 +386,16 @@ bool emulatorLoadState(buffer_t buffer){
    //memory
    if(palmSpecialFeatures & FEATURE_RAM_HUGE){
       memcpy(palmRam, buffer.data + offset, SUPERMASSIVE_RAM_SIZE);
+      swap16_buffer_if_little(palmRam, SUPERMASSIVE_RAM_SIZE / 2);
       offset += SUPERMASSIVE_RAM_SIZE;
    }
    else{
       memcpy(palmRam, buffer.data + offset, RAM_SIZE);
+      swap16_buffer_if_little(palmRam, RAM_SIZE / 2);
       offset += RAM_SIZE;
    }
    memcpy(palmReg, buffer.data + offset, REG_SIZE);
+   swap16_buffer_if_little(palmReg, REG_SIZE / 2);
    offset += REG_SIZE;
    memcpy(bankType, buffer.data + offset, TOTAL_MEMORY_BANKS);
    offset += TOTAL_MEMORY_BANKS;
@@ -505,13 +513,32 @@ bool emulatorLoadState(buffer_t buffer){
    return true;
 }
 
-buffer_t emulatorGetRamBuffer(){
-   buffer_t ramInfo;
+uint64_t emulatorGetRamSize(){
+   return palmSpecialFeatures & FEATURE_RAM_HUGE ? SUPERMASSIVE_RAM_SIZE : RAM_SIZE;
+}
 
-   ramInfo.data = palmRam;
-   ramInfo.size = palmSpecialFeatures & FEATURE_RAM_HUGE ? SUPERMASSIVE_RAM_SIZE : RAM_SIZE;
+bool emulatorSaveRam(buffer_t buffer){
+   uint64_t size = palmSpecialFeatures & FEATURE_RAM_HUGE ? SUPERMASSIVE_RAM_SIZE : RAM_SIZE;
 
-   return ramInfo;
+   if(buffer.size < size)
+      return false;
+
+   memcpy(buffer.data, palmRam, size);
+   swap16_buffer_if_little(buffer.data, size / 2);
+
+   return true;
+}
+
+bool emulatorLoadRam(buffer_t buffer){
+   uint64_t size = palmSpecialFeatures & FEATURE_RAM_HUGE ? SUPERMASSIVE_RAM_SIZE : RAM_SIZE;
+
+   if(buffer.size < size)
+      return false;
+
+   memcpy(palmRam, buffer.data, size);
+   swap16_buffer_if_little(palmRam, size / 2);
+
+   return true;
 }
 
 buffer_t emulatorGetSdCardBuffer(){

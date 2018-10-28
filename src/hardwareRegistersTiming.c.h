@@ -165,7 +165,7 @@ static double sysclksPerClk32(){
    return dmaclksPerClk32() / (2 << sysclkSelect);
 }
 
-static inline void rtiInterruptClk32(){
+static void rtiInterruptClk32(){
    //this function is part of endClk32();
    uint16_t triggeredRtiInterrupts = 0x0000;
 
@@ -209,7 +209,7 @@ static inline void rtiInterruptClk32(){
    }
 }
 
-static inline void watchdogSecondTickClk32(){
+static void watchdogSecondTickClk32(){
    //this function is part of endClk32();
    uint16_t watchdogState = registerArrayRead16(WATCHDOG);
 
@@ -234,7 +234,7 @@ static inline void watchdogSecondTickClk32(){
    }
 }
 
-static inline void rtcAddSecondClk32(){
+static void rtcAddSecondClk32(){
    //this function is part of endClk32();
    if(registerArrayRead16(RTCCTL) & 0x0080){
       //RTC enable bit set

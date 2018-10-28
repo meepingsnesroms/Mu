@@ -37,97 +37,22 @@
 	 | (((uint64_t)(val) & 0xff00000000000000ULL) >> 56))
 #endif
 
-/**
- * is_little_endian:
- *
- * Checks if the system is little endian or big-endian.
- *
- * Returns: greater than 0 if little-endian,
- * otherwise big-endian.
- **/
-#if defined(MSB_FIRST)
+#if defined(EMU_BIG_ENDIAN)
 #define is_little_endian() (0)
-#elif defined(__x86_64) || defined(__i386) || defined(_M_IX86) || defined(_M_X64) || defined(LSB_FIRST)
-#define is_little_endian() (1)
-#else
-static inline uint8_t is_little_endian(void)
-{
-   union
-   {
-      uint16_t x;
-      uint8_t y[2];
-   } u;
-
-   u.x = 1;
-   return u.y[0];
-}
-#endif
-
-/**
- * swap_if_little64:
- * @val        : unsigned 64-bit value
- *
- * Byteswap unsigned 64-bit value if system is little-endian.
- *
- * Returns: Byteswapped value in case system is little-endian,
- * otherwise returns same value.
- **/
-
-#if defined(MSB_FIRST)
 #define swap_if_little64(val) (val)
-#elif defined(__x86_64) || defined(__i386) || defined(_M_IX86) || defined(_M_X64) || defined(LSB_FIRST)
-#define swap_if_little64(val) (SWAP64(val))
-#else
-static inline uint64_t swap_if_little64(uint64_t val)
-{
-   if (is_little_endian())
-      return SWAP64(val);
-   return val;
-}
-#endif
-
-/**
- * swap_if_little32:
- * @val        : unsigned 32-bit value
- *
- * Byteswap unsigned 32-bit value if system is little-endian.
- *
- * Returns: Byteswapped value in case system is little-endian,
- * otherwise returns same value.
- **/
-
-#if defined(MSB_FIRST)
 #define swap_if_little32(val) (val)
-#elif defined(__x86_64) || defined(__i386) || defined(_M_IX86) || defined(_M_X64) || defined(LSB_FIRST)
-#define swap_if_little32(val) (SWAP32(val))
-#else
-static inline uint32_t swap_if_little32(uint32_t val)
-{
-   if (is_little_endian())
-      return SWAP32(val);
-   return val;
-}
-#endif
-
-/**
- * swap_if_little16:
- * @val        : unsigned 16-bit value
- *
- * Byteswap unsigned 16-bit value if system is little-endian.
- *
- * Returns: Byteswapped value in case system is little-endian,
- * otherwise returns same value.
- **/
-
-#if defined(MSB_FIRST)
 #define swap_if_little16(val) (val)
-#elif defined(__x86_64) || defined(__i386) || defined(_M_IX86) || defined(_M_X64) || defined(LSB_FIRST)
-#define swap_if_little16(val) (SWAP16(val))
+
 #else
-static inline uint16_t swap_if_little16(uint16_t val)
-{
-   if (is_little_endian())
-      return SWAP16(val);
-   return val;
-}
+#define is_little_endian() (1)
+#define swap_if_little64(val) (SWAP64(val))
+#define swap_if_little32(val) (SWAP32(val))
+#define swap_if_little16(val) (SWAP16(val))
 #endif
+
+static inline void swap16_buffer_if_little(uint16_t* buffer, uint64_t count){
+#if !defined(EMU_BIG_ENDIAN)
+   for(uint64_t index = 0; index < count; index++)
+      buffer[index] = SWAP16(buffer[index]);
+#endif
+}

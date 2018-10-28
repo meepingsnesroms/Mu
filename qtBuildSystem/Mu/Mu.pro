@@ -22,52 +22,53 @@ DEFINES += QT_DEPRECATED_WARNINGS
 # You can also select to disable deprecated APIs only up to a certain version of Qt.
 DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000 # disables all the APIs deprecated before Qt 6.0.0
 
-windows {
+windows{
     RC_ICONS = windows/Mu.ico
     QMAKE_CFLAGS += -openmp
     QMAKE_CXXFLAGS += -openmp
     DEFINES += "_Pragma=__pragma"
     DEFINES += EMU_MULTITHREADED
-    CONFIG += use_c_68k
 }
 
-macx {
+macx{
     CONFIG += sdk_no_version_check # using 10.14 SDK which Qt only unofficialy supports
     ICON = macos/Mu.icns
     QMAKE_INFO_PLIST = macos/Info.plist
     DEFINES += EMU_MULTITHREADED
-    CONFIG += use_c_68k
 }
 
-linux-g++ {
-    message(This really shouldent trigger yet!)
+linux-g++{
+    message(This really shouldnt trigger yet!)
     QMAKE_CFLAGS += -fopenmp
     QMAKE_CXXFLAGS += -fopenmp
     QMAKE_LFLAGS += -fopenmp
     DEFINES += EMU_MULTITHREADED
-    CONFIG += use_c_68k
 }
 
-android {
+android{
     QMAKE_CFLAGS += -fopenmp
     QMAKE_CXXFLAGS += -fopenmp
     QMAKE_LFLAGS += -fopenmp
     DEFINES += EMU_MULTITHREADED
-    CONFIG += use_arm_asm_68k # for now, later this will check if building for arm
+    CONFIG += optimize_for_arm # for now, later this will check if building for ARM
 }
 
-ios {
+ios{
     QMAKE_INFO_PLIST = ios/Info.plist
     DEFINES += EMU_MULTITHREADED
-    CONFIG += use_arm_asm_68k
+    CONFIG += optimize_for_arm
 }
 
 
 CONFIG(debug, debug|release){
+    # debug build, be accurate and add logging
     # DEFINES += EMU_DEBUG EMU_CUSTOM_DEBUG_LOG_HANDLER
     # DEFINES += EMU_SANDBOX
     # DEFINES += EMU_SANDBOX_OPCODE_LEVEL_DEBUG
     # DEFINES += EMU_SANDBOX_LOG_APIS
+}else{
+    # release build, go fast
+    DEFINES += EMU_NO_SAFETY
 }
 
 QMAKE_CFLAGS += -std=c99
@@ -75,12 +76,10 @@ CONFIG += c++11
 
 INCLUDEPATH += $$PWD/qt-common/include
 
-use_arm_asm_68k {
+optimize_for_arm{
     SOURCES += src/m68k/cyclone/Cyclone.s
     DEFINES += EMU_OPTIMIZE_FOR_ARM
-}
-
-use_c_68k {
+}else{
     SOURCES += src/m68k/musashi/m68kcpu.c \
         src/m68k/musashi/m68kdasm.c \
         src/m68k/musashi/m68kopac.c \
@@ -126,7 +125,6 @@ HEADERS += \
     src/specs/sed1376RegisterNames.h \
     src/ads7846.h \
     src/emulator.h \
-    src/endianness.h \
     src/flx68000.h \
     src/hardwareRegisters.h \
     src/hardwareRegistersAccessors.c.h \

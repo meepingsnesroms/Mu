@@ -19,18 +19,18 @@ static uint8_t pdiUsbD12ReadIndex;
 static uint8_t pdiUsbD12WriteIndex;
 
 
-static inline uint8_t pdiUsbD12FifoRead(){
+static uint8_t pdiUsbD12FifoRead(){
    uint8_t value = pdiUsbD12FifoBuffer[pdiUsbD12ReadIndex];
    pdiUsbD12ReadIndex = (pdiUsbD12ReadIndex + 1) % PDIUSBD12_TRANSFER_BUFFER_SIZE;
    return value;
 }
 
-static inline void pdiUsbD12FifoWrite(uint8_t value){
+static void pdiUsbD12FifoWrite(uint8_t value){
    pdiUsbD12FifoBuffer[pdiUsbD12WriteIndex] = value;
    pdiUsbD12WriteIndex = (pdiUsbD12WriteIndex + 1) % PDIUSBD12_TRANSFER_BUFFER_SIZE;
 }
 
-static inline void pdiUsbD12FifoStartNewCommand(){
+static void pdiUsbD12FifoStartNewCommand(){
    pdiUsbD12ReadIndex = 0;
    pdiUsbD12WriteIndex = 0;
 }

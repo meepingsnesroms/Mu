@@ -153,15 +153,18 @@ uint32_t EmuWrapper::init(const QString& romPath, const QString& bootloaderPath,
             if(ramFile.exists()){
                if(ramFile.open(QFile::ReadOnly | QFile::ExistingOnly)){
                   QByteArray ramData;
-                  buffer_t emuRam = emulatorGetRamBuffer();
+                  buffer_t emuRam;
 
                   ramData = ramFile.readAll();
                   ramFile.close();
 
+                  emuRam.data = (uint8_t*)ramData.data();
+                  emuRam.size = ramData.size();
+
                   //only copy in data if its the correct size, the file will be overwritten on exit with the devices RAM either way
                   //(changing RAM size requires a factory reset for now and always will when going from 128mb back to 16mb)
-                  if(ramData.size() == emuRam.size)
-                     memcpy(emuRam.data, ramData.data(), emuRam.size);
+                  if(emuRam.size == emulatorGetRamSize())
+                     emulatorLoadRam(emuRam);
                }
             }
          }
@@ -221,13 +224,19 @@ void EmuWrapper::exit(){
    if(emuInited){
       if(emuRamFilePath != ""){
          QFile ramFile(emuRamFilePath);
-         buffer_t emuRam = emulatorGetRamBuffer();
+         buffer_t emuRam;
+         emuRam.size = emulatorGetRamSize();
+         emuRam.data = new uint8_t[emuRam.size];
+
+         emulatorSaveRam(emuRam);
 
          //save out RAM before exit
          if(ramFile.open(QFile::WriteOnly | QFile::Truncate)){
             ramFile.write((const char*)emuRam.data, emuRam.size);
             ramFile.close();
          }
+
+         delete[] emuRam.data;
       }
       if(emuSdCardFilePath != ""){
          buffer_t emuSdCard = emulatorGetSdCardBuffer();

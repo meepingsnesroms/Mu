@@ -13,11 +13,11 @@ static uint16_t ads7846OutputValue;
 static bool     ads7846ChipSelect;
 
 
-static inline double ads7846RangeMap(double oldMin, double oldMax, double value, double newMin, double newMax){
+static double ads7846RangeMap(double oldMin, double oldMax, double value, double newMin, double newMax){
    return (value - oldMin) / (oldMax - oldMin) * (newMax - newMin) + newMin;
 }
 
-static inline bool ads7846GetAdcBit(){
+static bool ads7846GetAdcBit(){
    bool bit = ads7846OutputValue & 0x8000;
    ads7846OutputValue <<= 1;
    return bit;
