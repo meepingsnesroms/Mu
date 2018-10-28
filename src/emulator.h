@@ -122,7 +122,7 @@ typedef struct{
 #define AUDIO_WAIT_FOR_SAMPLE INT32_MIN
 
 //emulator data, some are GUI interface variables, some should be left alone
-extern uint8_t*  palmRam;//dont touch
+extern uint8_t*  palmRam;//access allowed to read save RAM without allocating a giant buffer, but endianness must be taken into account
 extern uint8_t*  palmRom;//dont touch
 extern uint8_t*  palmReg;//dont touch
 extern input_t   palmInput;//write allowed

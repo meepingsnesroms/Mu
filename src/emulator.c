@@ -58,10 +58,10 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t spec
    if(!palmRomDump.data)
       return EMU_ERROR_INVALID_PARAMETER;
 
-   //allocate the buffers
-   palmRam = malloc((specialFeatures & FEATURE_RAM_HUGE) ? SUPERMASSIVE_RAM_SIZE : RAM_SIZE);
-   palmRom = malloc(ROM_SIZE);
-   palmReg = malloc(REG_SIZE);
+   //allocate the buffers, add 4 to memory regions to prevent SIGSEGV from accessing off the end
+   palmRam = malloc(((specialFeatures & FEATURE_RAM_HUGE) ? SUPERMASSIVE_RAM_SIZE : RAM_SIZE) + 4);
+   palmRom = malloc(ROM_SIZE + 4);
+   palmReg = malloc(REG_SIZE + 4);
    palmAudio = malloc(AUDIO_SAMPLES_PER_FRAME * 2 * sizeof(int16_t));
    palmAudioResampler = blip_new(AUDIO_SAMPLES_PER_FRAME * 2);//have more than one frame of samples in case its written to at the end of the frame
    if(specialFeatures & FEATURE_320x320)
@@ -69,18 +69,12 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t spec
    else
       palmExtendedFramebuffer = NULL;
    if(!palmRam || !palmRom || !palmReg || !palmAudio || !palmAudioResampler || (!palmExtendedFramebuffer && (specialFeatures & FEATURE_320x320))){
-      if(palmRam)
-         free(palmRam);
-      if(palmRom)
-         free(palmRom);
-      if(palmReg)
-         free(palmReg);
-      if(palmAudio)
-         free(palmAudio);
-      if(palmAudioResampler)
-         blip_delete(palmAudioResampler);
-      if(palmExtendedFramebuffer)
-         free(palmExtendedFramebuffer);
+      free(palmRam);
+      free(palmRom);
+      free(palmReg);
+      free(palmAudio);
+      blip_delete(palmAudioResampler);
+      free(palmExtendedFramebuffer);
       return EMU_ERROR_OUT_OF_MEMORY;
    }
 
@@ -144,10 +138,8 @@ void emulatorExit(){
       free(palmReg);
       free(palmAudio);
       blip_delete(palmAudioResampler);
-      if(palmSpecialFeatures & FEATURE_320x320)
-         free(palmExtendedFramebuffer);
-      if(palmSdCard.flashChip.data)
-         free(palmSdCard.flashChip.data);
+      free(palmExtendedFramebuffer);
+      free(palmSdCard.flashChip.data);
       emulatorInitialized = false;
    }
 }

@@ -283,6 +283,7 @@ void m68k_write_memory_16(unsigned int address, unsigned short value){
          break;
 
       case CHIP_DX_RAM:
+         printf("Ram Write 16, PC:0x%08X/n", flx68000GetPc());
          ramWrite16(address, value);
          break;
 

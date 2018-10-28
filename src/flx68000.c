@@ -211,7 +211,14 @@ uint32_t flx68000GetRegister(uint8_t reg){
    */
 
 #if defined(EMU_OPTIMIZE_FOR_ARM)
-   //debug not supported on embedded devices yet
+   if(reg < 8)
+      return cycloneCpu.d[reg];
+   else if(reg < 16)
+      return cycloneCpu.a[reg - 8];
+   else if(reg == 16)
+      return cycloneCpu.pc;
+   else if(reg == 17)
+      return CycloneGetSr(&cycloneCpu);
 #else
    return m68k_get_reg(NULL, reg);
 #endif
@@ -219,7 +226,7 @@ uint32_t flx68000GetRegister(uint8_t reg){
 
 uint32_t flx68000GetPc(){
 #if defined(EMU_OPTIMIZE_FOR_ARM)
-   //debug not supported on embedded devices yet
+   return cycloneCpu.prev_pc;
 #else
    return m68k_get_reg(NULL, M68K_REG_PPC);
 #endif
@@ -229,7 +236,25 @@ uint64_t flx68000ReadArbitraryMemory(uint32_t address, uint8_t size){
    uint64_t data = UINT64_MAX;//invalid access
 
 #if defined(EMU_OPTIMIZE_FOR_ARM)
-   //debug not supported on embedded devices yet
+   //until SPI and UART destructive reads are implemented all reads to mapped addresses are safe, SPI is now implemented, this needs to be fixed
+   if(bankType[START_BANK(address)] != CHIP_NONE){
+      uint16_t m68kSr = CycloneGetSr(&cycloneCpu);
+      CycloneSetSr(&cycloneCpu, m68kSr | 0x2000);//prevent privilege violations
+      switch(size){
+         case 8:
+            data = m68k_read_memory_8(address);
+            break;
+
+         case 16:
+            data = m68k_read_memory_16(address);
+            break;
+
+         case 32:
+            data = m68k_read_memory_32(address);
+            break;
+      }
+      CycloneSetSr(&cycloneCpu, m68kSr);
+   }
 #else
    //until SPI and UART destructive reads are implemented all reads to mapped addresses are safe, SPI is now implemented, this needs to be fixed
    if(bankType[START_BANK(address)] != CHIP_NONE){

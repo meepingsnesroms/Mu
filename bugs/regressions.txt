@@ -1,0 +1,2 @@
+RetroArch port crashes on exit
+Endian compatibility is broken
