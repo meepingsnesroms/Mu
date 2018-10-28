@@ -66,6 +66,9 @@ CONFIG(debug, debug|release){
     # DEFINES += EMU_SANDBOX
     # DEFINES += EMU_SANDBOX_OPCODE_LEVEL_DEBUG
     # DEFINES += EMU_SANDBOX_LOG_APIS
+    QMAKE_CFLAGS += -fstack-protector-strong -fsanitize=address,undefined -Werror=array-bounds
+    QMAKE_CXXFLAGS += -fstack-protector-strong -fsanitize=address,undefined -Werror=array-bounds
+    QMAKE_LFLAGS += -fsanitize=address,undefined
 }else{
     # release build, go fast
     DEFINES += EMU_NO_SAFETY

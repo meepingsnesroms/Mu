@@ -35,14 +35,14 @@ static bool emulatorInitialized = false;
 
 uint8_t*  palmRam;
 uint8_t*  palmRom;
-uint8_t   palmReg[REG_SIZE];
+uint8_t*  palmReg;
 input_t   palmInput;
 sd_card_t palmSdCard;
 misc_hw_t palmMisc;
 uint16_t  palmFramebuffer[160 * (160 + 60)];//really 160*160, the extra pixels are the silkscreened digitizer area
 uint16_t* palmExtendedFramebuffer;
+int16_t*  palmAudio;
 blip_t*   palmAudioResampler;
-int16_t   palmAudio[AUDIO_SAMPLES_PER_FRAME * 2];
 uint32_t  palmSpecialFeatures;
 double    palmSysclksPerClk32;//how many SYSCLK cycles before toggling the 32.768 kHz crystal
 double    palmCycleCounter;//can be greater then 0 if too many cycles where run
@@ -61,16 +61,22 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t spec
    //allocate the buffers
    palmRam = malloc((specialFeatures & FEATURE_RAM_HUGE) ? SUPERMASSIVE_RAM_SIZE : RAM_SIZE);
    palmRom = malloc(ROM_SIZE);
+   palmReg = malloc(REG_SIZE);
+   palmAudio = malloc(AUDIO_SAMPLES_PER_FRAME * 2 * sizeof(int16_t));
    palmAudioResampler = blip_new(AUDIO_SAMPLES_PER_FRAME * 2);//have more than one frame of samples in case its written to at the end of the frame
    if(specialFeatures & FEATURE_320x320)
       palmExtendedFramebuffer = malloc(320 * (320 + 120) * sizeof(uint16_t));//really 320*320, the extra pixels are the silkscreened digitizer area
    else
       palmExtendedFramebuffer = NULL;
-   if(!palmRam || !palmRom || !palmAudioResampler || (!palmExtendedFramebuffer && (specialFeatures & FEATURE_320x320))){
+   if(!palmRam || !palmRom || !palmReg || !palmAudio || !palmAudioResampler || (!palmExtendedFramebuffer && (specialFeatures & FEATURE_320x320))){
       if(palmRam)
          free(palmRam);
       if(palmRom)
          free(palmRom);
+      if(palmReg)
+         free(palmReg);
+      if(palmAudio)
+         free(palmAudio);
       if(palmAudioResampler)
          blip_delete(palmAudioResampler);
       if(palmExtendedFramebuffer)
@@ -87,12 +93,12 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t spec
    memcpy(palmRom, palmRomDump.data, uMin(palmRomDump.size, ROM_SIZE));
    if(palmRomDump.size < ROM_SIZE)
       memset(palmRom + palmRomDump.size, 0x00, ROM_SIZE - palmRomDump.size);
-   swap16_buffer_if_little(palmRom, ROM_SIZE / 2);
+   swap16_buffer_if_little(palmRom, ROM_SIZE / sizeof(uint16_t));
    if(palmBootDump.data){
       memcpy(palmReg + REG_SIZE - 1 - BOOTLOADER_SIZE, palmBootDump.data, uMin(palmBootDump.size, BOOTLOADER_SIZE));
       if(palmBootDump.size < BOOTLOADER_SIZE)
          memset(palmReg + REG_SIZE - 1 - BOOTLOADER_SIZE + palmBootDump.size, 0x00, BOOTLOADER_SIZE - palmBootDump.size);
-      swap16_buffer_if_little(palmReg + REG_SIZE - 1 - BOOTLOADER_SIZE, BOOTLOADER_SIZE / 2);
+      swap16_buffer_if_little(palmReg + REG_SIZE - 1 - BOOTLOADER_SIZE, BOOTLOADER_SIZE / sizeof(uint16_t));
    }
    else{
       memset(palmReg + REG_SIZE - 1 - BOOTLOADER_SIZE, 0x00, BOOTLOADER_SIZE);
@@ -135,6 +141,8 @@ void emulatorExit(){
    if(emulatorInitialized){
       free(palmRam);
       free(palmRom);
+      free(palmReg);
+      free(palmAudio);
       blip_delete(palmAudioResampler);
       if(palmSpecialFeatures & FEATURE_320x320)
          free(palmExtendedFramebuffer);
@@ -230,16 +238,16 @@ bool emulatorSaveState(buffer_t buffer){
    //memory
    if(palmSpecialFeatures & FEATURE_RAM_HUGE){
       memcpy(buffer.data + offset, palmRam, SUPERMASSIVE_RAM_SIZE);
-   swap16_buffer_if_little(buffer.data + offset, SUPERMASSIVE_RAM_SIZE / 2);
+   swap16_buffer_if_little(buffer.data + offset, SUPERMASSIVE_RAM_SIZE / sizeof(uint16_t));
       offset += SUPERMASSIVE_RAM_SIZE;
    }
    else{
       memcpy(buffer.data + offset, palmRam, RAM_SIZE);
-   swap16_buffer_if_little(buffer.data + offset, RAM_SIZE / 2);
+   swap16_buffer_if_little(buffer.data + offset, RAM_SIZE / sizeof(uint16_t));
       offset += RAM_SIZE;
    }
    memcpy(buffer.data + offset, palmReg, REG_SIZE);
-   swap16_buffer_if_little(buffer.data + offset, REG_SIZE / 2);
+   swap16_buffer_if_little(buffer.data + offset, REG_SIZE / sizeof(uint16_t));
    offset += REG_SIZE;
    memcpy(buffer.data + offset, bankType, TOTAL_MEMORY_BANKS);
    offset += TOTAL_MEMORY_BANKS;
@@ -386,16 +394,16 @@ bool emulatorLoadState(buffer_t buffer){
    //memory
    if(palmSpecialFeatures & FEATURE_RAM_HUGE){
       memcpy(palmRam, buffer.data + offset, SUPERMASSIVE_RAM_SIZE);
-      swap16_buffer_if_little(palmRam, SUPERMASSIVE_RAM_SIZE / 2);
+      swap16_buffer_if_little(palmRam, SUPERMASSIVE_RAM_SIZE / sizeof(uint16_t));
       offset += SUPERMASSIVE_RAM_SIZE;
    }
    else{
       memcpy(palmRam, buffer.data + offset, RAM_SIZE);
-      swap16_buffer_if_little(palmRam, RAM_SIZE / 2);
+      swap16_buffer_if_little(palmRam, RAM_SIZE / sizeof(uint16_t));
       offset += RAM_SIZE;
    }
    memcpy(palmReg, buffer.data + offset, REG_SIZE);
-   swap16_buffer_if_little(palmReg, REG_SIZE / 2);
+   swap16_buffer_if_little(palmReg, REG_SIZE / sizeof(uint16_t));
    offset += REG_SIZE;
    memcpy(bankType, buffer.data + offset, TOTAL_MEMORY_BANKS);
    offset += TOTAL_MEMORY_BANKS;
@@ -524,7 +532,7 @@ bool emulatorSaveRam(buffer_t buffer){
       return false;
 
    memcpy(buffer.data, palmRam, size);
-   swap16_buffer_if_little(buffer.data, size / 2);
+   swap16_buffer_if_little(buffer.data, size / sizeof(uint16_t));
 
    return true;
 }
@@ -536,7 +544,7 @@ bool emulatorLoadRam(buffer_t buffer){
       return false;
 
    memcpy(palmRam, buffer.data, size);
-   swap16_buffer_if_little(palmRam, size / 2);
+   swap16_buffer_if_little(palmRam, size / sizeof(uint16_t));
 
    return true;
 }

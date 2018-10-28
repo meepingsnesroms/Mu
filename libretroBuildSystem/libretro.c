@@ -21,13 +21,13 @@
 #define JOYSTICK_MULTIPLIER 0.0001
 
 
-static retro_log_printf_t         log_cb;
-static retro_video_refresh_t      video_cb;
-static retro_audio_sample_batch_t audio_cb;
-static retro_environment_t        environ_cb;
-static retro_input_poll_t         input_poll_cb;
-static retro_input_state_t        input_state_cb;
-static struct retro_vfs_interface vfs_interface;
+static retro_log_printf_t          log_cb;
+static retro_video_refresh_t       video_cb;
+static retro_audio_sample_batch_t  audio_cb;
+static retro_environment_t         environ_cb;
+static retro_input_poll_t          input_poll_cb;
+static retro_input_state_t         input_state_cb;
+static struct retro_vfs_interface* vfs_interface;
 
 static bool     screenHires;
 static uint16_t screenWidth;
@@ -175,7 +175,7 @@ void retro_get_system_av_info(struct retro_system_av_info *info){
 
 void retro_set_environment(retro_environment_t cb){
    struct retro_log_callback logging;
-   struct retro_vfs_interface_info vfs_getter = { 1, &vfs_interface};
+   struct retro_vfs_interface_info vfs_getter = { 1, NULL};
 
    environ_cb = cb;
 
@@ -185,6 +185,7 @@ void retro_set_environment(retro_environment_t cb){
       log_cb = fallback_log;
    
    environ_cb(RETRO_ENVIRONMENT_GET_VFS_INTERFACE, &vfs_getter);
+   vfs_interface = vfs_getter.iface;
    
    struct retro_variable vars[] = {
       { "palm_emu_feature_ram_huge", "Extra RAM Hack; disabled|enabled" },
@@ -318,7 +319,7 @@ bool retro_load_game(const struct retro_game_info *info){
    if(info == NULL)
       return false;
    
-   environ_cb(RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY, &saveDir);
+   environ_cb(RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY, &systemDir);
    environ_cb(RETRO_ENVIRONMENT_GET_SAVE_DIRECTORY, &saveDir);
    
    rom.data = info->data;
@@ -327,17 +328,17 @@ bool retro_load_game(const struct retro_game_info *info){
    //bootloader
    strlcpy(bootloaderPath, systemDir, PATH_MAX);
    strlcat(bootloaderPath, "/bootloader-en-m515.rom", PATH_MAX);
-   bootloaderFile = vfs_interface.open(bootloaderPath, RETRO_VFS_FILE_ACCESS_READ, RETRO_VFS_FILE_ACCESS_HINT_NONE);
+   bootloaderFile = vfs_interface->open(bootloaderPath, RETRO_VFS_FILE_ACCESS_READ, RETRO_VFS_FILE_ACCESS_HINT_NONE);
    
    if(bootloaderFile){
-      bootloader.size = vfs_interface.size(bootloaderPath);
+      bootloader.size = vfs_interface->size(bootloaderFile);
       bootloader.data = malloc(bootloader.size);
       
       if(bootloader.data)
-         vfs_interface.read(bootloaderFile, bootloader.data, bootloader.size);
+         vfs_interface->read(bootloaderFile, bootloader.data, bootloader.size);
       else
          bootloader.size = 0;
-      vfs_interface.close(bootloaderFile);
+      vfs_interface->close(bootloaderFile);
    }
    else{
       bootloader.data = NULL;
@@ -357,14 +358,14 @@ bool retro_load_game(const struct retro_game_info *info){
    //save RAM
    strlcpy(saveRamPath, saveDir, PATH_MAX);
    strlcat(saveRamPath, "/userdata-en-m515.ram", PATH_MAX);
-   saveRamFile = vfs_interface.open(saveRamPath, RETRO_VFS_FILE_ACCESS_READ, RETRO_VFS_FILE_ACCESS_HINT_NONE);
+   saveRamFile = vfs_interface->open(saveRamPath, RETRO_VFS_FILE_ACCESS_READ, RETRO_VFS_FILE_ACCESS_HINT_NONE);
    
    if(saveRamFile){
-      if(vfs_interface.size(saveRamFile) == emulatorGetRamSize()){
-         vfs_interface.read(saveRamFile, palmRam, vfs_interface.size(saveRamFile));
-         swap16_buffer_if_little(palmRam, vfs_interface.size(saveRamFile) / 2);
+      if(vfs_interface->size(saveRamFile) == emulatorGetRamSize()){
+         vfs_interface->read(saveRamFile, palmRam, emulatorGetRamSize());
+         swap16_buffer_if_little(palmRam, emulatorGetRamSize() / 2);
       }
-      vfs_interface.close(saveRamFile);
+      vfs_interface->close(saveRamFile);
    }
    
    //set RTC
@@ -391,12 +392,12 @@ void retro_unload_game(void){
    //save RAM
    strlcpy(saveRamPath, saveDir, PATH_MAX);
    strlcat(saveRamPath, "/userdata-en-m515.ram", PATH_MAX);
-   saveRamFile = vfs_interface.open(saveRamPath, RETRO_VFS_FILE_ACCESS_WRITE, RETRO_VFS_FILE_ACCESS_HINT_NONE);
+   saveRamFile = vfs_interface->open(saveRamPath, RETRO_VFS_FILE_ACCESS_WRITE, RETRO_VFS_FILE_ACCESS_HINT_NONE);
    
    if(saveRamFile){
       swap16_buffer_if_little(palmRam, emulatorGetRamSize() / 2);//this will no longer be used, so its ok to destroy it when swapping
-      vfs_interface.write(saveRamFile, palmRam, emulatorGetRamSize());
-      vfs_interface.close(saveRamFile);
+      vfs_interface->write(saveRamFile, palmRam, emulatorGetRamSize());
+      vfs_interface->close(saveRamFile);
    }
    
    emulatorExit();
