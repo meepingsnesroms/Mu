@@ -281,6 +281,7 @@ void retro_run(void){
 
 bool retro_load_game(const struct retro_game_info *info){
    buffer_t rom;
+   buffer_t bootloader = {NULL, 0};//no bootloader support yet
    time_t rawTime;
    struct tm* timeInfo;
    
@@ -305,13 +306,13 @@ bool retro_load_game(const struct retro_game_info *info){
    if(info == NULL)
       return false;
    
-   rom.data = info.data;
-   rom.size = info.size;
+   rom.data = info->data;
+   rom.size = info->size;
    
    //updates the emulator configuration
    check_variables(true);
    
-   uint32_t error = emulatorInit(rom, NULL/*bootloader*/, emuFeatures);
+   uint32_t error = emulatorInit(rom, bootloader, emuFeatures);
    if(error != EMU_ERROR_NONE)
       return false;
    
@@ -376,6 +377,8 @@ void* retro_get_memory_data(unsigned id){
 size_t retro_get_memory_size(unsigned id){
    if(id == RETRO_MEMORY_SAVE_RAM)
       return emulatorGetRamSize();
+   
+   return 0;
 }
 
 void retro_cheat_reset(void){
