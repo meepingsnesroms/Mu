@@ -1,2 +1,2 @@
 RetroArch port crashes on exit
-Endian compatibility is broken
+Endian compatibility is broken(the CPU state needs to be standardized)

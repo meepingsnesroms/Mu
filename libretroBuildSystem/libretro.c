@@ -175,7 +175,7 @@ void retro_get_system_av_info(struct retro_system_av_info *info){
 
 void retro_set_environment(retro_environment_t cb){
    struct retro_log_callback logging;
-   struct retro_vfs_interface_info vfs_getter = { 1, NULL};
+   struct retro_vfs_interface_info vfs_getter = { 1, NULL };
 
    environ_cb = cb;
 

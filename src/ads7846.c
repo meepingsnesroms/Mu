@@ -1,12 +1,14 @@
+#include <stdint.h>
 #include <stdbool.h>
 
 #include "emulator.h"
 #include "portability.h"
 
 
-bool     ads7846PenIrqEnabled;
+bool ads7846PenIrqEnabled;
 
 static const uint16_t ads7846DockResistorValues[PORT_END] = {0xFFF/*none*/, 0x1EB/*USB cradle*/, 0/*serial cradle*/, 0/*USB peripheral*/, 0/*serial peripheral*/};
+//static const uint8_t ads7846BatteryValues[100];//need to map battery level to voltage
 static uint8_t  ads7846BitsToNextControl;//bits before starting a new control byte
 static uint8_t  ads7846ControlByte;
 static uint16_t ads7846OutputValue;
