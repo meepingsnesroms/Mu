@@ -24,7 +24,7 @@ RxOverflow on SPI1, don't know if back or front of FIFO is overwritten on overfl
 ICR POL(1,2,3,6) may flip the pin value as well as the interrupt, POL5 does not flip the INT5 pin though, this was confirmed with a hardware test(it doesnt seem to but there is instability on the pin when the SD card is plugged in, this may have to do with card detect also being a data line on the SD pinout)
 edge triggered INT* don't clear on write to ISR when masked in IMR(at least that seems to be the reason)
 if a sound interrupt is triggered while the button interrupt is disabled the button interrupt will still trigger(in galax game)
-Cyclone CPU emulator is not working
+Cyclone will cause SIGSEGVs, don't know why yet(the differences between the working and SIGSEGV versions are MEMHANDLERS_NEED_PREV_PC and INT_ACK_NEEDS_STUFF flags in cyclone)
 
 Debug tools:
 ADS7846 channels can't be read in single reference mode in hwTestSuite
@@ -48,6 +48,7 @@ in the edge case that SPICLK2 is disabled while using ADS7846 and a 1 was the la
 
 
 Fixed:
+Cyclone CPU emulator is not working
 PWM1 output value is not a direct range cast of 0<->255 to 0<->32767, its additive, see properPwmSineWave.png
 inductor dosent properly drain when PWM1 gets disabled
 PWM1 FIFOAV is always set true

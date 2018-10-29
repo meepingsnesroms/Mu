@@ -64,9 +64,9 @@
 /* ======================================================================== */
 
 /* Turn ON if you want to use the following M68K variants */
-#define M68K_EMULATE_010            OPT_ON
-#define M68K_EMULATE_EC020          OPT_ON
-#define M68K_EMULATE_020            OPT_ON
+#define M68K_EMULATE_010            OPT_OFF
+#define M68K_EMULATE_EC020          OPT_OFF
+#define M68K_EMULATE_020            OPT_OFF
 
 
 /* If ON, the CPU will call m68k_read_immediate_xx() for immediate addressing
@@ -143,7 +143,11 @@
  * access a word or longword at an odd address.
  * NOTE: This is only emulated properly for 68000 mode.
  */
+#if !defined(EMU_NO_SAFETY)
 #define M68K_EMULATE_ADDRESS_ERROR  OPT_ON
+#else
+#define M68K_EMULATE_ADDRESS_ERROR  OPT_OFF
+#endif
 
 
 /* Turn ON to enable logging of illegal instruction calls.

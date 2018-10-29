@@ -14,6 +14,10 @@
 #include <string>
 #include <stdint.h>
 
+#if defined(Q_OS_ANDROID)
+#include <android/log.h>
+#endif
+
 #include "emuwrapper.h"
 #include "src/emulator.h"
 
@@ -32,12 +36,10 @@ uint32_t                     frontendDebugStringSize;
 char*                        frontendDebugString;
 
 
-void frontendHandleDebugClearLogs(){
-   debugStrings.clear();
-   duplicateCallCount.clear();
-}
-
 void frontendHandleDebugPrint(){
+#if defined(Q_OS_ANDROID)
+   __android_log_print(ANDROID_LOG_DEBUG, "debugLog", "%s", frontendDebugString);
+#else
    QString newDebugString = frontendDebugString;
 
    //this debug handler doesnt need the \n
@@ -54,6 +56,7 @@ void frontendHandleDebugPrint(){
       debugStrings.push_back(newDebugString);
       duplicateCallCount.push_back(1);
    }
+#endif
 }
 
 

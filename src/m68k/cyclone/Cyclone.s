@@ -141,14 +141,12 @@ CycloneResetJT:
   strb r0,[r7,#0x47] ;@ IRQ
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   str r0,[r7,#0x3c] ;@ Stack pointer
   mov r0,#0
   str r0,[r7,#0x60] ;@ Membase
   mov r0,#4
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov lr,pc
   ldr pc,[r7,#0x64] ;@ Call checkpc()
   str r0,[r7,#0x40] ;@ PC + base
@@ -308,7 +306,6 @@ CycloneDoInterrupt:
   sub r1,r4,r1 ;@ r1 = Old PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 ;@ Push old SR:
   ldr r0,[r7,#0x4c]   ;@ X bit
   mov r1,r10,lsr #28  ;@ ____NZCV
@@ -322,11 +319,14 @@ CycloneDoInterrupt:
   str r0,[r7,#0x3c] ;@ Save A7
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r11,r8,lsr #29
   mov r0,r11
 ;@ call IrqCallback if it is defined
+  str r4,[r7,#0x40] ;@ Save PC
+  mov r1,r10,lsr #28
+  strb r1,[r7,#0x46] ;@ Save Flags (NZCV)
+  str r5,[r7,#0x5c] ;@ Save Cycles
   ldr r3,[r7,#0x8c] ;@ IrqCallback
   add lr,pc,#4*3
   tst r3,r3
@@ -344,7 +344,6 @@ CycloneDoInterrupt:
 ;@ Read IRQ Vector:
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   tst r0,r0 ;@ uninitialized int vector?
   moveq r0,#0x3c
   moveq lr,pc
@@ -388,7 +387,6 @@ Exception:
   sub r1,r4,r1 ;@ r1 = Old PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 ;@ Push old SR:
   ldr r0,[r7,#0x4c]   ;@ X bit
   mov r1,r10,lsr #28  ;@ ____NZCV
@@ -403,14 +401,12 @@ Exception:
   str r0,[r7,#0x3c] ;@ Save A7
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Read Exception Vector:
   mov r0,r8,lsr #24
   mov r0,r0,lsl #2
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   ldr r3,[r7,#0x60] ;@ Get Memory base
   add lr,pc,#4
   add r0,r0,r3 ;@ r0 = Memory Base + New PC
@@ -487,7 +483,6 @@ ExceptionAddressError:
   str r0,[r7,#0x3c] ;@ Save A7
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 ;@ Push old SR:
   ldr r0,[r7,#0x4c]   ;@ X bit
   mov r1,r10,ror #28  ;@ ____NZCV
@@ -502,7 +497,6 @@ ExceptionAddressError:
   str r0,[r7,#0x3c] ;@ Save A7
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 ;@ Push IR:
   ldr r0,[r7,#0x3c] ;@ A7
   mov r1,r8
@@ -510,7 +504,6 @@ ExceptionAddressError:
   str r0,[r7,#0x3c] ;@ Save A7
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 ;@ Push address:
   ldr r0,[r7,#0x3c] ;@ A7
   mov r1,r11
@@ -518,7 +511,6 @@ ExceptionAddressError:
   str r0,[r7,#0x3c] ;@ Save A7
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 ;@ Push info word:
   ldr r0,[r7,#0x3c] ;@ A7
   mov r1,r6
@@ -526,13 +518,11 @@ ExceptionAddressError:
   str r0,[r7,#0x3c] ;@ Save A7
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Read Exception Vector:
   mov r0,#0x0c
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   ldr r3,[r7,#0x60] ;@ Get Memory base
   add lr,pc,#4
   add r0,r0,r3 ;@ r0 = Memory Base + New PC
@@ -707,13 +697,14 @@ DbraMin1:
 
 ;@ ---------- [4a38] tst.b $3333.w uses Op4a38 ----------
 Op4a38:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r0,r0,asl #24
 
   and r10,r0,#0x80000000 ;@ r10=N_flag
@@ -755,6 +746,8 @@ Opd040:
 
 ;@ ---------- [4a79] tst.w $33333333.l uses Op4a79 ----------
 Op4a79:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r0:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -763,7 +756,6 @@ Op4a79:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r0,r0,asl #16
 
   and r10,r0,#0x80000000 ;@ r10=N_flag
@@ -803,13 +795,14 @@ Op0240:
 
 ;@ ---------- [2038] move.l $3333.w, d0 uses Op2038 ----------
 Op2038:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -827,6 +820,8 @@ Op2038:
 
 ;@ ---------- [b0b8] cmp.l $3333.w, d0 uses Opb0b8 ----------
 Opb0b8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get EA into r11 and value into r0:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
@@ -834,7 +829,6 @@ Opb0b8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -866,6 +860,8 @@ Op6002:
 
 ;@ ---------- [30c0] move.w d0, (a0)+ uses Op30c0 ----------
 Op30c0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x000f
   mov r1,r1,lsl #2
@@ -885,7 +881,6 @@ Op30c0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#8 ;@ Subtract cycles
@@ -894,6 +889,8 @@ Op30c0:
 
 ;@ ---------- [3028] move.w ($3333,a0), d0 uses Op3028 ----------
 Op3028:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -903,7 +900,6 @@ Op3028:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -945,6 +941,8 @@ Op0c40:
 
 ;@ ---------- [0c79] cmpi.w #$3333, $33333333.l uses Op0c79 ----------
 Op0c79:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$3333' into r10:
   ldrsh r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$3333' (address in r10) into r10:
@@ -957,7 +955,6 @@ Op0c79:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -972,6 +969,8 @@ Op0c79:
 
 ;@ ---------- [4e75] rts uses Op4e75 ----------
 Op4e75:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Pop PC:
   ldr r0,[r7,#0x3c]
   add r1,r0,#4 ;@ Postincrement A7
@@ -979,7 +978,6 @@ Op4e75:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   ldr r1,[r7,#0x60] ;@ Get Memory base
   add r0,r0,r1 ;@ Memory Base+PC
 
@@ -1027,6 +1025,8 @@ Op3000:
 
 ;@ ---------- [0839] btst #$33, $33333333.l uses Op0839 ----------
 Op0839:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 
 ;@ EaCalc : Get '#$33' into r0:
   ldrsb r0,[r4],#2 ;@ Fetch immediate value
@@ -1045,7 +1045,6 @@ Op0839:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -1089,6 +1088,8 @@ Op3040:
 
 ;@ ---------- [0838] btst #$33, $3333.w uses Op0838 ----------
 Op0838:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 
 ;@ EaCalc : Get '#$33' into r0:
   ldrsb r0,[r4],#2 ;@ Fetch immediate value
@@ -1105,7 +1106,6 @@ Op0838:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -1117,6 +1117,8 @@ Op0838:
 
 ;@ ---------- [4a39] tst.b $33333333.l uses Op4a39 ----------
 Op4a39:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r0:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -1125,7 +1127,6 @@ Op4a39:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r0,r0,asl #24
 
   and r10,r0,#0x80000000 ;@ r10=N_flag
@@ -1138,6 +1139,8 @@ Op4a39:
 
 ;@ ---------- [33d8] move.w (a0)+, $33333333.l uses Op33d8 ----------
 Op33d8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r0:
   and r2,r8,#0x000f
   ldr r0,[r7,r2,lsl #2]
@@ -1147,7 +1150,6 @@ Op33d8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -1162,7 +1164,6 @@ Op33d8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -1171,6 +1172,8 @@ Op33d8:
 
 ;@ ---------- [6700] beq 3335 uses Op6700 ----------
 Op6700:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   tst r10,#0x40000000 ;@ eq: Z
   beq BccDontBranch16
 
@@ -1199,6 +1202,8 @@ BccDontBranch16:
 
 ;@ ---------- [b038] cmp.b $3333.w, d0 uses Opb038 ----------
 Opb038:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get EA into r11 and value into r0:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
@@ -1206,7 +1211,6 @@ Opb038:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -1228,6 +1232,8 @@ Opb038:
 
 ;@ ---------- [3039] move.w $33333333.l, d0 uses Op3039 ----------
 Op3039:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r0:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -1236,7 +1242,6 @@ Op3039:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -1288,7 +1293,6 @@ Op6102:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   add r4,r4,r11,asr #24 ;@ r4 = New PC
 
@@ -1299,6 +1303,8 @@ Op6102:
 
 ;@ ---------- [6100] bsr 3335 uses Op6100 ----------
 Op6100:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   ldrsh r11,[r4] ;@ Fetch Branch offset
 ;@ Branch taken - Add on r0 to PC
 ;@ Bsr - remember old PC
@@ -1313,7 +1319,6 @@ Op6100:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   add r0,r4,r11 ;@ New PC
 ;@ Check Memory Base+pc
@@ -1356,6 +1361,8 @@ Op5e40:
 
 ;@ ---------- [1039] move.b $33333333.l, d0 uses Op1039 ----------
 Op1039:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r0:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -1364,7 +1371,6 @@ Op1039:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -1383,6 +1389,8 @@ Op1039:
 
 ;@ ---------- [20c0] move.l d0, (a0)+ uses Op20c0 ----------
 Op20c0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x000f
 ;@ EaRead : Read register[r1] into r1:
@@ -1402,7 +1410,6 @@ Op20c0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -1411,6 +1418,8 @@ Op20c0:
 
 ;@ ---------- [1018] move.b (a0)+, d0 uses Op1018 ----------
 Op1018:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r0:
   and r2,r8,#0x000f
   ldr r0,[r7,r2,lsl #2]
@@ -1420,7 +1429,6 @@ Op1018:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -1439,6 +1447,8 @@ Op1018:
 
 ;@ ---------- [30d0] move.w (a0), (a0)+ uses Op30d0 ----------
 Op30d0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -1447,7 +1457,6 @@ Op30d0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -1462,7 +1471,6 @@ Op30d0:
   mov r1,r1,lsr #16
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -1471,6 +1479,8 @@ Op30d0:
 
 ;@ ---------- [3080] move.w d0, (a0) uses Op3080 ----------
 Op3080:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x000f
   mov r1,r1,lsl #2
@@ -1488,7 +1498,6 @@ Op3080:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#8 ;@ Subtract cycles
@@ -1497,6 +1506,8 @@ Op3080:
 
 ;@ ---------- [3018] move.w (a0)+, d0 uses Op3018 ----------
 Op3018:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r0:
   and r2,r8,#0x000f
   ldr r0,[r7,r2,lsl #2]
@@ -1506,7 +1517,6 @@ Op3018:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -1555,6 +1565,8 @@ Opc040:
 
 ;@ ---------- [3180] move.w d0, ($33,a0,d3.w*2) uses Op3180 ----------
 Op3180:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x000f
   mov r1,r1,lsl #2
@@ -1584,7 +1596,6 @@ Op3180:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -1593,6 +1604,8 @@ Op3180:
 
 ;@ ---------- [1198] move.b (a0)+, ($33,a0,d3.w*2) uses Op1198 ----------
 Op1198:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r0:
   and r2,r8,#0x000f
   ldr r0,[r7,r2,lsl #2]
@@ -1602,7 +1615,6 @@ Op1198:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -1628,7 +1640,6 @@ Op1198:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -1652,6 +1663,8 @@ Op6502:
 
 ;@ ---------- [6500] bcs 3335 uses Op6500 ----------
 Op6500:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   tst r10,#0x20000000 ;@ cs: C
   beq BccDontBranch16
 
@@ -1703,6 +1716,8 @@ Op6a02:
 
 ;@ ---------- [41f0] lea ($33,a0,d3.w*2), a0 uses Op41f0 ----------
 Op41f0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r1:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -1730,6 +1745,8 @@ Op41f0:
 
 ;@ ---------- [4a28] tst.b ($3333,a0) uses Op4a28 ----------
 Op4a28:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -1739,7 +1756,6 @@ Op4a28:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r0,r0,asl #24
 
   and r10,r0,#0x80000000 ;@ r10=N_flag
@@ -1752,6 +1768,8 @@ Op4a28:
 
 ;@ ---------- [0828] btst #$33, ($3333,a0) uses Op0828 ----------
 Op0828:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 
 ;@ EaCalc : Get '#$33' into r0:
   ldrsb r0,[r4],#2 ;@ Fetch immediate value
@@ -1771,7 +1789,6 @@ Op0828:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -1810,6 +1827,8 @@ Op0640:
 
 ;@ ---------- [10c0] move.b d0, (a0)+ uses Op10c0 ----------
 Op10c0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x000f
 ;@ EaRead : Read register[r1] into r1:
@@ -1828,7 +1847,6 @@ Op10c0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#8 ;@ Subtract cycles
@@ -1837,6 +1855,8 @@ Op10c0:
 
 ;@ ---------- [10d8] move.b (a0)+, (a0)+ uses Op10d8 ----------
 Op10d8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r0:
   and r2,r8,#0x000f
   ldr r0,[r7,r2,lsl #2]
@@ -1846,7 +1866,6 @@ Op10d8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -1861,7 +1880,6 @@ Op10d8:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -1896,6 +1914,8 @@ Op0000:
 
 ;@ ---------- [0010] ori.b #$33, (a0) uses Op0010 ----------
 Op0010:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33' into r10:
   ldrsb r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$33' (address in r10) into r10:
@@ -1909,7 +1929,6 @@ Op0010:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -1922,7 +1941,6 @@ Op0010:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -1931,6 +1949,8 @@ Op0010:
 
 ;@ ---------- [0018] ori.b #$33, (a0)+ uses Op0018 ----------
 Op0018:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33' into r10:
   ldrsb r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$33' (address in r10) into r10:
@@ -1945,7 +1965,6 @@ Op0018:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -1958,7 +1977,6 @@ Op0018:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -1967,6 +1985,8 @@ Op0018:
 
 ;@ ---------- [001f] ori.b #$33, (a7)+ uses Op001f ----------
 Op001f:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33' into r10:
   ldrsb r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$33' (address in r10) into r10:
@@ -1980,7 +2000,6 @@ Op001f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -1993,7 +2012,6 @@ Op001f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -2002,6 +2020,8 @@ Op001f:
 
 ;@ ---------- [0020] ori.b #$33, -(a0) uses Op0020 ----------
 Op0020:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33' into r10:
   ldrsb r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$33' (address in r10) into r10:
@@ -2017,7 +2037,6 @@ Op0020:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -2030,7 +2049,6 @@ Op0020:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -2039,6 +2057,8 @@ Op0020:
 
 ;@ ---------- [0027] ori.b #$33, -(a7) uses Op0027 ----------
 Op0027:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33' into r10:
   ldrsb r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$33' (address in r10) into r10:
@@ -2052,7 +2072,6 @@ Op0027:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -2065,7 +2084,6 @@ Op0027:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -2074,6 +2092,8 @@ Op0027:
 
 ;@ ---------- [0028] ori.b #$33, ($3333,a0) uses Op0028 ----------
 Op0028:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33' into r10:
   ldrsb r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$33' (address in r10) into r10:
@@ -2088,7 +2108,6 @@ Op0028:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -2101,7 +2120,6 @@ Op0028:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -2110,6 +2128,8 @@ Op0028:
 
 ;@ ---------- [0030] ori.b #$33, ($33,a0,d3.w*2) uses Op0030 ----------
 Op0030:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33' into r10:
   ldrsb r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$33' (address in r10) into r10:
@@ -2133,7 +2153,6 @@ Op0030:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -2146,7 +2165,6 @@ Op0030:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -2155,6 +2173,8 @@ Op0030:
 
 ;@ ---------- [0038] ori.b #$33, $3333.w uses Op0038 ----------
 Op0038:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33' into r10:
   ldrsb r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$33' (address in r10) into r10:
@@ -2166,7 +2186,6 @@ Op0038:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -2179,7 +2198,6 @@ Op0038:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -2188,6 +2206,8 @@ Op0038:
 
 ;@ ---------- [0039] ori.b #$33, $33333333.l uses Op0039 ----------
 Op0039:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33' into r10:
   ldrsb r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$33' (address in r10) into r10:
@@ -2201,7 +2221,6 @@ Op0039:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -2214,7 +2233,6 @@ Op0039:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -2269,6 +2287,8 @@ Op0040:
 
 ;@ ---------- [0050] ori.w #$3333, (a0) uses Op0050 ----------
 Op0050:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$3333' into r10:
   ldrsh r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$3333' (address in r10) into r10:
@@ -2282,7 +2302,6 @@ Op0050:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -2295,7 +2314,6 @@ Op0050:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -2304,6 +2322,8 @@ Op0050:
 
 ;@ ---------- [0058] ori.w #$3333, (a0)+ uses Op0058 ----------
 Op0058:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$3333' into r10:
   ldrsh r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$3333' (address in r10) into r10:
@@ -2318,7 +2338,6 @@ Op0058:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -2331,7 +2350,6 @@ Op0058:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -2340,6 +2358,8 @@ Op0058:
 
 ;@ ---------- [0060] ori.w #$3333, -(a0) uses Op0060 ----------
 Op0060:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$3333' into r10:
   ldrsh r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$3333' (address in r10) into r10:
@@ -2355,7 +2375,6 @@ Op0060:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -2368,7 +2387,6 @@ Op0060:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -2377,6 +2395,8 @@ Op0060:
 
 ;@ ---------- [0068] ori.w #$3333, ($3333,a0) uses Op0068 ----------
 Op0068:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$3333' into r10:
   ldrsh r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$3333' (address in r10) into r10:
@@ -2391,7 +2411,6 @@ Op0068:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -2404,7 +2423,6 @@ Op0068:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -2413,6 +2431,8 @@ Op0068:
 
 ;@ ---------- [0070] ori.w #$3333, ($33,a0,d3.w*2) uses Op0070 ----------
 Op0070:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$3333' into r10:
   ldrsh r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$3333' (address in r10) into r10:
@@ -2436,7 +2456,6 @@ Op0070:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -2449,7 +2468,6 @@ Op0070:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -2458,6 +2476,8 @@ Op0070:
 
 ;@ ---------- [0078] ori.w #$3333, $3333.w uses Op0078 ----------
 Op0078:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$3333' into r10:
   ldrsh r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$3333' (address in r10) into r10:
@@ -2469,7 +2489,6 @@ Op0078:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -2482,7 +2501,6 @@ Op0078:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -2491,6 +2509,8 @@ Op0078:
 
 ;@ ---------- [0079] ori.w #$3333, $33333333.l uses Op0079 ----------
 Op0079:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$3333' into r10:
   ldrsh r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$3333' (address in r10) into r10:
@@ -2504,7 +2524,6 @@ Op0079:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -2517,7 +2536,6 @@ Op0079:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -2583,6 +2601,8 @@ Op0080:
 
 ;@ ---------- [0090] ori.l #$33333333, (a0) uses Op0090 ----------
 Op0090:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33333333' into r10:
   ldrh r2,[r4],#2 ;@ Fetch immediate value
   ldrh r3,[r4],#2
@@ -2598,7 +2618,6 @@ Op0090:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   orrs r1,r10,r0
@@ -2609,7 +2628,6 @@ Op0090:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -2618,6 +2636,8 @@ Op0090:
 
 ;@ ---------- [0098] ori.l #$33333333, (a0)+ uses Op0098 ----------
 Op0098:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33333333' into r10:
   ldrh r2,[r4],#2 ;@ Fetch immediate value
   ldrh r3,[r4],#2
@@ -2634,7 +2654,6 @@ Op0098:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   orrs r1,r10,r0
@@ -2645,7 +2664,6 @@ Op0098:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -2654,6 +2672,8 @@ Op0098:
 
 ;@ ---------- [00a0] ori.l #$33333333, -(a0) uses Op00a0 ----------
 Op00a0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33333333' into r10:
   ldrh r2,[r4],#2 ;@ Fetch immediate value
   ldrh r3,[r4],#2
@@ -2671,7 +2691,6 @@ Op00a0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   orrs r1,r10,r0
@@ -2682,7 +2701,6 @@ Op00a0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#30 ;@ Subtract cycles
@@ -2691,6 +2709,8 @@ Op00a0:
 
 ;@ ---------- [00a8] ori.l #$33333333, ($3333,a0) uses Op00a8 ----------
 Op00a8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33333333' into r10:
   ldrh r2,[r4],#2 ;@ Fetch immediate value
   ldrh r3,[r4],#2
@@ -2707,7 +2727,6 @@ Op00a8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   orrs r1,r10,r0
@@ -2718,7 +2737,6 @@ Op00a8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#32 ;@ Subtract cycles
@@ -2727,6 +2745,8 @@ Op00a8:
 
 ;@ ---------- [00b0] ori.l #$33333333, ($33,a0,d3.w*2) uses Op00b0 ----------
 Op00b0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33333333' into r10:
   ldrh r2,[r4],#2 ;@ Fetch immediate value
   ldrh r3,[r4],#2
@@ -2752,7 +2772,6 @@ Op00b0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   orrs r1,r10,r0
@@ -2763,7 +2782,6 @@ Op00b0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#34 ;@ Subtract cycles
@@ -2772,6 +2790,8 @@ Op00b0:
 
 ;@ ---------- [00b8] ori.l #$33333333, $3333.w uses Op00b8 ----------
 Op00b8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33333333' into r10:
   ldrh r2,[r4],#2 ;@ Fetch immediate value
   ldrh r3,[r4],#2
@@ -2785,7 +2805,6 @@ Op00b8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   orrs r1,r10,r0
@@ -2796,7 +2815,6 @@ Op00b8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#32 ;@ Subtract cycles
@@ -2805,6 +2823,8 @@ Op00b8:
 
 ;@ ---------- [00b9] ori.l #$33333333, $33333333.l uses Op00b9 ----------
 Op00b9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33333333' into r10:
   ldrh r2,[r4],#2 ;@ Fetch immediate value
   ldrh r3,[r4],#2
@@ -2820,7 +2840,6 @@ Op00b9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   orrs r1,r10,r0
@@ -2831,7 +2850,6 @@ Op00b9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#36 ;@ Subtract cycles
@@ -2864,6 +2882,8 @@ Op0100:
 
 ;@ ---------- [0108] movep.w ($3333,a0), d0 uses Op0108 ----------
 Op0108:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r6:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -2874,14 +2894,12 @@ Op0108:
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r11,r0,asl #24
 
   add r0,r6,#2
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r1:
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r1,r0,asl #24
 
   orr r1,r11,r1,lsr #8 ;@ second byte
@@ -2900,6 +2918,8 @@ Op0108:
 
 ;@ ---------- [0110] btst d0, (a0) uses Op0110 ----------
 Op0110:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
 ;@ EaRead : Read register[r11] into r11:
@@ -2913,7 +2933,6 @@ Op0110:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -2929,6 +2948,8 @@ Op0110:
 
 ;@ ---------- [0118] btst d0, (a0)+ uses Op0118 ----------
 Op0118:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
 ;@ EaRead : Read register[r11] into r11:
@@ -2943,7 +2964,6 @@ Op0118:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -2959,6 +2979,8 @@ Op0118:
 
 ;@ ---------- [011f] btst d0, (a7)+ uses Op011f ----------
 Op011f:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
 ;@ EaRead : Read register[r11] into r11:
@@ -2972,7 +2994,6 @@ Op011f:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -2988,6 +3009,8 @@ Op011f:
 
 ;@ ---------- [0120] btst d0, -(a0) uses Op0120 ----------
 Op0120:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
 ;@ EaRead : Read register[r11] into r11:
@@ -3003,7 +3026,6 @@ Op0120:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -3019,6 +3041,8 @@ Op0120:
 
 ;@ ---------- [0127] btst d0, -(a7) uses Op0127 ----------
 Op0127:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
 ;@ EaRead : Read register[r11] into r11:
@@ -3032,7 +3056,6 @@ Op0127:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -3048,6 +3071,8 @@ Op0127:
 
 ;@ ---------- [0128] btst d0, ($3333,a0) uses Op0128 ----------
 Op0128:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
 ;@ EaRead : Read register[r11] into r11:
@@ -3062,7 +3087,6 @@ Op0128:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -3078,6 +3102,8 @@ Op0128:
 
 ;@ ---------- [0130] btst d0, ($33,a0,d3.w*2) uses Op0130 ----------
 Op0130:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
 ;@ EaRead : Read register[r11] into r11:
@@ -3101,7 +3127,6 @@ Op0130:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -3117,6 +3142,8 @@ Op0130:
 
 ;@ ---------- [0138] btst d0, $3333.w uses Op0138 ----------
 Op0138:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
 ;@ EaRead : Read register[r11] into r11:
@@ -3128,7 +3155,6 @@ Op0138:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -3144,6 +3170,8 @@ Op0138:
 
 ;@ ---------- [0139] btst d0, $33333333.l uses Op0139 ----------
 Op0139:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
 ;@ EaRead : Read register[r11] into r11:
@@ -3157,7 +3185,6 @@ Op0139:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -3173,6 +3200,8 @@ Op0139:
 
 ;@ ---------- [013a] btst d0, ($3333,pc); =3335 uses Op013a ----------
 Op013a:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
 ;@ EaRead : Read register[r11] into r11:
@@ -3187,7 +3216,6 @@ Op013a:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x80] ;@ Call fetch8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -3203,6 +3231,8 @@ Op013a:
 
 ;@ ---------- [013b] btst d0, ($33,pc,d3.w*2); =35 uses Op013b ----------
 Op013b:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
 ;@ EaRead : Read register[r11] into r11:
@@ -3225,7 +3255,6 @@ Op013b:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x80] ;@ Call fetch8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -3293,6 +3322,8 @@ Op0140:
 
 ;@ ---------- [0148] movep.l ($3333,a0), d0 uses Op0148 ----------
 Op0148:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r6:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -3303,14 +3334,12 @@ Op0148:
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r11,r0,asl #24
 
   add r0,r6,#2
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r1:
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r1,r0,asl #24
 
   orr r11,r11,r1,lsr #8 ;@ second byte
@@ -3318,7 +3347,6 @@ Op0148:
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r1:
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r1,r0,asl #24
 
   orr r11,r11,r1,lsr #16 ;@ third byte
@@ -3326,7 +3354,6 @@ Op0148:
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r1:
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r1,r0,asl #24
 
   orr r1,r11,r1,lsr #24 ;@ fourth byte
@@ -3343,6 +3370,8 @@ Op0148:
 
 ;@ ---------- [0150] bchg d0, (a0) uses Op0150 ----------
 Op0150:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
 ;@ EaRead : Read register[r11] into r11:
@@ -3357,7 +3386,6 @@ Op0150:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -3373,7 +3401,6 @@ Op0150:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -3382,6 +3409,8 @@ Op0150:
 
 ;@ ---------- [0158] bchg d0, (a0)+ uses Op0158 ----------
 Op0158:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
 ;@ EaRead : Read register[r11] into r11:
@@ -3397,7 +3426,6 @@ Op0158:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -3413,7 +3441,6 @@ Op0158:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -3422,6 +3449,8 @@ Op0158:
 
 ;@ ---------- [015f] bchg d0, (a7)+ uses Op015f ----------
 Op015f:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
 ;@ EaRead : Read register[r11] into r11:
@@ -3436,7 +3465,6 @@ Op015f:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -3452,7 +3480,6 @@ Op015f:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -3461,6 +3488,8 @@ Op015f:
 
 ;@ ---------- [0160] bchg d0, -(a0) uses Op0160 ----------
 Op0160:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
 ;@ EaRead : Read register[r11] into r11:
@@ -3477,7 +3506,6 @@ Op0160:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -3493,7 +3521,6 @@ Op0160:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -3502,6 +3529,8 @@ Op0160:
 
 ;@ ---------- [0167] bchg d0, -(a7) uses Op0167 ----------
 Op0167:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
 ;@ EaRead : Read register[r11] into r11:
@@ -3516,7 +3545,6 @@ Op0167:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -3532,7 +3560,6 @@ Op0167:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -3541,6 +3568,8 @@ Op0167:
 
 ;@ ---------- [0168] bchg d0, ($3333,a0) uses Op0168 ----------
 Op0168:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
 ;@ EaRead : Read register[r11] into r11:
@@ -3556,7 +3585,6 @@ Op0168:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -3572,7 +3600,6 @@ Op0168:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -3581,6 +3608,8 @@ Op0168:
 
 ;@ ---------- [0170] bchg d0, ($33,a0,d3.w*2) uses Op0170 ----------
 Op0170:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
 ;@ EaRead : Read register[r11] into r11:
@@ -3605,7 +3634,6 @@ Op0170:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -3621,7 +3649,6 @@ Op0170:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -3630,6 +3657,8 @@ Op0170:
 
 ;@ ---------- [0178] bchg d0, $3333.w uses Op0178 ----------
 Op0178:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
 ;@ EaRead : Read register[r11] into r11:
@@ -3642,7 +3671,6 @@ Op0178:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -3658,7 +3686,6 @@ Op0178:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -3667,6 +3694,8 @@ Op0178:
 
 ;@ ---------- [0179] bchg d0, $33333333.l uses Op0179 ----------
 Op0179:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
 ;@ EaRead : Read register[r11] into r11:
@@ -3681,7 +3710,6 @@ Op0179:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -3697,7 +3725,6 @@ Op0179:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -3735,6 +3762,8 @@ Op0180:
 
 ;@ ---------- [0188] movep.w d0, ($3333,a0) uses Op0188 ----------
 Op0188:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
 ;@ EaRead : Read register[r11] into r11:
@@ -3752,7 +3781,6 @@ Op0188:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   add r0,r8,#2
   and r1,r11,#0xff
@@ -3760,7 +3788,6 @@ Op0188:
   and r1,r1,#0xff
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -3769,6 +3796,8 @@ Op0188:
 
 ;@ ---------- [0190] bclr d0, (a0) uses Op0190 ----------
 Op0190:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
 ;@ EaRead : Read register[r11] into r11:
@@ -3783,7 +3812,6 @@ Op0190:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -3799,7 +3827,6 @@ Op0190:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -3808,6 +3835,8 @@ Op0190:
 
 ;@ ---------- [0198] bclr d0, (a0)+ uses Op0198 ----------
 Op0198:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
 ;@ EaRead : Read register[r11] into r11:
@@ -3823,7 +3852,6 @@ Op0198:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -3839,7 +3867,6 @@ Op0198:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -3848,6 +3875,8 @@ Op0198:
 
 ;@ ---------- [019f] bclr d0, (a7)+ uses Op019f ----------
 Op019f:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
 ;@ EaRead : Read register[r11] into r11:
@@ -3862,7 +3891,6 @@ Op019f:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -3878,7 +3906,6 @@ Op019f:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -3887,6 +3914,8 @@ Op019f:
 
 ;@ ---------- [01a0] bclr d0, -(a0) uses Op01a0 ----------
 Op01a0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
 ;@ EaRead : Read register[r11] into r11:
@@ -3903,7 +3932,6 @@ Op01a0:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -3919,7 +3947,6 @@ Op01a0:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -3928,6 +3955,8 @@ Op01a0:
 
 ;@ ---------- [01a7] bclr d0, -(a7) uses Op01a7 ----------
 Op01a7:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
 ;@ EaRead : Read register[r11] into r11:
@@ -3942,7 +3971,6 @@ Op01a7:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -3958,7 +3986,6 @@ Op01a7:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -3967,6 +3994,8 @@ Op01a7:
 
 ;@ ---------- [01a8] bclr d0, ($3333,a0) uses Op01a8 ----------
 Op01a8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
 ;@ EaRead : Read register[r11] into r11:
@@ -3982,7 +4011,6 @@ Op01a8:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -3998,7 +4026,6 @@ Op01a8:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -4007,6 +4034,8 @@ Op01a8:
 
 ;@ ---------- [01b0] bclr d0, ($33,a0,d3.w*2) uses Op01b0 ----------
 Op01b0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
 ;@ EaRead : Read register[r11] into r11:
@@ -4031,7 +4060,6 @@ Op01b0:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -4047,7 +4075,6 @@ Op01b0:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -4056,6 +4083,8 @@ Op01b0:
 
 ;@ ---------- [01b8] bclr d0, $3333.w uses Op01b8 ----------
 Op01b8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
 ;@ EaRead : Read register[r11] into r11:
@@ -4068,7 +4097,6 @@ Op01b8:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -4084,7 +4112,6 @@ Op01b8:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -4093,6 +4120,8 @@ Op01b8:
 
 ;@ ---------- [01b9] bclr d0, $33333333.l uses Op01b9 ----------
 Op01b9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
 ;@ EaRead : Read register[r11] into r11:
@@ -4107,7 +4136,6 @@ Op01b9:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -4123,7 +4151,6 @@ Op01b9:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -4161,6 +4188,8 @@ Op01c0:
 
 ;@ ---------- [01c8] movep.l d0, ($3333,a0) uses Op01c8 ----------
 Op01c8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
 ;@ EaRead : Read register[r11] into r11:
@@ -4178,7 +4207,6 @@ Op01c8:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   add r0,r8,#2
   mov r1,r11,lsr #16 ;@ second byte
@@ -4186,7 +4214,6 @@ Op01c8:
   and r1,r1,#0xff
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   add r0,r8,#4
   mov r1,r11,lsr #8 ;@ first or third byte
@@ -4194,7 +4221,6 @@ Op01c8:
   and r1,r1,#0xff
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   add r0,r8,#6
   and r1,r11,#0xff
@@ -4202,7 +4228,6 @@ Op01c8:
   and r1,r1,#0xff
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -4211,6 +4236,8 @@ Op01c8:
 
 ;@ ---------- [01d0] bset d0, (a0) uses Op01d0 ----------
 Op01d0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
 ;@ EaRead : Read register[r11] into r11:
@@ -4225,7 +4252,6 @@ Op01d0:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -4241,7 +4267,6 @@ Op01d0:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -4250,6 +4275,8 @@ Op01d0:
 
 ;@ ---------- [01d8] bset d0, (a0)+ uses Op01d8 ----------
 Op01d8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
 ;@ EaRead : Read register[r11] into r11:
@@ -4265,7 +4292,6 @@ Op01d8:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -4281,7 +4307,6 @@ Op01d8:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -4290,6 +4315,8 @@ Op01d8:
 
 ;@ ---------- [01df] bset d0, (a7)+ uses Op01df ----------
 Op01df:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
 ;@ EaRead : Read register[r11] into r11:
@@ -4304,7 +4331,6 @@ Op01df:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -4320,7 +4346,6 @@ Op01df:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -4329,6 +4354,8 @@ Op01df:
 
 ;@ ---------- [01e0] bset d0, -(a0) uses Op01e0 ----------
 Op01e0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
 ;@ EaRead : Read register[r11] into r11:
@@ -4345,7 +4372,6 @@ Op01e0:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -4361,7 +4387,6 @@ Op01e0:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -4370,6 +4395,8 @@ Op01e0:
 
 ;@ ---------- [01e7] bset d0, -(a7) uses Op01e7 ----------
 Op01e7:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
 ;@ EaRead : Read register[r11] into r11:
@@ -4384,7 +4411,6 @@ Op01e7:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -4400,7 +4426,6 @@ Op01e7:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -4409,6 +4434,8 @@ Op01e7:
 
 ;@ ---------- [01e8] bset d0, ($3333,a0) uses Op01e8 ----------
 Op01e8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
 ;@ EaRead : Read register[r11] into r11:
@@ -4424,7 +4451,6 @@ Op01e8:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -4440,7 +4466,6 @@ Op01e8:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -4449,6 +4474,8 @@ Op01e8:
 
 ;@ ---------- [01f0] bset d0, ($33,a0,d3.w*2) uses Op01f0 ----------
 Op01f0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
 ;@ EaRead : Read register[r11] into r11:
@@ -4473,7 +4500,6 @@ Op01f0:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -4489,7 +4515,6 @@ Op01f0:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -4498,6 +4523,8 @@ Op01f0:
 
 ;@ ---------- [01f8] bset d0, $3333.w uses Op01f8 ----------
 Op01f8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
 ;@ EaRead : Read register[r11] into r11:
@@ -4510,7 +4537,6 @@ Op01f8:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -4526,7 +4552,6 @@ Op01f8:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -4535,6 +4560,8 @@ Op01f8:
 
 ;@ ---------- [01f9] bset d0, $33333333.l uses Op01f9 ----------
 Op01f9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
 ;@ EaRead : Read register[r11] into r11:
@@ -4549,7 +4576,6 @@ Op01f9:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r11,r11,#7  ;@ mem - do mod 8
 
@@ -4565,7 +4591,6 @@ Op01f9:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -4600,6 +4625,8 @@ Op0200:
 
 ;@ ---------- [0210] andi.b #$33, (a0) uses Op0210 ----------
 Op0210:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33' into r10:
   ldrsb r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$33' (address in r10) into r10:
@@ -4613,7 +4640,6 @@ Op0210:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -4626,7 +4652,6 @@ Op0210:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -4635,6 +4660,8 @@ Op0210:
 
 ;@ ---------- [0218] andi.b #$33, (a0)+ uses Op0218 ----------
 Op0218:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33' into r10:
   ldrsb r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$33' (address in r10) into r10:
@@ -4649,7 +4676,6 @@ Op0218:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -4662,7 +4688,6 @@ Op0218:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -4671,6 +4696,8 @@ Op0218:
 
 ;@ ---------- [021f] andi.b #$33, (a7)+ uses Op021f ----------
 Op021f:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33' into r10:
   ldrsb r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$33' (address in r10) into r10:
@@ -4684,7 +4711,6 @@ Op021f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -4697,7 +4723,6 @@ Op021f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -4706,6 +4731,8 @@ Op021f:
 
 ;@ ---------- [0220] andi.b #$33, -(a0) uses Op0220 ----------
 Op0220:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33' into r10:
   ldrsb r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$33' (address in r10) into r10:
@@ -4721,7 +4748,6 @@ Op0220:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -4734,7 +4760,6 @@ Op0220:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -4743,6 +4768,8 @@ Op0220:
 
 ;@ ---------- [0227] andi.b #$33, -(a7) uses Op0227 ----------
 Op0227:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33' into r10:
   ldrsb r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$33' (address in r10) into r10:
@@ -4756,7 +4783,6 @@ Op0227:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -4769,7 +4795,6 @@ Op0227:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -4778,6 +4803,8 @@ Op0227:
 
 ;@ ---------- [0228] andi.b #$33, ($3333,a0) uses Op0228 ----------
 Op0228:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33' into r10:
   ldrsb r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$33' (address in r10) into r10:
@@ -4792,7 +4819,6 @@ Op0228:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -4805,7 +4831,6 @@ Op0228:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -4814,6 +4839,8 @@ Op0228:
 
 ;@ ---------- [0230] andi.b #$33, ($33,a0,d3.w*2) uses Op0230 ----------
 Op0230:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33' into r10:
   ldrsb r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$33' (address in r10) into r10:
@@ -4837,7 +4864,6 @@ Op0230:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -4850,7 +4876,6 @@ Op0230:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -4859,6 +4884,8 @@ Op0230:
 
 ;@ ---------- [0238] andi.b #$33, $3333.w uses Op0238 ----------
 Op0238:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33' into r10:
   ldrsb r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$33' (address in r10) into r10:
@@ -4870,7 +4897,6 @@ Op0238:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -4883,7 +4909,6 @@ Op0238:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -4892,6 +4917,8 @@ Op0238:
 
 ;@ ---------- [0239] andi.b #$33, $33333333.l uses Op0239 ----------
 Op0239:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33' into r10:
   ldrsb r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$33' (address in r10) into r10:
@@ -4905,7 +4932,6 @@ Op0239:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -4918,7 +4944,6 @@ Op0239:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -4946,6 +4971,8 @@ Op023c:
 
 ;@ ---------- [0250] andi.w #$3333, (a0) uses Op0250 ----------
 Op0250:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$3333' into r10:
   ldrsh r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$3333' (address in r10) into r10:
@@ -4959,7 +4986,6 @@ Op0250:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -4972,7 +4998,6 @@ Op0250:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -4981,6 +5006,8 @@ Op0250:
 
 ;@ ---------- [0258] andi.w #$3333, (a0)+ uses Op0258 ----------
 Op0258:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$3333' into r10:
   ldrsh r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$3333' (address in r10) into r10:
@@ -4995,7 +5022,6 @@ Op0258:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -5008,7 +5034,6 @@ Op0258:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -5017,6 +5042,8 @@ Op0258:
 
 ;@ ---------- [0260] andi.w #$3333, -(a0) uses Op0260 ----------
 Op0260:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$3333' into r10:
   ldrsh r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$3333' (address in r10) into r10:
@@ -5032,7 +5059,6 @@ Op0260:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -5045,7 +5071,6 @@ Op0260:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -5054,6 +5079,8 @@ Op0260:
 
 ;@ ---------- [0268] andi.w #$3333, ($3333,a0) uses Op0268 ----------
 Op0268:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$3333' into r10:
   ldrsh r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$3333' (address in r10) into r10:
@@ -5068,7 +5095,6 @@ Op0268:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -5081,7 +5107,6 @@ Op0268:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -5090,6 +5115,8 @@ Op0268:
 
 ;@ ---------- [0270] andi.w #$3333, ($33,a0,d3.w*2) uses Op0270 ----------
 Op0270:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$3333' into r10:
   ldrsh r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$3333' (address in r10) into r10:
@@ -5113,7 +5140,6 @@ Op0270:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -5126,7 +5152,6 @@ Op0270:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -5135,6 +5160,8 @@ Op0270:
 
 ;@ ---------- [0278] andi.w #$3333, $3333.w uses Op0278 ----------
 Op0278:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$3333' into r10:
   ldrsh r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$3333' (address in r10) into r10:
@@ -5146,7 +5173,6 @@ Op0278:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -5159,7 +5185,6 @@ Op0278:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -5168,6 +5193,8 @@ Op0278:
 
 ;@ ---------- [0279] andi.w #$3333, $33333333.l uses Op0279 ----------
 Op0279:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$3333' into r10:
   ldrsh r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$3333' (address in r10) into r10:
@@ -5181,7 +5208,6 @@ Op0279:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -5194,7 +5220,6 @@ Op0279:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -5273,6 +5298,8 @@ Op0280:
 
 ;@ ---------- [0290] andi.l #$33333333, (a0) uses Op0290 ----------
 Op0290:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33333333' into r10:
   ldrh r2,[r4],#2 ;@ Fetch immediate value
   ldrh r3,[r4],#2
@@ -5288,7 +5315,6 @@ Op0290:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   ands r1,r10,r0
@@ -5299,7 +5325,6 @@ Op0290:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -5308,6 +5333,8 @@ Op0290:
 
 ;@ ---------- [0298] andi.l #$33333333, (a0)+ uses Op0298 ----------
 Op0298:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33333333' into r10:
   ldrh r2,[r4],#2 ;@ Fetch immediate value
   ldrh r3,[r4],#2
@@ -5324,7 +5351,6 @@ Op0298:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   ands r1,r10,r0
@@ -5335,7 +5361,6 @@ Op0298:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -5344,6 +5369,8 @@ Op0298:
 
 ;@ ---------- [02a0] andi.l #$33333333, -(a0) uses Op02a0 ----------
 Op02a0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33333333' into r10:
   ldrh r2,[r4],#2 ;@ Fetch immediate value
   ldrh r3,[r4],#2
@@ -5361,7 +5388,6 @@ Op02a0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   ands r1,r10,r0
@@ -5372,7 +5398,6 @@ Op02a0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#30 ;@ Subtract cycles
@@ -5381,6 +5406,8 @@ Op02a0:
 
 ;@ ---------- [02a8] andi.l #$33333333, ($3333,a0) uses Op02a8 ----------
 Op02a8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33333333' into r10:
   ldrh r2,[r4],#2 ;@ Fetch immediate value
   ldrh r3,[r4],#2
@@ -5397,7 +5424,6 @@ Op02a8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   ands r1,r10,r0
@@ -5408,7 +5434,6 @@ Op02a8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#32 ;@ Subtract cycles
@@ -5417,6 +5442,8 @@ Op02a8:
 
 ;@ ---------- [02b0] andi.l #$33333333, ($33,a0,d3.w*2) uses Op02b0 ----------
 Op02b0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33333333' into r10:
   ldrh r2,[r4],#2 ;@ Fetch immediate value
   ldrh r3,[r4],#2
@@ -5442,7 +5469,6 @@ Op02b0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   ands r1,r10,r0
@@ -5453,7 +5479,6 @@ Op02b0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#34 ;@ Subtract cycles
@@ -5462,6 +5487,8 @@ Op02b0:
 
 ;@ ---------- [02b8] andi.l #$33333333, $3333.w uses Op02b8 ----------
 Op02b8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33333333' into r10:
   ldrh r2,[r4],#2 ;@ Fetch immediate value
   ldrh r3,[r4],#2
@@ -5475,7 +5502,6 @@ Op02b8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   ands r1,r10,r0
@@ -5486,7 +5512,6 @@ Op02b8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#32 ;@ Subtract cycles
@@ -5495,6 +5520,8 @@ Op02b8:
 
 ;@ ---------- [02b9] andi.l #$33333333, $33333333.l uses Op02b9 ----------
 Op02b9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33333333' into r10:
   ldrh r2,[r4],#2 ;@ Fetch immediate value
   ldrh r3,[r4],#2
@@ -5510,7 +5537,6 @@ Op02b9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   ands r1,r10,r0
@@ -5521,7 +5547,6 @@ Op02b9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#36 ;@ Subtract cycles
@@ -5557,6 +5582,8 @@ Op0400:
 
 ;@ ---------- [0410] subi.b #$33, (a0) uses Op0410 ----------
 Op0410:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33' into r10:
   ldrsb r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$33' (address in r10) into r10:
@@ -5570,7 +5597,6 @@ Op0410:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -5584,7 +5610,6 @@ Op0410:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -5593,6 +5618,8 @@ Op0410:
 
 ;@ ---------- [0418] subi.b #$33, (a0)+ uses Op0418 ----------
 Op0418:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33' into r10:
   ldrsb r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$33' (address in r10) into r10:
@@ -5607,7 +5634,6 @@ Op0418:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -5621,7 +5647,6 @@ Op0418:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -5630,6 +5655,8 @@ Op0418:
 
 ;@ ---------- [041f] subi.b #$33, (a7)+ uses Op041f ----------
 Op041f:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33' into r10:
   ldrsb r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$33' (address in r10) into r10:
@@ -5643,7 +5670,6 @@ Op041f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -5657,7 +5683,6 @@ Op041f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -5666,6 +5691,8 @@ Op041f:
 
 ;@ ---------- [0420] subi.b #$33, -(a0) uses Op0420 ----------
 Op0420:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33' into r10:
   ldrsb r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$33' (address in r10) into r10:
@@ -5681,7 +5708,6 @@ Op0420:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -5695,7 +5721,6 @@ Op0420:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -5704,6 +5729,8 @@ Op0420:
 
 ;@ ---------- [0427] subi.b #$33, -(a7) uses Op0427 ----------
 Op0427:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33' into r10:
   ldrsb r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$33' (address in r10) into r10:
@@ -5717,7 +5744,6 @@ Op0427:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -5731,7 +5757,6 @@ Op0427:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -5740,6 +5765,8 @@ Op0427:
 
 ;@ ---------- [0428] subi.b #$33, ($3333,a0) uses Op0428 ----------
 Op0428:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33' into r10:
   ldrsb r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$33' (address in r10) into r10:
@@ -5754,7 +5781,6 @@ Op0428:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -5768,7 +5794,6 @@ Op0428:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -5777,6 +5802,8 @@ Op0428:
 
 ;@ ---------- [0430] subi.b #$33, ($33,a0,d3.w*2) uses Op0430 ----------
 Op0430:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33' into r10:
   ldrsb r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$33' (address in r10) into r10:
@@ -5800,7 +5827,6 @@ Op0430:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -5814,7 +5840,6 @@ Op0430:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -5823,6 +5848,8 @@ Op0430:
 
 ;@ ---------- [0438] subi.b #$33, $3333.w uses Op0438 ----------
 Op0438:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33' into r10:
   ldrsb r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$33' (address in r10) into r10:
@@ -5834,7 +5861,6 @@ Op0438:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -5848,7 +5874,6 @@ Op0438:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -5857,6 +5882,8 @@ Op0438:
 
 ;@ ---------- [0439] subi.b #$33, $33333333.l uses Op0439 ----------
 Op0439:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33' into r10:
   ldrsb r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$33' (address in r10) into r10:
@@ -5870,7 +5897,6 @@ Op0439:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -5884,7 +5910,6 @@ Op0439:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -5921,6 +5946,8 @@ Op0440:
 
 ;@ ---------- [0450] subi.w #$3333, (a0) uses Op0450 ----------
 Op0450:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$3333' into r10:
   ldrsh r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$3333' (address in r10) into r10:
@@ -5934,7 +5961,6 @@ Op0450:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -5948,7 +5974,6 @@ Op0450:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -5957,6 +5982,8 @@ Op0450:
 
 ;@ ---------- [0458] subi.w #$3333, (a0)+ uses Op0458 ----------
 Op0458:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$3333' into r10:
   ldrsh r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$3333' (address in r10) into r10:
@@ -5971,7 +5998,6 @@ Op0458:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -5985,7 +6011,6 @@ Op0458:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -5994,6 +6019,8 @@ Op0458:
 
 ;@ ---------- [0460] subi.w #$3333, -(a0) uses Op0460 ----------
 Op0460:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$3333' into r10:
   ldrsh r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$3333' (address in r10) into r10:
@@ -6009,7 +6036,6 @@ Op0460:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -6023,7 +6049,6 @@ Op0460:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -6032,6 +6057,8 @@ Op0460:
 
 ;@ ---------- [0468] subi.w #$3333, ($3333,a0) uses Op0468 ----------
 Op0468:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$3333' into r10:
   ldrsh r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$3333' (address in r10) into r10:
@@ -6046,7 +6073,6 @@ Op0468:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -6060,7 +6086,6 @@ Op0468:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -6069,6 +6094,8 @@ Op0468:
 
 ;@ ---------- [0470] subi.w #$3333, ($33,a0,d3.w*2) uses Op0470 ----------
 Op0470:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$3333' into r10:
   ldrsh r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$3333' (address in r10) into r10:
@@ -6092,7 +6119,6 @@ Op0470:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -6106,7 +6132,6 @@ Op0470:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -6115,6 +6140,8 @@ Op0470:
 
 ;@ ---------- [0478] subi.w #$3333, $3333.w uses Op0478 ----------
 Op0478:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$3333' into r10:
   ldrsh r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$3333' (address in r10) into r10:
@@ -6126,7 +6153,6 @@ Op0478:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -6140,7 +6166,6 @@ Op0478:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -6149,6 +6174,8 @@ Op0478:
 
 ;@ ---------- [0479] subi.w #$3333, $33333333.l uses Op0479 ----------
 Op0479:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$3333' into r10:
   ldrsh r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$3333' (address in r10) into r10:
@@ -6162,7 +6189,6 @@ Op0479:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -6176,7 +6202,6 @@ Op0479:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -6212,6 +6237,8 @@ Op0480:
 
 ;@ ---------- [0490] subi.l #$33333333, (a0) uses Op0490 ----------
 Op0490:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33333333' into r10:
   ldrh r2,[r4],#2 ;@ Fetch immediate value
   ldrh r3,[r4],#2
@@ -6227,7 +6254,6 @@ Op0490:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   rsbs r1,r10,r0 ;@ Defines NZCV
@@ -6239,7 +6265,6 @@ Op0490:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -6248,6 +6273,8 @@ Op0490:
 
 ;@ ---------- [0498] subi.l #$33333333, (a0)+ uses Op0498 ----------
 Op0498:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33333333' into r10:
   ldrh r2,[r4],#2 ;@ Fetch immediate value
   ldrh r3,[r4],#2
@@ -6264,7 +6291,6 @@ Op0498:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   rsbs r1,r10,r0 ;@ Defines NZCV
@@ -6276,7 +6302,6 @@ Op0498:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -6285,6 +6310,8 @@ Op0498:
 
 ;@ ---------- [04a0] subi.l #$33333333, -(a0) uses Op04a0 ----------
 Op04a0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33333333' into r10:
   ldrh r2,[r4],#2 ;@ Fetch immediate value
   ldrh r3,[r4],#2
@@ -6302,7 +6329,6 @@ Op04a0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   rsbs r1,r10,r0 ;@ Defines NZCV
@@ -6314,7 +6340,6 @@ Op04a0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#30 ;@ Subtract cycles
@@ -6323,6 +6348,8 @@ Op04a0:
 
 ;@ ---------- [04a8] subi.l #$33333333, ($3333,a0) uses Op04a8 ----------
 Op04a8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33333333' into r10:
   ldrh r2,[r4],#2 ;@ Fetch immediate value
   ldrh r3,[r4],#2
@@ -6339,7 +6366,6 @@ Op04a8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   rsbs r1,r10,r0 ;@ Defines NZCV
@@ -6351,7 +6377,6 @@ Op04a8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#32 ;@ Subtract cycles
@@ -6360,6 +6385,8 @@ Op04a8:
 
 ;@ ---------- [04b0] subi.l #$33333333, ($33,a0,d3.w*2) uses Op04b0 ----------
 Op04b0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33333333' into r10:
   ldrh r2,[r4],#2 ;@ Fetch immediate value
   ldrh r3,[r4],#2
@@ -6385,7 +6412,6 @@ Op04b0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   rsbs r1,r10,r0 ;@ Defines NZCV
@@ -6397,7 +6423,6 @@ Op04b0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#34 ;@ Subtract cycles
@@ -6406,6 +6431,8 @@ Op04b0:
 
 ;@ ---------- [04b8] subi.l #$33333333, $3333.w uses Op04b8 ----------
 Op04b8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33333333' into r10:
   ldrh r2,[r4],#2 ;@ Fetch immediate value
   ldrh r3,[r4],#2
@@ -6419,7 +6446,6 @@ Op04b8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   rsbs r1,r10,r0 ;@ Defines NZCV
@@ -6431,7 +6457,6 @@ Op04b8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#32 ;@ Subtract cycles
@@ -6440,6 +6465,8 @@ Op04b8:
 
 ;@ ---------- [04b9] subi.l #$33333333, $33333333.l uses Op04b9 ----------
 Op04b9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33333333' into r10:
   ldrh r2,[r4],#2 ;@ Fetch immediate value
   ldrh r3,[r4],#2
@@ -6455,7 +6482,6 @@ Op04b9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   rsbs r1,r10,r0 ;@ Defines NZCV
@@ -6467,7 +6493,6 @@ Op04b9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#36 ;@ Subtract cycles
@@ -6502,6 +6527,8 @@ Op0600:
 
 ;@ ---------- [0610] addi.b #$33, (a0) uses Op0610 ----------
 Op0610:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33' into r10:
   ldrsb r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$33' (address in r10) into r10:
@@ -6515,7 +6542,6 @@ Op0610:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -6528,7 +6554,6 @@ Op0610:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -6537,6 +6562,8 @@ Op0610:
 
 ;@ ---------- [0618] addi.b #$33, (a0)+ uses Op0618 ----------
 Op0618:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33' into r10:
   ldrsb r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$33' (address in r10) into r10:
@@ -6551,7 +6578,6 @@ Op0618:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -6564,7 +6590,6 @@ Op0618:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -6573,6 +6598,8 @@ Op0618:
 
 ;@ ---------- [061f] addi.b #$33, (a7)+ uses Op061f ----------
 Op061f:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33' into r10:
   ldrsb r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$33' (address in r10) into r10:
@@ -6586,7 +6613,6 @@ Op061f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -6599,7 +6625,6 @@ Op061f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -6608,6 +6633,8 @@ Op061f:
 
 ;@ ---------- [0620] addi.b #$33, -(a0) uses Op0620 ----------
 Op0620:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33' into r10:
   ldrsb r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$33' (address in r10) into r10:
@@ -6623,7 +6650,6 @@ Op0620:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -6636,7 +6662,6 @@ Op0620:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -6645,6 +6670,8 @@ Op0620:
 
 ;@ ---------- [0627] addi.b #$33, -(a7) uses Op0627 ----------
 Op0627:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33' into r10:
   ldrsb r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$33' (address in r10) into r10:
@@ -6658,7 +6685,6 @@ Op0627:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -6671,7 +6697,6 @@ Op0627:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -6680,6 +6705,8 @@ Op0627:
 
 ;@ ---------- [0628] addi.b #$33, ($3333,a0) uses Op0628 ----------
 Op0628:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33' into r10:
   ldrsb r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$33' (address in r10) into r10:
@@ -6694,7 +6721,6 @@ Op0628:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -6707,7 +6733,6 @@ Op0628:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -6716,6 +6741,8 @@ Op0628:
 
 ;@ ---------- [0630] addi.b #$33, ($33,a0,d3.w*2) uses Op0630 ----------
 Op0630:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33' into r10:
   ldrsb r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$33' (address in r10) into r10:
@@ -6739,7 +6766,6 @@ Op0630:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -6752,7 +6778,6 @@ Op0630:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -6761,6 +6786,8 @@ Op0630:
 
 ;@ ---------- [0638] addi.b #$33, $3333.w uses Op0638 ----------
 Op0638:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33' into r10:
   ldrsb r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$33' (address in r10) into r10:
@@ -6772,7 +6799,6 @@ Op0638:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -6785,7 +6811,6 @@ Op0638:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -6794,6 +6819,8 @@ Op0638:
 
 ;@ ---------- [0639] addi.b #$33, $33333333.l uses Op0639 ----------
 Op0639:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33' into r10:
   ldrsb r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$33' (address in r10) into r10:
@@ -6807,7 +6834,6 @@ Op0639:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -6820,7 +6846,6 @@ Op0639:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -6829,6 +6854,8 @@ Op0639:
 
 ;@ ---------- [0650] addi.w #$3333, (a0) uses Op0650 ----------
 Op0650:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$3333' into r10:
   ldrsh r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$3333' (address in r10) into r10:
@@ -6842,7 +6869,6 @@ Op0650:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -6855,7 +6881,6 @@ Op0650:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -6864,6 +6889,8 @@ Op0650:
 
 ;@ ---------- [0658] addi.w #$3333, (a0)+ uses Op0658 ----------
 Op0658:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$3333' into r10:
   ldrsh r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$3333' (address in r10) into r10:
@@ -6878,7 +6905,6 @@ Op0658:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -6891,7 +6917,6 @@ Op0658:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -6900,6 +6925,8 @@ Op0658:
 
 ;@ ---------- [0660] addi.w #$3333, -(a0) uses Op0660 ----------
 Op0660:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$3333' into r10:
   ldrsh r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$3333' (address in r10) into r10:
@@ -6915,7 +6942,6 @@ Op0660:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -6928,7 +6954,6 @@ Op0660:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -6937,6 +6962,8 @@ Op0660:
 
 ;@ ---------- [0668] addi.w #$3333, ($3333,a0) uses Op0668 ----------
 Op0668:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$3333' into r10:
   ldrsh r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$3333' (address in r10) into r10:
@@ -6951,7 +6978,6 @@ Op0668:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -6964,7 +6990,6 @@ Op0668:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -6973,6 +6998,8 @@ Op0668:
 
 ;@ ---------- [0670] addi.w #$3333, ($33,a0,d3.w*2) uses Op0670 ----------
 Op0670:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$3333' into r10:
   ldrsh r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$3333' (address in r10) into r10:
@@ -6996,7 +7023,6 @@ Op0670:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -7009,7 +7035,6 @@ Op0670:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -7018,6 +7043,8 @@ Op0670:
 
 ;@ ---------- [0678] addi.w #$3333, $3333.w uses Op0678 ----------
 Op0678:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$3333' into r10:
   ldrsh r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$3333' (address in r10) into r10:
@@ -7029,7 +7056,6 @@ Op0678:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -7042,7 +7068,6 @@ Op0678:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -7051,6 +7076,8 @@ Op0678:
 
 ;@ ---------- [0679] addi.w #$3333, $33333333.l uses Op0679 ----------
 Op0679:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$3333' into r10:
   ldrsh r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$3333' (address in r10) into r10:
@@ -7064,7 +7091,6 @@ Op0679:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -7077,7 +7103,6 @@ Op0679:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -7112,6 +7137,8 @@ Op0680:
 
 ;@ ---------- [0690] addi.l #$33333333, (a0) uses Op0690 ----------
 Op0690:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33333333' into r10:
   ldrh r2,[r4],#2 ;@ Fetch immediate value
   ldrh r3,[r4],#2
@@ -7127,7 +7154,6 @@ Op0690:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   adds r1,r10,r0 ;@ Defines NZCV
@@ -7138,7 +7164,6 @@ Op0690:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -7147,6 +7172,8 @@ Op0690:
 
 ;@ ---------- [0698] addi.l #$33333333, (a0)+ uses Op0698 ----------
 Op0698:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33333333' into r10:
   ldrh r2,[r4],#2 ;@ Fetch immediate value
   ldrh r3,[r4],#2
@@ -7163,7 +7190,6 @@ Op0698:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   adds r1,r10,r0 ;@ Defines NZCV
@@ -7174,7 +7200,6 @@ Op0698:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -7183,6 +7208,8 @@ Op0698:
 
 ;@ ---------- [06a0] addi.l #$33333333, -(a0) uses Op06a0 ----------
 Op06a0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33333333' into r10:
   ldrh r2,[r4],#2 ;@ Fetch immediate value
   ldrh r3,[r4],#2
@@ -7200,7 +7227,6 @@ Op06a0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   adds r1,r10,r0 ;@ Defines NZCV
@@ -7211,7 +7237,6 @@ Op06a0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#30 ;@ Subtract cycles
@@ -7220,6 +7245,8 @@ Op06a0:
 
 ;@ ---------- [06a8] addi.l #$33333333, ($3333,a0) uses Op06a8 ----------
 Op06a8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33333333' into r10:
   ldrh r2,[r4],#2 ;@ Fetch immediate value
   ldrh r3,[r4],#2
@@ -7236,7 +7263,6 @@ Op06a8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   adds r1,r10,r0 ;@ Defines NZCV
@@ -7247,7 +7273,6 @@ Op06a8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#32 ;@ Subtract cycles
@@ -7256,6 +7281,8 @@ Op06a8:
 
 ;@ ---------- [06b0] addi.l #$33333333, ($33,a0,d3.w*2) uses Op06b0 ----------
 Op06b0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33333333' into r10:
   ldrh r2,[r4],#2 ;@ Fetch immediate value
   ldrh r3,[r4],#2
@@ -7281,7 +7308,6 @@ Op06b0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   adds r1,r10,r0 ;@ Defines NZCV
@@ -7292,7 +7318,6 @@ Op06b0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#34 ;@ Subtract cycles
@@ -7301,6 +7326,8 @@ Op06b0:
 
 ;@ ---------- [06b8] addi.l #$33333333, $3333.w uses Op06b8 ----------
 Op06b8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33333333' into r10:
   ldrh r2,[r4],#2 ;@ Fetch immediate value
   ldrh r3,[r4],#2
@@ -7314,7 +7341,6 @@ Op06b8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   adds r1,r10,r0 ;@ Defines NZCV
@@ -7325,7 +7351,6 @@ Op06b8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#32 ;@ Subtract cycles
@@ -7334,6 +7359,8 @@ Op06b8:
 
 ;@ ---------- [06b9] addi.l #$33333333, $33333333.l uses Op06b9 ----------
 Op06b9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33333333' into r10:
   ldrh r2,[r4],#2 ;@ Fetch immediate value
   ldrh r3,[r4],#2
@@ -7349,7 +7376,6 @@ Op06b9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   adds r1,r10,r0 ;@ Defines NZCV
@@ -7360,7 +7386,6 @@ Op06b9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#36 ;@ Subtract cycles
@@ -7394,6 +7419,8 @@ Op0800:
 
 ;@ ---------- [0810] btst #$33, (a0) uses Op0810 ----------
 Op0810:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 
 ;@ EaCalc : Get '#$33' into r0:
   ldrsb r0,[r4],#2 ;@ Fetch immediate value
@@ -7412,7 +7439,6 @@ Op0810:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -7424,6 +7450,8 @@ Op0810:
 
 ;@ ---------- [0818] btst #$33, (a0)+ uses Op0818 ----------
 Op0818:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 
 ;@ EaCalc : Get '#$33' into r0:
   ldrsb r0,[r4],#2 ;@ Fetch immediate value
@@ -7443,7 +7471,6 @@ Op0818:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -7455,6 +7482,8 @@ Op0818:
 
 ;@ ---------- [081f] btst #$33, (a7)+ uses Op081f ----------
 Op081f:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 
 ;@ EaCalc : Get '#$33' into r0:
   ldrsb r0,[r4],#2 ;@ Fetch immediate value
@@ -7473,7 +7502,6 @@ Op081f:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -7485,6 +7513,8 @@ Op081f:
 
 ;@ ---------- [0820] btst #$33, -(a0) uses Op0820 ----------
 Op0820:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 
 ;@ EaCalc : Get '#$33' into r0:
   ldrsb r0,[r4],#2 ;@ Fetch immediate value
@@ -7505,7 +7535,6 @@ Op0820:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -7517,6 +7546,8 @@ Op0820:
 
 ;@ ---------- [0827] btst #$33, -(a7) uses Op0827 ----------
 Op0827:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 
 ;@ EaCalc : Get '#$33' into r0:
   ldrsb r0,[r4],#2 ;@ Fetch immediate value
@@ -7535,7 +7566,6 @@ Op0827:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -7547,6 +7577,8 @@ Op0827:
 
 ;@ ---------- [0830] btst #$33, ($33,a0,d3.w*2) uses Op0830 ----------
 Op0830:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 
 ;@ EaCalc : Get '#$33' into r0:
   ldrsb r0,[r4],#2 ;@ Fetch immediate value
@@ -7575,7 +7607,6 @@ Op0830:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -7587,6 +7618,8 @@ Op0830:
 
 ;@ ---------- [083a] btst #$33, ($3333,pc); =3337 uses Op083a ----------
 Op083a:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 
 ;@ EaCalc : Get '#$33' into r0:
   ldrsb r0,[r4],#2 ;@ Fetch immediate value
@@ -7606,7 +7639,6 @@ Op083a:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x80] ;@ Call fetch8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -7618,6 +7650,8 @@ Op083a:
 
 ;@ ---------- [083b] btst #$33, ($33,pc,d3.w*2); =37 uses Op083b ----------
 Op083b:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 
 ;@ EaCalc : Get '#$33' into r0:
   ldrsb r0,[r4],#2 ;@ Fetch immediate value
@@ -7645,7 +7679,6 @@ Op083b:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x80] ;@ Call fetch8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -7687,6 +7720,8 @@ Op0840:
 
 ;@ ---------- [0850] bchg #$33, (a0) uses Op0850 ----------
 Op0850:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 
 ;@ EaCalc : Get '#$33' into r0:
   ldrsb r0,[r4],#2 ;@ Fetch immediate value
@@ -7706,7 +7741,6 @@ Op0850:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -7718,7 +7752,6 @@ Op0850:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -7727,6 +7760,8 @@ Op0850:
 
 ;@ ---------- [0858] bchg #$33, (a0)+ uses Op0858 ----------
 Op0858:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 
 ;@ EaCalc : Get '#$33' into r0:
   ldrsb r0,[r4],#2 ;@ Fetch immediate value
@@ -7747,7 +7782,6 @@ Op0858:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -7759,7 +7793,6 @@ Op0858:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -7768,6 +7801,8 @@ Op0858:
 
 ;@ ---------- [085f] bchg #$33, (a7)+ uses Op085f ----------
 Op085f:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 
 ;@ EaCalc : Get '#$33' into r0:
   ldrsb r0,[r4],#2 ;@ Fetch immediate value
@@ -7787,7 +7822,6 @@ Op085f:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -7799,7 +7833,6 @@ Op085f:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -7808,6 +7841,8 @@ Op085f:
 
 ;@ ---------- [0860] bchg #$33, -(a0) uses Op0860 ----------
 Op0860:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 
 ;@ EaCalc : Get '#$33' into r0:
   ldrsb r0,[r4],#2 ;@ Fetch immediate value
@@ -7829,7 +7864,6 @@ Op0860:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -7841,7 +7875,6 @@ Op0860:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -7850,6 +7883,8 @@ Op0860:
 
 ;@ ---------- [0867] bchg #$33, -(a7) uses Op0867 ----------
 Op0867:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 
 ;@ EaCalc : Get '#$33' into r0:
   ldrsb r0,[r4],#2 ;@ Fetch immediate value
@@ -7869,7 +7904,6 @@ Op0867:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -7881,7 +7915,6 @@ Op0867:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -7890,6 +7923,8 @@ Op0867:
 
 ;@ ---------- [0868] bchg #$33, ($3333,a0) uses Op0868 ----------
 Op0868:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 
 ;@ EaCalc : Get '#$33' into r0:
   ldrsb r0,[r4],#2 ;@ Fetch immediate value
@@ -7910,7 +7945,6 @@ Op0868:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -7922,7 +7956,6 @@ Op0868:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -7931,6 +7964,8 @@ Op0868:
 
 ;@ ---------- [0870] bchg #$33, ($33,a0,d3.w*2) uses Op0870 ----------
 Op0870:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 
 ;@ EaCalc : Get '#$33' into r0:
   ldrsb r0,[r4],#2 ;@ Fetch immediate value
@@ -7960,7 +7995,6 @@ Op0870:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -7972,7 +8006,6 @@ Op0870:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -7981,6 +8014,8 @@ Op0870:
 
 ;@ ---------- [0878] bchg #$33, $3333.w uses Op0878 ----------
 Op0878:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 
 ;@ EaCalc : Get '#$33' into r0:
   ldrsb r0,[r4],#2 ;@ Fetch immediate value
@@ -7998,7 +8033,6 @@ Op0878:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -8010,7 +8044,6 @@ Op0878:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -8019,6 +8052,8 @@ Op0878:
 
 ;@ ---------- [0879] bchg #$33, $33333333.l uses Op0879 ----------
 Op0879:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 
 ;@ EaCalc : Get '#$33' into r0:
   ldrsb r0,[r4],#2 ;@ Fetch immediate value
@@ -8038,7 +8073,6 @@ Op0879:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -8050,7 +8084,6 @@ Op0879:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -8089,6 +8122,8 @@ Op0880:
 
 ;@ ---------- [0890] bclr #$33, (a0) uses Op0890 ----------
 Op0890:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 
 ;@ EaCalc : Get '#$33' into r0:
   ldrsb r0,[r4],#2 ;@ Fetch immediate value
@@ -8108,7 +8143,6 @@ Op0890:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -8120,7 +8154,6 @@ Op0890:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -8129,6 +8162,8 @@ Op0890:
 
 ;@ ---------- [0898] bclr #$33, (a0)+ uses Op0898 ----------
 Op0898:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 
 ;@ EaCalc : Get '#$33' into r0:
   ldrsb r0,[r4],#2 ;@ Fetch immediate value
@@ -8149,7 +8184,6 @@ Op0898:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -8161,7 +8195,6 @@ Op0898:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -8170,6 +8203,8 @@ Op0898:
 
 ;@ ---------- [089f] bclr #$33, (a7)+ uses Op089f ----------
 Op089f:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 
 ;@ EaCalc : Get '#$33' into r0:
   ldrsb r0,[r4],#2 ;@ Fetch immediate value
@@ -8189,7 +8224,6 @@ Op089f:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -8201,7 +8235,6 @@ Op089f:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -8210,6 +8243,8 @@ Op089f:
 
 ;@ ---------- [08a0] bclr #$33, -(a0) uses Op08a0 ----------
 Op08a0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 
 ;@ EaCalc : Get '#$33' into r0:
   ldrsb r0,[r4],#2 ;@ Fetch immediate value
@@ -8231,7 +8266,6 @@ Op08a0:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -8243,7 +8277,6 @@ Op08a0:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -8252,6 +8285,8 @@ Op08a0:
 
 ;@ ---------- [08a7] bclr #$33, -(a7) uses Op08a7 ----------
 Op08a7:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 
 ;@ EaCalc : Get '#$33' into r0:
   ldrsb r0,[r4],#2 ;@ Fetch immediate value
@@ -8271,7 +8306,6 @@ Op08a7:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -8283,7 +8317,6 @@ Op08a7:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -8292,6 +8325,8 @@ Op08a7:
 
 ;@ ---------- [08a8] bclr #$33, ($3333,a0) uses Op08a8 ----------
 Op08a8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 
 ;@ EaCalc : Get '#$33' into r0:
   ldrsb r0,[r4],#2 ;@ Fetch immediate value
@@ -8312,7 +8347,6 @@ Op08a8:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -8324,7 +8358,6 @@ Op08a8:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -8333,6 +8366,8 @@ Op08a8:
 
 ;@ ---------- [08b0] bclr #$33, ($33,a0,d3.w*2) uses Op08b0 ----------
 Op08b0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 
 ;@ EaCalc : Get '#$33' into r0:
   ldrsb r0,[r4],#2 ;@ Fetch immediate value
@@ -8362,7 +8397,6 @@ Op08b0:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -8374,7 +8408,6 @@ Op08b0:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -8383,6 +8416,8 @@ Op08b0:
 
 ;@ ---------- [08b8] bclr #$33, $3333.w uses Op08b8 ----------
 Op08b8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 
 ;@ EaCalc : Get '#$33' into r0:
   ldrsb r0,[r4],#2 ;@ Fetch immediate value
@@ -8400,7 +8435,6 @@ Op08b8:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -8412,7 +8446,6 @@ Op08b8:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -8421,6 +8454,8 @@ Op08b8:
 
 ;@ ---------- [08b9] bclr #$33, $33333333.l uses Op08b9 ----------
 Op08b9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 
 ;@ EaCalc : Get '#$33' into r0:
   ldrsb r0,[r4],#2 ;@ Fetch immediate value
@@ -8440,7 +8475,6 @@ Op08b9:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -8452,7 +8486,6 @@ Op08b9:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -8491,6 +8524,8 @@ Op08c0:
 
 ;@ ---------- [08d0] bset #$33, (a0) uses Op08d0 ----------
 Op08d0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 
 ;@ EaCalc : Get '#$33' into r0:
   ldrsb r0,[r4],#2 ;@ Fetch immediate value
@@ -8510,7 +8545,6 @@ Op08d0:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -8522,7 +8556,6 @@ Op08d0:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -8531,6 +8564,8 @@ Op08d0:
 
 ;@ ---------- [08d8] bset #$33, (a0)+ uses Op08d8 ----------
 Op08d8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 
 ;@ EaCalc : Get '#$33' into r0:
   ldrsb r0,[r4],#2 ;@ Fetch immediate value
@@ -8551,7 +8586,6 @@ Op08d8:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -8563,7 +8597,6 @@ Op08d8:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -8572,6 +8605,8 @@ Op08d8:
 
 ;@ ---------- [08df] bset #$33, (a7)+ uses Op08df ----------
 Op08df:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 
 ;@ EaCalc : Get '#$33' into r0:
   ldrsb r0,[r4],#2 ;@ Fetch immediate value
@@ -8591,7 +8626,6 @@ Op08df:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -8603,7 +8637,6 @@ Op08df:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -8612,6 +8645,8 @@ Op08df:
 
 ;@ ---------- [08e0] bset #$33, -(a0) uses Op08e0 ----------
 Op08e0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 
 ;@ EaCalc : Get '#$33' into r0:
   ldrsb r0,[r4],#2 ;@ Fetch immediate value
@@ -8633,7 +8668,6 @@ Op08e0:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -8645,7 +8679,6 @@ Op08e0:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -8654,6 +8687,8 @@ Op08e0:
 
 ;@ ---------- [08e7] bset #$33, -(a7) uses Op08e7 ----------
 Op08e7:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 
 ;@ EaCalc : Get '#$33' into r0:
   ldrsb r0,[r4],#2 ;@ Fetch immediate value
@@ -8673,7 +8708,6 @@ Op08e7:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -8685,7 +8719,6 @@ Op08e7:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -8694,6 +8727,8 @@ Op08e7:
 
 ;@ ---------- [08e8] bset #$33, ($3333,a0) uses Op08e8 ----------
 Op08e8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 
 ;@ EaCalc : Get '#$33' into r0:
   ldrsb r0,[r4],#2 ;@ Fetch immediate value
@@ -8714,7 +8749,6 @@ Op08e8:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -8726,7 +8760,6 @@ Op08e8:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -8735,6 +8768,8 @@ Op08e8:
 
 ;@ ---------- [08f0] bset #$33, ($33,a0,d3.w*2) uses Op08f0 ----------
 Op08f0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 
 ;@ EaCalc : Get '#$33' into r0:
   ldrsb r0,[r4],#2 ;@ Fetch immediate value
@@ -8764,7 +8799,6 @@ Op08f0:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -8776,7 +8810,6 @@ Op08f0:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -8785,6 +8818,8 @@ Op08f0:
 
 ;@ ---------- [08f8] bset #$33, $3333.w uses Op08f8 ----------
 Op08f8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 
 ;@ EaCalc : Get '#$33' into r0:
   ldrsb r0,[r4],#2 ;@ Fetch immediate value
@@ -8802,7 +8837,6 @@ Op08f8:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -8814,7 +8848,6 @@ Op08f8:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -8823,6 +8856,8 @@ Op08f8:
 
 ;@ ---------- [08f9] bset #$33, $33333333.l uses Op08f9 ----------
 Op08f9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 
 ;@ EaCalc : Get '#$33' into r0:
   ldrsb r0,[r4],#2 ;@ Fetch immediate value
@@ -8842,7 +8877,6 @@ Op08f9:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   tst r0,r11 ;@ Do arithmetic
   orreq r10,r10,#0x40000000 ;@ Get Z flag
@@ -8854,7 +8888,6 @@ Op08f9:
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -8889,6 +8922,8 @@ Op0a00:
 
 ;@ ---------- [0a10] eori.b #$33, (a0) uses Op0a10 ----------
 Op0a10:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33' into r10:
   ldrsb r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$33' (address in r10) into r10:
@@ -8902,7 +8937,6 @@ Op0a10:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -8915,7 +8949,6 @@ Op0a10:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -8924,6 +8957,8 @@ Op0a10:
 
 ;@ ---------- [0a18] eori.b #$33, (a0)+ uses Op0a18 ----------
 Op0a18:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33' into r10:
   ldrsb r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$33' (address in r10) into r10:
@@ -8938,7 +8973,6 @@ Op0a18:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -8951,7 +8985,6 @@ Op0a18:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -8960,6 +8993,8 @@ Op0a18:
 
 ;@ ---------- [0a1f] eori.b #$33, (a7)+ uses Op0a1f ----------
 Op0a1f:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33' into r10:
   ldrsb r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$33' (address in r10) into r10:
@@ -8973,7 +9008,6 @@ Op0a1f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -8986,7 +9020,6 @@ Op0a1f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -8995,6 +9028,8 @@ Op0a1f:
 
 ;@ ---------- [0a20] eori.b #$33, -(a0) uses Op0a20 ----------
 Op0a20:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33' into r10:
   ldrsb r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$33' (address in r10) into r10:
@@ -9010,7 +9045,6 @@ Op0a20:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -9023,7 +9057,6 @@ Op0a20:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -9032,6 +9065,8 @@ Op0a20:
 
 ;@ ---------- [0a27] eori.b #$33, -(a7) uses Op0a27 ----------
 Op0a27:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33' into r10:
   ldrsb r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$33' (address in r10) into r10:
@@ -9045,7 +9080,6 @@ Op0a27:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -9058,7 +9092,6 @@ Op0a27:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -9067,6 +9100,8 @@ Op0a27:
 
 ;@ ---------- [0a28] eori.b #$33, ($3333,a0) uses Op0a28 ----------
 Op0a28:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33' into r10:
   ldrsb r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$33' (address in r10) into r10:
@@ -9081,7 +9116,6 @@ Op0a28:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -9094,7 +9128,6 @@ Op0a28:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -9103,6 +9136,8 @@ Op0a28:
 
 ;@ ---------- [0a30] eori.b #$33, ($33,a0,d3.w*2) uses Op0a30 ----------
 Op0a30:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33' into r10:
   ldrsb r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$33' (address in r10) into r10:
@@ -9126,7 +9161,6 @@ Op0a30:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -9139,7 +9173,6 @@ Op0a30:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -9148,6 +9181,8 @@ Op0a30:
 
 ;@ ---------- [0a38] eori.b #$33, $3333.w uses Op0a38 ----------
 Op0a38:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33' into r10:
   ldrsb r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$33' (address in r10) into r10:
@@ -9159,7 +9194,6 @@ Op0a38:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -9172,7 +9206,6 @@ Op0a38:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -9181,6 +9214,8 @@ Op0a38:
 
 ;@ ---------- [0a39] eori.b #$33, $33333333.l uses Op0a39 ----------
 Op0a39:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33' into r10:
   ldrsb r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$33' (address in r10) into r10:
@@ -9194,7 +9229,6 @@ Op0a39:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -9207,7 +9241,6 @@ Op0a39:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -9262,6 +9295,8 @@ Op0a40:
 
 ;@ ---------- [0a50] eori.w #$3333, (a0) uses Op0a50 ----------
 Op0a50:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$3333' into r10:
   ldrsh r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$3333' (address in r10) into r10:
@@ -9275,7 +9310,6 @@ Op0a50:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -9288,7 +9322,6 @@ Op0a50:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -9297,6 +9330,8 @@ Op0a50:
 
 ;@ ---------- [0a58] eori.w #$3333, (a0)+ uses Op0a58 ----------
 Op0a58:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$3333' into r10:
   ldrsh r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$3333' (address in r10) into r10:
@@ -9311,7 +9346,6 @@ Op0a58:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -9324,7 +9358,6 @@ Op0a58:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -9333,6 +9366,8 @@ Op0a58:
 
 ;@ ---------- [0a60] eori.w #$3333, -(a0) uses Op0a60 ----------
 Op0a60:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$3333' into r10:
   ldrsh r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$3333' (address in r10) into r10:
@@ -9348,7 +9383,6 @@ Op0a60:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -9361,7 +9395,6 @@ Op0a60:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -9370,6 +9403,8 @@ Op0a60:
 
 ;@ ---------- [0a68] eori.w #$3333, ($3333,a0) uses Op0a68 ----------
 Op0a68:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$3333' into r10:
   ldrsh r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$3333' (address in r10) into r10:
@@ -9384,7 +9419,6 @@ Op0a68:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -9397,7 +9431,6 @@ Op0a68:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -9406,6 +9439,8 @@ Op0a68:
 
 ;@ ---------- [0a70] eori.w #$3333, ($33,a0,d3.w*2) uses Op0a70 ----------
 Op0a70:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$3333' into r10:
   ldrsh r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$3333' (address in r10) into r10:
@@ -9429,7 +9464,6 @@ Op0a70:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -9442,7 +9476,6 @@ Op0a70:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -9451,6 +9484,8 @@ Op0a70:
 
 ;@ ---------- [0a78] eori.w #$3333, $3333.w uses Op0a78 ----------
 Op0a78:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$3333' into r10:
   ldrsh r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$3333' (address in r10) into r10:
@@ -9462,7 +9497,6 @@ Op0a78:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -9475,7 +9509,6 @@ Op0a78:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -9484,6 +9517,8 @@ Op0a78:
 
 ;@ ---------- [0a79] eori.w #$3333, $33333333.l uses Op0a79 ----------
 Op0a79:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$3333' into r10:
   ldrsh r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$3333' (address in r10) into r10:
@@ -9497,7 +9532,6 @@ Op0a79:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -9510,7 +9544,6 @@ Op0a79:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -9594,6 +9627,8 @@ Op0a80:
 
 ;@ ---------- [0a90] eori.l #$33333333, (a0) uses Op0a90 ----------
 Op0a90:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33333333' into r10:
   ldrh r2,[r4],#2 ;@ Fetch immediate value
   ldrh r3,[r4],#2
@@ -9609,7 +9644,6 @@ Op0a90:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   eors r1,r10,r0
@@ -9620,7 +9654,6 @@ Op0a90:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -9629,6 +9662,8 @@ Op0a90:
 
 ;@ ---------- [0a98] eori.l #$33333333, (a0)+ uses Op0a98 ----------
 Op0a98:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33333333' into r10:
   ldrh r2,[r4],#2 ;@ Fetch immediate value
   ldrh r3,[r4],#2
@@ -9645,7 +9680,6 @@ Op0a98:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   eors r1,r10,r0
@@ -9656,7 +9690,6 @@ Op0a98:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -9665,6 +9698,8 @@ Op0a98:
 
 ;@ ---------- [0aa0] eori.l #$33333333, -(a0) uses Op0aa0 ----------
 Op0aa0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33333333' into r10:
   ldrh r2,[r4],#2 ;@ Fetch immediate value
   ldrh r3,[r4],#2
@@ -9682,7 +9717,6 @@ Op0aa0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   eors r1,r10,r0
@@ -9693,7 +9727,6 @@ Op0aa0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#30 ;@ Subtract cycles
@@ -9702,6 +9735,8 @@ Op0aa0:
 
 ;@ ---------- [0aa8] eori.l #$33333333, ($3333,a0) uses Op0aa8 ----------
 Op0aa8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33333333' into r10:
   ldrh r2,[r4],#2 ;@ Fetch immediate value
   ldrh r3,[r4],#2
@@ -9718,7 +9753,6 @@ Op0aa8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   eors r1,r10,r0
@@ -9729,7 +9763,6 @@ Op0aa8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#32 ;@ Subtract cycles
@@ -9738,6 +9771,8 @@ Op0aa8:
 
 ;@ ---------- [0ab0] eori.l #$33333333, ($33,a0,d3.w*2) uses Op0ab0 ----------
 Op0ab0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33333333' into r10:
   ldrh r2,[r4],#2 ;@ Fetch immediate value
   ldrh r3,[r4],#2
@@ -9763,7 +9798,6 @@ Op0ab0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   eors r1,r10,r0
@@ -9774,7 +9808,6 @@ Op0ab0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#34 ;@ Subtract cycles
@@ -9783,6 +9816,8 @@ Op0ab0:
 
 ;@ ---------- [0ab8] eori.l #$33333333, $3333.w uses Op0ab8 ----------
 Op0ab8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33333333' into r10:
   ldrh r2,[r4],#2 ;@ Fetch immediate value
   ldrh r3,[r4],#2
@@ -9796,7 +9831,6 @@ Op0ab8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   eors r1,r10,r0
@@ -9807,7 +9841,6 @@ Op0ab8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#32 ;@ Subtract cycles
@@ -9816,6 +9849,8 @@ Op0ab8:
 
 ;@ ---------- [0ab9] eori.l #$33333333, $33333333.l uses Op0ab9 ----------
 Op0ab9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33333333' into r10:
   ldrh r2,[r4],#2 ;@ Fetch immediate value
   ldrh r3,[r4],#2
@@ -9831,7 +9866,6 @@ Op0ab9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   eors r1,r10,r0
@@ -9842,7 +9876,6 @@ Op0ab9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#36 ;@ Subtract cycles
@@ -9873,6 +9906,8 @@ Op0c00:
 
 ;@ ---------- [0c10] cmpi.b #$33, (a0) uses Op0c10 ----------
 Op0c10:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33' into r10:
   ldrsb r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$33' (address in r10) into r10:
@@ -9885,7 +9920,6 @@ Op0c10:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -9900,6 +9934,8 @@ Op0c10:
 
 ;@ ---------- [0c18] cmpi.b #$33, (a0)+ uses Op0c18 ----------
 Op0c18:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33' into r10:
   ldrsb r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$33' (address in r10) into r10:
@@ -9913,7 +9949,6 @@ Op0c18:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -9928,6 +9963,8 @@ Op0c18:
 
 ;@ ---------- [0c1f] cmpi.b #$33, (a7)+ uses Op0c1f ----------
 Op0c1f:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33' into r10:
   ldrsb r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$33' (address in r10) into r10:
@@ -9940,7 +9977,6 @@ Op0c1f:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -9955,6 +9991,8 @@ Op0c1f:
 
 ;@ ---------- [0c20] cmpi.b #$33, -(a0) uses Op0c20 ----------
 Op0c20:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33' into r10:
   ldrsb r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$33' (address in r10) into r10:
@@ -9969,7 +10007,6 @@ Op0c20:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -9984,6 +10021,8 @@ Op0c20:
 
 ;@ ---------- [0c27] cmpi.b #$33, -(a7) uses Op0c27 ----------
 Op0c27:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33' into r10:
   ldrsb r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$33' (address in r10) into r10:
@@ -9996,7 +10035,6 @@ Op0c27:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -10011,6 +10049,8 @@ Op0c27:
 
 ;@ ---------- [0c28] cmpi.b #$33, ($3333,a0) uses Op0c28 ----------
 Op0c28:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33' into r10:
   ldrsb r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$33' (address in r10) into r10:
@@ -10024,7 +10064,6 @@ Op0c28:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -10039,6 +10078,8 @@ Op0c28:
 
 ;@ ---------- [0c30] cmpi.b #$33, ($33,a0,d3.w*2) uses Op0c30 ----------
 Op0c30:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33' into r10:
   ldrsb r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$33' (address in r10) into r10:
@@ -10061,7 +10102,6 @@ Op0c30:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -10076,6 +10116,8 @@ Op0c30:
 
 ;@ ---------- [0c38] cmpi.b #$33, $3333.w uses Op0c38 ----------
 Op0c38:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33' into r10:
   ldrsb r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$33' (address in r10) into r10:
@@ -10086,7 +10128,6 @@ Op0c38:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -10101,6 +10142,8 @@ Op0c38:
 
 ;@ ---------- [0c39] cmpi.b #$33, $33333333.l uses Op0c39 ----------
 Op0c39:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33' into r10:
   ldrsb r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$33' (address in r10) into r10:
@@ -10113,7 +10156,6 @@ Op0c39:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #24
 ;@ Do arithmetic:
@@ -10128,6 +10170,8 @@ Op0c39:
 
 ;@ ---------- [0c50] cmpi.w #$3333, (a0) uses Op0c50 ----------
 Op0c50:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$3333' into r10:
   ldrsh r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$3333' (address in r10) into r10:
@@ -10140,7 +10184,6 @@ Op0c50:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -10155,6 +10198,8 @@ Op0c50:
 
 ;@ ---------- [0c58] cmpi.w #$3333, (a0)+ uses Op0c58 ----------
 Op0c58:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$3333' into r10:
   ldrsh r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$3333' (address in r10) into r10:
@@ -10168,7 +10213,6 @@ Op0c58:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -10183,6 +10227,8 @@ Op0c58:
 
 ;@ ---------- [0c60] cmpi.w #$3333, -(a0) uses Op0c60 ----------
 Op0c60:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$3333' into r10:
   ldrsh r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$3333' (address in r10) into r10:
@@ -10197,7 +10243,6 @@ Op0c60:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -10212,6 +10257,8 @@ Op0c60:
 
 ;@ ---------- [0c68] cmpi.w #$3333, ($3333,a0) uses Op0c68 ----------
 Op0c68:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$3333' into r10:
   ldrsh r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$3333' (address in r10) into r10:
@@ -10225,7 +10272,6 @@ Op0c68:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -10240,6 +10286,8 @@ Op0c68:
 
 ;@ ---------- [0c70] cmpi.w #$3333, ($33,a0,d3.w*2) uses Op0c70 ----------
 Op0c70:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$3333' into r10:
   ldrsh r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$3333' (address in r10) into r10:
@@ -10262,7 +10310,6 @@ Op0c70:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -10277,6 +10324,8 @@ Op0c70:
 
 ;@ ---------- [0c78] cmpi.w #$3333, $3333.w uses Op0c78 ----------
 Op0c78:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$3333' into r10:
   ldrsh r10,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$3333' (address in r10) into r10:
@@ -10287,7 +10336,6 @@ Op0c78:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r10,r10,asl #16
 ;@ Do arithmetic:
@@ -10325,6 +10373,8 @@ Op0c80:
 
 ;@ ---------- [0c90] cmpi.l #$33333333, (a0) uses Op0c90 ----------
 Op0c90:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33333333' into r10:
   ldrh r2,[r4],#2 ;@ Fetch immediate value
   ldrh r3,[r4],#2
@@ -10339,7 +10389,6 @@ Op0c90:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   rsbs r1,r10,r0 ;@ Defines NZCV
@@ -10353,6 +10402,8 @@ Op0c90:
 
 ;@ ---------- [0c98] cmpi.l #$33333333, (a0)+ uses Op0c98 ----------
 Op0c98:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33333333' into r10:
   ldrh r2,[r4],#2 ;@ Fetch immediate value
   ldrh r3,[r4],#2
@@ -10368,7 +10419,6 @@ Op0c98:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   rsbs r1,r10,r0 ;@ Defines NZCV
@@ -10382,6 +10432,8 @@ Op0c98:
 
 ;@ ---------- [0ca0] cmpi.l #$33333333, -(a0) uses Op0ca0 ----------
 Op0ca0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33333333' into r10:
   ldrh r2,[r4],#2 ;@ Fetch immediate value
   ldrh r3,[r4],#2
@@ -10398,7 +10450,6 @@ Op0ca0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   rsbs r1,r10,r0 ;@ Defines NZCV
@@ -10412,6 +10463,8 @@ Op0ca0:
 
 ;@ ---------- [0ca8] cmpi.l #$33333333, ($3333,a0) uses Op0ca8 ----------
 Op0ca8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33333333' into r10:
   ldrh r2,[r4],#2 ;@ Fetch immediate value
   ldrh r3,[r4],#2
@@ -10427,7 +10480,6 @@ Op0ca8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   rsbs r1,r10,r0 ;@ Defines NZCV
@@ -10441,6 +10493,8 @@ Op0ca8:
 
 ;@ ---------- [0cb0] cmpi.l #$33333333, ($33,a0,d3.w*2) uses Op0cb0 ----------
 Op0cb0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33333333' into r10:
   ldrh r2,[r4],#2 ;@ Fetch immediate value
   ldrh r3,[r4],#2
@@ -10465,7 +10519,6 @@ Op0cb0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   rsbs r1,r10,r0 ;@ Defines NZCV
@@ -10479,6 +10532,8 @@ Op0cb0:
 
 ;@ ---------- [0cb8] cmpi.l #$33333333, $3333.w uses Op0cb8 ----------
 Op0cb8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33333333' into r10:
   ldrh r2,[r4],#2 ;@ Fetch immediate value
   ldrh r3,[r4],#2
@@ -10491,7 +10546,6 @@ Op0cb8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   rsbs r1,r10,r0 ;@ Defines NZCV
@@ -10505,6 +10559,8 @@ Op0cb8:
 
 ;@ ---------- [0cb9] cmpi.l #$33333333, $33333333.l uses Op0cb9 ----------
 Op0cb9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33333333' into r10:
   ldrh r2,[r4],#2 ;@ Fetch immediate value
   ldrh r3,[r4],#2
@@ -10519,7 +10575,6 @@ Op0cb9:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
   rsbs r1,r10,r0 ;@ Defines NZCV
@@ -10554,6 +10609,8 @@ Op1000:
 
 ;@ ---------- [1010] move.b (a0), d0 uses Op1010 ----------
 Op1010:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -10562,7 +10619,6 @@ Op1010:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -10581,6 +10637,8 @@ Op1010:
 
 ;@ ---------- [101f] move.b (a7)+, d0 uses Op101f ----------
 Op101f:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a7)+' into r0:
   ldr r0,[r7,#0x3c] ;@ A7
   add r3,r0,#2 ;@ Post-increment An
@@ -10589,7 +10647,6 @@ Op101f:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -10608,6 +10665,8 @@ Op101f:
 
 ;@ ---------- [1020] move.b -(a0), d0 uses Op1020 ----------
 Op1020:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -10618,7 +10677,6 @@ Op1020:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -10637,6 +10695,8 @@ Op1020:
 
 ;@ ---------- [1027] move.b -(a7), d0 uses Op1027 ----------
 Op1027:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a7)' into r0:
   ldr r0,[r7,#0x3c] ;@ A7
   sub r0,r0,#2 ;@ Pre-decrement An
@@ -10645,7 +10705,6 @@ Op1027:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -10664,6 +10723,8 @@ Op1027:
 
 ;@ ---------- [1028] move.b ($3333,a0), d0 uses Op1028 ----------
 Op1028:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -10673,7 +10734,6 @@ Op1028:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -10692,6 +10752,8 @@ Op1028:
 
 ;@ ---------- [1030] move.b ($33,a0,d3.w*2), d0 uses Op1030 ----------
 Op1030:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r0:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -10710,7 +10772,6 @@ Op1030:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -10729,13 +10790,14 @@ Op1030:
 
 ;@ ---------- [1038] move.b $3333.w, d0 uses Op1038 ----------
 Op1038:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -10754,6 +10816,8 @@ Op1038:
 
 ;@ ---------- [103a] move.b ($3333,pc), d0; =3335 uses Op103a ----------
 Op103a:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,pc)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   sub r0,r4,r0 ;@ Real PC
@@ -10763,7 +10827,6 @@ Op103a:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x80] ;@ Call fetch8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -10782,6 +10845,8 @@ Op103a:
 
 ;@ ---------- [103b] move.b ($33,pc,d3.w*2), d0; =35 uses Op103b ----------
 Op103b:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,pc,d3.w*2)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   ldrh r3,[r4] ;@ Get extension word
@@ -10799,7 +10864,6 @@ Op103b:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x80] ;@ Call fetch8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -10839,6 +10903,8 @@ Op103c:
 
 ;@ ---------- [1080] move.b d0, (a0) uses Op1080 ----------
 Op1080:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x000f
 ;@ EaRead : Read register[r1] into r1:
@@ -10855,7 +10921,6 @@ Op1080:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#8 ;@ Subtract cycles
@@ -10864,6 +10929,8 @@ Op1080:
 
 ;@ ---------- [1090] move.b (a0), (a0) uses Op1090 ----------
 Op1090:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -10872,7 +10939,6 @@ Op1090:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -10885,7 +10951,6 @@ Op1090:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -10894,6 +10959,8 @@ Op1090:
 
 ;@ ---------- [1098] move.b (a0)+, (a0) uses Op1098 ----------
 Op1098:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r0:
   and r2,r8,#0x000f
   ldr r0,[r7,r2,lsl #2]
@@ -10903,7 +10970,6 @@ Op1098:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -10916,7 +10982,6 @@ Op1098:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -10925,6 +10990,8 @@ Op1098:
 
 ;@ ---------- [109f] move.b (a7)+, (a0) uses Op109f ----------
 Op109f:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a7)+' into r0:
   ldr r0,[r7,#0x3c] ;@ A7
   add r3,r0,#2 ;@ Post-increment An
@@ -10933,7 +11000,6 @@ Op109f:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -10946,7 +11012,6 @@ Op109f:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -10955,6 +11020,8 @@ Op109f:
 
 ;@ ---------- [10a0] move.b -(a0), (a0) uses Op10a0 ----------
 Op10a0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -10965,7 +11032,6 @@ Op10a0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -10978,7 +11044,6 @@ Op10a0:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -10987,6 +11052,8 @@ Op10a0:
 
 ;@ ---------- [10a7] move.b -(a7), (a0) uses Op10a7 ----------
 Op10a7:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a7)' into r0:
   ldr r0,[r7,#0x3c] ;@ A7
   sub r0,r0,#2 ;@ Pre-decrement An
@@ -10995,7 +11062,6 @@ Op10a7:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -11008,7 +11074,6 @@ Op10a7:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -11017,6 +11082,8 @@ Op10a7:
 
 ;@ ---------- [10a8] move.b ($3333,a0), (a0) uses Op10a8 ----------
 Op10a8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -11026,7 +11093,6 @@ Op10a8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -11039,7 +11105,6 @@ Op10a8:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -11048,6 +11113,8 @@ Op10a8:
 
 ;@ ---------- [10b0] move.b ($33,a0,d3.w*2), (a0) uses Op10b0 ----------
 Op10b0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r0:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -11066,7 +11133,6 @@ Op10b0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -11079,7 +11145,6 @@ Op10b0:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -11088,13 +11153,14 @@ Op10b0:
 
 ;@ ---------- [10b8] move.b $3333.w, (a0) uses Op10b8 ----------
 Op10b8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -11107,7 +11173,6 @@ Op10b8:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -11116,6 +11181,8 @@ Op10b8:
 
 ;@ ---------- [10b9] move.b $33333333.l, (a0) uses Op10b9 ----------
 Op10b9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r0:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -11124,7 +11191,6 @@ Op10b9:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -11137,7 +11203,6 @@ Op10b9:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -11146,6 +11211,8 @@ Op10b9:
 
 ;@ ---------- [10ba] move.b ($3333,pc), (a0); =3335 uses Op10ba ----------
 Op10ba:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,pc)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   sub r0,r4,r0 ;@ Real PC
@@ -11155,7 +11222,6 @@ Op10ba:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x80] ;@ Call fetch8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -11168,7 +11234,6 @@ Op10ba:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -11177,6 +11242,8 @@ Op10ba:
 
 ;@ ---------- [10bb] move.b ($33,pc,d3.w*2), (a0); =35 uses Op10bb ----------
 Op10bb:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,pc,d3.w*2)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   ldrh r3,[r4] ;@ Get extension word
@@ -11194,7 +11261,6 @@ Op10bb:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x80] ;@ Call fetch8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -11207,7 +11273,6 @@ Op10bb:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -11216,6 +11281,8 @@ Op10bb:
 
 ;@ ---------- [10bc] move.b #$33, (a0) uses Op10bc ----------
 Op10bc:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33' into r1:
   ldrsb r1,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$33' (address in r1) into r1:
@@ -11232,7 +11299,6 @@ Op10bc:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -11241,6 +11307,8 @@ Op10bc:
 
 ;@ ---------- [10d0] move.b (a0), (a0)+ uses Op10d0 ----------
 Op10d0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -11249,7 +11317,6 @@ Op10d0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -11264,7 +11331,6 @@ Op10d0:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -11273,6 +11339,8 @@ Op10d0:
 
 ;@ ---------- [10df] move.b (a7)+, (a0)+ uses Op10df ----------
 Op10df:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a7)+' into r0:
   ldr r0,[r7,#0x3c] ;@ A7
   add r3,r0,#2 ;@ Post-increment An
@@ -11281,7 +11349,6 @@ Op10df:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -11296,7 +11363,6 @@ Op10df:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -11305,6 +11371,8 @@ Op10df:
 
 ;@ ---------- [10e0] move.b -(a0), (a0)+ uses Op10e0 ----------
 Op10e0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -11315,7 +11383,6 @@ Op10e0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -11330,7 +11397,6 @@ Op10e0:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -11339,6 +11405,8 @@ Op10e0:
 
 ;@ ---------- [10e7] move.b -(a7), (a0)+ uses Op10e7 ----------
 Op10e7:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a7)' into r0:
   ldr r0,[r7,#0x3c] ;@ A7
   sub r0,r0,#2 ;@ Pre-decrement An
@@ -11347,7 +11415,6 @@ Op10e7:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -11362,7 +11429,6 @@ Op10e7:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -11371,6 +11437,8 @@ Op10e7:
 
 ;@ ---------- [10e8] move.b ($3333,a0), (a0)+ uses Op10e8 ----------
 Op10e8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -11380,7 +11448,6 @@ Op10e8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -11395,7 +11462,6 @@ Op10e8:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -11404,6 +11470,8 @@ Op10e8:
 
 ;@ ---------- [10f0] move.b ($33,a0,d3.w*2), (a0)+ uses Op10f0 ----------
 Op10f0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r0:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -11422,7 +11490,6 @@ Op10f0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -11437,7 +11504,6 @@ Op10f0:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -11446,13 +11512,14 @@ Op10f0:
 
 ;@ ---------- [10f8] move.b $3333.w, (a0)+ uses Op10f8 ----------
 Op10f8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -11467,7 +11534,6 @@ Op10f8:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -11476,6 +11542,8 @@ Op10f8:
 
 ;@ ---------- [10f9] move.b $33333333.l, (a0)+ uses Op10f9 ----------
 Op10f9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r0:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -11484,7 +11552,6 @@ Op10f9:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -11499,7 +11566,6 @@ Op10f9:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -11508,6 +11574,8 @@ Op10f9:
 
 ;@ ---------- [10fa] move.b ($3333,pc), (a0)+; =3335 uses Op10fa ----------
 Op10fa:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,pc)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   sub r0,r4,r0 ;@ Real PC
@@ -11517,7 +11585,6 @@ Op10fa:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x80] ;@ Call fetch8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -11532,7 +11599,6 @@ Op10fa:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -11541,6 +11607,8 @@ Op10fa:
 
 ;@ ---------- [10fb] move.b ($33,pc,d3.w*2), (a0)+; =35 uses Op10fb ----------
 Op10fb:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,pc,d3.w*2)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   ldrh r3,[r4] ;@ Get extension word
@@ -11558,7 +11626,6 @@ Op10fb:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x80] ;@ Call fetch8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -11573,7 +11640,6 @@ Op10fb:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -11582,6 +11648,8 @@ Op10fb:
 
 ;@ ---------- [10fc] move.b #$33, (a0)+ uses Op10fc ----------
 Op10fc:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33' into r1:
   ldrsb r1,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$33' (address in r1) into r1:
@@ -11600,7 +11668,6 @@ Op10fc:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -11609,6 +11676,8 @@ Op10fc:
 
 ;@ ---------- [1100] move.b d0, -(a0) uses Op1100 ----------
 Op1100:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x000f
 ;@ EaRead : Read register[r1] into r1:
@@ -11627,7 +11696,6 @@ Op1100:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#8 ;@ Subtract cycles
@@ -11636,6 +11704,8 @@ Op1100:
 
 ;@ ---------- [1110] move.b (a0), -(a0) uses Op1110 ----------
 Op1110:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -11644,7 +11714,6 @@ Op1110:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -11659,7 +11728,6 @@ Op1110:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -11668,6 +11736,8 @@ Op1110:
 
 ;@ ---------- [1118] move.b (a0)+, -(a0) uses Op1118 ----------
 Op1118:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r0:
   and r2,r8,#0x000f
   ldr r0,[r7,r2,lsl #2]
@@ -11677,7 +11747,6 @@ Op1118:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -11692,7 +11761,6 @@ Op1118:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -11701,6 +11769,8 @@ Op1118:
 
 ;@ ---------- [111f] move.b (a7)+, -(a0) uses Op111f ----------
 Op111f:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a7)+' into r0:
   ldr r0,[r7,#0x3c] ;@ A7
   add r3,r0,#2 ;@ Post-increment An
@@ -11709,7 +11779,6 @@ Op111f:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -11724,7 +11793,6 @@ Op111f:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -11733,6 +11801,8 @@ Op111f:
 
 ;@ ---------- [1120] move.b -(a0), -(a0) uses Op1120 ----------
 Op1120:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -11743,7 +11813,6 @@ Op1120:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -11758,7 +11827,6 @@ Op1120:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -11767,6 +11835,8 @@ Op1120:
 
 ;@ ---------- [1127] move.b -(a7), -(a0) uses Op1127 ----------
 Op1127:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a7)' into r0:
   ldr r0,[r7,#0x3c] ;@ A7
   sub r0,r0,#2 ;@ Pre-decrement An
@@ -11775,7 +11845,6 @@ Op1127:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -11790,7 +11859,6 @@ Op1127:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -11799,6 +11867,8 @@ Op1127:
 
 ;@ ---------- [1128] move.b ($3333,a0), -(a0) uses Op1128 ----------
 Op1128:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -11808,7 +11878,6 @@ Op1128:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -11823,7 +11892,6 @@ Op1128:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -11832,6 +11900,8 @@ Op1128:
 
 ;@ ---------- [1130] move.b ($33,a0,d3.w*2), -(a0) uses Op1130 ----------
 Op1130:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r0:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -11850,7 +11920,6 @@ Op1130:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -11865,7 +11934,6 @@ Op1130:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -11874,13 +11942,14 @@ Op1130:
 
 ;@ ---------- [1138] move.b $3333.w, -(a0) uses Op1138 ----------
 Op1138:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -11895,7 +11964,6 @@ Op1138:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -11904,6 +11972,8 @@ Op1138:
 
 ;@ ---------- [1139] move.b $33333333.l, -(a0) uses Op1139 ----------
 Op1139:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r0:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -11912,7 +11982,6 @@ Op1139:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -11927,7 +11996,6 @@ Op1139:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -11936,6 +12004,8 @@ Op1139:
 
 ;@ ---------- [113a] move.b ($3333,pc), -(a0); =3335 uses Op113a ----------
 Op113a:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,pc)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   sub r0,r4,r0 ;@ Real PC
@@ -11945,7 +12015,6 @@ Op113a:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x80] ;@ Call fetch8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -11960,7 +12029,6 @@ Op113a:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -11969,6 +12037,8 @@ Op113a:
 
 ;@ ---------- [113b] move.b ($33,pc,d3.w*2), -(a0); =35 uses Op113b ----------
 Op113b:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,pc,d3.w*2)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   ldrh r3,[r4] ;@ Get extension word
@@ -11986,7 +12056,6 @@ Op113b:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x80] ;@ Call fetch8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -12001,7 +12070,6 @@ Op113b:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -12010,6 +12078,8 @@ Op113b:
 
 ;@ ---------- [113c] move.b #$33, -(a0) uses Op113c ----------
 Op113c:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33' into r1:
   ldrsb r1,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$33' (address in r1) into r1:
@@ -12028,7 +12098,6 @@ Op113c:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -12037,6 +12106,8 @@ Op113c:
 
 ;@ ---------- [1140] move.b d0, ($3333,a0) uses Op1140 ----------
 Op1140:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x000f
 ;@ EaRead : Read register[r1] into r1:
@@ -12056,7 +12127,6 @@ Op1140:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -12065,6 +12135,8 @@ Op1140:
 
 ;@ ---------- [1150] move.b (a0), ($3333,a0) uses Op1150 ----------
 Op1150:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -12073,7 +12145,6 @@ Op1150:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -12090,7 +12161,6 @@ Op1150:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -12099,6 +12169,8 @@ Op1150:
 
 ;@ ---------- [1158] move.b (a0)+, ($3333,a0) uses Op1158 ----------
 Op1158:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r0:
   and r2,r8,#0x000f
   ldr r0,[r7,r2,lsl #2]
@@ -12108,7 +12180,6 @@ Op1158:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -12125,7 +12196,6 @@ Op1158:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -12134,6 +12204,8 @@ Op1158:
 
 ;@ ---------- [115f] move.b (a7)+, ($3333,a0) uses Op115f ----------
 Op115f:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a7)+' into r0:
   ldr r0,[r7,#0x3c] ;@ A7
   add r3,r0,#2 ;@ Post-increment An
@@ -12142,7 +12214,6 @@ Op115f:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -12159,7 +12230,6 @@ Op115f:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -12168,6 +12238,8 @@ Op115f:
 
 ;@ ---------- [1160] move.b -(a0), ($3333,a0) uses Op1160 ----------
 Op1160:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -12178,7 +12250,6 @@ Op1160:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -12195,7 +12266,6 @@ Op1160:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -12204,6 +12274,8 @@ Op1160:
 
 ;@ ---------- [1167] move.b -(a7), ($3333,a0) uses Op1167 ----------
 Op1167:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a7)' into r0:
   ldr r0,[r7,#0x3c] ;@ A7
   sub r0,r0,#2 ;@ Pre-decrement An
@@ -12212,7 +12284,6 @@ Op1167:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -12229,7 +12300,6 @@ Op1167:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -12238,6 +12308,8 @@ Op1167:
 
 ;@ ---------- [1168] move.b ($3333,a0), ($3333,a0) uses Op1168 ----------
 Op1168:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -12247,7 +12319,6 @@ Op1168:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -12264,7 +12335,6 @@ Op1168:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -12273,6 +12343,8 @@ Op1168:
 
 ;@ ---------- [1170] move.b ($33,a0,d3.w*2), ($3333,a0) uses Op1170 ----------
 Op1170:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r0:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -12291,7 +12363,6 @@ Op1170:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -12308,7 +12379,6 @@ Op1170:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -12317,13 +12387,14 @@ Op1170:
 
 ;@ ---------- [1178] move.b $3333.w, ($3333,a0) uses Op1178 ----------
 Op1178:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -12340,7 +12411,6 @@ Op1178:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -12349,6 +12419,8 @@ Op1178:
 
 ;@ ---------- [1179] move.b $33333333.l, ($3333,a0) uses Op1179 ----------
 Op1179:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r0:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -12357,7 +12429,6 @@ Op1179:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -12374,7 +12445,6 @@ Op1179:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -12383,6 +12453,8 @@ Op1179:
 
 ;@ ---------- [117a] move.b ($3333,pc), ($3333,a0); =3335 uses Op117a ----------
 Op117a:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,pc)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   sub r0,r4,r0 ;@ Real PC
@@ -12392,7 +12464,6 @@ Op117a:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x80] ;@ Call fetch8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -12409,7 +12480,6 @@ Op117a:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -12418,6 +12488,8 @@ Op117a:
 
 ;@ ---------- [117b] move.b ($33,pc,d3.w*2), ($3333,a0); =35 uses Op117b ----------
 Op117b:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,pc,d3.w*2)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   ldrh r3,[r4] ;@ Get extension word
@@ -12435,7 +12507,6 @@ Op117b:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x80] ;@ Call fetch8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -12452,7 +12523,6 @@ Op117b:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -12461,6 +12531,8 @@ Op117b:
 
 ;@ ---------- [117c] move.b #$33, ($3333,a0) uses Op117c ----------
 Op117c:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33' into r1:
   ldrsb r1,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$33' (address in r1) into r1:
@@ -12480,7 +12552,6 @@ Op117c:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -12489,6 +12560,8 @@ Op117c:
 
 ;@ ---------- [1180] move.b d0, ($33,a0,d3.w*2) uses Op1180 ----------
 Op1180:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x000f
 ;@ EaRead : Read register[r1] into r1:
@@ -12517,7 +12590,6 @@ Op1180:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -12526,6 +12598,8 @@ Op1180:
 
 ;@ ---------- [1190] move.b (a0), ($33,a0,d3.w*2) uses Op1190 ----------
 Op1190:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -12534,7 +12608,6 @@ Op1190:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -12560,7 +12633,6 @@ Op1190:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -12569,6 +12641,8 @@ Op1190:
 
 ;@ ---------- [119f] move.b (a7)+, ($33,a0,d3.w*2) uses Op119f ----------
 Op119f:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a7)+' into r0:
   ldr r0,[r7,#0x3c] ;@ A7
   add r3,r0,#2 ;@ Post-increment An
@@ -12577,7 +12651,6 @@ Op119f:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -12603,7 +12676,6 @@ Op119f:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -12612,6 +12684,8 @@ Op119f:
 
 ;@ ---------- [11a0] move.b -(a0), ($33,a0,d3.w*2) uses Op11a0 ----------
 Op11a0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -12622,7 +12696,6 @@ Op11a0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -12648,7 +12721,6 @@ Op11a0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -12657,6 +12729,8 @@ Op11a0:
 
 ;@ ---------- [11a7] move.b -(a7), ($33,a0,d3.w*2) uses Op11a7 ----------
 Op11a7:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a7)' into r0:
   ldr r0,[r7,#0x3c] ;@ A7
   sub r0,r0,#2 ;@ Pre-decrement An
@@ -12665,7 +12739,6 @@ Op11a7:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -12691,7 +12764,6 @@ Op11a7:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -12700,6 +12772,8 @@ Op11a7:
 
 ;@ ---------- [11a8] move.b ($3333,a0), ($33,a0,d3.w*2) uses Op11a8 ----------
 Op11a8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -12709,7 +12783,6 @@ Op11a8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -12735,7 +12808,6 @@ Op11a8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -12744,6 +12816,8 @@ Op11a8:
 
 ;@ ---------- [11b0] move.b ($33,a0,d3.w*2), ($33,a0,d3.w*2) uses Op11b0 ----------
 Op11b0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r0:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -12762,7 +12836,6 @@ Op11b0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -12788,7 +12861,6 @@ Op11b0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -12797,13 +12869,14 @@ Op11b0:
 
 ;@ ---------- [11b8] move.b $3333.w, ($33,a0,d3.w*2) uses Op11b8 ----------
 Op11b8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -12829,7 +12902,6 @@ Op11b8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -12838,6 +12910,8 @@ Op11b8:
 
 ;@ ---------- [11b9] move.b $33333333.l, ($33,a0,d3.w*2) uses Op11b9 ----------
 Op11b9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r0:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -12846,7 +12920,6 @@ Op11b9:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -12872,7 +12945,6 @@ Op11b9:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#26 ;@ Subtract cycles
@@ -12881,6 +12953,8 @@ Op11b9:
 
 ;@ ---------- [11ba] move.b ($3333,pc), ($33,a0,d3.w*2); =3335 uses Op11ba ----------
 Op11ba:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,pc)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   sub r0,r4,r0 ;@ Real PC
@@ -12890,7 +12964,6 @@ Op11ba:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x80] ;@ Call fetch8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -12916,7 +12989,6 @@ Op11ba:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -12925,6 +12997,8 @@ Op11ba:
 
 ;@ ---------- [11bb] move.b ($33,pc,d3.w*2), ($33,a0,d3.w*2); =35 uses Op11bb ----------
 Op11bb:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,pc,d3.w*2)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   ldrh r3,[r4] ;@ Get extension word
@@ -12942,7 +13016,6 @@ Op11bb:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x80] ;@ Call fetch8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -12968,7 +13041,6 @@ Op11bb:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -12977,6 +13049,8 @@ Op11bb:
 
 ;@ ---------- [11bc] move.b #$33, ($33,a0,d3.w*2) uses Op11bc ----------
 Op11bc:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33' into r1:
   ldrsb r1,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$33' (address in r1) into r1:
@@ -13005,7 +13079,6 @@ Op11bc:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -13014,6 +13087,8 @@ Op11bc:
 
 ;@ ---------- [11c0] move.b d0, $3333.w uses Op11c0 ----------
 Op11c0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x000f
 ;@ EaRead : Read register[r1] into r1:
@@ -13029,7 +13104,6 @@ Op11c0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -13038,6 +13112,8 @@ Op11c0:
 
 ;@ ---------- [11d0] move.b (a0), $3333.w uses Op11d0 ----------
 Op11d0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -13046,7 +13122,6 @@ Op11d0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -13059,7 +13134,6 @@ Op11d0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -13068,6 +13142,8 @@ Op11d0:
 
 ;@ ---------- [11d8] move.b (a0)+, $3333.w uses Op11d8 ----------
 Op11d8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r0:
   and r2,r8,#0x000f
   ldr r0,[r7,r2,lsl #2]
@@ -13077,7 +13153,6 @@ Op11d8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -13090,7 +13165,6 @@ Op11d8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -13099,6 +13173,8 @@ Op11d8:
 
 ;@ ---------- [11df] move.b (a7)+, $3333.w uses Op11df ----------
 Op11df:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a7)+' into r0:
   ldr r0,[r7,#0x3c] ;@ A7
   add r3,r0,#2 ;@ Post-increment An
@@ -13107,7 +13183,6 @@ Op11df:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -13120,7 +13195,6 @@ Op11df:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -13129,6 +13203,8 @@ Op11df:
 
 ;@ ---------- [11e0] move.b -(a0), $3333.w uses Op11e0 ----------
 Op11e0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -13139,7 +13215,6 @@ Op11e0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -13152,7 +13227,6 @@ Op11e0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -13161,6 +13235,8 @@ Op11e0:
 
 ;@ ---------- [11e7] move.b -(a7), $3333.w uses Op11e7 ----------
 Op11e7:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a7)' into r0:
   ldr r0,[r7,#0x3c] ;@ A7
   sub r0,r0,#2 ;@ Pre-decrement An
@@ -13169,7 +13245,6 @@ Op11e7:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -13182,7 +13257,6 @@ Op11e7:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -13191,6 +13265,8 @@ Op11e7:
 
 ;@ ---------- [11e8] move.b ($3333,a0), $3333.w uses Op11e8 ----------
 Op11e8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -13200,7 +13276,6 @@ Op11e8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -13213,7 +13288,6 @@ Op11e8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -13222,6 +13296,8 @@ Op11e8:
 
 ;@ ---------- [11f0] move.b ($33,a0,d3.w*2), $3333.w uses Op11f0 ----------
 Op11f0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r0:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -13240,7 +13316,6 @@ Op11f0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -13253,7 +13328,6 @@ Op11f0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -13262,13 +13336,14 @@ Op11f0:
 
 ;@ ---------- [11f8] move.b $3333.w, $3333.w uses Op11f8 ----------
 Op11f8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -13281,7 +13356,6 @@ Op11f8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -13290,6 +13364,8 @@ Op11f8:
 
 ;@ ---------- [11f9] move.b $33333333.l, $3333.w uses Op11f9 ----------
 Op11f9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r0:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -13298,7 +13374,6 @@ Op11f9:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -13311,7 +13386,6 @@ Op11f9:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -13320,6 +13394,8 @@ Op11f9:
 
 ;@ ---------- [11fa] move.b ($3333,pc), $3333.w; =3335 uses Op11fa ----------
 Op11fa:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,pc)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   sub r0,r4,r0 ;@ Real PC
@@ -13329,7 +13405,6 @@ Op11fa:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x80] ;@ Call fetch8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -13342,7 +13417,6 @@ Op11fa:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -13351,6 +13425,8 @@ Op11fa:
 
 ;@ ---------- [11fb] move.b ($33,pc,d3.w*2), $3333.w; =35 uses Op11fb ----------
 Op11fb:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,pc,d3.w*2)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   ldrh r3,[r4] ;@ Get extension word
@@ -13368,7 +13444,6 @@ Op11fb:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x80] ;@ Call fetch8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -13381,7 +13456,6 @@ Op11fb:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -13390,6 +13464,8 @@ Op11fb:
 
 ;@ ---------- [11fc] move.b #$33, $3333.w uses Op11fc ----------
 Op11fc:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33' into r1:
   ldrsb r1,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$33' (address in r1) into r1:
@@ -13405,7 +13481,6 @@ Op11fc:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -13414,6 +13489,8 @@ Op11fc:
 
 ;@ ---------- [13c0] move.b d0, $33333333.l uses Op13c0 ----------
 Op13c0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x000f
 ;@ EaRead : Read register[r1] into r1:
@@ -13431,7 +13508,6 @@ Op13c0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -13440,6 +13516,8 @@ Op13c0:
 
 ;@ ---------- [13d0] move.b (a0), $33333333.l uses Op13d0 ----------
 Op13d0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -13448,7 +13526,6 @@ Op13d0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -13463,7 +13540,6 @@ Op13d0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -13472,6 +13548,8 @@ Op13d0:
 
 ;@ ---------- [13d8] move.b (a0)+, $33333333.l uses Op13d8 ----------
 Op13d8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r0:
   and r2,r8,#0x000f
   ldr r0,[r7,r2,lsl #2]
@@ -13481,7 +13559,6 @@ Op13d8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -13496,7 +13573,6 @@ Op13d8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -13505,6 +13581,8 @@ Op13d8:
 
 ;@ ---------- [13df] move.b (a7)+, $33333333.l uses Op13df ----------
 Op13df:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a7)+' into r0:
   ldr r0,[r7,#0x3c] ;@ A7
   add r3,r0,#2 ;@ Post-increment An
@@ -13513,7 +13591,6 @@ Op13df:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -13528,7 +13605,6 @@ Op13df:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -13537,6 +13613,8 @@ Op13df:
 
 ;@ ---------- [13e0] move.b -(a0), $33333333.l uses Op13e0 ----------
 Op13e0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -13547,7 +13625,6 @@ Op13e0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -13562,7 +13639,6 @@ Op13e0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -13571,6 +13647,8 @@ Op13e0:
 
 ;@ ---------- [13e7] move.b -(a7), $33333333.l uses Op13e7 ----------
 Op13e7:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a7)' into r0:
   ldr r0,[r7,#0x3c] ;@ A7
   sub r0,r0,#2 ;@ Pre-decrement An
@@ -13579,7 +13657,6 @@ Op13e7:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -13594,7 +13671,6 @@ Op13e7:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -13603,6 +13679,8 @@ Op13e7:
 
 ;@ ---------- [13e8] move.b ($3333,a0), $33333333.l uses Op13e8 ----------
 Op13e8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -13612,7 +13690,6 @@ Op13e8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -13627,7 +13704,6 @@ Op13e8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -13636,6 +13712,8 @@ Op13e8:
 
 ;@ ---------- [13f0] move.b ($33,a0,d3.w*2), $33333333.l uses Op13f0 ----------
 Op13f0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r0:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -13654,7 +13732,6 @@ Op13f0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -13669,7 +13746,6 @@ Op13f0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#26 ;@ Subtract cycles
@@ -13678,13 +13754,14 @@ Op13f0:
 
 ;@ ---------- [13f8] move.b $3333.w, $33333333.l uses Op13f8 ----------
 Op13f8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -13699,7 +13776,6 @@ Op13f8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -13708,6 +13784,8 @@ Op13f8:
 
 ;@ ---------- [13f9] move.b $33333333.l, $33333333.l uses Op13f9 ----------
 Op13f9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r0:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -13716,7 +13794,6 @@ Op13f9:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -13731,7 +13808,6 @@ Op13f9:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -13740,6 +13816,8 @@ Op13f9:
 
 ;@ ---------- [13fa] move.b ($3333,pc), $33333333.l; =3335 uses Op13fa ----------
 Op13fa:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,pc)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   sub r0,r4,r0 ;@ Real PC
@@ -13749,7 +13827,6 @@ Op13fa:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x80] ;@ Call fetch8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -13764,7 +13841,6 @@ Op13fa:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -13773,6 +13849,8 @@ Op13fa:
 
 ;@ ---------- [13fb] move.b ($33,pc,d3.w*2), $33333333.l; =35 uses Op13fb ----------
 Op13fb:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,pc,d3.w*2)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   ldrh r3,[r4] ;@ Get extension word
@@ -13790,7 +13868,6 @@ Op13fb:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x80] ;@ Call fetch8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -13805,7 +13882,6 @@ Op13fb:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#26 ;@ Subtract cycles
@@ -13814,6 +13890,8 @@ Op13fb:
 
 ;@ ---------- [13fc] move.b #$33, $33333333.l uses Op13fc ----------
 Op13fc:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33' into r1:
   ldrsb r1,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$33' (address in r1) into r1:
@@ -13831,7 +13909,6 @@ Op13fc:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -13840,6 +13917,8 @@ Op13fc:
 
 ;@ ---------- [1ec0] move.b d0, (a7)+ uses Op1ec0 ----------
 Op1ec0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x000f
 ;@ EaRead : Read register[r1] into r1:
@@ -13857,7 +13936,6 @@ Op1ec0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#8 ;@ Subtract cycles
@@ -13866,6 +13944,8 @@ Op1ec0:
 
 ;@ ---------- [1ed0] move.b (a0), (a7)+ uses Op1ed0 ----------
 Op1ed0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -13874,7 +13954,6 @@ Op1ed0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -13888,7 +13967,6 @@ Op1ed0:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -13897,6 +13975,8 @@ Op1ed0:
 
 ;@ ---------- [1ed8] move.b (a0)+, (a7)+ uses Op1ed8 ----------
 Op1ed8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r0:
   and r2,r8,#0x000f
   ldr r0,[r7,r2,lsl #2]
@@ -13906,7 +13986,6 @@ Op1ed8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -13920,7 +13999,6 @@ Op1ed8:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -13929,6 +14007,8 @@ Op1ed8:
 
 ;@ ---------- [1edf] move.b (a7)+, (a7)+ uses Op1edf ----------
 Op1edf:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a7)+' into r0:
   ldr r0,[r7,#0x3c] ;@ A7
   add r3,r0,#2 ;@ Post-increment An
@@ -13937,7 +14017,6 @@ Op1edf:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -13951,7 +14030,6 @@ Op1edf:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -13960,6 +14038,8 @@ Op1edf:
 
 ;@ ---------- [1ee0] move.b -(a0), (a7)+ uses Op1ee0 ----------
 Op1ee0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -13970,7 +14050,6 @@ Op1ee0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -13984,7 +14063,6 @@ Op1ee0:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -13993,6 +14071,8 @@ Op1ee0:
 
 ;@ ---------- [1ee7] move.b -(a7), (a7)+ uses Op1ee7 ----------
 Op1ee7:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a7)' into r0:
   ldr r0,[r7,#0x3c] ;@ A7
   sub r0,r0,#2 ;@ Pre-decrement An
@@ -14001,7 +14081,6 @@ Op1ee7:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -14015,7 +14094,6 @@ Op1ee7:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -14024,6 +14102,8 @@ Op1ee7:
 
 ;@ ---------- [1ee8] move.b ($3333,a0), (a7)+ uses Op1ee8 ----------
 Op1ee8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -14033,7 +14113,6 @@ Op1ee8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -14047,7 +14126,6 @@ Op1ee8:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -14056,6 +14134,8 @@ Op1ee8:
 
 ;@ ---------- [1ef0] move.b ($33,a0,d3.w*2), (a7)+ uses Op1ef0 ----------
 Op1ef0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r0:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -14074,7 +14154,6 @@ Op1ef0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -14088,7 +14167,6 @@ Op1ef0:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -14097,13 +14175,14 @@ Op1ef0:
 
 ;@ ---------- [1ef8] move.b $3333.w, (a7)+ uses Op1ef8 ----------
 Op1ef8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -14117,7 +14196,6 @@ Op1ef8:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -14126,6 +14204,8 @@ Op1ef8:
 
 ;@ ---------- [1ef9] move.b $33333333.l, (a7)+ uses Op1ef9 ----------
 Op1ef9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r0:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -14134,7 +14214,6 @@ Op1ef9:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -14148,7 +14227,6 @@ Op1ef9:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -14157,6 +14235,8 @@ Op1ef9:
 
 ;@ ---------- [1efa] move.b ($3333,pc), (a7)+; =3335 uses Op1efa ----------
 Op1efa:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,pc)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   sub r0,r4,r0 ;@ Real PC
@@ -14166,7 +14246,6 @@ Op1efa:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x80] ;@ Call fetch8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -14180,7 +14259,6 @@ Op1efa:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -14189,6 +14267,8 @@ Op1efa:
 
 ;@ ---------- [1efb] move.b ($33,pc,d3.w*2), (a7)+; =35 uses Op1efb ----------
 Op1efb:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,pc,d3.w*2)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   ldrh r3,[r4] ;@ Get extension word
@@ -14206,7 +14286,6 @@ Op1efb:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x80] ;@ Call fetch8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -14220,7 +14299,6 @@ Op1efb:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -14229,6 +14307,8 @@ Op1efb:
 
 ;@ ---------- [1efc] move.b #$33, (a7)+ uses Op1efc ----------
 Op1efc:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33' into r1:
   ldrsb r1,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$33' (address in r1) into r1:
@@ -14246,7 +14326,6 @@ Op1efc:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -14255,6 +14334,8 @@ Op1efc:
 
 ;@ ---------- [1f00] move.b d0, -(a7) uses Op1f00 ----------
 Op1f00:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x000f
 ;@ EaRead : Read register[r1] into r1:
@@ -14272,7 +14353,6 @@ Op1f00:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#8 ;@ Subtract cycles
@@ -14281,6 +14361,8 @@ Op1f00:
 
 ;@ ---------- [1f10] move.b (a0), -(a7) uses Op1f10 ----------
 Op1f10:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -14289,7 +14371,6 @@ Op1f10:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -14303,7 +14384,6 @@ Op1f10:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -14312,6 +14392,8 @@ Op1f10:
 
 ;@ ---------- [1f18] move.b (a0)+, -(a7) uses Op1f18 ----------
 Op1f18:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r0:
   and r2,r8,#0x000f
   ldr r0,[r7,r2,lsl #2]
@@ -14321,7 +14403,6 @@ Op1f18:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -14335,7 +14416,6 @@ Op1f18:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -14344,6 +14424,8 @@ Op1f18:
 
 ;@ ---------- [1f1f] move.b (a7)+, -(a7) uses Op1f1f ----------
 Op1f1f:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a7)+' into r0:
   ldr r0,[r7,#0x3c] ;@ A7
   add r3,r0,#2 ;@ Post-increment An
@@ -14352,7 +14434,6 @@ Op1f1f:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -14366,7 +14447,6 @@ Op1f1f:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -14375,6 +14455,8 @@ Op1f1f:
 
 ;@ ---------- [1f20] move.b -(a0), -(a7) uses Op1f20 ----------
 Op1f20:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -14385,7 +14467,6 @@ Op1f20:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -14399,7 +14480,6 @@ Op1f20:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -14408,6 +14488,8 @@ Op1f20:
 
 ;@ ---------- [1f27] move.b -(a7), -(a7) uses Op1f27 ----------
 Op1f27:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a7)' into r0:
   ldr r0,[r7,#0x3c] ;@ A7
   sub r0,r0,#2 ;@ Pre-decrement An
@@ -14416,7 +14498,6 @@ Op1f27:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -14430,7 +14511,6 @@ Op1f27:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -14439,6 +14519,8 @@ Op1f27:
 
 ;@ ---------- [1f28] move.b ($3333,a0), -(a7) uses Op1f28 ----------
 Op1f28:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -14448,7 +14530,6 @@ Op1f28:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -14462,7 +14543,6 @@ Op1f28:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -14471,6 +14551,8 @@ Op1f28:
 
 ;@ ---------- [1f30] move.b ($33,a0,d3.w*2), -(a7) uses Op1f30 ----------
 Op1f30:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r0:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -14489,7 +14571,6 @@ Op1f30:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -14503,7 +14584,6 @@ Op1f30:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -14512,13 +14592,14 @@ Op1f30:
 
 ;@ ---------- [1f38] move.b $3333.w, -(a7) uses Op1f38 ----------
 Op1f38:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -14532,7 +14613,6 @@ Op1f38:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -14541,6 +14621,8 @@ Op1f38:
 
 ;@ ---------- [1f39] move.b $33333333.l, -(a7) uses Op1f39 ----------
 Op1f39:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r0:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -14549,7 +14631,6 @@ Op1f39:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -14563,7 +14644,6 @@ Op1f39:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -14572,6 +14652,8 @@ Op1f39:
 
 ;@ ---------- [1f3a] move.b ($3333,pc), -(a7); =3335 uses Op1f3a ----------
 Op1f3a:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,pc)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   sub r0,r4,r0 ;@ Real PC
@@ -14581,7 +14663,6 @@ Op1f3a:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x80] ;@ Call fetch8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -14595,7 +14676,6 @@ Op1f3a:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -14604,6 +14684,8 @@ Op1f3a:
 
 ;@ ---------- [1f3b] move.b ($33,pc,d3.w*2), -(a7); =35 uses Op1f3b ----------
 Op1f3b:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,pc,d3.w*2)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   ldrh r3,[r4] ;@ Get extension word
@@ -14621,7 +14703,6 @@ Op1f3b:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x80] ;@ Call fetch8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -14635,7 +14716,6 @@ Op1f3b:
   mov r1,r1,lsr #24
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -14644,6 +14724,8 @@ Op1f3b:
 
 ;@ ---------- [1f3c] move.b #$33, -(a7) uses Op1f3c ----------
 Op1f3c:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33' into r1:
   ldrsb r1,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$33' (address in r1) into r1:
@@ -14661,7 +14743,6 @@ Op1f3c:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -14691,6 +14772,8 @@ Op2000:
 
 ;@ ---------- [2010] move.l (a0), d0 uses Op2010 ----------
 Op2010:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -14699,7 +14782,6 @@ Op2010:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -14717,6 +14799,8 @@ Op2010:
 
 ;@ ---------- [2018] move.l (a0)+, d0 uses Op2018 ----------
 Op2018:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r0:
   and r2,r8,#0x000f
   ldr r0,[r7,r2,lsl #2]
@@ -14726,7 +14810,6 @@ Op2018:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -14744,6 +14827,8 @@ Op2018:
 
 ;@ ---------- [2020] move.l -(a0), d0 uses Op2020 ----------
 Op2020:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -14754,7 +14839,6 @@ Op2020:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -14772,6 +14856,8 @@ Op2020:
 
 ;@ ---------- [2028] move.l ($3333,a0), d0 uses Op2028 ----------
 Op2028:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -14781,7 +14867,6 @@ Op2028:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -14799,6 +14884,8 @@ Op2028:
 
 ;@ ---------- [2030] move.l ($33,a0,d3.w*2), d0 uses Op2030 ----------
 Op2030:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r0:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -14817,7 +14904,6 @@ Op2030:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -14835,6 +14921,8 @@ Op2030:
 
 ;@ ---------- [2039] move.l $33333333.l, d0 uses Op2039 ----------
 Op2039:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r0:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -14843,7 +14931,6 @@ Op2039:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -14861,6 +14948,8 @@ Op2039:
 
 ;@ ---------- [203a] move.l ($3333,pc), d0; =3335 uses Op203a ----------
 Op203a:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,pc)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   sub r0,r4,r0 ;@ Real PC
@@ -14870,7 +14959,6 @@ Op203a:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -14888,6 +14976,8 @@ Op203a:
 
 ;@ ---------- [203b] move.l ($33,pc,d3.w*2), d0; =35 uses Op203b ----------
 Op203b:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,pc,d3.w*2)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   ldrh r3,[r4] ;@ Get extension word
@@ -14905,7 +14995,6 @@ Op203b:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -14963,6 +15052,8 @@ Op2040:
 
 ;@ ---------- [2050] movea.l (a0), a0 uses Op2050 ----------
 Op2050:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -14971,7 +15062,6 @@ Op2050:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r1,r0
 
 ;@ EaCalc : Get register index into r0:
@@ -14987,6 +15077,8 @@ Op2050:
 
 ;@ ---------- [2058] movea.l (a0)+, a0 uses Op2058 ----------
 Op2058:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r0:
   and r2,r8,#0x000f
   ldr r0,[r7,r2,lsl #2]
@@ -14996,7 +15088,6 @@ Op2058:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r1,r0
 
 ;@ EaCalc : Get register index into r0:
@@ -15012,6 +15103,8 @@ Op2058:
 
 ;@ ---------- [2060] movea.l -(a0), a0 uses Op2060 ----------
 Op2060:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -15022,7 +15115,6 @@ Op2060:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r1,r0
 
 ;@ EaCalc : Get register index into r0:
@@ -15038,6 +15130,8 @@ Op2060:
 
 ;@ ---------- [2068] movea.l ($3333,a0), a0 uses Op2068 ----------
 Op2068:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -15047,7 +15141,6 @@ Op2068:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r1,r0
 
 ;@ EaCalc : Get register index into r0:
@@ -15063,6 +15156,8 @@ Op2068:
 
 ;@ ---------- [2070] movea.l ($33,a0,d3.w*2), a0 uses Op2070 ----------
 Op2070:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r0:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -15081,7 +15176,6 @@ Op2070:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r1,r0
 
 ;@ EaCalc : Get register index into r0:
@@ -15097,13 +15191,14 @@ Op2070:
 
 ;@ ---------- [2078] movea.l $3333.w, a0 uses Op2078 ----------
 Op2078:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r1,r0
 
 ;@ EaCalc : Get register index into r0:
@@ -15119,6 +15214,8 @@ Op2078:
 
 ;@ ---------- [2079] movea.l $33333333.l, a0 uses Op2079 ----------
 Op2079:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r0:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -15127,7 +15224,6 @@ Op2079:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r1,r0
 
 ;@ EaCalc : Get register index into r0:
@@ -15143,6 +15239,8 @@ Op2079:
 
 ;@ ---------- [207a] movea.l ($3333,pc), a0; =3335 uses Op207a ----------
 Op207a:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,pc)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   sub r0,r4,r0 ;@ Real PC
@@ -15152,7 +15250,6 @@ Op207a:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r1,r0
 
 ;@ EaCalc : Get register index into r0:
@@ -15168,6 +15265,8 @@ Op207a:
 
 ;@ ---------- [207b] movea.l ($33,pc,d3.w*2), a0; =35 uses Op207b ----------
 Op207b:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,pc,d3.w*2)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   ldrh r3,[r4] ;@ Get extension word
@@ -15185,7 +15284,6 @@ Op207b:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r1,r0
 
 ;@ EaCalc : Get register index into r0:
@@ -15220,6 +15318,8 @@ Op207c:
 
 ;@ ---------- [2080] move.l d0, (a0) uses Op2080 ----------
 Op2080:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x000f
 ;@ EaRead : Read register[r1] into r1:
@@ -15237,7 +15337,6 @@ Op2080:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -15246,6 +15345,8 @@ Op2080:
 
 ;@ ---------- [2090] move.l (a0), (a0) uses Op2090 ----------
 Op2090:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -15254,7 +15355,6 @@ Op2090:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -15267,7 +15367,6 @@ Op2090:
 ;@ EaWrite: Write r1 into '(a0)' (address in r0):
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -15276,6 +15375,8 @@ Op2090:
 
 ;@ ---------- [2098] move.l (a0)+, (a0) uses Op2098 ----------
 Op2098:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r0:
   and r2,r8,#0x000f
   ldr r0,[r7,r2,lsl #2]
@@ -15285,7 +15386,6 @@ Op2098:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -15298,7 +15398,6 @@ Op2098:
 ;@ EaWrite: Write r1 into '(a0)' (address in r0):
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -15307,6 +15406,8 @@ Op2098:
 
 ;@ ---------- [20a0] move.l -(a0), (a0) uses Op20a0 ----------
 Op20a0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -15317,7 +15418,6 @@ Op20a0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -15330,7 +15430,6 @@ Op20a0:
 ;@ EaWrite: Write r1 into '(a0)' (address in r0):
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -15339,6 +15438,8 @@ Op20a0:
 
 ;@ ---------- [20a8] move.l ($3333,a0), (a0) uses Op20a8 ----------
 Op20a8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -15348,7 +15449,6 @@ Op20a8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -15361,7 +15461,6 @@ Op20a8:
 ;@ EaWrite: Write r1 into '(a0)' (address in r0):
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -15370,6 +15469,8 @@ Op20a8:
 
 ;@ ---------- [20b0] move.l ($33,a0,d3.w*2), (a0) uses Op20b0 ----------
 Op20b0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r0:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -15388,7 +15489,6 @@ Op20b0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -15401,7 +15501,6 @@ Op20b0:
 ;@ EaWrite: Write r1 into '(a0)' (address in r0):
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#26 ;@ Subtract cycles
@@ -15410,13 +15509,14 @@ Op20b0:
 
 ;@ ---------- [20b8] move.l $3333.w, (a0) uses Op20b8 ----------
 Op20b8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -15429,7 +15529,6 @@ Op20b8:
 ;@ EaWrite: Write r1 into '(a0)' (address in r0):
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -15438,6 +15537,8 @@ Op20b8:
 
 ;@ ---------- [20b9] move.l $33333333.l, (a0) uses Op20b9 ----------
 Op20b9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r0:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -15446,7 +15547,6 @@ Op20b9:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -15459,7 +15559,6 @@ Op20b9:
 ;@ EaWrite: Write r1 into '(a0)' (address in r0):
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -15468,6 +15567,8 @@ Op20b9:
 
 ;@ ---------- [20ba] move.l ($3333,pc), (a0); =3335 uses Op20ba ----------
 Op20ba:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,pc)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   sub r0,r4,r0 ;@ Real PC
@@ -15477,7 +15578,6 @@ Op20ba:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -15490,7 +15590,6 @@ Op20ba:
 ;@ EaWrite: Write r1 into '(a0)' (address in r0):
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -15499,6 +15598,8 @@ Op20ba:
 
 ;@ ---------- [20bb] move.l ($33,pc,d3.w*2), (a0); =35 uses Op20bb ----------
 Op20bb:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,pc,d3.w*2)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   ldrh r3,[r4] ;@ Get extension word
@@ -15516,7 +15617,6 @@ Op20bb:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -15529,7 +15629,6 @@ Op20bb:
 ;@ EaWrite: Write r1 into '(a0)' (address in r0):
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#26 ;@ Subtract cycles
@@ -15538,6 +15637,8 @@ Op20bb:
 
 ;@ ---------- [20bc] move.l #$33333333, (a0) uses Op20bc ----------
 Op20bc:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33333333' into r1:
   ldrh r2,[r4],#2 ;@ Fetch immediate value
   ldrh r3,[r4],#2
@@ -15556,7 +15657,6 @@ Op20bc:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -15565,6 +15665,8 @@ Op20bc:
 
 ;@ ---------- [20d0] move.l (a0), (a0)+ uses Op20d0 ----------
 Op20d0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -15573,7 +15675,6 @@ Op20d0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -15588,7 +15689,6 @@ Op20d0:
 ;@ EaWrite: Write r1 into '(a0)+' (address in r0):
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -15597,6 +15697,8 @@ Op20d0:
 
 ;@ ---------- [20d8] move.l (a0)+, (a0)+ uses Op20d8 ----------
 Op20d8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r0:
   and r2,r8,#0x000f
   ldr r0,[r7,r2,lsl #2]
@@ -15606,7 +15708,6 @@ Op20d8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -15621,7 +15722,6 @@ Op20d8:
 ;@ EaWrite: Write r1 into '(a0)+' (address in r0):
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -15630,6 +15730,8 @@ Op20d8:
 
 ;@ ---------- [20e0] move.l -(a0), (a0)+ uses Op20e0 ----------
 Op20e0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -15640,7 +15742,6 @@ Op20e0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -15655,7 +15756,6 @@ Op20e0:
 ;@ EaWrite: Write r1 into '(a0)+' (address in r0):
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -15664,6 +15764,8 @@ Op20e0:
 
 ;@ ---------- [20e8] move.l ($3333,a0), (a0)+ uses Op20e8 ----------
 Op20e8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -15673,7 +15775,6 @@ Op20e8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -15688,7 +15789,6 @@ Op20e8:
 ;@ EaWrite: Write r1 into '(a0)+' (address in r0):
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -15697,6 +15797,8 @@ Op20e8:
 
 ;@ ---------- [20f0] move.l ($33,a0,d3.w*2), (a0)+ uses Op20f0 ----------
 Op20f0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r0:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -15715,7 +15817,6 @@ Op20f0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -15730,7 +15831,6 @@ Op20f0:
 ;@ EaWrite: Write r1 into '(a0)+' (address in r0):
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#26 ;@ Subtract cycles
@@ -15739,13 +15839,14 @@ Op20f0:
 
 ;@ ---------- [20f8] move.l $3333.w, (a0)+ uses Op20f8 ----------
 Op20f8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -15760,7 +15861,6 @@ Op20f8:
 ;@ EaWrite: Write r1 into '(a0)+' (address in r0):
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -15769,6 +15869,8 @@ Op20f8:
 
 ;@ ---------- [20f9] move.l $33333333.l, (a0)+ uses Op20f9 ----------
 Op20f9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r0:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -15777,7 +15879,6 @@ Op20f9:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -15792,7 +15893,6 @@ Op20f9:
 ;@ EaWrite: Write r1 into '(a0)+' (address in r0):
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -15801,6 +15901,8 @@ Op20f9:
 
 ;@ ---------- [20fa] move.l ($3333,pc), (a0)+; =3335 uses Op20fa ----------
 Op20fa:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,pc)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   sub r0,r4,r0 ;@ Real PC
@@ -15810,7 +15912,6 @@ Op20fa:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -15825,7 +15926,6 @@ Op20fa:
 ;@ EaWrite: Write r1 into '(a0)+' (address in r0):
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -15834,6 +15934,8 @@ Op20fa:
 
 ;@ ---------- [20fb] move.l ($33,pc,d3.w*2), (a0)+; =35 uses Op20fb ----------
 Op20fb:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,pc,d3.w*2)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   ldrh r3,[r4] ;@ Get extension word
@@ -15851,7 +15953,6 @@ Op20fb:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -15866,7 +15967,6 @@ Op20fb:
 ;@ EaWrite: Write r1 into '(a0)+' (address in r0):
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#26 ;@ Subtract cycles
@@ -15875,6 +15975,8 @@ Op20fb:
 
 ;@ ---------- [20fc] move.l #$33333333, (a0)+ uses Op20fc ----------
 Op20fc:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33333333' into r1:
   ldrh r2,[r4],#2 ;@ Fetch immediate value
   ldrh r3,[r4],#2
@@ -15895,7 +15997,6 @@ Op20fc:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -15904,6 +16005,8 @@ Op20fc:
 
 ;@ ---------- [2100] move.l d0, -(a0) uses Op2100 ----------
 Op2100:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x000f
 ;@ EaRead : Read register[r1] into r1:
@@ -15926,14 +16029,12 @@ Op2100:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaWrite: Write r11 into '-(a0)' (address in r8):
   mov r1,r11,lsr #16
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -15942,6 +16043,8 @@ Op2100:
 
 ;@ ---------- [2110] move.l (a0), -(a0) uses Op2110 ----------
 Op2110:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -15950,7 +16053,6 @@ Op2110:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -15968,14 +16070,12 @@ Op2110:
   uxth r1,r1 ;@ zero extend
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaWrite: Write r11 into '-(a0)' (address in r8):
   mov r1,r11,lsr #16
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -15984,6 +16084,8 @@ Op2110:
 
 ;@ ---------- [2118] move.l (a0)+, -(a0) uses Op2118 ----------
 Op2118:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r0:
   and r2,r8,#0x000f
   ldr r0,[r7,r2,lsl #2]
@@ -15993,7 +16095,6 @@ Op2118:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -16011,14 +16112,12 @@ Op2118:
   uxth r1,r1 ;@ zero extend
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaWrite: Write r11 into '-(a0)' (address in r8):
   mov r1,r11,lsr #16
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -16027,6 +16126,8 @@ Op2118:
 
 ;@ ---------- [2120] move.l -(a0), -(a0) uses Op2120 ----------
 Op2120:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -16037,7 +16138,6 @@ Op2120:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -16055,14 +16155,12 @@ Op2120:
   uxth r1,r1 ;@ zero extend
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaWrite: Write r11 into '-(a0)' (address in r8):
   mov r1,r11,lsr #16
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -16071,6 +16169,8 @@ Op2120:
 
 ;@ ---------- [2128] move.l ($3333,a0), -(a0) uses Op2128 ----------
 Op2128:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -16080,7 +16180,6 @@ Op2128:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -16098,14 +16197,12 @@ Op2128:
   uxth r1,r1 ;@ zero extend
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaWrite: Write r11 into '-(a0)' (address in r8):
   mov r1,r11,lsr #16
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -16114,6 +16211,8 @@ Op2128:
 
 ;@ ---------- [2130] move.l ($33,a0,d3.w*2), -(a0) uses Op2130 ----------
 Op2130:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r0:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -16132,7 +16231,6 @@ Op2130:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -16150,14 +16248,12 @@ Op2130:
   uxth r1,r1 ;@ zero extend
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaWrite: Write r11 into '-(a0)' (address in r8):
   mov r1,r11,lsr #16
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#26 ;@ Subtract cycles
@@ -16166,13 +16262,14 @@ Op2130:
 
 ;@ ---------- [2138] move.l $3333.w, -(a0) uses Op2138 ----------
 Op2138:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -16190,14 +16287,12 @@ Op2138:
   uxth r1,r1 ;@ zero extend
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaWrite: Write r11 into '-(a0)' (address in r8):
   mov r1,r11,lsr #16
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -16206,6 +16301,8 @@ Op2138:
 
 ;@ ---------- [2139] move.l $33333333.l, -(a0) uses Op2139 ----------
 Op2139:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r0:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -16214,7 +16311,6 @@ Op2139:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -16232,14 +16328,12 @@ Op2139:
   uxth r1,r1 ;@ zero extend
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaWrite: Write r11 into '-(a0)' (address in r8):
   mov r1,r11,lsr #16
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -16248,6 +16342,8 @@ Op2139:
 
 ;@ ---------- [213a] move.l ($3333,pc), -(a0); =3335 uses Op213a ----------
 Op213a:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,pc)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   sub r0,r4,r0 ;@ Real PC
@@ -16257,7 +16353,6 @@ Op213a:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -16275,14 +16370,12 @@ Op213a:
   uxth r1,r1 ;@ zero extend
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaWrite: Write r11 into '-(a0)' (address in r8):
   mov r1,r11,lsr #16
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -16291,6 +16384,8 @@ Op213a:
 
 ;@ ---------- [213b] move.l ($33,pc,d3.w*2), -(a0); =35 uses Op213b ----------
 Op213b:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,pc,d3.w*2)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   ldrh r3,[r4] ;@ Get extension word
@@ -16308,7 +16403,6 @@ Op213b:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -16326,14 +16420,12 @@ Op213b:
   uxth r1,r1 ;@ zero extend
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaWrite: Write r11 into '-(a0)' (address in r8):
   mov r1,r11,lsr #16
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#26 ;@ Subtract cycles
@@ -16342,6 +16434,8 @@ Op213b:
 
 ;@ ---------- [213c] move.l #$33333333, -(a0) uses Op213c ----------
 Op213c:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33333333' into r1:
   ldrh r2,[r4],#2 ;@ Fetch immediate value
   ldrh r3,[r4],#2
@@ -16365,14 +16459,12 @@ Op213c:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaWrite: Write r11 into '-(a0)' (address in r8):
   mov r1,r11,lsr #16
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -16381,6 +16473,8 @@ Op213c:
 
 ;@ ---------- [2140] move.l d0, ($3333,a0) uses Op2140 ----------
 Op2140:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x000f
 ;@ EaRead : Read register[r1] into r1:
@@ -16401,7 +16495,6 @@ Op2140:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -16410,6 +16503,8 @@ Op2140:
 
 ;@ ---------- [2150] move.l (a0), ($3333,a0) uses Op2150 ----------
 Op2150:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -16418,7 +16513,6 @@ Op2150:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -16435,7 +16529,6 @@ Op2150:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -16444,6 +16537,8 @@ Op2150:
 
 ;@ ---------- [2158] move.l (a0)+, ($3333,a0) uses Op2158 ----------
 Op2158:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r0:
   and r2,r8,#0x000f
   ldr r0,[r7,r2,lsl #2]
@@ -16453,7 +16548,6 @@ Op2158:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -16470,7 +16564,6 @@ Op2158:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -16479,6 +16572,8 @@ Op2158:
 
 ;@ ---------- [2160] move.l -(a0), ($3333,a0) uses Op2160 ----------
 Op2160:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -16489,7 +16584,6 @@ Op2160:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -16506,7 +16600,6 @@ Op2160:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#26 ;@ Subtract cycles
@@ -16515,6 +16608,8 @@ Op2160:
 
 ;@ ---------- [2168] move.l ($3333,a0), ($3333,a0) uses Op2168 ----------
 Op2168:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -16524,7 +16619,6 @@ Op2168:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -16541,7 +16635,6 @@ Op2168:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -16550,6 +16643,8 @@ Op2168:
 
 ;@ ---------- [2170] move.l ($33,a0,d3.w*2), ($3333,a0) uses Op2170 ----------
 Op2170:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r0:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -16568,7 +16663,6 @@ Op2170:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -16585,7 +16679,6 @@ Op2170:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#30 ;@ Subtract cycles
@@ -16594,13 +16687,14 @@ Op2170:
 
 ;@ ---------- [2178] move.l $3333.w, ($3333,a0) uses Op2178 ----------
 Op2178:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -16617,7 +16711,6 @@ Op2178:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -16626,6 +16719,8 @@ Op2178:
 
 ;@ ---------- [2179] move.l $33333333.l, ($3333,a0) uses Op2179 ----------
 Op2179:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r0:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -16634,7 +16729,6 @@ Op2179:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -16651,7 +16745,6 @@ Op2179:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#32 ;@ Subtract cycles
@@ -16660,6 +16753,8 @@ Op2179:
 
 ;@ ---------- [217a] move.l ($3333,pc), ($3333,a0); =3335 uses Op217a ----------
 Op217a:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,pc)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   sub r0,r4,r0 ;@ Real PC
@@ -16669,7 +16764,6 @@ Op217a:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -16686,7 +16780,6 @@ Op217a:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -16695,6 +16788,8 @@ Op217a:
 
 ;@ ---------- [217b] move.l ($33,pc,d3.w*2), ($3333,a0); =35 uses Op217b ----------
 Op217b:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,pc,d3.w*2)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   ldrh r3,[r4] ;@ Get extension word
@@ -16712,7 +16807,6 @@ Op217b:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -16729,7 +16823,6 @@ Op217b:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#30 ;@ Subtract cycles
@@ -16738,6 +16831,8 @@ Op217b:
 
 ;@ ---------- [217c] move.l #$33333333, ($3333,a0) uses Op217c ----------
 Op217c:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33333333' into r1:
   ldrh r2,[r4],#2 ;@ Fetch immediate value
   ldrh r3,[r4],#2
@@ -16759,7 +16854,6 @@ Op217c:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -16768,6 +16862,8 @@ Op217c:
 
 ;@ ---------- [2180] move.l d0, ($33,a0,d3.w*2) uses Op2180 ----------
 Op2180:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x000f
 ;@ EaRead : Read register[r1] into r1:
@@ -16796,7 +16892,6 @@ Op2180:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -16805,6 +16900,8 @@ Op2180:
 
 ;@ ---------- [2190] move.l (a0), ($33,a0,d3.w*2) uses Op2190 ----------
 Op2190:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -16813,7 +16910,6 @@ Op2190:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -16838,7 +16934,6 @@ Op2190:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#26 ;@ Subtract cycles
@@ -16847,6 +16942,8 @@ Op2190:
 
 ;@ ---------- [2198] move.l (a0)+, ($33,a0,d3.w*2) uses Op2198 ----------
 Op2198:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r0:
   and r2,r8,#0x000f
   ldr r0,[r7,r2,lsl #2]
@@ -16856,7 +16953,6 @@ Op2198:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -16881,7 +16977,6 @@ Op2198:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#26 ;@ Subtract cycles
@@ -16890,6 +16985,8 @@ Op2198:
 
 ;@ ---------- [21a0] move.l -(a0), ($33,a0,d3.w*2) uses Op21a0 ----------
 Op21a0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -16900,7 +16997,6 @@ Op21a0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -16925,7 +17021,6 @@ Op21a0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -16934,6 +17029,8 @@ Op21a0:
 
 ;@ ---------- [21a8] move.l ($3333,a0), ($33,a0,d3.w*2) uses Op21a8 ----------
 Op21a8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -16943,7 +17040,6 @@ Op21a8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -16968,7 +17064,6 @@ Op21a8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#30 ;@ Subtract cycles
@@ -16977,6 +17072,8 @@ Op21a8:
 
 ;@ ---------- [21b0] move.l ($33,a0,d3.w*2), ($33,a0,d3.w*2) uses Op21b0 ----------
 Op21b0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r0:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -16995,7 +17092,6 @@ Op21b0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -17020,7 +17116,6 @@ Op21b0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#32 ;@ Subtract cycles
@@ -17029,13 +17124,14 @@ Op21b0:
 
 ;@ ---------- [21b8] move.l $3333.w, ($33,a0,d3.w*2) uses Op21b8 ----------
 Op21b8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -17060,7 +17156,6 @@ Op21b8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#30 ;@ Subtract cycles
@@ -17069,6 +17164,8 @@ Op21b8:
 
 ;@ ---------- [21b9] move.l $33333333.l, ($33,a0,d3.w*2) uses Op21b9 ----------
 Op21b9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r0:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -17077,7 +17174,6 @@ Op21b9:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -17102,7 +17198,6 @@ Op21b9:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#34 ;@ Subtract cycles
@@ -17111,6 +17206,8 @@ Op21b9:
 
 ;@ ---------- [21ba] move.l ($3333,pc), ($33,a0,d3.w*2); =3335 uses Op21ba ----------
 Op21ba:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,pc)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   sub r0,r4,r0 ;@ Real PC
@@ -17120,7 +17217,6 @@ Op21ba:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -17145,7 +17241,6 @@ Op21ba:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#30 ;@ Subtract cycles
@@ -17154,6 +17249,8 @@ Op21ba:
 
 ;@ ---------- [21bb] move.l ($33,pc,d3.w*2), ($33,a0,d3.w*2); =35 uses Op21bb ----------
 Op21bb:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,pc,d3.w*2)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   ldrh r3,[r4] ;@ Get extension word
@@ -17171,7 +17268,6 @@ Op21bb:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -17196,7 +17292,6 @@ Op21bb:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#32 ;@ Subtract cycles
@@ -17205,6 +17300,8 @@ Op21bb:
 
 ;@ ---------- [21bc] move.l #$33333333, ($33,a0,d3.w*2) uses Op21bc ----------
 Op21bc:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33333333' into r1:
   ldrh r2,[r4],#2 ;@ Fetch immediate value
   ldrh r3,[r4],#2
@@ -17234,7 +17331,6 @@ Op21bc:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#26 ;@ Subtract cycles
@@ -17243,6 +17339,8 @@ Op21bc:
 
 ;@ ---------- [21c0] move.l d0, $3333.w uses Op21c0 ----------
 Op21c0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x000f
 ;@ EaRead : Read register[r1] into r1:
@@ -17258,7 +17356,6 @@ Op21c0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -17267,6 +17364,8 @@ Op21c0:
 
 ;@ ---------- [21d0] move.l (a0), $3333.w uses Op21d0 ----------
 Op21d0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -17275,7 +17374,6 @@ Op21d0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -17287,7 +17385,6 @@ Op21d0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -17296,6 +17393,8 @@ Op21d0:
 
 ;@ ---------- [21d8] move.l (a0)+, $3333.w uses Op21d8 ----------
 Op21d8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r0:
   and r2,r8,#0x000f
   ldr r0,[r7,r2,lsl #2]
@@ -17305,7 +17404,6 @@ Op21d8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -17317,7 +17415,6 @@ Op21d8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -17326,6 +17423,8 @@ Op21d8:
 
 ;@ ---------- [21e0] move.l -(a0), $3333.w uses Op21e0 ----------
 Op21e0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -17336,7 +17435,6 @@ Op21e0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -17348,7 +17446,6 @@ Op21e0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#26 ;@ Subtract cycles
@@ -17357,6 +17454,8 @@ Op21e0:
 
 ;@ ---------- [21e8] move.l ($3333,a0), $3333.w uses Op21e8 ----------
 Op21e8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -17366,7 +17465,6 @@ Op21e8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -17378,7 +17476,6 @@ Op21e8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -17387,6 +17484,8 @@ Op21e8:
 
 ;@ ---------- [21f0] move.l ($33,a0,d3.w*2), $3333.w uses Op21f0 ----------
 Op21f0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r0:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -17405,7 +17504,6 @@ Op21f0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -17417,7 +17515,6 @@ Op21f0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#30 ;@ Subtract cycles
@@ -17426,13 +17523,14 @@ Op21f0:
 
 ;@ ---------- [21f8] move.l $3333.w, $3333.w uses Op21f8 ----------
 Op21f8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -17444,7 +17542,6 @@ Op21f8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -17453,6 +17550,8 @@ Op21f8:
 
 ;@ ---------- [21f9] move.l $33333333.l, $3333.w uses Op21f9 ----------
 Op21f9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r0:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -17461,7 +17560,6 @@ Op21f9:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -17473,7 +17571,6 @@ Op21f9:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#32 ;@ Subtract cycles
@@ -17482,6 +17579,8 @@ Op21f9:
 
 ;@ ---------- [21fa] move.l ($3333,pc), $3333.w; =3335 uses Op21fa ----------
 Op21fa:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,pc)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   sub r0,r4,r0 ;@ Real PC
@@ -17491,7 +17590,6 @@ Op21fa:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -17503,7 +17601,6 @@ Op21fa:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -17512,6 +17609,8 @@ Op21fa:
 
 ;@ ---------- [21fb] move.l ($33,pc,d3.w*2), $3333.w; =35 uses Op21fb ----------
 Op21fb:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,pc,d3.w*2)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   ldrh r3,[r4] ;@ Get extension word
@@ -17529,7 +17628,6 @@ Op21fb:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -17541,7 +17639,6 @@ Op21fb:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#30 ;@ Subtract cycles
@@ -17550,6 +17647,8 @@ Op21fb:
 
 ;@ ---------- [21fc] move.l #$33333333, $3333.w uses Op21fc ----------
 Op21fc:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33333333' into r1:
   ldrh r2,[r4],#2 ;@ Fetch immediate value
   ldrh r3,[r4],#2
@@ -17566,7 +17665,6 @@ Op21fc:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -17575,6 +17673,8 @@ Op21fc:
 
 ;@ ---------- [23c0] move.l d0, $33333333.l uses Op23c0 ----------
 Op23c0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x000f
 ;@ EaRead : Read register[r1] into r1:
@@ -17592,7 +17692,6 @@ Op23c0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -17601,6 +17700,8 @@ Op23c0:
 
 ;@ ---------- [23d0] move.l (a0), $33333333.l uses Op23d0 ----------
 Op23d0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -17609,7 +17710,6 @@ Op23d0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -17623,7 +17723,6 @@ Op23d0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -17632,6 +17731,8 @@ Op23d0:
 
 ;@ ---------- [23d8] move.l (a0)+, $33333333.l uses Op23d8 ----------
 Op23d8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r0:
   and r2,r8,#0x000f
   ldr r0,[r7,r2,lsl #2]
@@ -17641,7 +17742,6 @@ Op23d8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -17655,7 +17755,6 @@ Op23d8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -17664,6 +17763,8 @@ Op23d8:
 
 ;@ ---------- [23e0] move.l -(a0), $33333333.l uses Op23e0 ----------
 Op23e0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -17674,7 +17775,6 @@ Op23e0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -17688,7 +17788,6 @@ Op23e0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#30 ;@ Subtract cycles
@@ -17697,6 +17796,8 @@ Op23e0:
 
 ;@ ---------- [23e8] move.l ($3333,a0), $33333333.l uses Op23e8 ----------
 Op23e8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -17706,7 +17807,6 @@ Op23e8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -17720,7 +17820,6 @@ Op23e8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#32 ;@ Subtract cycles
@@ -17729,6 +17828,8 @@ Op23e8:
 
 ;@ ---------- [23f0] move.l ($33,a0,d3.w*2), $33333333.l uses Op23f0 ----------
 Op23f0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r0:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -17747,7 +17848,6 @@ Op23f0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -17761,7 +17861,6 @@ Op23f0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#34 ;@ Subtract cycles
@@ -17770,13 +17869,14 @@ Op23f0:
 
 ;@ ---------- [23f8] move.l $3333.w, $33333333.l uses Op23f8 ----------
 Op23f8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -17790,7 +17890,6 @@ Op23f8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#32 ;@ Subtract cycles
@@ -17799,6 +17898,8 @@ Op23f8:
 
 ;@ ---------- [23f9] move.l $33333333.l, $33333333.l uses Op23f9 ----------
 Op23f9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r0:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -17807,7 +17908,6 @@ Op23f9:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -17821,7 +17921,6 @@ Op23f9:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#36 ;@ Subtract cycles
@@ -17830,6 +17929,8 @@ Op23f9:
 
 ;@ ---------- [23fa] move.l ($3333,pc), $33333333.l; =3335 uses Op23fa ----------
 Op23fa:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,pc)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   sub r0,r4,r0 ;@ Real PC
@@ -17839,7 +17940,6 @@ Op23fa:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -17853,7 +17953,6 @@ Op23fa:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#32 ;@ Subtract cycles
@@ -17862,6 +17961,8 @@ Op23fa:
 
 ;@ ---------- [23fb] move.l ($33,pc,d3.w*2), $33333333.l; =35 uses Op23fb ----------
 Op23fb:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,pc,d3.w*2)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   ldrh r3,[r4] ;@ Get extension word
@@ -17879,7 +17980,6 @@ Op23fb:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -17893,7 +17993,6 @@ Op23fb:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#34 ;@ Subtract cycles
@@ -17902,6 +18001,8 @@ Op23fb:
 
 ;@ ---------- [23fc] move.l #$33333333, $33333333.l uses Op23fc ----------
 Op23fc:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33333333' into r1:
   ldrh r2,[r4],#2 ;@ Fetch immediate value
   ldrh r3,[r4],#2
@@ -17920,7 +18021,6 @@ Op23fc:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -17929,6 +18029,8 @@ Op23fc:
 
 ;@ ---------- [2ec0] move.l d0, (a7)+ uses Op2ec0 ----------
 Op2ec0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x000f
 ;@ EaRead : Read register[r1] into r1:
@@ -17946,7 +18048,6 @@ Op2ec0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -17955,6 +18056,8 @@ Op2ec0:
 
 ;@ ---------- [2ed0] move.l (a0), (a7)+ uses Op2ed0 ----------
 Op2ed0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -17963,7 +18066,6 @@ Op2ed0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -17976,7 +18078,6 @@ Op2ed0:
 ;@ EaWrite: Write r1 into '(a7)+' (address in r0):
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -17985,6 +18086,8 @@ Op2ed0:
 
 ;@ ---------- [2ed8] move.l (a0)+, (a7)+ uses Op2ed8 ----------
 Op2ed8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r0:
   and r2,r8,#0x000f
   ldr r0,[r7,r2,lsl #2]
@@ -17994,7 +18097,6 @@ Op2ed8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -18007,7 +18109,6 @@ Op2ed8:
 ;@ EaWrite: Write r1 into '(a7)+' (address in r0):
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -18016,6 +18117,8 @@ Op2ed8:
 
 ;@ ---------- [2ee0] move.l -(a0), (a7)+ uses Op2ee0 ----------
 Op2ee0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -18026,7 +18129,6 @@ Op2ee0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -18039,7 +18141,6 @@ Op2ee0:
 ;@ EaWrite: Write r1 into '(a7)+' (address in r0):
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -18048,6 +18149,8 @@ Op2ee0:
 
 ;@ ---------- [2ee8] move.l ($3333,a0), (a7)+ uses Op2ee8 ----------
 Op2ee8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -18057,7 +18160,6 @@ Op2ee8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -18070,7 +18172,6 @@ Op2ee8:
 ;@ EaWrite: Write r1 into '(a7)+' (address in r0):
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -18079,6 +18180,8 @@ Op2ee8:
 
 ;@ ---------- [2ef0] move.l ($33,a0,d3.w*2), (a7)+ uses Op2ef0 ----------
 Op2ef0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r0:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -18097,7 +18200,6 @@ Op2ef0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -18110,7 +18212,6 @@ Op2ef0:
 ;@ EaWrite: Write r1 into '(a7)+' (address in r0):
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#26 ;@ Subtract cycles
@@ -18119,13 +18220,14 @@ Op2ef0:
 
 ;@ ---------- [2ef8] move.l $3333.w, (a7)+ uses Op2ef8 ----------
 Op2ef8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -18138,7 +18240,6 @@ Op2ef8:
 ;@ EaWrite: Write r1 into '(a7)+' (address in r0):
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -18147,6 +18248,8 @@ Op2ef8:
 
 ;@ ---------- [2ef9] move.l $33333333.l, (a7)+ uses Op2ef9 ----------
 Op2ef9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r0:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -18155,7 +18258,6 @@ Op2ef9:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -18168,7 +18270,6 @@ Op2ef9:
 ;@ EaWrite: Write r1 into '(a7)+' (address in r0):
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -18177,6 +18278,8 @@ Op2ef9:
 
 ;@ ---------- [2efa] move.l ($3333,pc), (a7)+; =3335 uses Op2efa ----------
 Op2efa:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,pc)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   sub r0,r4,r0 ;@ Real PC
@@ -18186,7 +18289,6 @@ Op2efa:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -18199,7 +18301,6 @@ Op2efa:
 ;@ EaWrite: Write r1 into '(a7)+' (address in r0):
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -18208,6 +18309,8 @@ Op2efa:
 
 ;@ ---------- [2efb] move.l ($33,pc,d3.w*2), (a7)+; =35 uses Op2efb ----------
 Op2efb:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,pc,d3.w*2)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   ldrh r3,[r4] ;@ Get extension word
@@ -18225,7 +18328,6 @@ Op2efb:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -18238,7 +18340,6 @@ Op2efb:
 ;@ EaWrite: Write r1 into '(a7)+' (address in r0):
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#26 ;@ Subtract cycles
@@ -18247,6 +18348,8 @@ Op2efb:
 
 ;@ ---------- [2efc] move.l #$33333333, (a7)+ uses Op2efc ----------
 Op2efc:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33333333' into r1:
   ldrh r2,[r4],#2 ;@ Fetch immediate value
   ldrh r3,[r4],#2
@@ -18265,7 +18368,6 @@ Op2efc:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -18274,6 +18376,8 @@ Op2efc:
 
 ;@ ---------- [2f00] move.l d0, -(a7) uses Op2f00 ----------
 Op2f00:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x000f
 ;@ EaRead : Read register[r1] into r1:
@@ -18294,14 +18398,12 @@ Op2f00:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaWrite: Write r11 into '-(a7)' (address in r8):
   mov r1,r11,lsr #16
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -18310,6 +18412,8 @@ Op2f00:
 
 ;@ ---------- [2f10] move.l (a0), -(a7) uses Op2f10 ----------
 Op2f10:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -18318,7 +18422,6 @@ Op2f10:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -18334,14 +18437,12 @@ Op2f10:
   uxth r1,r1 ;@ zero extend
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaWrite: Write r11 into '-(a7)' (address in r8):
   mov r1,r11,lsr #16
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -18350,6 +18451,8 @@ Op2f10:
 
 ;@ ---------- [2f18] move.l (a0)+, -(a7) uses Op2f18 ----------
 Op2f18:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r0:
   and r2,r8,#0x000f
   ldr r0,[r7,r2,lsl #2]
@@ -18359,7 +18462,6 @@ Op2f18:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -18375,14 +18477,12 @@ Op2f18:
   uxth r1,r1 ;@ zero extend
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaWrite: Write r11 into '-(a7)' (address in r8):
   mov r1,r11,lsr #16
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -18391,6 +18491,8 @@ Op2f18:
 
 ;@ ---------- [2f20] move.l -(a0), -(a7) uses Op2f20 ----------
 Op2f20:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -18401,7 +18503,6 @@ Op2f20:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -18417,14 +18518,12 @@ Op2f20:
   uxth r1,r1 ;@ zero extend
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaWrite: Write r11 into '-(a7)' (address in r8):
   mov r1,r11,lsr #16
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -18433,6 +18532,8 @@ Op2f20:
 
 ;@ ---------- [2f28] move.l ($3333,a0), -(a7) uses Op2f28 ----------
 Op2f28:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -18442,7 +18543,6 @@ Op2f28:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -18458,14 +18558,12 @@ Op2f28:
   uxth r1,r1 ;@ zero extend
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaWrite: Write r11 into '-(a7)' (address in r8):
   mov r1,r11,lsr #16
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -18474,6 +18572,8 @@ Op2f28:
 
 ;@ ---------- [2f30] move.l ($33,a0,d3.w*2), -(a7) uses Op2f30 ----------
 Op2f30:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r0:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -18492,7 +18592,6 @@ Op2f30:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -18508,14 +18607,12 @@ Op2f30:
   uxth r1,r1 ;@ zero extend
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaWrite: Write r11 into '-(a7)' (address in r8):
   mov r1,r11,lsr #16
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#26 ;@ Subtract cycles
@@ -18524,13 +18621,14 @@ Op2f30:
 
 ;@ ---------- [2f38] move.l $3333.w, -(a7) uses Op2f38 ----------
 Op2f38:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -18546,14 +18644,12 @@ Op2f38:
   uxth r1,r1 ;@ zero extend
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaWrite: Write r11 into '-(a7)' (address in r8):
   mov r1,r11,lsr #16
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -18562,6 +18658,8 @@ Op2f38:
 
 ;@ ---------- [2f39] move.l $33333333.l, -(a7) uses Op2f39 ----------
 Op2f39:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r0:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -18570,7 +18668,6 @@ Op2f39:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -18586,14 +18683,12 @@ Op2f39:
   uxth r1,r1 ;@ zero extend
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaWrite: Write r11 into '-(a7)' (address in r8):
   mov r1,r11,lsr #16
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -18602,6 +18697,8 @@ Op2f39:
 
 ;@ ---------- [2f3a] move.l ($3333,pc), -(a7); =3335 uses Op2f3a ----------
 Op2f3a:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,pc)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   sub r0,r4,r0 ;@ Real PC
@@ -18611,7 +18708,6 @@ Op2f3a:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -18627,14 +18723,12 @@ Op2f3a:
   uxth r1,r1 ;@ zero extend
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaWrite: Write r11 into '-(a7)' (address in r8):
   mov r1,r11,lsr #16
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -18643,6 +18737,8 @@ Op2f3a:
 
 ;@ ---------- [2f3b] move.l ($33,pc,d3.w*2), -(a7); =35 uses Op2f3b ----------
 Op2f3b:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,pc,d3.w*2)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   ldrh r3,[r4] ;@ Get extension word
@@ -18660,7 +18756,6 @@ Op2f3b:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -18676,14 +18771,12 @@ Op2f3b:
   uxth r1,r1 ;@ zero extend
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaWrite: Write r11 into '-(a7)' (address in r8):
   mov r1,r11,lsr #16
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#26 ;@ Subtract cycles
@@ -18692,6 +18785,8 @@ Op2f3b:
 
 ;@ ---------- [2f3c] move.l #$33333333, -(a7) uses Op2f3c ----------
 Op2f3c:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$33333333' into r1:
   ldrh r2,[r4],#2 ;@ Fetch immediate value
   ldrh r3,[r4],#2
@@ -18713,14 +18808,12 @@ Op2f3c:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaWrite: Write r11 into '-(a7)' (address in r8):
   mov r1,r11,lsr #16
   add lr,pc,#4
   mov r0,r8
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -18729,6 +18822,8 @@ Op2f3c:
 
 ;@ ---------- [3010] move.w (a0), d0 uses Op3010 ----------
 Op3010:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -18737,7 +18832,6 @@ Op3010:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -18757,6 +18851,8 @@ Op3010:
 
 ;@ ---------- [3020] move.w -(a0), d0 uses Op3020 ----------
 Op3020:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -18767,7 +18863,6 @@ Op3020:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -18787,6 +18882,8 @@ Op3020:
 
 ;@ ---------- [3030] move.w ($33,a0,d3.w*2), d0 uses Op3030 ----------
 Op3030:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r0:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -18805,7 +18902,6 @@ Op3030:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -18825,13 +18921,14 @@ Op3030:
 
 ;@ ---------- [3038] move.w $3333.w, d0 uses Op3038 ----------
 Op3038:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -18851,6 +18948,8 @@ Op3038:
 
 ;@ ---------- [303a] move.w ($3333,pc), d0; =3335 uses Op303a ----------
 Op303a:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,pc)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   sub r0,r4,r0 ;@ Real PC
@@ -18860,7 +18959,6 @@ Op303a:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -18880,6 +18978,8 @@ Op303a:
 
 ;@ ---------- [303b] move.w ($33,pc,d3.w*2), d0; =35 uses Op303b ----------
 Op303b:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,pc,d3.w*2)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   ldrh r3,[r4] ;@ Get extension word
@@ -18897,7 +18997,6 @@ Op303b:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -18939,6 +19038,8 @@ Op303c:
 
 ;@ ---------- [3050] movea.w (a0), a0 uses Op3050 ----------
 Op3050:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -18947,7 +19048,6 @@ Op3050:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   sxth r1,r0 ;@ sign extend
 
 ;@ EaCalc : Get register index into r0:
@@ -18962,6 +19062,8 @@ Op3050:
 
 ;@ ---------- [3058] movea.w (a0)+, a0 uses Op3058 ----------
 Op3058:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r0:
   and r2,r8,#0x000f
   ldr r0,[r7,r2,lsl #2]
@@ -18971,7 +19073,6 @@ Op3058:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   sxth r1,r0 ;@ sign extend
 
 ;@ EaCalc : Get register index into r0:
@@ -18986,6 +19087,8 @@ Op3058:
 
 ;@ ---------- [3060] movea.w -(a0), a0 uses Op3060 ----------
 Op3060:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -18996,7 +19099,6 @@ Op3060:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   sxth r1,r0 ;@ sign extend
 
 ;@ EaCalc : Get register index into r0:
@@ -19011,6 +19113,8 @@ Op3060:
 
 ;@ ---------- [3068] movea.w ($3333,a0), a0 uses Op3068 ----------
 Op3068:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -19020,7 +19124,6 @@ Op3068:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   sxth r1,r0 ;@ sign extend
 
 ;@ EaCalc : Get register index into r0:
@@ -19035,6 +19138,8 @@ Op3068:
 
 ;@ ---------- [3070] movea.w ($33,a0,d3.w*2), a0 uses Op3070 ----------
 Op3070:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r0:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -19053,7 +19158,6 @@ Op3070:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   sxth r1,r0 ;@ sign extend
 
 ;@ EaCalc : Get register index into r0:
@@ -19068,13 +19172,14 @@ Op3070:
 
 ;@ ---------- [3078] movea.w $3333.w, a0 uses Op3078 ----------
 Op3078:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   sxth r1,r0 ;@ sign extend
 
 ;@ EaCalc : Get register index into r0:
@@ -19089,6 +19194,8 @@ Op3078:
 
 ;@ ---------- [3079] movea.w $33333333.l, a0 uses Op3079 ----------
 Op3079:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r0:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -19097,7 +19204,6 @@ Op3079:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   sxth r1,r0 ;@ sign extend
 
 ;@ EaCalc : Get register index into r0:
@@ -19112,6 +19218,8 @@ Op3079:
 
 ;@ ---------- [307a] movea.w ($3333,pc), a0; =3335 uses Op307a ----------
 Op307a:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,pc)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   sub r0,r4,r0 ;@ Real PC
@@ -19121,7 +19229,6 @@ Op307a:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   sxth r1,r0 ;@ sign extend
 
 ;@ EaCalc : Get register index into r0:
@@ -19136,6 +19243,8 @@ Op307a:
 
 ;@ ---------- [307b] movea.w ($33,pc,d3.w*2), a0; =35 uses Op307b ----------
 Op307b:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,pc,d3.w*2)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   ldrh r3,[r4] ;@ Get extension word
@@ -19153,7 +19262,6 @@ Op307b:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   sxth r1,r0 ;@ sign extend
 
 ;@ EaCalc : Get register index into r0:
@@ -19184,6 +19292,8 @@ Op307c:
 
 ;@ ---------- [3090] move.w (a0), (a0) uses Op3090 ----------
 Op3090:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -19192,7 +19302,6 @@ Op3090:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -19205,7 +19314,6 @@ Op3090:
   mov r1,r1,lsr #16
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -19214,6 +19322,8 @@ Op3090:
 
 ;@ ---------- [3098] move.w (a0)+, (a0) uses Op3098 ----------
 Op3098:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r0:
   and r2,r8,#0x000f
   ldr r0,[r7,r2,lsl #2]
@@ -19223,7 +19333,6 @@ Op3098:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -19236,7 +19345,6 @@ Op3098:
   mov r1,r1,lsr #16
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -19245,6 +19353,8 @@ Op3098:
 
 ;@ ---------- [30a0] move.w -(a0), (a0) uses Op30a0 ----------
 Op30a0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -19255,7 +19365,6 @@ Op30a0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -19268,7 +19377,6 @@ Op30a0:
   mov r1,r1,lsr #16
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -19277,6 +19385,8 @@ Op30a0:
 
 ;@ ---------- [30a8] move.w ($3333,a0), (a0) uses Op30a8 ----------
 Op30a8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -19286,7 +19396,6 @@ Op30a8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -19299,7 +19408,6 @@ Op30a8:
   mov r1,r1,lsr #16
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -19308,6 +19416,8 @@ Op30a8:
 
 ;@ ---------- [30b0] move.w ($33,a0,d3.w*2), (a0) uses Op30b0 ----------
 Op30b0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r0:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -19326,7 +19436,6 @@ Op30b0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -19339,7 +19448,6 @@ Op30b0:
   mov r1,r1,lsr #16
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -19348,13 +19456,14 @@ Op30b0:
 
 ;@ ---------- [30b8] move.w $3333.w, (a0) uses Op30b8 ----------
 Op30b8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -19367,7 +19476,6 @@ Op30b8:
   mov r1,r1,lsr #16
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -19376,6 +19484,8 @@ Op30b8:
 
 ;@ ---------- [30b9] move.w $33333333.l, (a0) uses Op30b9 ----------
 Op30b9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r0:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -19384,7 +19494,6 @@ Op30b9:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -19397,7 +19506,6 @@ Op30b9:
   mov r1,r1,lsr #16
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -19406,6 +19514,8 @@ Op30b9:
 
 ;@ ---------- [30ba] move.w ($3333,pc), (a0); =3335 uses Op30ba ----------
 Op30ba:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,pc)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   sub r0,r4,r0 ;@ Real PC
@@ -19415,7 +19525,6 @@ Op30ba:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -19428,7 +19537,6 @@ Op30ba:
   mov r1,r1,lsr #16
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -19437,6 +19545,8 @@ Op30ba:
 
 ;@ ---------- [30bb] move.w ($33,pc,d3.w*2), (a0); =35 uses Op30bb ----------
 Op30bb:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,pc,d3.w*2)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   ldrh r3,[r4] ;@ Get extension word
@@ -19454,7 +19564,6 @@ Op30bb:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -19467,7 +19576,6 @@ Op30bb:
   mov r1,r1,lsr #16
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -19476,6 +19584,8 @@ Op30bb:
 
 ;@ ---------- [30bc] move.w #$3333, (a0) uses Op30bc ----------
 Op30bc:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$3333' into r1:
   ldrsh r1,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$3333' (address in r1) into r1:
@@ -19492,7 +19602,6 @@ Op30bc:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -19501,6 +19610,8 @@ Op30bc:
 
 ;@ ---------- [30d8] move.w (a0)+, (a0)+ uses Op30d8 ----------
 Op30d8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r0:
   and r2,r8,#0x000f
   ldr r0,[r7,r2,lsl #2]
@@ -19510,7 +19621,6 @@ Op30d8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -19525,7 +19635,6 @@ Op30d8:
   mov r1,r1,lsr #16
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -19534,6 +19643,8 @@ Op30d8:
 
 ;@ ---------- [30e0] move.w -(a0), (a0)+ uses Op30e0 ----------
 Op30e0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -19544,7 +19655,6 @@ Op30e0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -19559,7 +19669,6 @@ Op30e0:
   mov r1,r1,lsr #16
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -19568,6 +19677,8 @@ Op30e0:
 
 ;@ ---------- [30e8] move.w ($3333,a0), (a0)+ uses Op30e8 ----------
 Op30e8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -19577,7 +19688,6 @@ Op30e8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -19592,7 +19702,6 @@ Op30e8:
   mov r1,r1,lsr #16
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -19601,6 +19710,8 @@ Op30e8:
 
 ;@ ---------- [30f0] move.w ($33,a0,d3.w*2), (a0)+ uses Op30f0 ----------
 Op30f0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r0:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -19619,7 +19730,6 @@ Op30f0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -19634,7 +19744,6 @@ Op30f0:
   mov r1,r1,lsr #16
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -19643,13 +19752,14 @@ Op30f0:
 
 ;@ ---------- [30f8] move.w $3333.w, (a0)+ uses Op30f8 ----------
 Op30f8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -19664,7 +19774,6 @@ Op30f8:
   mov r1,r1,lsr #16
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -19673,6 +19782,8 @@ Op30f8:
 
 ;@ ---------- [30f9] move.w $33333333.l, (a0)+ uses Op30f9 ----------
 Op30f9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r0:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -19681,7 +19792,6 @@ Op30f9:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -19696,7 +19806,6 @@ Op30f9:
   mov r1,r1,lsr #16
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -19705,6 +19814,8 @@ Op30f9:
 
 ;@ ---------- [30fa] move.w ($3333,pc), (a0)+; =3335 uses Op30fa ----------
 Op30fa:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,pc)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   sub r0,r4,r0 ;@ Real PC
@@ -19714,7 +19825,6 @@ Op30fa:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -19729,7 +19839,6 @@ Op30fa:
   mov r1,r1,lsr #16
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -19738,6 +19847,8 @@ Op30fa:
 
 ;@ ---------- [30fb] move.w ($33,pc,d3.w*2), (a0)+; =35 uses Op30fb ----------
 Op30fb:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,pc,d3.w*2)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   ldrh r3,[r4] ;@ Get extension word
@@ -19755,7 +19866,6 @@ Op30fb:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -19770,7 +19880,6 @@ Op30fb:
   mov r1,r1,lsr #16
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -19779,6 +19888,8 @@ Op30fb:
 
 ;@ ---------- [30fc] move.w #$3333, (a0)+ uses Op30fc ----------
 Op30fc:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$3333' into r1:
   ldrsh r1,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$3333' (address in r1) into r1:
@@ -19797,7 +19908,6 @@ Op30fc:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -19806,6 +19916,8 @@ Op30fc:
 
 ;@ ---------- [3100] move.w d0, -(a0) uses Op3100 ----------
 Op3100:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x000f
   mov r1,r1,lsl #2
@@ -19825,7 +19937,6 @@ Op3100:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#8 ;@ Subtract cycles
@@ -19834,6 +19945,8 @@ Op3100:
 
 ;@ ---------- [3110] move.w (a0), -(a0) uses Op3110 ----------
 Op3110:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -19842,7 +19955,6 @@ Op3110:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -19857,7 +19969,6 @@ Op3110:
   mov r1,r1,lsr #16
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -19866,6 +19977,8 @@ Op3110:
 
 ;@ ---------- [3118] move.w (a0)+, -(a0) uses Op3118 ----------
 Op3118:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r0:
   and r2,r8,#0x000f
   ldr r0,[r7,r2,lsl #2]
@@ -19875,7 +19988,6 @@ Op3118:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -19890,7 +20002,6 @@ Op3118:
   mov r1,r1,lsr #16
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -19899,6 +20010,8 @@ Op3118:
 
 ;@ ---------- [3120] move.w -(a0), -(a0) uses Op3120 ----------
 Op3120:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -19909,7 +20022,6 @@ Op3120:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -19924,7 +20036,6 @@ Op3120:
   mov r1,r1,lsr #16
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -19933,6 +20044,8 @@ Op3120:
 
 ;@ ---------- [3128] move.w ($3333,a0), -(a0) uses Op3128 ----------
 Op3128:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -19942,7 +20055,6 @@ Op3128:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -19957,7 +20069,6 @@ Op3128:
   mov r1,r1,lsr #16
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -19966,6 +20077,8 @@ Op3128:
 
 ;@ ---------- [3130] move.w ($33,a0,d3.w*2), -(a0) uses Op3130 ----------
 Op3130:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r0:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -19984,7 +20097,6 @@ Op3130:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -19999,7 +20111,6 @@ Op3130:
   mov r1,r1,lsr #16
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -20008,13 +20119,14 @@ Op3130:
 
 ;@ ---------- [3138] move.w $3333.w, -(a0) uses Op3138 ----------
 Op3138:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -20029,7 +20141,6 @@ Op3138:
   mov r1,r1,lsr #16
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -20038,6 +20149,8 @@ Op3138:
 
 ;@ ---------- [3139] move.w $33333333.l, -(a0) uses Op3139 ----------
 Op3139:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r0:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -20046,7 +20159,6 @@ Op3139:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -20061,7 +20173,6 @@ Op3139:
   mov r1,r1,lsr #16
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -20070,6 +20181,8 @@ Op3139:
 
 ;@ ---------- [313a] move.w ($3333,pc), -(a0); =3335 uses Op313a ----------
 Op313a:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,pc)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   sub r0,r4,r0 ;@ Real PC
@@ -20079,7 +20192,6 @@ Op313a:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -20094,7 +20206,6 @@ Op313a:
   mov r1,r1,lsr #16
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -20103,6 +20214,8 @@ Op313a:
 
 ;@ ---------- [313b] move.w ($33,pc,d3.w*2), -(a0); =35 uses Op313b ----------
 Op313b:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,pc,d3.w*2)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   ldrh r3,[r4] ;@ Get extension word
@@ -20120,7 +20233,6 @@ Op313b:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -20135,7 +20247,6 @@ Op313b:
   mov r1,r1,lsr #16
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -20144,6 +20255,8 @@ Op313b:
 
 ;@ ---------- [313c] move.w #$3333, -(a0) uses Op313c ----------
 Op313c:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$3333' into r1:
   ldrsh r1,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$3333' (address in r1) into r1:
@@ -20162,7 +20275,6 @@ Op313c:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -20171,6 +20283,8 @@ Op313c:
 
 ;@ ---------- [3140] move.w d0, ($3333,a0) uses Op3140 ----------
 Op3140:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x000f
   mov r1,r1,lsl #2
@@ -20191,7 +20305,6 @@ Op3140:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -20200,6 +20313,8 @@ Op3140:
 
 ;@ ---------- [3150] move.w (a0), ($3333,a0) uses Op3150 ----------
 Op3150:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -20208,7 +20323,6 @@ Op3150:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -20225,7 +20339,6 @@ Op3150:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -20234,6 +20347,8 @@ Op3150:
 
 ;@ ---------- [3158] move.w (a0)+, ($3333,a0) uses Op3158 ----------
 Op3158:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r0:
   and r2,r8,#0x000f
   ldr r0,[r7,r2,lsl #2]
@@ -20243,7 +20358,6 @@ Op3158:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -20260,7 +20374,6 @@ Op3158:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -20269,6 +20382,8 @@ Op3158:
 
 ;@ ---------- [3160] move.w -(a0), ($3333,a0) uses Op3160 ----------
 Op3160:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -20279,7 +20394,6 @@ Op3160:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -20296,7 +20410,6 @@ Op3160:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -20305,6 +20418,8 @@ Op3160:
 
 ;@ ---------- [3168] move.w ($3333,a0), ($3333,a0) uses Op3168 ----------
 Op3168:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -20314,7 +20429,6 @@ Op3168:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -20331,7 +20445,6 @@ Op3168:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -20340,6 +20453,8 @@ Op3168:
 
 ;@ ---------- [3170] move.w ($33,a0,d3.w*2), ($3333,a0) uses Op3170 ----------
 Op3170:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r0:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -20358,7 +20473,6 @@ Op3170:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -20375,7 +20489,6 @@ Op3170:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -20384,13 +20497,14 @@ Op3170:
 
 ;@ ---------- [3178] move.w $3333.w, ($3333,a0) uses Op3178 ----------
 Op3178:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -20407,7 +20521,6 @@ Op3178:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -20416,6 +20529,8 @@ Op3178:
 
 ;@ ---------- [3179] move.w $33333333.l, ($3333,a0) uses Op3179 ----------
 Op3179:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r0:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -20424,7 +20539,6 @@ Op3179:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -20441,7 +20555,6 @@ Op3179:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -20450,6 +20563,8 @@ Op3179:
 
 ;@ ---------- [317a] move.w ($3333,pc), ($3333,a0); =3335 uses Op317a ----------
 Op317a:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,pc)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   sub r0,r4,r0 ;@ Real PC
@@ -20459,7 +20574,6 @@ Op317a:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -20476,7 +20590,6 @@ Op317a:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -20485,6 +20598,8 @@ Op317a:
 
 ;@ ---------- [317b] move.w ($33,pc,d3.w*2), ($3333,a0); =35 uses Op317b ----------
 Op317b:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,pc,d3.w*2)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   ldrh r3,[r4] ;@ Get extension word
@@ -20502,7 +20617,6 @@ Op317b:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -20519,7 +20633,6 @@ Op317b:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -20528,6 +20641,8 @@ Op317b:
 
 ;@ ---------- [317c] move.w #$3333, ($3333,a0) uses Op317c ----------
 Op317c:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$3333' into r1:
   ldrsh r1,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$3333' (address in r1) into r1:
@@ -20547,7 +20662,6 @@ Op317c:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -20556,6 +20670,8 @@ Op317c:
 
 ;@ ---------- [3190] move.w (a0), ($33,a0,d3.w*2) uses Op3190 ----------
 Op3190:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -20564,7 +20680,6 @@ Op3190:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -20590,7 +20705,6 @@ Op3190:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -20599,6 +20713,8 @@ Op3190:
 
 ;@ ---------- [3198] move.w (a0)+, ($33,a0,d3.w*2) uses Op3198 ----------
 Op3198:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r0:
   and r2,r8,#0x000f
   ldr r0,[r7,r2,lsl #2]
@@ -20608,7 +20724,6 @@ Op3198:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -20634,7 +20749,6 @@ Op3198:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -20643,6 +20757,8 @@ Op3198:
 
 ;@ ---------- [31a0] move.w -(a0), ($33,a0,d3.w*2) uses Op31a0 ----------
 Op31a0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -20653,7 +20769,6 @@ Op31a0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -20679,7 +20794,6 @@ Op31a0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -20688,6 +20802,8 @@ Op31a0:
 
 ;@ ---------- [31a8] move.w ($3333,a0), ($33,a0,d3.w*2) uses Op31a8 ----------
 Op31a8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -20697,7 +20813,6 @@ Op31a8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -20723,7 +20838,6 @@ Op31a8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -20732,6 +20846,8 @@ Op31a8:
 
 ;@ ---------- [31b0] move.w ($33,a0,d3.w*2), ($33,a0,d3.w*2) uses Op31b0 ----------
 Op31b0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r0:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -20750,7 +20866,6 @@ Op31b0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -20776,7 +20891,6 @@ Op31b0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -20785,13 +20899,14 @@ Op31b0:
 
 ;@ ---------- [31b8] move.w $3333.w, ($33,a0,d3.w*2) uses Op31b8 ----------
 Op31b8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -20817,7 +20932,6 @@ Op31b8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -20826,6 +20940,8 @@ Op31b8:
 
 ;@ ---------- [31b9] move.w $33333333.l, ($33,a0,d3.w*2) uses Op31b9 ----------
 Op31b9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r0:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -20834,7 +20950,6 @@ Op31b9:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -20860,7 +20975,6 @@ Op31b9:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#26 ;@ Subtract cycles
@@ -20869,6 +20983,8 @@ Op31b9:
 
 ;@ ---------- [31ba] move.w ($3333,pc), ($33,a0,d3.w*2); =3335 uses Op31ba ----------
 Op31ba:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,pc)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   sub r0,r4,r0 ;@ Real PC
@@ -20878,7 +20994,6 @@ Op31ba:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -20904,7 +21019,6 @@ Op31ba:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -20913,6 +21027,8 @@ Op31ba:
 
 ;@ ---------- [31bb] move.w ($33,pc,d3.w*2), ($33,a0,d3.w*2); =35 uses Op31bb ----------
 Op31bb:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,pc,d3.w*2)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   ldrh r3,[r4] ;@ Get extension word
@@ -20930,7 +21046,6 @@ Op31bb:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -20956,7 +21071,6 @@ Op31bb:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -20965,6 +21079,8 @@ Op31bb:
 
 ;@ ---------- [31bc] move.w #$3333, ($33,a0,d3.w*2) uses Op31bc ----------
 Op31bc:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$3333' into r1:
   ldrsh r1,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$3333' (address in r1) into r1:
@@ -20993,7 +21109,6 @@ Op31bc:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -21002,6 +21117,8 @@ Op31bc:
 
 ;@ ---------- [31c0] move.w d0, $3333.w uses Op31c0 ----------
 Op31c0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x000f
   mov r1,r1,lsl #2
@@ -21018,7 +21135,6 @@ Op31c0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -21027,6 +21143,8 @@ Op31c0:
 
 ;@ ---------- [31d0] move.w (a0), $3333.w uses Op31d0 ----------
 Op31d0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -21035,7 +21153,6 @@ Op31d0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -21048,7 +21165,6 @@ Op31d0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -21057,6 +21173,8 @@ Op31d0:
 
 ;@ ---------- [31d8] move.w (a0)+, $3333.w uses Op31d8 ----------
 Op31d8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r0:
   and r2,r8,#0x000f
   ldr r0,[r7,r2,lsl #2]
@@ -21066,7 +21184,6 @@ Op31d8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -21079,7 +21196,6 @@ Op31d8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -21088,6 +21204,8 @@ Op31d8:
 
 ;@ ---------- [31e0] move.w -(a0), $3333.w uses Op31e0 ----------
 Op31e0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -21098,7 +21216,6 @@ Op31e0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -21111,7 +21228,6 @@ Op31e0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -21120,6 +21236,8 @@ Op31e0:
 
 ;@ ---------- [31e8] move.w ($3333,a0), $3333.w uses Op31e8 ----------
 Op31e8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -21129,7 +21247,6 @@ Op31e8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -21142,7 +21259,6 @@ Op31e8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -21151,6 +21267,8 @@ Op31e8:
 
 ;@ ---------- [31f0] move.w ($33,a0,d3.w*2), $3333.w uses Op31f0 ----------
 Op31f0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r0:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -21169,7 +21287,6 @@ Op31f0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -21182,7 +21299,6 @@ Op31f0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -21191,13 +21307,14 @@ Op31f0:
 
 ;@ ---------- [31f8] move.w $3333.w, $3333.w uses Op31f8 ----------
 Op31f8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -21210,7 +21327,6 @@ Op31f8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -21219,6 +21335,8 @@ Op31f8:
 
 ;@ ---------- [31f9] move.w $33333333.l, $3333.w uses Op31f9 ----------
 Op31f9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r0:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -21227,7 +21345,6 @@ Op31f9:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -21240,7 +21357,6 @@ Op31f9:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -21249,6 +21365,8 @@ Op31f9:
 
 ;@ ---------- [31fa] move.w ($3333,pc), $3333.w; =3335 uses Op31fa ----------
 Op31fa:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,pc)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   sub r0,r4,r0 ;@ Real PC
@@ -21258,7 +21376,6 @@ Op31fa:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -21271,7 +21388,6 @@ Op31fa:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -21280,6 +21396,8 @@ Op31fa:
 
 ;@ ---------- [31fb] move.w ($33,pc,d3.w*2), $3333.w; =35 uses Op31fb ----------
 Op31fb:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,pc,d3.w*2)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   ldrh r3,[r4] ;@ Get extension word
@@ -21297,7 +21415,6 @@ Op31fb:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -21310,7 +21427,6 @@ Op31fb:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -21319,6 +21435,8 @@ Op31fb:
 
 ;@ ---------- [31fc] move.w #$3333, $3333.w uses Op31fc ----------
 Op31fc:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$3333' into r1:
   ldrsh r1,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$3333' (address in r1) into r1:
@@ -21334,7 +21452,6 @@ Op31fc:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -21343,6 +21460,8 @@ Op31fc:
 
 ;@ ---------- [33c0] move.w d0, $33333333.l uses Op33c0 ----------
 Op33c0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x000f
   mov r1,r1,lsl #2
@@ -21361,7 +21480,6 @@ Op33c0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -21370,6 +21488,8 @@ Op33c0:
 
 ;@ ---------- [33d0] move.w (a0), $33333333.l uses Op33d0 ----------
 Op33d0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -21378,7 +21498,6 @@ Op33d0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -21393,7 +21512,6 @@ Op33d0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -21402,6 +21520,8 @@ Op33d0:
 
 ;@ ---------- [33e0] move.w -(a0), $33333333.l uses Op33e0 ----------
 Op33e0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -21412,7 +21532,6 @@ Op33e0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -21427,7 +21546,6 @@ Op33e0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -21436,6 +21554,8 @@ Op33e0:
 
 ;@ ---------- [33e8] move.w ($3333,a0), $33333333.l uses Op33e8 ----------
 Op33e8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -21445,7 +21565,6 @@ Op33e8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -21460,7 +21579,6 @@ Op33e8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -21469,6 +21587,8 @@ Op33e8:
 
 ;@ ---------- [33f0] move.w ($33,a0,d3.w*2), $33333333.l uses Op33f0 ----------
 Op33f0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r0:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -21487,7 +21607,6 @@ Op33f0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -21502,7 +21621,6 @@ Op33f0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#26 ;@ Subtract cycles
@@ -21511,13 +21629,14 @@ Op33f0:
 
 ;@ ---------- [33f8] move.w $3333.w, $33333333.l uses Op33f8 ----------
 Op33f8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -21532,7 +21651,6 @@ Op33f8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -21541,6 +21659,8 @@ Op33f8:
 
 ;@ ---------- [33f9] move.w $33333333.l, $33333333.l uses Op33f9 ----------
 Op33f9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r0:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -21549,7 +21669,6 @@ Op33f9:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -21564,7 +21683,6 @@ Op33f9:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -21573,6 +21691,8 @@ Op33f9:
 
 ;@ ---------- [33fa] move.w ($3333,pc), $33333333.l; =3335 uses Op33fa ----------
 Op33fa:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,pc)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   sub r0,r4,r0 ;@ Real PC
@@ -21582,7 +21702,6 @@ Op33fa:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -21597,7 +21716,6 @@ Op33fa:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -21606,6 +21724,8 @@ Op33fa:
 
 ;@ ---------- [33fb] move.w ($33,pc,d3.w*2), $33333333.l; =35 uses Op33fb ----------
 Op33fb:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,pc,d3.w*2)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   ldrh r3,[r4] ;@ Get extension word
@@ -21623,7 +21743,6 @@ Op33fb:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -21638,7 +21757,6 @@ Op33fb:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#26 ;@ Subtract cycles
@@ -21647,6 +21765,8 @@ Op33fb:
 
 ;@ ---------- [33fc] move.w #$3333, $33333333.l uses Op33fc ----------
 Op33fc:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$3333' into r1:
   ldrsh r1,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$3333' (address in r1) into r1:
@@ -21664,7 +21784,6 @@ Op33fc:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -21673,6 +21792,8 @@ Op33fc:
 
 ;@ ---------- [3ec0] move.w d0, (a7)+ uses Op3ec0 ----------
 Op3ec0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x000f
   mov r1,r1,lsl #2
@@ -21691,7 +21812,6 @@ Op3ec0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#8 ;@ Subtract cycles
@@ -21700,6 +21820,8 @@ Op3ec0:
 
 ;@ ---------- [3ed0] move.w (a0), (a7)+ uses Op3ed0 ----------
 Op3ed0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -21708,7 +21830,6 @@ Op3ed0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -21722,7 +21843,6 @@ Op3ed0:
   mov r1,r1,lsr #16
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -21731,6 +21851,8 @@ Op3ed0:
 
 ;@ ---------- [3ed8] move.w (a0)+, (a7)+ uses Op3ed8 ----------
 Op3ed8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r0:
   and r2,r8,#0x000f
   ldr r0,[r7,r2,lsl #2]
@@ -21740,7 +21862,6 @@ Op3ed8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -21754,7 +21875,6 @@ Op3ed8:
   mov r1,r1,lsr #16
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -21763,6 +21883,8 @@ Op3ed8:
 
 ;@ ---------- [3ee0] move.w -(a0), (a7)+ uses Op3ee0 ----------
 Op3ee0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -21773,7 +21895,6 @@ Op3ee0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -21787,7 +21908,6 @@ Op3ee0:
   mov r1,r1,lsr #16
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -21796,6 +21916,8 @@ Op3ee0:
 
 ;@ ---------- [3ee8] move.w ($3333,a0), (a7)+ uses Op3ee8 ----------
 Op3ee8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -21805,7 +21927,6 @@ Op3ee8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -21819,7 +21940,6 @@ Op3ee8:
   mov r1,r1,lsr #16
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -21828,6 +21948,8 @@ Op3ee8:
 
 ;@ ---------- [3ef0] move.w ($33,a0,d3.w*2), (a7)+ uses Op3ef0 ----------
 Op3ef0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r0:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -21846,7 +21968,6 @@ Op3ef0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -21860,7 +21981,6 @@ Op3ef0:
   mov r1,r1,lsr #16
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -21869,13 +21989,14 @@ Op3ef0:
 
 ;@ ---------- [3ef8] move.w $3333.w, (a7)+ uses Op3ef8 ----------
 Op3ef8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -21889,7 +22010,6 @@ Op3ef8:
   mov r1,r1,lsr #16
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -21898,6 +22018,8 @@ Op3ef8:
 
 ;@ ---------- [3ef9] move.w $33333333.l, (a7)+ uses Op3ef9 ----------
 Op3ef9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r0:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -21906,7 +22028,6 @@ Op3ef9:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -21920,7 +22041,6 @@ Op3ef9:
   mov r1,r1,lsr #16
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -21929,6 +22049,8 @@ Op3ef9:
 
 ;@ ---------- [3efa] move.w ($3333,pc), (a7)+; =3335 uses Op3efa ----------
 Op3efa:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,pc)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   sub r0,r4,r0 ;@ Real PC
@@ -21938,7 +22060,6 @@ Op3efa:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -21952,7 +22073,6 @@ Op3efa:
   mov r1,r1,lsr #16
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -21961,6 +22081,8 @@ Op3efa:
 
 ;@ ---------- [3efb] move.w ($33,pc,d3.w*2), (a7)+; =35 uses Op3efb ----------
 Op3efb:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,pc,d3.w*2)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   ldrh r3,[r4] ;@ Get extension word
@@ -21978,7 +22100,6 @@ Op3efb:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -21992,7 +22113,6 @@ Op3efb:
   mov r1,r1,lsr #16
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -22001,6 +22121,8 @@ Op3efb:
 
 ;@ ---------- [3efc] move.w #$3333, (a7)+ uses Op3efc ----------
 Op3efc:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$3333' into r1:
   ldrsh r1,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$3333' (address in r1) into r1:
@@ -22018,7 +22140,6 @@ Op3efc:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -22027,6 +22148,8 @@ Op3efc:
 
 ;@ ---------- [3f00] move.w d0, -(a7) uses Op3f00 ----------
 Op3f00:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x000f
   mov r1,r1,lsl #2
@@ -22045,7 +22168,6 @@ Op3f00:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#8 ;@ Subtract cycles
@@ -22054,6 +22176,8 @@ Op3f00:
 
 ;@ ---------- [3f10] move.w (a0), -(a7) uses Op3f10 ----------
 Op3f10:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -22062,7 +22186,6 @@ Op3f10:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -22076,7 +22199,6 @@ Op3f10:
   mov r1,r1,lsr #16
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -22085,6 +22207,8 @@ Op3f10:
 
 ;@ ---------- [3f18] move.w (a0)+, -(a7) uses Op3f18 ----------
 Op3f18:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r0:
   and r2,r8,#0x000f
   ldr r0,[r7,r2,lsl #2]
@@ -22094,7 +22218,6 @@ Op3f18:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -22108,7 +22231,6 @@ Op3f18:
   mov r1,r1,lsr #16
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -22117,6 +22239,8 @@ Op3f18:
 
 ;@ ---------- [3f20] move.w -(a0), -(a7) uses Op3f20 ----------
 Op3f20:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -22127,7 +22251,6 @@ Op3f20:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -22141,7 +22264,6 @@ Op3f20:
   mov r1,r1,lsr #16
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -22150,6 +22272,8 @@ Op3f20:
 
 ;@ ---------- [3f28] move.w ($3333,a0), -(a7) uses Op3f28 ----------
 Op3f28:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -22159,7 +22283,6 @@ Op3f28:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -22173,7 +22296,6 @@ Op3f28:
   mov r1,r1,lsr #16
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -22182,6 +22304,8 @@ Op3f28:
 
 ;@ ---------- [3f30] move.w ($33,a0,d3.w*2), -(a7) uses Op3f30 ----------
 Op3f30:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r0:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -22200,7 +22324,6 @@ Op3f30:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -22214,7 +22337,6 @@ Op3f30:
   mov r1,r1,lsr #16
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -22223,13 +22345,14 @@ Op3f30:
 
 ;@ ---------- [3f38] move.w $3333.w, -(a7) uses Op3f38 ----------
 Op3f38:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -22243,7 +22366,6 @@ Op3f38:
   mov r1,r1,lsr #16
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -22252,6 +22374,8 @@ Op3f38:
 
 ;@ ---------- [3f39] move.w $33333333.l, -(a7) uses Op3f39 ----------
 Op3f39:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r0:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -22260,7 +22384,6 @@ Op3f39:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -22274,7 +22397,6 @@ Op3f39:
   mov r1,r1,lsr #16
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -22283,6 +22405,8 @@ Op3f39:
 
 ;@ ---------- [3f3a] move.w ($3333,pc), -(a7); =3335 uses Op3f3a ----------
 Op3f3a:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,pc)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   sub r0,r4,r0 ;@ Real PC
@@ -22292,7 +22416,6 @@ Op3f3a:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -22306,7 +22429,6 @@ Op3f3a:
   mov r1,r1,lsr #16
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -22315,6 +22437,8 @@ Op3f3a:
 
 ;@ ---------- [3f3b] move.w ($33,pc,d3.w*2), -(a7); =35 uses Op3f3b ----------
 Op3f3b:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,pc,d3.w*2)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   ldrh r3,[r4] ;@ Get extension word
@@ -22332,7 +22456,6 @@ Op3f3b:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #16
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -22346,7 +22469,6 @@ Op3f3b:
   mov r1,r1,lsr #16
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -22355,6 +22477,8 @@ Op3f3b:
 
 ;@ ---------- [3f3c] move.w #$3333, -(a7) uses Op3f3c ----------
 Op3f3c:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '#$3333' into r1:
   ldrsh r1,[r4],#2 ;@ Fetch immediate value
 ;@ EaRead : Read '#$3333' (address in r1) into r1:
@@ -22372,7 +22496,6 @@ Op3f3c:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -22412,6 +22535,8 @@ Op4000:
 
 ;@ ---------- [4010] negx.b (a0) uses Op4010 ----------
 Op4010:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -22421,7 +22546,6 @@ Op4010:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Negx:
 ;@ Get X bit:
@@ -22444,7 +22568,6 @@ Op4010:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -22453,6 +22576,8 @@ Op4010:
 
 ;@ ---------- [4018] negx.b (a0)+ uses Op4018 ----------
 Op4018:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r11:
   and r2,r8,#0x000f
   ldr r11,[r7,r2,lsl #2]
@@ -22463,7 +22588,6 @@ Op4018:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Negx:
 ;@ Get X bit:
@@ -22486,7 +22610,6 @@ Op4018:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -22495,6 +22618,8 @@ Op4018:
 
 ;@ ---------- [401f] negx.b (a7)+ uses Op401f ----------
 Op401f:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a7)+' into r11:
   ldr r11,[r7,#0x3c] ;@ A7
   add r3,r11,#2 ;@ Post-increment An
@@ -22504,7 +22629,6 @@ Op401f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Negx:
 ;@ Get X bit:
@@ -22527,7 +22651,6 @@ Op401f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -22536,6 +22659,8 @@ Op401f:
 
 ;@ ---------- [4020] negx.b -(a0) uses Op4020 ----------
 Op4020:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -22547,7 +22672,6 @@ Op4020:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Negx:
 ;@ Get X bit:
@@ -22570,7 +22694,6 @@ Op4020:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -22579,6 +22702,8 @@ Op4020:
 
 ;@ ---------- [4027] negx.b -(a7) uses Op4027 ----------
 Op4027:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a7)' into r11:
   ldr r11,[r7,#0x3c] ;@ A7
   sub r11,r11,#2 ;@ Pre-decrement An
@@ -22588,7 +22713,6 @@ Op4027:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Negx:
 ;@ Get X bit:
@@ -22611,7 +22735,6 @@ Op4027:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -22620,6 +22743,8 @@ Op4027:
 
 ;@ ---------- [4028] negx.b ($3333,a0) uses Op4028 ----------
 Op4028:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r11:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -22630,7 +22755,6 @@ Op4028:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Negx:
 ;@ Get X bit:
@@ -22653,7 +22777,6 @@ Op4028:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -22662,6 +22785,8 @@ Op4028:
 
 ;@ ---------- [4030] negx.b ($33,a0,d3.w*2) uses Op4030 ----------
 Op4030:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r11:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -22681,7 +22806,6 @@ Op4030:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Negx:
 ;@ Get X bit:
@@ -22704,7 +22828,6 @@ Op4030:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -22713,6 +22836,8 @@ Op4030:
 
 ;@ ---------- [4038] negx.b $3333.w uses Op4038 ----------
 Op4038:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
@@ -22720,7 +22845,6 @@ Op4038:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Negx:
 ;@ Get X bit:
@@ -22743,7 +22867,6 @@ Op4038:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -22752,6 +22875,8 @@ Op4038:
 
 ;@ ---------- [4039] negx.b $33333333.l uses Op4039 ----------
 Op4039:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r11:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -22761,7 +22886,6 @@ Op4039:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Negx:
 ;@ Get X bit:
@@ -22784,7 +22908,6 @@ Op4039:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -22825,6 +22948,8 @@ Op4040:
 
 ;@ ---------- [4050] negx.w (a0) uses Op4050 ----------
 Op4050:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -22834,7 +22959,6 @@ Op4050:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Negx:
 ;@ Get X bit:
@@ -22857,7 +22981,6 @@ Op4050:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -22866,6 +22989,8 @@ Op4050:
 
 ;@ ---------- [4058] negx.w (a0)+ uses Op4058 ----------
 Op4058:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r11:
   and r2,r8,#0x000f
   ldr r11,[r7,r2,lsl #2]
@@ -22876,7 +23001,6 @@ Op4058:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Negx:
 ;@ Get X bit:
@@ -22899,7 +23023,6 @@ Op4058:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -22908,6 +23031,8 @@ Op4058:
 
 ;@ ---------- [4060] negx.w -(a0) uses Op4060 ----------
 Op4060:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -22919,7 +23044,6 @@ Op4060:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Negx:
 ;@ Get X bit:
@@ -22942,7 +23066,6 @@ Op4060:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -22951,6 +23074,8 @@ Op4060:
 
 ;@ ---------- [4068] negx.w ($3333,a0) uses Op4068 ----------
 Op4068:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r11:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -22961,7 +23086,6 @@ Op4068:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Negx:
 ;@ Get X bit:
@@ -22984,7 +23108,6 @@ Op4068:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -22993,6 +23116,8 @@ Op4068:
 
 ;@ ---------- [4070] negx.w ($33,a0,d3.w*2) uses Op4070 ----------
 Op4070:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r11:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -23012,7 +23137,6 @@ Op4070:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Negx:
 ;@ Get X bit:
@@ -23035,7 +23159,6 @@ Op4070:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -23044,6 +23167,8 @@ Op4070:
 
 ;@ ---------- [4078] negx.w $3333.w uses Op4078 ----------
 Op4078:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
@@ -23051,7 +23176,6 @@ Op4078:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Negx:
 ;@ Get X bit:
@@ -23074,7 +23198,6 @@ Op4078:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -23083,6 +23206,8 @@ Op4078:
 
 ;@ ---------- [4079] negx.w $33333333.l uses Op4079 ----------
 Op4079:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r11:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -23092,7 +23217,6 @@ Op4079:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Negx:
 ;@ Get X bit:
@@ -23115,7 +23239,6 @@ Op4079:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -23152,6 +23275,8 @@ Op4080:
 
 ;@ ---------- [4090] negx.l (a0) uses Op4090 ----------
 Op4090:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -23161,7 +23286,6 @@ Op4090:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Negx:
 ;@ Get X bit:
@@ -23180,7 +23304,6 @@ Op4090:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -23189,6 +23312,8 @@ Op4090:
 
 ;@ ---------- [4098] negx.l (a0)+ uses Op4098 ----------
 Op4098:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r11:
   and r2,r8,#0x000f
   ldr r11,[r7,r2,lsl #2]
@@ -23199,7 +23324,6 @@ Op4098:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Negx:
 ;@ Get X bit:
@@ -23218,7 +23342,6 @@ Op4098:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -23227,6 +23350,8 @@ Op4098:
 
 ;@ ---------- [40a0] negx.l -(a0) uses Op40a0 ----------
 Op40a0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -23238,7 +23363,6 @@ Op40a0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Negx:
 ;@ Get X bit:
@@ -23257,7 +23381,6 @@ Op40a0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -23266,6 +23389,8 @@ Op40a0:
 
 ;@ ---------- [40a8] negx.l ($3333,a0) uses Op40a8 ----------
 Op40a8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r11:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -23276,7 +23401,6 @@ Op40a8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Negx:
 ;@ Get X bit:
@@ -23295,7 +23419,6 @@ Op40a8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -23304,6 +23427,8 @@ Op40a8:
 
 ;@ ---------- [40b0] negx.l ($33,a0,d3.w*2) uses Op40b0 ----------
 Op40b0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r11:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -23323,7 +23448,6 @@ Op40b0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Negx:
 ;@ Get X bit:
@@ -23342,7 +23466,6 @@ Op40b0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#26 ;@ Subtract cycles
@@ -23351,6 +23474,8 @@ Op40b0:
 
 ;@ ---------- [40b8] negx.l $3333.w uses Op40b8 ----------
 Op40b8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
@@ -23358,7 +23483,6 @@ Op40b8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Negx:
 ;@ Get X bit:
@@ -23377,7 +23501,6 @@ Op40b8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -23386,6 +23509,8 @@ Op40b8:
 
 ;@ ---------- [40b9] negx.l $33333333.l uses Op40b9 ----------
 Op40b9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r11:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -23395,7 +23520,6 @@ Op40b9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Negx:
 ;@ Get X bit:
@@ -23414,7 +23538,6 @@ Op40b9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -23447,6 +23570,8 @@ Op40c0:
 
 ;@ ---------- [40d0] move sr, (a0) uses Op40d0 ----------
 Op40d0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   ldr r0,[r7,#0x4c]   ;@ X bit
   mov r1,r10,lsr #28  ;@ ____NZCV
   eor r2,r1,r1,ror #1 ;@ Bit 0=C^V
@@ -23467,7 +23592,6 @@ Op40d0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -23476,6 +23600,8 @@ Op40d0:
 
 ;@ ---------- [40d8] move sr, (a0)+ uses Op40d8 ----------
 Op40d8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   ldr r0,[r7,#0x4c]   ;@ X bit
   mov r1,r10,lsr #28  ;@ ____NZCV
   eor r2,r1,r1,ror #1 ;@ Bit 0=C^V
@@ -23497,7 +23623,6 @@ Op40d8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -23506,6 +23631,8 @@ Op40d8:
 
 ;@ ---------- [40e0] move sr, -(a0) uses Op40e0 ----------
 Op40e0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   ldr r0,[r7,#0x4c]   ;@ X bit
   mov r1,r10,lsr #28  ;@ ____NZCV
   eor r2,r1,r1,ror #1 ;@ Bit 0=C^V
@@ -23528,7 +23655,6 @@ Op40e0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -23537,6 +23663,8 @@ Op40e0:
 
 ;@ ---------- [40e8] move sr, ($3333,a0) uses Op40e8 ----------
 Op40e8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   ldr r0,[r7,#0x4c]   ;@ X bit
   mov r1,r10,lsr #28  ;@ ____NZCV
   eor r2,r1,r1,ror #1 ;@ Bit 0=C^V
@@ -23558,7 +23686,6 @@ Op40e8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -23567,6 +23694,8 @@ Op40e8:
 
 ;@ ---------- [40f0] move sr, ($33,a0,d3.w*2) uses Op40f0 ----------
 Op40f0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   ldr r0,[r7,#0x4c]   ;@ X bit
   mov r1,r10,lsr #28  ;@ ____NZCV
   eor r2,r1,r1,ror #1 ;@ Bit 0=C^V
@@ -23597,7 +23726,6 @@ Op40f0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -23606,6 +23734,8 @@ Op40f0:
 
 ;@ ---------- [40f8] move sr, $3333.w uses Op40f8 ----------
 Op40f8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   ldr r0,[r7,#0x4c]   ;@ X bit
   mov r1,r10,lsr #28  ;@ ____NZCV
   eor r2,r1,r1,ror #1 ;@ Bit 0=C^V
@@ -23624,7 +23754,6 @@ Op40f8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -23633,6 +23762,8 @@ Op40f8:
 
 ;@ ---------- [40f9] move sr, $33333333.l uses Op40f9 ----------
 Op40f9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   ldr r0,[r7,#0x4c]   ;@ X bit
   mov r1,r10,lsr #28  ;@ ____NZCV
   eor r2,r1,r1,ror #1 ;@ Bit 0=C^V
@@ -23653,7 +23784,6 @@ Op40f9:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -23703,6 +23833,8 @@ chktrap4180: ;@ CHK exception:
 
 ;@ ---------- [4190] chk (a0), a0 uses Op4190 ----------
 Op4190:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get value into r0:
 ;@ EaCalc : Get '(a0)' into r0:
   and r2,r8,#0x000f
@@ -23712,7 +23844,6 @@ Op4190:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -23749,6 +23880,8 @@ chktrap4190: ;@ CHK exception:
 
 ;@ ---------- [4198] chk (a0)+, a0 uses Op4198 ----------
 Op4198:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get value into r0:
 ;@ EaCalc : Get '(a0)+' into r0:
   and r2,r8,#0x000f
@@ -23759,7 +23892,6 @@ Op4198:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -23796,6 +23928,8 @@ chktrap4198: ;@ CHK exception:
 
 ;@ ---------- [41a0] chk -(a0), a0 uses Op41a0 ----------
 Op41a0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get value into r0:
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
@@ -23807,7 +23941,6 @@ Op41a0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -23844,6 +23977,8 @@ chktrap41a0: ;@ CHK exception:
 
 ;@ ---------- [41a8] chk ($3333,a0), a0 uses Op41a8 ----------
 Op41a8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get value into r0:
 ;@ EaCalc : Get '($3333,a0)' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch offset
@@ -23854,7 +23989,6 @@ Op41a8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -23891,6 +24025,8 @@ chktrap41a8: ;@ CHK exception:
 
 ;@ ---------- [41b0] chk ($33,a0,d3.w*2), a0 uses Op41b0 ----------
 Op41b0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get value into r0:
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r0:
 ;@ Get extension word into r3:
@@ -23910,7 +24046,6 @@ Op41b0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -23947,6 +24082,8 @@ chktrap41b0: ;@ CHK exception:
 
 ;@ ---------- [41b8] chk $3333.w, a0 uses Op41b8 ----------
 Op41b8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get value into r0:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
@@ -23954,7 +24091,6 @@ Op41b8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -23991,6 +24127,8 @@ chktrap41b8: ;@ CHK exception:
 
 ;@ ---------- [41b9] chk $33333333.l, a0 uses Op41b9 ----------
 Op41b9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get value into r0:
 ;@ EaCalc : Get '$33333333.l' into r0:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
@@ -24000,7 +24138,6 @@ Op41b9:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -24037,6 +24174,8 @@ chktrap41b9: ;@ CHK exception:
 
 ;@ ---------- [41ba] chk ($3333,pc), a0; =3335 uses Op41ba ----------
 Op41ba:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get value into r0:
 ;@ EaCalc : Get '($3333,pc)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
@@ -24047,7 +24186,6 @@ Op41ba:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -24084,6 +24222,8 @@ chktrap41ba: ;@ CHK exception:
 
 ;@ ---------- [41bb] chk ($33,pc,d3.w*2), a0; =35 uses Op41bb ----------
 Op41bb:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get value into r0:
 ;@ EaCalc : Get '($33,pc,d3.w*2)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
@@ -24102,7 +24242,6 @@ Op41bb:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -24179,6 +24318,8 @@ chktrap41bc: ;@ CHK exception:
 
 ;@ ---------- [41d0] lea (a0), a0 uses Op41d0 ----------
 Op41d0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r1:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -24196,6 +24337,8 @@ Op41d0:
 
 ;@ ---------- [41e8] lea ($3333,a0), a0 uses Op41e8 ----------
 Op41e8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r1:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -24214,6 +24357,8 @@ Op41e8:
 
 ;@ ---------- [41f8] lea $3333.w, a0 uses Op41f8 ----------
 Op41f8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r1:
   ldrsh r1,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaCalc : Get register index into r0:
@@ -24229,6 +24374,8 @@ Op41f8:
 
 ;@ ---------- [41f9] lea $33333333.l, a0 uses Op41f9 ----------
 Op41f9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r1:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -24246,6 +24393,8 @@ Op41f9:
 
 ;@ ---------- [41fa] lea ($3333,pc), a0; =3335 uses Op41fa ----------
 Op41fa:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,pc)' into r1:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   sub r0,r4,r0 ;@ Real PC
@@ -24264,6 +24413,8 @@ Op41fa:
 
 ;@ ---------- [41fb] lea ($33,pc,d3.w*2), a0; =35 uses Op41fb ----------
 Op41fb:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,pc,d3.w*2)' into r1:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   ldrh r3,[r4] ;@ Get extension word
@@ -24307,6 +24458,8 @@ Op4200:
 
 ;@ ---------- [4210] clr.b (a0) uses Op4210 ----------
 Op4210:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -24322,7 +24475,6 @@ Op4210:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -24331,6 +24483,8 @@ Op4210:
 
 ;@ ---------- [4218] clr.b (a0)+ uses Op4218 ----------
 Op4218:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r11:
   and r2,r8,#0x000f
   ldr r11,[r7,r2,lsl #2]
@@ -24347,7 +24501,6 @@ Op4218:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -24356,6 +24509,8 @@ Op4218:
 
 ;@ ---------- [421f] clr.b (a7)+ uses Op421f ----------
 Op421f:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a7)+' into r11:
   ldr r11,[r7,#0x3c] ;@ A7
   add r3,r11,#2 ;@ Post-increment An
@@ -24371,7 +24526,6 @@ Op421f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -24380,6 +24534,8 @@ Op421f:
 
 ;@ ---------- [4220] clr.b -(a0) uses Op4220 ----------
 Op4220:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -24397,7 +24553,6 @@ Op4220:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -24406,6 +24561,8 @@ Op4220:
 
 ;@ ---------- [4227] clr.b -(a7) uses Op4227 ----------
 Op4227:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a7)' into r11:
   ldr r11,[r7,#0x3c] ;@ A7
   sub r11,r11,#2 ;@ Pre-decrement An
@@ -24421,7 +24578,6 @@ Op4227:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -24430,6 +24586,8 @@ Op4227:
 
 ;@ ---------- [4228] clr.b ($3333,a0) uses Op4228 ----------
 Op4228:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r11:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -24446,7 +24604,6 @@ Op4228:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -24455,6 +24612,8 @@ Op4228:
 
 ;@ ---------- [4230] clr.b ($33,a0,d3.w*2) uses Op4230 ----------
 Op4230:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r11:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -24480,7 +24639,6 @@ Op4230:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -24489,6 +24647,8 @@ Op4230:
 
 ;@ ---------- [4238] clr.b $3333.w uses Op4238 ----------
 Op4238:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 
@@ -24502,7 +24662,6 @@ Op4238:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -24511,6 +24670,8 @@ Op4238:
 
 ;@ ---------- [4239] clr.b $33333333.l uses Op4239 ----------
 Op4239:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r11:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -24526,7 +24687,6 @@ Op4239:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -24553,6 +24713,8 @@ Op4240:
 
 ;@ ---------- [4250] clr.w (a0) uses Op4250 ----------
 Op4250:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -24568,7 +24730,6 @@ Op4250:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -24577,6 +24738,8 @@ Op4250:
 
 ;@ ---------- [4258] clr.w (a0)+ uses Op4258 ----------
 Op4258:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r11:
   and r2,r8,#0x000f
   ldr r11,[r7,r2,lsl #2]
@@ -24593,7 +24756,6 @@ Op4258:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -24602,6 +24764,8 @@ Op4258:
 
 ;@ ---------- [4260] clr.w -(a0) uses Op4260 ----------
 Op4260:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -24619,7 +24783,6 @@ Op4260:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -24628,6 +24791,8 @@ Op4260:
 
 ;@ ---------- [4268] clr.w ($3333,a0) uses Op4268 ----------
 Op4268:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r11:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -24644,7 +24809,6 @@ Op4268:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -24653,6 +24817,8 @@ Op4268:
 
 ;@ ---------- [4270] clr.w ($33,a0,d3.w*2) uses Op4270 ----------
 Op4270:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r11:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -24678,7 +24844,6 @@ Op4270:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -24687,6 +24852,8 @@ Op4270:
 
 ;@ ---------- [4278] clr.w $3333.w uses Op4278 ----------
 Op4278:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 
@@ -24700,7 +24867,6 @@ Op4278:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -24709,6 +24875,8 @@ Op4278:
 
 ;@ ---------- [4279] clr.w $33333333.l uses Op4279 ----------
 Op4279:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r11:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -24724,7 +24892,6 @@ Op4279:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -24750,6 +24917,8 @@ Op4280:
 
 ;@ ---------- [4290] clr.l (a0) uses Op4290 ----------
 Op4290:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -24764,7 +24933,6 @@ Op4290:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -24773,6 +24941,8 @@ Op4290:
 
 ;@ ---------- [4298] clr.l (a0)+ uses Op4298 ----------
 Op4298:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r11:
   and r2,r8,#0x000f
   ldr r11,[r7,r2,lsl #2]
@@ -24788,7 +24958,6 @@ Op4298:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -24797,6 +24966,8 @@ Op4298:
 
 ;@ ---------- [42a0] clr.l -(a0) uses Op42a0 ----------
 Op42a0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -24813,7 +24984,6 @@ Op42a0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -24822,6 +24992,8 @@ Op42a0:
 
 ;@ ---------- [42a8] clr.l ($3333,a0) uses Op42a8 ----------
 Op42a8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r11:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -24837,7 +25009,6 @@ Op42a8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -24846,6 +25017,8 @@ Op42a8:
 
 ;@ ---------- [42b0] clr.l ($33,a0,d3.w*2) uses Op42b0 ----------
 Op42b0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r11:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -24870,7 +25043,6 @@ Op42b0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#26 ;@ Subtract cycles
@@ -24879,6 +25051,8 @@ Op42b0:
 
 ;@ ---------- [42b8] clr.l $3333.w uses Op42b8 ----------
 Op42b8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 
@@ -24891,7 +25065,6 @@ Op42b8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -24900,6 +25073,8 @@ Op42b8:
 
 ;@ ---------- [42b9] clr.l $33333333.l uses Op42b9 ----------
 Op42b9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r11:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -24914,7 +25089,6 @@ Op42b9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -24946,6 +25120,8 @@ Op4400:
 
 ;@ ---------- [4410] neg.b (a0) uses Op4410 ----------
 Op4410:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -24955,7 +25131,6 @@ Op4410:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Neg:
   mov r0,r0,asl #24
@@ -24970,7 +25145,6 @@ Op4410:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -24979,6 +25153,8 @@ Op4410:
 
 ;@ ---------- [4418] neg.b (a0)+ uses Op4418 ----------
 Op4418:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r11:
   and r2,r8,#0x000f
   ldr r11,[r7,r2,lsl #2]
@@ -24989,7 +25165,6 @@ Op4418:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Neg:
   mov r0,r0,asl #24
@@ -25004,7 +25179,6 @@ Op4418:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -25013,6 +25187,8 @@ Op4418:
 
 ;@ ---------- [441f] neg.b (a7)+ uses Op441f ----------
 Op441f:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a7)+' into r11:
   ldr r11,[r7,#0x3c] ;@ A7
   add r3,r11,#2 ;@ Post-increment An
@@ -25022,7 +25198,6 @@ Op441f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Neg:
   mov r0,r0,asl #24
@@ -25037,7 +25212,6 @@ Op441f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -25046,6 +25220,8 @@ Op441f:
 
 ;@ ---------- [4420] neg.b -(a0) uses Op4420 ----------
 Op4420:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -25057,7 +25233,6 @@ Op4420:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Neg:
   mov r0,r0,asl #24
@@ -25072,7 +25247,6 @@ Op4420:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -25081,6 +25255,8 @@ Op4420:
 
 ;@ ---------- [4427] neg.b -(a7) uses Op4427 ----------
 Op4427:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a7)' into r11:
   ldr r11,[r7,#0x3c] ;@ A7
   sub r11,r11,#2 ;@ Pre-decrement An
@@ -25090,7 +25266,6 @@ Op4427:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Neg:
   mov r0,r0,asl #24
@@ -25105,7 +25280,6 @@ Op4427:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -25114,6 +25288,8 @@ Op4427:
 
 ;@ ---------- [4428] neg.b ($3333,a0) uses Op4428 ----------
 Op4428:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r11:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -25124,7 +25300,6 @@ Op4428:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Neg:
   mov r0,r0,asl #24
@@ -25139,7 +25314,6 @@ Op4428:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -25148,6 +25322,8 @@ Op4428:
 
 ;@ ---------- [4430] neg.b ($33,a0,d3.w*2) uses Op4430 ----------
 Op4430:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r11:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -25167,7 +25343,6 @@ Op4430:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Neg:
   mov r0,r0,asl #24
@@ -25182,7 +25357,6 @@ Op4430:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -25191,6 +25365,8 @@ Op4430:
 
 ;@ ---------- [4438] neg.b $3333.w uses Op4438 ----------
 Op4438:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
@@ -25198,7 +25374,6 @@ Op4438:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Neg:
   mov r0,r0,asl #24
@@ -25213,7 +25388,6 @@ Op4438:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -25222,6 +25396,8 @@ Op4438:
 
 ;@ ---------- [4439] neg.b $33333333.l uses Op4439 ----------
 Op4439:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r11:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -25231,7 +25407,6 @@ Op4439:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Neg:
   mov r0,r0,asl #24
@@ -25246,7 +25421,6 @@ Op4439:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -25279,6 +25453,8 @@ Op4440:
 
 ;@ ---------- [4450] neg.w (a0) uses Op4450 ----------
 Op4450:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -25288,7 +25464,6 @@ Op4450:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Neg:
   mov r0,r0,asl #16
@@ -25303,7 +25478,6 @@ Op4450:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -25312,6 +25486,8 @@ Op4450:
 
 ;@ ---------- [4458] neg.w (a0)+ uses Op4458 ----------
 Op4458:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r11:
   and r2,r8,#0x000f
   ldr r11,[r7,r2,lsl #2]
@@ -25322,7 +25498,6 @@ Op4458:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Neg:
   mov r0,r0,asl #16
@@ -25337,7 +25512,6 @@ Op4458:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -25346,6 +25520,8 @@ Op4458:
 
 ;@ ---------- [4460] neg.w -(a0) uses Op4460 ----------
 Op4460:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -25357,7 +25533,6 @@ Op4460:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Neg:
   mov r0,r0,asl #16
@@ -25372,7 +25547,6 @@ Op4460:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -25381,6 +25555,8 @@ Op4460:
 
 ;@ ---------- [4468] neg.w ($3333,a0) uses Op4468 ----------
 Op4468:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r11:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -25391,7 +25567,6 @@ Op4468:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Neg:
   mov r0,r0,asl #16
@@ -25406,7 +25581,6 @@ Op4468:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -25415,6 +25589,8 @@ Op4468:
 
 ;@ ---------- [4470] neg.w ($33,a0,d3.w*2) uses Op4470 ----------
 Op4470:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r11:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -25434,7 +25610,6 @@ Op4470:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Neg:
   mov r0,r0,asl #16
@@ -25449,7 +25624,6 @@ Op4470:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -25458,6 +25632,8 @@ Op4470:
 
 ;@ ---------- [4478] neg.w $3333.w uses Op4478 ----------
 Op4478:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
@@ -25465,7 +25641,6 @@ Op4478:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Neg:
   mov r0,r0,asl #16
@@ -25480,7 +25655,6 @@ Op4478:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -25489,6 +25663,8 @@ Op4478:
 
 ;@ ---------- [4479] neg.w $33333333.l uses Op4479 ----------
 Op4479:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r11:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -25498,7 +25674,6 @@ Op4479:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Neg:
   mov r0,r0,asl #16
@@ -25513,7 +25688,6 @@ Op4479:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -25543,6 +25717,8 @@ Op4480:
 
 ;@ ---------- [4490] neg.l (a0) uses Op4490 ----------
 Op4490:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -25552,7 +25728,6 @@ Op4490:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Neg:
   rsbs r1,r0,#0
@@ -25564,7 +25739,6 @@ Op4490:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -25573,6 +25747,8 @@ Op4490:
 
 ;@ ---------- [4498] neg.l (a0)+ uses Op4498 ----------
 Op4498:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r11:
   and r2,r8,#0x000f
   ldr r11,[r7,r2,lsl #2]
@@ -25583,7 +25759,6 @@ Op4498:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Neg:
   rsbs r1,r0,#0
@@ -25595,7 +25770,6 @@ Op4498:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -25604,6 +25778,8 @@ Op4498:
 
 ;@ ---------- [44a0] neg.l -(a0) uses Op44a0 ----------
 Op44a0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -25615,7 +25791,6 @@ Op44a0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Neg:
   rsbs r1,r0,#0
@@ -25627,7 +25802,6 @@ Op44a0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -25636,6 +25810,8 @@ Op44a0:
 
 ;@ ---------- [44a8] neg.l ($3333,a0) uses Op44a8 ----------
 Op44a8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r11:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -25646,7 +25822,6 @@ Op44a8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Neg:
   rsbs r1,r0,#0
@@ -25658,7 +25833,6 @@ Op44a8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -25667,6 +25841,8 @@ Op44a8:
 
 ;@ ---------- [44b0] neg.l ($33,a0,d3.w*2) uses Op44b0 ----------
 Op44b0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r11:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -25686,7 +25862,6 @@ Op44b0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Neg:
   rsbs r1,r0,#0
@@ -25698,7 +25873,6 @@ Op44b0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#26 ;@ Subtract cycles
@@ -25707,6 +25881,8 @@ Op44b0:
 
 ;@ ---------- [44b8] neg.l $3333.w uses Op44b8 ----------
 Op44b8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
@@ -25714,7 +25890,6 @@ Op44b8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Neg:
   rsbs r1,r0,#0
@@ -25726,7 +25901,6 @@ Op44b8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -25735,6 +25909,8 @@ Op44b8:
 
 ;@ ---------- [44b9] neg.l $33333333.l uses Op44b9 ----------
 Op44b9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r11:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -25744,7 +25920,6 @@ Op44b9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Neg:
   rsbs r1,r0,#0
@@ -25756,7 +25931,6 @@ Op44b9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -25784,6 +25958,8 @@ Op44c0:
 
 ;@ ---------- [44d0] move (a0), ccr uses Op44d0 ----------
 Op44d0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -25792,7 +25968,6 @@ Op44d0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   eor r1,r0,r0,ror #1 ;@ Bit 0=C^V
   mov r2,r0,lsl #25
@@ -25808,6 +25983,8 @@ Op44d0:
 
 ;@ ---------- [44d8] move (a0)+, ccr uses Op44d8 ----------
 Op44d8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r0:
   and r2,r8,#0x000f
   ldr r0,[r7,r2,lsl #2]
@@ -25817,7 +25994,6 @@ Op44d8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   eor r1,r0,r0,ror #1 ;@ Bit 0=C^V
   mov r2,r0,lsl #25
@@ -25833,6 +26009,8 @@ Op44d8:
 
 ;@ ---------- [44e0] move -(a0), ccr uses Op44e0 ----------
 Op44e0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -25843,7 +26021,6 @@ Op44e0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   eor r1,r0,r0,ror #1 ;@ Bit 0=C^V
   mov r2,r0,lsl #25
@@ -25859,6 +26036,8 @@ Op44e0:
 
 ;@ ---------- [44e8] move ($3333,a0), ccr uses Op44e8 ----------
 Op44e8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -25868,7 +26047,6 @@ Op44e8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   eor r1,r0,r0,ror #1 ;@ Bit 0=C^V
   mov r2,r0,lsl #25
@@ -25884,6 +26062,8 @@ Op44e8:
 
 ;@ ---------- [44f0] move ($33,a0,d3.w*2), ccr uses Op44f0 ----------
 Op44f0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r0:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -25902,7 +26082,6 @@ Op44f0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   eor r1,r0,r0,ror #1 ;@ Bit 0=C^V
   mov r2,r0,lsl #25
@@ -25918,13 +26097,14 @@ Op44f0:
 
 ;@ ---------- [44f8] move $3333.w, ccr uses Op44f8 ----------
 Op44f8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   eor r1,r0,r0,ror #1 ;@ Bit 0=C^V
   mov r2,r0,lsl #25
@@ -25940,6 +26120,8 @@ Op44f8:
 
 ;@ ---------- [44f9] move $33333333.l, ccr uses Op44f9 ----------
 Op44f9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r0:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -25948,7 +26130,6 @@ Op44f9:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   eor r1,r0,r0,ror #1 ;@ Bit 0=C^V
   mov r2,r0,lsl #25
@@ -25964,6 +26145,8 @@ Op44f9:
 
 ;@ ---------- [44fa] move ($3333,pc), ccr; =3335 uses Op44fa ----------
 Op44fa:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,pc)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   sub r0,r4,r0 ;@ Real PC
@@ -25973,7 +26156,6 @@ Op44fa:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   eor r1,r0,r0,ror #1 ;@ Bit 0=C^V
   mov r2,r0,lsl #25
@@ -25989,6 +26171,8 @@ Op44fa:
 
 ;@ ---------- [44fb] move ($33,pc,d3.w*2), ccr; =35 uses Op44fb ----------
 Op44fb:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,pc,d3.w*2)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   ldrh r3,[r4] ;@ Get extension word
@@ -26006,7 +26190,6 @@ Op44fb:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   eor r1,r0,r0,ror #1 ;@ Bit 0=C^V
   mov r2,r0,lsl #25
@@ -26061,6 +26244,8 @@ Op4600:
 
 ;@ ---------- [4610] not.b (a0) uses Op4610 ----------
 Op4610:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -26070,7 +26255,6 @@ Op4610:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Not:
   mov r0,r0,asl #24
@@ -26083,7 +26267,6 @@ Op4610:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -26092,6 +26275,8 @@ Op4610:
 
 ;@ ---------- [4618] not.b (a0)+ uses Op4618 ----------
 Op4618:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r11:
   and r2,r8,#0x000f
   ldr r11,[r7,r2,lsl #2]
@@ -26102,7 +26287,6 @@ Op4618:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Not:
   mov r0,r0,asl #24
@@ -26115,7 +26299,6 @@ Op4618:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -26124,6 +26307,8 @@ Op4618:
 
 ;@ ---------- [461f] not.b (a7)+ uses Op461f ----------
 Op461f:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a7)+' into r11:
   ldr r11,[r7,#0x3c] ;@ A7
   add r3,r11,#2 ;@ Post-increment An
@@ -26133,7 +26318,6 @@ Op461f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Not:
   mov r0,r0,asl #24
@@ -26146,7 +26330,6 @@ Op461f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -26155,6 +26338,8 @@ Op461f:
 
 ;@ ---------- [4620] not.b -(a0) uses Op4620 ----------
 Op4620:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -26166,7 +26351,6 @@ Op4620:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Not:
   mov r0,r0,asl #24
@@ -26179,7 +26363,6 @@ Op4620:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -26188,6 +26371,8 @@ Op4620:
 
 ;@ ---------- [4627] not.b -(a7) uses Op4627 ----------
 Op4627:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a7)' into r11:
   ldr r11,[r7,#0x3c] ;@ A7
   sub r11,r11,#2 ;@ Pre-decrement An
@@ -26197,7 +26382,6 @@ Op4627:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Not:
   mov r0,r0,asl #24
@@ -26210,7 +26394,6 @@ Op4627:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -26219,6 +26402,8 @@ Op4627:
 
 ;@ ---------- [4628] not.b ($3333,a0) uses Op4628 ----------
 Op4628:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r11:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -26229,7 +26414,6 @@ Op4628:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Not:
   mov r0,r0,asl #24
@@ -26242,7 +26426,6 @@ Op4628:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -26251,6 +26434,8 @@ Op4628:
 
 ;@ ---------- [4630] not.b ($33,a0,d3.w*2) uses Op4630 ----------
 Op4630:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r11:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -26270,7 +26455,6 @@ Op4630:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Not:
   mov r0,r0,asl #24
@@ -26283,7 +26467,6 @@ Op4630:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -26292,6 +26475,8 @@ Op4630:
 
 ;@ ---------- [4638] not.b $3333.w uses Op4638 ----------
 Op4638:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
@@ -26299,7 +26484,6 @@ Op4638:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Not:
   mov r0,r0,asl #24
@@ -26312,7 +26496,6 @@ Op4638:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -26321,6 +26504,8 @@ Op4638:
 
 ;@ ---------- [4639] not.b $33333333.l uses Op4639 ----------
 Op4639:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r11:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -26330,7 +26515,6 @@ Op4639:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Not:
   mov r0,r0,asl #24
@@ -26343,7 +26527,6 @@ Op4639:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -26374,6 +26557,8 @@ Op4640:
 
 ;@ ---------- [4650] not.w (a0) uses Op4650 ----------
 Op4650:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -26383,7 +26568,6 @@ Op4650:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Not:
   mov r0,r0,asl #16
@@ -26396,7 +26580,6 @@ Op4650:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -26405,6 +26588,8 @@ Op4650:
 
 ;@ ---------- [4658] not.w (a0)+ uses Op4658 ----------
 Op4658:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r11:
   and r2,r8,#0x000f
   ldr r11,[r7,r2,lsl #2]
@@ -26415,7 +26600,6 @@ Op4658:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Not:
   mov r0,r0,asl #16
@@ -26428,7 +26612,6 @@ Op4658:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -26437,6 +26620,8 @@ Op4658:
 
 ;@ ---------- [4660] not.w -(a0) uses Op4660 ----------
 Op4660:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -26448,7 +26633,6 @@ Op4660:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Not:
   mov r0,r0,asl #16
@@ -26461,7 +26645,6 @@ Op4660:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -26470,6 +26653,8 @@ Op4660:
 
 ;@ ---------- [4668] not.w ($3333,a0) uses Op4668 ----------
 Op4668:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r11:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -26480,7 +26665,6 @@ Op4668:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Not:
   mov r0,r0,asl #16
@@ -26493,7 +26677,6 @@ Op4668:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -26502,6 +26685,8 @@ Op4668:
 
 ;@ ---------- [4670] not.w ($33,a0,d3.w*2) uses Op4670 ----------
 Op4670:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r11:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -26521,7 +26706,6 @@ Op4670:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Not:
   mov r0,r0,asl #16
@@ -26534,7 +26718,6 @@ Op4670:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -26543,6 +26726,8 @@ Op4670:
 
 ;@ ---------- [4678] not.w $3333.w uses Op4678 ----------
 Op4678:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
@@ -26550,7 +26735,6 @@ Op4678:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Not:
   mov r0,r0,asl #16
@@ -26563,7 +26747,6 @@ Op4678:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -26572,6 +26755,8 @@ Op4678:
 
 ;@ ---------- [4679] not.w $33333333.l uses Op4679 ----------
 Op4679:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r11:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -26581,7 +26766,6 @@ Op4679:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Not:
   mov r0,r0,asl #16
@@ -26594,7 +26778,6 @@ Op4679:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -26623,6 +26806,8 @@ Op4680:
 
 ;@ ---------- [4690] not.l (a0) uses Op4690 ----------
 Op4690:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -26632,7 +26817,6 @@ Op4690:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Not:
   mvns r1,r0
@@ -26643,7 +26827,6 @@ Op4690:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -26652,6 +26835,8 @@ Op4690:
 
 ;@ ---------- [4698] not.l (a0)+ uses Op4698 ----------
 Op4698:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r11:
   and r2,r8,#0x000f
   ldr r11,[r7,r2,lsl #2]
@@ -26662,7 +26847,6 @@ Op4698:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Not:
   mvns r1,r0
@@ -26673,7 +26857,6 @@ Op4698:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -26682,6 +26865,8 @@ Op4698:
 
 ;@ ---------- [46a0] not.l -(a0) uses Op46a0 ----------
 Op46a0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -26693,7 +26878,6 @@ Op46a0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Not:
   mvns r1,r0
@@ -26704,7 +26888,6 @@ Op46a0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -26713,6 +26896,8 @@ Op46a0:
 
 ;@ ---------- [46a8] not.l ($3333,a0) uses Op46a8 ----------
 Op46a8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r11:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -26723,7 +26908,6 @@ Op46a8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Not:
   mvns r1,r0
@@ -26734,7 +26918,6 @@ Op46a8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -26743,6 +26926,8 @@ Op46a8:
 
 ;@ ---------- [46b0] not.l ($33,a0,d3.w*2) uses Op46b0 ----------
 Op46b0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r11:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -26762,7 +26947,6 @@ Op46b0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Not:
   mvns r1,r0
@@ -26773,7 +26957,6 @@ Op46b0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#26 ;@ Subtract cycles
@@ -26782,6 +26965,8 @@ Op46b0:
 
 ;@ ---------- [46b8] not.l $3333.w uses Op46b8 ----------
 Op46b8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
@@ -26789,7 +26974,6 @@ Op46b8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Not:
   mvns r1,r0
@@ -26800,7 +26984,6 @@ Op46b8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -26809,6 +26992,8 @@ Op46b8:
 
 ;@ ---------- [46b9] not.l $33333333.l uses Op46b9 ----------
 Op46b9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r11:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -26818,7 +27003,6 @@ Op46b9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Not:
   mvns r1,r0
@@ -26829,7 +27013,6 @@ Op46b9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -26887,6 +27070,7 @@ no_sp_swap46c0:
 ;@ ---------- [46d0] move (a0), sr uses Op46d0 ----------
 Op46d0:
   ldr r11,[r7,#0x44] ;@ Get SR high
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
   tst r11,#0x20 ;@ Check we are in supervisor mode
   beq WrongPrivilegeMode ;@ No
 
@@ -26898,7 +27082,6 @@ Op46d0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   eor r1,r0,r0,ror #1 ;@ Bit 0=C^V
   mov r2,r0,lsl #25
@@ -26940,6 +27123,7 @@ no_sp_swap46d0:
 ;@ ---------- [46d8] move (a0)+, sr uses Op46d8 ----------
 Op46d8:
   ldr r11,[r7,#0x44] ;@ Get SR high
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
   tst r11,#0x20 ;@ Check we are in supervisor mode
   beq WrongPrivilegeMode ;@ No
 
@@ -26952,7 +27136,6 @@ Op46d8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   eor r1,r0,r0,ror #1 ;@ Bit 0=C^V
   mov r2,r0,lsl #25
@@ -26994,6 +27177,7 @@ no_sp_swap46d8:
 ;@ ---------- [46e0] move -(a0), sr uses Op46e0 ----------
 Op46e0:
   ldr r11,[r7,#0x44] ;@ Get SR high
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
   tst r11,#0x20 ;@ Check we are in supervisor mode
   beq WrongPrivilegeMode ;@ No
 
@@ -27007,7 +27191,6 @@ Op46e0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   eor r1,r0,r0,ror #1 ;@ Bit 0=C^V
   mov r2,r0,lsl #25
@@ -27049,6 +27232,7 @@ no_sp_swap46e0:
 ;@ ---------- [46e8] move ($3333,a0), sr uses Op46e8 ----------
 Op46e8:
   ldr r11,[r7,#0x44] ;@ Get SR high
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
   tst r11,#0x20 ;@ Check we are in supervisor mode
   beq WrongPrivilegeMode ;@ No
 
@@ -27061,7 +27245,6 @@ Op46e8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   eor r1,r0,r0,ror #1 ;@ Bit 0=C^V
   mov r2,r0,lsl #25
@@ -27103,6 +27286,7 @@ no_sp_swap46e8:
 ;@ ---------- [46f0] move ($33,a0,d3.w*2), sr uses Op46f0 ----------
 Op46f0:
   ldr r11,[r7,#0x44] ;@ Get SR high
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
   tst r11,#0x20 ;@ Check we are in supervisor mode
   beq WrongPrivilegeMode ;@ No
 
@@ -27124,7 +27308,6 @@ Op46f0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   eor r1,r0,r0,ror #1 ;@ Bit 0=C^V
   mov r2,r0,lsl #25
@@ -27166,6 +27349,7 @@ no_sp_swap46f0:
 ;@ ---------- [46f8] move $3333.w, sr uses Op46f8 ----------
 Op46f8:
   ldr r11,[r7,#0x44] ;@ Get SR high
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
   tst r11,#0x20 ;@ Check we are in supervisor mode
   beq WrongPrivilegeMode ;@ No
 
@@ -27175,7 +27359,6 @@ Op46f8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   eor r1,r0,r0,ror #1 ;@ Bit 0=C^V
   mov r2,r0,lsl #25
@@ -27217,6 +27400,7 @@ no_sp_swap46f8:
 ;@ ---------- [46f9] move $33333333.l, sr uses Op46f9 ----------
 Op46f9:
   ldr r11,[r7,#0x44] ;@ Get SR high
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
   tst r11,#0x20 ;@ Check we are in supervisor mode
   beq WrongPrivilegeMode ;@ No
 
@@ -27228,7 +27412,6 @@ Op46f9:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   eor r1,r0,r0,ror #1 ;@ Bit 0=C^V
   mov r2,r0,lsl #25
@@ -27270,6 +27453,7 @@ no_sp_swap46f9:
 ;@ ---------- [46fa] move ($3333,pc), sr; =3335 uses Op46fa ----------
 Op46fa:
   ldr r11,[r7,#0x44] ;@ Get SR high
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
   tst r11,#0x20 ;@ Check we are in supervisor mode
   beq WrongPrivilegeMode ;@ No
 
@@ -27282,7 +27466,6 @@ Op46fa:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   eor r1,r0,r0,ror #1 ;@ Bit 0=C^V
   mov r2,r0,lsl #25
@@ -27324,6 +27507,7 @@ no_sp_swap46fa:
 ;@ ---------- [46fb] move ($33,pc,d3.w*2), sr; =35 uses Op46fb ----------
 Op46fb:
   ldr r11,[r7,#0x44] ;@ Get SR high
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
   tst r11,#0x20 ;@ Check we are in supervisor mode
   beq WrongPrivilegeMode ;@ No
 
@@ -27344,7 +27528,6 @@ Op46fb:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   eor r1,r0,r0,ror #1 ;@ Bit 0=C^V
   mov r2,r0,lsl #25
@@ -27471,6 +27654,8 @@ finish4800:
 
 ;@ ---------- [4810] nbcd (a0) uses Op4810 ----------
 Op4810:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -27480,7 +27665,6 @@ Op4810:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldr r2,[r7,#0x4c]
   bic r10,r10,#0xb0000000 ;@ clear all flags, except Z
@@ -27506,7 +27690,6 @@ Op4810:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 finish4810:
   str r10,[r7,#0x4c] ;@ Save X
@@ -27519,6 +27702,8 @@ finish4810:
 
 ;@ ---------- [4818] nbcd (a0)+ uses Op4818 ----------
 Op4818:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r11:
   and r2,r8,#0x000f
   ldr r11,[r7,r2,lsl #2]
@@ -27529,7 +27714,6 @@ Op4818:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldr r2,[r7,#0x4c]
   bic r10,r10,#0xb0000000 ;@ clear all flags, except Z
@@ -27555,7 +27739,6 @@ Op4818:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 finish4818:
   str r10,[r7,#0x4c] ;@ Save X
@@ -27568,6 +27751,8 @@ finish4818:
 
 ;@ ---------- [481f] nbcd (a7)+ uses Op481f ----------
 Op481f:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a7)+' into r11:
   ldr r11,[r7,#0x3c] ;@ A7
   add r3,r11,#2 ;@ Post-increment An
@@ -27577,7 +27762,6 @@ Op481f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldr r2,[r7,#0x4c]
   bic r10,r10,#0xb0000000 ;@ clear all flags, except Z
@@ -27603,7 +27787,6 @@ Op481f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 finish481f:
   str r10,[r7,#0x4c] ;@ Save X
@@ -27616,6 +27799,8 @@ finish481f:
 
 ;@ ---------- [4820] nbcd -(a0) uses Op4820 ----------
 Op4820:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -27627,7 +27812,6 @@ Op4820:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldr r2,[r7,#0x4c]
   bic r10,r10,#0xb0000000 ;@ clear all flags, except Z
@@ -27653,7 +27837,6 @@ Op4820:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 finish4820:
   str r10,[r7,#0x4c] ;@ Save X
@@ -27666,6 +27849,8 @@ finish4820:
 
 ;@ ---------- [4827] nbcd -(a7) uses Op4827 ----------
 Op4827:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a7)' into r11:
   ldr r11,[r7,#0x3c] ;@ A7
   sub r11,r11,#2 ;@ Pre-decrement An
@@ -27675,7 +27860,6 @@ Op4827:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldr r2,[r7,#0x4c]
   bic r10,r10,#0xb0000000 ;@ clear all flags, except Z
@@ -27701,7 +27885,6 @@ Op4827:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 finish4827:
   str r10,[r7,#0x4c] ;@ Save X
@@ -27714,6 +27897,8 @@ finish4827:
 
 ;@ ---------- [4828] nbcd ($3333,a0) uses Op4828 ----------
 Op4828:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r11:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -27724,7 +27909,6 @@ Op4828:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldr r2,[r7,#0x4c]
   bic r10,r10,#0xb0000000 ;@ clear all flags, except Z
@@ -27750,7 +27934,6 @@ Op4828:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 finish4828:
   str r10,[r7,#0x4c] ;@ Save X
@@ -27763,6 +27946,8 @@ finish4828:
 
 ;@ ---------- [4830] nbcd ($33,a0,d3.w*2) uses Op4830 ----------
 Op4830:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r11:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -27782,7 +27967,6 @@ Op4830:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldr r2,[r7,#0x4c]
   bic r10,r10,#0xb0000000 ;@ clear all flags, except Z
@@ -27808,7 +27992,6 @@ Op4830:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 finish4830:
   str r10,[r7,#0x4c] ;@ Save X
@@ -27821,6 +28004,8 @@ finish4830:
 
 ;@ ---------- [4838] nbcd $3333.w uses Op4838 ----------
 Op4838:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
@@ -27828,7 +28013,6 @@ Op4838:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldr r2,[r7,#0x4c]
   bic r10,r10,#0xb0000000 ;@ clear all flags, except Z
@@ -27854,7 +28038,6 @@ Op4838:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 finish4838:
   str r10,[r7,#0x4c] ;@ Save X
@@ -27867,6 +28050,8 @@ finish4838:
 
 ;@ ---------- [4839] nbcd $33333333.l uses Op4839 ----------
 Op4839:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r11:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -27876,7 +28061,6 @@ Op4839:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldr r2,[r7,#0x4c]
   bic r10,r10,#0xb0000000 ;@ clear all flags, except Z
@@ -27902,7 +28086,6 @@ Op4839:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 finish4839:
   str r10,[r7,#0x4c] ;@ Save X
@@ -27915,6 +28098,8 @@ finish4839:
 
 ;@ ---------- [4850] pea (a0) uses Op4850 ----------
 Op4850:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   ldr r11,[r7,#0x3c]
 ;@ EaCalc : Get '(a0)' into r1:
   and r2,r8,#0x000f
@@ -27927,7 +28112,6 @@ Op4850:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -27936,6 +28120,8 @@ Op4850:
 
 ;@ ---------- [4868] pea ($3333,a0) uses Op4868 ----------
 Op4868:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   ldr r11,[r7,#0x3c]
 ;@ EaCalc : Get '($3333,a0)' into r1:
   ldrsh r0,[r4],#2 ;@ Fetch offset
@@ -27949,7 +28135,6 @@ Op4868:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -27958,6 +28143,8 @@ Op4868:
 
 ;@ ---------- [4870] pea ($33,a0,d3.w*2) uses Op4870 ----------
 Op4870:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   ldr r11,[r7,#0x3c]
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r1:
 ;@ Get extension word into r3:
@@ -27980,7 +28167,6 @@ Op4870:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -27989,6 +28175,8 @@ Op4870:
 
 ;@ ---------- [4878] pea $3333.w uses Op4878 ----------
 Op4878:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   ldr r11,[r7,#0x3c]
 ;@ EaCalc : Get '$3333.w' into r1:
   ldrsh r1,[r4],#2 ;@ Fetch Absolute Short address
@@ -27999,7 +28187,6 @@ Op4878:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -28008,6 +28195,8 @@ Op4878:
 
 ;@ ---------- [4879] pea $33333333.l uses Op4879 ----------
 Op4879:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   ldr r11,[r7,#0x3c]
 ;@ EaCalc : Get '$33333333.l' into r1:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
@@ -28020,7 +28209,6 @@ Op4879:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -28029,6 +28217,8 @@ Op4879:
 
 ;@ ---------- [487a] pea ($3333,pc); =3335 uses Op487a ----------
 Op487a:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   ldr r11,[r7,#0x3c]
 ;@ EaCalc : Get '($3333,pc)' into r1:
   ldr r0,[r7,#0x60] ;@ Get Memory base
@@ -28042,7 +28232,6 @@ Op487a:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -28051,6 +28240,8 @@ Op487a:
 
 ;@ ---------- [487b] pea ($33,pc,d3.w*2); =35 uses Op487b ----------
 Op487b:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   ldr r11,[r7,#0x3c]
 ;@ EaCalc : Get '($33,pc,d3.w*2)' into r1:
   ldr r0,[r7,#0x60] ;@ Get Memory base
@@ -28072,7 +28263,6 @@ Op487b:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -28102,6 +28292,8 @@ Op4880:
 
 ;@ ---------- [4890] movem.w d0-d1/d4-d5/a0-a1/a4-a5, (a0) uses Op4890 ----------
 Op4890:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   ldrh r11,[r4],#2 ;@ r11=register mask
 
 ;@ Get the address into r6:
@@ -28128,7 +28320,6 @@ Movemloop4890:
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   add r6,r6,#2 ;@ Post-increment address
   sub r5,r5,#4 ;@ Take some cycles
@@ -28147,6 +28338,8 @@ NoRegs4890:
 
 ;@ ---------- [48a0] movem.w d2-d3/d6-d7/a2-a3/a6-a7, -(a0) uses Op48a0 ----------
 Op48a0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   ldrh r11,[r4],#2 ;@ r11=register mask
 
 ;@ Get the address into r6:
@@ -28174,7 +28367,6 @@ Movemloop48a0:
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   sub r5,r5,#4 ;@ Take some cycles
   tst r11,r11
@@ -28199,6 +28391,8 @@ NoRegs48a0:
 
 ;@ ---------- [48a8] movem.w d0-d1/d4-d5/a0-a1/a4-a5, ($3333,a0) uses Op48a8 ----------
 Op48a8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   ldrh r11,[r4],#2 ;@ r11=register mask
 
 ;@ Get the address into r6:
@@ -28226,7 +28420,6 @@ Movemloop48a8:
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   add r6,r6,#2 ;@ Post-increment address
   sub r5,r5,#4 ;@ Take some cycles
@@ -28245,6 +28438,8 @@ NoRegs48a8:
 
 ;@ ---------- [48b0] movem.w d0-d1/d4-d5/a0-a1/a4-a5, ($33,a0,d3.w*2) uses Op48b0 ----------
 Op48b0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   ldrh r11,[r4],#2 ;@ r11=register mask
 
 ;@ Get the address into r6:
@@ -28281,7 +28476,6 @@ Movemloop48b0:
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   add r6,r6,#2 ;@ Post-increment address
   sub r5,r5,#4 ;@ Take some cycles
@@ -28300,6 +28494,8 @@ NoRegs48b0:
 
 ;@ ---------- [48b8] movem.w d0-d1/d4-d5/a0-a1/a4-a5, $3333.w uses Op48b8 ----------
 Op48b8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   ldrh r11,[r4],#2 ;@ r11=register mask
 
 ;@ Get the address into r6:
@@ -28324,7 +28520,6 @@ Movemloop48b8:
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   add r6,r6,#2 ;@ Post-increment address
   sub r5,r5,#4 ;@ Take some cycles
@@ -28343,6 +28538,8 @@ NoRegs48b8:
 
 ;@ ---------- [48b9] movem.w d0-d1/d4-d5/a0-a1/a4-a5, $33333333.l uses Op48b9 ----------
 Op48b9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   ldrh r11,[r4],#2 ;@ r11=register mask
 
 ;@ Get the address into r6:
@@ -28369,7 +28566,6 @@ Movemloop48b9:
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   add r6,r6,#2 ;@ Post-increment address
   sub r5,r5,#4 ;@ Take some cycles
@@ -28408,6 +28604,8 @@ Op48c0:
 
 ;@ ---------- [48d0] movem.l d0-d1/d4-d5/a0-a1/a4-a5, (a0) uses Op48d0 ----------
 Op48d0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   ldrh r11,[r4],#2 ;@ r11=register mask
 
 ;@ Get the address into r6:
@@ -28433,7 +28631,6 @@ Movemloop48d0:
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   add r6,r6,#4 ;@ Post-increment address
   sub r5,r5,#8 ;@ Take some cycles
@@ -28452,6 +28649,8 @@ NoRegs48d0:
 
 ;@ ---------- [48e0] movem.l d2-d3/d6-d7/a2-a3/a6-a7, -(a0) uses Op48e0 ----------
 Op48e0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   ldrh r11,[r4],#2 ;@ r11=register mask
 
 ;@ Get the address into r6:
@@ -28479,7 +28678,6 @@ Movemloop48e0:
   uxth r1,r1 ;@ zero extend
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldr r1,[r7,r4] ;@ Load value from Dn/An
   mov r0,r6
@@ -28487,7 +28685,6 @@ Movemloop48e0:
   mov r1,r1,lsr #16
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   sub r5,r5,#8 ;@ Take some cycles
   tst r11,r11
@@ -28512,6 +28709,8 @@ NoRegs48e0:
 
 ;@ ---------- [48e8] movem.l d0-d1/d4-d5/a0-a1/a4-a5, ($3333,a0) uses Op48e8 ----------
 Op48e8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   ldrh r11,[r4],#2 ;@ r11=register mask
 
 ;@ Get the address into r6:
@@ -28538,7 +28737,6 @@ Movemloop48e8:
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   add r6,r6,#4 ;@ Post-increment address
   sub r5,r5,#8 ;@ Take some cycles
@@ -28557,6 +28755,8 @@ NoRegs48e8:
 
 ;@ ---------- [48f0] movem.l d0-d1/d4-d5/a0-a1/a4-a5, ($33,a0,d3.w*2) uses Op48f0 ----------
 Op48f0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   ldrh r11,[r4],#2 ;@ r11=register mask
 
 ;@ Get the address into r6:
@@ -28592,7 +28792,6 @@ Movemloop48f0:
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   add r6,r6,#4 ;@ Post-increment address
   sub r5,r5,#8 ;@ Take some cycles
@@ -28611,6 +28810,8 @@ NoRegs48f0:
 
 ;@ ---------- [48f8] movem.l d0-d1/d4-d5/a0-a1/a4-a5, $3333.w uses Op48f8 ----------
 Op48f8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   ldrh r11,[r4],#2 ;@ r11=register mask
 
 ;@ Get the address into r6:
@@ -28634,7 +28835,6 @@ Movemloop48f8:
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   add r6,r6,#4 ;@ Post-increment address
   sub r5,r5,#8 ;@ Take some cycles
@@ -28653,6 +28853,8 @@ NoRegs48f8:
 
 ;@ ---------- [48f9] movem.l d0-d1/d4-d5/a0-a1/a4-a5, $33333333.l uses Op48f9 ----------
 Op48f9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   ldrh r11,[r4],#2 ;@ r11=register mask
 
 ;@ Get the address into r6:
@@ -28678,7 +28880,6 @@ Movemloop48f9:
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   add r6,r6,#4 ;@ Post-increment address
   sub r5,r5,#8 ;@ Take some cycles
@@ -28713,6 +28914,8 @@ Op4a00:
 
 ;@ ---------- [4a10] tst.b (a0) uses Op4a10 ----------
 Op4a10:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -28721,7 +28924,6 @@ Op4a10:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r0,r0,asl #24
 
   and r10,r0,#0x80000000 ;@ r10=N_flag
@@ -28734,6 +28936,8 @@ Op4a10:
 
 ;@ ---------- [4a18] tst.b (a0)+ uses Op4a18 ----------
 Op4a18:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r0:
   and r2,r8,#0x000f
   ldr r0,[r7,r2,lsl #2]
@@ -28743,7 +28947,6 @@ Op4a18:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r0,r0,asl #24
 
   and r10,r0,#0x80000000 ;@ r10=N_flag
@@ -28756,6 +28959,8 @@ Op4a18:
 
 ;@ ---------- [4a1f] tst.b (a7)+ uses Op4a1f ----------
 Op4a1f:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a7)+' into r0:
   ldr r0,[r7,#0x3c] ;@ A7
   add r3,r0,#2 ;@ Post-increment An
@@ -28764,7 +28969,6 @@ Op4a1f:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r0,r0,asl #24
 
   and r10,r0,#0x80000000 ;@ r10=N_flag
@@ -28777,6 +28981,8 @@ Op4a1f:
 
 ;@ ---------- [4a20] tst.b -(a0) uses Op4a20 ----------
 Op4a20:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -28787,7 +28993,6 @@ Op4a20:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r0,r0,asl #24
 
   and r10,r0,#0x80000000 ;@ r10=N_flag
@@ -28800,6 +29005,8 @@ Op4a20:
 
 ;@ ---------- [4a27] tst.b -(a7) uses Op4a27 ----------
 Op4a27:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a7)' into r0:
   ldr r0,[r7,#0x3c] ;@ A7
   sub r0,r0,#2 ;@ Pre-decrement An
@@ -28808,7 +29015,6 @@ Op4a27:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r0,r0,asl #24
 
   and r10,r0,#0x80000000 ;@ r10=N_flag
@@ -28821,6 +29027,8 @@ Op4a27:
 
 ;@ ---------- [4a30] tst.b ($33,a0,d3.w*2) uses Op4a30 ----------
 Op4a30:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r0:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -28839,7 +29047,6 @@ Op4a30:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r0,r0,asl #24
 
   and r10,r0,#0x80000000 ;@ r10=N_flag
@@ -28869,6 +29076,8 @@ Op4a40:
 
 ;@ ---------- [4a50] tst.w (a0) uses Op4a50 ----------
 Op4a50:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -28877,7 +29086,6 @@ Op4a50:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r0,r0,asl #16
 
   and r10,r0,#0x80000000 ;@ r10=N_flag
@@ -28890,6 +29098,8 @@ Op4a50:
 
 ;@ ---------- [4a58] tst.w (a0)+ uses Op4a58 ----------
 Op4a58:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r0:
   and r2,r8,#0x000f
   ldr r0,[r7,r2,lsl #2]
@@ -28899,7 +29109,6 @@ Op4a58:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r0,r0,asl #16
 
   and r10,r0,#0x80000000 ;@ r10=N_flag
@@ -28912,6 +29121,8 @@ Op4a58:
 
 ;@ ---------- [4a60] tst.w -(a0) uses Op4a60 ----------
 Op4a60:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -28922,7 +29133,6 @@ Op4a60:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r0,r0,asl #16
 
   and r10,r0,#0x80000000 ;@ r10=N_flag
@@ -28935,6 +29145,8 @@ Op4a60:
 
 ;@ ---------- [4a68] tst.w ($3333,a0) uses Op4a68 ----------
 Op4a68:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -28944,7 +29156,6 @@ Op4a68:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r0,r0,asl #16
 
   and r10,r0,#0x80000000 ;@ r10=N_flag
@@ -28957,6 +29168,8 @@ Op4a68:
 
 ;@ ---------- [4a70] tst.w ($33,a0,d3.w*2) uses Op4a70 ----------
 Op4a70:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r0:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -28975,7 +29188,6 @@ Op4a70:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r0,r0,asl #16
 
   and r10,r0,#0x80000000 ;@ r10=N_flag
@@ -28988,13 +29200,14 @@ Op4a70:
 
 ;@ ---------- [4a78] tst.w $3333.w uses Op4a78 ----------
 Op4a78:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r0,r0,asl #16
 
   and r10,r0,#0x80000000 ;@ r10=N_flag
@@ -29023,6 +29236,8 @@ Op4a80:
 
 ;@ ---------- [4a90] tst.l (a0) uses Op4a90 ----------
 Op4a90:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -29031,7 +29246,6 @@ Op4a90:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   tst r0,r0
 
   and r10,r0,#0x80000000 ;@ r10=N_flag
@@ -29044,6 +29258,8 @@ Op4a90:
 
 ;@ ---------- [4a98] tst.l (a0)+ uses Op4a98 ----------
 Op4a98:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r0:
   and r2,r8,#0x000f
   ldr r0,[r7,r2,lsl #2]
@@ -29053,7 +29269,6 @@ Op4a98:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   tst r0,r0
 
   and r10,r0,#0x80000000 ;@ r10=N_flag
@@ -29066,6 +29281,8 @@ Op4a98:
 
 ;@ ---------- [4aa0] tst.l -(a0) uses Op4aa0 ----------
 Op4aa0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -29076,7 +29293,6 @@ Op4aa0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   tst r0,r0
 
   and r10,r0,#0x80000000 ;@ r10=N_flag
@@ -29089,6 +29305,8 @@ Op4aa0:
 
 ;@ ---------- [4aa8] tst.l ($3333,a0) uses Op4aa8 ----------
 Op4aa8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -29098,7 +29316,6 @@ Op4aa8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   tst r0,r0
 
   and r10,r0,#0x80000000 ;@ r10=N_flag
@@ -29111,6 +29328,8 @@ Op4aa8:
 
 ;@ ---------- [4ab0] tst.l ($33,a0,d3.w*2) uses Op4ab0 ----------
 Op4ab0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r0:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -29129,7 +29348,6 @@ Op4ab0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   tst r0,r0
 
   and r10,r0,#0x80000000 ;@ r10=N_flag
@@ -29142,13 +29360,14 @@ Op4ab0:
 
 ;@ ---------- [4ab8] tst.l $3333.w uses Op4ab8 ----------
 Op4ab8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   tst r0,r0
 
   and r10,r0,#0x80000000 ;@ r10=N_flag
@@ -29161,6 +29380,8 @@ Op4ab8:
 
 ;@ ---------- [4ab9] tst.l $33333333.l uses Op4ab9 ----------
 Op4ab9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r0:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -29169,7 +29390,6 @@ Op4ab9:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   tst r0,r0
 
   and r10,r0,#0x80000000 ;@ r10=N_flag
@@ -29203,6 +29423,8 @@ Op4ac0:
 
 ;@ ---------- [4ad0] tas (a0) uses Op4ad0 ----------
 Op4ad0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -29212,7 +29434,6 @@ Op4ad0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -29224,7 +29445,6 @@ Op4ad0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -29233,6 +29453,8 @@ Op4ad0:
 
 ;@ ---------- [4ad8] tas (a0)+ uses Op4ad8 ----------
 Op4ad8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r11:
   and r2,r8,#0x000f
   ldr r11,[r7,r2,lsl #2]
@@ -29243,7 +29465,6 @@ Op4ad8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -29255,7 +29476,6 @@ Op4ad8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -29264,6 +29484,8 @@ Op4ad8:
 
 ;@ ---------- [4adf] tas (a7)+ uses Op4adf ----------
 Op4adf:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a7)+' into r11:
   ldr r11,[r7,#0x3c] ;@ A7
   add r3,r11,#2 ;@ Post-increment An
@@ -29273,7 +29495,6 @@ Op4adf:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -29285,7 +29506,6 @@ Op4adf:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -29294,6 +29514,8 @@ Op4adf:
 
 ;@ ---------- [4ae0] tas -(a0) uses Op4ae0 ----------
 Op4ae0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -29305,7 +29527,6 @@ Op4ae0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -29317,7 +29538,6 @@ Op4ae0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -29326,6 +29546,8 @@ Op4ae0:
 
 ;@ ---------- [4ae7] tas -(a7) uses Op4ae7 ----------
 Op4ae7:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a7)' into r11:
   ldr r11,[r7,#0x3c] ;@ A7
   sub r11,r11,#2 ;@ Pre-decrement An
@@ -29335,7 +29557,6 @@ Op4ae7:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -29347,7 +29568,6 @@ Op4ae7:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -29356,6 +29576,8 @@ Op4ae7:
 
 ;@ ---------- [4ae8] tas ($3333,a0) uses Op4ae8 ----------
 Op4ae8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r11:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -29366,7 +29588,6 @@ Op4ae8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -29378,7 +29599,6 @@ Op4ae8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -29387,6 +29607,8 @@ Op4ae8:
 
 ;@ ---------- [4af0] tas ($33,a0,d3.w*2) uses Op4af0 ----------
 Op4af0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r11:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -29406,7 +29628,6 @@ Op4af0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -29418,7 +29639,6 @@ Op4af0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -29427,6 +29647,8 @@ Op4af0:
 
 ;@ ---------- [4af8] tas $3333.w uses Op4af8 ----------
 Op4af8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r1:
@@ -29434,7 +29656,6 @@ Op4af8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -29446,7 +29667,6 @@ Op4af8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -29455,6 +29675,8 @@ Op4af8:
 
 ;@ ---------- [4af9] tas $33333333.l uses Op4af9 ----------
 Op4af9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r11:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -29464,7 +29686,6 @@ Op4af9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   movs r1,r0,asl #24
 
   and r10,r1,#0x80000000 ;@ r10=N_flag
@@ -29476,7 +29697,6 @@ Op4af9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#26 ;@ Subtract cycles
@@ -29485,6 +29705,8 @@ Op4af9:
 
 ;@ ---------- [4c90] movem.w (a0), d0-d1/d4-d5/a0-a1/a4-a5 uses Op4c90 ----------
 Op4c90:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   ldrh r11,[r4],#2 ;@ r11=register mask
 
 ;@ Get the address into r6:
@@ -29509,7 +29731,6 @@ Movemloop4c90:
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   sxth r0,r0 ;@ sign extend
 
   str r0,[r7,r4] ;@ Save value into Dn/An
@@ -29530,6 +29751,8 @@ NoRegs4c90:
 
 ;@ ---------- [4c98] movem.w (a0)+, d0-d1/d4-d5/a0-a1/a4-a5 uses Op4c98 ----------
 Op4c98:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   ldrh r11,[r4],#2 ;@ r11=register mask
 
 ;@ Get the address into r6:
@@ -29553,7 +29776,6 @@ Movemloop4c98:
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   sxth r0,r0 ;@ sign extend
 
   str r0,[r7,r4] ;@ Save value into Dn/An
@@ -29580,6 +29802,8 @@ NoRegs4c98:
 
 ;@ ---------- [4ca8] movem.w ($3333,a0), d0-d1/d4-d5/a0-a1/a4-a5 uses Op4ca8 ----------
 Op4ca8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   ldrh r11,[r4],#2 ;@ r11=register mask
 
 ;@ Get the address into r6:
@@ -29605,7 +29829,6 @@ Movemloop4ca8:
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   sxth r0,r0 ;@ sign extend
 
   str r0,[r7,r4] ;@ Save value into Dn/An
@@ -29626,6 +29849,8 @@ NoRegs4ca8:
 
 ;@ ---------- [4cb0] movem.w ($33,a0,d3.w*2), d0-d1/d4-d5/a0-a1/a4-a5 uses Op4cb0 ----------
 Op4cb0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   ldrh r11,[r4],#2 ;@ r11=register mask
 
 ;@ Get the address into r6:
@@ -29660,7 +29885,6 @@ Movemloop4cb0:
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   sxth r0,r0 ;@ sign extend
 
   str r0,[r7,r4] ;@ Save value into Dn/An
@@ -29681,6 +29905,8 @@ NoRegs4cb0:
 
 ;@ ---------- [4cb8] movem.w $3333.w, d0-d1/d4-d5/a0-a1/a4-a5 uses Op4cb8 ----------
 Op4cb8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   ldrh r11,[r4],#2 ;@ r11=register mask
 
 ;@ Get the address into r6:
@@ -29703,7 +29929,6 @@ Movemloop4cb8:
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   sxth r0,r0 ;@ sign extend
 
   str r0,[r7,r4] ;@ Save value into Dn/An
@@ -29724,6 +29949,8 @@ NoRegs4cb8:
 
 ;@ ---------- [4cb9] movem.w $33333333.l, d0-d1/d4-d5/a0-a1/a4-a5 uses Op4cb9 ----------
 Op4cb9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   ldrh r11,[r4],#2 ;@ r11=register mask
 
 ;@ Get the address into r6:
@@ -29748,7 +29975,6 @@ Movemloop4cb9:
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   sxth r0,r0 ;@ sign extend
 
   str r0,[r7,r4] ;@ Save value into Dn/An
@@ -29769,6 +29995,8 @@ NoRegs4cb9:
 
 ;@ ---------- [4cba] movem.w ($3333,pc), d0-d1/d4-d5/a0-a1/a4-a5; =3337 uses Op4cba ----------
 Op4cba:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   ldrh r11,[r4],#2 ;@ r11=register mask
 
 ;@ Get the address into r6:
@@ -29794,7 +30022,6 @@ Movemloop4cba:
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   sxth r0,r0 ;@ sign extend
 
   str r0,[r7,r4] ;@ Save value into Dn/An
@@ -29815,6 +30042,8 @@ NoRegs4cba:
 
 ;@ ---------- [4cbb] movem.w ($33,pc,d3.w*2), d0-d1/d4-d5/a0-a1/a4-a5; =37 uses Op4cbb ----------
 Op4cbb:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   ldrh r11,[r4],#2 ;@ r11=register mask
 
 ;@ Get the address into r6:
@@ -29848,7 +30077,6 @@ Movemloop4cbb:
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   sxth r0,r0 ;@ sign extend
 
   str r0,[r7,r4] ;@ Save value into Dn/An
@@ -29869,6 +30097,8 @@ NoRegs4cbb:
 
 ;@ ---------- [4cd0] movem.l (a0), d0-d1/d4-d5/a0-a1/a4-a5 uses Op4cd0 ----------
 Op4cd0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   ldrh r11,[r4],#2 ;@ r11=register mask
 
 ;@ Get the address into r6:
@@ -29893,7 +30123,6 @@ Movemloop4cd0:
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   str r0,[r7,r4] ;@ Save value into Dn/An
   add r6,r6,#4 ;@ Post-increment address
@@ -29913,6 +30142,8 @@ NoRegs4cd0:
 
 ;@ ---------- [4cd8] movem.l (a0)+, d0-d1/d4-d5/a0-a1/a4-a5 uses Op4cd8 ----------
 Op4cd8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   ldrh r11,[r4],#2 ;@ r11=register mask
 
 ;@ Get the address into r6:
@@ -29936,7 +30167,6 @@ Movemloop4cd8:
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   str r0,[r7,r4] ;@ Save value into Dn/An
   add r6,r6,#4 ;@ Post-increment address
@@ -29962,6 +30192,8 @@ NoRegs4cd8:
 
 ;@ ---------- [4ce8] movem.l ($3333,a0), d0-d1/d4-d5/a0-a1/a4-a5 uses Op4ce8 ----------
 Op4ce8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   ldrh r11,[r4],#2 ;@ r11=register mask
 
 ;@ Get the address into r6:
@@ -29987,7 +30219,6 @@ Movemloop4ce8:
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   str r0,[r7,r4] ;@ Save value into Dn/An
   add r6,r6,#4 ;@ Post-increment address
@@ -30007,6 +30238,8 @@ NoRegs4ce8:
 
 ;@ ---------- [4cf0] movem.l ($33,a0,d3.w*2), d0-d1/d4-d5/a0-a1/a4-a5 uses Op4cf0 ----------
 Op4cf0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   ldrh r11,[r4],#2 ;@ r11=register mask
 
 ;@ Get the address into r6:
@@ -30041,7 +30274,6 @@ Movemloop4cf0:
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   str r0,[r7,r4] ;@ Save value into Dn/An
   add r6,r6,#4 ;@ Post-increment address
@@ -30061,6 +30293,8 @@ NoRegs4cf0:
 
 ;@ ---------- [4cf8] movem.l $3333.w, d0-d1/d4-d5/a0-a1/a4-a5 uses Op4cf8 ----------
 Op4cf8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   ldrh r11,[r4],#2 ;@ r11=register mask
 
 ;@ Get the address into r6:
@@ -30083,7 +30317,6 @@ Movemloop4cf8:
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   str r0,[r7,r4] ;@ Save value into Dn/An
   add r6,r6,#4 ;@ Post-increment address
@@ -30103,6 +30336,8 @@ NoRegs4cf8:
 
 ;@ ---------- [4cf9] movem.l $33333333.l, d0-d1/d4-d5/a0-a1/a4-a5 uses Op4cf9 ----------
 Op4cf9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   ldrh r11,[r4],#2 ;@ r11=register mask
 
 ;@ Get the address into r6:
@@ -30127,7 +30362,6 @@ Movemloop4cf9:
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   str r0,[r7,r4] ;@ Save value into Dn/An
   add r6,r6,#4 ;@ Post-increment address
@@ -30147,6 +30381,8 @@ NoRegs4cf9:
 
 ;@ ---------- [4cfa] movem.l ($3333,pc), d0-d1/d4-d5/a0-a1/a4-a5; =3337 uses Op4cfa ----------
 Op4cfa:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   ldrh r11,[r4],#2 ;@ r11=register mask
 
 ;@ Get the address into r6:
@@ -30172,7 +30408,6 @@ Movemloop4cfa:
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   str r0,[r7,r4] ;@ Save value into Dn/An
   add r6,r6,#4 ;@ Post-increment address
@@ -30192,6 +30427,8 @@ NoRegs4cfa:
 
 ;@ ---------- [4cfb] movem.l ($33,pc,d3.w*2), d0-d1/d4-d5/a0-a1/a4-a5; =37 uses Op4cfb ----------
 Op4cfb:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   ldrh r11,[r4],#2 ;@ r11=register mask
 
 ;@ Get the address into r6:
@@ -30225,7 +30462,6 @@ Movemloop4cfb:
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   str r0,[r7,r4] ;@ Save value into Dn/An
   add r6,r6,#4 ;@ Post-increment address
@@ -30245,6 +30481,8 @@ NoRegs4cfb:
 
 ;@ ---------- [4e40] trap #0 uses Op4e40 ----------
 Op4e40:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   and r0,r8,#0xf ;@ Get trap number
   orr r0,r0,#0x20 ;@ 32+n
   bl Exception
@@ -30256,6 +30494,8 @@ Op4e40:
 
 ;@ ---------- [4e50] link a0,#$3333 uses Op4e50 ----------
 Op4e50:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get An
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0007
@@ -30271,7 +30511,6 @@ Op4e50:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 ;@ Save to An
 ;@ EaWrite: r8 into register[r11]:
   str r8,[r7,r11,lsl #2]
@@ -30291,6 +30530,8 @@ Op4e50:
 
 ;@ ---------- [4e57] link a7,#$3333 uses Op4e57 ----------
 Op4e57:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   ldr r0,[r7,#0x3c] ;@ Get A7
   sub r0,r0,#4 ;@ A7-=4
   mov r8,r0 ;@ abuse r8
@@ -30300,7 +30541,6 @@ Op4e57:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 ;@ Save to An
 ;@ Get offset:
 ;@ EaCalc : Get '#$3333' into r0:
@@ -30317,6 +30557,8 @@ Op4e57:
 
 ;@ ---------- [4e58] unlk a0 uses Op4e58 ----------
 Op4e58:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get An
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x000f
@@ -30329,7 +30571,6 @@ Op4e58:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   str r8,[r7,#0x3c] ;@ Save A7
 
@@ -30445,6 +30686,7 @@ no_sp_swap4e72:
 ;@ ---------- [4e73] rte uses Op4e73 ----------
 Op4e73:
   ldr r11,[r7,#0x44] ;@ Get SR high
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
   tst r11,#0x20 ;@ Check we are in supervisor mode
   beq WrongPrivilegeMode ;@ No
 
@@ -30455,7 +30697,6 @@ Op4e73:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   eor r1,r0,r0,ror #1 ;@ Bit 0=C^V
   mov r2,r0,lsl #25
@@ -30473,7 +30714,6 @@ Op4e73:
   str r1,[r7,#0x3c] ;@ Save A7
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   ldr r1,[r7,#0x60] ;@ Get Memory base
   add r0,r0,r1 ;@ Memory Base+PC
 
@@ -30517,6 +30757,8 @@ no_sp_swap4e73:
 
 ;@ ---------- [4e76] trapv uses Op4e76 ----------
 Op4e76:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   tst r10,#0x10000000
   subne r5,r5,#34
   movne r0,#7 ;@ TRAPV exception
@@ -30528,6 +30770,8 @@ Op4e76:
 
 ;@ ---------- [4e77] rtr uses Op4e77 ----------
 Op4e77:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Pop SR:
   ldr r0,[r7,#0x3c]
   add r1,r0,#2 ;@ Postincrement A7
@@ -30535,7 +30779,6 @@ Op4e77:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   eor r1,r0,r0,ror #1 ;@ Bit 0=C^V
   mov r2,r0,lsl #25
@@ -30550,7 +30793,6 @@ Op4e77:
   str r1,[r7,#0x3c] ;@ Save A7
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   ldr r1,[r7,#0x60] ;@ Get Memory base
   add r0,r0,r1 ;@ Memory Base+PC
 
@@ -30568,6 +30810,8 @@ Op4e77:
 
 ;@ ---------- [4e90] jsr (a0) uses Op4e90 ----------
 Op4e90:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   ldr r11,[r7,#0x60] ;@ Get Memory base
 
 ;@ EaCalc : Get '(a0)' into r12:
@@ -30592,7 +30836,6 @@ Op4e90:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
   ldrgt pc,[r6,r8,asl #2] ;@ Jump to opcode handler
@@ -30600,6 +30843,8 @@ Op4e90:
 
 ;@ ---------- [4ea8] jsr ($3333,a0) uses Op4ea8 ----------
 Op4ea8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   ldr r11,[r7,#0x60] ;@ Get Memory base
 
 ;@ EaCalc : Get '($3333,a0)' into r12:
@@ -30625,7 +30870,6 @@ Op4ea8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
   ldrgt pc,[r6,r8,asl #2] ;@ Jump to opcode handler
@@ -30633,6 +30877,8 @@ Op4ea8:
 
 ;@ ---------- [4eb0] jsr ($33,a0,d3.w*2) uses Op4eb0 ----------
 Op4eb0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   ldr r11,[r7,#0x60] ;@ Get Memory base
 
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r12:
@@ -30667,7 +30913,6 @@ Op4eb0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
   ldrgt pc,[r6,r8,asl #2] ;@ Jump to opcode handler
@@ -30675,6 +30920,8 @@ Op4eb0:
 
 ;@ ---------- [4eb8] jsr $3333.w uses Op4eb8 ----------
 Op4eb8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   ldr r11,[r7,#0x60] ;@ Get Memory base
 
 ;@ EaCalc : Get '$3333.w' into r12:
@@ -30697,7 +30944,6 @@ Op4eb8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
   ldrgt pc,[r6,r8,asl #2] ;@ Jump to opcode handler
@@ -30705,6 +30951,8 @@ Op4eb8:
 
 ;@ ---------- [4eb9] jsr $33333333.l uses Op4eb9 ----------
 Op4eb9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   ldr r11,[r7,#0x60] ;@ Get Memory base
 
 ;@ EaCalc : Get '$33333333.l' into r12:
@@ -30729,7 +30977,6 @@ Op4eb9:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
   ldrgt pc,[r6,r8,asl #2] ;@ Jump to opcode handler
@@ -30737,6 +30984,8 @@ Op4eb9:
 
 ;@ ---------- [4eba] jsr ($3333,pc); =3335 uses Op4eba ----------
 Op4eba:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   ldr r11,[r7,#0x60] ;@ Get Memory base
 
 ;@ EaCalc : Get '($3333,pc)' into r12:
@@ -30762,7 +31011,6 @@ Op4eba:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
   ldrgt pc,[r6,r8,asl #2] ;@ Jump to opcode handler
@@ -30770,6 +31018,8 @@ Op4eba:
 
 ;@ ---------- [4ebb] jsr ($33,pc,d3.w*2); =35 uses Op4ebb ----------
 Op4ebb:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   ldr r11,[r7,#0x60] ;@ Get Memory base
 
 ;@ EaCalc : Get '($33,pc,d3.w*2)' into r12:
@@ -30803,7 +31053,6 @@ Op4ebb:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
   ldrgt pc,[r6,r8,asl #2] ;@ Jump to opcode handler
@@ -31013,6 +31262,8 @@ Op5000:
 
 ;@ ---------- [5010] addq.b #8, (a0) uses Op5010 ----------
 Op5010:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -31022,7 +31273,6 @@ Op5010:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #24
 
@@ -31035,7 +31285,6 @@ Op5010:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -31044,6 +31293,8 @@ Op5010:
 
 ;@ ---------- [5018] addq.b #8, (a0)+ uses Op5018 ----------
 Op5018:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r11:
   and r2,r8,#0x000f
   ldr r11,[r7,r2,lsl #2]
@@ -31054,7 +31305,6 @@ Op5018:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #24
 
@@ -31067,7 +31317,6 @@ Op5018:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -31076,6 +31325,8 @@ Op5018:
 
 ;@ ---------- [501f] addq.b #8, (a7)+ uses Op501f ----------
 Op501f:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a7)+' into r11:
   ldr r11,[r7,#0x3c] ;@ A7
   add r3,r11,#2 ;@ Post-increment An
@@ -31085,7 +31336,6 @@ Op501f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #24
 
@@ -31098,7 +31348,6 @@ Op501f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -31107,6 +31356,8 @@ Op501f:
 
 ;@ ---------- [5020] addq.b #8, -(a0) uses Op5020 ----------
 Op5020:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -31118,7 +31369,6 @@ Op5020:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #24
 
@@ -31131,7 +31381,6 @@ Op5020:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -31140,6 +31389,8 @@ Op5020:
 
 ;@ ---------- [5027] addq.b #8, -(a7) uses Op5027 ----------
 Op5027:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a7)' into r11:
   ldr r11,[r7,#0x3c] ;@ A7
   sub r11,r11,#2 ;@ Pre-decrement An
@@ -31149,7 +31400,6 @@ Op5027:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #24
 
@@ -31162,7 +31412,6 @@ Op5027:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -31171,6 +31420,8 @@ Op5027:
 
 ;@ ---------- [5028] addq.b #8, ($3333,a0) uses Op5028 ----------
 Op5028:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r11:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -31181,7 +31432,6 @@ Op5028:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #24
 
@@ -31194,7 +31444,6 @@ Op5028:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -31203,6 +31452,8 @@ Op5028:
 
 ;@ ---------- [5030] addq.b #8, ($33,a0,d3.w*2) uses Op5030 ----------
 Op5030:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r11:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -31222,7 +31473,6 @@ Op5030:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #24
 
@@ -31235,7 +31485,6 @@ Op5030:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -31244,6 +31493,8 @@ Op5030:
 
 ;@ ---------- [5038] addq.b #8, $3333.w uses Op5038 ----------
 Op5038:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
@@ -31251,7 +31502,6 @@ Op5038:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #24
 
@@ -31264,7 +31514,6 @@ Op5038:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -31273,6 +31522,8 @@ Op5038:
 
 ;@ ---------- [5039] addq.b #8, $33333333.l uses Op5039 ----------
 Op5039:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r11:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -31282,7 +31533,6 @@ Op5039:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #24
 
@@ -31295,7 +31545,6 @@ Op5039:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -31344,6 +31593,8 @@ Op5048:
 
 ;@ ---------- [5050] addq.w #8, (a0) uses Op5050 ----------
 Op5050:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -31353,7 +31604,6 @@ Op5050:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #16
 
@@ -31366,7 +31616,6 @@ Op5050:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -31375,6 +31624,8 @@ Op5050:
 
 ;@ ---------- [5058] addq.w #8, (a0)+ uses Op5058 ----------
 Op5058:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r11:
   and r2,r8,#0x000f
   ldr r11,[r7,r2,lsl #2]
@@ -31385,7 +31636,6 @@ Op5058:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #16
 
@@ -31398,7 +31648,6 @@ Op5058:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -31407,6 +31656,8 @@ Op5058:
 
 ;@ ---------- [5060] addq.w #8, -(a0) uses Op5060 ----------
 Op5060:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -31418,7 +31669,6 @@ Op5060:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #16
 
@@ -31431,7 +31681,6 @@ Op5060:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -31440,6 +31689,8 @@ Op5060:
 
 ;@ ---------- [5068] addq.w #8, ($3333,a0) uses Op5068 ----------
 Op5068:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r11:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -31450,7 +31701,6 @@ Op5068:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #16
 
@@ -31463,7 +31713,6 @@ Op5068:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -31472,6 +31721,8 @@ Op5068:
 
 ;@ ---------- [5070] addq.w #8, ($33,a0,d3.w*2) uses Op5070 ----------
 Op5070:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r11:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -31491,7 +31742,6 @@ Op5070:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #16
 
@@ -31504,7 +31754,6 @@ Op5070:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -31513,6 +31762,8 @@ Op5070:
 
 ;@ ---------- [5078] addq.w #8, $3333.w uses Op5078 ----------
 Op5078:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
@@ -31520,7 +31771,6 @@ Op5078:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #16
 
@@ -31533,7 +31783,6 @@ Op5078:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -31542,6 +31791,8 @@ Op5078:
 
 ;@ ---------- [5079] addq.w #8, $33333333.l uses Op5079 ----------
 Op5079:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r11:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -31551,7 +31802,6 @@ Op5079:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #16
 
@@ -31564,7 +31814,6 @@ Op5079:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -31609,6 +31858,8 @@ Op5088:
 
 ;@ ---------- [5090] addq.l #8, (a0) uses Op5090 ----------
 Op5090:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -31618,7 +31869,6 @@ Op5090:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   adds r1,r0,#0x0008
   mrs r10,cpsr ;@ r10=flags
@@ -31628,7 +31878,6 @@ Op5090:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -31637,6 +31886,8 @@ Op5090:
 
 ;@ ---------- [5098] addq.l #8, (a0)+ uses Op5098 ----------
 Op5098:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r11:
   and r2,r8,#0x000f
   ldr r11,[r7,r2,lsl #2]
@@ -31647,7 +31898,6 @@ Op5098:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   adds r1,r0,#0x0008
   mrs r10,cpsr ;@ r10=flags
@@ -31657,7 +31907,6 @@ Op5098:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -31666,6 +31915,8 @@ Op5098:
 
 ;@ ---------- [50a0] addq.l #8, -(a0) uses Op50a0 ----------
 Op50a0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -31677,7 +31928,6 @@ Op50a0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   adds r1,r0,#0x0008
   mrs r10,cpsr ;@ r10=flags
@@ -31687,7 +31937,6 @@ Op50a0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -31696,6 +31945,8 @@ Op50a0:
 
 ;@ ---------- [50a8] addq.l #8, ($3333,a0) uses Op50a8 ----------
 Op50a8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r11:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -31706,7 +31957,6 @@ Op50a8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   adds r1,r0,#0x0008
   mrs r10,cpsr ;@ r10=flags
@@ -31716,7 +31966,6 @@ Op50a8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -31725,6 +31974,8 @@ Op50a8:
 
 ;@ ---------- [50b0] addq.l #8, ($33,a0,d3.w*2) uses Op50b0 ----------
 Op50b0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r11:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -31744,7 +31995,6 @@ Op50b0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   adds r1,r0,#0x0008
   mrs r10,cpsr ;@ r10=flags
@@ -31754,7 +32004,6 @@ Op50b0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#26 ;@ Subtract cycles
@@ -31763,6 +32012,8 @@ Op50b0:
 
 ;@ ---------- [50b8] addq.l #8, $3333.w uses Op50b8 ----------
 Op50b8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
@@ -31770,7 +32021,6 @@ Op50b8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   adds r1,r0,#0x0008
   mrs r10,cpsr ;@ r10=flags
@@ -31780,7 +32030,6 @@ Op50b8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -31789,6 +32038,8 @@ Op50b8:
 
 ;@ ---------- [50b9] addq.l #8, $33333333.l uses Op50b9 ----------
 Op50b9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r11:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -31798,7 +32049,6 @@ Op50b9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   adds r1,r0,#0x0008
   mrs r10,cpsr ;@ r10=flags
@@ -31808,7 +32058,6 @@ Op50b9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -31842,6 +32091,8 @@ DbraTrue:
 
 ;@ ---------- [50d0] st (a0) uses Op50d0 ----------
 Op50d0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mvn r1,#0
 
 ;@ EaCalc : Get '(a0)' into r0:
@@ -31853,7 +32104,6 @@ Op50d0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -31862,6 +32112,8 @@ Op50d0:
 
 ;@ ---------- [50d8] st (a0)+ uses Op50d8 ----------
 Op50d8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mvn r1,#0
 
 ;@ EaCalc : Get '(a0)+' into r0:
@@ -31874,7 +32126,6 @@ Op50d8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -31883,6 +32134,8 @@ Op50d8:
 
 ;@ ---------- [50df] st (a7)+ uses Op50df ----------
 Op50df:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mvn r1,#0
 
 ;@ EaCalc : Get '(a7)+' into r0:
@@ -31894,7 +32147,6 @@ Op50df:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -31903,6 +32155,8 @@ Op50df:
 
 ;@ ---------- [50e0] st -(a0) uses Op50e0 ----------
 Op50e0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mvn r1,#0
 
 ;@ EaCalc : Get '-(a0)' into r0:
@@ -31916,7 +32170,6 @@ Op50e0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -31925,6 +32178,8 @@ Op50e0:
 
 ;@ ---------- [50e7] st -(a7) uses Op50e7 ----------
 Op50e7:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mvn r1,#0
 
 ;@ EaCalc : Get '-(a7)' into r0:
@@ -31936,7 +32191,6 @@ Op50e7:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -31945,6 +32199,8 @@ Op50e7:
 
 ;@ ---------- [50e8] st ($3333,a0) uses Op50e8 ----------
 Op50e8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mvn r1,#0
 
 ;@ EaCalc : Get '($3333,a0)' into r0:
@@ -31957,7 +32213,6 @@ Op50e8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -31966,6 +32221,8 @@ Op50e8:
 
 ;@ ---------- [50f0] st ($33,a0,d3.w*2) uses Op50f0 ----------
 Op50f0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mvn r1,#0
 
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r0:
@@ -31987,7 +32244,6 @@ Op50f0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -31996,6 +32252,8 @@ Op50f0:
 
 ;@ ---------- [50f8] st $3333.w uses Op50f8 ----------
 Op50f8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mvn r1,#0
 
 ;@ EaCalc : Get '$3333.w' into r0:
@@ -32005,7 +32263,6 @@ Op50f8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -32014,6 +32271,8 @@ Op50f8:
 
 ;@ ---------- [50f9] st $33333333.l uses Op50f9 ----------
 Op50f9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mvn r1,#0
 
 ;@ EaCalc : Get '$33333333.l' into r0:
@@ -32025,7 +32284,6 @@ Op50f9:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -32057,6 +32315,8 @@ Op5100:
 
 ;@ ---------- [5110] subq.b #8, (a0) uses Op5110 ----------
 Op5110:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -32066,7 +32326,6 @@ Op5110:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #24
 
@@ -32080,7 +32339,6 @@ Op5110:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -32089,6 +32347,8 @@ Op5110:
 
 ;@ ---------- [5118] subq.b #8, (a0)+ uses Op5118 ----------
 Op5118:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r11:
   and r2,r8,#0x000f
   ldr r11,[r7,r2,lsl #2]
@@ -32099,7 +32359,6 @@ Op5118:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #24
 
@@ -32113,7 +32372,6 @@ Op5118:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -32122,6 +32380,8 @@ Op5118:
 
 ;@ ---------- [511f] subq.b #8, (a7)+ uses Op511f ----------
 Op511f:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a7)+' into r11:
   ldr r11,[r7,#0x3c] ;@ A7
   add r3,r11,#2 ;@ Post-increment An
@@ -32131,7 +32391,6 @@ Op511f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #24
 
@@ -32145,7 +32404,6 @@ Op511f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -32154,6 +32412,8 @@ Op511f:
 
 ;@ ---------- [5120] subq.b #8, -(a0) uses Op5120 ----------
 Op5120:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -32165,7 +32425,6 @@ Op5120:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #24
 
@@ -32179,7 +32438,6 @@ Op5120:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -32188,6 +32446,8 @@ Op5120:
 
 ;@ ---------- [5127] subq.b #8, -(a7) uses Op5127 ----------
 Op5127:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a7)' into r11:
   ldr r11,[r7,#0x3c] ;@ A7
   sub r11,r11,#2 ;@ Pre-decrement An
@@ -32197,7 +32457,6 @@ Op5127:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #24
 
@@ -32211,7 +32470,6 @@ Op5127:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -32220,6 +32478,8 @@ Op5127:
 
 ;@ ---------- [5128] subq.b #8, ($3333,a0) uses Op5128 ----------
 Op5128:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r11:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -32230,7 +32490,6 @@ Op5128:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #24
 
@@ -32244,7 +32503,6 @@ Op5128:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -32253,6 +32511,8 @@ Op5128:
 
 ;@ ---------- [5130] subq.b #8, ($33,a0,d3.w*2) uses Op5130 ----------
 Op5130:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r11:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -32272,7 +32532,6 @@ Op5130:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #24
 
@@ -32286,7 +32545,6 @@ Op5130:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -32295,6 +32553,8 @@ Op5130:
 
 ;@ ---------- [5138] subq.b #8, $3333.w uses Op5138 ----------
 Op5138:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
@@ -32302,7 +32562,6 @@ Op5138:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #24
 
@@ -32316,7 +32575,6 @@ Op5138:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -32325,6 +32583,8 @@ Op5138:
 
 ;@ ---------- [5139] subq.b #8, $33333333.l uses Op5139 ----------
 Op5139:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r11:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -32334,7 +32594,6 @@ Op5139:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #24
 
@@ -32348,7 +32607,6 @@ Op5139:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -32398,6 +32656,8 @@ Op5148:
 
 ;@ ---------- [5150] subq.w #8, (a0) uses Op5150 ----------
 Op5150:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -32407,7 +32667,6 @@ Op5150:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #16
 
@@ -32421,7 +32680,6 @@ Op5150:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -32430,6 +32688,8 @@ Op5150:
 
 ;@ ---------- [5158] subq.w #8, (a0)+ uses Op5158 ----------
 Op5158:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r11:
   and r2,r8,#0x000f
   ldr r11,[r7,r2,lsl #2]
@@ -32440,7 +32700,6 @@ Op5158:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #16
 
@@ -32454,7 +32713,6 @@ Op5158:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -32463,6 +32721,8 @@ Op5158:
 
 ;@ ---------- [5160] subq.w #8, -(a0) uses Op5160 ----------
 Op5160:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -32474,7 +32734,6 @@ Op5160:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #16
 
@@ -32488,7 +32747,6 @@ Op5160:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -32497,6 +32755,8 @@ Op5160:
 
 ;@ ---------- [5168] subq.w #8, ($3333,a0) uses Op5168 ----------
 Op5168:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r11:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -32507,7 +32767,6 @@ Op5168:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #16
 
@@ -32521,7 +32780,6 @@ Op5168:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -32530,6 +32788,8 @@ Op5168:
 
 ;@ ---------- [5170] subq.w #8, ($33,a0,d3.w*2) uses Op5170 ----------
 Op5170:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r11:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -32549,7 +32809,6 @@ Op5170:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #16
 
@@ -32563,7 +32822,6 @@ Op5170:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -32572,6 +32830,8 @@ Op5170:
 
 ;@ ---------- [5178] subq.w #8, $3333.w uses Op5178 ----------
 Op5178:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
@@ -32579,7 +32839,6 @@ Op5178:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #16
 
@@ -32593,7 +32852,6 @@ Op5178:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -32602,6 +32860,8 @@ Op5178:
 
 ;@ ---------- [5179] subq.w #8, $33333333.l uses Op5179 ----------
 Op5179:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r11:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -32611,7 +32871,6 @@ Op5179:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   mov r0,r0,asl #16
 
@@ -32625,7 +32884,6 @@ Op5179:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -32671,6 +32929,8 @@ Op5188:
 
 ;@ ---------- [5190] subq.l #8, (a0) uses Op5190 ----------
 Op5190:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -32680,7 +32940,6 @@ Op5190:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   subs r1,r0,#0x0008
   mrs r10,cpsr ;@ r10=flags
@@ -32691,7 +32950,6 @@ Op5190:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -32700,6 +32958,8 @@ Op5190:
 
 ;@ ---------- [5198] subq.l #8, (a0)+ uses Op5198 ----------
 Op5198:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r11:
   and r2,r8,#0x000f
   ldr r11,[r7,r2,lsl #2]
@@ -32710,7 +32970,6 @@ Op5198:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   subs r1,r0,#0x0008
   mrs r10,cpsr ;@ r10=flags
@@ -32721,7 +32980,6 @@ Op5198:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -32730,6 +32988,8 @@ Op5198:
 
 ;@ ---------- [51a0] subq.l #8, -(a0) uses Op51a0 ----------
 Op51a0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -32741,7 +33001,6 @@ Op51a0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   subs r1,r0,#0x0008
   mrs r10,cpsr ;@ r10=flags
@@ -32752,7 +33011,6 @@ Op51a0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -32761,6 +33019,8 @@ Op51a0:
 
 ;@ ---------- [51a8] subq.l #8, ($3333,a0) uses Op51a8 ----------
 Op51a8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r11:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -32771,7 +33031,6 @@ Op51a8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   subs r1,r0,#0x0008
   mrs r10,cpsr ;@ r10=flags
@@ -32782,7 +33041,6 @@ Op51a8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -32791,6 +33049,8 @@ Op51a8:
 
 ;@ ---------- [51b0] subq.l #8, ($33,a0,d3.w*2) uses Op51b0 ----------
 Op51b0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r11:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -32810,7 +33070,6 @@ Op51b0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   subs r1,r0,#0x0008
   mrs r10,cpsr ;@ r10=flags
@@ -32821,7 +33080,6 @@ Op51b0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#26 ;@ Subtract cycles
@@ -32830,6 +33088,8 @@ Op51b0:
 
 ;@ ---------- [51b8] subq.l #8, $3333.w uses Op51b8 ----------
 Op51b8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
@@ -32837,7 +33097,6 @@ Op51b8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   subs r1,r0,#0x0008
   mrs r10,cpsr ;@ r10=flags
@@ -32848,7 +33107,6 @@ Op51b8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -32857,6 +33115,8 @@ Op51b8:
 
 ;@ ---------- [51b9] subq.l #8, $33333333.l uses Op51b9 ----------
 Op51b9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r11:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -32866,7 +33126,6 @@ Op51b9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   subs r1,r0,#0x0008
   mrs r10,cpsr ;@ r10=flags
@@ -32877,7 +33136,6 @@ Op51b9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -32900,6 +33158,8 @@ Op51c0:
 
 ;@ ---------- [51d0] sf (a0) uses Op51d0 ----------
 Op51d0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
 
 ;@ EaCalc : Get '(a0)' into r0:
@@ -32911,7 +33171,6 @@ Op51d0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -32920,6 +33179,8 @@ Op51d0:
 
 ;@ ---------- [51d8] sf (a0)+ uses Op51d8 ----------
 Op51d8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
 
 ;@ EaCalc : Get '(a0)+' into r0:
@@ -32932,7 +33193,6 @@ Op51d8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -32941,6 +33201,8 @@ Op51d8:
 
 ;@ ---------- [51df] sf (a7)+ uses Op51df ----------
 Op51df:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
 
 ;@ EaCalc : Get '(a7)+' into r0:
@@ -32952,7 +33214,6 @@ Op51df:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -32961,6 +33222,8 @@ Op51df:
 
 ;@ ---------- [51e0] sf -(a0) uses Op51e0 ----------
 Op51e0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
 
 ;@ EaCalc : Get '-(a0)' into r0:
@@ -32974,7 +33237,6 @@ Op51e0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -32983,6 +33245,8 @@ Op51e0:
 
 ;@ ---------- [51e7] sf -(a7) uses Op51e7 ----------
 Op51e7:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
 
 ;@ EaCalc : Get '-(a7)' into r0:
@@ -32994,7 +33258,6 @@ Op51e7:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -33003,6 +33266,8 @@ Op51e7:
 
 ;@ ---------- [51e8] sf ($3333,a0) uses Op51e8 ----------
 Op51e8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
 
 ;@ EaCalc : Get '($3333,a0)' into r0:
@@ -33015,7 +33280,6 @@ Op51e8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -33024,6 +33288,8 @@ Op51e8:
 
 ;@ ---------- [51f0] sf ($33,a0,d3.w*2) uses Op51f0 ----------
 Op51f0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
 
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r0:
@@ -33045,7 +33311,6 @@ Op51f0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -33054,6 +33319,8 @@ Op51f0:
 
 ;@ ---------- [51f8] sf $3333.w uses Op51f8 ----------
 Op51f8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
 
 ;@ EaCalc : Get '$3333.w' into r0:
@@ -33063,7 +33330,6 @@ Op51f8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -33072,6 +33338,8 @@ Op51f8:
 
 ;@ ---------- [51f9] sf $33333333.l uses Op51f9 ----------
 Op51f9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
 
 ;@ EaCalc : Get '$33333333.l' into r0:
@@ -33083,7 +33351,6 @@ Op51f9:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -33143,6 +33410,8 @@ Op52c8:
 
 ;@ ---------- [52d0] shi (a0) uses Op52d0 ----------
 Op52d0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x60000000 ;@ hi: !C && !Z
   mvneq r1,#0
@@ -33156,7 +33425,6 @@ Op52d0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -33165,6 +33433,8 @@ Op52d0:
 
 ;@ ---------- [52d8] shi (a0)+ uses Op52d8 ----------
 Op52d8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x60000000 ;@ hi: !C && !Z
   mvneq r1,#0
@@ -33179,7 +33449,6 @@ Op52d8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -33188,6 +33457,8 @@ Op52d8:
 
 ;@ ---------- [52df] shi (a7)+ uses Op52df ----------
 Op52df:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x60000000 ;@ hi: !C && !Z
   mvneq r1,#0
@@ -33201,7 +33472,6 @@ Op52df:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -33210,6 +33480,8 @@ Op52df:
 
 ;@ ---------- [52e0] shi -(a0) uses Op52e0 ----------
 Op52e0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x60000000 ;@ hi: !C && !Z
   mvneq r1,#0
@@ -33225,7 +33497,6 @@ Op52e0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -33234,6 +33505,8 @@ Op52e0:
 
 ;@ ---------- [52e7] shi -(a7) uses Op52e7 ----------
 Op52e7:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x60000000 ;@ hi: !C && !Z
   mvneq r1,#0
@@ -33247,7 +33520,6 @@ Op52e7:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -33256,6 +33528,8 @@ Op52e7:
 
 ;@ ---------- [52e8] shi ($3333,a0) uses Op52e8 ----------
 Op52e8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x60000000 ;@ hi: !C && !Z
   mvneq r1,#0
@@ -33270,7 +33544,6 @@ Op52e8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -33279,6 +33552,8 @@ Op52e8:
 
 ;@ ---------- [52f0] shi ($33,a0,d3.w*2) uses Op52f0 ----------
 Op52f0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x60000000 ;@ hi: !C && !Z
   mvneq r1,#0
@@ -33302,7 +33577,6 @@ Op52f0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -33311,6 +33585,8 @@ Op52f0:
 
 ;@ ---------- [52f8] shi $3333.w uses Op52f8 ----------
 Op52f8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x60000000 ;@ hi: !C && !Z
   mvneq r1,#0
@@ -33322,7 +33598,6 @@ Op52f8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -33331,6 +33606,8 @@ Op52f8:
 
 ;@ ---------- [52f9] shi $33333333.l uses Op52f9 ----------
 Op52f9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x60000000 ;@ hi: !C && !Z
   mvneq r1,#0
@@ -33344,7 +33621,6 @@ Op52f9:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -33404,6 +33680,8 @@ Op53c8:
 
 ;@ ---------- [53d0] sls (a0) uses Op53d0 ----------
 Op53d0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x60000000 ;@ ls: C || Z
   mvnne r1,#0
@@ -33417,7 +33695,6 @@ Op53d0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -33426,6 +33703,8 @@ Op53d0:
 
 ;@ ---------- [53d8] sls (a0)+ uses Op53d8 ----------
 Op53d8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x60000000 ;@ ls: C || Z
   mvnne r1,#0
@@ -33440,7 +33719,6 @@ Op53d8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -33449,6 +33727,8 @@ Op53d8:
 
 ;@ ---------- [53df] sls (a7)+ uses Op53df ----------
 Op53df:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x60000000 ;@ ls: C || Z
   mvnne r1,#0
@@ -33462,7 +33742,6 @@ Op53df:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -33471,6 +33750,8 @@ Op53df:
 
 ;@ ---------- [53e0] sls -(a0) uses Op53e0 ----------
 Op53e0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x60000000 ;@ ls: C || Z
   mvnne r1,#0
@@ -33486,7 +33767,6 @@ Op53e0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -33495,6 +33775,8 @@ Op53e0:
 
 ;@ ---------- [53e7] sls -(a7) uses Op53e7 ----------
 Op53e7:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x60000000 ;@ ls: C || Z
   mvnne r1,#0
@@ -33508,7 +33790,6 @@ Op53e7:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -33517,6 +33798,8 @@ Op53e7:
 
 ;@ ---------- [53e8] sls ($3333,a0) uses Op53e8 ----------
 Op53e8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x60000000 ;@ ls: C || Z
   mvnne r1,#0
@@ -33531,7 +33814,6 @@ Op53e8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -33540,6 +33822,8 @@ Op53e8:
 
 ;@ ---------- [53f0] sls ($33,a0,d3.w*2) uses Op53f0 ----------
 Op53f0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x60000000 ;@ ls: C || Z
   mvnne r1,#0
@@ -33563,7 +33847,6 @@ Op53f0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -33572,6 +33855,8 @@ Op53f0:
 
 ;@ ---------- [53f8] sls $3333.w uses Op53f8 ----------
 Op53f8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x60000000 ;@ ls: C || Z
   mvnne r1,#0
@@ -33583,7 +33868,6 @@ Op53f8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -33592,6 +33876,8 @@ Op53f8:
 
 ;@ ---------- [53f9] sls $33333333.l uses Op53f9 ----------
 Op53f9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x60000000 ;@ ls: C || Z
   mvnne r1,#0
@@ -33605,7 +33891,6 @@ Op53f9:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -33665,6 +33950,8 @@ Op54c8:
 
 ;@ ---------- [54d0] scc (a0) uses Op54d0 ----------
 Op54d0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x20000000 ;@ cc: !C
   mvneq r1,#0
@@ -33678,7 +33965,6 @@ Op54d0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -33687,6 +33973,8 @@ Op54d0:
 
 ;@ ---------- [54d8] scc (a0)+ uses Op54d8 ----------
 Op54d8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x20000000 ;@ cc: !C
   mvneq r1,#0
@@ -33701,7 +33989,6 @@ Op54d8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -33710,6 +33997,8 @@ Op54d8:
 
 ;@ ---------- [54df] scc (a7)+ uses Op54df ----------
 Op54df:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x20000000 ;@ cc: !C
   mvneq r1,#0
@@ -33723,7 +34012,6 @@ Op54df:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -33732,6 +34020,8 @@ Op54df:
 
 ;@ ---------- [54e0] scc -(a0) uses Op54e0 ----------
 Op54e0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x20000000 ;@ cc: !C
   mvneq r1,#0
@@ -33747,7 +34037,6 @@ Op54e0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -33756,6 +34045,8 @@ Op54e0:
 
 ;@ ---------- [54e7] scc -(a7) uses Op54e7 ----------
 Op54e7:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x20000000 ;@ cc: !C
   mvneq r1,#0
@@ -33769,7 +34060,6 @@ Op54e7:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -33778,6 +34068,8 @@ Op54e7:
 
 ;@ ---------- [54e8] scc ($3333,a0) uses Op54e8 ----------
 Op54e8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x20000000 ;@ cc: !C
   mvneq r1,#0
@@ -33792,7 +34084,6 @@ Op54e8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -33801,6 +34092,8 @@ Op54e8:
 
 ;@ ---------- [54f0] scc ($33,a0,d3.w*2) uses Op54f0 ----------
 Op54f0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x20000000 ;@ cc: !C
   mvneq r1,#0
@@ -33824,7 +34117,6 @@ Op54f0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -33833,6 +34125,8 @@ Op54f0:
 
 ;@ ---------- [54f8] scc $3333.w uses Op54f8 ----------
 Op54f8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x20000000 ;@ cc: !C
   mvneq r1,#0
@@ -33844,7 +34138,6 @@ Op54f8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -33853,6 +34146,8 @@ Op54f8:
 
 ;@ ---------- [54f9] scc $33333333.l uses Op54f9 ----------
 Op54f9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x20000000 ;@ cc: !C
   mvneq r1,#0
@@ -33866,7 +34161,6 @@ Op54f9:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -33926,6 +34220,8 @@ Op55c8:
 
 ;@ ---------- [55d0] scs (a0) uses Op55d0 ----------
 Op55d0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x20000000 ;@ cs: C
   mvnne r1,#0
@@ -33939,7 +34235,6 @@ Op55d0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -33948,6 +34243,8 @@ Op55d0:
 
 ;@ ---------- [55d8] scs (a0)+ uses Op55d8 ----------
 Op55d8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x20000000 ;@ cs: C
   mvnne r1,#0
@@ -33962,7 +34259,6 @@ Op55d8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -33971,6 +34267,8 @@ Op55d8:
 
 ;@ ---------- [55df] scs (a7)+ uses Op55df ----------
 Op55df:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x20000000 ;@ cs: C
   mvnne r1,#0
@@ -33984,7 +34282,6 @@ Op55df:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -33993,6 +34290,8 @@ Op55df:
 
 ;@ ---------- [55e0] scs -(a0) uses Op55e0 ----------
 Op55e0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x20000000 ;@ cs: C
   mvnne r1,#0
@@ -34008,7 +34307,6 @@ Op55e0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -34017,6 +34315,8 @@ Op55e0:
 
 ;@ ---------- [55e7] scs -(a7) uses Op55e7 ----------
 Op55e7:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x20000000 ;@ cs: C
   mvnne r1,#0
@@ -34030,7 +34330,6 @@ Op55e7:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -34039,6 +34338,8 @@ Op55e7:
 
 ;@ ---------- [55e8] scs ($3333,a0) uses Op55e8 ----------
 Op55e8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x20000000 ;@ cs: C
   mvnne r1,#0
@@ -34053,7 +34354,6 @@ Op55e8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -34062,6 +34362,8 @@ Op55e8:
 
 ;@ ---------- [55f0] scs ($33,a0,d3.w*2) uses Op55f0 ----------
 Op55f0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x20000000 ;@ cs: C
   mvnne r1,#0
@@ -34085,7 +34387,6 @@ Op55f0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -34094,6 +34395,8 @@ Op55f0:
 
 ;@ ---------- [55f8] scs $3333.w uses Op55f8 ----------
 Op55f8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x20000000 ;@ cs: C
   mvnne r1,#0
@@ -34105,7 +34408,6 @@ Op55f8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -34114,6 +34416,8 @@ Op55f8:
 
 ;@ ---------- [55f9] scs $33333333.l uses Op55f9 ----------
 Op55f9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x20000000 ;@ cs: C
   mvnne r1,#0
@@ -34127,7 +34431,6 @@ Op55f9:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -34187,6 +34490,8 @@ Op56c8:
 
 ;@ ---------- [56d0] sne (a0) uses Op56d0 ----------
 Op56d0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x40000000 ;@ ne: !Z
   mvneq r1,#0
@@ -34200,7 +34505,6 @@ Op56d0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -34209,6 +34513,8 @@ Op56d0:
 
 ;@ ---------- [56d8] sne (a0)+ uses Op56d8 ----------
 Op56d8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x40000000 ;@ ne: !Z
   mvneq r1,#0
@@ -34223,7 +34529,6 @@ Op56d8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -34232,6 +34537,8 @@ Op56d8:
 
 ;@ ---------- [56df] sne (a7)+ uses Op56df ----------
 Op56df:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x40000000 ;@ ne: !Z
   mvneq r1,#0
@@ -34245,7 +34552,6 @@ Op56df:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -34254,6 +34560,8 @@ Op56df:
 
 ;@ ---------- [56e0] sne -(a0) uses Op56e0 ----------
 Op56e0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x40000000 ;@ ne: !Z
   mvneq r1,#0
@@ -34269,7 +34577,6 @@ Op56e0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -34278,6 +34585,8 @@ Op56e0:
 
 ;@ ---------- [56e7] sne -(a7) uses Op56e7 ----------
 Op56e7:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x40000000 ;@ ne: !Z
   mvneq r1,#0
@@ -34291,7 +34600,6 @@ Op56e7:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -34300,6 +34608,8 @@ Op56e7:
 
 ;@ ---------- [56e8] sne ($3333,a0) uses Op56e8 ----------
 Op56e8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x40000000 ;@ ne: !Z
   mvneq r1,#0
@@ -34314,7 +34624,6 @@ Op56e8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -34323,6 +34632,8 @@ Op56e8:
 
 ;@ ---------- [56f0] sne ($33,a0,d3.w*2) uses Op56f0 ----------
 Op56f0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x40000000 ;@ ne: !Z
   mvneq r1,#0
@@ -34346,7 +34657,6 @@ Op56f0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -34355,6 +34665,8 @@ Op56f0:
 
 ;@ ---------- [56f8] sne $3333.w uses Op56f8 ----------
 Op56f8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x40000000 ;@ ne: !Z
   mvneq r1,#0
@@ -34366,7 +34678,6 @@ Op56f8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -34375,6 +34686,8 @@ Op56f8:
 
 ;@ ---------- [56f9] sne $33333333.l uses Op56f9 ----------
 Op56f9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x40000000 ;@ ne: !Z
   mvneq r1,#0
@@ -34388,7 +34701,6 @@ Op56f9:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -34448,6 +34760,8 @@ Op57c8:
 
 ;@ ---------- [57d0] seq (a0) uses Op57d0 ----------
 Op57d0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x40000000 ;@ eq: Z
   mvnne r1,#0
@@ -34461,7 +34775,6 @@ Op57d0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -34470,6 +34783,8 @@ Op57d0:
 
 ;@ ---------- [57d8] seq (a0)+ uses Op57d8 ----------
 Op57d8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x40000000 ;@ eq: Z
   mvnne r1,#0
@@ -34484,7 +34799,6 @@ Op57d8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -34493,6 +34807,8 @@ Op57d8:
 
 ;@ ---------- [57df] seq (a7)+ uses Op57df ----------
 Op57df:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x40000000 ;@ eq: Z
   mvnne r1,#0
@@ -34506,7 +34822,6 @@ Op57df:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -34515,6 +34830,8 @@ Op57df:
 
 ;@ ---------- [57e0] seq -(a0) uses Op57e0 ----------
 Op57e0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x40000000 ;@ eq: Z
   mvnne r1,#0
@@ -34530,7 +34847,6 @@ Op57e0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -34539,6 +34855,8 @@ Op57e0:
 
 ;@ ---------- [57e7] seq -(a7) uses Op57e7 ----------
 Op57e7:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x40000000 ;@ eq: Z
   mvnne r1,#0
@@ -34552,7 +34870,6 @@ Op57e7:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -34561,6 +34878,8 @@ Op57e7:
 
 ;@ ---------- [57e8] seq ($3333,a0) uses Op57e8 ----------
 Op57e8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x40000000 ;@ eq: Z
   mvnne r1,#0
@@ -34575,7 +34894,6 @@ Op57e8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -34584,6 +34902,8 @@ Op57e8:
 
 ;@ ---------- [57f0] seq ($33,a0,d3.w*2) uses Op57f0 ----------
 Op57f0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x40000000 ;@ eq: Z
   mvnne r1,#0
@@ -34607,7 +34927,6 @@ Op57f0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -34616,6 +34935,8 @@ Op57f0:
 
 ;@ ---------- [57f8] seq $3333.w uses Op57f8 ----------
 Op57f8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x40000000 ;@ eq: Z
   mvnne r1,#0
@@ -34627,7 +34948,6 @@ Op57f8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -34636,6 +34956,8 @@ Op57f8:
 
 ;@ ---------- [57f9] seq $33333333.l uses Op57f9 ----------
 Op57f9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x40000000 ;@ eq: Z
   mvnne r1,#0
@@ -34649,7 +34971,6 @@ Op57f9:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -34709,6 +35030,8 @@ Op58c8:
 
 ;@ ---------- [58d0] svc (a0) uses Op58d0 ----------
 Op58d0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x10000000 ;@ vc: !V
   mvneq r1,#0
@@ -34722,7 +35045,6 @@ Op58d0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -34731,6 +35053,8 @@ Op58d0:
 
 ;@ ---------- [58d8] svc (a0)+ uses Op58d8 ----------
 Op58d8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x10000000 ;@ vc: !V
   mvneq r1,#0
@@ -34745,7 +35069,6 @@ Op58d8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -34754,6 +35077,8 @@ Op58d8:
 
 ;@ ---------- [58df] svc (a7)+ uses Op58df ----------
 Op58df:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x10000000 ;@ vc: !V
   mvneq r1,#0
@@ -34767,7 +35092,6 @@ Op58df:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -34776,6 +35100,8 @@ Op58df:
 
 ;@ ---------- [58e0] svc -(a0) uses Op58e0 ----------
 Op58e0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x10000000 ;@ vc: !V
   mvneq r1,#0
@@ -34791,7 +35117,6 @@ Op58e0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -34800,6 +35125,8 @@ Op58e0:
 
 ;@ ---------- [58e7] svc -(a7) uses Op58e7 ----------
 Op58e7:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x10000000 ;@ vc: !V
   mvneq r1,#0
@@ -34813,7 +35140,6 @@ Op58e7:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -34822,6 +35148,8 @@ Op58e7:
 
 ;@ ---------- [58e8] svc ($3333,a0) uses Op58e8 ----------
 Op58e8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x10000000 ;@ vc: !V
   mvneq r1,#0
@@ -34836,7 +35164,6 @@ Op58e8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -34845,6 +35172,8 @@ Op58e8:
 
 ;@ ---------- [58f0] svc ($33,a0,d3.w*2) uses Op58f0 ----------
 Op58f0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x10000000 ;@ vc: !V
   mvneq r1,#0
@@ -34868,7 +35197,6 @@ Op58f0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -34877,6 +35205,8 @@ Op58f0:
 
 ;@ ---------- [58f8] svc $3333.w uses Op58f8 ----------
 Op58f8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x10000000 ;@ vc: !V
   mvneq r1,#0
@@ -34888,7 +35218,6 @@ Op58f8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -34897,6 +35226,8 @@ Op58f8:
 
 ;@ ---------- [58f9] svc $33333333.l uses Op58f9 ----------
 Op58f9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x10000000 ;@ vc: !V
   mvneq r1,#0
@@ -34910,7 +35241,6 @@ Op58f9:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -34970,6 +35300,8 @@ Op59c8:
 
 ;@ ---------- [59d0] svs (a0) uses Op59d0 ----------
 Op59d0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x10000000 ;@ vs: V
   mvnne r1,#0
@@ -34983,7 +35315,6 @@ Op59d0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -34992,6 +35323,8 @@ Op59d0:
 
 ;@ ---------- [59d8] svs (a0)+ uses Op59d8 ----------
 Op59d8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x10000000 ;@ vs: V
   mvnne r1,#0
@@ -35006,7 +35339,6 @@ Op59d8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -35015,6 +35347,8 @@ Op59d8:
 
 ;@ ---------- [59df] svs (a7)+ uses Op59df ----------
 Op59df:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x10000000 ;@ vs: V
   mvnne r1,#0
@@ -35028,7 +35362,6 @@ Op59df:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -35037,6 +35370,8 @@ Op59df:
 
 ;@ ---------- [59e0] svs -(a0) uses Op59e0 ----------
 Op59e0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x10000000 ;@ vs: V
   mvnne r1,#0
@@ -35052,7 +35387,6 @@ Op59e0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -35061,6 +35395,8 @@ Op59e0:
 
 ;@ ---------- [59e7] svs -(a7) uses Op59e7 ----------
 Op59e7:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x10000000 ;@ vs: V
   mvnne r1,#0
@@ -35074,7 +35410,6 @@ Op59e7:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -35083,6 +35418,8 @@ Op59e7:
 
 ;@ ---------- [59e8] svs ($3333,a0) uses Op59e8 ----------
 Op59e8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x10000000 ;@ vs: V
   mvnne r1,#0
@@ -35097,7 +35434,6 @@ Op59e8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -35106,6 +35442,8 @@ Op59e8:
 
 ;@ ---------- [59f0] svs ($33,a0,d3.w*2) uses Op59f0 ----------
 Op59f0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x10000000 ;@ vs: V
   mvnne r1,#0
@@ -35129,7 +35467,6 @@ Op59f0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -35138,6 +35475,8 @@ Op59f0:
 
 ;@ ---------- [59f8] svs $3333.w uses Op59f8 ----------
 Op59f8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x10000000 ;@ vs: V
   mvnne r1,#0
@@ -35149,7 +35488,6 @@ Op59f8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -35158,6 +35496,8 @@ Op59f8:
 
 ;@ ---------- [59f9] svs $33333333.l uses Op59f9 ----------
 Op59f9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,#0x10000000 ;@ vs: V
   mvnne r1,#0
@@ -35171,7 +35511,6 @@ Op59f9:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -35231,6 +35570,8 @@ Op5ac8:
 
 ;@ ---------- [5ad0] spl (a0) uses Op5ad0 ----------
 Op5ad0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,r10 ;@ pl: !N
   mvnpl r1,#0
@@ -35244,7 +35585,6 @@ Op5ad0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -35253,6 +35593,8 @@ Op5ad0:
 
 ;@ ---------- [5ad8] spl (a0)+ uses Op5ad8 ----------
 Op5ad8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,r10 ;@ pl: !N
   mvnpl r1,#0
@@ -35267,7 +35609,6 @@ Op5ad8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -35276,6 +35617,8 @@ Op5ad8:
 
 ;@ ---------- [5adf] spl (a7)+ uses Op5adf ----------
 Op5adf:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,r10 ;@ pl: !N
   mvnpl r1,#0
@@ -35289,7 +35632,6 @@ Op5adf:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -35298,6 +35640,8 @@ Op5adf:
 
 ;@ ---------- [5ae0] spl -(a0) uses Op5ae0 ----------
 Op5ae0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,r10 ;@ pl: !N
   mvnpl r1,#0
@@ -35313,7 +35657,6 @@ Op5ae0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -35322,6 +35665,8 @@ Op5ae0:
 
 ;@ ---------- [5ae7] spl -(a7) uses Op5ae7 ----------
 Op5ae7:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,r10 ;@ pl: !N
   mvnpl r1,#0
@@ -35335,7 +35680,6 @@ Op5ae7:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -35344,6 +35688,8 @@ Op5ae7:
 
 ;@ ---------- [5ae8] spl ($3333,a0) uses Op5ae8 ----------
 Op5ae8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,r10 ;@ pl: !N
   mvnpl r1,#0
@@ -35358,7 +35704,6 @@ Op5ae8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -35367,6 +35712,8 @@ Op5ae8:
 
 ;@ ---------- [5af0] spl ($33,a0,d3.w*2) uses Op5af0 ----------
 Op5af0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,r10 ;@ pl: !N
   mvnpl r1,#0
@@ -35390,7 +35737,6 @@ Op5af0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -35399,6 +35745,8 @@ Op5af0:
 
 ;@ ---------- [5af8] spl $3333.w uses Op5af8 ----------
 Op5af8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,r10 ;@ pl: !N
   mvnpl r1,#0
@@ -35410,7 +35758,6 @@ Op5af8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -35419,6 +35766,8 @@ Op5af8:
 
 ;@ ---------- [5af9] spl $33333333.l uses Op5af9 ----------
 Op5af9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,r10 ;@ pl: !N
   mvnpl r1,#0
@@ -35432,7 +35781,6 @@ Op5af9:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -35492,6 +35840,8 @@ Op5bc8:
 
 ;@ ---------- [5bd0] smi (a0) uses Op5bd0 ----------
 Op5bd0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,r10 ;@ mi: N
   mvnmi r1,#0
@@ -35505,7 +35855,6 @@ Op5bd0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -35514,6 +35863,8 @@ Op5bd0:
 
 ;@ ---------- [5bd8] smi (a0)+ uses Op5bd8 ----------
 Op5bd8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,r10 ;@ mi: N
   mvnmi r1,#0
@@ -35528,7 +35879,6 @@ Op5bd8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -35537,6 +35887,8 @@ Op5bd8:
 
 ;@ ---------- [5bdf] smi (a7)+ uses Op5bdf ----------
 Op5bdf:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,r10 ;@ mi: N
   mvnmi r1,#0
@@ -35550,7 +35902,6 @@ Op5bdf:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -35559,6 +35910,8 @@ Op5bdf:
 
 ;@ ---------- [5be0] smi -(a0) uses Op5be0 ----------
 Op5be0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,r10 ;@ mi: N
   mvnmi r1,#0
@@ -35574,7 +35927,6 @@ Op5be0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -35583,6 +35935,8 @@ Op5be0:
 
 ;@ ---------- [5be7] smi -(a7) uses Op5be7 ----------
 Op5be7:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,r10 ;@ mi: N
   mvnmi r1,#0
@@ -35596,7 +35950,6 @@ Op5be7:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -35605,6 +35958,8 @@ Op5be7:
 
 ;@ ---------- [5be8] smi ($3333,a0) uses Op5be8 ----------
 Op5be8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,r10 ;@ mi: N
   mvnmi r1,#0
@@ -35619,7 +35974,6 @@ Op5be8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -35628,6 +35982,8 @@ Op5be8:
 
 ;@ ---------- [5bf0] smi ($33,a0,d3.w*2) uses Op5bf0 ----------
 Op5bf0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,r10 ;@ mi: N
   mvnmi r1,#0
@@ -35651,7 +36007,6 @@ Op5bf0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -35660,6 +36015,8 @@ Op5bf0:
 
 ;@ ---------- [5bf8] smi $3333.w uses Op5bf8 ----------
 Op5bf8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,r10 ;@ mi: N
   mvnmi r1,#0
@@ -35671,7 +36028,6 @@ Op5bf8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -35680,6 +36036,8 @@ Op5bf8:
 
 ;@ ---------- [5bf9] smi $33333333.l uses Op5bf9 ----------
 Op5bf9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   tst r10,r10 ;@ mi: N
   mvnmi r1,#0
@@ -35693,7 +36051,6 @@ Op5bf9:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -35753,6 +36110,8 @@ Op5cc8:
 
 ;@ ---------- [5cd0] sge (a0) uses Op5cd0 ----------
 Op5cd0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   teq r10,r10,lsl #3 ;@ ge: N == V
   mvnpl r1,#0
@@ -35766,7 +36125,6 @@ Op5cd0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -35775,6 +36133,8 @@ Op5cd0:
 
 ;@ ---------- [5cd8] sge (a0)+ uses Op5cd8 ----------
 Op5cd8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   teq r10,r10,lsl #3 ;@ ge: N == V
   mvnpl r1,#0
@@ -35789,7 +36149,6 @@ Op5cd8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -35798,6 +36157,8 @@ Op5cd8:
 
 ;@ ---------- [5cdf] sge (a7)+ uses Op5cdf ----------
 Op5cdf:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   teq r10,r10,lsl #3 ;@ ge: N == V
   mvnpl r1,#0
@@ -35811,7 +36172,6 @@ Op5cdf:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -35820,6 +36180,8 @@ Op5cdf:
 
 ;@ ---------- [5ce0] sge -(a0) uses Op5ce0 ----------
 Op5ce0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   teq r10,r10,lsl #3 ;@ ge: N == V
   mvnpl r1,#0
@@ -35835,7 +36197,6 @@ Op5ce0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -35844,6 +36205,8 @@ Op5ce0:
 
 ;@ ---------- [5ce7] sge -(a7) uses Op5ce7 ----------
 Op5ce7:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   teq r10,r10,lsl #3 ;@ ge: N == V
   mvnpl r1,#0
@@ -35857,7 +36220,6 @@ Op5ce7:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -35866,6 +36228,8 @@ Op5ce7:
 
 ;@ ---------- [5ce8] sge ($3333,a0) uses Op5ce8 ----------
 Op5ce8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   teq r10,r10,lsl #3 ;@ ge: N == V
   mvnpl r1,#0
@@ -35880,7 +36244,6 @@ Op5ce8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -35889,6 +36252,8 @@ Op5ce8:
 
 ;@ ---------- [5cf0] sge ($33,a0,d3.w*2) uses Op5cf0 ----------
 Op5cf0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   teq r10,r10,lsl #3 ;@ ge: N == V
   mvnpl r1,#0
@@ -35912,7 +36277,6 @@ Op5cf0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -35921,6 +36285,8 @@ Op5cf0:
 
 ;@ ---------- [5cf8] sge $3333.w uses Op5cf8 ----------
 Op5cf8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   teq r10,r10,lsl #3 ;@ ge: N == V
   mvnpl r1,#0
@@ -35932,7 +36298,6 @@ Op5cf8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -35941,6 +36306,8 @@ Op5cf8:
 
 ;@ ---------- [5cf9] sge $33333333.l uses Op5cf9 ----------
 Op5cf9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   teq r10,r10,lsl #3 ;@ ge: N == V
   mvnpl r1,#0
@@ -35954,7 +36321,6 @@ Op5cf9:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -36014,6 +36380,8 @@ Op5dc8:
 
 ;@ ---------- [5dd0] slt (a0) uses Op5dd0 ----------
 Op5dd0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   teq r10,r10,lsl #3 ;@ lt: N != V
   mvnmi r1,#0
@@ -36027,7 +36395,6 @@ Op5dd0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -36036,6 +36403,8 @@ Op5dd0:
 
 ;@ ---------- [5dd8] slt (a0)+ uses Op5dd8 ----------
 Op5dd8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   teq r10,r10,lsl #3 ;@ lt: N != V
   mvnmi r1,#0
@@ -36050,7 +36419,6 @@ Op5dd8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -36059,6 +36427,8 @@ Op5dd8:
 
 ;@ ---------- [5ddf] slt (a7)+ uses Op5ddf ----------
 Op5ddf:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   teq r10,r10,lsl #3 ;@ lt: N != V
   mvnmi r1,#0
@@ -36072,7 +36442,6 @@ Op5ddf:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -36081,6 +36450,8 @@ Op5ddf:
 
 ;@ ---------- [5de0] slt -(a0) uses Op5de0 ----------
 Op5de0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   teq r10,r10,lsl #3 ;@ lt: N != V
   mvnmi r1,#0
@@ -36096,7 +36467,6 @@ Op5de0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -36105,6 +36475,8 @@ Op5de0:
 
 ;@ ---------- [5de7] slt -(a7) uses Op5de7 ----------
 Op5de7:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   teq r10,r10,lsl #3 ;@ lt: N != V
   mvnmi r1,#0
@@ -36118,7 +36490,6 @@ Op5de7:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -36127,6 +36498,8 @@ Op5de7:
 
 ;@ ---------- [5de8] slt ($3333,a0) uses Op5de8 ----------
 Op5de8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   teq r10,r10,lsl #3 ;@ lt: N != V
   mvnmi r1,#0
@@ -36141,7 +36514,6 @@ Op5de8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -36150,6 +36522,8 @@ Op5de8:
 
 ;@ ---------- [5df0] slt ($33,a0,d3.w*2) uses Op5df0 ----------
 Op5df0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   teq r10,r10,lsl #3 ;@ lt: N != V
   mvnmi r1,#0
@@ -36173,7 +36547,6 @@ Op5df0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -36182,6 +36555,8 @@ Op5df0:
 
 ;@ ---------- [5df8] slt $3333.w uses Op5df8 ----------
 Op5df8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   teq r10,r10,lsl #3 ;@ lt: N != V
   mvnmi r1,#0
@@ -36193,7 +36568,6 @@ Op5df8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -36202,6 +36576,8 @@ Op5df8:
 
 ;@ ---------- [5df9] slt $33333333.l uses Op5df9 ----------
 Op5df9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   teq r10,r10,lsl #3 ;@ lt: N != V
   mvnmi r1,#0
@@ -36215,7 +36591,6 @@ Op5df9:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -36248,6 +36623,8 @@ Op5e00:
 
 ;@ ---------- [5e10] addq.b #7, (a0) uses Op5e10 ----------
 Op5e10:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -36257,7 +36634,6 @@ Op5e10:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -36272,7 +36648,6 @@ Op5e10:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -36281,6 +36656,8 @@ Op5e10:
 
 ;@ ---------- [5e18] addq.b #7, (a0)+ uses Op5e18 ----------
 Op5e18:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r11:
   and r2,r8,#0x000f
   ldr r11,[r7,r2,lsl #2]
@@ -36291,7 +36668,6 @@ Op5e18:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -36306,7 +36682,6 @@ Op5e18:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -36315,6 +36690,8 @@ Op5e18:
 
 ;@ ---------- [5e1f] addq.b #7, (a7)+ uses Op5e1f ----------
 Op5e1f:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a7)+' into r11:
   ldr r11,[r7,#0x3c] ;@ A7
   add r3,r11,#2 ;@ Post-increment An
@@ -36324,7 +36701,6 @@ Op5e1f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -36339,7 +36715,6 @@ Op5e1f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -36348,6 +36723,8 @@ Op5e1f:
 
 ;@ ---------- [5e20] addq.b #7, -(a0) uses Op5e20 ----------
 Op5e20:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -36359,7 +36736,6 @@ Op5e20:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -36374,7 +36750,6 @@ Op5e20:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -36383,6 +36758,8 @@ Op5e20:
 
 ;@ ---------- [5e27] addq.b #7, -(a7) uses Op5e27 ----------
 Op5e27:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a7)' into r11:
   ldr r11,[r7,#0x3c] ;@ A7
   sub r11,r11,#2 ;@ Pre-decrement An
@@ -36392,7 +36769,6 @@ Op5e27:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -36407,7 +36783,6 @@ Op5e27:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -36416,6 +36791,8 @@ Op5e27:
 
 ;@ ---------- [5e28] addq.b #7, ($3333,a0) uses Op5e28 ----------
 Op5e28:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r11:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -36426,7 +36803,6 @@ Op5e28:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -36441,7 +36817,6 @@ Op5e28:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -36450,6 +36825,8 @@ Op5e28:
 
 ;@ ---------- [5e30] addq.b #7, ($33,a0,d3.w*2) uses Op5e30 ----------
 Op5e30:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r11:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -36469,7 +36846,6 @@ Op5e30:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -36484,7 +36860,6 @@ Op5e30:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -36493,6 +36868,8 @@ Op5e30:
 
 ;@ ---------- [5e38] addq.b #7, $3333.w uses Op5e38 ----------
 Op5e38:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
@@ -36500,7 +36877,6 @@ Op5e38:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -36515,7 +36891,6 @@ Op5e38:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -36524,6 +36899,8 @@ Op5e38:
 
 ;@ ---------- [5e39] addq.b #7, $33333333.l uses Op5e39 ----------
 Op5e39:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r11:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -36533,7 +36910,6 @@ Op5e39:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -36548,7 +36924,6 @@ Op5e39:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -36576,6 +36951,8 @@ Op5e48:
 
 ;@ ---------- [5e50] addq.w #7, (a0) uses Op5e50 ----------
 Op5e50:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -36585,7 +36962,6 @@ Op5e50:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -36600,7 +36976,6 @@ Op5e50:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -36609,6 +36984,8 @@ Op5e50:
 
 ;@ ---------- [5e58] addq.w #7, (a0)+ uses Op5e58 ----------
 Op5e58:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r11:
   and r2,r8,#0x000f
   ldr r11,[r7,r2,lsl #2]
@@ -36619,7 +36996,6 @@ Op5e58:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -36634,7 +37010,6 @@ Op5e58:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -36643,6 +37018,8 @@ Op5e58:
 
 ;@ ---------- [5e60] addq.w #7, -(a0) uses Op5e60 ----------
 Op5e60:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -36654,7 +37031,6 @@ Op5e60:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -36669,7 +37045,6 @@ Op5e60:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -36678,6 +37053,8 @@ Op5e60:
 
 ;@ ---------- [5e68] addq.w #7, ($3333,a0) uses Op5e68 ----------
 Op5e68:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r11:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -36688,7 +37065,6 @@ Op5e68:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -36703,7 +37079,6 @@ Op5e68:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -36712,6 +37087,8 @@ Op5e68:
 
 ;@ ---------- [5e70] addq.w #7, ($33,a0,d3.w*2) uses Op5e70 ----------
 Op5e70:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r11:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -36731,7 +37108,6 @@ Op5e70:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -36746,7 +37122,6 @@ Op5e70:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -36755,6 +37130,8 @@ Op5e70:
 
 ;@ ---------- [5e78] addq.w #7, $3333.w uses Op5e78 ----------
 Op5e78:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
@@ -36762,7 +37139,6 @@ Op5e78:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -36777,7 +37153,6 @@ Op5e78:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -36786,6 +37161,8 @@ Op5e78:
 
 ;@ ---------- [5e79] addq.w #7, $33333333.l uses Op5e79 ----------
 Op5e79:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r11:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -36795,7 +37172,6 @@ Op5e79:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -36810,7 +37186,6 @@ Op5e79:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -36859,6 +37234,8 @@ Op5e88:
 
 ;@ ---------- [5e90] addq.l #7, (a0) uses Op5e90 ----------
 Op5e90:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -36868,7 +37245,6 @@ Op5e90:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -36880,7 +37256,6 @@ Op5e90:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -36889,6 +37264,8 @@ Op5e90:
 
 ;@ ---------- [5e98] addq.l #7, (a0)+ uses Op5e98 ----------
 Op5e98:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r11:
   and r2,r8,#0x000f
   ldr r11,[r7,r2,lsl #2]
@@ -36899,7 +37276,6 @@ Op5e98:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -36911,7 +37287,6 @@ Op5e98:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -36920,6 +37295,8 @@ Op5e98:
 
 ;@ ---------- [5ea0] addq.l #7, -(a0) uses Op5ea0 ----------
 Op5ea0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -36931,7 +37308,6 @@ Op5ea0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -36943,7 +37319,6 @@ Op5ea0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -36952,6 +37327,8 @@ Op5ea0:
 
 ;@ ---------- [5ea8] addq.l #7, ($3333,a0) uses Op5ea8 ----------
 Op5ea8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r11:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -36962,7 +37339,6 @@ Op5ea8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -36974,7 +37350,6 @@ Op5ea8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -36983,6 +37358,8 @@ Op5ea8:
 
 ;@ ---------- [5eb0] addq.l #7, ($33,a0,d3.w*2) uses Op5eb0 ----------
 Op5eb0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r11:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -37002,7 +37379,6 @@ Op5eb0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -37014,7 +37390,6 @@ Op5eb0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#26 ;@ Subtract cycles
@@ -37023,6 +37398,8 @@ Op5eb0:
 
 ;@ ---------- [5eb8] addq.l #7, $3333.w uses Op5eb8 ----------
 Op5eb8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
@@ -37030,7 +37407,6 @@ Op5eb8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -37042,7 +37418,6 @@ Op5eb8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -37051,6 +37426,8 @@ Op5eb8:
 
 ;@ ---------- [5eb9] addq.l #7, $33333333.l uses Op5eb9 ----------
 Op5eb9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r11:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -37060,7 +37437,6 @@ Op5eb9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -37072,7 +37448,6 @@ Op5eb9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -37134,6 +37509,8 @@ Op5ec8:
 
 ;@ ---------- [5ed0] sgt (a0) uses Op5ed0 ----------
 Op5ed0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   eor r0,r10,r10,lsl #3 ;@ gt: !Z && N == V
   orrs r0,r10,lsl #1
@@ -37148,7 +37525,6 @@ Op5ed0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -37157,6 +37533,8 @@ Op5ed0:
 
 ;@ ---------- [5ed8] sgt (a0)+ uses Op5ed8 ----------
 Op5ed8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   eor r0,r10,r10,lsl #3 ;@ gt: !Z && N == V
   orrs r0,r10,lsl #1
@@ -37172,7 +37550,6 @@ Op5ed8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -37181,6 +37558,8 @@ Op5ed8:
 
 ;@ ---------- [5edf] sgt (a7)+ uses Op5edf ----------
 Op5edf:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   eor r0,r10,r10,lsl #3 ;@ gt: !Z && N == V
   orrs r0,r10,lsl #1
@@ -37195,7 +37574,6 @@ Op5edf:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -37204,6 +37582,8 @@ Op5edf:
 
 ;@ ---------- [5ee0] sgt -(a0) uses Op5ee0 ----------
 Op5ee0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   eor r0,r10,r10,lsl #3 ;@ gt: !Z && N == V
   orrs r0,r10,lsl #1
@@ -37220,7 +37600,6 @@ Op5ee0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -37229,6 +37608,8 @@ Op5ee0:
 
 ;@ ---------- [5ee7] sgt -(a7) uses Op5ee7 ----------
 Op5ee7:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   eor r0,r10,r10,lsl #3 ;@ gt: !Z && N == V
   orrs r0,r10,lsl #1
@@ -37243,7 +37624,6 @@ Op5ee7:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -37252,6 +37632,8 @@ Op5ee7:
 
 ;@ ---------- [5ee8] sgt ($3333,a0) uses Op5ee8 ----------
 Op5ee8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   eor r0,r10,r10,lsl #3 ;@ gt: !Z && N == V
   orrs r0,r10,lsl #1
@@ -37267,7 +37649,6 @@ Op5ee8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -37276,6 +37657,8 @@ Op5ee8:
 
 ;@ ---------- [5ef0] sgt ($33,a0,d3.w*2) uses Op5ef0 ----------
 Op5ef0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   eor r0,r10,r10,lsl #3 ;@ gt: !Z && N == V
   orrs r0,r10,lsl #1
@@ -37300,7 +37683,6 @@ Op5ef0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -37309,6 +37691,8 @@ Op5ef0:
 
 ;@ ---------- [5ef8] sgt $3333.w uses Op5ef8 ----------
 Op5ef8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   eor r0,r10,r10,lsl #3 ;@ gt: !Z && N == V
   orrs r0,r10,lsl #1
@@ -37321,7 +37705,6 @@ Op5ef8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -37330,6 +37713,8 @@ Op5ef8:
 
 ;@ ---------- [5ef9] sgt $33333333.l uses Op5ef9 ----------
 Op5ef9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   eor r0,r10,r10,lsl #3 ;@ gt: !Z && N == V
   orrs r0,r10,lsl #1
@@ -37344,7 +37729,6 @@ Op5ef9:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -37378,6 +37762,8 @@ Op5f00:
 
 ;@ ---------- [5f10] subq.b #7, (a0) uses Op5f10 ----------
 Op5f10:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -37387,7 +37773,6 @@ Op5f10:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -37403,7 +37788,6 @@ Op5f10:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -37412,6 +37796,8 @@ Op5f10:
 
 ;@ ---------- [5f18] subq.b #7, (a0)+ uses Op5f18 ----------
 Op5f18:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r11:
   and r2,r8,#0x000f
   ldr r11,[r7,r2,lsl #2]
@@ -37422,7 +37808,6 @@ Op5f18:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -37438,7 +37823,6 @@ Op5f18:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -37447,6 +37831,8 @@ Op5f18:
 
 ;@ ---------- [5f1f] subq.b #7, (a7)+ uses Op5f1f ----------
 Op5f1f:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a7)+' into r11:
   ldr r11,[r7,#0x3c] ;@ A7
   add r3,r11,#2 ;@ Post-increment An
@@ -37456,7 +37842,6 @@ Op5f1f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -37472,7 +37857,6 @@ Op5f1f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -37481,6 +37865,8 @@ Op5f1f:
 
 ;@ ---------- [5f20] subq.b #7, -(a0) uses Op5f20 ----------
 Op5f20:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -37492,7 +37878,6 @@ Op5f20:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -37508,7 +37893,6 @@ Op5f20:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -37517,6 +37901,8 @@ Op5f20:
 
 ;@ ---------- [5f27] subq.b #7, -(a7) uses Op5f27 ----------
 Op5f27:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a7)' into r11:
   ldr r11,[r7,#0x3c] ;@ A7
   sub r11,r11,#2 ;@ Pre-decrement An
@@ -37526,7 +37912,6 @@ Op5f27:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -37542,7 +37927,6 @@ Op5f27:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -37551,6 +37935,8 @@ Op5f27:
 
 ;@ ---------- [5f28] subq.b #7, ($3333,a0) uses Op5f28 ----------
 Op5f28:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r11:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -37561,7 +37947,6 @@ Op5f28:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -37577,7 +37962,6 @@ Op5f28:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -37586,6 +37970,8 @@ Op5f28:
 
 ;@ ---------- [5f30] subq.b #7, ($33,a0,d3.w*2) uses Op5f30 ----------
 Op5f30:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r11:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -37605,7 +37991,6 @@ Op5f30:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -37621,7 +38006,6 @@ Op5f30:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -37630,6 +38014,8 @@ Op5f30:
 
 ;@ ---------- [5f38] subq.b #7, $3333.w uses Op5f38 ----------
 Op5f38:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
@@ -37637,7 +38023,6 @@ Op5f38:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -37653,7 +38038,6 @@ Op5f38:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -37662,6 +38046,8 @@ Op5f38:
 
 ;@ ---------- [5f39] subq.b #7, $33333333.l uses Op5f39 ----------
 Op5f39:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r11:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -37671,7 +38057,6 @@ Op5f39:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -37687,7 +38072,6 @@ Op5f39:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -37741,6 +38125,8 @@ Op5f48:
 
 ;@ ---------- [5f50] subq.w #7, (a0) uses Op5f50 ----------
 Op5f50:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -37750,7 +38136,6 @@ Op5f50:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -37766,7 +38151,6 @@ Op5f50:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -37775,6 +38159,8 @@ Op5f50:
 
 ;@ ---------- [5f58] subq.w #7, (a0)+ uses Op5f58 ----------
 Op5f58:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r11:
   and r2,r8,#0x000f
   ldr r11,[r7,r2,lsl #2]
@@ -37785,7 +38171,6 @@ Op5f58:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -37801,7 +38186,6 @@ Op5f58:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -37810,6 +38194,8 @@ Op5f58:
 
 ;@ ---------- [5f60] subq.w #7, -(a0) uses Op5f60 ----------
 Op5f60:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -37821,7 +38207,6 @@ Op5f60:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -37837,7 +38222,6 @@ Op5f60:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -37846,6 +38230,8 @@ Op5f60:
 
 ;@ ---------- [5f68] subq.w #7, ($3333,a0) uses Op5f68 ----------
 Op5f68:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r11:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -37856,7 +38242,6 @@ Op5f68:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -37872,7 +38257,6 @@ Op5f68:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -37881,6 +38265,8 @@ Op5f68:
 
 ;@ ---------- [5f70] subq.w #7, ($33,a0,d3.w*2) uses Op5f70 ----------
 Op5f70:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r11:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -37900,7 +38286,6 @@ Op5f70:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -37916,7 +38301,6 @@ Op5f70:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -37925,6 +38309,8 @@ Op5f70:
 
 ;@ ---------- [5f78] subq.w #7, $3333.w uses Op5f78 ----------
 Op5f78:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
@@ -37932,7 +38318,6 @@ Op5f78:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -37948,7 +38333,6 @@ Op5f78:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -37957,6 +38341,8 @@ Op5f78:
 
 ;@ ---------- [5f79] subq.w #7, $33333333.l uses Op5f79 ----------
 Op5f79:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r11:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -37966,7 +38352,6 @@ Op5f79:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -37982,7 +38367,6 @@ Op5f79:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -38032,6 +38416,8 @@ Op5f88:
 
 ;@ ---------- [5f90] subq.l #7, (a0) uses Op5f90 ----------
 Op5f90:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -38041,7 +38427,6 @@ Op5f90:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -38054,7 +38439,6 @@ Op5f90:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -38063,6 +38447,8 @@ Op5f90:
 
 ;@ ---------- [5f98] subq.l #7, (a0)+ uses Op5f98 ----------
 Op5f98:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r11:
   and r2,r8,#0x000f
   ldr r11,[r7,r2,lsl #2]
@@ -38073,7 +38459,6 @@ Op5f98:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -38086,7 +38471,6 @@ Op5f98:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -38095,6 +38479,8 @@ Op5f98:
 
 ;@ ---------- [5fa0] subq.l #7, -(a0) uses Op5fa0 ----------
 Op5fa0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -38106,7 +38492,6 @@ Op5fa0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -38119,7 +38504,6 @@ Op5fa0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -38128,6 +38512,8 @@ Op5fa0:
 
 ;@ ---------- [5fa8] subq.l #7, ($3333,a0) uses Op5fa8 ----------
 Op5fa8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r11:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -38138,7 +38524,6 @@ Op5fa8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -38151,7 +38536,6 @@ Op5fa8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -38160,6 +38544,8 @@ Op5fa8:
 
 ;@ ---------- [5fb0] subq.l #7, ($33,a0,d3.w*2) uses Op5fb0 ----------
 Op5fb0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r11:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -38179,7 +38565,6 @@ Op5fb0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -38192,7 +38577,6 @@ Op5fb0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#26 ;@ Subtract cycles
@@ -38201,6 +38585,8 @@ Op5fb0:
 
 ;@ ---------- [5fb8] subq.l #7, $3333.w uses Op5fb8 ----------
 Op5fb8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
@@ -38208,7 +38594,6 @@ Op5fb8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -38221,7 +38606,6 @@ Op5fb8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -38230,6 +38614,8 @@ Op5fb8:
 
 ;@ ---------- [5fb9] subq.l #7, $33333333.l uses Op5fb9 ----------
 Op5fb9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r11:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -38239,7 +38625,6 @@ Op5fb9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   and r2,r8,#0x0e00 ;@ Get quick value
 
@@ -38252,7 +38637,6 @@ Op5fb9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -38314,6 +38698,8 @@ Op5fc8:
 
 ;@ ---------- [5fd0] sle (a0) uses Op5fd0 ----------
 Op5fd0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   eor r0,r10,r10,lsl #3 ;@ le: Z || N != V
   orrs r0,r10,lsl #1
@@ -38328,7 +38714,6 @@ Op5fd0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -38337,6 +38722,8 @@ Op5fd0:
 
 ;@ ---------- [5fd8] sle (a0)+ uses Op5fd8 ----------
 Op5fd8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   eor r0,r10,r10,lsl #3 ;@ le: Z || N != V
   orrs r0,r10,lsl #1
@@ -38352,7 +38739,6 @@ Op5fd8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -38361,6 +38747,8 @@ Op5fd8:
 
 ;@ ---------- [5fdf] sle (a7)+ uses Op5fdf ----------
 Op5fdf:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   eor r0,r10,r10,lsl #3 ;@ le: Z || N != V
   orrs r0,r10,lsl #1
@@ -38375,7 +38763,6 @@ Op5fdf:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -38384,6 +38771,8 @@ Op5fdf:
 
 ;@ ---------- [5fe0] sle -(a0) uses Op5fe0 ----------
 Op5fe0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   eor r0,r10,r10,lsl #3 ;@ le: Z || N != V
   orrs r0,r10,lsl #1
@@ -38400,7 +38789,6 @@ Op5fe0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -38409,6 +38797,8 @@ Op5fe0:
 
 ;@ ---------- [5fe7] sle -(a7) uses Op5fe7 ----------
 Op5fe7:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   eor r0,r10,r10,lsl #3 ;@ le: Z || N != V
   orrs r0,r10,lsl #1
@@ -38423,7 +38813,6 @@ Op5fe7:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -38432,6 +38821,8 @@ Op5fe7:
 
 ;@ ---------- [5fe8] sle ($3333,a0) uses Op5fe8 ----------
 Op5fe8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   eor r0,r10,r10,lsl #3 ;@ le: Z || N != V
   orrs r0,r10,lsl #1
@@ -38447,7 +38838,6 @@ Op5fe8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -38456,6 +38846,8 @@ Op5fe8:
 
 ;@ ---------- [5ff0] sle ($33,a0,d3.w*2) uses Op5ff0 ----------
 Op5ff0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   eor r0,r10,r10,lsl #3 ;@ le: Z || N != V
   orrs r0,r10,lsl #1
@@ -38480,7 +38872,6 @@ Op5ff0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -38489,6 +38880,8 @@ Op5ff0:
 
 ;@ ---------- [5ff8] sle $3333.w uses Op5ff8 ----------
 Op5ff8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   eor r0,r10,r10,lsl #3 ;@ le: Z || N != V
   orrs r0,r10,lsl #1
@@ -38501,7 +38894,6 @@ Op5ff8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -38510,6 +38902,8 @@ Op5ff8:
 
 ;@ ---------- [5ff9] sle $33333333.l uses Op5ff9 ----------
 Op5ff9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   mov r1,#0
   eor r0,r10,r10,lsl #3 ;@ le: Z || N != V
   orrs r0,r10,lsl #1
@@ -38524,7 +38918,6 @@ Op5ff9:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -38533,6 +38926,8 @@ Op5ff9:
 
 ;@ ---------- [6000] bra 3335 uses Op6000 ----------
 Op6000:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   ldrsh r11,[r4] ;@ Fetch Branch offset
 ;@ Branch taken - Add on r0 to PC
   add r0,r4,r11 ;@ New PC
@@ -38578,7 +38973,6 @@ Op6103:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   add r4,r4,r11,asr #24 ;@ r4 = New PC
   b ExceptionAddressError_r_prg_r4
@@ -38590,6 +38984,8 @@ Op6103:
 
 ;@ ---------- [6200] bhi 3335 uses Op6200 ----------
 Op6200:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   tst r10,#0x60000000 ;@ hi: !C && !Z
   bne BccDontBranch16
 
@@ -38642,6 +39038,8 @@ Op6203:
 
 ;@ ---------- [6300] bls 3335 uses Op6300 ----------
 Op6300:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   tst r10,#0x60000000 ;@ ls: C || Z
   beq BccDontBranch16
 
@@ -38694,6 +39092,8 @@ Op6303:
 
 ;@ ---------- [6400] bcc 3335 uses Op6400 ----------
 Op6400:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   tst r10,#0x20000000 ;@ cc: !C
   bne BccDontBranch16
 
@@ -38747,6 +39147,8 @@ Op6503:
 
 ;@ ---------- [6600] bne 3335 uses Op6600 ----------
 Op6600:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   tst r10,#0x40000000 ;@ ne: !Z
   bne BccDontBranch16
 
@@ -38800,6 +39202,8 @@ Op6703:
 
 ;@ ---------- [6800] bvc 3335 uses Op6800 ----------
 Op6800:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   tst r10,#0x10000000 ;@ vc: !V
   bne BccDontBranch16
 
@@ -38852,6 +39256,8 @@ Op6803:
 
 ;@ ---------- [6900] bvs 3335 uses Op6900 ----------
 Op6900:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   tst r10,#0x10000000 ;@ vs: V
   beq BccDontBranch16
 
@@ -38904,6 +39310,8 @@ Op6903:
 
 ;@ ---------- [6a00] bpl 3335 uses Op6a00 ----------
 Op6a00:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   tst r10,r10 ;@ pl: !N
   bmi BccDontBranch16
 
@@ -38941,6 +39349,8 @@ Op6a03:
 
 ;@ ---------- [6b00] bmi 3335 uses Op6b00 ----------
 Op6b00:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   tst r10,r10 ;@ mi: N
   bpl BccDontBranch16
 
@@ -38993,6 +39403,8 @@ Op6b03:
 
 ;@ ---------- [6c00] bge 3335 uses Op6c00 ----------
 Op6c00:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   teq r10,r10,lsl #3 ;@ ge: N == V
   bmi BccDontBranch16
 
@@ -39045,6 +39457,8 @@ Op6c03:
 
 ;@ ---------- [6d00] blt 3335 uses Op6d00 ----------
 Op6d00:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   teq r10,r10,lsl #3 ;@ lt: N != V
   bpl BccDontBranch16
 
@@ -39097,6 +39511,8 @@ Op6d03:
 
 ;@ ---------- [6e00] bgt 3335 uses Op6e00 ----------
 Op6e00:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   eor r0,r10,r10,lsl #3 ;@ gt: !Z && N == V
   orrs r0,r10,lsl #1
   bmi BccDontBranch16
@@ -39152,6 +39568,8 @@ Op6e03:
 
 ;@ ---------- [6f00] ble 3335 uses Op6f00 ----------
 Op6f00:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
   eor r0,r10,r10,lsl #3 ;@ le: Z || N != V
   orrs r0,r10,lsl #1
   bpl BccDontBranch16
@@ -39235,6 +39653,8 @@ Op8000:
 
 ;@ ---------- [8010] or.b (a0), d0 uses Op8010 ----------
 Op8010:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -39243,7 +39663,6 @@ Op8010:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -39268,6 +39687,8 @@ Op8010:
 
 ;@ ---------- [8018] or.b (a0)+, d0 uses Op8018 ----------
 Op8018:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r0:
   and r2,r8,#0x000f
   ldr r0,[r7,r2,lsl #2]
@@ -39277,7 +39698,6 @@ Op8018:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -39302,6 +39722,8 @@ Op8018:
 
 ;@ ---------- [801f] or.b (a7)+, d0 uses Op801f ----------
 Op801f:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a7)+' into r0:
   ldr r0,[r7,#0x3c] ;@ A7
   add r3,r0,#2 ;@ Post-increment An
@@ -39310,7 +39732,6 @@ Op801f:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -39335,6 +39756,8 @@ Op801f:
 
 ;@ ---------- [8020] or.b -(a0), d0 uses Op8020 ----------
 Op8020:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -39345,7 +39768,6 @@ Op8020:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -39370,6 +39792,8 @@ Op8020:
 
 ;@ ---------- [8027] or.b -(a7), d0 uses Op8027 ----------
 Op8027:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a7)' into r0:
   ldr r0,[r7,#0x3c] ;@ A7
   sub r0,r0,#2 ;@ Pre-decrement An
@@ -39378,7 +39802,6 @@ Op8027:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -39403,6 +39826,8 @@ Op8027:
 
 ;@ ---------- [8028] or.b ($3333,a0), d0 uses Op8028 ----------
 Op8028:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -39412,7 +39837,6 @@ Op8028:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -39437,6 +39861,8 @@ Op8028:
 
 ;@ ---------- [8030] or.b ($33,a0,d3.w*2), d0 uses Op8030 ----------
 Op8030:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r0:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -39455,7 +39881,6 @@ Op8030:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -39480,13 +39905,14 @@ Op8030:
 
 ;@ ---------- [8038] or.b $3333.w, d0 uses Op8038 ----------
 Op8038:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -39511,6 +39937,8 @@ Op8038:
 
 ;@ ---------- [8039] or.b $33333333.l, d0 uses Op8039 ----------
 Op8039:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r0:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -39519,7 +39947,6 @@ Op8039:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -39544,6 +39971,8 @@ Op8039:
 
 ;@ ---------- [803a] or.b ($3333,pc), d0; =3335 uses Op803a ----------
 Op803a:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,pc)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   sub r0,r4,r0 ;@ Real PC
@@ -39553,7 +39982,6 @@ Op803a:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x80] ;@ Call fetch8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -39578,6 +40006,8 @@ Op803a:
 
 ;@ ---------- [803b] or.b ($33,pc,d3.w*2), d0; =35 uses Op803b ----------
 Op803b:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,pc,d3.w*2)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   ldrh r3,[r4] ;@ Get extension word
@@ -39595,7 +40025,6 @@ Op803b:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x80] ;@ Call fetch8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -39676,6 +40105,8 @@ Op8040:
 
 ;@ ---------- [8050] or.w (a0), d0 uses Op8050 ----------
 Op8050:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -39684,7 +40115,6 @@ Op8050:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -39710,6 +40140,8 @@ Op8050:
 
 ;@ ---------- [8058] or.w (a0)+, d0 uses Op8058 ----------
 Op8058:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r0:
   and r2,r8,#0x000f
   ldr r0,[r7,r2,lsl #2]
@@ -39719,7 +40151,6 @@ Op8058:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -39745,6 +40176,8 @@ Op8058:
 
 ;@ ---------- [8060] or.w -(a0), d0 uses Op8060 ----------
 Op8060:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -39755,7 +40188,6 @@ Op8060:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -39781,6 +40213,8 @@ Op8060:
 
 ;@ ---------- [8068] or.w ($3333,a0), d0 uses Op8068 ----------
 Op8068:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -39790,7 +40224,6 @@ Op8068:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -39816,6 +40249,8 @@ Op8068:
 
 ;@ ---------- [8070] or.w ($33,a0,d3.w*2), d0 uses Op8070 ----------
 Op8070:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r0:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -39834,7 +40269,6 @@ Op8070:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -39860,13 +40294,14 @@ Op8070:
 
 ;@ ---------- [8078] or.w $3333.w, d0 uses Op8078 ----------
 Op8078:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -39892,6 +40327,8 @@ Op8078:
 
 ;@ ---------- [8079] or.w $33333333.l, d0 uses Op8079 ----------
 Op8079:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r0:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -39900,7 +40337,6 @@ Op8079:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -39926,6 +40362,8 @@ Op8079:
 
 ;@ ---------- [807a] or.w ($3333,pc), d0; =3335 uses Op807a ----------
 Op807a:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,pc)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   sub r0,r4,r0 ;@ Real PC
@@ -39935,7 +40373,6 @@ Op807a:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -39961,6 +40398,8 @@ Op807a:
 
 ;@ ---------- [807b] or.w ($33,pc,d3.w*2), d0; =35 uses Op807b ----------
 Op807b:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,pc,d3.w*2)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   ldrh r3,[r4] ;@ Get extension word
@@ -39978,7 +40417,6 @@ Op807b:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -40058,6 +40496,8 @@ Op8080:
 
 ;@ ---------- [8090] or.l (a0), d0 uses Op8090 ----------
 Op8090:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -40066,7 +40506,6 @@ Op8090:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -40089,6 +40528,8 @@ Op8090:
 
 ;@ ---------- [8098] or.l (a0)+, d0 uses Op8098 ----------
 Op8098:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r0:
   and r2,r8,#0x000f
   ldr r0,[r7,r2,lsl #2]
@@ -40098,7 +40539,6 @@ Op8098:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -40121,6 +40561,8 @@ Op8098:
 
 ;@ ---------- [80a0] or.l -(a0), d0 uses Op80a0 ----------
 Op80a0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -40131,7 +40573,6 @@ Op80a0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -40154,6 +40595,8 @@ Op80a0:
 
 ;@ ---------- [80a8] or.l ($3333,a0), d0 uses Op80a8 ----------
 Op80a8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -40163,7 +40606,6 @@ Op80a8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -40186,6 +40628,8 @@ Op80a8:
 
 ;@ ---------- [80b0] or.l ($33,a0,d3.w*2), d0 uses Op80b0 ----------
 Op80b0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r0:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -40204,7 +40648,6 @@ Op80b0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -40227,13 +40670,14 @@ Op80b0:
 
 ;@ ---------- [80b8] or.l $3333.w, d0 uses Op80b8 ----------
 Op80b8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -40256,6 +40700,8 @@ Op80b8:
 
 ;@ ---------- [80b9] or.l $33333333.l, d0 uses Op80b9 ----------
 Op80b9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r0:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -40264,7 +40710,6 @@ Op80b9:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -40287,6 +40732,8 @@ Op80b9:
 
 ;@ ---------- [80ba] or.l ($3333,pc), d0; =3335 uses Op80ba ----------
 Op80ba:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,pc)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   sub r0,r4,r0 ;@ Real PC
@@ -40296,7 +40743,6 @@ Op80ba:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -40319,6 +40765,8 @@ Op80ba:
 
 ;@ ---------- [80bb] or.l ($33,pc,d3.w*2), d0; =35 uses Op80bb ----------
 Op80bb:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,pc,d3.w*2)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   ldrh r3,[r4] ;@ Get extension word
@@ -40336,7 +40784,6 @@ Op80bb:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -40450,6 +40897,8 @@ divzero80c0:
 
 ;@ ---------- [80d0] divu.w (a0), d0 uses Op80d0 ----------
 Op80d0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -40458,7 +40907,6 @@ Op80d0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -40519,6 +40967,8 @@ divzero80d0:
 
 ;@ ---------- [80d8] divu.w (a0)+, d0 uses Op80d8 ----------
 Op80d8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r0:
   and r2,r8,#0x000f
   ldr r0,[r7,r2,lsl #2]
@@ -40528,7 +40978,6 @@ Op80d8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -40589,6 +41038,8 @@ divzero80d8:
 
 ;@ ---------- [80e0] divu.w -(a0), d0 uses Op80e0 ----------
 Op80e0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -40599,7 +41050,6 @@ Op80e0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -40660,6 +41110,8 @@ divzero80e0:
 
 ;@ ---------- [80e8] divu.w ($3333,a0), d0 uses Op80e8 ----------
 Op80e8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -40669,7 +41121,6 @@ Op80e8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -40730,6 +41181,8 @@ divzero80e8:
 
 ;@ ---------- [80f0] divu.w ($33,a0,d3.w*2), d0 uses Op80f0 ----------
 Op80f0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r0:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -40748,7 +41201,6 @@ Op80f0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -40809,13 +41261,14 @@ divzero80f0:
 
 ;@ ---------- [80f8] divu.w $3333.w, d0 uses Op80f8 ----------
 Op80f8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -40876,6 +41329,8 @@ divzero80f8:
 
 ;@ ---------- [80f9] divu.w $33333333.l, d0 uses Op80f9 ----------
 Op80f9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r0:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -40884,7 +41339,6 @@ Op80f9:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -40945,6 +41399,8 @@ divzero80f9:
 
 ;@ ---------- [80fa] divu.w ($3333,pc), d0; =3335 uses Op80fa ----------
 Op80fa:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,pc)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   sub r0,r4,r0 ;@ Real PC
@@ -40954,7 +41410,6 @@ Op80fa:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -41015,6 +41470,8 @@ divzero80fa:
 
 ;@ ---------- [80fb] divu.w ($33,pc,d3.w*2), d0; =35 uses Op80fb ----------
 Op80fb:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,pc,d3.w*2)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   ldrh r3,[r4] ;@ Get extension word
@@ -41032,7 +41489,6 @@ Op80fb:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -41206,6 +41662,8 @@ Op8100:
 
 ;@ ---------- [8108] sbcd -(a0), -(a0) uses Op8108 ----------
 Op8108:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get src/dest EA vals
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
@@ -41216,7 +41674,6 @@ Op8108:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r6,r0
 
 ;@ EaCalc : Get '-(a0)' into r11:
@@ -41229,7 +41686,6 @@ Op8108:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   bic r10,r10,#0xb1000000 ;@ clear all flags except old Z
   ldr r1,[r7,#0x4c] ;@ Get X bit
@@ -41263,7 +41719,6 @@ Op8108:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldr r6,[r7,#0x54]
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -41273,6 +41728,8 @@ Op8108:
 
 ;@ ---------- [810f] sbcd -(a7), -(a0) uses Op810f ----------
 Op810f:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get src/dest EA vals
 ;@ EaCalc : Get '-(a7)' into r0:
   ldr r0,[r7,#0x3c] ;@ A7
@@ -41282,7 +41739,6 @@ Op810f:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r6,r0
 
 ;@ EaCalc : Get '-(a0)' into r11:
@@ -41295,7 +41751,6 @@ Op810f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   bic r10,r10,#0xb1000000 ;@ clear all flags except old Z
   ldr r1,[r7,#0x4c] ;@ Get X bit
@@ -41329,7 +41784,6 @@ Op810f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldr r6,[r7,#0x54]
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -41339,6 +41793,8 @@ Op810f:
 
 ;@ ---------- [8110] or.b d0, (a0) uses Op8110 ----------
 Op8110:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -41348,7 +41804,6 @@ Op8110:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -41368,7 +41823,6 @@ Op8110:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -41377,6 +41831,8 @@ Op8110:
 
 ;@ ---------- [8118] or.b d0, (a0)+ uses Op8118 ----------
 Op8118:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r11:
   and r2,r8,#0x000f
   ldr r11,[r7,r2,lsl #2]
@@ -41387,7 +41843,6 @@ Op8118:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -41407,7 +41862,6 @@ Op8118:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -41416,6 +41870,8 @@ Op8118:
 
 ;@ ---------- [811f] or.b d0, (a7)+ uses Op811f ----------
 Op811f:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a7)+' into r11:
   ldr r11,[r7,#0x3c] ;@ A7
   add r3,r11,#2 ;@ Post-increment An
@@ -41425,7 +41881,6 @@ Op811f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -41445,7 +41900,6 @@ Op811f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -41454,6 +41908,8 @@ Op811f:
 
 ;@ ---------- [8120] or.b d0, -(a0) uses Op8120 ----------
 Op8120:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -41465,7 +41921,6 @@ Op8120:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -41485,7 +41940,6 @@ Op8120:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -41494,6 +41948,8 @@ Op8120:
 
 ;@ ---------- [8127] or.b d0, -(a7) uses Op8127 ----------
 Op8127:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a7)' into r11:
   ldr r11,[r7,#0x3c] ;@ A7
   sub r11,r11,#2 ;@ Pre-decrement An
@@ -41503,7 +41959,6 @@ Op8127:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -41523,7 +41978,6 @@ Op8127:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -41532,6 +41986,8 @@ Op8127:
 
 ;@ ---------- [8128] or.b d0, ($3333,a0) uses Op8128 ----------
 Op8128:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r11:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -41542,7 +41998,6 @@ Op8128:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -41562,7 +42017,6 @@ Op8128:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -41571,6 +42025,8 @@ Op8128:
 
 ;@ ---------- [8130] or.b d0, ($33,a0,d3.w*2) uses Op8130 ----------
 Op8130:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r11:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -41590,7 +42046,6 @@ Op8130:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -41610,7 +42065,6 @@ Op8130:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -41619,6 +42073,8 @@ Op8130:
 
 ;@ ---------- [8138] or.b d0, $3333.w uses Op8138 ----------
 Op8138:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
@@ -41626,7 +42082,6 @@ Op8138:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -41646,7 +42101,6 @@ Op8138:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -41655,6 +42109,8 @@ Op8138:
 
 ;@ ---------- [8139] or.b d0, $33333333.l uses Op8139 ----------
 Op8139:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r11:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -41664,7 +42120,6 @@ Op8139:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -41684,7 +42139,6 @@ Op8139:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -41693,6 +42147,8 @@ Op8139:
 
 ;@ ---------- [8150] or.w d0, (a0) uses Op8150 ----------
 Op8150:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -41702,7 +42158,6 @@ Op8150:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -41722,7 +42177,6 @@ Op8150:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -41731,6 +42185,8 @@ Op8150:
 
 ;@ ---------- [8158] or.w d0, (a0)+ uses Op8158 ----------
 Op8158:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r11:
   and r2,r8,#0x000f
   ldr r11,[r7,r2,lsl #2]
@@ -41741,7 +42197,6 @@ Op8158:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -41761,7 +42216,6 @@ Op8158:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -41770,6 +42224,8 @@ Op8158:
 
 ;@ ---------- [8160] or.w d0, -(a0) uses Op8160 ----------
 Op8160:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -41781,7 +42237,6 @@ Op8160:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -41801,7 +42256,6 @@ Op8160:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -41810,6 +42264,8 @@ Op8160:
 
 ;@ ---------- [8168] or.w d0, ($3333,a0) uses Op8168 ----------
 Op8168:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r11:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -41820,7 +42276,6 @@ Op8168:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -41840,7 +42295,6 @@ Op8168:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -41849,6 +42303,8 @@ Op8168:
 
 ;@ ---------- [8170] or.w d0, ($33,a0,d3.w*2) uses Op8170 ----------
 Op8170:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r11:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -41868,7 +42324,6 @@ Op8170:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -41888,7 +42343,6 @@ Op8170:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -41897,6 +42351,8 @@ Op8170:
 
 ;@ ---------- [8178] or.w d0, $3333.w uses Op8178 ----------
 Op8178:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
@@ -41904,7 +42360,6 @@ Op8178:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -41924,7 +42379,6 @@ Op8178:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -41933,6 +42387,8 @@ Op8178:
 
 ;@ ---------- [8179] or.w d0, $33333333.l uses Op8179 ----------
 Op8179:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r11:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -41942,7 +42398,6 @@ Op8179:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -41962,7 +42417,6 @@ Op8179:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -41971,6 +42425,8 @@ Op8179:
 
 ;@ ---------- [8190] or.l d0, (a0) uses Op8190 ----------
 Op8190:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -41980,7 +42436,6 @@ Op8190:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -41997,7 +42452,6 @@ Op8190:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -42006,6 +42460,8 @@ Op8190:
 
 ;@ ---------- [8198] or.l d0, (a0)+ uses Op8198 ----------
 Op8198:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r11:
   and r2,r8,#0x000f
   ldr r11,[r7,r2,lsl #2]
@@ -42016,7 +42472,6 @@ Op8198:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -42033,7 +42488,6 @@ Op8198:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -42042,6 +42496,8 @@ Op8198:
 
 ;@ ---------- [81a0] or.l d0, -(a0) uses Op81a0 ----------
 Op81a0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -42053,7 +42509,6 @@ Op81a0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -42070,7 +42525,6 @@ Op81a0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -42079,6 +42533,8 @@ Op81a0:
 
 ;@ ---------- [81a8] or.l d0, ($3333,a0) uses Op81a8 ----------
 Op81a8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r11:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -42089,7 +42545,6 @@ Op81a8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -42106,7 +42561,6 @@ Op81a8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -42115,6 +42569,8 @@ Op81a8:
 
 ;@ ---------- [81b0] or.l d0, ($33,a0,d3.w*2) uses Op81b0 ----------
 Op81b0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r11:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -42134,7 +42590,6 @@ Op81b0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -42151,7 +42606,6 @@ Op81b0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#26 ;@ Subtract cycles
@@ -42160,6 +42614,8 @@ Op81b0:
 
 ;@ ---------- [81b8] or.l d0, $3333.w uses Op81b8 ----------
 Op81b8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
@@ -42167,7 +42623,6 @@ Op81b8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -42184,7 +42639,6 @@ Op81b8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -42193,6 +42647,8 @@ Op81b8:
 
 ;@ ---------- [81b9] or.l d0, $33333333.l uses Op81b9 ----------
 Op81b9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r11:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -42202,7 +42658,6 @@ Op81b9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -42219,7 +42674,6 @@ Op81b9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -42312,6 +42766,8 @@ divzero81c0:
 
 ;@ ---------- [81d0] divs.w (a0), d0 uses Op81d0 ----------
 Op81d0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -42320,7 +42776,6 @@ Op81d0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -42401,6 +42856,8 @@ divzero81d0:
 
 ;@ ---------- [81d8] divs.w (a0)+, d0 uses Op81d8 ----------
 Op81d8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r0:
   and r2,r8,#0x000f
   ldr r0,[r7,r2,lsl #2]
@@ -42410,7 +42867,6 @@ Op81d8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -42491,6 +42947,8 @@ divzero81d8:
 
 ;@ ---------- [81e0] divs.w -(a0), d0 uses Op81e0 ----------
 Op81e0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -42501,7 +42959,6 @@ Op81e0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -42582,6 +43039,8 @@ divzero81e0:
 
 ;@ ---------- [81e8] divs.w ($3333,a0), d0 uses Op81e8 ----------
 Op81e8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -42591,7 +43050,6 @@ Op81e8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -42672,6 +43130,8 @@ divzero81e8:
 
 ;@ ---------- [81f0] divs.w ($33,a0,d3.w*2), d0 uses Op81f0 ----------
 Op81f0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r0:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -42690,7 +43150,6 @@ Op81f0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -42771,13 +43230,14 @@ divzero81f0:
 
 ;@ ---------- [81f8] divs.w $3333.w, d0 uses Op81f8 ----------
 Op81f8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -42858,6 +43318,8 @@ divzero81f8:
 
 ;@ ---------- [81f9] divs.w $33333333.l, d0 uses Op81f9 ----------
 Op81f9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r0:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -42866,7 +43328,6 @@ Op81f9:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -42947,6 +43408,8 @@ divzero81f9:
 
 ;@ ---------- [81fa] divs.w ($3333,pc), d0; =3335 uses Op81fa ----------
 Op81fa:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,pc)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   sub r0,r4,r0 ;@ Real PC
@@ -42956,7 +43419,6 @@ Op81fa:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -43037,6 +43499,8 @@ divzero81fa:
 
 ;@ ---------- [81fb] divs.w ($33,pc,d3.w*2), d0; =35 uses Op81fb ----------
 Op81fb:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,pc,d3.w*2)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   ldrh r3,[r4] ;@ Get extension word
@@ -43054,7 +43518,6 @@ Op81fb:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -43218,6 +43681,8 @@ divzero81fc:
 
 ;@ ---------- [8f08] sbcd -(a0), -(a7) uses Op8f08 ----------
 Op8f08:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get src/dest EA vals
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
@@ -43228,7 +43693,6 @@ Op8f08:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r6,r0
 
 ;@ EaCalc : Get '-(a7)' into r11:
@@ -43239,7 +43703,6 @@ Op8f08:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   bic r10,r10,#0xb1000000 ;@ clear all flags except old Z
   ldr r1,[r7,#0x4c] ;@ Get X bit
@@ -43273,7 +43736,6 @@ Op8f08:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldr r6,[r7,#0x54]
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -43283,6 +43745,8 @@ Op8f08:
 
 ;@ ---------- [8f0f] sbcd -(a7), -(a7) uses Op8f0f ----------
 Op8f0f:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get src/dest EA vals
 ;@ EaCalc : Get '-(a7)' into r0:
   ldr r0,[r7,#0x3c] ;@ A7
@@ -43292,7 +43756,6 @@ Op8f0f:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r6,r0
 
 ;@ EaCalc : Get '-(a7)' into r11:
@@ -43303,7 +43766,6 @@ Op8f0f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   bic r10,r10,#0xb1000000 ;@ clear all flags except old Z
   ldr r1,[r7,#0x4c] ;@ Get X bit
@@ -43337,7 +43799,6 @@ Op8f0f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldr r6,[r7,#0x54]
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -43376,6 +43837,8 @@ Op9000:
 
 ;@ ---------- [9010] sub.b (a0), d0 uses Op9010 ----------
 Op9010:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -43384,7 +43847,6 @@ Op9010:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -43410,6 +43872,8 @@ Op9010:
 
 ;@ ---------- [9018] sub.b (a0)+, d0 uses Op9018 ----------
 Op9018:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r0:
   and r2,r8,#0x000f
   ldr r0,[r7,r2,lsl #2]
@@ -43419,7 +43883,6 @@ Op9018:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -43445,6 +43908,8 @@ Op9018:
 
 ;@ ---------- [901f] sub.b (a7)+, d0 uses Op901f ----------
 Op901f:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a7)+' into r0:
   ldr r0,[r7,#0x3c] ;@ A7
   add r3,r0,#2 ;@ Post-increment An
@@ -43453,7 +43918,6 @@ Op901f:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -43479,6 +43943,8 @@ Op901f:
 
 ;@ ---------- [9020] sub.b -(a0), d0 uses Op9020 ----------
 Op9020:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -43489,7 +43955,6 @@ Op9020:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -43515,6 +43980,8 @@ Op9020:
 
 ;@ ---------- [9027] sub.b -(a7), d0 uses Op9027 ----------
 Op9027:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a7)' into r0:
   ldr r0,[r7,#0x3c] ;@ A7
   sub r0,r0,#2 ;@ Pre-decrement An
@@ -43523,7 +43990,6 @@ Op9027:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -43549,6 +44015,8 @@ Op9027:
 
 ;@ ---------- [9028] sub.b ($3333,a0), d0 uses Op9028 ----------
 Op9028:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -43558,7 +44026,6 @@ Op9028:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -43584,6 +44051,8 @@ Op9028:
 
 ;@ ---------- [9030] sub.b ($33,a0,d3.w*2), d0 uses Op9030 ----------
 Op9030:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r0:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -43602,7 +44071,6 @@ Op9030:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -43628,13 +44096,14 @@ Op9030:
 
 ;@ ---------- [9038] sub.b $3333.w, d0 uses Op9038 ----------
 Op9038:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -43660,6 +44129,8 @@ Op9038:
 
 ;@ ---------- [9039] sub.b $33333333.l, d0 uses Op9039 ----------
 Op9039:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r0:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -43668,7 +44139,6 @@ Op9039:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -43694,6 +44164,8 @@ Op9039:
 
 ;@ ---------- [903a] sub.b ($3333,pc), d0; =3335 uses Op903a ----------
 Op903a:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,pc)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   sub r0,r4,r0 ;@ Real PC
@@ -43703,7 +44175,6 @@ Op903a:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x80] ;@ Call fetch8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -43729,6 +44200,8 @@ Op903a:
 
 ;@ ---------- [903b] sub.b ($33,pc,d3.w*2), d0; =35 uses Op903b ----------
 Op903b:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,pc,d3.w*2)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   ldrh r3,[r4] ;@ Get extension word
@@ -43746,7 +44219,6 @@ Op903b:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x80] ;@ Call fetch8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -43830,6 +44302,8 @@ Op9040:
 
 ;@ ---------- [9050] sub.w (a0), d0 uses Op9050 ----------
 Op9050:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -43838,7 +44312,6 @@ Op9050:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -43865,6 +44338,8 @@ Op9050:
 
 ;@ ---------- [9058] sub.w (a0)+, d0 uses Op9058 ----------
 Op9058:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r0:
   and r2,r8,#0x000f
   ldr r0,[r7,r2,lsl #2]
@@ -43874,7 +44349,6 @@ Op9058:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -43901,6 +44375,8 @@ Op9058:
 
 ;@ ---------- [9060] sub.w -(a0), d0 uses Op9060 ----------
 Op9060:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -43911,7 +44387,6 @@ Op9060:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -43938,6 +44413,8 @@ Op9060:
 
 ;@ ---------- [9068] sub.w ($3333,a0), d0 uses Op9068 ----------
 Op9068:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -43947,7 +44424,6 @@ Op9068:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -43974,6 +44450,8 @@ Op9068:
 
 ;@ ---------- [9070] sub.w ($33,a0,d3.w*2), d0 uses Op9070 ----------
 Op9070:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r0:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -43992,7 +44470,6 @@ Op9070:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -44019,13 +44496,14 @@ Op9070:
 
 ;@ ---------- [9078] sub.w $3333.w, d0 uses Op9078 ----------
 Op9078:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -44052,6 +44530,8 @@ Op9078:
 
 ;@ ---------- [9079] sub.w $33333333.l, d0 uses Op9079 ----------
 Op9079:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r0:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -44060,7 +44540,6 @@ Op9079:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -44087,6 +44566,8 @@ Op9079:
 
 ;@ ---------- [907a] sub.w ($3333,pc), d0; =3335 uses Op907a ----------
 Op907a:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,pc)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   sub r0,r4,r0 ;@ Real PC
@@ -44096,7 +44577,6 @@ Op907a:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -44123,6 +44603,8 @@ Op907a:
 
 ;@ ---------- [907b] sub.w ($33,pc,d3.w*2), d0; =35 uses Op907b ----------
 Op907b:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,pc,d3.w*2)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   ldrh r3,[r4] ;@ Get extension word
@@ -44140,7 +44622,6 @@ Op907b:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -44223,6 +44704,8 @@ Op9080:
 
 ;@ ---------- [9090] sub.l (a0), d0 uses Op9090 ----------
 Op9090:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -44231,7 +44714,6 @@ Op9090:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -44255,6 +44737,8 @@ Op9090:
 
 ;@ ---------- [9098] sub.l (a0)+, d0 uses Op9098 ----------
 Op9098:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r0:
   and r2,r8,#0x000f
   ldr r0,[r7,r2,lsl #2]
@@ -44264,7 +44748,6 @@ Op9098:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -44288,6 +44771,8 @@ Op9098:
 
 ;@ ---------- [90a0] sub.l -(a0), d0 uses Op90a0 ----------
 Op90a0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -44298,7 +44783,6 @@ Op90a0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -44322,6 +44806,8 @@ Op90a0:
 
 ;@ ---------- [90a8] sub.l ($3333,a0), d0 uses Op90a8 ----------
 Op90a8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -44331,7 +44817,6 @@ Op90a8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -44355,6 +44840,8 @@ Op90a8:
 
 ;@ ---------- [90b0] sub.l ($33,a0,d3.w*2), d0 uses Op90b0 ----------
 Op90b0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r0:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -44373,7 +44860,6 @@ Op90b0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -44397,13 +44883,14 @@ Op90b0:
 
 ;@ ---------- [90b8] sub.l $3333.w, d0 uses Op90b8 ----------
 Op90b8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -44427,6 +44914,8 @@ Op90b8:
 
 ;@ ---------- [90b9] sub.l $33333333.l, d0 uses Op90b9 ----------
 Op90b9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r0:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -44435,7 +44924,6 @@ Op90b9:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -44459,6 +44947,8 @@ Op90b9:
 
 ;@ ---------- [90ba] sub.l ($3333,pc), d0; =3335 uses Op90ba ----------
 Op90ba:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,pc)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   sub r0,r4,r0 ;@ Real PC
@@ -44468,7 +44958,6 @@ Op90ba:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -44492,6 +44981,8 @@ Op90ba:
 
 ;@ ---------- [90bb] sub.l ($33,pc,d3.w*2), d0; =35 uses Op90bb ----------
 Op90bb:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,pc,d3.w*2)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   ldrh r3,[r4] ;@ Get extension word
@@ -44509,7 +45000,6 @@ Op90bb:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -44585,6 +45075,8 @@ Op90c0:
 
 ;@ ---------- [90d0] suba.w (a0), a0 uses Op90d0 ----------
 Op90d0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -44593,7 +45085,6 @@ Op90d0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -44614,6 +45105,8 @@ Op90d0:
 
 ;@ ---------- [90d8] suba.w (a0)+, a0 uses Op90d8 ----------
 Op90d8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r0:
   and r2,r8,#0x000f
   ldr r0,[r7,r2,lsl #2]
@@ -44623,7 +45116,6 @@ Op90d8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -44644,6 +45136,8 @@ Op90d8:
 
 ;@ ---------- [90e0] suba.w -(a0), a0 uses Op90e0 ----------
 Op90e0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -44654,7 +45148,6 @@ Op90e0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -44675,6 +45168,8 @@ Op90e0:
 
 ;@ ---------- [90e8] suba.w ($3333,a0), a0 uses Op90e8 ----------
 Op90e8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -44684,7 +45179,6 @@ Op90e8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -44705,6 +45199,8 @@ Op90e8:
 
 ;@ ---------- [90f0] suba.w ($33,a0,d3.w*2), a0 uses Op90f0 ----------
 Op90f0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r0:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -44723,7 +45219,6 @@ Op90f0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -44744,13 +45239,14 @@ Op90f0:
 
 ;@ ---------- [90f8] suba.w $3333.w, a0 uses Op90f8 ----------
 Op90f8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -44771,6 +45267,8 @@ Op90f8:
 
 ;@ ---------- [90f9] suba.w $33333333.l, a0 uses Op90f9 ----------
 Op90f9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r0:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -44779,7 +45277,6 @@ Op90f9:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -44800,6 +45297,8 @@ Op90f9:
 
 ;@ ---------- [90fa] suba.w ($3333,pc), a0; =3335 uses Op90fa ----------
 Op90fa:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,pc)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   sub r0,r4,r0 ;@ Real PC
@@ -44809,7 +45308,6 @@ Op90fa:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -44830,6 +45328,8 @@ Op90fa:
 
 ;@ ---------- [90fb] suba.w ($33,pc,d3.w*2), a0; =35 uses Op90fb ----------
 Op90fb:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,pc,d3.w*2)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   ldrh r3,[r4] ;@ Get extension word
@@ -44847,7 +45347,6 @@ Op90fb:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -44932,6 +45431,8 @@ Op9100:
 
 ;@ ---------- [9108] subx.b -(a0), -(a0) uses Op9108 ----------
 Op9108:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get src/dest EA vals
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
@@ -44942,7 +45443,6 @@ Op9108:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r6,r0,asl #24
 
 ;@ EaCalc : Get '-(a0)' into r11:
@@ -44954,7 +45454,6 @@ Op9108:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
 ;@ Get X bit:
@@ -44977,7 +45476,6 @@ Op9108:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldr r6,[r7,#0x54]
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -44987,6 +45485,8 @@ Op9108:
 
 ;@ ---------- [910f] subx.b -(a7), -(a0) uses Op910f ----------
 Op910f:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get src/dest EA vals
 ;@ EaCalc : Get '-(a7)' into r0:
   ldr r0,[r7,#0x3c] ;@ A7
@@ -44996,7 +45496,6 @@ Op910f:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r6,r0,asl #24
 
 ;@ EaCalc : Get '-(a0)' into r11:
@@ -45008,7 +45507,6 @@ Op910f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
 ;@ Get X bit:
@@ -45031,7 +45529,6 @@ Op910f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldr r6,[r7,#0x54]
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -45041,6 +45538,8 @@ Op910f:
 
 ;@ ---------- [9110] sub.b d0, (a0) uses Op9110 ----------
 Op9110:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -45050,7 +45549,6 @@ Op9110:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -45071,7 +45569,6 @@ Op9110:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -45080,6 +45577,8 @@ Op9110:
 
 ;@ ---------- [9118] sub.b d0, (a0)+ uses Op9118 ----------
 Op9118:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r11:
   and r2,r8,#0x000f
   ldr r11,[r7,r2,lsl #2]
@@ -45090,7 +45589,6 @@ Op9118:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -45111,7 +45609,6 @@ Op9118:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -45120,6 +45617,8 @@ Op9118:
 
 ;@ ---------- [911f] sub.b d0, (a7)+ uses Op911f ----------
 Op911f:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a7)+' into r11:
   ldr r11,[r7,#0x3c] ;@ A7
   add r3,r11,#2 ;@ Post-increment An
@@ -45129,7 +45628,6 @@ Op911f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -45150,7 +45648,6 @@ Op911f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -45159,6 +45656,8 @@ Op911f:
 
 ;@ ---------- [9120] sub.b d0, -(a0) uses Op9120 ----------
 Op9120:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -45170,7 +45669,6 @@ Op9120:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -45191,7 +45689,6 @@ Op9120:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -45200,6 +45697,8 @@ Op9120:
 
 ;@ ---------- [9127] sub.b d0, -(a7) uses Op9127 ----------
 Op9127:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a7)' into r11:
   ldr r11,[r7,#0x3c] ;@ A7
   sub r11,r11,#2 ;@ Pre-decrement An
@@ -45209,7 +45708,6 @@ Op9127:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -45230,7 +45728,6 @@ Op9127:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -45239,6 +45736,8 @@ Op9127:
 
 ;@ ---------- [9128] sub.b d0, ($3333,a0) uses Op9128 ----------
 Op9128:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r11:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -45249,7 +45748,6 @@ Op9128:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -45270,7 +45768,6 @@ Op9128:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -45279,6 +45776,8 @@ Op9128:
 
 ;@ ---------- [9130] sub.b d0, ($33,a0,d3.w*2) uses Op9130 ----------
 Op9130:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r11:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -45298,7 +45797,6 @@ Op9130:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -45319,7 +45817,6 @@ Op9130:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -45328,6 +45825,8 @@ Op9130:
 
 ;@ ---------- [9138] sub.b d0, $3333.w uses Op9138 ----------
 Op9138:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
@@ -45335,7 +45834,6 @@ Op9138:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -45356,7 +45854,6 @@ Op9138:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -45365,6 +45862,8 @@ Op9138:
 
 ;@ ---------- [9139] sub.b d0, $33333333.l uses Op9139 ----------
 Op9139:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r11:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -45374,7 +45873,6 @@ Op9139:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -45395,7 +45893,6 @@ Op9139:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -45446,6 +45943,8 @@ Op9140:
 
 ;@ ---------- [9148] subx.w -(a0), -(a0) uses Op9148 ----------
 Op9148:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get src/dest EA vals
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
@@ -45456,7 +45955,6 @@ Op9148:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r6,r0,asl #16
 
 ;@ EaCalc : Get '-(a0)' into r11:
@@ -45468,7 +45966,6 @@ Op9148:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
 ;@ Get X bit:
@@ -45491,7 +45988,6 @@ Op9148:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldr r6,[r7,#0x54]
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -45501,6 +45997,8 @@ Op9148:
 
 ;@ ---------- [9150] sub.w d0, (a0) uses Op9150 ----------
 Op9150:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -45510,7 +46008,6 @@ Op9150:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -45531,7 +46028,6 @@ Op9150:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -45540,6 +46036,8 @@ Op9150:
 
 ;@ ---------- [9158] sub.w d0, (a0)+ uses Op9158 ----------
 Op9158:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r11:
   and r2,r8,#0x000f
   ldr r11,[r7,r2,lsl #2]
@@ -45550,7 +46048,6 @@ Op9158:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -45571,7 +46068,6 @@ Op9158:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -45580,6 +46076,8 @@ Op9158:
 
 ;@ ---------- [9160] sub.w d0, -(a0) uses Op9160 ----------
 Op9160:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -45591,7 +46089,6 @@ Op9160:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -45612,7 +46109,6 @@ Op9160:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -45621,6 +46117,8 @@ Op9160:
 
 ;@ ---------- [9168] sub.w d0, ($3333,a0) uses Op9168 ----------
 Op9168:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r11:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -45631,7 +46129,6 @@ Op9168:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -45652,7 +46149,6 @@ Op9168:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -45661,6 +46157,8 @@ Op9168:
 
 ;@ ---------- [9170] sub.w d0, ($33,a0,d3.w*2) uses Op9170 ----------
 Op9170:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r11:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -45680,7 +46178,6 @@ Op9170:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -45701,7 +46198,6 @@ Op9170:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -45710,6 +46206,8 @@ Op9170:
 
 ;@ ---------- [9178] sub.w d0, $3333.w uses Op9178 ----------
 Op9178:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
@@ -45717,7 +46215,6 @@ Op9178:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -45738,7 +46235,6 @@ Op9178:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -45747,6 +46243,8 @@ Op9178:
 
 ;@ ---------- [9179] sub.w d0, $33333333.l uses Op9179 ----------
 Op9179:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r11:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -45756,7 +46254,6 @@ Op9179:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -45777,7 +46274,6 @@ Op9179:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -45822,6 +46318,8 @@ Op9180:
 
 ;@ ---------- [9188] subx.l -(a0), -(a0) uses Op9188 ----------
 Op9188:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get src/dest EA vals
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
@@ -45832,7 +46330,6 @@ Op9188:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r6,r0
 
 ;@ EaCalc : Get '-(a0)' into r11:
@@ -45844,7 +46341,6 @@ Op9188:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
 ;@ Get X bit:
@@ -45864,7 +46360,6 @@ Op9188:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldr r6,[r7,#0x54]
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -45874,6 +46369,8 @@ Op9188:
 
 ;@ ---------- [9190] sub.l d0, (a0) uses Op9190 ----------
 Op9190:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -45883,7 +46380,6 @@ Op9190:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -45901,7 +46397,6 @@ Op9190:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -45910,6 +46405,8 @@ Op9190:
 
 ;@ ---------- [9198] sub.l d0, (a0)+ uses Op9198 ----------
 Op9198:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r11:
   and r2,r8,#0x000f
   ldr r11,[r7,r2,lsl #2]
@@ -45920,7 +46417,6 @@ Op9198:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -45938,7 +46434,6 @@ Op9198:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -45947,6 +46442,8 @@ Op9198:
 
 ;@ ---------- [91a0] sub.l d0, -(a0) uses Op91a0 ----------
 Op91a0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -45958,7 +46455,6 @@ Op91a0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -45976,7 +46472,6 @@ Op91a0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -45985,6 +46480,8 @@ Op91a0:
 
 ;@ ---------- [91a8] sub.l d0, ($3333,a0) uses Op91a8 ----------
 Op91a8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r11:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -45995,7 +46492,6 @@ Op91a8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -46013,7 +46509,6 @@ Op91a8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -46022,6 +46517,8 @@ Op91a8:
 
 ;@ ---------- [91b0] sub.l d0, ($33,a0,d3.w*2) uses Op91b0 ----------
 Op91b0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r11:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -46041,7 +46538,6 @@ Op91b0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -46059,7 +46555,6 @@ Op91b0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#26 ;@ Subtract cycles
@@ -46068,6 +46563,8 @@ Op91b0:
 
 ;@ ---------- [91b8] sub.l d0, $3333.w uses Op91b8 ----------
 Op91b8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
@@ -46075,7 +46572,6 @@ Op91b8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -46093,7 +46589,6 @@ Op91b8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -46102,6 +46597,8 @@ Op91b8:
 
 ;@ ---------- [91b9] sub.l d0, $33333333.l uses Op91b9 ----------
 Op91b9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r11:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -46111,7 +46608,6 @@ Op91b9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -46129,7 +46625,6 @@ Op91b9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -46160,6 +46655,8 @@ Op91c0:
 
 ;@ ---------- [91d0] suba.l (a0), a0 uses Op91d0 ----------
 Op91d0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -46168,7 +46665,6 @@ Op91d0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -46187,6 +46683,8 @@ Op91d0:
 
 ;@ ---------- [91d8] suba.l (a0)+, a0 uses Op91d8 ----------
 Op91d8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r0:
   and r2,r8,#0x000f
   ldr r0,[r7,r2,lsl #2]
@@ -46196,7 +46694,6 @@ Op91d8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -46215,6 +46712,8 @@ Op91d8:
 
 ;@ ---------- [91e0] suba.l -(a0), a0 uses Op91e0 ----------
 Op91e0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -46225,7 +46724,6 @@ Op91e0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -46244,6 +46742,8 @@ Op91e0:
 
 ;@ ---------- [91e8] suba.l ($3333,a0), a0 uses Op91e8 ----------
 Op91e8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -46253,7 +46753,6 @@ Op91e8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -46272,6 +46771,8 @@ Op91e8:
 
 ;@ ---------- [91f0] suba.l ($33,a0,d3.w*2), a0 uses Op91f0 ----------
 Op91f0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r0:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -46290,7 +46791,6 @@ Op91f0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -46309,13 +46809,14 @@ Op91f0:
 
 ;@ ---------- [91f8] suba.l $3333.w, a0 uses Op91f8 ----------
 Op91f8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -46334,6 +46835,8 @@ Op91f8:
 
 ;@ ---------- [91f9] suba.l $33333333.l, a0 uses Op91f9 ----------
 Op91f9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r0:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -46342,7 +46845,6 @@ Op91f9:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -46361,6 +46863,8 @@ Op91f9:
 
 ;@ ---------- [91fa] suba.l ($3333,pc), a0; =3335 uses Op91fa ----------
 Op91fa:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,pc)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   sub r0,r4,r0 ;@ Real PC
@@ -46370,7 +46874,6 @@ Op91fa:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -46389,6 +46892,8 @@ Op91fa:
 
 ;@ ---------- [91fb] suba.l ($33,pc,d3.w*2), a0; =35 uses Op91fb ----------
 Op91fb:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,pc,d3.w*2)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   ldrh r3,[r4] ;@ Get extension word
@@ -46406,7 +46911,6 @@ Op91fb:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -46448,6 +46952,8 @@ Op91fc:
 
 ;@ ---------- [9f08] subx.b -(a0), -(a7) uses Op9f08 ----------
 Op9f08:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get src/dest EA vals
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
@@ -46458,7 +46964,6 @@ Op9f08:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r6,r0,asl #24
 
 ;@ EaCalc : Get '-(a7)' into r11:
@@ -46469,7 +46974,6 @@ Op9f08:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
 ;@ Get X bit:
@@ -46492,7 +46996,6 @@ Op9f08:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldr r6,[r7,#0x54]
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -46502,6 +47005,8 @@ Op9f08:
 
 ;@ ---------- [9f0f] subx.b -(a7), -(a7) uses Op9f0f ----------
 Op9f0f:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get src/dest EA vals
 ;@ EaCalc : Get '-(a7)' into r0:
   ldr r0,[r7,#0x3c] ;@ A7
@@ -46511,7 +47016,6 @@ Op9f0f:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r6,r0,asl #24
 
 ;@ EaCalc : Get '-(a7)' into r11:
@@ -46522,7 +47026,6 @@ Op9f0f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
 ;@ Get X bit:
@@ -46545,7 +47048,6 @@ Op9f0f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldr r6,[r7,#0x54]
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -46581,6 +47083,8 @@ Opb000:
 
 ;@ ---------- [b010] cmp.b (a0), d0 uses Opb010 ----------
 Opb010:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get EA into r11 and value into r0:
 ;@ EaCalc : Get '(a0)' into r0:
   and r2,r8,#0x000f
@@ -46590,7 +47094,6 @@ Opb010:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -46612,6 +47115,8 @@ Opb010:
 
 ;@ ---------- [b018] cmp.b (a0)+, d0 uses Opb018 ----------
 Opb018:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get EA into r11 and value into r0:
 ;@ EaCalc : Get '(a0)+' into r0:
   and r2,r8,#0x000f
@@ -46622,7 +47127,6 @@ Opb018:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -46644,6 +47148,8 @@ Opb018:
 
 ;@ ---------- [b01f] cmp.b (a7)+, d0 uses Opb01f ----------
 Opb01f:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get EA into r11 and value into r0:
 ;@ EaCalc : Get '(a7)+' into r0:
   ldr r0,[r7,#0x3c] ;@ A7
@@ -46653,7 +47159,6 @@ Opb01f:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -46675,6 +47180,8 @@ Opb01f:
 
 ;@ ---------- [b020] cmp.b -(a0), d0 uses Opb020 ----------
 Opb020:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get EA into r11 and value into r0:
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
@@ -46686,7 +47193,6 @@ Opb020:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -46708,6 +47214,8 @@ Opb020:
 
 ;@ ---------- [b027] cmp.b -(a7), d0 uses Opb027 ----------
 Opb027:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get EA into r11 and value into r0:
 ;@ EaCalc : Get '-(a7)' into r0:
   ldr r0,[r7,#0x3c] ;@ A7
@@ -46717,7 +47225,6 @@ Opb027:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -46739,6 +47246,8 @@ Opb027:
 
 ;@ ---------- [b028] cmp.b ($3333,a0), d0 uses Opb028 ----------
 Opb028:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get EA into r11 and value into r0:
 ;@ EaCalc : Get '($3333,a0)' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch offset
@@ -46749,7 +47258,6 @@ Opb028:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -46771,6 +47279,8 @@ Opb028:
 
 ;@ ---------- [b030] cmp.b ($33,a0,d3.w*2), d0 uses Opb030 ----------
 Opb030:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get EA into r11 and value into r0:
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r0:
 ;@ Get extension word into r3:
@@ -46790,7 +47300,6 @@ Opb030:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -46812,6 +47321,8 @@ Opb030:
 
 ;@ ---------- [b039] cmp.b $33333333.l, d0 uses Opb039 ----------
 Opb039:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get EA into r11 and value into r0:
 ;@ EaCalc : Get '$33333333.l' into r0:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
@@ -46821,7 +47332,6 @@ Opb039:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -46843,6 +47353,8 @@ Opb039:
 
 ;@ ---------- [b03a] cmp.b ($3333,pc), d0; =3335 uses Opb03a ----------
 Opb03a:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get EA into r11 and value into r0:
 ;@ EaCalc : Get '($3333,pc)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
@@ -46853,7 +47365,6 @@ Opb03a:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x80] ;@ Call fetch8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -46875,6 +47386,8 @@ Opb03a:
 
 ;@ ---------- [b03b] cmp.b ($33,pc,d3.w*2), d0; =35 uses Opb03b ----------
 Opb03b:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get EA into r11 and value into r0:
 ;@ EaCalc : Get '($33,pc,d3.w*2)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
@@ -46893,7 +47406,6 @@ Opb03b:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x80] ;@ Call fetch8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -46966,6 +47478,8 @@ Opb040:
 
 ;@ ---------- [b050] cmp.w (a0), d0 uses Opb050 ----------
 Opb050:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get EA into r11 and value into r0:
 ;@ EaCalc : Get '(a0)' into r0:
   and r2,r8,#0x000f
@@ -46975,7 +47489,6 @@ Opb050:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -46997,6 +47510,8 @@ Opb050:
 
 ;@ ---------- [b058] cmp.w (a0)+, d0 uses Opb058 ----------
 Opb058:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get EA into r11 and value into r0:
 ;@ EaCalc : Get '(a0)+' into r0:
   and r2,r8,#0x000f
@@ -47007,7 +47522,6 @@ Opb058:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -47029,6 +47543,8 @@ Opb058:
 
 ;@ ---------- [b060] cmp.w -(a0), d0 uses Opb060 ----------
 Opb060:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get EA into r11 and value into r0:
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
@@ -47040,7 +47556,6 @@ Opb060:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -47062,6 +47577,8 @@ Opb060:
 
 ;@ ---------- [b068] cmp.w ($3333,a0), d0 uses Opb068 ----------
 Opb068:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get EA into r11 and value into r0:
 ;@ EaCalc : Get '($3333,a0)' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch offset
@@ -47072,7 +47589,6 @@ Opb068:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -47094,6 +47610,8 @@ Opb068:
 
 ;@ ---------- [b070] cmp.w ($33,a0,d3.w*2), d0 uses Opb070 ----------
 Opb070:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get EA into r11 and value into r0:
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r0:
 ;@ Get extension word into r3:
@@ -47113,7 +47631,6 @@ Opb070:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -47135,6 +47652,8 @@ Opb070:
 
 ;@ ---------- [b078] cmp.w $3333.w, d0 uses Opb078 ----------
 Opb078:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get EA into r11 and value into r0:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
@@ -47142,7 +47661,6 @@ Opb078:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -47164,6 +47682,8 @@ Opb078:
 
 ;@ ---------- [b079] cmp.w $33333333.l, d0 uses Opb079 ----------
 Opb079:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get EA into r11 and value into r0:
 ;@ EaCalc : Get '$33333333.l' into r0:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
@@ -47173,7 +47693,6 @@ Opb079:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -47195,6 +47714,8 @@ Opb079:
 
 ;@ ---------- [b07a] cmp.w ($3333,pc), d0; =3335 uses Opb07a ----------
 Opb07a:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get EA into r11 and value into r0:
 ;@ EaCalc : Get '($3333,pc)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
@@ -47205,7 +47726,6 @@ Opb07a:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -47227,6 +47747,8 @@ Opb07a:
 
 ;@ ---------- [b07b] cmp.w ($33,pc,d3.w*2), d0; =35 uses Opb07b ----------
 Opb07b:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get EA into r11 and value into r0:
 ;@ EaCalc : Get '($33,pc,d3.w*2)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
@@ -47245,7 +47767,6 @@ Opb07b:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -47316,6 +47837,8 @@ Opb080:
 
 ;@ ---------- [b090] cmp.l (a0), d0 uses Opb090 ----------
 Opb090:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get EA into r11 and value into r0:
 ;@ EaCalc : Get '(a0)' into r0:
   and r2,r8,#0x000f
@@ -47325,7 +47848,6 @@ Opb090:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -47345,6 +47867,8 @@ Opb090:
 
 ;@ ---------- [b098] cmp.l (a0)+, d0 uses Opb098 ----------
 Opb098:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get EA into r11 and value into r0:
 ;@ EaCalc : Get '(a0)+' into r0:
   and r2,r8,#0x000f
@@ -47355,7 +47879,6 @@ Opb098:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -47375,6 +47898,8 @@ Opb098:
 
 ;@ ---------- [b0a0] cmp.l -(a0), d0 uses Opb0a0 ----------
 Opb0a0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get EA into r11 and value into r0:
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
@@ -47386,7 +47911,6 @@ Opb0a0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -47406,6 +47930,8 @@ Opb0a0:
 
 ;@ ---------- [b0a8] cmp.l ($3333,a0), d0 uses Opb0a8 ----------
 Opb0a8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get EA into r11 and value into r0:
 ;@ EaCalc : Get '($3333,a0)' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch offset
@@ -47416,7 +47942,6 @@ Opb0a8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -47436,6 +47961,8 @@ Opb0a8:
 
 ;@ ---------- [b0b0] cmp.l ($33,a0,d3.w*2), d0 uses Opb0b0 ----------
 Opb0b0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get EA into r11 and value into r0:
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r0:
 ;@ Get extension word into r3:
@@ -47455,7 +47982,6 @@ Opb0b0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -47475,6 +48001,8 @@ Opb0b0:
 
 ;@ ---------- [b0b9] cmp.l $33333333.l, d0 uses Opb0b9 ----------
 Opb0b9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get EA into r11 and value into r0:
 ;@ EaCalc : Get '$33333333.l' into r0:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
@@ -47484,7 +48012,6 @@ Opb0b9:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -47504,6 +48031,8 @@ Opb0b9:
 
 ;@ ---------- [b0ba] cmp.l ($3333,pc), d0; =3335 uses Opb0ba ----------
 Opb0ba:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get EA into r11 and value into r0:
 ;@ EaCalc : Get '($3333,pc)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
@@ -47514,7 +48043,6 @@ Opb0ba:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -47534,6 +48062,8 @@ Opb0ba:
 
 ;@ ---------- [b0bb] cmp.l ($33,pc,d3.w*2), d0; =35 uses Opb0bb ----------
 Opb0bb:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get EA into r11 and value into r0:
 ;@ EaCalc : Get '($33,pc,d3.w*2)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
@@ -47552,7 +48082,6 @@ Opb0bb:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -47620,6 +48149,8 @@ Opb0c0:
 
 ;@ ---------- [b0d0] cmpa.w (a0), a0 uses Opb0d0 ----------
 Opb0d0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -47628,7 +48159,6 @@ Opb0d0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x1e00
@@ -47648,6 +48178,8 @@ Opb0d0:
 
 ;@ ---------- [b0d8] cmpa.w (a0)+, a0 uses Opb0d8 ----------
 Opb0d8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r0:
   and r2,r8,#0x000f
   ldr r0,[r7,r2,lsl #2]
@@ -47657,7 +48189,6 @@ Opb0d8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x1e00
@@ -47677,6 +48208,8 @@ Opb0d8:
 
 ;@ ---------- [b0e0] cmpa.w -(a0), a0 uses Opb0e0 ----------
 Opb0e0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -47687,7 +48220,6 @@ Opb0e0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x1e00
@@ -47707,6 +48239,8 @@ Opb0e0:
 
 ;@ ---------- [b0e8] cmpa.w ($3333,a0), a0 uses Opb0e8 ----------
 Opb0e8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -47716,7 +48250,6 @@ Opb0e8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x1e00
@@ -47736,6 +48269,8 @@ Opb0e8:
 
 ;@ ---------- [b0f0] cmpa.w ($33,a0,d3.w*2), a0 uses Opb0f0 ----------
 Opb0f0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r0:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -47754,7 +48289,6 @@ Opb0f0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x1e00
@@ -47774,13 +48308,14 @@ Opb0f0:
 
 ;@ ---------- [b0f8] cmpa.w $3333.w, a0 uses Opb0f8 ----------
 Opb0f8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x1e00
@@ -47800,6 +48335,8 @@ Opb0f8:
 
 ;@ ---------- [b0f9] cmpa.w $33333333.l, a0 uses Opb0f9 ----------
 Opb0f9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r0:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -47808,7 +48345,6 @@ Opb0f9:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x1e00
@@ -47828,6 +48364,8 @@ Opb0f9:
 
 ;@ ---------- [b0fa] cmpa.w ($3333,pc), a0; =3335 uses Opb0fa ----------
 Opb0fa:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,pc)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   sub r0,r4,r0 ;@ Real PC
@@ -47837,7 +48375,6 @@ Opb0fa:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x1e00
@@ -47857,6 +48394,8 @@ Opb0fa:
 
 ;@ ---------- [b0fb] cmpa.w ($33,pc,d3.w*2), a0; =35 uses Opb0fb ----------
 Opb0fb:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,pc,d3.w*2)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   ldrh r3,[r4] ;@ Get extension word
@@ -47874,7 +48413,6 @@ Opb0fb:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x1e00
@@ -47946,6 +48484,8 @@ Opb100:
 
 ;@ ---------- [b108] cmpm.b (a0)+, (a0)+ uses Opb108 ----------
 Opb108:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get src operand into r11:
 ;@ EaCalc : Get '(a0)+' into r0:
   and r2,r8,#0x000f
@@ -47956,7 +48496,6 @@ Opb108:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r11,r0,asl #24
 
 ;@ Get dst operand into r0:
@@ -47968,7 +48507,6 @@ Opb108:
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   rsbs r0,r11,r0,asl #24
   mrs r10,cpsr ;@ r10=flags
@@ -47981,6 +48519,8 @@ Opb108:
 
 ;@ ---------- [b10f] cmpm.b (a7)+, (a0)+ uses Opb10f ----------
 Opb10f:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get src operand into r11:
 ;@ EaCalc : Get '(a7)+' into r0:
   ldr r0,[r7,#0x3c] ;@ A7
@@ -47990,7 +48530,6 @@ Opb10f:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r11,r0,asl #24
 
 ;@ Get dst operand into r0:
@@ -48002,7 +48541,6 @@ Opb10f:
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   rsbs r0,r11,r0,asl #24
   mrs r10,cpsr ;@ r10=flags
@@ -48015,6 +48553,8 @@ Opb10f:
 
 ;@ ---------- [b110] eor.b d0, (a0) uses Opb110 ----------
 Opb110:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get EA into r11 and value into r0:
 ;@ EaCalc : Get '(a0)' into r11:
   and r2,r8,#0x000f
@@ -48025,7 +48565,6 @@ Opb110:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -48045,7 +48584,6 @@ Opb110:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -48054,6 +48592,8 @@ Opb110:
 
 ;@ ---------- [b118] eor.b d0, (a0)+ uses Opb118 ----------
 Opb118:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get EA into r11 and value into r0:
 ;@ EaCalc : Get '(a0)+' into r11:
   and r2,r8,#0x000f
@@ -48065,7 +48605,6 @@ Opb118:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -48085,7 +48624,6 @@ Opb118:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -48094,6 +48632,8 @@ Opb118:
 
 ;@ ---------- [b11f] eor.b d0, (a7)+ uses Opb11f ----------
 Opb11f:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get EA into r11 and value into r0:
 ;@ EaCalc : Get '(a7)+' into r11:
   ldr r11,[r7,#0x3c] ;@ A7
@@ -48104,7 +48644,6 @@ Opb11f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -48124,7 +48663,6 @@ Opb11f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -48133,6 +48671,8 @@ Opb11f:
 
 ;@ ---------- [b120] eor.b d0, -(a0) uses Opb120 ----------
 Opb120:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get EA into r11 and value into r0:
 ;@ EaCalc : Get '-(a0)' into r11:
   and r2,r8,#0x000f
@@ -48145,7 +48685,6 @@ Opb120:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -48165,7 +48704,6 @@ Opb120:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -48174,6 +48712,8 @@ Opb120:
 
 ;@ ---------- [b127] eor.b d0, -(a7) uses Opb127 ----------
 Opb127:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get EA into r11 and value into r0:
 ;@ EaCalc : Get '-(a7)' into r11:
   ldr r11,[r7,#0x3c] ;@ A7
@@ -48184,7 +48724,6 @@ Opb127:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -48204,7 +48743,6 @@ Opb127:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -48213,6 +48751,8 @@ Opb127:
 
 ;@ ---------- [b128] eor.b d0, ($3333,a0) uses Opb128 ----------
 Opb128:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get EA into r11 and value into r0:
 ;@ EaCalc : Get '($3333,a0)' into r11:
   ldrsh r0,[r4],#2 ;@ Fetch offset
@@ -48224,7 +48764,6 @@ Opb128:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -48244,7 +48783,6 @@ Opb128:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -48253,6 +48791,8 @@ Opb128:
 
 ;@ ---------- [b130] eor.b d0, ($33,a0,d3.w*2) uses Opb130 ----------
 Opb130:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get EA into r11 and value into r0:
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r11:
 ;@ Get extension word into r3:
@@ -48273,7 +48813,6 @@ Opb130:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -48293,7 +48832,6 @@ Opb130:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -48302,6 +48840,8 @@ Opb130:
 
 ;@ ---------- [b138] eor.b d0, $3333.w uses Opb138 ----------
 Opb138:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get EA into r11 and value into r0:
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
@@ -48310,7 +48850,6 @@ Opb138:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -48330,7 +48869,6 @@ Opb138:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -48339,6 +48877,8 @@ Opb138:
 
 ;@ ---------- [b139] eor.b d0, $33333333.l uses Opb139 ----------
 Opb139:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get EA into r11 and value into r0:
 ;@ EaCalc : Get '$33333333.l' into r11:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
@@ -48349,7 +48889,6 @@ Opb139:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -48369,7 +48908,6 @@ Opb139:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -48409,6 +48947,8 @@ Opb140:
 
 ;@ ---------- [b148] cmpm.w (a0)+, (a0)+ uses Opb148 ----------
 Opb148:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get src operand into r11:
 ;@ EaCalc : Get '(a0)+' into r0:
   and r2,r8,#0x000f
@@ -48419,7 +48959,6 @@ Opb148:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r11,r0,asl #16
 
 ;@ Get dst operand into r0:
@@ -48431,7 +48970,6 @@ Opb148:
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   rsbs r0,r11,r0,asl #16
   mrs r10,cpsr ;@ r10=flags
@@ -48444,6 +48982,8 @@ Opb148:
 
 ;@ ---------- [b150] eor.w d0, (a0) uses Opb150 ----------
 Opb150:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get EA into r11 and value into r0:
 ;@ EaCalc : Get '(a0)' into r11:
   and r2,r8,#0x000f
@@ -48454,7 +48994,6 @@ Opb150:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -48474,7 +49013,6 @@ Opb150:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -48483,6 +49021,8 @@ Opb150:
 
 ;@ ---------- [b158] eor.w d0, (a0)+ uses Opb158 ----------
 Opb158:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get EA into r11 and value into r0:
 ;@ EaCalc : Get '(a0)+' into r11:
   and r2,r8,#0x000f
@@ -48494,7 +49034,6 @@ Opb158:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -48514,7 +49053,6 @@ Opb158:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -48523,6 +49061,8 @@ Opb158:
 
 ;@ ---------- [b160] eor.w d0, -(a0) uses Opb160 ----------
 Opb160:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get EA into r11 and value into r0:
 ;@ EaCalc : Get '-(a0)' into r11:
   and r2,r8,#0x000f
@@ -48535,7 +49075,6 @@ Opb160:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -48555,7 +49094,6 @@ Opb160:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -48564,6 +49102,8 @@ Opb160:
 
 ;@ ---------- [b168] eor.w d0, ($3333,a0) uses Opb168 ----------
 Opb168:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get EA into r11 and value into r0:
 ;@ EaCalc : Get '($3333,a0)' into r11:
   ldrsh r0,[r4],#2 ;@ Fetch offset
@@ -48575,7 +49115,6 @@ Opb168:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -48595,7 +49134,6 @@ Opb168:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -48604,6 +49142,8 @@ Opb168:
 
 ;@ ---------- [b170] eor.w d0, ($33,a0,d3.w*2) uses Opb170 ----------
 Opb170:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get EA into r11 and value into r0:
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r11:
 ;@ Get extension word into r3:
@@ -48624,7 +49164,6 @@ Opb170:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -48644,7 +49183,6 @@ Opb170:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -48653,6 +49191,8 @@ Opb170:
 
 ;@ ---------- [b178] eor.w d0, $3333.w uses Opb178 ----------
 Opb178:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get EA into r11 and value into r0:
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
@@ -48661,7 +49201,6 @@ Opb178:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -48681,7 +49220,6 @@ Opb178:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -48690,6 +49228,8 @@ Opb178:
 
 ;@ ---------- [b179] eor.w d0, $33333333.l uses Opb179 ----------
 Opb179:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get EA into r11 and value into r0:
 ;@ EaCalc : Get '$33333333.l' into r11:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
@@ -48700,7 +49240,6 @@ Opb179:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -48720,7 +49259,6 @@ Opb179:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -48756,6 +49294,8 @@ Opb180:
 
 ;@ ---------- [b188] cmpm.l (a0)+, (a0)+ uses Opb188 ----------
 Opb188:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get src operand into r11:
 ;@ EaCalc : Get '(a0)+' into r0:
   and r2,r8,#0x000f
@@ -48766,7 +49306,6 @@ Opb188:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r11,r0
 
 ;@ Get dst operand into r0:
@@ -48778,7 +49317,6 @@ Opb188:
 ;@ EaRead : Read '(a0)+' (address in r0) into r0:
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   rsbs r0,r11,r0
   mrs r10,cpsr ;@ r10=flags
@@ -48791,6 +49329,8 @@ Opb188:
 
 ;@ ---------- [b190] eor.l d0, (a0) uses Opb190 ----------
 Opb190:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get EA into r11 and value into r0:
 ;@ EaCalc : Get '(a0)' into r11:
   and r2,r8,#0x000f
@@ -48801,7 +49341,6 @@ Opb190:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -48818,7 +49357,6 @@ Opb190:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -48827,6 +49365,8 @@ Opb190:
 
 ;@ ---------- [b198] eor.l d0, (a0)+ uses Opb198 ----------
 Opb198:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get EA into r11 and value into r0:
 ;@ EaCalc : Get '(a0)+' into r11:
   and r2,r8,#0x000f
@@ -48838,7 +49378,6 @@ Opb198:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -48855,7 +49394,6 @@ Opb198:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -48864,6 +49402,8 @@ Opb198:
 
 ;@ ---------- [b1a0] eor.l d0, -(a0) uses Opb1a0 ----------
 Opb1a0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get EA into r11 and value into r0:
 ;@ EaCalc : Get '-(a0)' into r11:
   and r2,r8,#0x000f
@@ -48876,7 +49416,6 @@ Opb1a0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -48893,7 +49432,6 @@ Opb1a0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -48902,6 +49440,8 @@ Opb1a0:
 
 ;@ ---------- [b1a8] eor.l d0, ($3333,a0) uses Opb1a8 ----------
 Opb1a8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get EA into r11 and value into r0:
 ;@ EaCalc : Get '($3333,a0)' into r11:
   ldrsh r0,[r4],#2 ;@ Fetch offset
@@ -48913,7 +49453,6 @@ Opb1a8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -48930,7 +49469,6 @@ Opb1a8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -48939,6 +49477,8 @@ Opb1a8:
 
 ;@ ---------- [b1b0] eor.l d0, ($33,a0,d3.w*2) uses Opb1b0 ----------
 Opb1b0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get EA into r11 and value into r0:
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r11:
 ;@ Get extension word into r3:
@@ -48959,7 +49499,6 @@ Opb1b0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -48976,7 +49515,6 @@ Opb1b0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#26 ;@ Subtract cycles
@@ -48985,6 +49523,8 @@ Opb1b0:
 
 ;@ ---------- [b1b8] eor.l d0, $3333.w uses Opb1b8 ----------
 Opb1b8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get EA into r11 and value into r0:
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
@@ -48993,7 +49533,6 @@ Opb1b8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -49010,7 +49549,6 @@ Opb1b8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -49019,6 +49557,8 @@ Opb1b8:
 
 ;@ ---------- [b1b9] eor.l d0, $33333333.l uses Opb1b9 ----------
 Opb1b9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get EA into r11 and value into r0:
 ;@ EaCalc : Get '$33333333.l' into r11:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
@@ -49029,7 +49569,6 @@ Opb1b9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Get register operand into r1:
 ;@ EaCalc : Get register index into r1:
@@ -49046,7 +49585,6 @@ Opb1b9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -49076,6 +49614,8 @@ Opb1c0:
 
 ;@ ---------- [b1d0] cmpa.l (a0), a0 uses Opb1d0 ----------
 Opb1d0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -49084,7 +49624,6 @@ Opb1d0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x1e00
@@ -49102,6 +49641,8 @@ Opb1d0:
 
 ;@ ---------- [b1d8] cmpa.l (a0)+, a0 uses Opb1d8 ----------
 Opb1d8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r0:
   and r2,r8,#0x000f
   ldr r0,[r7,r2,lsl #2]
@@ -49111,7 +49652,6 @@ Opb1d8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x1e00
@@ -49129,6 +49669,8 @@ Opb1d8:
 
 ;@ ---------- [b1e0] cmpa.l -(a0), a0 uses Opb1e0 ----------
 Opb1e0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -49139,7 +49681,6 @@ Opb1e0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x1e00
@@ -49157,6 +49698,8 @@ Opb1e0:
 
 ;@ ---------- [b1e8] cmpa.l ($3333,a0), a0 uses Opb1e8 ----------
 Opb1e8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -49166,7 +49709,6 @@ Opb1e8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x1e00
@@ -49184,6 +49726,8 @@ Opb1e8:
 
 ;@ ---------- [b1f0] cmpa.l ($33,a0,d3.w*2), a0 uses Opb1f0 ----------
 Opb1f0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r0:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -49202,7 +49746,6 @@ Opb1f0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x1e00
@@ -49220,13 +49763,14 @@ Opb1f0:
 
 ;@ ---------- [b1f8] cmpa.l $3333.w, a0 uses Opb1f8 ----------
 Opb1f8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x1e00
@@ -49244,6 +49788,8 @@ Opb1f8:
 
 ;@ ---------- [b1f9] cmpa.l $33333333.l, a0 uses Opb1f9 ----------
 Opb1f9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r0:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -49252,7 +49798,6 @@ Opb1f9:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x1e00
@@ -49270,6 +49815,8 @@ Opb1f9:
 
 ;@ ---------- [b1fa] cmpa.l ($3333,pc), a0; =3335 uses Opb1fa ----------
 Opb1fa:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,pc)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   sub r0,r4,r0 ;@ Real PC
@@ -49279,7 +49826,6 @@ Opb1fa:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x1e00
@@ -49297,6 +49843,8 @@ Opb1fa:
 
 ;@ ---------- [b1fb] cmpa.l ($33,pc,d3.w*2), a0; =35 uses Opb1fb ----------
 Opb1fb:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,pc,d3.w*2)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   ldrh r3,[r4] ;@ Get extension word
@@ -49314,7 +49862,6 @@ Opb1fb:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x1e00
@@ -49354,6 +49901,8 @@ Opb1fc:
 
 ;@ ---------- [bf08] cmpm.b (a0)+, (a7)+ uses Opbf08 ----------
 Opbf08:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get src operand into r11:
 ;@ EaCalc : Get '(a0)+' into r0:
   and r2,r8,#0x000f
@@ -49364,7 +49913,6 @@ Opbf08:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r11,r0,asl #24
 
 ;@ Get dst operand into r0:
@@ -49375,7 +49923,6 @@ Opbf08:
 ;@ EaRead : Read '(a7)+' (address in r0) into r0:
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   rsbs r0,r11,r0,asl #24
   mrs r10,cpsr ;@ r10=flags
@@ -49388,6 +49935,8 @@ Opbf08:
 
 ;@ ---------- [bf0f] cmpm.b (a7)+, (a7)+ uses Opbf0f ----------
 Opbf0f:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get src operand into r11:
 ;@ EaCalc : Get '(a7)+' into r0:
   ldr r0,[r7,#0x3c] ;@ A7
@@ -49397,7 +49946,6 @@ Opbf0f:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r11,r0,asl #24
 
 ;@ Get dst operand into r0:
@@ -49408,7 +49956,6 @@ Opbf0f:
 ;@ EaRead : Read '(a7)+' (address in r0) into r0:
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   rsbs r0,r11,r0,asl #24
   mrs r10,cpsr ;@ r10=flags
@@ -49449,6 +49996,8 @@ Opc000:
 
 ;@ ---------- [c010] and.b (a0), d0 uses Opc010 ----------
 Opc010:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -49457,7 +50006,6 @@ Opc010:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -49482,6 +50030,8 @@ Opc010:
 
 ;@ ---------- [c018] and.b (a0)+, d0 uses Opc018 ----------
 Opc018:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r0:
   and r2,r8,#0x000f
   ldr r0,[r7,r2,lsl #2]
@@ -49491,7 +50041,6 @@ Opc018:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -49516,6 +50065,8 @@ Opc018:
 
 ;@ ---------- [c01f] and.b (a7)+, d0 uses Opc01f ----------
 Opc01f:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a7)+' into r0:
   ldr r0,[r7,#0x3c] ;@ A7
   add r3,r0,#2 ;@ Post-increment An
@@ -49524,7 +50075,6 @@ Opc01f:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -49549,6 +50099,8 @@ Opc01f:
 
 ;@ ---------- [c020] and.b -(a0), d0 uses Opc020 ----------
 Opc020:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -49559,7 +50111,6 @@ Opc020:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -49584,6 +50135,8 @@ Opc020:
 
 ;@ ---------- [c027] and.b -(a7), d0 uses Opc027 ----------
 Opc027:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a7)' into r0:
   ldr r0,[r7,#0x3c] ;@ A7
   sub r0,r0,#2 ;@ Pre-decrement An
@@ -49592,7 +50145,6 @@ Opc027:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -49617,6 +50169,8 @@ Opc027:
 
 ;@ ---------- [c028] and.b ($3333,a0), d0 uses Opc028 ----------
 Opc028:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -49626,7 +50180,6 @@ Opc028:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -49651,6 +50204,8 @@ Opc028:
 
 ;@ ---------- [c030] and.b ($33,a0,d3.w*2), d0 uses Opc030 ----------
 Opc030:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r0:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -49669,7 +50224,6 @@ Opc030:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -49694,13 +50248,14 @@ Opc030:
 
 ;@ ---------- [c038] and.b $3333.w, d0 uses Opc038 ----------
 Opc038:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -49725,6 +50280,8 @@ Opc038:
 
 ;@ ---------- [c039] and.b $33333333.l, d0 uses Opc039 ----------
 Opc039:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r0:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -49733,7 +50290,6 @@ Opc039:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -49758,6 +50314,8 @@ Opc039:
 
 ;@ ---------- [c03a] and.b ($3333,pc), d0; =3335 uses Opc03a ----------
 Opc03a:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,pc)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   sub r0,r4,r0 ;@ Real PC
@@ -49767,7 +50325,6 @@ Opc03a:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x80] ;@ Call fetch8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -49792,6 +50349,8 @@ Opc03a:
 
 ;@ ---------- [c03b] and.b ($33,pc,d3.w*2), d0; =35 uses Opc03b ----------
 Opc03b:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,pc,d3.w*2)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   ldrh r3,[r4] ;@ Get extension word
@@ -49809,7 +50368,6 @@ Opc03b:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x80] ;@ Call fetch8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -49861,6 +50419,8 @@ Opc03c:
 
 ;@ ---------- [c050] and.w (a0), d0 uses Opc050 ----------
 Opc050:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -49869,7 +50429,6 @@ Opc050:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -49895,6 +50454,8 @@ Opc050:
 
 ;@ ---------- [c058] and.w (a0)+, d0 uses Opc058 ----------
 Opc058:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r0:
   and r2,r8,#0x000f
   ldr r0,[r7,r2,lsl #2]
@@ -49904,7 +50465,6 @@ Opc058:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -49930,6 +50490,8 @@ Opc058:
 
 ;@ ---------- [c060] and.w -(a0), d0 uses Opc060 ----------
 Opc060:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -49940,7 +50502,6 @@ Opc060:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -49966,6 +50527,8 @@ Opc060:
 
 ;@ ---------- [c068] and.w ($3333,a0), d0 uses Opc068 ----------
 Opc068:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -49975,7 +50538,6 @@ Opc068:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -50001,6 +50563,8 @@ Opc068:
 
 ;@ ---------- [c070] and.w ($33,a0,d3.w*2), d0 uses Opc070 ----------
 Opc070:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r0:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -50019,7 +50583,6 @@ Opc070:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -50045,13 +50608,14 @@ Opc070:
 
 ;@ ---------- [c078] and.w $3333.w, d0 uses Opc078 ----------
 Opc078:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -50077,6 +50641,8 @@ Opc078:
 
 ;@ ---------- [c079] and.w $33333333.l, d0 uses Opc079 ----------
 Opc079:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r0:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -50085,7 +50651,6 @@ Opc079:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -50111,6 +50676,8 @@ Opc079:
 
 ;@ ---------- [c07a] and.w ($3333,pc), d0; =3335 uses Opc07a ----------
 Opc07a:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,pc)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   sub r0,r4,r0 ;@ Real PC
@@ -50120,7 +50687,6 @@ Opc07a:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -50146,6 +50712,8 @@ Opc07a:
 
 ;@ ---------- [c07b] and.w ($33,pc,d3.w*2), d0; =35 uses Opc07b ----------
 Opc07b:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,pc,d3.w*2)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   ldrh r3,[r4] ;@ Get extension word
@@ -50163,7 +50731,6 @@ Opc07b:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -50243,6 +50810,8 @@ Opc080:
 
 ;@ ---------- [c090] and.l (a0), d0 uses Opc090 ----------
 Opc090:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -50251,7 +50820,6 @@ Opc090:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -50274,6 +50842,8 @@ Opc090:
 
 ;@ ---------- [c098] and.l (a0)+, d0 uses Opc098 ----------
 Opc098:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r0:
   and r2,r8,#0x000f
   ldr r0,[r7,r2,lsl #2]
@@ -50283,7 +50853,6 @@ Opc098:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -50306,6 +50875,8 @@ Opc098:
 
 ;@ ---------- [c0a0] and.l -(a0), d0 uses Opc0a0 ----------
 Opc0a0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -50316,7 +50887,6 @@ Opc0a0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -50339,6 +50909,8 @@ Opc0a0:
 
 ;@ ---------- [c0a8] and.l ($3333,a0), d0 uses Opc0a8 ----------
 Opc0a8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -50348,7 +50920,6 @@ Opc0a8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -50371,6 +50942,8 @@ Opc0a8:
 
 ;@ ---------- [c0b0] and.l ($33,a0,d3.w*2), d0 uses Opc0b0 ----------
 Opc0b0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r0:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -50389,7 +50962,6 @@ Opc0b0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -50412,13 +50984,14 @@ Opc0b0:
 
 ;@ ---------- [c0b8] and.l $3333.w, d0 uses Opc0b8 ----------
 Opc0b8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -50441,6 +51014,8 @@ Opc0b8:
 
 ;@ ---------- [c0b9] and.l $33333333.l, d0 uses Opc0b9 ----------
 Opc0b9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r0:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -50449,7 +51024,6 @@ Opc0b9:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -50472,6 +51046,8 @@ Opc0b9:
 
 ;@ ---------- [c0ba] and.l ($3333,pc), d0; =3335 uses Opc0ba ----------
 Opc0ba:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,pc)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   sub r0,r4,r0 ;@ Real PC
@@ -50481,7 +51057,6 @@ Opc0ba:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -50504,6 +51079,8 @@ Opc0ba:
 
 ;@ ---------- [c0bb] and.l ($33,pc,d3.w*2), d0; =35 uses Opc0bb ----------
 Opc0bb:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,pc,d3.w*2)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   ldrh r3,[r4] ;@ Get extension word
@@ -50521,7 +51098,6 @@ Opc0bb:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -50601,6 +51177,8 @@ Opc0c0:
 
 ;@ ---------- [c0d0] mulu.w (a0), d0 uses Opc0d0 ----------
 Opc0d0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -50609,7 +51187,6 @@ Opc0d0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -50636,6 +51213,8 @@ Opc0d0:
 
 ;@ ---------- [c0d8] mulu.w (a0)+, d0 uses Opc0d8 ----------
 Opc0d8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r0:
   and r2,r8,#0x000f
   ldr r0,[r7,r2,lsl #2]
@@ -50645,7 +51224,6 @@ Opc0d8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -50672,6 +51250,8 @@ Opc0d8:
 
 ;@ ---------- [c0e0] mulu.w -(a0), d0 uses Opc0e0 ----------
 Opc0e0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -50682,7 +51262,6 @@ Opc0e0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -50709,6 +51288,8 @@ Opc0e0:
 
 ;@ ---------- [c0e8] mulu.w ($3333,a0), d0 uses Opc0e8 ----------
 Opc0e8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -50718,7 +51299,6 @@ Opc0e8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -50745,6 +51325,8 @@ Opc0e8:
 
 ;@ ---------- [c0f0] mulu.w ($33,a0,d3.w*2), d0 uses Opc0f0 ----------
 Opc0f0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r0:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -50763,7 +51345,6 @@ Opc0f0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -50790,13 +51371,14 @@ Opc0f0:
 
 ;@ ---------- [c0f8] mulu.w $3333.w, d0 uses Opc0f8 ----------
 Opc0f8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -50823,6 +51405,8 @@ Opc0f8:
 
 ;@ ---------- [c0f9] mulu.w $33333333.l, d0 uses Opc0f9 ----------
 Opc0f9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r0:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -50831,7 +51415,6 @@ Opc0f9:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -50858,6 +51441,8 @@ Opc0f9:
 
 ;@ ---------- [c0fa] mulu.w ($3333,pc), d0; =3335 uses Opc0fa ----------
 Opc0fa:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,pc)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   sub r0,r4,r0 ;@ Real PC
@@ -50867,7 +51452,6 @@ Opc0fa:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -50894,6 +51478,8 @@ Opc0fa:
 
 ;@ ---------- [c0fb] mulu.w ($33,pc,d3.w*2), d0; =35 uses Opc0fb ----------
 Opc0fb:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,pc,d3.w*2)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   ldrh r3,[r4] ;@ Get extension word
@@ -50911,7 +51497,6 @@ Opc0fb:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -51014,6 +51599,8 @@ Opc100:
 
 ;@ ---------- [c108] abcd -(a0), -(a0) uses Opc108 ----------
 Opc108:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get src/dest EA vals
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
@@ -51024,7 +51611,6 @@ Opc108:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r6,r0
 
 ;@ EaCalc : Get '-(a0)' into r11:
@@ -51037,7 +51623,6 @@ Opc108:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   bic r10,r10,#0xb1000000 ;@ clear all flags except old Z
   ldr r1,[r7,#0x4c] ;@ Get X bit
@@ -51068,7 +51653,6 @@ Opc108:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldr r6,[r7,#0x54]
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -51078,6 +51662,8 @@ Opc108:
 
 ;@ ---------- [c10f] abcd -(a7), -(a0) uses Opc10f ----------
 Opc10f:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get src/dest EA vals
 ;@ EaCalc : Get '-(a7)' into r0:
   ldr r0,[r7,#0x3c] ;@ A7
@@ -51087,7 +51673,6 @@ Opc10f:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r6,r0
 
 ;@ EaCalc : Get '-(a0)' into r11:
@@ -51100,7 +51685,6 @@ Opc10f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   bic r10,r10,#0xb1000000 ;@ clear all flags except old Z
   ldr r1,[r7,#0x4c] ;@ Get X bit
@@ -51131,7 +51715,6 @@ Opc10f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldr r6,[r7,#0x54]
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -51141,6 +51724,8 @@ Opc10f:
 
 ;@ ---------- [c110] and.b d0, (a0) uses Opc110 ----------
 Opc110:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -51150,7 +51735,6 @@ Opc110:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -51170,7 +51754,6 @@ Opc110:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -51179,6 +51762,8 @@ Opc110:
 
 ;@ ---------- [c118] and.b d0, (a0)+ uses Opc118 ----------
 Opc118:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r11:
   and r2,r8,#0x000f
   ldr r11,[r7,r2,lsl #2]
@@ -51189,7 +51774,6 @@ Opc118:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -51209,7 +51793,6 @@ Opc118:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -51218,6 +51801,8 @@ Opc118:
 
 ;@ ---------- [c11f] and.b d0, (a7)+ uses Opc11f ----------
 Opc11f:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a7)+' into r11:
   ldr r11,[r7,#0x3c] ;@ A7
   add r3,r11,#2 ;@ Post-increment An
@@ -51227,7 +51812,6 @@ Opc11f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -51247,7 +51831,6 @@ Opc11f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -51256,6 +51839,8 @@ Opc11f:
 
 ;@ ---------- [c120] and.b d0, -(a0) uses Opc120 ----------
 Opc120:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -51267,7 +51852,6 @@ Opc120:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -51287,7 +51871,6 @@ Opc120:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -51296,6 +51879,8 @@ Opc120:
 
 ;@ ---------- [c127] and.b d0, -(a7) uses Opc127 ----------
 Opc127:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a7)' into r11:
   ldr r11,[r7,#0x3c] ;@ A7
   sub r11,r11,#2 ;@ Pre-decrement An
@@ -51305,7 +51890,6 @@ Opc127:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -51325,7 +51909,6 @@ Opc127:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -51334,6 +51917,8 @@ Opc127:
 
 ;@ ---------- [c128] and.b d0, ($3333,a0) uses Opc128 ----------
 Opc128:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r11:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -51344,7 +51929,6 @@ Opc128:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -51364,7 +51948,6 @@ Opc128:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -51373,6 +51956,8 @@ Opc128:
 
 ;@ ---------- [c130] and.b d0, ($33,a0,d3.w*2) uses Opc130 ----------
 Opc130:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r11:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -51392,7 +51977,6 @@ Opc130:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -51412,7 +51996,6 @@ Opc130:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -51421,6 +52004,8 @@ Opc130:
 
 ;@ ---------- [c138] and.b d0, $3333.w uses Opc138 ----------
 Opc138:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
@@ -51428,7 +52013,6 @@ Opc138:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -51448,7 +52032,6 @@ Opc138:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -51457,6 +52040,8 @@ Opc138:
 
 ;@ ---------- [c139] and.b d0, $33333333.l uses Opc139 ----------
 Opc139:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r11:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -51466,7 +52051,6 @@ Opc139:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -51486,7 +52070,6 @@ Opc139:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -51528,6 +52111,8 @@ Opc148:
 
 ;@ ---------- [c150] and.w d0, (a0) uses Opc150 ----------
 Opc150:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -51537,7 +52122,6 @@ Opc150:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -51557,7 +52141,6 @@ Opc150:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -51566,6 +52149,8 @@ Opc150:
 
 ;@ ---------- [c158] and.w d0, (a0)+ uses Opc158 ----------
 Opc158:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r11:
   and r2,r8,#0x000f
   ldr r11,[r7,r2,lsl #2]
@@ -51576,7 +52161,6 @@ Opc158:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -51596,7 +52180,6 @@ Opc158:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -51605,6 +52188,8 @@ Opc158:
 
 ;@ ---------- [c160] and.w d0, -(a0) uses Opc160 ----------
 Opc160:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -51616,7 +52201,6 @@ Opc160:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -51636,7 +52220,6 @@ Opc160:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -51645,6 +52228,8 @@ Opc160:
 
 ;@ ---------- [c168] and.w d0, ($3333,a0) uses Opc168 ----------
 Opc168:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r11:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -51655,7 +52240,6 @@ Opc168:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -51675,7 +52259,6 @@ Opc168:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -51684,6 +52267,8 @@ Opc168:
 
 ;@ ---------- [c170] and.w d0, ($33,a0,d3.w*2) uses Opc170 ----------
 Opc170:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r11:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -51703,7 +52288,6 @@ Opc170:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -51723,7 +52307,6 @@ Opc170:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -51732,6 +52315,8 @@ Opc170:
 
 ;@ ---------- [c178] and.w d0, $3333.w uses Opc178 ----------
 Opc178:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
@@ -51739,7 +52324,6 @@ Opc178:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -51759,7 +52343,6 @@ Opc178:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -51768,6 +52351,8 @@ Opc178:
 
 ;@ ---------- [c179] and.w d0, $33333333.l uses Opc179 ----------
 Opc179:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r11:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -51777,7 +52362,6 @@ Opc179:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -51797,7 +52381,6 @@ Opc179:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -51822,6 +52405,8 @@ Opc188:
 
 ;@ ---------- [c190] and.l d0, (a0) uses Opc190 ----------
 Opc190:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -51831,7 +52416,6 @@ Opc190:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -51848,7 +52432,6 @@ Opc190:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -51857,6 +52440,8 @@ Opc190:
 
 ;@ ---------- [c198] and.l d0, (a0)+ uses Opc198 ----------
 Opc198:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r11:
   and r2,r8,#0x000f
   ldr r11,[r7,r2,lsl #2]
@@ -51867,7 +52452,6 @@ Opc198:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -51884,7 +52468,6 @@ Opc198:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -51893,6 +52476,8 @@ Opc198:
 
 ;@ ---------- [c1a0] and.l d0, -(a0) uses Opc1a0 ----------
 Opc1a0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -51904,7 +52489,6 @@ Opc1a0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -51921,7 +52505,6 @@ Opc1a0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -51930,6 +52513,8 @@ Opc1a0:
 
 ;@ ---------- [c1a8] and.l d0, ($3333,a0) uses Opc1a8 ----------
 Opc1a8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r11:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -51940,7 +52525,6 @@ Opc1a8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -51957,7 +52541,6 @@ Opc1a8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -51966,6 +52549,8 @@ Opc1a8:
 
 ;@ ---------- [c1b0] and.l d0, ($33,a0,d3.w*2) uses Opc1b0 ----------
 Opc1b0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r11:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -51985,7 +52570,6 @@ Opc1b0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -52002,7 +52586,6 @@ Opc1b0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#26 ;@ Subtract cycles
@@ -52011,6 +52594,8 @@ Opc1b0:
 
 ;@ ---------- [c1b8] and.l d0, $3333.w uses Opc1b8 ----------
 Opc1b8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
@@ -52018,7 +52603,6 @@ Opc1b8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -52035,7 +52619,6 @@ Opc1b8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -52044,6 +52627,8 @@ Opc1b8:
 
 ;@ ---------- [c1b9] and.l d0, $33333333.l uses Opc1b9 ----------
 Opc1b9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r11:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -52053,7 +52638,6 @@ Opc1b9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -52070,7 +52654,6 @@ Opc1b9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -52109,6 +52692,8 @@ Opc1c0:
 
 ;@ ---------- [c1d0] muls.w (a0), d0 uses Opc1d0 ----------
 Opc1d0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -52117,7 +52702,6 @@ Opc1d0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -52144,6 +52728,8 @@ Opc1d0:
 
 ;@ ---------- [c1d8] muls.w (a0)+, d0 uses Opc1d8 ----------
 Opc1d8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r0:
   and r2,r8,#0x000f
   ldr r0,[r7,r2,lsl #2]
@@ -52153,7 +52739,6 @@ Opc1d8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -52180,6 +52765,8 @@ Opc1d8:
 
 ;@ ---------- [c1e0] muls.w -(a0), d0 uses Opc1e0 ----------
 Opc1e0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -52190,7 +52777,6 @@ Opc1e0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -52217,6 +52803,8 @@ Opc1e0:
 
 ;@ ---------- [c1e8] muls.w ($3333,a0), d0 uses Opc1e8 ----------
 Opc1e8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -52226,7 +52814,6 @@ Opc1e8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -52253,6 +52840,8 @@ Opc1e8:
 
 ;@ ---------- [c1f0] muls.w ($33,a0,d3.w*2), d0 uses Opc1f0 ----------
 Opc1f0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r0:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -52271,7 +52860,6 @@ Opc1f0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -52298,13 +52886,14 @@ Opc1f0:
 
 ;@ ---------- [c1f8] muls.w $3333.w, d0 uses Opc1f8 ----------
 Opc1f8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -52331,6 +52920,8 @@ Opc1f8:
 
 ;@ ---------- [c1f9] muls.w $33333333.l, d0 uses Opc1f9 ----------
 Opc1f9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r0:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -52339,7 +52930,6 @@ Opc1f9:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -52366,6 +52956,8 @@ Opc1f9:
 
 ;@ ---------- [c1fa] muls.w ($3333,pc), d0; =3335 uses Opc1fa ----------
 Opc1fa:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,pc)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   sub r0,r4,r0 ;@ Real PC
@@ -52375,7 +52967,6 @@ Opc1fa:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -52402,6 +52993,8 @@ Opc1fa:
 
 ;@ ---------- [c1fb] muls.w ($33,pc,d3.w*2), d0; =35 uses Opc1fb ----------
 Opc1fb:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,pc,d3.w*2)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   ldrh r3,[r4] ;@ Get extension word
@@ -52419,7 +53012,6 @@ Opc1fb:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -52475,6 +53067,8 @@ Opc1fc:
 
 ;@ ---------- [cf08] abcd -(a0), -(a7) uses Opcf08 ----------
 Opcf08:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get src/dest EA vals
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
@@ -52485,7 +53079,6 @@ Opcf08:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r6,r0
 
 ;@ EaCalc : Get '-(a7)' into r11:
@@ -52496,7 +53089,6 @@ Opcf08:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   bic r10,r10,#0xb1000000 ;@ clear all flags except old Z
   ldr r1,[r7,#0x4c] ;@ Get X bit
@@ -52527,7 +53119,6 @@ Opcf08:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldr r6,[r7,#0x54]
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -52537,6 +53128,8 @@ Opcf08:
 
 ;@ ---------- [cf0f] abcd -(a7), -(a7) uses Opcf0f ----------
 Opcf0f:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get src/dest EA vals
 ;@ EaCalc : Get '-(a7)' into r0:
   ldr r0,[r7,#0x3c] ;@ A7
@@ -52546,7 +53139,6 @@ Opcf0f:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r6,r0
 
 ;@ EaCalc : Get '-(a7)' into r11:
@@ -52557,7 +53149,6 @@ Opcf0f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   bic r10,r10,#0xb1000000 ;@ clear all flags except old Z
   ldr r1,[r7,#0x4c] ;@ Get X bit
@@ -52588,7 +53179,6 @@ Opcf0f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldr r6,[r7,#0x54]
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -52626,6 +53216,8 @@ Opd000:
 
 ;@ ---------- [d010] add.b (a0), d0 uses Opd010 ----------
 Opd010:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -52634,7 +53226,6 @@ Opd010:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -52659,6 +53250,8 @@ Opd010:
 
 ;@ ---------- [d018] add.b (a0)+, d0 uses Opd018 ----------
 Opd018:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r0:
   and r2,r8,#0x000f
   ldr r0,[r7,r2,lsl #2]
@@ -52668,7 +53261,6 @@ Opd018:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -52693,6 +53285,8 @@ Opd018:
 
 ;@ ---------- [d01f] add.b (a7)+, d0 uses Opd01f ----------
 Opd01f:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a7)+' into r0:
   ldr r0,[r7,#0x3c] ;@ A7
   add r3,r0,#2 ;@ Post-increment An
@@ -52701,7 +53295,6 @@ Opd01f:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -52726,6 +53319,8 @@ Opd01f:
 
 ;@ ---------- [d020] add.b -(a0), d0 uses Opd020 ----------
 Opd020:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -52736,7 +53331,6 @@ Opd020:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -52761,6 +53355,8 @@ Opd020:
 
 ;@ ---------- [d027] add.b -(a7), d0 uses Opd027 ----------
 Opd027:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a7)' into r0:
   ldr r0,[r7,#0x3c] ;@ A7
   sub r0,r0,#2 ;@ Pre-decrement An
@@ -52769,7 +53365,6 @@ Opd027:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -52794,6 +53389,8 @@ Opd027:
 
 ;@ ---------- [d028] add.b ($3333,a0), d0 uses Opd028 ----------
 Opd028:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -52803,7 +53400,6 @@ Opd028:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -52828,6 +53424,8 @@ Opd028:
 
 ;@ ---------- [d030] add.b ($33,a0,d3.w*2), d0 uses Opd030 ----------
 Opd030:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r0:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -52846,7 +53444,6 @@ Opd030:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -52871,13 +53468,14 @@ Opd030:
 
 ;@ ---------- [d038] add.b $3333.w, d0 uses Opd038 ----------
 Opd038:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -52902,6 +53500,8 @@ Opd038:
 
 ;@ ---------- [d039] add.b $33333333.l, d0 uses Opd039 ----------
 Opd039:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r0:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -52910,7 +53510,6 @@ Opd039:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -52935,6 +53534,8 @@ Opd039:
 
 ;@ ---------- [d03a] add.b ($3333,pc), d0; =3335 uses Opd03a ----------
 Opd03a:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,pc)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   sub r0,r4,r0 ;@ Real PC
@@ -52944,7 +53545,6 @@ Opd03a:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x80] ;@ Call fetch8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -52969,6 +53569,8 @@ Opd03a:
 
 ;@ ---------- [d03b] add.b ($33,pc,d3.w*2), d0; =35 uses Opd03b ----------
 Opd03b:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,pc,d3.w*2)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   ldrh r3,[r4] ;@ Get extension word
@@ -52986,7 +53588,6 @@ Opd03b:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x80] ;@ Call fetch8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -53038,6 +53639,8 @@ Opd03c:
 
 ;@ ---------- [d050] add.w (a0), d0 uses Opd050 ----------
 Opd050:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -53046,7 +53649,6 @@ Opd050:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -53072,6 +53674,8 @@ Opd050:
 
 ;@ ---------- [d058] add.w (a0)+, d0 uses Opd058 ----------
 Opd058:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r0:
   and r2,r8,#0x000f
   ldr r0,[r7,r2,lsl #2]
@@ -53081,7 +53685,6 @@ Opd058:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -53107,6 +53710,8 @@ Opd058:
 
 ;@ ---------- [d060] add.w -(a0), d0 uses Opd060 ----------
 Opd060:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -53117,7 +53722,6 @@ Opd060:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -53143,6 +53747,8 @@ Opd060:
 
 ;@ ---------- [d068] add.w ($3333,a0), d0 uses Opd068 ----------
 Opd068:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -53152,7 +53758,6 @@ Opd068:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -53178,6 +53783,8 @@ Opd068:
 
 ;@ ---------- [d070] add.w ($33,a0,d3.w*2), d0 uses Opd070 ----------
 Opd070:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r0:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -53196,7 +53803,6 @@ Opd070:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -53222,13 +53828,14 @@ Opd070:
 
 ;@ ---------- [d078] add.w $3333.w, d0 uses Opd078 ----------
 Opd078:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -53254,6 +53861,8 @@ Opd078:
 
 ;@ ---------- [d079] add.w $33333333.l, d0 uses Opd079 ----------
 Opd079:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r0:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -53262,7 +53871,6 @@ Opd079:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -53288,6 +53896,8 @@ Opd079:
 
 ;@ ---------- [d07a] add.w ($3333,pc), d0; =3335 uses Opd07a ----------
 Opd07a:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,pc)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   sub r0,r4,r0 ;@ Real PC
@@ -53297,7 +53907,6 @@ Opd07a:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -53323,6 +53932,8 @@ Opd07a:
 
 ;@ ---------- [d07b] add.w ($33,pc,d3.w*2), d0; =35 uses Opd07b ----------
 Opd07b:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,pc,d3.w*2)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   ldrh r3,[r4] ;@ Get extension word
@@ -53340,7 +53951,6 @@ Opd07b:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -53420,6 +54030,8 @@ Opd080:
 
 ;@ ---------- [d090] add.l (a0), d0 uses Opd090 ----------
 Opd090:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -53428,7 +54040,6 @@ Opd090:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -53451,6 +54062,8 @@ Opd090:
 
 ;@ ---------- [d098] add.l (a0)+, d0 uses Opd098 ----------
 Opd098:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r0:
   and r2,r8,#0x000f
   ldr r0,[r7,r2,lsl #2]
@@ -53460,7 +54073,6 @@ Opd098:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -53483,6 +54095,8 @@ Opd098:
 
 ;@ ---------- [d0a0] add.l -(a0), d0 uses Opd0a0 ----------
 Opd0a0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -53493,7 +54107,6 @@ Opd0a0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -53516,6 +54129,8 @@ Opd0a0:
 
 ;@ ---------- [d0a8] add.l ($3333,a0), d0 uses Opd0a8 ----------
 Opd0a8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -53525,7 +54140,6 @@ Opd0a8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -53548,6 +54162,8 @@ Opd0a8:
 
 ;@ ---------- [d0b0] add.l ($33,a0,d3.w*2), d0 uses Opd0b0 ----------
 Opd0b0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r0:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -53566,7 +54182,6 @@ Opd0b0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -53589,13 +54204,14 @@ Opd0b0:
 
 ;@ ---------- [d0b8] add.l $3333.w, d0 uses Opd0b8 ----------
 Opd0b8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -53618,6 +54234,8 @@ Opd0b8:
 
 ;@ ---------- [d0b9] add.l $33333333.l, d0 uses Opd0b9 ----------
 Opd0b9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r0:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -53626,7 +54244,6 @@ Opd0b9:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -53649,6 +54266,8 @@ Opd0b9:
 
 ;@ ---------- [d0ba] add.l ($3333,pc), d0; =3335 uses Opd0ba ----------
 Opd0ba:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,pc)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   sub r0,r4,r0 ;@ Real PC
@@ -53658,7 +54277,6 @@ Opd0ba:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -53681,6 +54299,8 @@ Opd0ba:
 
 ;@ ---------- [d0bb] add.l ($33,pc,d3.w*2), d0; =35 uses Opd0bb ----------
 Opd0bb:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,pc,d3.w*2)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   ldrh r3,[r4] ;@ Get extension word
@@ -53698,7 +54318,6 @@ Opd0bb:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x0e00
@@ -53772,6 +54391,8 @@ Opd0c0:
 
 ;@ ---------- [d0d0] adda.w (a0), a0 uses Opd0d0 ----------
 Opd0d0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -53780,7 +54401,6 @@ Opd0d0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -53801,6 +54421,8 @@ Opd0d0:
 
 ;@ ---------- [d0d8] adda.w (a0)+, a0 uses Opd0d8 ----------
 Opd0d8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r0:
   and r2,r8,#0x000f
   ldr r0,[r7,r2,lsl #2]
@@ -53810,7 +54432,6 @@ Opd0d8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -53831,6 +54452,8 @@ Opd0d8:
 
 ;@ ---------- [d0e0] adda.w -(a0), a0 uses Opd0e0 ----------
 Opd0e0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -53841,7 +54464,6 @@ Opd0e0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -53862,6 +54484,8 @@ Opd0e0:
 
 ;@ ---------- [d0e8] adda.w ($3333,a0), a0 uses Opd0e8 ----------
 Opd0e8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -53871,7 +54495,6 @@ Opd0e8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -53892,6 +54515,8 @@ Opd0e8:
 
 ;@ ---------- [d0f0] adda.w ($33,a0,d3.w*2), a0 uses Opd0f0 ----------
 Opd0f0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r0:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -53910,7 +54535,6 @@ Opd0f0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -53931,13 +54555,14 @@ Opd0f0:
 
 ;@ ---------- [d0f8] adda.w $3333.w, a0 uses Opd0f8 ----------
 Opd0f8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -53958,6 +54583,8 @@ Opd0f8:
 
 ;@ ---------- [d0f9] adda.w $33333333.l, a0 uses Opd0f9 ----------
 Opd0f9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r0:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -53966,7 +54593,6 @@ Opd0f9:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -53987,6 +54613,8 @@ Opd0f9:
 
 ;@ ---------- [d0fa] adda.w ($3333,pc), a0; =3335 uses Opd0fa ----------
 Opd0fa:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,pc)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   sub r0,r4,r0 ;@ Real PC
@@ -53996,7 +54624,6 @@ Opd0fa:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -54017,6 +54644,8 @@ Opd0fa:
 
 ;@ ---------- [d0fb] adda.w ($33,pc,d3.w*2), a0; =35 uses Opd0fb ----------
 Opd0fb:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,pc,d3.w*2)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   ldrh r3,[r4] ;@ Get extension word
@@ -54034,7 +54663,6 @@ Opd0fb:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -54121,6 +54749,8 @@ Opd100:
 
 ;@ ---------- [d108] addx.b -(a0), -(a0) uses Opd108 ----------
 Opd108:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get src/dest EA vals
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
@@ -54131,7 +54761,6 @@ Opd108:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r6,r0,asl #24
 
 ;@ EaCalc : Get '-(a0)' into r11:
@@ -54143,7 +54772,6 @@ Opd108:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
 ;@ Get X bit:
@@ -54168,7 +54796,6 @@ Opd108:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldr r6,[r7,#0x54]
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -54178,6 +54805,8 @@ Opd108:
 
 ;@ ---------- [d10f] addx.b -(a7), -(a0) uses Opd10f ----------
 Opd10f:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get src/dest EA vals
 ;@ EaCalc : Get '-(a7)' into r0:
   ldr r0,[r7,#0x3c] ;@ A7
@@ -54187,7 +54816,6 @@ Opd10f:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r6,r0,asl #24
 
 ;@ EaCalc : Get '-(a0)' into r11:
@@ -54199,7 +54827,6 @@ Opd10f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
 ;@ Get X bit:
@@ -54224,7 +54851,6 @@ Opd10f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldr r6,[r7,#0x54]
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -54234,6 +54860,8 @@ Opd10f:
 
 ;@ ---------- [d110] add.b d0, (a0) uses Opd110 ----------
 Opd110:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -54243,7 +54871,6 @@ Opd110:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -54263,7 +54890,6 @@ Opd110:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -54272,6 +54898,8 @@ Opd110:
 
 ;@ ---------- [d118] add.b d0, (a0)+ uses Opd118 ----------
 Opd118:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r11:
   and r2,r8,#0x000f
   ldr r11,[r7,r2,lsl #2]
@@ -54282,7 +54910,6 @@ Opd118:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -54302,7 +54929,6 @@ Opd118:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -54311,6 +54937,8 @@ Opd118:
 
 ;@ ---------- [d11f] add.b d0, (a7)+ uses Opd11f ----------
 Opd11f:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a7)+' into r11:
   ldr r11,[r7,#0x3c] ;@ A7
   add r3,r11,#2 ;@ Post-increment An
@@ -54320,7 +54948,6 @@ Opd11f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -54340,7 +54967,6 @@ Opd11f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -54349,6 +54975,8 @@ Opd11f:
 
 ;@ ---------- [d120] add.b d0, -(a0) uses Opd120 ----------
 Opd120:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -54360,7 +54988,6 @@ Opd120:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -54380,7 +55007,6 @@ Opd120:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -54389,6 +55015,8 @@ Opd120:
 
 ;@ ---------- [d127] add.b d0, -(a7) uses Opd127 ----------
 Opd127:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a7)' into r11:
   ldr r11,[r7,#0x3c] ;@ A7
   sub r11,r11,#2 ;@ Pre-decrement An
@@ -54398,7 +55026,6 @@ Opd127:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -54418,7 +55045,6 @@ Opd127:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -54427,6 +55053,8 @@ Opd127:
 
 ;@ ---------- [d128] add.b d0, ($3333,a0) uses Opd128 ----------
 Opd128:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r11:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -54437,7 +55065,6 @@ Opd128:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -54457,7 +55084,6 @@ Opd128:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -54466,6 +55092,8 @@ Opd128:
 
 ;@ ---------- [d130] add.b d0, ($33,a0,d3.w*2) uses Opd130 ----------
 Opd130:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r11:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -54485,7 +55113,6 @@ Opd130:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -54505,7 +55132,6 @@ Opd130:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -54514,6 +55140,8 @@ Opd130:
 
 ;@ ---------- [d138] add.b d0, $3333.w uses Opd138 ----------
 Opd138:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
@@ -54521,7 +55149,6 @@ Opd138:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -54541,7 +55168,6 @@ Opd138:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -54550,6 +55176,8 @@ Opd138:
 
 ;@ ---------- [d139] add.b d0, $33333333.l uses Opd139 ----------
 Opd139:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r11:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -54559,7 +55187,6 @@ Opd139:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -54579,7 +55206,6 @@ Opd139:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -54632,6 +55258,8 @@ Opd140:
 
 ;@ ---------- [d148] addx.w -(a0), -(a0) uses Opd148 ----------
 Opd148:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get src/dest EA vals
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
@@ -54642,7 +55270,6 @@ Opd148:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r6,r0,asl #16
 
 ;@ EaCalc : Get '-(a0)' into r11:
@@ -54654,7 +55281,6 @@ Opd148:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
 ;@ Get X bit:
@@ -54679,7 +55305,6 @@ Opd148:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldr r6,[r7,#0x54]
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -54689,6 +55314,8 @@ Opd148:
 
 ;@ ---------- [d150] add.w d0, (a0) uses Opd150 ----------
 Opd150:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -54698,7 +55325,6 @@ Opd150:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -54718,7 +55344,6 @@ Opd150:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -54727,6 +55352,8 @@ Opd150:
 
 ;@ ---------- [d158] add.w d0, (a0)+ uses Opd158 ----------
 Opd158:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r11:
   and r2,r8,#0x000f
   ldr r11,[r7,r2,lsl #2]
@@ -54737,7 +55364,6 @@ Opd158:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -54757,7 +55383,6 @@ Opd158:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -54766,6 +55391,8 @@ Opd158:
 
 ;@ ---------- [d160] add.w d0, -(a0) uses Opd160 ----------
 Opd160:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -54777,7 +55404,6 @@ Opd160:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -54797,7 +55423,6 @@ Opd160:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -54806,6 +55431,8 @@ Opd160:
 
 ;@ ---------- [d168] add.w d0, ($3333,a0) uses Opd168 ----------
 Opd168:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r11:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -54816,7 +55443,6 @@ Opd168:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -54836,7 +55462,6 @@ Opd168:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -54845,6 +55470,8 @@ Opd168:
 
 ;@ ---------- [d170] add.w d0, ($33,a0,d3.w*2) uses Opd170 ----------
 Opd170:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r11:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -54864,7 +55491,6 @@ Opd170:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -54884,7 +55510,6 @@ Opd170:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -54893,6 +55518,8 @@ Opd170:
 
 ;@ ---------- [d178] add.w d0, $3333.w uses Opd178 ----------
 Opd178:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
@@ -54900,7 +55527,6 @@ Opd178:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -54920,7 +55546,6 @@ Opd178:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -54929,6 +55554,8 @@ Opd178:
 
 ;@ ---------- [d179] add.w d0, $33333333.l uses Opd179 ----------
 Opd179:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r11:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -54938,7 +55565,6 @@ Opd179:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -54958,7 +55584,6 @@ Opd179:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -55001,6 +55626,8 @@ Opd180:
 
 ;@ ---------- [d188] addx.l -(a0), -(a0) uses Opd188 ----------
 Opd188:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get src/dest EA vals
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
@@ -55011,7 +55638,6 @@ Opd188:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r6,r0
 
 ;@ EaCalc : Get '-(a0)' into r11:
@@ -55023,7 +55649,6 @@ Opd188:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
 ;@ Get X bit:
@@ -55041,7 +55666,6 @@ Opd188:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldr r6,[r7,#0x54]
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -55051,6 +55675,8 @@ Opd188:
 
 ;@ ---------- [d190] add.l d0, (a0) uses Opd190 ----------
 Opd190:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -55060,7 +55686,6 @@ Opd190:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -55077,7 +55702,6 @@ Opd190:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -55086,6 +55710,8 @@ Opd190:
 
 ;@ ---------- [d198] add.l d0, (a0)+ uses Opd198 ----------
 Opd198:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r11:
   and r2,r8,#0x000f
   ldr r11,[r7,r2,lsl #2]
@@ -55096,7 +55722,6 @@ Opd198:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -55113,7 +55738,6 @@ Opd198:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -55122,6 +55746,8 @@ Opd198:
 
 ;@ ---------- [d1a0] add.l d0, -(a0) uses Opd1a0 ----------
 Opd1a0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -55133,7 +55759,6 @@ Opd1a0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -55150,7 +55775,6 @@ Opd1a0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#22 ;@ Subtract cycles
@@ -55159,6 +55783,8 @@ Opd1a0:
 
 ;@ ---------- [d1a8] add.l d0, ($3333,a0) uses Opd1a8 ----------
 Opd1a8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r11:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -55169,7 +55795,6 @@ Opd1a8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -55186,7 +55811,6 @@ Opd1a8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -55195,6 +55819,8 @@ Opd1a8:
 
 ;@ ---------- [d1b0] add.l d0, ($33,a0,d3.w*2) uses Opd1b0 ----------
 Opd1b0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r11:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -55214,7 +55840,6 @@ Opd1b0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -55231,7 +55856,6 @@ Opd1b0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#26 ;@ Subtract cycles
@@ -55240,6 +55864,8 @@ Opd1b0:
 
 ;@ ---------- [d1b8] add.l d0, $3333.w uses Opd1b8 ----------
 Opd1b8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
@@ -55247,7 +55873,6 @@ Opd1b8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -55264,7 +55889,6 @@ Opd1b8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#24 ;@ Subtract cycles
@@ -55273,6 +55897,8 @@ Opd1b8:
 
 ;@ ---------- [d1b9] add.l d0, $33333333.l uses Opd1b9 ----------
 Opd1b9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r11:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -55282,7 +55908,6 @@ Opd1b9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r1:
   and r1,r8,#0x0e00
@@ -55299,7 +55924,6 @@ Opd1b9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x7c] ;@ Call write32(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#28 ;@ Subtract cycles
@@ -55330,6 +55954,8 @@ Opd1c0:
 
 ;@ ---------- [d1d0] adda.l (a0), a0 uses Opd1d0 ----------
 Opd1d0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -55338,7 +55964,6 @@ Opd1d0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -55357,6 +55982,8 @@ Opd1d0:
 
 ;@ ---------- [d1d8] adda.l (a0)+, a0 uses Opd1d8 ----------
 Opd1d8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r0:
   and r2,r8,#0x000f
   ldr r0,[r7,r2,lsl #2]
@@ -55366,7 +55993,6 @@ Opd1d8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -55385,6 +56011,8 @@ Opd1d8:
 
 ;@ ---------- [d1e0] adda.l -(a0), a0 uses Opd1e0 ----------
 Opd1e0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -55395,7 +56023,6 @@ Opd1e0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -55414,6 +56041,8 @@ Opd1e0:
 
 ;@ ---------- [d1e8] adda.l ($3333,a0), a0 uses Opd1e8 ----------
 Opd1e8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -55423,7 +56052,6 @@ Opd1e8:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -55442,6 +56070,8 @@ Opd1e8:
 
 ;@ ---------- [d1f0] adda.l ($33,a0,d3.w*2), a0 uses Opd1f0 ----------
 Opd1f0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r0:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -55460,7 +56090,6 @@ Opd1f0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -55479,13 +56108,14 @@ Opd1f0:
 
 ;@ ---------- [d1f8] adda.l $3333.w, a0 uses Opd1f8 ----------
 Opd1f8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r0) into r0:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -55504,6 +56134,8 @@ Opd1f8:
 
 ;@ ---------- [d1f9] adda.l $33333333.l, a0 uses Opd1f9 ----------
 Opd1f9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r0:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -55512,7 +56144,6 @@ Opd1f9:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x70] ;@ Call read32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -55531,6 +56162,8 @@ Opd1f9:
 
 ;@ ---------- [d1fa] adda.l ($3333,pc), a0; =3335 uses Opd1fa ----------
 Opd1fa:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,pc)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   sub r0,r4,r0 ;@ Real PC
@@ -55540,7 +56173,6 @@ Opd1fa:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -55559,6 +56191,8 @@ Opd1fa:
 
 ;@ ---------- [d1fb] adda.l ($33,pc,d3.w*2), a0; =35 uses Opd1fb ----------
 Opd1fb:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,pc,d3.w*2)' into r0:
   ldr r0,[r7,#0x60] ;@ Get Memory base
   ldrh r3,[r4] ;@ Get extension word
@@ -55576,7 +56210,6 @@ Opd1fb:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x88] ;@ Call fetch32(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ EaCalc : Get register index into r11:
   and r11,r8,#0x1e00
@@ -55618,6 +56251,8 @@ Opd1fc:
 
 ;@ ---------- [df08] addx.b -(a0), -(a7) uses Opdf08 ----------
 Opdf08:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get src/dest EA vals
 ;@ EaCalc : Get '-(a0)' into r0:
   and r2,r8,#0x000f
@@ -55628,7 +56263,6 @@ Opdf08:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r6,r0,asl #24
 
 ;@ EaCalc : Get '-(a7)' into r11:
@@ -55639,7 +56273,6 @@ Opdf08:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
 ;@ Get X bit:
@@ -55664,7 +56297,6 @@ Opdf08:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldr r6,[r7,#0x54]
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -55674,6 +56306,8 @@ Opdf08:
 
 ;@ ---------- [df0f] addx.b -(a7), -(a7) uses Opdf0f ----------
 Opdf0f:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ Get src/dest EA vals
 ;@ EaCalc : Get '-(a7)' into r0:
   ldr r0,[r7,#0x3c] ;@ A7
@@ -55683,7 +56317,6 @@ Opdf0f:
   str r4,[r7,#0x40] ;@ Save PC
   mov lr,pc
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r6,r0,asl #24
 
 ;@ EaCalc : Get '-(a7)' into r11:
@@ -55694,7 +56327,6 @@ Opdf0f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x68] ;@ Call read8(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
 ;@ Do arithmetic:
 ;@ Get X bit:
@@ -55719,7 +56351,6 @@ Opdf0f:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x74] ;@ Call write8(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldr r6,[r7,#0x54]
   ldrh r8,[r4],#2 ;@ Fetch next opcode
@@ -56527,6 +57158,8 @@ Ope0b8:
 
 ;@ ---------- [e0d0] asr.w (a0) uses Ope0d0 ----------
 Ope0d0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -56536,7 +57169,6 @@ Ope0d0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
 ;@ For shift right, use loworder bits for the operation:
@@ -56555,7 +57187,6 @@ Ope0d0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -56564,6 +57195,8 @@ Ope0d0:
 
 ;@ ---------- [e0d8] asr.w (a0)+ uses Ope0d8 ----------
 Ope0d8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r11:
   and r2,r8,#0x000f
   ldr r11,[r7,r2,lsl #2]
@@ -56574,7 +57207,6 @@ Ope0d8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
 ;@ For shift right, use loworder bits for the operation:
@@ -56593,7 +57225,6 @@ Ope0d8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -56602,6 +57233,8 @@ Ope0d8:
 
 ;@ ---------- [e0e0] asr.w -(a0) uses Ope0e0 ----------
 Ope0e0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -56613,7 +57246,6 @@ Ope0e0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
 ;@ For shift right, use loworder bits for the operation:
@@ -56632,7 +57264,6 @@ Ope0e0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -56641,6 +57272,8 @@ Ope0e0:
 
 ;@ ---------- [e0e8] asr.w ($3333,a0) uses Ope0e8 ----------
 Ope0e8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r11:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -56651,7 +57284,6 @@ Ope0e8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
 ;@ For shift right, use loworder bits for the operation:
@@ -56670,7 +57302,6 @@ Ope0e8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -56679,6 +57310,8 @@ Ope0e8:
 
 ;@ ---------- [e0f0] asr.w ($33,a0,d3.w*2) uses Ope0f0 ----------
 Ope0f0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r11:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -56698,7 +57331,6 @@ Ope0f0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
 ;@ For shift right, use loworder bits for the operation:
@@ -56717,7 +57349,6 @@ Ope0f0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -56726,6 +57357,8 @@ Ope0f0:
 
 ;@ ---------- [e0f8] asr.w $3333.w uses Ope0f8 ----------
 Ope0f8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
@@ -56733,7 +57366,6 @@ Ope0f8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
 ;@ For shift right, use loworder bits for the operation:
@@ -56752,7 +57384,6 @@ Ope0f8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -56761,6 +57392,8 @@ Ope0f8:
 
 ;@ ---------- [e0f9] asr.w $33333333.l uses Ope0f9 ----------
 Ope0f9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r11:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -56770,7 +57403,6 @@ Ope0f9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
 ;@ For shift right, use loworder bits for the operation:
@@ -56789,7 +57421,6 @@ Ope0f9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -57625,6 +58256,8 @@ Ope1b8:
 
 ;@ ---------- [e1d0] asl.w (a0) uses Ope1d0 ----------
 Ope1d0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -57634,7 +58267,6 @@ Ope1d0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
   adds r3,r0,#0 ;@ save old value for V flag calculation, also clear V
@@ -57656,7 +58288,6 @@ Ope1d0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -57665,6 +58296,8 @@ Ope1d0:
 
 ;@ ---------- [e1d8] asl.w (a0)+ uses Ope1d8 ----------
 Ope1d8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r11:
   and r2,r8,#0x000f
   ldr r11,[r7,r2,lsl #2]
@@ -57675,7 +58308,6 @@ Ope1d8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
   adds r3,r0,#0 ;@ save old value for V flag calculation, also clear V
@@ -57697,7 +58329,6 @@ Ope1d8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -57706,6 +58337,8 @@ Ope1d8:
 
 ;@ ---------- [e1e0] asl.w -(a0) uses Ope1e0 ----------
 Ope1e0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -57717,7 +58350,6 @@ Ope1e0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
   adds r3,r0,#0 ;@ save old value for V flag calculation, also clear V
@@ -57739,7 +58371,6 @@ Ope1e0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -57748,6 +58379,8 @@ Ope1e0:
 
 ;@ ---------- [e1e8] asl.w ($3333,a0) uses Ope1e8 ----------
 Ope1e8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r11:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -57758,7 +58391,6 @@ Ope1e8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
   adds r3,r0,#0 ;@ save old value for V flag calculation, also clear V
@@ -57780,7 +58412,6 @@ Ope1e8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -57789,6 +58420,8 @@ Ope1e8:
 
 ;@ ---------- [e1f0] asl.w ($33,a0,d3.w*2) uses Ope1f0 ----------
 Ope1f0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r11:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -57808,7 +58441,6 @@ Ope1f0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
   adds r3,r0,#0 ;@ save old value for V flag calculation, also clear V
@@ -57830,7 +58462,6 @@ Ope1f0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -57839,6 +58470,8 @@ Ope1f0:
 
 ;@ ---------- [e1f8] asl.w $3333.w uses Ope1f8 ----------
 Ope1f8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
@@ -57846,7 +58479,6 @@ Ope1f8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
   adds r3,r0,#0 ;@ save old value for V flag calculation, also clear V
@@ -57868,7 +58500,6 @@ Ope1f8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -57877,6 +58508,8 @@ Ope1f8:
 
 ;@ ---------- [e1f9] asl.w $33333333.l uses Ope1f9 ----------
 Ope1f9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r11:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -57886,7 +58519,6 @@ Ope1f9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
   adds r3,r0,#0 ;@ save old value for V flag calculation, also clear V
@@ -57908,7 +58540,6 @@ Ope1f9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -57995,6 +58626,8 @@ Ope290:
 
 ;@ ---------- [e2d0] lsr.w (a0) uses Ope2d0 ----------
 Ope2d0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -58004,7 +58637,6 @@ Ope2d0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
 ;@ For shift right, use loworder bits for the operation:
@@ -58024,7 +58656,6 @@ Ope2d0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -58033,6 +58664,8 @@ Ope2d0:
 
 ;@ ---------- [e2d8] lsr.w (a0)+ uses Ope2d8 ----------
 Ope2d8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r11:
   and r2,r8,#0x000f
   ldr r11,[r7,r2,lsl #2]
@@ -58043,7 +58676,6 @@ Ope2d8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
 ;@ For shift right, use loworder bits for the operation:
@@ -58063,7 +58695,6 @@ Ope2d8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -58072,6 +58703,8 @@ Ope2d8:
 
 ;@ ---------- [e2e0] lsr.w -(a0) uses Ope2e0 ----------
 Ope2e0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -58083,7 +58716,6 @@ Ope2e0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
 ;@ For shift right, use loworder bits for the operation:
@@ -58103,7 +58735,6 @@ Ope2e0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -58112,6 +58743,8 @@ Ope2e0:
 
 ;@ ---------- [e2e8] lsr.w ($3333,a0) uses Ope2e8 ----------
 Ope2e8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r11:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -58122,7 +58755,6 @@ Ope2e8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
 ;@ For shift right, use loworder bits for the operation:
@@ -58142,7 +58774,6 @@ Ope2e8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -58151,6 +58782,8 @@ Ope2e8:
 
 ;@ ---------- [e2f0] lsr.w ($33,a0,d3.w*2) uses Ope2f0 ----------
 Ope2f0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r11:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -58170,7 +58803,6 @@ Ope2f0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
 ;@ For shift right, use loworder bits for the operation:
@@ -58190,7 +58822,6 @@ Ope2f0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -58199,6 +58830,8 @@ Ope2f0:
 
 ;@ ---------- [e2f8] lsr.w $3333.w uses Ope2f8 ----------
 Ope2f8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
@@ -58206,7 +58839,6 @@ Ope2f8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
 ;@ For shift right, use loworder bits for the operation:
@@ -58226,7 +58858,6 @@ Ope2f8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -58235,6 +58866,8 @@ Ope2f8:
 
 ;@ ---------- [e2f9] lsr.w $33333333.l uses Ope2f9 ----------
 Ope2f9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r11:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -58244,7 +58877,6 @@ Ope2f9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
 ;@ For shift right, use loworder bits for the operation:
@@ -58264,7 +58896,6 @@ Ope2f9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -58347,6 +58978,8 @@ Ope390:
 
 ;@ ---------- [e3d0] lsl.w (a0) uses Ope3d0 ----------
 Ope3d0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -58356,7 +58989,6 @@ Ope3d0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
 ;@ Shift register:
@@ -58369,7 +59001,6 @@ Ope3d0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -58378,6 +59009,8 @@ Ope3d0:
 
 ;@ ---------- [e3d8] lsl.w (a0)+ uses Ope3d8 ----------
 Ope3d8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r11:
   and r2,r8,#0x000f
   ldr r11,[r7,r2,lsl #2]
@@ -58388,7 +59021,6 @@ Ope3d8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
 ;@ Shift register:
@@ -58401,7 +59033,6 @@ Ope3d8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -58410,6 +59041,8 @@ Ope3d8:
 
 ;@ ---------- [e3e0] lsl.w -(a0) uses Ope3e0 ----------
 Ope3e0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -58421,7 +59054,6 @@ Ope3e0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
 ;@ Shift register:
@@ -58434,7 +59066,6 @@ Ope3e0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -58443,6 +59074,8 @@ Ope3e0:
 
 ;@ ---------- [e3e8] lsl.w ($3333,a0) uses Ope3e8 ----------
 Ope3e8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r11:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -58453,7 +59086,6 @@ Ope3e8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
 ;@ Shift register:
@@ -58466,7 +59098,6 @@ Ope3e8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -58475,6 +59106,8 @@ Ope3e8:
 
 ;@ ---------- [e3f0] lsl.w ($33,a0,d3.w*2) uses Ope3f0 ----------
 Ope3f0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r11:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -58494,7 +59127,6 @@ Ope3f0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
 ;@ Shift register:
@@ -58507,7 +59139,6 @@ Ope3f0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -58516,6 +59147,8 @@ Ope3f0:
 
 ;@ ---------- [e3f8] lsl.w $3333.w uses Ope3f8 ----------
 Ope3f8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
@@ -58523,7 +59156,6 @@ Ope3f8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
 ;@ Shift register:
@@ -58536,7 +59168,6 @@ Ope3f8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -58545,6 +59176,8 @@ Ope3f8:
 
 ;@ ---------- [e3f9] lsl.w $33333333.l uses Ope3f9 ----------
 Ope3f9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r11:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -58554,7 +59187,6 @@ Ope3f9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
 ;@ Shift register:
@@ -58567,7 +59199,6 @@ Ope3f9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -58576,6 +59207,8 @@ Ope3f9:
 
 ;@ ---------- [e4d0] roxr.w (a0) uses Ope4d0 ----------
 Ope4d0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -58585,7 +59218,6 @@ Ope4d0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
   orr r0,r0,r0,lsr #16
@@ -58603,7 +59235,6 @@ Ope4d0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -58612,6 +59243,8 @@ Ope4d0:
 
 ;@ ---------- [e4d8] roxr.w (a0)+ uses Ope4d8 ----------
 Ope4d8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r11:
   and r2,r8,#0x000f
   ldr r11,[r7,r2,lsl #2]
@@ -58622,7 +59255,6 @@ Ope4d8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
   orr r0,r0,r0,lsr #16
@@ -58640,7 +59272,6 @@ Ope4d8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -58649,6 +59280,8 @@ Ope4d8:
 
 ;@ ---------- [e4e0] roxr.w -(a0) uses Ope4e0 ----------
 Ope4e0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -58660,7 +59293,6 @@ Ope4e0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
   orr r0,r0,r0,lsr #16
@@ -58678,7 +59310,6 @@ Ope4e0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -58687,6 +59318,8 @@ Ope4e0:
 
 ;@ ---------- [e4e8] roxr.w ($3333,a0) uses Ope4e8 ----------
 Ope4e8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r11:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -58697,7 +59330,6 @@ Ope4e8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
   orr r0,r0,r0,lsr #16
@@ -58715,7 +59347,6 @@ Ope4e8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -58724,6 +59355,8 @@ Ope4e8:
 
 ;@ ---------- [e4f0] roxr.w ($33,a0,d3.w*2) uses Ope4f0 ----------
 Ope4f0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r11:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -58743,7 +59376,6 @@ Ope4f0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
   orr r0,r0,r0,lsr #16
@@ -58761,7 +59393,6 @@ Ope4f0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -58770,6 +59401,8 @@ Ope4f0:
 
 ;@ ---------- [e4f8] roxr.w $3333.w uses Ope4f8 ----------
 Ope4f8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
@@ -58777,7 +59410,6 @@ Ope4f8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
   orr r0,r0,r0,lsr #16
@@ -58795,7 +59427,6 @@ Ope4f8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -58804,6 +59435,8 @@ Ope4f8:
 
 ;@ ---------- [e4f9] roxr.w $33333333.l uses Ope4f9 ----------
 Ope4f9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r11:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -58813,7 +59446,6 @@ Ope4f9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
   orr r0,r0,r0,lsr #16
@@ -58831,7 +59463,6 @@ Ope4f9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -58840,6 +59471,8 @@ Ope4f9:
 
 ;@ ---------- [e5d0] roxl.w (a0) uses Ope5d0 ----------
 Ope5d0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -58849,7 +59482,6 @@ Ope5d0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
   ldr r3,[r7,#0x4c]
@@ -58865,7 +59497,6 @@ Ope5d0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -58874,6 +59505,8 @@ Ope5d0:
 
 ;@ ---------- [e5d8] roxl.w (a0)+ uses Ope5d8 ----------
 Ope5d8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r11:
   and r2,r8,#0x000f
   ldr r11,[r7,r2,lsl #2]
@@ -58884,7 +59517,6 @@ Ope5d8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
   ldr r3,[r7,#0x4c]
@@ -58900,7 +59532,6 @@ Ope5d8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -58909,6 +59540,8 @@ Ope5d8:
 
 ;@ ---------- [e5e0] roxl.w -(a0) uses Ope5e0 ----------
 Ope5e0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -58920,7 +59553,6 @@ Ope5e0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
   ldr r3,[r7,#0x4c]
@@ -58936,7 +59568,6 @@ Ope5e0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -58945,6 +59576,8 @@ Ope5e0:
 
 ;@ ---------- [e5e8] roxl.w ($3333,a0) uses Ope5e8 ----------
 Ope5e8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r11:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -58955,7 +59588,6 @@ Ope5e8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
   ldr r3,[r7,#0x4c]
@@ -58971,7 +59603,6 @@ Ope5e8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -58980,6 +59611,8 @@ Ope5e8:
 
 ;@ ---------- [e5f0] roxl.w ($33,a0,d3.w*2) uses Ope5f0 ----------
 Ope5f0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r11:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -58999,7 +59632,6 @@ Ope5f0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
   ldr r3,[r7,#0x4c]
@@ -59015,7 +59647,6 @@ Ope5f0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -59024,6 +59655,8 @@ Ope5f0:
 
 ;@ ---------- [e5f8] roxl.w $3333.w uses Ope5f8 ----------
 Ope5f8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
@@ -59031,7 +59664,6 @@ Ope5f8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
   ldr r3,[r7,#0x4c]
@@ -59047,7 +59679,6 @@ Ope5f8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -59056,6 +59687,8 @@ Ope5f8:
 
 ;@ ---------- [e5f9] roxl.w $33333333.l uses Ope5f9 ----------
 Ope5f9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r11:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -59065,7 +59698,6 @@ Ope5f9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
   ldr r3,[r7,#0x4c]
@@ -59081,7 +59713,6 @@ Ope5f9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -59090,6 +59721,8 @@ Ope5f9:
 
 ;@ ---------- [e6d0] ror.w (a0) uses Ope6d0 ----------
 Ope6d0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -59099,7 +59732,6 @@ Ope6d0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
 ;@ Mirror value in whole 32 bits:
@@ -59115,7 +59747,6 @@ Ope6d0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -59124,6 +59755,8 @@ Ope6d0:
 
 ;@ ---------- [e6d8] ror.w (a0)+ uses Ope6d8 ----------
 Ope6d8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r11:
   and r2,r8,#0x000f
   ldr r11,[r7,r2,lsl #2]
@@ -59134,7 +59767,6 @@ Ope6d8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
 ;@ Mirror value in whole 32 bits:
@@ -59150,7 +59782,6 @@ Ope6d8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -59159,6 +59790,8 @@ Ope6d8:
 
 ;@ ---------- [e6e0] ror.w -(a0) uses Ope6e0 ----------
 Ope6e0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -59170,7 +59803,6 @@ Ope6e0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
 ;@ Mirror value in whole 32 bits:
@@ -59186,7 +59818,6 @@ Ope6e0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -59195,6 +59826,8 @@ Ope6e0:
 
 ;@ ---------- [e6e8] ror.w ($3333,a0) uses Ope6e8 ----------
 Ope6e8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r11:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -59205,7 +59838,6 @@ Ope6e8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
 ;@ Mirror value in whole 32 bits:
@@ -59221,7 +59853,6 @@ Ope6e8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -59230,6 +59861,8 @@ Ope6e8:
 
 ;@ ---------- [e6f0] ror.w ($33,a0,d3.w*2) uses Ope6f0 ----------
 Ope6f0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r11:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -59249,7 +59882,6 @@ Ope6f0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
 ;@ Mirror value in whole 32 bits:
@@ -59265,7 +59897,6 @@ Ope6f0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -59274,6 +59905,8 @@ Ope6f0:
 
 ;@ ---------- [e6f8] ror.w $3333.w uses Ope6f8 ----------
 Ope6f8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
@@ -59281,7 +59914,6 @@ Ope6f8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
 ;@ Mirror value in whole 32 bits:
@@ -59297,7 +59929,6 @@ Ope6f8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -59306,6 +59937,8 @@ Ope6f8:
 
 ;@ ---------- [e6f9] ror.w $33333333.l uses Ope6f9 ----------
 Ope6f9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r11:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -59315,7 +59948,6 @@ Ope6f9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
 ;@ Mirror value in whole 32 bits:
@@ -59331,7 +59963,6 @@ Ope6f9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
@@ -59340,6 +59971,8 @@ Ope6f9:
 
 ;@ ---------- [e7d0] rol.w (a0) uses Ope7d0 ----------
 Ope7d0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -59349,7 +59982,6 @@ Ope7d0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
 ;@ Mirror value in whole 32 bits:
@@ -59368,7 +60000,6 @@ Ope7d0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -59377,6 +60008,8 @@ Ope7d0:
 
 ;@ ---------- [e7d8] rol.w (a0)+ uses Ope7d8 ----------
 Ope7d8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '(a0)+' into r11:
   and r2,r8,#0x000f
   ldr r11,[r7,r2,lsl #2]
@@ -59387,7 +60020,6 @@ Ope7d8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
 ;@ Mirror value in whole 32 bits:
@@ -59406,7 +60038,6 @@ Ope7d8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#12 ;@ Subtract cycles
@@ -59415,6 +60046,8 @@ Ope7d8:
 
 ;@ ---------- [e7e0] rol.w -(a0) uses Ope7e0 ----------
 Ope7e0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '-(a0)' into r11:
   and r2,r8,#0x000f
   orr r2,r2,#0x8 ;@ A0-7
@@ -59426,7 +60059,6 @@ Ope7e0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
 ;@ Mirror value in whole 32 bits:
@@ -59445,7 +60077,6 @@ Ope7e0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#14 ;@ Subtract cycles
@@ -59454,6 +60085,8 @@ Ope7e0:
 
 ;@ ---------- [e7e8] rol.w ($3333,a0) uses Ope7e8 ----------
 Ope7e8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($3333,a0)' into r11:
   ldrsh r0,[r4],#2 ;@ Fetch offset
   and r2,r8,#0x000f
@@ -59464,7 +60097,6 @@ Ope7e8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
 ;@ Mirror value in whole 32 bits:
@@ -59483,7 +60115,6 @@ Ope7e8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -59492,6 +60123,8 @@ Ope7e8:
 
 ;@ ---------- [e7f0] rol.w ($33,a0,d3.w*2) uses Ope7f0 ----------
 Ope7f0:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '($33,a0,d3.w*2)' into r11:
 ;@ Get extension word into r3:
   ldrh r3,[r4],#2 ;@ ($Disp,PC,Rn)
@@ -59511,7 +60144,6 @@ Ope7f0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
 ;@ Mirror value in whole 32 bits:
@@ -59530,7 +60162,6 @@ Ope7f0:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#18 ;@ Subtract cycles
@@ -59539,6 +60170,8 @@ Ope7f0:
 
 ;@ ---------- [e7f8] rol.w $3333.w uses Ope7f8 ----------
 Ope7f8:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$3333.w' into r11:
   ldrsh r11,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaRead : Read '$3333.w' (address in r11) into r0:
@@ -59546,7 +60179,6 @@ Ope7f8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
 ;@ Mirror value in whole 32 bits:
@@ -59565,7 +60197,6 @@ Ope7f8:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#16 ;@ Subtract cycles
@@ -59574,6 +60205,8 @@ Ope7f8:
 
 ;@ ---------- [e7f9] rol.w $33333333.l uses Ope7f9 ----------
 Ope7f9:
+  str r4,[r7,#0x50] ;@ Save prev PC + 2
+
 ;@ EaCalc : Get '$33333333.l' into r11:
   ldrh r2,[r4],#2 ;@ Fetch Absolute Long address
   ldrh r0,[r4],#2
@@ -59583,7 +60216,6 @@ Ope7f9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
   mov r0,r0,asl #16
 
 ;@ Mirror value in whole 32 bits:
@@ -59602,7 +60234,6 @@ Ope7f9:
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
-  ldr r4,[r7,#0x40] ;@ Load PC
 
   ldrh r8,[r4],#2 ;@ Fetch next opcode
   subs r5,r5,#20 ;@ Subtract cycles
