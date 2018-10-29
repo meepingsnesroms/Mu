@@ -287,7 +287,7 @@ void resetFunctionViewer(){
    hwTests[totalHwTests].testFunction = getPenPosition;
    totalHwTests++;
    
-   if(cpuType & CPU_M68K){
+   if(cpuType & CPU_M68K || cpuType == CPU_NONE){
       /*68k only functions*/
       if((cpuType & CPU_M68K_TYPES) != CPU_M68K_328){
          /*original dragonball doesnt have a bootloader*/
@@ -344,6 +344,10 @@ void resetFunctionViewer(){
       hwTests[totalHwTests].testFunction = ads7846Read;
       totalHwTests++;
       
+      StrNCopy(hwTests[totalHwTests].name, "Play Constant Tone", TEST_NAME_LENGTH);
+      hwTests[totalHwTests].testFunction = playConstantTone;
+      totalHwTests++;
+      
       if(isM515){
          StrNCopy(hwTests[totalHwTests].name, "Toggle Backlight", TEST_NAME_LENGTH);
          hwTests[totalHwTests].testFunction = toggleBacklight;
@@ -382,14 +386,6 @@ void resetFunctionViewer(){
       
       StrNCopy(hwTests[totalHwTests].name, "Get SPI2 ENABLE Delay", TEST_NAME_LENGTH);
       hwTests[totalHwTests].testFunction = checkSpi2EnableBitDelay;
-      totalHwTests++;
-      
-      StrNCopy(hwTests[totalHwTests].name, "Interrogate SPI2", TEST_NAME_LENGTH);
-      hwTests[totalHwTests].testFunction = interrogateSpi2;
-      totalHwTests++;
-      
-      StrNCopy(hwTests[totalHwTests].name, "Self Probe SPI2", TEST_NAME_LENGTH);
-      hwTests[totalHwTests].testFunction = selfProbeSpi2;
       totalHwTests++;
    }
 }

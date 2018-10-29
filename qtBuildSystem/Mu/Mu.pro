@@ -62,9 +62,9 @@ ios{
 
 CONFIG(debug, debug|release){
     # debug build, be accurate, fail hard, and add logging
-    # DEFINES += EMU_DEBUG EMU_CUSTOM_DEBUG_LOG_HANDLER
+    DEFINES += EMU_DEBUG EMU_CUSTOM_DEBUG_LOG_HANDLER
     windows|macx|linux-g++{
-        # DEFINES += EMU_SANDBOX
+        DEFINES += EMU_SANDBOX
         # DEFINES += EMU_SANDBOX_OPCODE_LEVEL_DEBUG
         # DEFINES += EMU_SANDBOX_LOG_APIS
         # also check for any buffer overflows and memory leaks

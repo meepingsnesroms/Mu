@@ -272,98 +272,6 @@ var checkSpi2EnableBitDelay(){
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
 
-var interrogateSpi2(){
-   static Boolean firstRun = true;
-   static uint32_t regAddresses[8] = {HW_REG_ADDR(PBDATA), HW_REG_ADDR(PCDATA), HW_REG_ADDR(PEDATA), HW_REG_ADDR(PFDATA), HW_REG_ADDR(PGDATA), HW_REG_ADDR(PJDATA), HW_REG_ADDR(PKDATA), HW_REG_ADDR(PMDATA)};
-   static uint8_t registersDuringSpiRead[8];/*P(BCEFGJKM)DATA*/
-   uint16_t y = 0;
-   
-   if(firstRun){
-      firstRun = false;
-      debugSafeScreenClear(C_WHITE);
-   }
-   
-   if(getButtonPressed(buttonBack)){
-      firstRun = true;
-      exitSubprogram();
-   }
-   
-   if(getButton(buttonSelect)){
-      uint8_t count;
-      
-      for(count = 0; count < sizeof(registersDuringSpiRead); count++){
-         uint16_t osSpi2Control = readArbitraryMemory16(HW_REG_ADDR(SPICONT2)) & 0xE030;/*use data rate, phase and polarity from OS*/
-         
-         /*enable SPI2*/
-         writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), osSpi2Control | 0x0200/*enable*/);
-         
-         /*flush the register*/
-         writeArbitraryMemory16(HW_REG_ADDR(SPIDATA2), 0x0000);
-         writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), osSpi2Control | 0x0200/*enable*/ | 0x0100/*exchange*/ | 0x0015);
-         while(readArbitraryMemory16(HW_REG_ADDR(SPICONT2)) & 0x0100);
-         
-         /*send control byte*/
-         writeArbitraryMemory16(HW_REG_ADDR(SPIDATA2), 0xD4 << 8);
-         writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), osSpi2Control | 0x0200/*enable*/ | 0x0100/*exchange*/ | 0x0007);
-         
-         /*final clock before busy, this should turn busy line on*/
-         writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), osSpi2Control | 0x0200/*enable*/ | 0x0100/*exchange*/ | 0x0007);
-         registersDuringSpiRead[count] = readArbitraryMemory8(regAddresses[count]);
-      }
-   }
-   else{
-      uint8_t count;
-      
-      for(count = 0; count < sizeof(registersDuringSpiRead); count++)
-         registersDuringSpiRead[count] = readArbitraryMemory8(regAddresses[count]);
-   }
-   
-   StrPrintF(sharedDataBuffer, "Select = ADS7846 Ch 5 Read");
-   UG_PutString(0, y, sharedDataBuffer);
-   y += FONT_HEIGHT + 1;
-   StrPrintF(sharedDataBuffer, "PBDATA:0x%02X", registersDuringSpiRead[0]);
-   UG_PutString(0, y, sharedDataBuffer);
-   y += FONT_HEIGHT + 1;
-   StrPrintF(sharedDataBuffer, "PCDATA:0x%02X", registersDuringSpiRead[1]);
-   UG_PutString(0, y, sharedDataBuffer);
-   y += FONT_HEIGHT + 1;
-   /*PDDATA is buttons, not relevent to the SPI*/
-   StrPrintF(sharedDataBuffer, "PEDATA:0x%02X", registersDuringSpiRead[2]);
-   UG_PutString(0, y, sharedDataBuffer);
-   y += FONT_HEIGHT + 1;
-   StrPrintF(sharedDataBuffer, "PFDATA:0x%02X", registersDuringSpiRead[3]);
-   UG_PutString(0, y, sharedDataBuffer);
-   y += FONT_HEIGHT + 1;
-   StrPrintF(sharedDataBuffer, "PGDATA:0x%02X", registersDuringSpiRead[4]);
-   UG_PutString(0, y, sharedDataBuffer);
-   y += FONT_HEIGHT + 1;
-   StrPrintF(sharedDataBuffer, "PJDATA:0x%02X", registersDuringSpiRead[5]);
-   UG_PutString(0, y, sharedDataBuffer);
-   y += FONT_HEIGHT + 1;
-   StrPrintF(sharedDataBuffer, "PKDATA:0x%02X", registersDuringSpiRead[6]);
-   UG_PutString(0, y, sharedDataBuffer);
-   y += FONT_HEIGHT + 1;
-   StrPrintF(sharedDataBuffer, "PMDATA:0x%02X", registersDuringSpiRead[7]);
-   UG_PutString(0, y, sharedDataBuffer);
-   y += FONT_HEIGHT + 1;
-   /*
-   StrPrintF(sharedDataBuffer, "PESEL:0x%02X", readArbitraryMemory8(HW_REG_ADDR(PESEL)));
-   UG_PutString(0, y, sharedDataBuffer);
-   y += FONT_HEIGHT + 1;
-   StrPrintF(sharedDataBuffer, "PEDIR:0x%02X", readArbitraryMemory8(HW_REG_ADDR(PEDIR)));
-   UG_PutString(0, y, sharedDataBuffer);
-   y += FONT_HEIGHT + 1;
-   */
-   StrPrintF(sharedDataBuffer, "SPICONT2:0x%04X", readArbitraryMemory16(HW_REG_ADDR(SPICONT2)));
-   UG_PutString(0, y, sharedDataBuffer);
-   y += FONT_HEIGHT + 1;
-   StrPrintF(sharedDataBuffer, "SPIDATA2:0x%04X", readArbitraryMemory16(HW_REG_ADDR(SPIDATA2)));
-   UG_PutString(0, y, sharedDataBuffer);
-   y += FONT_HEIGHT + 1;
-   
-   return makeVar(LENGTH_0, TYPE_NULL, 0);
-}
-
 var tstat1GetSemaphoreLockOrder(){
    static Boolean firstRun = true;
    uint16_t testWriteValue = 0xF0F1;
@@ -510,49 +418,6 @@ var ads7846ReadOsVersion(){
       UG_PutString(0, y, sharedDataBuffer);
       y += FONT_HEIGHT + 1;
    }
-   
-   return makeVar(LENGTH_0, TYPE_NULL, 0);
-}
-
-var selfProbeSpi2(){
-   static Boolean firstRun = true;
-   uint16_t testWriteValue = 0xF0F1;
-   uint16_t y = 0;
-   
-   if(firstRun){
-      firstRun = false;
-      debugSafeScreenClear(C_WHITE);
-   }
-   
-   if(getButtonPressed(buttonBack)){
-      firstRun = true;
-      exitSubprogram();
-   }
-   
-   /*enable SPI2*/
-   writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), 0x0200);
-   
-   /*set output value*/
-   writeArbitraryMemory16(HW_REG_ADDR(SPIDATA2), 0x00F0);
-   
-   StrPrintF(sharedDataBuffer, "SPIDATA2:0x%04X", readArbitraryMemory16(HW_REG_ADDR(SPIDATA2)));
-   UG_PutString(0, y, sharedDataBuffer);
-   y += FONT_HEIGHT + 1;
-   writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), 0x0301);/*shift in 2 bits*/
-   StrPrintF(sharedDataBuffer, "Shift left 2");
-   UG_PutString(0, y, sharedDataBuffer);
-   y += FONT_HEIGHT + 1;
-   StrPrintF(sharedDataBuffer, "New SPIDATA2:0x%04X", readArbitraryMemory16(HW_REG_ADDR(SPIDATA2)));
-   UG_PutString(0, y, sharedDataBuffer);
-   y += FONT_HEIGHT + 1;
-   writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), 0xE000);/*disable SPI2*/
-   StrPrintF(sharedDataBuffer, "Disabled SPICONT2:0x%04X", readArbitraryMemory16(HW_REG_ADDR(SPICONT2)));
-   UG_PutString(0, y, sharedDataBuffer);
-   y += FONT_HEIGHT + 1;
-   writeArbitraryMemory16(HW_REG_ADDR(SPICONT2), 0xC000);/*write after disabled test*/
-   StrPrintF(sharedDataBuffer, "Written SPICONT2:0x%04X", readArbitraryMemory16(HW_REG_ADDR(SPICONT2)));
-   UG_PutString(0, y, sharedDataBuffer);
-   y += FONT_HEIGHT + 1;
    
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
@@ -1030,6 +895,32 @@ var getPenPosition(){
    StrPrintF(sharedDataBuffer, "Screen Y:%d    ", screenPen.y);/*"true " needs the space to clear the e from "false"*/
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
+   
+   return makeVar(LENGTH_0, TYPE_NULL, 0);
+}
+
+var playConstantTone(){
+   static Boolean firstRun = true;
+   
+   if(firstRun){
+      firstRun = false;
+      debugSafeScreenClear(C_WHITE);
+      StrPrintF(sharedDataBuffer, "Squealing In Progress");
+      UG_PutString(0, 0, sharedDataBuffer);
+      writeArbitraryMemory16(HW_REG_ADDR(PWMC1), 0x001C);
+      writeArbitraryMemory8(HW_REG_ADDR(PWMP1), 0xFF);
+   }
+   
+   while(readArbitraryMemory16(HW_REG_ADDR(PWMC1)) & 0x0020){
+      /*add audio samples*/
+      writeArbitraryMemory8(HW_REG_ADDR(PWMS1 + 1), 0x7F);
+   }
+   
+   if(getButtonPressed(buttonBack)){
+      writeArbitraryMemory16(HW_REG_ADDR(PWMC1), 0x0000);
+      firstRun = true;
+      exitSubprogram();
+   }
    
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
