@@ -6,6 +6,8 @@ INCFLAGS := -I$(LIBRETRO_COMM_DIR)/include
 
 ifeq ($(DEBUG), 1)
    COREDEFINES += -DEMU_DEBUG -DEMU_SANDBOX
+else
+   COREDEFINES += -DEMU_NO_SAFETY
 endif
 
 ifneq (,$(findstring msvc2003,$(platform)))

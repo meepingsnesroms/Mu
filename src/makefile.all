@@ -13,7 +13,7 @@ EMU_SOURCES_C := $(EMU_PATH)/emulator.c \
       $(EMU_PATH)/audio/inductor.c \
       $(EMU_PATH)/debug/sandbox.c
 
-ifeq ($(EMU_OPTIMIZE_FOR_ARM), 1)
+ifeq ($(EMU_OPTIMIZE_FOR_ARM), true)
    EMU_DEFINES += -DEMU_OPTIMIZE_FOR_ARM
    EMU_SOURCES_ASM += $(EMU_PATH)/m68k/cyclone/Cyclone.s
 else

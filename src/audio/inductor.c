@@ -6,7 +6,7 @@
 #include "blip_buf.h"
 
 
-#define INDUCTOR_CLOCK_POWER 0.000001//the amount 1 clock of true or false will increase the inductors total value
+#define INDUCTOR_CLOCK_POWER 0.000001//the amount 1 clock of true or false will change the inductors total value
 
 
 double inductorCurrentCharge;

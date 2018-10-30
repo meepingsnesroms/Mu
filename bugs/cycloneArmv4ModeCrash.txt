@@ -1,0 +1,18 @@
+0x9bdfeacc                   0f 10 08 e2  and	r1, r8, #15
+0x9bdfead0  <+0x0004>        01 11 d7 e7  ldrb	r1, [r7, r1, lsl #2]
+0x9bdfead4  <+0x0008>        01 2c b0 e1  lsls	r2, r1, #24
+0x9bdfead8  <+0x000c>        02 a1 02 e2  and	r10, r2, #-2147483648	; 0x80000000
+0x9bdfeadc  <+0x0010>        01 a1 8a 03  orreq	r10, r10, #1073741824	; 0x40000000
+0x9bdfeae0  <+0x0014>        1e 2c 08 e2  and	r2, r8, #7680	; 0x1e00
+0x9bdfeae4  <+0x0018>        a2 03 97 e7  ldr	r0, [r7, r2, lsr #7]
+0x9bdfeae8  <+0x001c>        01 30 80 e2  add	r3, r0, #1
+0x9bdfeaec  <+0x0020>        a2 33 87 e7  str	r3, [r7, r2, lsr #7]
+0x9bdfeaf0  <+0x0024>        0f e0 a0 e1  mov	lr, pc
+0x9bdfeaf4  <+0x0028>        74 f0 97 e5  ldr	pc, [r7, #116]	; 0x74
+0x9bdfeaf8  <+0x002c>        b2 80 d4 e0  ldrh	r8, [r4], #2
+0x9bdfeafc  <+0x0030>        08 50 55 e2  subs	r5, r5, #8
+0x9bdfeb00  <+0x0034>        08 f1 96 c7  ldrgt	pc, [r6, r8, lsl #2]
+0x9bdfeb04  <+0x0038>        a3 fb ff ea  b	0x9bdfd998 <CycloneEnd>
+
+Crashed with SIGSEGV
+When compiled in release mode crashes with SIGILL

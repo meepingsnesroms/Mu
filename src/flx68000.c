@@ -7,6 +7,7 @@
 #include "memoryAccess.h"
 
 #if defined(EMU_OPTIMIZE_FOR_ARM)
+#include <stdlib.h>//for exit(1)
 #include "m68k/cyclone/Cyclone.h"
 #else
 #include "m68k/musashi/m68kcpu.h"
@@ -42,7 +43,7 @@ unsigned int checkPc(unsigned int pc){
       windowSize = chips[CHIP_DX_RAM].mask + 1;
    }
    else{
-      //executing from anywhere else is not supported
+      //executing from anywhere else is not supported, just crash to prevent corrupting the user RAM file with invalid accesses
       exit(1);
    }
 

@@ -14761,7 +14761,8 @@ Op2100:
   mov r11,r1
   add r0,r8,#2
 ;@ EaWrite: Write r1 into '-(a0)' (address in r0):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
 
@@ -14799,7 +14800,8 @@ Op2110:
   mov r11,r1
   add r0,r8,#2
 ;@ EaWrite: Write r1 into '-(a0)' (address in r0):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
 
@@ -14838,7 +14840,8 @@ Op2118:
   mov r11,r1
   add r0,r8,#2
 ;@ EaWrite: Write r1 into '-(a0)' (address in r0):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
 
@@ -14878,7 +14881,8 @@ Op2120:
   mov r11,r1
   add r0,r8,#2
 ;@ EaWrite: Write r1 into '-(a0)' (address in r0):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
 
@@ -14917,7 +14921,8 @@ Op2128:
   mov r11,r1
   add r0,r8,#2
 ;@ EaWrite: Write r1 into '-(a0)' (address in r0):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
 
@@ -14965,7 +14970,8 @@ Op2130:
   mov r11,r1
   add r0,r8,#2
 ;@ EaWrite: Write r1 into '-(a0)' (address in r0):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
 
@@ -15001,7 +15007,8 @@ Op2138:
   mov r11,r1
   add r0,r8,#2
 ;@ EaWrite: Write r1 into '-(a0)' (address in r0):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
 
@@ -15039,7 +15046,8 @@ Op2139:
   mov r11,r1
   add r0,r8,#2
 ;@ EaWrite: Write r1 into '-(a0)' (address in r0):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
 
@@ -15078,7 +15086,8 @@ Op213a:
   mov r11,r1
   add r0,r8,#2
 ;@ EaWrite: Write r1 into '-(a0)' (address in r0):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
 
@@ -15125,7 +15134,8 @@ Op213b:
   mov r11,r1
   add r0,r8,#2
 ;@ EaWrite: Write r1 into '-(a0)' (address in r0):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
 
@@ -15161,7 +15171,8 @@ Op213c:
   mov r11,r1
   add r0,r8,#2
 ;@ EaWrite: Write r1 into '-(a0)' (address in r0):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
 
@@ -16896,7 +16907,8 @@ Op2f00:
   mov r11,r1
   add r0,r8,#2
 ;@ EaWrite: Write r1 into '-(a7)' (address in r0):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
 
@@ -16932,7 +16944,8 @@ Op2f10:
   mov r11,r1
   add r0,r8,#2
 ;@ EaWrite: Write r1 into '-(a7)' (address in r0):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
 
@@ -16969,7 +16982,8 @@ Op2f18:
   mov r11,r1
   add r0,r8,#2
 ;@ EaWrite: Write r1 into '-(a7)' (address in r0):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
 
@@ -17007,7 +17021,8 @@ Op2f20:
   mov r11,r1
   add r0,r8,#2
 ;@ EaWrite: Write r1 into '-(a7)' (address in r0):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
 
@@ -17044,7 +17059,8 @@ Op2f28:
   mov r11,r1
   add r0,r8,#2
 ;@ EaWrite: Write r1 into '-(a7)' (address in r0):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
 
@@ -17090,7 +17106,8 @@ Op2f30:
   mov r11,r1
   add r0,r8,#2
 ;@ EaWrite: Write r1 into '-(a7)' (address in r0):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
 
@@ -17124,7 +17141,8 @@ Op2f38:
   mov r11,r1
   add r0,r8,#2
 ;@ EaWrite: Write r1 into '-(a7)' (address in r0):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
 
@@ -17160,7 +17178,8 @@ Op2f39:
   mov r11,r1
   add r0,r8,#2
 ;@ EaWrite: Write r1 into '-(a7)' (address in r0):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
 
@@ -17197,7 +17216,8 @@ Op2f3a:
   mov r11,r1
   add r0,r8,#2
 ;@ EaWrite: Write r1 into '-(a7)' (address in r0):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
 
@@ -17242,7 +17262,8 @@ Op2f3b:
   mov r11,r1
   add r0,r8,#2
 ;@ EaWrite: Write r1 into '-(a7)' (address in r0):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
 
@@ -17276,7 +17297,8 @@ Op2f3c:
   mov r11,r1
   add r0,r8,#2
 ;@ EaWrite: Write r1 into '-(a7)' (address in r0):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
 
@@ -17498,7 +17520,8 @@ Op3050:
 ;@ EaRead : Read '(a0)' (address in r0) into r1:
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  sxth r1,r0 ;@ sign extend
+  mov r1,r0,asl #16
+  mov r1,r1,asr #16 ;@ sign extend
 
 ;@ EaCalc : Get register index into r0:
   and r0,r8,#0x1e00
@@ -17520,7 +17543,8 @@ Op3058:
 ;@ EaRead : Read '(a0)+' (address in r0) into r1:
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  sxth r1,r0 ;@ sign extend
+  mov r1,r0,asl #16
+  mov r1,r1,asr #16 ;@ sign extend
 
 ;@ EaCalc : Get register index into r0:
   and r0,r8,#0x1e00
@@ -17543,7 +17567,8 @@ Op3060:
 ;@ EaRead : Read '-(a0)' (address in r0) into r1:
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  sxth r1,r0 ;@ sign extend
+  mov r1,r0,asl #16
+  mov r1,r1,asr #16 ;@ sign extend
 
 ;@ EaCalc : Get register index into r0:
   and r0,r8,#0x1e00
@@ -17565,7 +17590,8 @@ Op3068:
 ;@ EaRead : Read '($3333,a0)' (address in r0) into r1:
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  sxth r1,r0 ;@ sign extend
+  mov r1,r0,asl #16
+  mov r1,r1,asr #16 ;@ sign extend
 
 ;@ EaCalc : Get register index into r0:
   and r0,r8,#0x1e00
@@ -17596,7 +17622,8 @@ Op3070:
 ;@ EaRead : Read '($33,a0,d3.w*2)' (address in r0) into r1:
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  sxth r1,r0 ;@ sign extend
+  mov r1,r0,asl #16
+  mov r1,r1,asr #16 ;@ sign extend
 
 ;@ EaCalc : Get register index into r0:
   and r0,r8,#0x1e00
@@ -17615,7 +17642,8 @@ Op3078:
 ;@ EaRead : Read '$3333.w' (address in r0) into r1:
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  sxth r1,r0 ;@ sign extend
+  mov r1,r0,asl #16
+  mov r1,r1,asr #16 ;@ sign extend
 
 ;@ EaCalc : Get register index into r0:
   and r0,r8,#0x1e00
@@ -17636,7 +17664,8 @@ Op3079:
 ;@ EaRead : Read '$33333333.l' (address in r0) into r1:
   mov lr,pc
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  sxth r1,r0 ;@ sign extend
+  mov r1,r0,asl #16
+  mov r1,r1,asr #16 ;@ sign extend
 
 ;@ EaCalc : Get register index into r0:
   and r0,r8,#0x1e00
@@ -17658,7 +17687,8 @@ Op307a:
 ;@ EaRead : Read '($3333,pc)' (address in r0) into r1:
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
-  sxth r1,r0 ;@ sign extend
+  mov r1,r0,asl #16
+  mov r1,r1,asr #16 ;@ sign extend
 
 ;@ EaCalc : Get register index into r0:
   and r0,r8,#0x1e00
@@ -17688,7 +17718,8 @@ Op307b:
 ;@ EaRead : Read '($33,pc,d3.w*2)' (address in r0) into r1:
   mov lr,pc
   ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
-  sxth r1,r0 ;@ sign extend
+  mov r1,r0,asl #16
+  mov r1,r1,asr #16 ;@ sign extend
 
 ;@ EaCalc : Get register index into r0:
   and r0,r8,#0x1e00
@@ -21056,7 +21087,8 @@ Op4050:
   andeq r10,r10,r3 ;@ fix Z
 
 ;@ EaWrite: Write r1 into '(a0)' (address in r11):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
@@ -21095,7 +21127,8 @@ Op4058:
   andeq r10,r10,r3 ;@ fix Z
 
 ;@ EaWrite: Write r1 into '(a0)+' (address in r11):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
@@ -21135,7 +21168,8 @@ Op4060:
   andeq r10,r10,r3 ;@ fix Z
 
 ;@ EaWrite: Write r1 into '-(a0)' (address in r11):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
@@ -21174,7 +21208,8 @@ Op4068:
   andeq r10,r10,r3 ;@ fix Z
 
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r11):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
@@ -21222,7 +21257,8 @@ Op4070:
   andeq r10,r10,r3 ;@ fix Z
 
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r11):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
@@ -21258,7 +21294,8 @@ Op4078:
   andeq r10,r10,r3 ;@ fix Z
 
 ;@ EaWrite: Write r1 into '$3333.w' (address in r11):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
@@ -21296,7 +21333,8 @@ Op4079:
   andeq r10,r10,r3 ;@ fix Z
 
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r11):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
@@ -21626,7 +21664,8 @@ Op40d0:
   orr r2,r2,#0x8 ;@ A0-7
   ldr r0,[r7,r2,lsl #2]
 ;@ EaWrite: Write r1 into '(a0)' (address in r0):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
 
@@ -21654,7 +21693,8 @@ Op40d8:
   add r3,r0,#2 ;@ Post-increment An
   str r3,[r7,r2,lsl #2]
 ;@ EaWrite: Write r1 into '(a0)+' (address in r0):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
 
@@ -21683,7 +21723,8 @@ Op40e0:
   sub r0,r0,#2 ;@ Pre-decrement An
   str r0,[r7,r2,lsl #2]
 ;@ EaWrite: Write r1 into '-(a0)' (address in r0):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
 
@@ -21711,7 +21752,8 @@ Op40e8:
   ldr r2,[r7,r2,lsl #2]
   add r0,r0,r2 ;@ Add on offset
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r0):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
 
@@ -21748,7 +21790,8 @@ Op40f0:
   ldr r2,[r7,r2,lsl #2]
   add r0,r2,r3 ;@ r0=Disp+An+Rn
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r0):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
 
@@ -21773,7 +21816,8 @@ Op40f8:
 ;@ EaCalc : Get '$3333.w' into r0:
   ldrsh r0,[r4],#2 ;@ Fetch Absolute Short address
 ;@ EaWrite: Write r1 into '$3333.w' (address in r0):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
 
@@ -21800,7 +21844,8 @@ Op40f9:
   ldrh r0,[r4],#2
   orr r0,r0,r2,lsl #16
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r0):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
 
@@ -22676,7 +22721,8 @@ Op4250:
   mov r10,#0x40000000 ;@ NZCV=0100
 
 ;@ EaWrite: Write r1 into '(a0)' (address in r11):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
@@ -22699,7 +22745,8 @@ Op4258:
   mov r10,#0x40000000 ;@ NZCV=0100
 
 ;@ EaWrite: Write r1 into '(a0)+' (address in r11):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
@@ -22723,7 +22770,8 @@ Op4260:
   mov r10,#0x40000000 ;@ NZCV=0100
 
 ;@ EaWrite: Write r1 into '-(a0)' (address in r11):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
@@ -22746,7 +22794,8 @@ Op4268:
   mov r10,#0x40000000 ;@ NZCV=0100
 
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r11):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
@@ -22778,7 +22827,8 @@ Op4270:
   mov r10,#0x40000000 ;@ NZCV=0100
 
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r11):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
@@ -22798,7 +22848,8 @@ Op4278:
   mov r10,#0x40000000 ;@ NZCV=0100
 
 ;@ EaWrite: Write r1 into '$3333.w' (address in r11):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
@@ -22820,7 +22871,8 @@ Op4279:
   mov r10,#0x40000000 ;@ NZCV=0100
 
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r11):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
@@ -23355,7 +23407,8 @@ Op4450:
   mov r1,r1,asr #16
 
 ;@ EaWrite: Write r1 into '(a0)' (address in r11):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
@@ -23386,7 +23439,8 @@ Op4458:
   mov r1,r1,asr #16
 
 ;@ EaWrite: Write r1 into '(a0)+' (address in r11):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
@@ -23418,7 +23472,8 @@ Op4460:
   mov r1,r1,asr #16
 
 ;@ EaWrite: Write r1 into '-(a0)' (address in r11):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
@@ -23449,7 +23504,8 @@ Op4468:
   mov r1,r1,asr #16
 
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r11):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
@@ -23489,7 +23545,8 @@ Op4470:
   mov r1,r1,asr #16
 
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r11):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
@@ -23517,7 +23574,8 @@ Op4478:
   mov r1,r1,asr #16
 
 ;@ EaWrite: Write r1 into '$3333.w' (address in r11):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
@@ -23547,7 +23605,8 @@ Op4479:
   mov r1,r1,asr #16
 
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r11):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
@@ -24361,7 +24420,8 @@ Op4650:
   orreq r10,r10,#0x40000000 ;@ get NZ, clear CV
 
 ;@ EaWrite: Write r1 into '(a0)' (address in r11):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
@@ -24390,7 +24450,8 @@ Op4658:
   orreq r10,r10,#0x40000000 ;@ get NZ, clear CV
 
 ;@ EaWrite: Write r1 into '(a0)+' (address in r11):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
@@ -24420,7 +24481,8 @@ Op4660:
   orreq r10,r10,#0x40000000 ;@ get NZ, clear CV
 
 ;@ EaWrite: Write r1 into '-(a0)' (address in r11):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
@@ -24449,7 +24511,8 @@ Op4668:
   orreq r10,r10,#0x40000000 ;@ get NZ, clear CV
 
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r11):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
@@ -24487,7 +24550,8 @@ Op4670:
   orreq r10,r10,#0x40000000 ;@ get NZ, clear CV
 
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r11):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
@@ -24513,7 +24577,8 @@ Op4678:
   orreq r10,r10,#0x40000000 ;@ get NZ, clear CV
 
 ;@ EaWrite: Write r1 into '$3333.w' (address in r11):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
@@ -24541,7 +24606,8 @@ Op4679:
   orreq r10,r10,#0x40000000 ;@ get NZ, clear CV
 
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r11):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
@@ -25994,7 +26060,8 @@ Movemloop4890:
   ;@ Copy register to memory:
   ldr r1,[r7,r4] ;@ Load value from Dn/An
 ;@ EaWrite: Write r1 into '(a0)' (address in r6):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
@@ -26039,7 +26106,8 @@ Movemloop48a0:
   ;@ Copy register to memory:
   ldr r1,[r7,r4] ;@ Load value from Dn/An
 ;@ EaWrite: Write r1 into '-(a0)' (address in r6):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
@@ -26090,7 +26158,8 @@ Movemloop48a8:
   ;@ Copy register to memory:
   ldr r1,[r7,r4] ;@ Load value from Dn/An
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r6):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
@@ -26144,7 +26213,8 @@ Movemloop48b0:
   ;@ Copy register to memory:
   ldr r1,[r7,r4] ;@ Load value from Dn/An
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r6):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
@@ -26186,7 +26256,8 @@ Movemloop48b8:
   ;@ Copy register to memory:
   ldr r1,[r7,r4] ;@ Load value from Dn/An
 ;@ EaWrite: Write r1 into '$3333.w' (address in r6):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
@@ -26230,7 +26301,8 @@ Movemloop48b9:
   ;@ Copy register to memory:
   ldr r1,[r7,r4] ;@ Load value from Dn/An
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r6):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
@@ -26339,7 +26411,8 @@ Movemloop48e0:
   ldr r1,[r7,r4] ;@ Load value from Dn/An
   add r0,r6,#2
 ;@ EaWrite: Write r1 into '-(a0)' (address in r0):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   mov lr,pc
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
 
@@ -27301,7 +27374,8 @@ Movemloop4c90:
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  sxth r0,r0 ;@ sign extend
+  mov r0,r0,asl #16
+  mov r0,r0,asr #16 ;@ sign extend
 
   str r0,[r7,r4] ;@ Save value into Dn/An
   add r6,r6,#2 ;@ Post-increment address
@@ -27344,7 +27418,8 @@ Movemloop4c98:
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  sxth r0,r0 ;@ sign extend
+  mov r0,r0,asl #16
+  mov r0,r0,asr #16 ;@ sign extend
 
   str r0,[r7,r4] ;@ Save value into Dn/An
   add r6,r6,#2 ;@ Post-increment address
@@ -27395,7 +27470,8 @@ Movemloop4ca8:
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  sxth r0,r0 ;@ sign extend
+  mov r0,r0,asl #16
+  mov r0,r0,asr #16 ;@ sign extend
 
   str r0,[r7,r4] ;@ Save value into Dn/An
   add r6,r6,#2 ;@ Post-increment address
@@ -27449,7 +27525,8 @@ Movemloop4cb0:
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  sxth r0,r0 ;@ sign extend
+  mov r0,r0,asl #16
+  mov r0,r0,asr #16 ;@ sign extend
 
   str r0,[r7,r4] ;@ Save value into Dn/An
   add r6,r6,#2 ;@ Post-increment address
@@ -27491,7 +27568,8 @@ Movemloop4cb8:
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  sxth r0,r0 ;@ sign extend
+  mov r0,r0,asl #16
+  mov r0,r0,asr #16 ;@ sign extend
 
   str r0,[r7,r4] ;@ Save value into Dn/An
   add r6,r6,#2 ;@ Post-increment address
@@ -27535,7 +27613,8 @@ Movemloop4cb9:
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x6c] ;@ Call read16(r0) handler
-  sxth r0,r0 ;@ sign extend
+  mov r0,r0,asl #16
+  mov r0,r0,asr #16 ;@ sign extend
 
   str r0,[r7,r4] ;@ Save value into Dn/An
   add r6,r6,#2 ;@ Post-increment address
@@ -27580,7 +27659,8 @@ Movemloop4cba:
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
-  sxth r0,r0 ;@ sign extend
+  mov r0,r0,asl #16
+  mov r0,r0,asr #16 ;@ sign extend
 
   str r0,[r7,r4] ;@ Save value into Dn/An
   add r6,r6,#2 ;@ Post-increment address
@@ -27633,7 +27713,8 @@ Movemloop4cbb:
   add lr,pc,#4
   mov r0,r6
   ldr pc,[r7,#0x84] ;@ Call fetch16(r0) handler
-  sxth r0,r0 ;@ sign extend
+  mov r0,r0,asl #16
+  mov r0,r0,asr #16 ;@ sign extend
 
   str r0,[r7,r4] ;@ Save value into Dn/An
   add r6,r6,#2 ;@ Post-increment address
@@ -38789,7 +38870,8 @@ Op8150:
 ;@ Save result:
   mov r1,r1,asr #16
 ;@ EaWrite: Write r1 into '(a0)' (address in r11):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
@@ -38825,7 +38907,8 @@ Op8158:
 ;@ Save result:
   mov r1,r1,asr #16
 ;@ EaWrite: Write r1 into '(a0)+' (address in r11):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
@@ -38862,7 +38945,8 @@ Op8160:
 ;@ Save result:
   mov r1,r1,asr #16
 ;@ EaWrite: Write r1 into '-(a0)' (address in r11):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
@@ -38898,7 +38982,8 @@ Op8168:
 ;@ Save result:
   mov r1,r1,asr #16
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r11):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
@@ -38943,7 +39028,8 @@ Op8170:
 ;@ Save result:
   mov r1,r1,asr #16
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r11):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
@@ -38976,7 +39062,8 @@ Op8178:
 ;@ Save result:
   mov r1,r1,asr #16
 ;@ EaWrite: Write r1 into '$3333.w' (address in r11):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
@@ -39011,7 +39098,8 @@ Op8179:
 ;@ Save result:
   mov r1,r1,asr #16
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r11):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
@@ -42415,7 +42503,8 @@ Op9150:
 ;@ Save result:
   mov r1,r1,asr #16
 ;@ EaWrite: Write r1 into '(a0)' (address in r11):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
@@ -42452,7 +42541,8 @@ Op9158:
 ;@ Save result:
   mov r1,r1,asr #16
 ;@ EaWrite: Write r1 into '(a0)+' (address in r11):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
@@ -42490,7 +42580,8 @@ Op9160:
 ;@ Save result:
   mov r1,r1,asr #16
 ;@ EaWrite: Write r1 into '-(a0)' (address in r11):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
@@ -42527,7 +42618,8 @@ Op9168:
 ;@ Save result:
   mov r1,r1,asr #16
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r11):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
@@ -42573,7 +42665,8 @@ Op9170:
 ;@ Save result:
   mov r1,r1,asr #16
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r11):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
@@ -42607,7 +42700,8 @@ Op9178:
 ;@ Save result:
   mov r1,r1,asr #16
 ;@ EaWrite: Write r1 into '$3333.w' (address in r11):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
@@ -42643,7 +42737,8 @@ Op9179:
 ;@ Save result:
   mov r1,r1,asr #16
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r11):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
@@ -48081,7 +48176,8 @@ Opc150:
 ;@ Save result:
   mov r1,r1,asr #16
 ;@ EaWrite: Write r1 into '(a0)' (address in r11):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
@@ -48117,7 +48213,8 @@ Opc158:
 ;@ Save result:
   mov r1,r1,asr #16
 ;@ EaWrite: Write r1 into '(a0)+' (address in r11):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
@@ -48154,7 +48251,8 @@ Opc160:
 ;@ Save result:
   mov r1,r1,asr #16
 ;@ EaWrite: Write r1 into '-(a0)' (address in r11):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
@@ -48190,7 +48288,8 @@ Opc168:
 ;@ Save result:
   mov r1,r1,asr #16
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r11):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
@@ -48235,7 +48334,8 @@ Opc170:
 ;@ Save result:
   mov r1,r1,asr #16
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r11):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
@@ -48268,7 +48368,8 @@ Opc178:
 ;@ Save result:
   mov r1,r1,asr #16
 ;@ EaWrite: Write r1 into '$3333.w' (address in r11):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
@@ -48303,7 +48404,8 @@ Opc179:
 ;@ Save result:
   mov r1,r1,asr #16
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r11):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
@@ -51059,7 +51161,8 @@ Opd150:
 ;@ Save result:
   mov r1,r1,asr #16
 ;@ EaWrite: Write r1 into '(a0)' (address in r11):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
@@ -51095,7 +51198,8 @@ Opd158:
 ;@ Save result:
   mov r1,r1,asr #16
 ;@ EaWrite: Write r1 into '(a0)+' (address in r11):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
@@ -51132,7 +51236,8 @@ Opd160:
 ;@ Save result:
   mov r1,r1,asr #16
 ;@ EaWrite: Write r1 into '-(a0)' (address in r11):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
@@ -51168,7 +51273,8 @@ Opd168:
 ;@ Save result:
   mov r1,r1,asr #16
 ;@ EaWrite: Write r1 into '($3333,a0)' (address in r11):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
@@ -51213,7 +51319,8 @@ Opd170:
 ;@ Save result:
   mov r1,r1,asr #16
 ;@ EaWrite: Write r1 into '($33,a0,d3.w*2)' (address in r11):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
@@ -51246,7 +51353,8 @@ Opd178:
 ;@ Save result:
   mov r1,r1,asr #16
 ;@ EaWrite: Write r1 into '$3333.w' (address in r11):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
@@ -51281,7 +51389,8 @@ Opd179:
 ;@ Save result:
   mov r1,r1,asr #16
 ;@ EaWrite: Write r1 into '$33333333.l' (address in r11):
-  uxth r1,r1 ;@ zero extend
+  mov r1,r1,lsl #16
+  mov r1,r1,lsr #16 ;@ zero extend
   add lr,pc,#4
   mov r0,r11
   ldr pc,[r7,#0x78] ;@ Call write16(r0,r1) handler
