@@ -53,18 +53,18 @@ android{
     CONFIG += optimize_for_arm # for now, later this will check if building for ARM
 }
 
-ios{
-    QMAKE_INFO_PLIST = ios/Info.plist
-    DEFINES += EMU_MULTITHREADED
-    CONFIG += optimize_for_arm
-}
+# ios{
+#     QMAKE_INFO_PLIST = ios/Info.plist
+#     DEFINES += EMU_MULTITHREADED
+#     CONFIG += optimize_for_arm
+# }
 
 
 CONFIG(debug, debug|release){
     # debug build, be accurate, fail hard, and add logging
     DEFINES += EMU_DEBUG EMU_CUSTOM_DEBUG_LOG_HANDLER
-    windows|macx|linux-g++{
-        DEFINES += EMU_SANDBOX
+    !optimize_for_arm:DEFINES += EMU_SANDBOX
+    macx|linux-g++{
         # DEFINES += EMU_SANDBOX_OPCODE_LEVEL_DEBUG
         # DEFINES += EMU_SANDBOX_LOG_APIS
         # also check for any buffer overflows and memory leaks
