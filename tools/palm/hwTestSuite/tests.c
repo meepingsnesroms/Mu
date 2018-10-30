@@ -900,27 +900,37 @@ var getPenPosition(){
 }
 
 var playConstantTone(){
+   static const uint8_t samples[10] = {0x50, 0x60, 0x70, 0x80, 0x90, 0x10, 0x90, 0x80, 0x70, 0x60};
    static Boolean firstRun = true;
+   static uint8_t count;
    
    if(firstRun){
       firstRun = false;
       debugSafeScreenClear(C_WHITE);
       StrPrintF(sharedDataBuffer, "Squealing In Progress");
       UG_PutString(0, 0, sharedDataBuffer);
-      writeArbitraryMemory16(HW_REG_ADDR(PWMC1), 0x001C);
+      forceFrameRedraw();
+      writeArbitraryMemory16(HW_REG_ADDR(PWMC1), 0x0F1C);
       writeArbitraryMemory8(HW_REG_ADDR(PWMP1), 0xFF);
+      count = 0;
    }
    
-   while(readArbitraryMemory16(HW_REG_ADDR(PWMC1)) & 0x0020){
-      /*add audio samples*/
-      writeArbitraryMemory8(HW_REG_ADDR(PWMS1 + 1), 0x7F);
+   while(true){
+      while(readArbitraryMemory16(HW_REG_ADDR(PWMC1)) & 0x0020){
+         /*add audio samples*/
+         writeArbitraryMemory8(HW_REG_ADDR(PWMS1 + 1), samples[count]);
+         count++;
+         if(count >= 10)
+            count = 0;
+      }
+      
+      if(KeyCurrentState() & buttonBack)
+         break;
    }
    
-   if(getButtonPressed(buttonBack)){
-      writeArbitraryMemory16(HW_REG_ADDR(PWMC1), 0x0000);
-      firstRun = true;
-      exitSubprogram();
-   }
+   writeArbitraryMemory16(HW_REG_ADDR(PWMC1), 0x0000);
+   firstRun = true;
+   exitSubprogram();
    
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }

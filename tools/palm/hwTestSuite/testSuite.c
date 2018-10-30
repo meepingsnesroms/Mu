@@ -233,6 +233,8 @@ static Boolean testerInit(){
    UG_FillScreen(C_WHITE);
    
    /*setup subprogram enviroment*/
+   palmButtons = 0x0000;
+   palmButtonsLastFrame = 0x0000;
    FtrGet(sysFtrCreator, sysFtrNumOEMDeviceID, &deviceId);
    isM515 = deviceId == (uint32_t)'lith';/*"lith" is the Palm m515 device code, likely because it is one of the first with a lithium ion battery*/
    haveKsyms = initUndocumentedApiHandlers();
@@ -282,24 +284,23 @@ static void testerFrameLoop(){
    WinDrawBitmap(offscreenBitmap, 0, 0);
    
    palmButtonsLastFrame = palmButtons;
+   
+   if(!skipFrameDelay)
+      SysTaskDelay(4);/*30 fps*/
+   skipFrameDelay = false;
 }
 
 DWord PilotMain(Word cmd, Ptr cmdBPB, Word launchFlags){
    if(cmd == sysAppLaunchCmdNormalLaunch){
-      Boolean initSuccess;
-      initSuccess = testerInit();
+      Boolean initSuccess = testerInit();
       
-      if(!initSuccess){
+      if(!initSuccess)
          return 0;
-      }
       
       applicationRunning = true;
-      while(applicationRunning){
+      
+      while(applicationRunning)
          testerFrameLoop();
-         if(!skipFrameDelay)
-            SysTaskDelay(4);/*30 fps*/
-         skipFrameDelay = false;
-      }
       
       testerExit();
    }
