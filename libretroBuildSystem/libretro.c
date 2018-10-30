@@ -11,6 +11,7 @@
 #include <compat/strl.h>
 #include <file/file_path.h>
 #include <retro_miscellaneous.h>
+#include <streams/file_stream.h>
 
 #include "../src/emulator.h"
 #include "../src/portability.h"
@@ -27,7 +28,6 @@ static retro_audio_sample_batch_t  audio_cb;
 static retro_environment_t         environ_cb;
 static retro_input_poll_t          input_poll_cb;
 static retro_input_state_t         input_state_cb;
-static struct retro_vfs_interface* vfs_interface;
 
 static bool     screenHires;
 static uint16_t screenWidth;
@@ -184,8 +184,8 @@ void retro_set_environment(retro_environment_t cb){
    else
       log_cb = fallback_log;
    
-   environ_cb(RETRO_ENVIRONMENT_GET_VFS_INTERFACE, &vfs_getter);
-   vfs_interface = vfs_getter.iface;
+   if(environ_cb(RETRO_ENVIRONMENT_GET_VFS_INTERFACE, &vfs_getter))
+      filestream_vfs_init(&vfs_getter);
    
    struct retro_variable vars[] = {
       { "palm_emu_feature_ram_huge", "Extra RAM Hack; disabled|enabled" },
@@ -309,8 +309,8 @@ bool retro_load_game(const struct retro_game_info *info){
    buffer_t bootloader;
    char bootloaderPath[PATH_MAX];
    char saveRamPath[PATH_MAX];
-   struct retro_vfs_file_handle* bootloaderFile;
-   struct retro_vfs_file_handle* saveRamFile;
+   struct RFILE* bootloaderFile;
+   struct RFILE* saveRamFile;
    const char* systemDir;
    const char* saveDir;
    time_t rawTime;
@@ -328,17 +328,17 @@ bool retro_load_game(const struct retro_game_info *info){
    //bootloader
    strlcpy(bootloaderPath, systemDir, PATH_MAX);
    strlcat(bootloaderPath, "/bootloader-en-m515.rom", PATH_MAX);
-   bootloaderFile = vfs_interface->open(bootloaderPath, RETRO_VFS_FILE_ACCESS_READ, RETRO_VFS_FILE_ACCESS_HINT_NONE);
+   bootloaderFile = filestream_open(bootloaderPath, RETRO_VFS_FILE_ACCESS_READ, RETRO_VFS_FILE_ACCESS_HINT_NONE);
    
    if(bootloaderFile){
-      bootloader.size = vfs_interface->size(bootloaderFile);
+      bootloader.size = filestream_get_size(bootloaderFile);
       bootloader.data = malloc(bootloader.size);
       
       if(bootloader.data)
-         vfs_interface->read(bootloaderFile, bootloader.data, bootloader.size);
+         filestream_read(bootloaderFile, bootloader.data, bootloader.size);
       else
          bootloader.size = 0;
-      vfs_interface->close(bootloaderFile);
+      filestream_close(bootloaderFile);
    }
    else{
       bootloader.data = NULL;
@@ -358,14 +358,14 @@ bool retro_load_game(const struct retro_game_info *info){
    //save RAM
    strlcpy(saveRamPath, saveDir, PATH_MAX);
    strlcat(saveRamPath, "/userdata-en-m515.ram", PATH_MAX);
-   saveRamFile = vfs_interface->open(saveRamPath, RETRO_VFS_FILE_ACCESS_READ, RETRO_VFS_FILE_ACCESS_HINT_NONE);
+   saveRamFile = filestream_open(saveRamPath, RETRO_VFS_FILE_ACCESS_READ, RETRO_VFS_FILE_ACCESS_HINT_NONE);
    
    if(saveRamFile){
-      if(vfs_interface->size(saveRamFile) == emulatorGetRamSize()){
-         vfs_interface->read(saveRamFile, palmRam, emulatorGetRamSize());
+      if(filestream_get_size(saveRamFile) == emulatorGetRamSize()){
+         filestream_read(saveRamFile, palmRam, emulatorGetRamSize());
          swap16_buffer_if_little(palmRam, emulatorGetRamSize() / sizeof(uint16_t));
       }
-      vfs_interface->close(saveRamFile);
+      filestream_close(saveRamFile);
    }
    
    //set RTC
@@ -385,19 +385,19 @@ bool retro_load_game(const struct retro_game_info *info){
 void retro_unload_game(void){
    const char* saveDir;
    char saveRamPath[PATH_MAX];
-   struct retro_vfs_file_handle* saveRamFile;
+   struct RFILE* saveRamFile;
    
    environ_cb(RETRO_ENVIRONMENT_GET_SAVE_DIRECTORY, &saveDir);
    
    //save RAM
    strlcpy(saveRamPath, saveDir, PATH_MAX);
    strlcat(saveRamPath, "/userdata-en-m515.ram", PATH_MAX);
-   saveRamFile = vfs_interface->open(saveRamPath, RETRO_VFS_FILE_ACCESS_WRITE, RETRO_VFS_FILE_ACCESS_HINT_NONE);
+   saveRamFile = filestream_open(saveRamPath, RETRO_VFS_FILE_ACCESS_WRITE, RETRO_VFS_FILE_ACCESS_HINT_NONE);
    
    if(saveRamFile){
       swap16_buffer_if_little(palmRam, emulatorGetRamSize() / sizeof(uint16_t));//this will no longer be used, so its ok to destroy it when swapping
-      vfs_interface->write(saveRamFile, palmRam, emulatorGetRamSize());
-      vfs_interface->close(saveRamFile);
+      filestream_write(saveRamFile, palmRam, emulatorGetRamSize());
+      filestream_close(saveRamFile);
    }
    
    emulatorExit();

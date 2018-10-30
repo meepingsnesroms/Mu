@@ -1,2 +1,4 @@
-RetroArch port crashes on exit
 Endian compatibility is broken(the CPU state needs to be standardized)
+
+Fixed:
+RetroArch port crashes on exit(needed to check if environ_cb returned true, switched to libretro-common filestreams too)
