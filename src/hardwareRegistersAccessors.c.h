@@ -688,7 +688,7 @@ static uint16_t getPwmc1(){
    if(returnValue & 0x0080){
       clearIprIsrBit(INT_PWM1);
       checkInterrupts();
-      registerArrayWrite16(PWMC1, returnValue & 0xFF7F);
+      registerArrayWrite16(PWMC1, returnValue & 0xFF5F);
    }
 
    //the REPEAT field is write only
