@@ -63,7 +63,7 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t spec
    palmRom = malloc(ROM_SIZE + 4);
    palmReg = malloc(REG_SIZE + 4);
    palmAudio = malloc(AUDIO_SAMPLES_PER_FRAME * 2 * sizeof(int16_t));
-   palmAudioResampler = blip_new(AUDIO_SAMPLES_PER_FRAME * 2);//have more than one frame of samples in case its written to at the end of the frame
+   palmAudioResampler = blip_new(AUDIO_SAMPLE_RATE);//have 1 second of samples
    if(specialFeatures & FEATURE_320x320)
       palmExtendedFramebuffer = malloc(320 * (320 + 120) * sizeof(uint16_t));//really 320*320, the extra pixels are the silkscreened digitizer area
    else
@@ -104,7 +104,7 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t spec
       //add 320*320 silkscreen image later, 2xBRZ should be able to make 320*320 version of the 160*160 silkscreen
    }
    memset(palmAudio, 0x00, AUDIO_SAMPLES_PER_FRAME * 2/*channels*/ * sizeof(int16_t));
-   blip_set_rates(palmAudioResampler, AUDIO_END_OF_FRAME, AUDIO_SAMPLES_PER_FRAME);
+   blip_set_rates(palmAudioResampler, AUDIO_END_OF_FRAME * EMU_FPS, AUDIO_SAMPLE_RATE);
    flx68000Reset();
    sed1376Reset();
    ads7846Reset();
