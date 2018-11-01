@@ -14,8 +14,8 @@ double inductorChargeAtLastSample;
 
 
 void inductorReset(){
-   inductorCurrentCharge = 0.0;
-   inductorChargeAtLastSample = 0.0;
+   inductorCurrentCharge = -1.0;
+   inductorChargeAtLastSample = -1.0;
 }
 
 void inductorAddClocks(int32_t clocks, bool charge){

@@ -97,6 +97,8 @@ int32_t pwm1FifoRunSample(int32_t now, int32_t clockOffset){
       inductorSampleAudio(audioNow + audioSampleDuration);
       audioNow += audioSampleDuration;
    }
+   //inductorCurrentCharge = (dMin((double)sample / period, 1.0) - 0.5) * 2.0;
+   //inductorSampleAudio(audioNow + audioSampleDuration);
 
    //remove used entry
    if(pwm1FifoEntrys() > 0)
@@ -638,35 +640,12 @@ static void samplePwm1(bool forClk32, double sysclks){
 
       //use samples
       if(pwm1ClocksToNextSample <= 0){
-         int32_t audioClocksLeft = audioClocks;
-
-         while(pwm1FifoEntrys() > 0 && pwm1ClocksToNextSample <= 0){
-            int32_t audioUsed;
-
+         while(pwm1ClocksToNextSample <= 0){
             //switch out samples until waiting(pwm1ClocksToNextSample is positive)
-            if(pwm1ClocksToNextSample == AUDIO_WAIT_FOR_SAMPLE){
-               //got first sample in a while
-               audioUsed = pwm1FifoRunSample(audioNow, 0);
-               pwm1ClocksToNextSample = audioUsed;
-            }
-            else{
-               //continue processing existing sample stream
-               audioUsed += pwm1FifoRunSample(audioNow, pwm1ClocksToNextSample);
-               pwm1ClocksToNextSample += audioUsed;
-            }
-
+            //continue processing existing sample stream
+            int32_t audioUsed = pwm1FifoRunSample(audioNow, pwm1ClocksToNextSample);
+            pwm1ClocksToNextSample += audioUsed;
             audioNow += audioUsed;
-            audioClocksLeft -= audioUsed;//goes negative when extra clocks are used
-         }
-
-         //all samples used and its still negative, wait for next sample
-         if(pwm1ClocksToNextSample <= 0)
-            pwm1ClocksToNextSample = AUDIO_WAIT_FOR_SAMPLE;
-
-         //add 0 to inductor when theres no samples
-         if(audioClocksLeft > 0){
-            inductorAddClocks(audioClocksLeft, false);
-            inductorSampleAudio(audioNow + audioClocksLeft);
          }
       }
    }

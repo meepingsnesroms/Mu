@@ -109,12 +109,13 @@ typedef struct{
 #define EMU_FPS 60
 #define EMU_SYSCLK_PRECISION 2000000//the amount of cycles to run before adding SYSCLKs, higher = faster, higher values may skip timer events and lower audio accuracy
 #define AUDIO_SAMPLE_RATE 48000
+#define AUDIO_CLOCK_RATE 235929600//smallest amount of time a second can be split into:(2.0 * (14.0 * (255 + 1.0) + 15 + 1.0)) * 32768 == 235929600, used to convert the variable timing of SYSCLK and CLK32 to a fixed location in the current frame 0<->AUDIO_END_OF_FRAME
 #define SAVE_STATE_VERSION 0
 
 //system constants
 #define CRYSTAL_FREQUENCY 32768
 #define AUDIO_SAMPLES_PER_FRAME (AUDIO_SAMPLE_RATE / EMU_FPS)
-#define AUDIO_END_OF_FRAME (235929600 / EMU_FPS)//smallest amount of time a second can be split into:(2.0 * (14.0 * (255 + 1.0) + 15 + 1.0)) * 32768 == 235929600, used to convert the variable timing of SYSCLK and CLK32 to a fixed location in the current frame 0<->AUDIO_END_OF_FRAME
+#define AUDIO_END_OF_FRAME (AUDIO_CLOCK_RATE / EMU_FPS)
 #define AUDIO_WAIT_FOR_SAMPLE INT32_MIN
 
 //emulator data, some are GUI interface variables, some should be left alone

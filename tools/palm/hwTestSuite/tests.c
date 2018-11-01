@@ -900,9 +900,15 @@ var getPenPosition(){
 }
 
 var playConstantTone(){
-   static const uint8_t samples[10] = {0x50, 0x60, 0x70, 0x80, 0x90, 0x10, 0x90, 0x80, 0x70, 0x60};
+   /*static const uint16_t testFreq = 10000;*/
+   static const uint8_t samples[10] = {0x50, 0x60, 0x70, 0x80, 0x90, 0xA0, 0x90, 0x80, 0x70, 0x60};/*this buffer needs to pe played testFreq times a second*/
    static Boolean firstRun = true;
    static uint8_t count;
+#if 0
+   uint32_t basePwm1ClockSpeed = 33161216 / 1/*REPEAT*/ / 2/*CLKSEL*/;
+   uint32_t neededPwm1ClockSpeed = (uint32_t)testFreq * 0xFF/*period*/ * 10/*samples*/;
+   uint8_t prescaler = basePwm1ClockSpeed / neededPwm1ClockSpeed
+#endif
    
    if(firstRun){
       firstRun = false;
@@ -910,7 +916,7 @@ var playConstantTone(){
       StrPrintF(sharedDataBuffer, "Squealing In Progress");
       UG_PutString(0, 0, sharedDataBuffer);
       forceFrameRedraw();
-      writeArbitraryMemory16(HW_REG_ADDR(PWMC1), 0x0F1C);
+      writeArbitraryMemory16(HW_REG_ADDR(PWMC1), 0x0F10);
       writeArbitraryMemory8(HW_REG_ADDR(PWMP1), 0xFF);
       count = 0;
    }

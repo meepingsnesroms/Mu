@@ -104,7 +104,7 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t spec
       //add 320*320 silkscreen image later, 2xBRZ should be able to make 320*320 version of the 160*160 silkscreen
    }
    memset(palmAudio, 0x00, AUDIO_SAMPLES_PER_FRAME * 2/*channels*/ * sizeof(int16_t));
-   blip_set_rates(palmAudioResampler, AUDIO_END_OF_FRAME * EMU_FPS, AUDIO_SAMPLE_RATE);
+   blip_set_rates(palmAudioResampler, AUDIO_CLOCK_RATE, AUDIO_SAMPLE_RATE);
    flx68000Reset();
    sed1376Reset();
    ads7846Reset();
