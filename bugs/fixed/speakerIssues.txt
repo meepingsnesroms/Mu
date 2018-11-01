@@ -1,0 +1,6 @@
+Theory of speaker output issues:
+SysTaskDelay is used in PrvDoFreqDurationAmp, if SysTaskDelay waits on a timer the timer will not be triggered until addSysclks, the same time at which the PWM is sampled with empty samples due to the timer not being triggered properly.(this is wrong the actual solution is listed below)
+
+It is not stated what PWM1 does when it runs out of samples, does it keep playing the last sample, or does it set 0% duty cycle?(the last sample plays infinitely!)
+
+FIFO also seemed to overwrite its current sample when a sample was written as well.

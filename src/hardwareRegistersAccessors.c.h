@@ -87,14 +87,10 @@ int32_t pwm1FifoRunSample(int32_t now, int32_t clockOffset){
    uint8_t repeat = 1 << (pwmc1 >> 2 & 0x03);
    int32_t audioNow = now + clockOffset;
    int32_t audioSampleDuration = usingClk32 ? audioGetFramePercentIncrementFromClk32s(period * prescaler * clockDivider) : audioGetFramePercentIncrementFromSysclks(period * prescaler * clockDivider);
-   int32_t audioDutyCycle = dMin((double)sample / period, 1.0)/*dutyCycle*/ * audioSampleDuration;
+   double dutyCycle = dMin((double)sample / period, 1.00);
 
-   //relay all the samples to the inductor
    for(uint8_t index = 0; index < repeat; index++){
-      inductorAddClocks(audioDutyCycle, true);
-      inductorSampleAudio(audioNow + audioDutyCycle);
-      inductorAddClocks(audioSampleDuration - audioDutyCycle, false);
-      inductorSampleAudio(audioNow + audioSampleDuration);
+      inductorPwmDutyCycle(audioNow, audioSampleDuration, dutyCycle);
       audioNow += audioSampleDuration;
    }
 
@@ -647,8 +643,7 @@ static void samplePwm1(bool forClk32, double sysclks){
    }
    else{
       //PWM1 not enabled
-      inductorPwmOff(audioClocks);
-      inductorSampleAudio(audioNow + audioClocks);
+      inductorPwmOff(audioNow, audioClocks);
    }
 }
 

@@ -39,7 +39,7 @@ uint8_t*  palmReg;
 input_t   palmInput;
 sd_card_t palmSdCard;
 misc_hw_t palmMisc;
-uint16_t  palmFramebuffer[160 * (160 + 60)];//really 160*160, the extra pixels are the silkscreened digitizer area
+uint16_t* palmFramebuffer;
 uint16_t* palmExtendedFramebuffer;
 int16_t*  palmAudio;
 blip_t*   palmAudioResampler;
@@ -62,16 +62,18 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t spec
    palmRam = malloc(((specialFeatures & FEATURE_RAM_HUGE) ? SUPERMASSIVE_RAM_SIZE : RAM_SIZE) + 4);
    palmRom = malloc(ROM_SIZE + 4);
    palmReg = malloc(REG_SIZE + 4);
+   palmFramebuffer = malloc(160 * (160 + 60) * sizeof(uint16_t));//really 160*160, the extra pixels are the silkscreened digitizer area
    palmAudio = malloc(AUDIO_SAMPLES_PER_FRAME * 2 * sizeof(int16_t));
    palmAudioResampler = blip_new(AUDIO_SAMPLE_RATE);//have 1 second of samples
    if(specialFeatures & FEATURE_320x320)
       palmExtendedFramebuffer = malloc(320 * (320 + 120) * sizeof(uint16_t));//really 320*320, the extra pixels are the silkscreened digitizer area
    else
       palmExtendedFramebuffer = NULL;
-   if(!palmRam || !palmRom || !palmReg || !palmAudio || !palmAudioResampler || (!palmExtendedFramebuffer && (specialFeatures & FEATURE_320x320))){
+   if(!palmRam || !palmRom || !palmReg || !palmFramebuffer || !palmAudio || !palmAudioResampler || (!palmExtendedFramebuffer && (specialFeatures & FEATURE_320x320))){
       free(palmRam);
       free(palmRom);
       free(palmReg);
+      free(palmFramebuffer);
       free(palmAudio);
       blip_delete(palmAudioResampler);
       free(palmExtendedFramebuffer);
@@ -136,6 +138,7 @@ void emulatorExit(){
       free(palmRam);
       free(palmRom);
       free(palmReg);
+      free(palmFramebuffer);
       free(palmAudio);
       blip_delete(palmAudioResampler);
       free(palmExtendedFramebuffer);
