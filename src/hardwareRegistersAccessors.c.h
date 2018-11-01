@@ -97,8 +97,6 @@ int32_t pwm1FifoRunSample(int32_t now, int32_t clockOffset){
       inductorSampleAudio(audioNow + audioSampleDuration);
       audioNow += audioSampleDuration;
    }
-   //inductorCurrentCharge = (dMin((double)sample / period, 1.0) - 0.5) * 2.0;
-   //inductorSampleAudio(audioNow + audioSampleDuration);
 
    //remove used entry
    if(pwm1FifoEntrys() > 0)
@@ -119,12 +117,13 @@ int32_t pwm1FifoRunSample(int32_t now, int32_t clockOffset){
 
 static void pwm1FifoWrite(uint8_t value){
    if(pwm1FifoEntrys() < 5){
-      pwm1Fifo[pwm1WritePosition] = value;
       pwm1WritePosition = (pwm1WritePosition + 1) % 6;
+      pwm1Fifo[pwm1WritePosition] = value;
    }
 }
 
 static void pwm1FifoFlush(){
+   pwm1Fifo[0] = 0x00;
    pwm1ReadPosition = 0;
    pwm1WritePosition = 0;
 }
@@ -442,7 +441,7 @@ static void setPwmc1(uint16_t value){
    //PWM1 enabled, set IRQ
    if(!(oldPwmc1 & 0x0010) && value & 0x0010){
       value |= 0x0080;//enable IRQ
-      pwm1ClocksToNextSample = AUDIO_WAIT_FOR_SAMPLE;//when first sample is written output it immediatly
+      pwm1ClocksToNextSample = 0;//when first sample is written output it immediatly
    }
 
    //clear interrupt by write(reading can also clear the interrupt)
@@ -635,23 +634,20 @@ static void samplePwm1(bool forClk32, double sysclks){
 
    if(pwmc1 & 0x0010){
       //add cycles
-      if(pwm1ClocksToNextSample != AUDIO_WAIT_FOR_SAMPLE)
-         pwm1ClocksToNextSample -= audioClocks;
+      pwm1ClocksToNextSample -= audioClocks;
 
       //use samples
-      if(pwm1ClocksToNextSample <= 0){
-         while(pwm1ClocksToNextSample <= 0){
-            //switch out samples until waiting(pwm1ClocksToNextSample is positive)
-            //continue processing existing sample stream
-            int32_t audioUsed = pwm1FifoRunSample(audioNow, pwm1ClocksToNextSample);
-            pwm1ClocksToNextSample += audioUsed;
-            audioNow += audioUsed;
-         }
+      while(pwm1ClocksToNextSample <= 0){
+         //switch out samples until waiting(pwm1ClocksToNextSample is positive)
+         //continue processing existing sample stream
+         int32_t audioUsed = pwm1FifoRunSample(audioNow, pwm1ClocksToNextSample);
+         pwm1ClocksToNextSample += audioUsed;
+         audioNow += audioUsed;
       }
    }
    else{
-      //PWM1 not enabled, add 0 to inductor
-      inductorAddClocks(audioClocks, false);
+      //PWM1 not enabled
+      inductorPwmOff(audioClocks);
       inductorSampleAudio(audioNow + audioClocks);
    }
 }

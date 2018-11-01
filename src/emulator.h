@@ -116,7 +116,6 @@ typedef struct{
 #define CRYSTAL_FREQUENCY 32768
 #define AUDIO_SAMPLES_PER_FRAME (AUDIO_SAMPLE_RATE / EMU_FPS)
 #define AUDIO_END_OF_FRAME (AUDIO_CLOCK_RATE / EMU_FPS)
-#define AUDIO_WAIT_FOR_SAMPLE INT32_MIN
 
 //emulator data, some are GUI interface variables, some should be left alone
 extern uint8_t*  palmRam;//access allowed to read save RAM without allocating a giant buffer, but endianness must be taken into account
