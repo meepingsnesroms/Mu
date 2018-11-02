@@ -1,4 +1,21 @@
 ------------------------------------------
+v0.9.5 to v0.9.8(Oct 18 2018 - ??? ?? 2018)
+
+RetroArch GUI:
+*switch to official VFS API, no more blobs of fopen() calls
+*update the core info file
+
+Qt GUI:
+*fixed audio threading
+*removed unneeded buffers on the GUI side and replaced them with a mutex
+
+Core:
+*sound works perfectly as far as I can tell(unless a program purposely sets the sample length > 1 second, which is useless for generating sound anyway)
+*add ARM optimized 68k CPU core(not fully working yet, SIGSEGVs when running)
+*allow safety checks to be disabled with EMU_NO_SAFETY, accuracy is maintained when its not defined
+*switch byte buffer orders to optimize for 16 bit opcode fetches
+
+------------------------------------------
 v0.9 to v0.9.5(Sept 22 2018 - Oct 18 2018)
 
 RetroArch GUI:

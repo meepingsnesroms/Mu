@@ -24,7 +24,7 @@ void inductorPwmDutyCycle(int32_t now, int32_t clocks, double dutyCycle){
    double cutoffPoint = dutyCycle - 0.50;//cant go past the actual duty cycle percentage
 
 #if !defined(EMU_NO_SAFETY)
-   if(now + clocks > AUDIO_CLOCK_RATE)
+   if(now + clocks >= AUDIO_CLOCK_RATE)
       return;
 #endif
 
