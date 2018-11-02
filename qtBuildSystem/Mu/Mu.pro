@@ -69,9 +69,9 @@ CONFIG(debug, debug|release){
         # DEFINES += EMU_SANDBOX_LOG_APIS
         # also check for any buffer overflows and memory leaks
         # -fsanitize=undefined,leak
-        # QMAKE_CFLAGS += -fstack-protector-strong -fsanitize=address -Werror=array-bounds
-        # QMAKE_CXXFLAGS += -fstack-protector-strong -fsanitize=address -Werror=array-bounds
-        # QMAKE_LFLAGS += -fsanitize=address
+        QMAKE_CFLAGS += -fstack-protector-strong -fsanitize=address -Werror=array-bounds
+        QMAKE_CXXFLAGS += -fstack-protector-strong -fsanitize=address -Werror=array-bounds
+        QMAKE_LFLAGS += -fsanitize=address
     }
 }else{
     # release build, go fast

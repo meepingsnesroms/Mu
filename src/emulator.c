@@ -592,7 +592,7 @@ void emulateFrame(){
    palmCycleCounter -= (double)CRYSTAL_FREQUENCY / EMU_FPS;
 
    //audio
-   blip_end_frame(palmAudioResampler, AUDIO_END_OF_FRAME);
+   blip_end_frame(palmAudioResampler, blip_clocks_needed(palmAudioResampler, AUDIO_SAMPLES_PER_FRAME));
    //printf("There are %d audio samples available\n", blip_samples_avail(palmAudioResampler));
    blip_read_samples(palmAudioResampler, palmAudio, AUDIO_SAMPLES_PER_FRAME, true);
    MULTITHREAD_LOOP for(uint32_t samples = 0; samples < AUDIO_SAMPLES_PER_FRAME * 2; samples += 2)
