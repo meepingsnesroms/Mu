@@ -1,1 +1,2 @@
-APP_ABI := all armeabi
+APP_ABI := all
+APP_PLATFORM := android-18

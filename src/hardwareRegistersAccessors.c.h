@@ -620,8 +620,8 @@ static void samplePwm1(bool forClk32, double sysclks){
    int32_t audioNow;
    int32_t audioClocks;
 
-   //check if enabled and validate clock mode
-   if(forClk32 != (bool)(pwmc1 & 0x8000))
+   //check if enabled and validate clock mode, CLK32 is used if PLL is disabled as the inductor still needs to settle
+   if(forClk32 != (bool)(pwmc1 & 0x8000) && !(forClk32 && palmSysclksPerClk32 < 1.0))
       return;
 
    //these calculations are fairly heavy, only do them after we know the clock mode is valid

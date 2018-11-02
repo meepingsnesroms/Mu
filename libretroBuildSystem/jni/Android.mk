@@ -27,7 +27,7 @@ endif
 #set ASM CPU core
 ifneq ($(TARGET_ARCH_ABI),arm64-v8a)
    #armv8 is 64 bit, it cant run < armv8 assembly outside of legacy emulation mode
-   EMU_OPTIMIZE_FOR_ARM = true
+   #EMU_OPTIMIZE_FOR_ARM = true #disable until the SIGSEGVs are fixed
 endif
 
 #armv7+ optimizations
