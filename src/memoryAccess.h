@@ -34,6 +34,12 @@
 #define BUFFER_WRITE_8(segment, accessAddress, mask, value)  (*(uint8_t*)(segment + ((accessAddress) & (mask))) = (value))
 #define BUFFER_WRITE_16(segment, accessAddress, mask, value) (*(uint16_t*)(segment + ((accessAddress) & (mask))) = (value))
 #define BUFFER_WRITE_32(segment, accessAddress, mask, value) (*(uint32_t*)(segment + ((accessAddress) & (mask))) = (value))
+#define BUFFER_READ_8_BIG_ENDIAN(segment, accessAddress, mask)  (*(uint8_t*)(segment + ((accessAddress) & (mask))))
+#define BUFFER_READ_16_BIG_ENDIAN(segment, accessAddress, mask) (*(uint16_t*)(segment + ((accessAddress) & (mask))))
+#define BUFFER_READ_32_BIG_ENDIAN(segment, accessAddress, mask) (*(uint32_t*)(segment + ((accessAddress) & (mask))))
+#define BUFFER_WRITE_8_BIG_ENDIAN(segment, accessAddress, mask, value)  (*(uint8_t*)(segment + ((accessAddress) & (mask))) = (value))
+#define BUFFER_WRITE_16_BIG_ENDIAN(segment, accessAddress, mask, value) (*(uint16_t*)(segment + ((accessAddress) & (mask))) = (value))
+#define BUFFER_WRITE_32_BIG_ENDIAN(segment, accessAddress, mask, value) (*(uint32_t*)(segment + ((accessAddress) & (mask))) = (value))
 #else
 //optimize for opcode fetches(16 bit reads)
 #define BUFFER_READ_8(segment, accessAddress, mask)  (*(uint8_t*)(segment + ((accessAddress) & (mask) ^ 1)))
@@ -42,14 +48,13 @@
 #define BUFFER_WRITE_8(segment, accessAddress, mask, value)  (*(uint8_t*)(segment + ((accessAddress) & (mask) ^ 1)) = (value))
 #define BUFFER_WRITE_16(segment, accessAddress, mask, value) (*(uint16_t*)(segment + ((accessAddress) & (mask))) = (value))
 #define BUFFER_WRITE_32(segment, accessAddress, mask, value) (*(uint16_t*)(segment + ((accessAddress) & (mask))) = (value) >> 16 , *(uint16_t*)(segment + ((accessAddress) + 2 & (mask))) = (value) & 0xFFFF)
+#define BUFFER_READ_8_BIG_ENDIAN(segment, accessAddress, mask)  (segment[(accessAddress) & (mask)])
+#define BUFFER_READ_16_BIG_ENDIAN(segment, accessAddress, mask) (segment[(accessAddress) & (mask)] << 8 | segment[(accessAddress) + 1 & (mask)])
+#define BUFFER_READ_32_BIG_ENDIAN(segment, accessAddress, mask) (segment[(accessAddress) & (mask)] << 24 | segment[(accessAddress) + 1 & (mask)] << 16 | segment[(accessAddress) + 2 & (mask)] << 8 | segment[(accessAddress) + 3 & (mask)])
+#define BUFFER_WRITE_8_BIG_ENDIAN(segment, accessAddress, mask, value)  (segment[(accessAddress) & (mask)] = (value))
+#define BUFFER_WRITE_16_BIG_ENDIAN(segment, accessAddress, mask, value) (segment[(accessAddress) & (mask)] = (value) >> 8, segment[(accessAddress) + 1 & (mask)] = (value) & 0xFF)
+#define BUFFER_WRITE_32_BIG_ENDIAN(segment, accessAddress, mask, value) (segment[(accessAddress) & (mask)] = (value) >> 24, segment[(accessAddress) + 1 & (mask)] = ((value) >> 16) & 0xFF, segment[(accessAddress) + 2 & (mask)] = ((value) >> 8) & 0xFF, segment[(accessAddress) + 3 & (mask)] = (value) & 0xFF)
 #endif
-
-#define BUFFER_READ_8_ENDIANLESS(segment, accessAddress, mask)  (segment[(accessAddress) & (mask)])
-#define BUFFER_READ_16_ENDIANLESS(segment, accessAddress, mask) (segment[(accessAddress) & (mask)] << 8 | segment[(accessAddress) + 1 & (mask)])
-#define BUFFER_READ_32_ENDIANLESS(segment, accessAddress, mask) (segment[(accessAddress) & (mask)] << 24 | segment[(accessAddress) + 1 & (mask)] << 16 | segment[(accessAddress) + 2 & (mask)] << 8 | segment[(accessAddress) + 3 & (mask)])
-#define BUFFER_WRITE_8_ENDIANLESS(segment, accessAddress, mask, value)  (segment[(accessAddress) & (mask)] = (value))
-#define BUFFER_WRITE_16_ENDIANLESS(segment, accessAddress, mask, value) (segment[(accessAddress) & (mask)] = (value) >> 8, segment[(accessAddress) + 1 & (mask)] = (value) & 0xFF)
-#define BUFFER_WRITE_32_ENDIANLESS(segment, accessAddress, mask, value) (segment[(accessAddress) & (mask)] = (value) >> 24, segment[(accessAddress) + 1 & (mask)] = ((value) >> 16) & 0xFF, segment[(accessAddress) + 2 & (mask)] = ((value) >> 8) & 0xFF, segment[(accessAddress) + 3 & (mask)] = (value) & 0xFF)
 
 extern uint8_t bankType[];
 

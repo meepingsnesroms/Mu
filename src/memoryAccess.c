@@ -31,7 +31,7 @@ static uint8_t sed1376Read8(uint32_t address){
    if(sed1376PowerSaveEnabled())
       return 0x00;
    if(address & SED1376_MR_BIT)
-      return BUFFER_READ_8_ENDIANLESS(sed1376Framebuffer, address, chips[CHIP_B0_SED].mask);
+      return BUFFER_READ_8_BIG_ENDIAN(sed1376Framebuffer, address, chips[CHIP_B0_SED].mask);
    else
       return sed1376GetRegister(address & chips[CHIP_B0_SED].mask);
 }
@@ -39,7 +39,7 @@ static uint16_t sed1376Read16(uint32_t address){
    if(sed1376PowerSaveEnabled())
       return 0x0000;
    if(address & SED1376_MR_BIT)
-      return BUFFER_READ_16_ENDIANLESS(sed1376Framebuffer, address, chips[CHIP_B0_SED].mask);
+      return BUFFER_READ_16_BIG_ENDIAN(sed1376Framebuffer, address, chips[CHIP_B0_SED].mask);
    else
       return sed1376GetRegister(address & chips[CHIP_B0_SED].mask);
 }
@@ -47,25 +47,25 @@ static uint32_t sed1376Read32(uint32_t address){
    if(sed1376PowerSaveEnabled())
       return 0x00000000;
    if(address & SED1376_MR_BIT)
-      return BUFFER_READ_32_ENDIANLESS(sed1376Framebuffer, address, chips[CHIP_B0_SED].mask);
+      return BUFFER_READ_32_BIG_ENDIAN(sed1376Framebuffer, address, chips[CHIP_B0_SED].mask);
    else
       return sed1376GetRegister(address & chips[CHIP_B0_SED].mask);
 }
 static void sed1376Write8(uint32_t address, uint8_t value){
    if(address & SED1376_MR_BIT)
-      BUFFER_WRITE_8_ENDIANLESS(sed1376Framebuffer, address, chips[CHIP_B0_SED].mask, value);
+      BUFFER_WRITE_8_BIG_ENDIAN(sed1376Framebuffer, address, chips[CHIP_B0_SED].mask, value);
    else
       sed1376SetRegister(address & chips[CHIP_B0_SED].mask, value);
 }
 static void sed1376Write16(uint32_t address, uint16_t value){
    if(address & SED1376_MR_BIT)
-      BUFFER_WRITE_16_ENDIANLESS(sed1376Framebuffer, address, chips[CHIP_B0_SED].mask, value);
+      BUFFER_WRITE_16_BIG_ENDIAN(sed1376Framebuffer, address, chips[CHIP_B0_SED].mask, value);
    else
       sed1376SetRegister(address & chips[CHIP_B0_SED].mask, value);
 }
 static void sed1376Write32(uint32_t address, uint32_t value){
    if(address & SED1376_MR_BIT)
-      BUFFER_WRITE_32_ENDIANLESS(sed1376Framebuffer, address, chips[CHIP_B0_SED].mask, value);
+      BUFFER_WRITE_32_BIG_ENDIAN(sed1376Framebuffer, address, chips[CHIP_B0_SED].mask, value);
    else
       sed1376SetRegister(address & chips[CHIP_B0_SED].mask, value);
 }
