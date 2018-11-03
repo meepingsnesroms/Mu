@@ -23,8 +23,6 @@
 
 extern "C"{
 #include "src/flx68000.h"
-#include "src/memoryAccess.h"
-#include "src/hardwareRegisters.h"
 }
 
 
@@ -93,7 +91,7 @@ void EmuWrapper::emuThreadRun(){
          emuPaused = false;
          if(!emuNewFrameReady){
             palmInput = emuInput;
-            emulateFrame();
+            emulatorRunFrame();
             emuNewFrameReady = true;
          }
       }

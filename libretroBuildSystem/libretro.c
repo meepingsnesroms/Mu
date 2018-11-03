@@ -293,7 +293,7 @@ void retro_run(void){
    palmInput.buttonPower = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_START);
    
    //run emulator
-   emulateFrame();
+   emulatorRunFrame();
    memcpy(screenData, screenHires ? palmExtendedFramebuffer : palmFramebuffer, screenWidth * screenHeight * sizeof(uint16_t));
    
    //draw mouse

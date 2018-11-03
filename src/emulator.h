@@ -150,7 +150,7 @@ buffer_t emulatorGetSdCardBuffer();//this is a direct pointer to the SD card dat
 uint32_t emulatorInsertSdCard(buffer_t image);//use (NULL, desired size) to create a new empty SD card
 void emulatorEjectSdCard();
 uint32_t emulatorInstallPrcPdb(buffer_t file);
-void emulateFrame();
+void emulatorRunFrame();
    
 #ifdef __cplusplus
 }

@@ -9,6 +9,7 @@
 #define INDUCTOR_CLOCK_POWER 0.0001//the amount 1 clock of true or false will change the inductors total value
 #define INDUCTOR_SPEAKER_RANGE 0x6000//prevent hitting the top or bottom of the speaker when switching direction rapidly
 
+
 double inductorCurrentCharge;
 double inductorChargeAtLastSample;
 

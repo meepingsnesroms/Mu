@@ -47,11 +47,11 @@ void ads7846SaveState(uint8_t* data){
 
    writeStateValueBool(data + offset, ads7846PenIrqEnabled);
    offset += sizeof(uint8_t);
-   writeStateValueUint8(data + offset, ads7846BitsToNextControl);
+   writeStateValue8(data + offset, ads7846BitsToNextControl);
    offset += sizeof(uint8_t);
-   writeStateValueUint8(data + offset, ads7846ControlByte);
+   writeStateValue8(data + offset, ads7846ControlByte);
    offset += sizeof(uint8_t);
-   writeStateValueUint16(data + offset, ads7846OutputValue);
+   writeStateValue16(data + offset, ads7846OutputValue);
    offset += sizeof(uint16_t);
    writeStateValueBool(data + offset, ads7846ChipSelect);
    offset += sizeof(uint8_t);
@@ -62,11 +62,11 @@ void ads7846LoadState(uint8_t* data){
 
    ads7846PenIrqEnabled = readStateValueBool(data + offset);
    offset += sizeof(uint8_t);
-   ads7846BitsToNextControl = readStateValueUint8(data + offset);
+   ads7846BitsToNextControl = readStateValue8(data + offset);
    offset += sizeof(uint8_t);
-   ads7846ControlByte = readStateValueUint8(data + offset);
+   ads7846ControlByte = readStateValue8(data + offset);
    offset += sizeof(uint8_t);
-   ads7846OutputValue = readStateValueUint16(data + offset);
+   ads7846OutputValue = readStateValue16(data + offset);
    offset += sizeof(uint16_t);
    ads7846ChipSelect = readStateValueBool(data + offset);
    offset += sizeof(uint8_t);

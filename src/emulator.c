@@ -209,15 +209,15 @@ bool emulatorSaveState(buffer_t buffer){
       return false;//state cant fit
 
    //state validation, wont load states that are not from the same state version
-   writeStateValueUint32(buffer.data + offset, SAVE_STATE_VERSION);
+   writeStateValue32(buffer.data + offset, SAVE_STATE_VERSION);
    offset += sizeof(uint32_t);
 
    //features, hotpluging emulated hardware is not supported
-   writeStateValueUint32(buffer.data + offset, palmSpecialFeatures);
+   writeStateValue32(buffer.data + offset, palmSpecialFeatures);
    offset += sizeof(uint32_t);
 
    //SD card size
-   writeStateValueUint64(buffer.data + offset, palmSdCard.flashChip.size);
+   writeStateValue64(buffer.data + offset, palmSdCard.flashChip.size);
    offset += sizeof(uint64_t);
 
    //chips
@@ -233,12 +233,12 @@ bool emulatorSaveState(buffer_t buffer){
    //memory
    if(palmSpecialFeatures & FEATURE_RAM_HUGE){
       memcpy(buffer.data + offset, palmRam, SUPERMASSIVE_RAM_SIZE);
-   swap16_buffer_if_little(buffer.data + offset, SUPERMASSIVE_RAM_SIZE / sizeof(uint16_t));
+      swap16_buffer_if_little(buffer.data + offset, SUPERMASSIVE_RAM_SIZE / sizeof(uint16_t));
       offset += SUPERMASSIVE_RAM_SIZE;
    }
    else{
       memcpy(buffer.data + offset, palmRam, RAM_SIZE);
-   swap16_buffer_if_little(buffer.data + offset, RAM_SIZE / sizeof(uint16_t));
+      swap16_buffer_if_little(buffer.data + offset, RAM_SIZE / sizeof(uint16_t));
       offset += RAM_SIZE;
    }
    memcpy(buffer.data + offset, palmReg, REG_SIZE);
@@ -249,11 +249,11 @@ bool emulatorSaveState(buffer_t buffer){
    for(uint8_t chip = CHIP_BEGIN; chip < CHIP_END; chip++){
       writeStateValueBool(buffer.data + offset, chips[chip].enable);
       offset += sizeof(uint8_t);
-      writeStateValueUint32(buffer.data + offset, chips[chip].start);
+      writeStateValue32(buffer.data + offset, chips[chip].start);
       offset += sizeof(uint32_t);
-      writeStateValueUint32(buffer.data + offset, chips[chip].lineSize);
+      writeStateValue32(buffer.data + offset, chips[chip].lineSize);
       offset += sizeof(uint32_t);
-      writeStateValueUint32(buffer.data + offset, chips[chip].mask);
+      writeStateValue32(buffer.data + offset, chips[chip].mask);
       offset += sizeof(uint32_t);
       writeStateValueBool(buffer.data + offset, chips[chip].inBootMode);
       offset += sizeof(uint8_t);
@@ -263,7 +263,7 @@ bool emulatorSaveState(buffer_t buffer){
       offset += sizeof(uint8_t);
       writeStateValueBool(buffer.data + offset, chips[chip].supervisorOnlyProtectedMemory);
       offset += sizeof(uint8_t);
-      writeStateValueUint32(buffer.data + offset, chips[chip].unprotectedSize);
+      writeStateValue32(buffer.data + offset, chips[chip].unprotectedSize);
       offset += sizeof(uint32_t);
    }
 
@@ -272,11 +272,11 @@ bool emulatorSaveState(buffer_t buffer){
    offset += sizeof(uint64_t);
    writeStateValueDouble(buffer.data + offset, palmCycleCounter);
    offset += sizeof(uint64_t);
-   writeStateValueInt8(buffer.data + offset, pllSleepWait);
+   writeStateValue8(buffer.data + offset, pllSleepWait);
    offset += sizeof(int8_t);
-   writeStateValueInt8(buffer.data + offset, pllWakeWait);
+   writeStateValue8(buffer.data + offset, pllWakeWait);
    offset += sizeof(int8_t);
-   writeStateValueUint32(buffer.data + offset, clk32Counter);
+   writeStateValue32(buffer.data + offset, clk32Counter);
    offset += sizeof(uint32_t);
    writeStateValueDouble(buffer.data + offset, pctlrCpuClockDivider);
    offset += sizeof(uint64_t);
@@ -284,41 +284,41 @@ bool emulatorSaveState(buffer_t buffer){
    offset += sizeof(uint64_t);
    writeStateValueDouble(buffer.data + offset, timerCycleCounter[1]);
    offset += sizeof(uint64_t);
-   writeStateValueUint16(buffer.data + offset, timerStatusReadAcknowledge[0]);
+   writeStateValue16(buffer.data + offset, timerStatusReadAcknowledge[0]);
    offset += sizeof(uint16_t);
-   writeStateValueUint16(buffer.data + offset, timerStatusReadAcknowledge[1]);
+   writeStateValue16(buffer.data + offset, timerStatusReadAcknowledge[1]);
    offset += sizeof(uint16_t);
-   writeStateValueUint32(buffer.data + offset, interruptEdgeTriggered);
+   writeStateValue32(buffer.data + offset, interruptEdgeTriggered);
    offset += sizeof(uint32_t);
 
    //SPI1
    for(uint8_t fifoPosition = 0; fifoPosition < 9; fifoPosition++){
-      writeStateValueUint16(buffer.data + offset, spi1RxFifo[fifoPosition]);
+      writeStateValue16(buffer.data + offset, spi1RxFifo[fifoPosition]);
       offset += sizeof(uint16_t);
    }
    for(uint8_t fifoPosition = 0; fifoPosition < 9; fifoPosition++){
-      writeStateValueUint16(buffer.data + offset, spi1TxFifo[fifoPosition]);
+      writeStateValue16(buffer.data + offset, spi1TxFifo[fifoPosition]);
       offset += sizeof(uint16_t);
    }
-   writeStateValueUint8(buffer.data + offset, spi1RxReadPosition);
+   writeStateValue8(buffer.data + offset, spi1RxReadPosition);
    offset += sizeof(uint8_t);
-   writeStateValueUint8(buffer.data + offset, spi1RxWritePosition);
+   writeStateValue8(buffer.data + offset, spi1RxWritePosition);
    offset += sizeof(uint8_t);
-   writeStateValueUint8(buffer.data + offset, spi1TxReadPosition);
+   writeStateValue8(buffer.data + offset, spi1TxReadPosition);
    offset += sizeof(uint8_t);
-   writeStateValueUint8(buffer.data + offset, spi1TxWritePosition);
+   writeStateValue8(buffer.data + offset, spi1TxWritePosition);
    offset += sizeof(uint8_t);
 
    //PWM1, audio
-   writeStateValueInt32(buffer.data + offset, pwm1ClocksToNextSample);
+   writeStateValue32(buffer.data + offset, pwm1ClocksToNextSample);
    offset += sizeof(int32_t);
    for(uint8_t fifoPosition = 0; fifoPosition < 6; fifoPosition++){
-      writeStateValueUint8(buffer.data + offset, pwm1Fifo[fifoPosition]);
+      writeStateValue8(buffer.data + offset, pwm1Fifo[fifoPosition]);
       offset += sizeof(uint8_t);
    }
-   writeStateValueUint8(buffer.data + offset, pwm1ReadPosition);
+   writeStateValue8(buffer.data + offset, pwm1ReadPosition);
    offset += sizeof(uint8_t);
-   writeStateValueUint8(buffer.data + offset, pwm1WritePosition);
+   writeStateValue8(buffer.data + offset, pwm1WritePosition);
    offset += sizeof(uint8_t);
    writeStateValueDouble(buffer.data + offset, inductorCurrentCharge);
    offset += sizeof(uint64_t);
@@ -330,23 +330,23 @@ bool emulatorSaveState(buffer_t buffer){
    offset += sizeof(uint8_t);
    writeStateValueBool(buffer.data + offset, palmMisc.lcdOn);
    offset += sizeof(uint8_t);
-   writeStateValueUint8(buffer.data + offset, palmMisc.backlightLevel);
+   writeStateValue8(buffer.data + offset, palmMisc.backlightLevel);
    offset += sizeof(uint8_t);
    writeStateValueBool(buffer.data + offset, palmMisc.vibratorOn);
    offset += sizeof(uint8_t);
    writeStateValueBool(buffer.data + offset, palmMisc.batteryCharging);
    offset += sizeof(uint8_t);
-   writeStateValueUint8(buffer.data + offset, palmMisc.batteryLevel);
+   writeStateValue8(buffer.data + offset, palmMisc.batteryLevel);
    offset += sizeof(uint8_t);
-   writeStateValueUint8(buffer.data + offset, palmMisc.dataPort);
+   writeStateValue8(buffer.data + offset, palmMisc.dataPort);
    offset += sizeof(uint8_t);
 
    //SD card
-   writeStateValueUint32(buffer.data + offset, palmSdCard.command);
+   writeStateValue32(buffer.data + offset, palmSdCard.command);
    offset += sizeof(uint32_t);
-   writeStateValueUint8(buffer.data + offset, palmSdCard.commandBitsRemaining);
+   writeStateValue8(buffer.data + offset, palmSdCard.commandBitsRemaining);
    offset += sizeof(uint8_t);
-   writeStateValueUint8(buffer.data + offset, palmSdCard.response);
+   writeStateValue8(buffer.data + offset, palmSdCard.response);
    offset += sizeof(uint8_t);
    memcpy(buffer.data + offset, palmSdCard.dataPacket, sizeof(palmSdCard.dataPacket));
    offset += sizeof(palmSdCard.dataPacket);
@@ -360,17 +360,17 @@ bool emulatorLoadState(buffer_t buffer){
    uint64_t offset = 0;
 
    //state validation, wont load states that are not from the same state version
-   if(readStateValueUint32(buffer.data + offset) != SAVE_STATE_VERSION)
+   if(readStateValue32(buffer.data + offset) != SAVE_STATE_VERSION)
       return false;
    offset += sizeof(uint32_t);
 
    //features, hotpluging emulated hardware is not supported
-   if(readStateValueUint32(buffer.data + offset) != palmSpecialFeatures)
+   if(readStateValue32(buffer.data + offset) != palmSpecialFeatures)
       return false;
    offset += sizeof(uint32_t);
 
    //SD card size, the malloc when loading can make it fail, make sure if it fails the emulator state doesnt change
-   uint64_t stateSdCardSize = readStateValueUint64(buffer.data + offset);
+   uint64_t stateSdCardSize = readStateValue64(buffer.data + offset);
    uint8_t* stateSdCardBuffer = stateSdCardSize > 0 ? malloc(stateSdCardSize) : NULL;
    if(stateSdCardSize > 0 && !stateSdCardBuffer)
       return false;
@@ -405,11 +405,11 @@ bool emulatorLoadState(buffer_t buffer){
    for(uint8_t chip = CHIP_BEGIN; chip < CHIP_END; chip++){
       chips[chip].enable = readStateValueBool(buffer.data + offset);
       offset += sizeof(uint8_t);
-      chips[chip].start = readStateValueUint32(buffer.data + offset);
+      chips[chip].start = readStateValue32(buffer.data + offset);
       offset += sizeof(uint32_t);
-      chips[chip].lineSize = readStateValueUint32(buffer.data + offset);
+      chips[chip].lineSize = readStateValue32(buffer.data + offset);
       offset += sizeof(uint32_t);
-      chips[chip].mask = readStateValueUint32(buffer.data + offset);
+      chips[chip].mask = readStateValue32(buffer.data + offset);
       offset += sizeof(uint32_t);
       chips[chip].inBootMode = readStateValueBool(buffer.data + offset);
       offset += sizeof(uint8_t);
@@ -419,7 +419,7 @@ bool emulatorLoadState(buffer_t buffer){
       offset += sizeof(uint8_t);
       chips[chip].supervisorOnlyProtectedMemory = readStateValueBool(buffer.data + offset);
       offset += sizeof(uint8_t);
-      chips[chip].unprotectedSize = readStateValueUint32(buffer.data + offset);
+      chips[chip].unprotectedSize = readStateValue32(buffer.data + offset);
       offset += sizeof(uint32_t);
    }
 
@@ -428,11 +428,11 @@ bool emulatorLoadState(buffer_t buffer){
    offset += sizeof(uint64_t);
    palmCycleCounter = readStateValueDouble(buffer.data + offset);
    offset += sizeof(uint64_t);
-   pllSleepWait = readStateValueInt8(buffer.data + offset);
+   pllSleepWait = readStateValue8(buffer.data + offset);
    offset += sizeof(int8_t);
-   pllWakeWait = readStateValueInt8(buffer.data + offset);
+   pllWakeWait = readStateValue8(buffer.data + offset);
    offset += sizeof(int8_t);
-   clk32Counter = readStateValueUint32(buffer.data + offset);
+   clk32Counter = readStateValue32(buffer.data + offset);
    offset += sizeof(uint32_t);
    pctlrCpuClockDivider = readStateValueDouble(buffer.data + offset);
    offset += sizeof(uint64_t);
@@ -440,41 +440,41 @@ bool emulatorLoadState(buffer_t buffer){
    offset += sizeof(uint64_t);
    timerCycleCounter[1] = readStateValueDouble(buffer.data + offset);
    offset += sizeof(uint64_t);
-   timerStatusReadAcknowledge[0] = readStateValueUint16(buffer.data + offset);
+   timerStatusReadAcknowledge[0] = readStateValue16(buffer.data + offset);
    offset += sizeof(uint16_t);
-   timerStatusReadAcknowledge[1] = readStateValueUint16(buffer.data + offset);
+   timerStatusReadAcknowledge[1] = readStateValue16(buffer.data + offset);
    offset += sizeof(uint16_t);
-   interruptEdgeTriggered = readStateValueUint32(buffer.data + offset);
+   interruptEdgeTriggered = readStateValue32(buffer.data + offset);
    offset += sizeof(uint32_t);
 
    //SPI1
    for(uint8_t fifoPosition = 0; fifoPosition < 9; fifoPosition++){
-      spi1RxFifo[fifoPosition] = readStateValueUint16(buffer.data + offset);
+      spi1RxFifo[fifoPosition] = readStateValue16(buffer.data + offset);
       offset += sizeof(uint16_t);
    }
    for(uint8_t fifoPosition = 0; fifoPosition < 9; fifoPosition++){
-      spi1TxFifo[fifoPosition] = readStateValueUint16(buffer.data + offset);
+      spi1TxFifo[fifoPosition] = readStateValue16(buffer.data + offset);
       offset += sizeof(uint16_t);
    }
-   spi1RxReadPosition = readStateValueUint8(buffer.data + offset);
+   spi1RxReadPosition = readStateValue8(buffer.data + offset);
    offset += sizeof(uint8_t);
-   spi1RxWritePosition = readStateValueUint8(buffer.data + offset);
+   spi1RxWritePosition = readStateValue8(buffer.data + offset);
    offset += sizeof(uint8_t);
-   spi1TxReadPosition = readStateValueUint8(buffer.data + offset);
+   spi1TxReadPosition = readStateValue8(buffer.data + offset);
    offset += sizeof(uint8_t);
-   spi1TxWritePosition = readStateValueUint8(buffer.data + offset);
+   spi1TxWritePosition = readStateValue8(buffer.data + offset);
    offset += sizeof(uint8_t);
 
    //PWM1, audio
-   pwm1ClocksToNextSample = readStateValueInt32(buffer.data + offset);
+   pwm1ClocksToNextSample = readStateValue32(buffer.data + offset);
    offset += sizeof(int32_t);
    for(uint8_t fifoPosition = 0; fifoPosition < 6; fifoPosition++){
-      pwm1Fifo[fifoPosition] = readStateValueUint8(buffer.data + offset);
+      pwm1Fifo[fifoPosition] = readStateValue8(buffer.data + offset);
       offset += sizeof(uint8_t);
    }
-   pwm1ReadPosition = readStateValueUint8(buffer.data + offset);
+   pwm1ReadPosition = readStateValue8(buffer.data + offset);
    offset += sizeof(uint8_t);
-   pwm1WritePosition = readStateValueUint8(buffer.data + offset);
+   pwm1WritePosition = readStateValue8(buffer.data + offset);
    offset += sizeof(uint8_t);
    inductorCurrentCharge = readStateValueDouble(buffer.data + offset);
    offset += sizeof(uint64_t);
@@ -486,23 +486,23 @@ bool emulatorLoadState(buffer_t buffer){
    offset += sizeof(uint8_t);
    palmMisc.lcdOn = readStateValueBool(buffer.data + offset);
    offset += sizeof(uint8_t);
-   palmMisc.backlightLevel = readStateValueUint8(buffer.data + offset);
+   palmMisc.backlightLevel = readStateValue8(buffer.data + offset);
    offset += sizeof(uint8_t);
    palmMisc.vibratorOn = readStateValueBool(buffer.data + offset);
    offset += sizeof(uint8_t);
    palmMisc.batteryCharging = readStateValueBool(buffer.data + offset);
    offset += sizeof(uint8_t);
-   palmMisc.batteryLevel = readStateValueUint8(buffer.data + offset);
+   palmMisc.batteryLevel = readStateValue8(buffer.data + offset);
    offset += sizeof(uint8_t);
-   palmMisc.dataPort = readStateValueUint8(buffer.data + offset);
+   palmMisc.dataPort = readStateValue8(buffer.data + offset);
    offset += sizeof(uint8_t);
 
    //SD card
-   palmSdCard.command = readStateValueUint32(buffer.data + offset);
+   palmSdCard.command = readStateValue32(buffer.data + offset);
    offset += sizeof(uint32_t);
-   palmSdCard.commandBitsRemaining = readStateValueUint8(buffer.data + offset);
+   palmSdCard.commandBitsRemaining = readStateValue8(buffer.data + offset);
    offset += sizeof(uint8_t);
-   palmSdCard.response = readStateValueUint8(buffer.data + offset);
+   palmSdCard.response = readStateValue8(buffer.data + offset);
    offset += sizeof(uint8_t);
    memcpy(palmSdCard.dataPacket, buffer.data + offset, sizeof(palmSdCard.dataPacket));
    offset += sizeof(palmSdCard.dataPacket);
@@ -579,7 +579,7 @@ uint32_t emulatorInstallPrcPdb(buffer_t file){
    //return EMU_ERROR_NONE;
 }
 
-void emulateFrame(){
+void emulatorRunFrame(){
    //I/O
    refreshInputState();
 
@@ -594,9 +594,8 @@ void emulateFrame(){
    //audio
    blip_end_frame(palmAudioResampler, blip_clocks_needed(palmAudioResampler, AUDIO_SAMPLES_PER_FRAME));
    /*
-   if(blip_samples_avail(palmAudioResampler) != AUDIO_SAMPLES_PER_FRAME){
+   if(blip_samples_avail(palmAudioResampler) != AUDIO_SAMPLES_PER_FRAME)
       printf("There are %d audio samples available, %d should be available\n", blip_samples_avail(palmAudioResampler), AUDIO_SAMPLES_PER_FRAME);
-   }
    */
    blip_read_samples(palmAudioResampler, palmAudio, AUDIO_SAMPLES_PER_FRAME, true);
    MULTITHREAD_LOOP for(uint32_t samples = 0; samples < AUDIO_SAMPLES_PER_FRAME * 2; samples += 2)

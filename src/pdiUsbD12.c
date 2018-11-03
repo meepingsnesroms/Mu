@@ -55,9 +55,9 @@ void pdiUsbD12SaveState(uint8_t* data){
 
    memcpy(data + offset, pdiUsbD12FifoBuffer, PDIUSBD12_TRANSFER_BUFFER_SIZE);
    offset += PDIUSBD12_TRANSFER_BUFFER_SIZE;
-   writeStateValueUint8(data + offset, pdiUsbD12ReadIndex);
+   writeStateValue8(data + offset, pdiUsbD12ReadIndex);
    offset += sizeof(uint8_t);
-   writeStateValueUint8(data + offset, pdiUsbD12WriteIndex);
+   writeStateValue8(data + offset, pdiUsbD12WriteIndex);
    offset += sizeof(uint8_t);
 }
 
@@ -66,9 +66,9 @@ void pdiUsbD12LoadState(uint8_t* data){
 
    memcpy(pdiUsbD12FifoBuffer, data + offset, PDIUSBD12_TRANSFER_BUFFER_SIZE);
    offset += PDIUSBD12_TRANSFER_BUFFER_SIZE;
-   pdiUsbD12ReadIndex = readStateValueUint8(data + offset);
+   pdiUsbD12ReadIndex = readStateValue8(data + offset);
    offset += sizeof(uint8_t);
-   pdiUsbD12WriteIndex = readStateValueUint8(data + offset);
+   pdiUsbD12WriteIndex = readStateValue8(data + offset);
    offset += sizeof(uint8_t);
 }
 
