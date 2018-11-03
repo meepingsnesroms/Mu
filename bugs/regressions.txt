@@ -1,4 +1,4 @@
-Endian compatibility is broken(the CPU state needs to be standardized)
+Endian compatibility is broken(the CPU state needs to be standardized)(fixed again with musashi)
 
 Fixed:
 RetroArch port crashes on exit(needed to check if environ_cb returned true, switched to libretro-common filestreams too)
