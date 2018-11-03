@@ -119,9 +119,7 @@ static void pwm1FifoWrite(uint8_t value){
 }
 
 static void pwm1FifoFlush(){
-   pwm1Fifo[0] = 0x00;
-   pwm1ReadPosition = 0;
-   pwm1WritePosition = 0;
+   pwm1ReadPosition = pwm1WritePosition;
 }
 
 //register setters

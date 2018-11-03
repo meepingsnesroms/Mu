@@ -1,6 +1,10 @@
 Theory of speaker output issues:
 SysTaskDelay is used in PrvDoFreqDurationAmp, if SysTaskDelay waits on a timer the timer will not be triggered until addSysclks, the same time at which the PWM is sampled with empty samples due to the timer not being triggered properly.(this is wrong the actual solution is listed below)
 
-It is not stated what PWM1 does when it runs out of samples, does it keep playing the last sample, or does it set 0% duty cycle?(the last sample plays infinitely!)
+Stated in MC68VZ328UM.pdf:
+The pulse-width modulator will revert to free running at the duty-cycle setting that was set last until the FIFO is reloaded or the pulse-width modulator is disabled.
+
 
 FIFO also seemed to overwrite its current sample when a sample was written as well.
+
+I still don't know exactly what "flushing" the PWM1 FIFO means, it could set the read pointer to the write pointer, or it could set the read and write pointer to 0 along with the sample buffer, going based off the "free running" thing above I think it leaves the last active sample and just sets readPtr = writePtr.

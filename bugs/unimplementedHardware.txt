@@ -26,6 +26,7 @@ edge triggered INT* don't clear on write to ISR when masked in IMR(at least that
 if a sound interrupt is triggered while the button interrupt is disabled the button interrupt will still trigger(in galax game)
 Cyclone will cause SIGSEGVs, don't know why yet
 PWM2 is not implemented
+don't know if flushing the PWM1 FIFO sets all the bytes to 0x00, or just sets the read pointer to the write pointer preserving the newest sample and making the size 0(readPtr = writePtr has significantly cleaner audio then 0ing it out though)
 
 Debug tools:
 ADS7846 channels can't be read in single reference mode in hwTestSuite

@@ -21,14 +21,13 @@ void inductorReset(){
 void inductorPwmDutyCycle(int32_t now, int32_t clocks, double dutyCycle){
    int32_t onClocks = clocks * dutyCycle;
    int32_t offClocks = clocks * (1.00 - dutyCycle);
-   double cutoffPoint = dutyCycle - 0.50;//cant go past the actual duty cycle percentage
 
 #if !defined(EMU_NO_SAFETY)
    if(now + clocks >= AUDIO_CLOCK_RATE)
       return;
 #endif
 
-   inductorCurrentCharge = dMin(inductorCurrentCharge + onClocks * INDUCTOR_CLOCK_POWER, cutoffPoint);
+   inductorCurrentCharge = dMin(inductorCurrentCharge + onClocks * INDUCTOR_CLOCK_POWER, 1.0);
    blip_add_delta(palmAudioResampler, now, (inductorCurrentCharge - inductorChargeAtLastSample) * INDUCTOR_SPEAKER_RANGE);
    inductorChargeAtLastSample = inductorCurrentCharge;
 
