@@ -1,0 +1,4 @@
+Sister projects with SquirrelJME:
+https://github.com/XerTheSquirrel/SquirrelJME
+
+Release at Christmas
