@@ -92,14 +92,12 @@ The source files can now be located properly.
 
 #### For Qt
  1. Run once to create the directory tree
- 2. Copy "palmRoms/Palm m515/rom(selfDumped).bin" to "~/Mu"
- 3. Rename "rom(selfDumped).bin" to "palmos41-en-m515.rom"
- 4. Copy "palmBootloaders/Palm m515/bootloader(type 2).bin" to "~/Mu"
- 5. Rename "bootloader(type 2).bin" to "bootloader-en-m515.rom"
- 6. Run emu and press start button
+ 2. Copy "palmos41-en-m515.rom" to "~/Mu"
+ 3. Copy "bootloader-en-m515.rom" to "~/Mu"
+ 4. Run emu and press start button
  
  #### For RetroArch 
- 1. Copy and rename the same files as above but to the RetroArch "system" directory
+ 1. Copy the same files as above but to the RetroArch "system" directory
  2. Copy mu_libretro.(so/dylib/dll) to the RetroArch "cores" directory
  3. Run RetroArch, select "Load Core",  select "Mu", select "Start Core"
 
