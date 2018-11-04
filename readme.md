@@ -13,7 +13,7 @@ It is also written in C for RetroArch so it will run on everything at the start,
 
 It is the best Palm brand OS 4 device that has no special hardware builtin(cellphone, barcode scanner, keyboard attachment), it has a color screen, and available ROM dumps.
 
-## What about accessorys?
+## What about accessories?
 
 The Palm keyboard attachment will likely be emulated later on so the PC keyboard can be used on text fields.
 
