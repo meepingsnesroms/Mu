@@ -1,4 +1,4 @@
 Sister projects with SquirrelJME:
 https://github.com/XerTheSquirrel/SquirrelJME
 
-Release at Christmas
+Release at Christmas 17:00 GMT, 9:00 My time, 12:00 SquirrelJME devs time
