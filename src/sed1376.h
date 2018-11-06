@@ -1,4 +1,5 @@
-#pragma once
+#ifndef SED1376_H
+#define SED1376_H
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -15,3 +16,5 @@ uint8_t sed1376GetRegister(uint8_t address);
 void sed1376SetRegister(uint8_t address, uint8_t value);
 
 void sed1376Render();
+
+#endif

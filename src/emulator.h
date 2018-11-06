@@ -1,4 +1,5 @@
-#pragma once
+#ifndef EMULATOR_H
+#define EMULATOR_H
 //this is the only header a frontend needs to include
 
 #ifdef __cplusplus
@@ -154,4 +155,6 @@ void emulatorRunFrame();
    
 #ifdef __cplusplus
 }
+#endif
+
 #endif

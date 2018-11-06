@@ -1,4 +1,5 @@
-#pragma once
+#ifndef FLX68000_H
+#define FLX68000_H
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -18,3 +19,5 @@ void flx68000BusError(uint32_t address, bool isWrite);
 uint32_t flx68000GetRegister(uint8_t reg);//only for debugging
 uint32_t flx68000GetPc();//only for debugging
 uint64_t flx68000ReadArbitraryMemory(uint32_t address, uint8_t size);//only for debugging
+
+#endif

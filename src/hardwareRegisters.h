@@ -1,4 +1,5 @@
-#pragma once
+#ifndef HARDWARE_REGISTERS_H
+#define HARDWARE_REGISTERS_H
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -112,3 +113,5 @@ void setEmuRegister(uint32_t address, uint32_t value);
 //config
 void resetHwRegisters();
 void setRtc(uint16_t days, uint8_t hours, uint8_t minutes, uint8_t seconds);
+
+#endif
