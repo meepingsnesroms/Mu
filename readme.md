@@ -81,15 +81,6 @@ Install prc-tools from the below link(self compiled or prepackaged vm)
     ./make.sh
 
 ## Running
-#### Before Compiling On Windows
-You must enable symlinks first:
-
-    cd ./libretro-palmm515emu
-    git config core.symlinks true
-
-Then open GitHub Desktop and discard all changes to create the linked directorys.  
-The source files can now be located properly.
-
 #### For Qt
  1. Run once to create the directory tree
  2. Copy "palmos41-en-m515.rom" to "~/Mu"
@@ -108,4 +99,4 @@ The source files can now be located properly.
 <a rel="license" href="http://creativecommons.org/licenses/by-nc/3.0/us/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc/3.0/us/88x31.png" /></a><br />This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc/3.0/us/">Creative Commons Attribution-NonCommercial 3.0 United States License</a>.
 
 ## Also see Mu's sister project
-[SquirrelJME](https://multiphasicapps.net)
+[🐿SquirrelJME](https://multiphasicapps.net)
