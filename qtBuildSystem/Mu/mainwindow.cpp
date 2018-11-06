@@ -23,6 +23,33 @@
 #include "statemanager.h"
 
 
+/*
+#if defined(Q_OS_ANDROID)
+#include <android/log.h>
+#endif
+
+void printLastRun(){
+   static int64_t lastTime = 0;
+   struct timespec tms;
+
+   clock_gettime(CLOCK_REALTIME, &tms);
+
+   int64_t micros = tms.tv_sec * 1000000;
+   micros += tms.tv_nsec / 1000;
+   if(tms.tv_nsec % 1000 >= 500)
+       micros++;
+
+#if defined(Q_OS_ANDROID)
+   __android_log_print(ANDROID_LOG_DEBUG, "Mu", "Microseconds:%lld\n", micros - lastTime);
+#else
+   printf("Microseconds:%lld\n", micros - lastTime);
+#endif
+
+   lastTime = micros;
+}
+*/
+
+
 MainWindow::MainWindow(QWidget* parent) :
    QMainWindow(parent),
    ui(new Ui::MainWindow){
@@ -168,18 +195,22 @@ void MainWindow::updateDisplay(){
    if(emu.newFrameReady()){
       //video
       ui->display->setPixmap(emu.getFramebuffer().scaled(ui->display->size().width(), ui->display->size().height(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
-      ui->display->repaint();
 
       //audio
       audioOut->write((const char*)emu.getAudioSamples(), AUDIO_SAMPLES_PER_FRAME * 2/*channels*/ * sizeof(int16_t));
 
       //power LED
       ui->powerButtonLed->setStyleSheet(emu.getPowerButtonLed() ? "background: lime" : "");
-      ui->powerButtonLed->repaint();
 
       //allow next frame to start
       emu.frameHandled();
+
+      //update GUI
+      ui->display->repaint();
+      ui->powerButtonLed->repaint();
    }
+
+   //printLastRun();
 }
 
 //palm buttons

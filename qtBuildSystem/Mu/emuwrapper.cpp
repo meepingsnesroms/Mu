@@ -36,7 +36,7 @@ char*                        frontendDebugString;
 
 void frontendHandleDebugPrint(){
 #if defined(Q_OS_ANDROID)
-   __android_log_print(ANDROID_LOG_DEBUG, "debugLog", "%s", frontendDebugString);
+   __android_log_print(ANDROID_LOG_DEBUG, "MuDebug", "%s", frontendDebugString);
 #else
    QString newDebugString = frontendDebugString;
 

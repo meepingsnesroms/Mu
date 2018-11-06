@@ -1,4 +1,5 @@
 #include <QMouseEvent>
+#include <QLabel>
 
 #include <stdint.h>
 

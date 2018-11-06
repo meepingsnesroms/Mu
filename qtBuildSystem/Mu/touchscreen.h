@@ -2,7 +2,6 @@
 
 #include <QLabel>
 #include <QMouseEvent>
-//#include <QTouchEvent>
 
 class TouchScreen : public QLabel{
    Q_OBJECT
