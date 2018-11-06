@@ -321,8 +321,8 @@ void sed1376SetRegister(uint8_t address, uint8_t value){
 void sed1376Render(){
    if(palmMisc.lcdOn && pllIsOn() && !sed1376PowerSaveEnabled() && !(sed1376Registers[DISP_MODE] & 0x80)){
       //only render if LCD on, PLL on, power save off, and force blank off, SED1376 clock is provided by the CPU, if its off so is the SED
-      bool color = sed1376Registers[PANEL_TYPE] & 0x40;
-      bool pictureInPictureEnabled = sed1376Registers[SPECIAL_EFFECT] & 0x10;
+      bool color = !!(sed1376Registers[PANEL_TYPE] & 0x40);
+      bool pictureInPictureEnabled = !!(sed1376Registers[SPECIAL_EFFECT] & 0x10);
       uint8_t bitDepth = 1 << (sed1376Registers[DISP_MODE] & 0x07);
       uint16_t rotation = 90 * (sed1376Registers[SPECIAL_EFFECT] & 0x03);
 
@@ -331,8 +331,11 @@ void sed1376Render(){
       selectRenderer(color, bitDepth);
 
       if(renderPixel){
-         MULTITHREAD_DOUBLE_LOOP for(uint16_t pixelY = 0; pixelY < 160; pixelY++)
-            for(uint16_t pixelX = 0; pixelX < 160; pixelX++)
+         uint16_t pixelX;
+         uint16_t pixelY;
+
+         MULTITHREAD_DOUBLE_LOOP for(pixelY = 0; pixelY < 160; pixelY++)
+            for(pixelX = 0; pixelX < 160; pixelX++)
                palmFramebuffer[pixelY * 160 + pixelX] = renderPixel(pixelX, pixelY);
 
          //debugLog("Screen start address:0x%08X, buffer width:%d, swivel view:%d degrees\n", screenStartAddress, lineSize, rotation);
@@ -392,7 +395,7 @@ void sed1376Render(){
          }
       }
       else{
-         debugLog("Invalid screen format, color:%s, BPP:%d, rotation:%d\n", boolString(color), bitDepth, rotation);
+         debugLog("Invalid screen format, color:%s, BPP:%d, rotation:%d\n", color ? "true" : "false", bitDepth, rotation);
       }
    }
    else{
