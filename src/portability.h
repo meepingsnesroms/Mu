@@ -7,9 +7,10 @@
 //endian
 static inline void swap16BufferIfLittle(uint8_t* buffer, uint64_t count){
 #if !defined(EMU_BIG_ENDIAN)
+   uint64_t index;
    //count specifys the number of uint16_t's that need to be swapped, the uint8_t* is because of alignment restrictions that crash on some platforms
    count *= sizeof(uint16_t);
-   for(uint64_t index = 0; index < count; index += 2){
+   for(index = 0; index < count; index += 2){
       uint8_t temp = buffer[index];
       buffer[index] = buffer[index + 1];
       buffer[index + 1] = temp;

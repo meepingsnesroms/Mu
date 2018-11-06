@@ -204,6 +204,7 @@ uint64_t emulatorGetStateSize(){
 
 bool emulatorSaveState(buffer_t buffer){
    uint64_t offset = 0;
+   uint8_t index;
 
    if(buffer.size < emulatorGetStateSize())
       return false;//state cant fit
@@ -246,24 +247,24 @@ bool emulatorSaveState(buffer_t buffer){
    offset += REG_SIZE;
    memcpy(buffer.data + offset, bankType, TOTAL_MEMORY_BANKS);
    offset += TOTAL_MEMORY_BANKS;
-   for(uint8_t chip = CHIP_BEGIN; chip < CHIP_END; chip++){
-      writeStateValueBool(buffer.data + offset, chips[chip].enable);
+   for(index = CHIP_BEGIN; index < CHIP_END; index++){
+      writeStateValueBool(buffer.data + offset, chips[index].enable);
       offset += sizeof(uint8_t);
-      writeStateValue32(buffer.data + offset, chips[chip].start);
+      writeStateValue32(buffer.data + offset, chips[index].start);
       offset += sizeof(uint32_t);
-      writeStateValue32(buffer.data + offset, chips[chip].lineSize);
+      writeStateValue32(buffer.data + offset, chips[index].lineSize);
       offset += sizeof(uint32_t);
-      writeStateValue32(buffer.data + offset, chips[chip].mask);
+      writeStateValue32(buffer.data + offset, chips[index].mask);
       offset += sizeof(uint32_t);
-      writeStateValueBool(buffer.data + offset, chips[chip].inBootMode);
+      writeStateValueBool(buffer.data + offset, chips[index].inBootMode);
       offset += sizeof(uint8_t);
-      writeStateValueBool(buffer.data + offset, chips[chip].readOnly);
+      writeStateValueBool(buffer.data + offset, chips[index].readOnly);
       offset += sizeof(uint8_t);
-      writeStateValueBool(buffer.data + offset, chips[chip].readOnlyForProtectedMemory);
+      writeStateValueBool(buffer.data + offset, chips[index].readOnlyForProtectedMemory);
       offset += sizeof(uint8_t);
-      writeStateValueBool(buffer.data + offset, chips[chip].supervisorOnlyProtectedMemory);
+      writeStateValueBool(buffer.data + offset, chips[index].supervisorOnlyProtectedMemory);
       offset += sizeof(uint8_t);
-      writeStateValue32(buffer.data + offset, chips[chip].unprotectedSize);
+      writeStateValue32(buffer.data + offset, chips[index].unprotectedSize);
       offset += sizeof(uint32_t);
    }
 
@@ -292,12 +293,12 @@ bool emulatorSaveState(buffer_t buffer){
    offset += sizeof(uint32_t);
 
    //SPI1
-   for(uint8_t fifoPosition = 0; fifoPosition < 9; fifoPosition++){
-      writeStateValue16(buffer.data + offset, spi1RxFifo[fifoPosition]);
+   for(index = 0; index < 9; index++){
+      writeStateValue16(buffer.data + offset, spi1RxFifo[index]);
       offset += sizeof(uint16_t);
    }
-   for(uint8_t fifoPosition = 0; fifoPosition < 9; fifoPosition++){
-      writeStateValue16(buffer.data + offset, spi1TxFifo[fifoPosition]);
+   for(index = 0; index < 9; index++){
+      writeStateValue16(buffer.data + offset, spi1TxFifo[index]);
       offset += sizeof(uint16_t);
    }
    writeStateValue8(buffer.data + offset, spi1RxReadPosition);
@@ -312,8 +313,8 @@ bool emulatorSaveState(buffer_t buffer){
    //PWM1, audio
    writeStateValue32(buffer.data + offset, pwm1ClocksToNextSample);
    offset += sizeof(int32_t);
-   for(uint8_t fifoPosition = 0; fifoPosition < 6; fifoPosition++){
-      writeStateValue8(buffer.data + offset, pwm1Fifo[fifoPosition]);
+   for(index = 0; index < 6; index++){
+      writeStateValue8(buffer.data + offset, pwm1Fifo[index]);
       offset += sizeof(uint8_t);
    }
    writeStateValue8(buffer.data + offset, pwm1ReadPosition);
@@ -358,6 +359,7 @@ bool emulatorSaveState(buffer_t buffer){
 
 bool emulatorLoadState(buffer_t buffer){
    uint64_t offset = 0;
+   uint8_t index;
 
    //state validation, wont load states that are not from the same state version
    if(readStateValue32(buffer.data + offset) != SAVE_STATE_VERSION)
@@ -402,24 +404,24 @@ bool emulatorLoadState(buffer_t buffer){
    offset += REG_SIZE;
    memcpy(bankType, buffer.data + offset, TOTAL_MEMORY_BANKS);
    offset += TOTAL_MEMORY_BANKS;
-   for(uint8_t chip = CHIP_BEGIN; chip < CHIP_END; chip++){
-      chips[chip].enable = readStateValueBool(buffer.data + offset);
+   for(index = CHIP_BEGIN; index < CHIP_END; index++){
+      chips[index].enable = readStateValueBool(buffer.data + offset);
       offset += sizeof(uint8_t);
-      chips[chip].start = readStateValue32(buffer.data + offset);
+      chips[index].start = readStateValue32(buffer.data + offset);
       offset += sizeof(uint32_t);
-      chips[chip].lineSize = readStateValue32(buffer.data + offset);
+      chips[index].lineSize = readStateValue32(buffer.data + offset);
       offset += sizeof(uint32_t);
-      chips[chip].mask = readStateValue32(buffer.data + offset);
+      chips[index].mask = readStateValue32(buffer.data + offset);
       offset += sizeof(uint32_t);
-      chips[chip].inBootMode = readStateValueBool(buffer.data + offset);
+      chips[index].inBootMode = readStateValueBool(buffer.data + offset);
       offset += sizeof(uint8_t);
-      chips[chip].readOnly = readStateValueBool(buffer.data + offset);
+      chips[index].readOnly = readStateValueBool(buffer.data + offset);
       offset += sizeof(uint8_t);
-      chips[chip].readOnlyForProtectedMemory = readStateValueBool(buffer.data + offset);
+      chips[index].readOnlyForProtectedMemory = readStateValueBool(buffer.data + offset);
       offset += sizeof(uint8_t);
-      chips[chip].supervisorOnlyProtectedMemory = readStateValueBool(buffer.data + offset);
+      chips[index].supervisorOnlyProtectedMemory = readStateValueBool(buffer.data + offset);
       offset += sizeof(uint8_t);
-      chips[chip].unprotectedSize = readStateValue32(buffer.data + offset);
+      chips[index].unprotectedSize = readStateValue32(buffer.data + offset);
       offset += sizeof(uint32_t);
    }
 
@@ -448,12 +450,12 @@ bool emulatorLoadState(buffer_t buffer){
    offset += sizeof(uint32_t);
 
    //SPI1
-   for(uint8_t fifoPosition = 0; fifoPosition < 9; fifoPosition++){
-      spi1RxFifo[fifoPosition] = readStateValue16(buffer.data + offset);
+   for(index = 0; index < 9; index++){
+      spi1RxFifo[index] = readStateValue16(buffer.data + offset);
       offset += sizeof(uint16_t);
    }
-   for(uint8_t fifoPosition = 0; fifoPosition < 9; fifoPosition++){
-      spi1TxFifo[fifoPosition] = readStateValue16(buffer.data + offset);
+   for(index = 0; index < 9; index++){
+      spi1TxFifo[index] = readStateValue16(buffer.data + offset);
       offset += sizeof(uint16_t);
    }
    spi1RxReadPosition = readStateValue8(buffer.data + offset);
@@ -468,8 +470,8 @@ bool emulatorLoadState(buffer_t buffer){
    //PWM1, audio
    pwm1ClocksToNextSample = readStateValue32(buffer.data + offset);
    offset += sizeof(int32_t);
-   for(uint8_t fifoPosition = 0; fifoPosition < 6; fifoPosition++){
-      pwm1Fifo[fifoPosition] = readStateValue8(buffer.data + offset);
+   for(index = 0; index < 6; index++){
+      pwm1Fifo[index] = readStateValue8(buffer.data + offset);
       offset += sizeof(uint8_t);
    }
    pwm1ReadPosition = readStateValue8(buffer.data + offset);
@@ -580,6 +582,8 @@ uint32_t emulatorInstallPrcPdb(buffer_t file){
 }
 
 void emulatorRunFrame(){
+   uint32_t samples;
+
    //I/O
    refreshInputState();
 
@@ -598,7 +602,7 @@ void emulatorRunFrame(){
       printf("There are %d audio samples available, %d should be available\n", blip_samples_avail(palmAudioResampler), AUDIO_SAMPLES_PER_FRAME);
    */
    blip_read_samples(palmAudioResampler, palmAudio, AUDIO_SAMPLES_PER_FRAME, true);
-   MULTITHREAD_LOOP for(uint32_t samples = 0; samples < AUDIO_SAMPLES_PER_FRAME * 2; samples += 2)
+   MULTITHREAD_LOOP for(samples = 0; samples < AUDIO_SAMPLES_PER_FRAME * 2; samples += 2)
       palmAudio[samples + 1] = palmAudio[samples];
 
    //video
