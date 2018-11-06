@@ -227,7 +227,7 @@ else ifeq ($(platform), psp1)
 	TARGET := $(TARGET_NAME)_libretro_$(platform).$(EXT)
 	CC = psp-gcc$(EXE_EXT)
 	AR = psp-ar$(EXE_EXT)
-	CFLAGS += -DPSP -G0
+	CFLAGS += -std=c99 -DPSP -G0
 	STATIC_LINKING=1
 	STATIC_LINKING_LINK=1
 
