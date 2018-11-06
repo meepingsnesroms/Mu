@@ -1,4 +1,5 @@
-#pragma once
+#ifndef PORTABILITY_H
+#define PORTABILITY_H
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -24,10 +25,6 @@ static inline void swap16BufferIfLittle(uint8_t* buffer, uint64_t count){
 #define MULTITHREAD_LOOP
 #define MULTITHREAD_DOUBLE_LOOP
 #endif
-
-static inline const char* boolString(bool boo){
-   return boo ? "true" : "false";
-}
 
 static inline uint64_t uMin(uint64_t x, uint64_t y){
    return x < y ? x : y;
@@ -157,3 +154,5 @@ static inline bool readStateValueBool(uint8_t* where){
 static inline void writeStateValueBool(uint8_t* where, bool value){
    where[0] = value;
 }
+
+#endif

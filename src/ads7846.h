@@ -1,4 +1,5 @@
-#pragma once
+#ifndef ADS7846_H
+#define ADS7846_H
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -13,3 +14,5 @@ void ads7846LoadState(uint8_t* data);
 void ads7846SetChipSelect(bool value);
 bool ads7846ExchangeBit(bool bitIn);
 bool ads7846Busy();
+
+#endif

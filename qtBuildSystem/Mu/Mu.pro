@@ -78,7 +78,6 @@ CONFIG(debug, debug|release){
     DEFINES += EMU_NO_SAFETY
 }
 
-QMAKE_CFLAGS += -std=c99
 CONFIG += c++11
 
 INCLUDEPATH += $$PWD/qt-common/include

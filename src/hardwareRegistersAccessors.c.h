@@ -81,7 +81,7 @@ int32_t pwm1FifoRunSample(int32_t now, int32_t clockOffset){
    uint8_t sample = pwm1Fifo[pwm1ReadPosition];
    uint16_t period = registerArrayRead8(PWMP1) + 2;
    uint16_t pwmc1 = registerArrayRead16(PWMC1);
-   bool usingClk32 = pwmc1 & 0x8000;
+   bool usingClk32 = !!(pwmc1 & 0x8000);
    uint8_t prescaler = (pwmc1 >> 8 & 0x7F) + 1;
    uint8_t clockDivider = 2 << (pwmc1 & 0x03);
    uint8_t repeat = 1 << (pwmc1 >> 2 & 0x03);
@@ -619,7 +619,7 @@ static void samplePwm1(bool forClk32, double sysclks){
    int32_t audioClocks;
 
    //check if enabled and validate clock mode, CLK32 is used if PLL is disabled as the inductor still needs to settle
-   if(forClk32 != (bool)(pwmc1 & 0x8000) && !(forClk32 && palmSysclksPerClk32 < 1.0))
+   if(forClk32 != !!(pwmc1 & 0x8000) && !(forClk32 && palmSysclksPerClk32 < 1.0))
       return;
 
    //these calculations are fairly heavy, only do them after we know the clock mode is valid
@@ -667,7 +667,7 @@ static uint16_t getPwmc1(){
 
 //updaters
 static void updatePowerButtonLedStatus(){
-   palmMisc.powerButtonLed = (bool)(getPortBValue() & 0x40) != palmMisc.batteryCharging;
+   palmMisc.powerButtonLed = !!(getPortBValue() & 0x40) != palmMisc.batteryCharging;
 }
 
 static void updateVibratorStatus(){

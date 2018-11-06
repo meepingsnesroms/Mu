@@ -10,7 +10,7 @@ else
    COREDEFINES += -DEMU_NO_SAFETY
 endif
 
-ifneq (,$(findstring msvc2003,$(platform)))
+ifneq (,$(findstring msvc200,$(platform)))
    INCFLAGS += -I$(LIBRETRO_COMM_DIR)/include/compat/msvc
 endif
 

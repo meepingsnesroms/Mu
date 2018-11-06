@@ -1,5 +1,4 @@
 #include <stdint.h>
-#include <stdbool.h>
 
 #include "../portability.h"
 #include "../emulator.h"

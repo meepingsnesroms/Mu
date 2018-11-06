@@ -295,7 +295,7 @@ bool flx68000IsSupervisor(){
 #if defined(EMU_OPTIMIZE_FOR_ARM)
    return CycloneGetSr(&cycloneCpu) & 0x2000;
 #else
-   return m68k_get_reg(NULL, M68K_REG_SR) & 0x2000;
+   return !!(m68k_get_reg(NULL, M68K_REG_SR) & 0x2000);
 #endif
 }
 
