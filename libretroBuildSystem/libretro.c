@@ -307,8 +307,8 @@ void retro_run(void){
 bool retro_load_game(const struct retro_game_info *info){
    buffer_t rom;
    buffer_t bootloader;
-   char bootloaderPath[PATH_MAX];
-   char saveRamPath[PATH_MAX];
+   char bootloaderPath[PATH_MAX_LENGTH];
+   char saveRamPath[PATH_MAX_LENGTH];
    struct RFILE* bootloaderFile;
    struct RFILE* saveRamFile;
    const char* systemDir;
@@ -326,8 +326,8 @@ bool retro_load_game(const struct retro_game_info *info){
    rom.size = info->size;
    
    //bootloader
-   strlcpy(bootloaderPath, systemDir, PATH_MAX);
-   strlcat(bootloaderPath, "/bootloader-en-m515.rom", PATH_MAX);
+   strlcpy(bootloaderPath, systemDir, PATH_MAX_LENGTH);
+   strlcat(bootloaderPath, "/bootloader-en-m515.rom", PATH_MAX_LENGTH);
    bootloaderFile = filestream_open(bootloaderPath, RETRO_VFS_FILE_ACCESS_READ, RETRO_VFS_FILE_ACCESS_HINT_NONE);
    
    if(bootloaderFile){
@@ -356,8 +356,8 @@ bool retro_load_game(const struct retro_game_info *info){
       free(bootloader.data);
    
    //save RAM
-   strlcpy(saveRamPath, saveDir, PATH_MAX);
-   strlcat(saveRamPath, "/userdata-en-m515.ram", PATH_MAX);
+   strlcpy(saveRamPath, saveDir, PATH_MAX_LENGTH);
+   strlcat(saveRamPath, "/userdata-en-m515.ram", PATH_MAX_LENGTH);
    saveRamFile = filestream_open(saveRamPath, RETRO_VFS_FILE_ACCESS_READ, RETRO_VFS_FILE_ACCESS_HINT_NONE);
    
    if(saveRamFile){
@@ -384,14 +384,14 @@ bool retro_load_game(const struct retro_game_info *info){
 
 void retro_unload_game(void){
    const char* saveDir;
-   char saveRamPath[PATH_MAX];
+   char saveRamPath[PATH_MAX_LENGTH];
    struct RFILE* saveRamFile;
    
    environ_cb(RETRO_ENVIRONMENT_GET_SAVE_DIRECTORY, &saveDir);
    
    //save RAM
-   strlcpy(saveRamPath, saveDir, PATH_MAX);
-   strlcat(saveRamPath, "/userdata-en-m515.ram", PATH_MAX);
+   strlcpy(saveRamPath, saveDir, PATH_MAX_LENGTH);
+   strlcat(saveRamPath, "/userdata-en-m515.ram", PATH_MAX_LENGTH);
    saveRamFile = filestream_open(saveRamPath, RETRO_VFS_FILE_ACCESS_WRITE, RETRO_VFS_FILE_ACCESS_HINT_NONE);
    
    if(saveRamFile){
