@@ -3,20 +3,18 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-
 //endian
-#define SWAP16(x) ((uint16_t)(                  \
-         (((uint16_t)(x) & 0x00ff) << 8)      | \
-         (((uint16_t)(x) & 0xff00) >> 8)        \
-          ))
-
-static inline void swap16_buffer_if_little(uint16_t* buffer, uint64_t count){
+static inline void swap16BufferIfLittle(uint8_t* buffer, uint64_t count){
 #if !defined(EMU_BIG_ENDIAN)
-   for(uint64_t index = 0; index < count; index++)
-      buffer[index] = SWAP16(buffer[index]);
+   //count specifys the number of uint16_t's that need to be swapped, the uint8_t* is because of alignment restrictions that crash on some platforms
+   count *= sizeof(uint16_t);
+   for(uint64_t index = 0; index < count; index += 2){
+      uint8_t temp = buffer[index];
+      buffer[index] = buffer[index + 1];
+      buffer[index + 1] = temp;
+   }
 #endif
 }
-
 
 //threads
 #if defined(EMU_MULTITHREADED)
@@ -26,7 +24,6 @@ static inline void swap16_buffer_if_little(uint16_t* buffer, uint64_t count){
 #define MULTITHREAD_LOOP
 #define MULTITHREAD_DOUBLE_LOOP
 #endif
-
 
 static inline const char* boolString(bool boo){
    return boo ? "true" : "false";

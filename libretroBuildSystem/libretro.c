@@ -363,7 +363,7 @@ bool retro_load_game(const struct retro_game_info *info){
    if(saveRamFile){
       if(filestream_get_size(saveRamFile) == emulatorGetRamSize()){
          filestream_read(saveRamFile, palmRam, emulatorGetRamSize());
-         swap16_buffer_if_little(palmRam, emulatorGetRamSize() / sizeof(uint16_t));
+         swap16BufferIfLittle(palmRam, emulatorGetRamSize() / sizeof(uint16_t));
       }
       filestream_close(saveRamFile);
    }
@@ -395,7 +395,7 @@ void retro_unload_game(void){
    saveRamFile = filestream_open(saveRamPath, RETRO_VFS_FILE_ACCESS_WRITE, RETRO_VFS_FILE_ACCESS_HINT_NONE);
    
    if(saveRamFile){
-      swap16_buffer_if_little(palmRam, emulatorGetRamSize() / sizeof(uint16_t));//this will no longer be used, so its ok to destroy it when swapping
+      swap16BufferIfLittle(palmRam, emulatorGetRamSize() / sizeof(uint16_t));//this will no longer be used, so its ok to destroy it when swapping
       filestream_write(saveRamFile, palmRam, emulatorGetRamSize());
       filestream_close(saveRamFile);
    }
