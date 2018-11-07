@@ -9,7 +9,6 @@
 #include <time.h>
 
 #include <compat/strl.h>
-#include <file/file_path.h>
 #include <retro_miscellaneous.h>
 #include <streams/file_stream.h>
 
