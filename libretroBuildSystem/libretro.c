@@ -181,16 +181,6 @@ void retro_get_system_av_info(struct retro_system_av_info *info){
 void retro_set_environment(retro_environment_t cb){
    struct retro_log_callback logging;
    struct retro_vfs_interface_info vfs_getter = { 1, NULL };
-
-   environ_cb = cb;
-
-   if (environ_cb(RETRO_ENVIRONMENT_GET_LOG_INTERFACE, &logging))
-      log_cb = logging.log;
-   else
-      log_cb = fallback_log;
-   
-   if(environ_cb(RETRO_ENVIRONMENT_GET_VFS_INTERFACE, &vfs_getter))
-      filestream_vfs_init(&vfs_getter);
    
    struct retro_variable vars[] = {
       { "palm_emu_feature_ram_huge", "Extra RAM Hack; disabled|enabled" },
@@ -204,8 +194,6 @@ void retro_set_environment(retro_environment_t cb){
       { "palm_emu_use_joystick_as_mouse", "Use Left Joystick As Mouse; disabled|enabled" },
       { 0 }
    };
-   environ_cb(RETRO_ENVIRONMENT_SET_VARIABLES, vars);
-   
    struct retro_input_descriptor input_desc[] = {
       { 0, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_LEFT, RETRO_DEVICE_ID_ANALOG_X, "Touchscreen Mouse X" },
       { 0, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_LEFT, RETRO_DEVICE_ID_ANALOG_Y, "Touchscreen Mouse Y" },
@@ -222,6 +210,18 @@ void retro_set_environment(retro_environment_t cb){
       { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_Y,      "Calender" },
       { 0 }
    };
+
+   environ_cb = cb;
+
+   if (environ_cb(RETRO_ENVIRONMENT_GET_LOG_INTERFACE, &logging))
+      log_cb = logging.log;
+   else
+      log_cb = fallback_log;
+   
+   if(environ_cb(RETRO_ENVIRONMENT_GET_VFS_INTERFACE, &vfs_getter))
+      filestream_vfs_init(&vfs_getter);
+   
+   environ_cb(RETRO_ENVIRONMENT_SET_VARIABLES, vars);
    environ_cb(RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS, input_desc);
 }
 
@@ -320,6 +320,7 @@ bool retro_load_game(const struct retro_game_info *info){
    const char* saveDir;
    time_t rawTime;
    struct tm* timeInfo;
+   uint32_t error;
    
    if(info == NULL)
       return false;
@@ -353,7 +354,7 @@ bool retro_load_game(const struct retro_game_info *info){
    //updates the emulator configuration
    check_variables(true);
    
-   uint32_t error = emulatorInit(rom, bootloader, emuFeatures);
+   error = emulatorInit(rom, bootloader, emuFeatures);
    if(error != EMU_ERROR_NONE)
       return false;
    
