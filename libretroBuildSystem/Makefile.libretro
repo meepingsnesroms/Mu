@@ -1,9 +1,7 @@
 DEBUG=0
 GIT_VERSION := " $(shell git rev-parse --short HEAD)"
-HAVE_GRIFFIN=0
 STATIC_LINKING=0
 STATIC_LINKING_LINK=0
-LAGFIX=1
 
 CORE_DIR := .
 BUILD_DIR = build
@@ -177,8 +175,6 @@ THEOS_BUILD_DIR := objs
 include $(THEOS)/makefiles/common.mk
 
 LIBRARY_NAME = $(TARGET_NAME)_libretro_ios
-HAVE_GRIFFIN = 1
-
 
 # QNX
 else ifeq ($(platform), qnx)
