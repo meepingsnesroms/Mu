@@ -28,24 +28,30 @@ static uint32_t romRead32(uint32_t address){return BUFFER_READ_32(palmRom, addre
 
 //SED1376 accesses
 static uint8_t sed1376Read8(uint32_t address){
+#if !defined(EMU_NO_SAFETY)
    if(sed1376PowerSaveEnabled())
       return 0x00;
+#endif
    if(address & SED1376_MR_BIT)
       return BUFFER_READ_8_BIG_ENDIAN(sed1376Framebuffer, address, chips[CHIP_B0_SED].mask);
    else
       return sed1376GetRegister(address & chips[CHIP_B0_SED].mask);
 }
 static uint16_t sed1376Read16(uint32_t address){
+#if !defined(EMU_NO_SAFETY)
    if(sed1376PowerSaveEnabled())
       return 0x0000;
+#endif
    if(address & SED1376_MR_BIT)
       return BUFFER_READ_16_BIG_ENDIAN(sed1376Framebuffer, address, chips[CHIP_B0_SED].mask);
    else
       return sed1376GetRegister(address & chips[CHIP_B0_SED].mask);
 }
 static uint32_t sed1376Read32(uint32_t address){
+#if !defined(EMU_NO_SAFETY)
    if(sed1376PowerSaveEnabled())
       return 0x00000000;
+#endif
    if(address & SED1376_MR_BIT)
       return BUFFER_READ_32_BIG_ENDIAN(sed1376Framebuffer, address, chips[CHIP_B0_SED].mask);
    else
