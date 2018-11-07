@@ -17,7 +17,7 @@ endif
 ifneq (,$(findstring msvc20,$(platform)))
    #Mu is dependent on stdbool.h and the standard inline directive existing
    INCFLAGS += -I$(CORE_DIR)/fixIncludes/stdbool
-   COREDEFINES += -Dinline=__inline -DINLINE=__inline
+   COREDEFINES += -Dinline=_inline -DINLINE=_inline
 endif
 
 include $(EMU_PATH)/makefile.all
