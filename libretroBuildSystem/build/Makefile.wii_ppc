@@ -42,8 +42,8 @@ LIBEXT = .wii_ppc.a
 STATIC_LINKING = 1
 platform       = wii
 PLATDEFS       = -DGEKKO -DHW_RVL
-PLATCFLAGS     = -m32 -fstrict-aliasing -mrvl -mcpu=750 -meabi -mhard-float
-PLATCXXFLAGS   = -m32 -fstrict-aliasing -mrvl -mcpu=750 -meabi -mhard-float
+PLATCFLAGS     = -m32 -fstrict-aliasing -mrvl -mcpu=750 -meabi -mhard-float -DMSB_FIRST -DWORDS_BIGENDIAN=1 -DEMU_BIG_ENDIAN
+PLATCXXFLAGS   = -m32 -fstrict-aliasing -mrvl -mcpu=750 -meabi -mhard-float -DMSB_FIRST -DWORDS_BIGENDIAN=1 -DEMU_BIG_ENDIAN
 PLATLDFLAGS    = -shared -lm
 PLATLDXFLAGS   = -shared -lm
 
