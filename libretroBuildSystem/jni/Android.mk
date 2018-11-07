@@ -4,7 +4,7 @@ CORE_DIR := $(LOCAL_PATH)/..
 
 include $(CORE_DIR)/build/Makefile.common
 
-COREFLAGS := -funroll-loops -D__LIBRETRO__ -DFRONTEND_SUPPORTS_RGB565 $(INCFLAGS) $(COREDEFINES)
+COREFLAGS := -funroll-loops -D__LIBRETRO__ -DINLINE=inline -DFRONTEND_SUPPORTS_RGB565 $(INCFLAGS) $(COREDEFINES)
 
 GIT_VERSION := " $(shell git rev-parse --short HEAD || echo unknown)"
 ifneq ($(GIT_VERSION)," unknown")
