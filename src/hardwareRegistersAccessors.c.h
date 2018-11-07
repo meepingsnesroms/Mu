@@ -670,11 +670,11 @@ static void updatePowerButtonLedStatus(){
 }
 
 static void updateVibratorStatus(){
-   palmMisc.vibratorOn = getPortKValue() & 0x10;
+   palmMisc.vibratorOn = !!(getPortKValue() & 0x10);
 }
 
 static void updateAds7846ChipSelectStatus(){
-   ads7846SetChipSelect(getPortGValue() & 0x04);
+   ads7846SetChipSelect(!!(getPortGValue() & 0x04));
 }
 
 static void updateBacklightAmplifierStatus(){
