@@ -7,7 +7,7 @@ static void timer1(uint8_t reason, double sysclks){
    uint16_t timer1Compare = registerArrayRead16(TCMP1);
    double timer1OldCount = timerCycleCounter[0];
    double timer1Prescaler = (registerArrayRead16(TPRER1) & 0x00FF) + 1;
-   bool timer1Enabled = timer1Control & 0x0001;
+   bool timer1Enabled = timer1Control & 0x0001;//no need for a bool cast, already using the lowest bit
 
    if(timer1Enabled){
       switch((timer1Control & 0x000E) >> 1){
@@ -74,7 +74,7 @@ static void timer2(uint8_t reason, double sysclks){
    uint16_t timer2Compare = registerArrayRead16(TCMP2);
    double timer2OldCount = timerCycleCounter[1];
    double timer2Prescaler = (registerArrayRead16(TPRER2) & 0x00FF) + 1;
-   bool timer2Enabled = timer2Control & 0x0001;
+   bool timer2Enabled = timer2Control & 0x0001;//no need for a bool cast, already using the lowest bit
 
    if(timer2Enabled){
       switch((timer2Control & 0x000E) >> 1){

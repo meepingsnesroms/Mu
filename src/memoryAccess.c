@@ -115,7 +115,7 @@ unsigned int m68k_read_memory_8(unsigned int address){
          return romRead8(address);
 
       case CHIP_A1_USB:
-         return pdiUsbD12GetRegister(address & chips[CHIP_A1_USB].mask);
+         return pdiUsbD12GetRegister(!!(address & chips[CHIP_A1_USB].mask));
 
       case CHIP_B0_SED:
          return sed1376Read8(address);
@@ -154,7 +154,7 @@ unsigned int m68k_read_memory_16(unsigned int address){
          return romRead16(address);
 
       case CHIP_A1_USB:
-         return pdiUsbD12GetRegister(address & chips[CHIP_A1_USB].mask);
+         return pdiUsbD12GetRegister(!!(address & chips[CHIP_A1_USB].mask));
 
       case CHIP_B0_SED:
          return sed1376Read16(address);
@@ -193,7 +193,7 @@ unsigned int m68k_read_memory_32(unsigned int address){
          return romRead32(address);
 
       case CHIP_A1_USB:
-         return pdiUsbD12GetRegister(address & chips[CHIP_A1_USB].mask);
+         return pdiUsbD12GetRegister(!!(address & chips[CHIP_A1_USB].mask));
 
       case CHIP_B0_SED:
          return sed1376Read32(address);
@@ -232,7 +232,7 @@ void m68k_write_memory_8(unsigned int address, unsigned char value){
          break;
 
       case CHIP_A1_USB:
-         pdiUsbD12SetRegister(address & chips[CHIP_A1_USB].mask, value);
+         pdiUsbD12SetRegister(!!(address & chips[CHIP_A1_USB].mask), value);
          break;
 
       case CHIP_B0_SED:
@@ -275,7 +275,7 @@ void m68k_write_memory_16(unsigned int address, unsigned short value){
          break;
 
       case CHIP_A1_USB:
-         pdiUsbD12SetRegister(address & chips[CHIP_A1_USB].mask, value);
+         pdiUsbD12SetRegister(!!(address & chips[CHIP_A1_USB].mask), value);
          break;
 
       case CHIP_B0_SED:
@@ -318,7 +318,7 @@ void m68k_write_memory_32(unsigned int address, unsigned int value){
          break;
 
       case CHIP_A1_USB:
-         pdiUsbD12SetRegister(address & chips[CHIP_A1_USB].mask, value);
+         pdiUsbD12SetRegister(!!(address & chips[CHIP_A1_USB].mask), value);
          break;
 
       case CHIP_B0_SED:
@@ -375,12 +375,16 @@ static uint8_t getProperBankType(uint32_t bank){
 }
 
 void setRegisterXXFFAccessMode(){
-   MULTITHREAD_LOOP for(uint32_t topByte = 0; topByte < 0x100; topByte++)
+   uint32_t topByte;
+
+   MULTITHREAD_LOOP for(topByte = 0; topByte < 0x100; topByte++)
       bankType[START_BANK(topByte << 24 | 0x00FFF000)] = CHIP_REGISTERS;
 }
 
 void setRegisterFFFFAccessMode(){
-   MULTITHREAD_LOOP for(uint32_t topByte = 0; topByte < 0x100; topByte++){
+   uint32_t topByte;
+
+   MULTITHREAD_LOOP for(topByte = 0; topByte < 0x100; topByte++){
       uint32_t bank = START_BANK(topByte << 24 | 0x00FFF000);
       bankType[bank] = getProperBankType(bank);
    }
@@ -392,7 +396,9 @@ void setSed1376Attached(bool attached){
 }
 
 void resetAddressSpace(){
-   MULTITHREAD_LOOP for(uint32_t bank = 0; bank < TOTAL_MEMORY_BANKS; bank++)
+   uint32_t bank;
+
+   MULTITHREAD_LOOP for(bank = 0; bank < TOTAL_MEMORY_BANKS; bank++)
       bankType[bank] = getProperBankType(bank);
    flx68000RefreshAddressing();
 }

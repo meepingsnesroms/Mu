@@ -1,4 +1,5 @@
-#pragma once
+#ifndef MEMORY_ACCESS_H
+#define MEMORY_ACCESS_H
 
 #include <stdint.h>
 
@@ -62,3 +63,5 @@ void setRegisterXXFFAccessMode();
 void setRegisterFFFFAccessMode();
 void setSed1376Attached(bool attached);
 void resetAddressSpace();
+
+#endif

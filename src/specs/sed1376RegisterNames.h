@@ -24,7 +24,7 @@
 /*Panel Configuration Registers*/
 #define PANEL_TYPE     0x10
 #define MOD_RATE       0x11
-//unfinished
+/*unfinished*/
 
 /*Display Mode Registers*/
 #define DISP_MODE      0x70

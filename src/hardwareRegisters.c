@@ -51,11 +51,11 @@ bool pllIsOn(){
 }
 
 bool backlightAmplifierState(){
-   return getPortKValue() & 0x02;
+   return !!(getPortKValue() & 0x02);
 }
 
 bool registersAreXXFFMapped(){
-   return registerArrayRead8(SCR) & 0x04;
+   return !!(registerArrayRead8(SCR) & 0x04);
 }
 
 bool sed1376ClockConnected(){
@@ -281,7 +281,7 @@ static void checkPortDInterrupts(){
    */
 
    //IRQ1, polarity set in ICR
-   if(portDIrqPins & ~portDDir & 0x10 && (bool)(portDInputValues & 0x10) == (bool)(interruptControlRegister & 0x8000)){
+   if(portDIrqPins & ~portDDir & 0x10 && !!(portDInputValues & 0x10) == !!(interruptControlRegister & 0x8000)){
       if(!(interruptControlRegister & 0x0800) || !(interruptEdgeTriggered & INT_IRQ1))
          setIprIsrBit(INT_IRQ1);
       interruptEdgeTriggered |= INT_IRQ1;
@@ -293,7 +293,7 @@ static void checkPortDInterrupts(){
    }
 
    //IRQ2, polarity set in ICR
-   if(portDIrqPins & ~portDDir & 0x20 && (bool)(portDInputValues & 0x20) == (bool)(interruptControlRegister & 0x4000)){
+   if(portDIrqPins & ~portDDir & 0x20 && !!(portDInputValues & 0x20) == !!(interruptControlRegister & 0x4000)){
       if(!(interruptControlRegister & 0x0400) || !(interruptEdgeTriggered & INT_IRQ2))
          setIprIsrBit(INT_IRQ2);
       interruptEdgeTriggered |= INT_IRQ2;
@@ -305,7 +305,7 @@ static void checkPortDInterrupts(){
    }
 
    //IRQ3, polarity set in ICR
-   if(portDIrqPins & ~portDDir & 0x40 && (bool)(portDInputValues & 0x40) == (bool)(interruptControlRegister & 0x2000)){
+   if(portDIrqPins & ~portDDir & 0x40 && !!(portDInputValues & 0x40) == !!(interruptControlRegister & 0x2000)){
       if(!(interruptControlRegister & 0x0200) || !(interruptEdgeTriggered & INT_IRQ3))
          setIprIsrBit(INT_IRQ3);
       interruptEdgeTriggered |= INT_IRQ3;
@@ -317,7 +317,7 @@ static void checkPortDInterrupts(){
    }
 
    //IRQ6, polarity set in ICR
-   if(portDIrqPins & ~portDDir & 0x80 && (bool)(portDInputValues & 0x80) == (bool)(interruptControlRegister & 0x1000)){
+   if(portDIrqPins & ~portDDir & 0x80 && !!(portDInputValues & 0x80) == !!(interruptControlRegister & 0x1000)){
       if(!(interruptControlRegister & 0x0100) || !(interruptEdgeTriggered & INT_IRQ6))
          setIprIsrBit(INT_IRQ6);
       interruptEdgeTriggered |= INT_IRQ6;

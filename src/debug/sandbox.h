@@ -1,4 +1,5 @@
-#pragma once
+#ifndef SANDBOX_H
+#define SANDBOX_H
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -15,3 +16,5 @@ uint32_t sandboxCommand(uint32_t test, void* data);
 void sandboxOnOpcodeRun();
 bool sandboxRunning();
 void sandboxReturn();//should only be called called by 68k code
+
+#endif

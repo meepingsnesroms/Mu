@@ -112,7 +112,9 @@ void flx68000SaveState(uint8_t* data){
    CyclonePack(&cycloneCpu, data + offset);
    offset += 0x80;//specified in Cyclone.h, line 82
 #else
-   for(uint8_t index = 0; index < 16; index++){
+   uint8_t index;
+
+   for(index = 0; index < 16; index++){
       writeStateValue32(data + offset, m68ki_cpu.dar[index]);
       offset += sizeof(uint32_t);
    }
@@ -120,7 +122,7 @@ void flx68000SaveState(uint8_t* data){
    offset += sizeof(uint32_t);
    writeStateValue32(data + offset, m68ki_cpu.pc);
    offset += sizeof(uint32_t);
-   for(uint8_t index = 0; index < 7; index++){
+   for(index = 0; index < 7; index++){
       writeStateValue32(data + offset, m68ki_cpu.sp[index]);
       offset += sizeof(uint32_t);
    }
@@ -184,7 +186,9 @@ void flx68000LoadState(uint8_t* data){
    CycloneUnpack(&cycloneCpu, data + offset);
    offset += 0x80;//specified in Cyclone.h, line 82
 #else
-   for(uint8_t index = 0; index < 16; index++){
+   uint8_t index;
+
+   for(index = 0; index < 16; index++){
       m68ki_cpu.dar[index] = readStateValue32(data + offset);
       offset += sizeof(uint32_t);
    }
@@ -192,7 +196,7 @@ void flx68000LoadState(uint8_t* data){
    offset += sizeof(uint32_t);
    m68ki_cpu.pc = readStateValue32(data + offset);
    offset += sizeof(uint32_t);
-   for(uint8_t index = 0; index < 7; index++){
+   for(index = 0; index < 7; index++){
       m68ki_cpu.sp[index] = readStateValue32(data + offset);
       offset += sizeof(uint32_t);
    }
@@ -295,7 +299,7 @@ bool flx68000IsSupervisor(){
 #if defined(EMU_OPTIMIZE_FOR_ARM)
    return CycloneGetSr(&cycloneCpu) & 0x2000;
 #else
-   return m68k_get_reg(NULL, M68K_REG_SR) & 0x2000;
+   return !!(m68k_get_reg(NULL, M68K_REG_SR) & 0x2000);
 #endif
 }
 

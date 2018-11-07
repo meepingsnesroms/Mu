@@ -1,4 +1,5 @@
-#pragma once
+#ifndef PORTABILITY_H
+#define PORTABILITY_H
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -6,9 +7,10 @@
 //endian
 static inline void swap16BufferIfLittle(uint8_t* buffer, uint64_t count){
 #if !defined(EMU_BIG_ENDIAN)
+   uint64_t index;
    //count specifys the number of uint16_t's that need to be swapped, the uint8_t* is because of alignment restrictions that crash on some platforms
    count *= sizeof(uint16_t);
-   for(uint64_t index = 0; index < count; index += 2){
+   for(index = 0; index < count; index += 2){
       uint8_t temp = buffer[index];
       buffer[index] = buffer[index + 1];
       buffer[index + 1] = temp;
@@ -25,34 +27,122 @@ static inline void swap16BufferIfLittle(uint8_t* buffer, uint64_t count){
 #define MULTITHREAD_DOUBLE_LOOP
 #endif
 
-static inline const char* boolString(bool boo){
-   return boo ? "true" : "false";
-}
-
-static inline uint64_t uMin(uint64_t x, uint64_t y){
+//range capping
+static inline uint8_t u8Min(uint8_t x, uint8_t y){
    return x < y ? x : y;
 }
 
-static inline uint64_t uMax(uint64_t x, uint64_t y){
+static inline uint8_t u8Max(uint8_t x, uint8_t y){
    return x > y ? x : y;
 }
 
-static inline uint64_t uClamp(uint64_t low, uint64_t value, uint64_t high){
+static inline uint8_t u8Clamp(uint8_t low, uint8_t value, uint8_t high){
    //x must always be less than z!
-   return uMax(low, uMin(value, high));
+   return u8Max(low, u8Min(value, high));
 }
 
-static inline int64_t sMin(int64_t x, int64_t y){
+static inline uint16_t u16Min(uint16_t x, uint16_t y){
    return x < y ? x : y;
 }
 
-static inline int64_t sMax(int64_t x, int64_t y){
+static inline uint16_t u16Max(uint16_t x, uint16_t y){
    return x > y ? x : y;
 }
 
-static inline int64_t sClamp(int64_t low, int64_t value, int64_t high){
+static inline uint16_t u16Clamp(uint16_t low, uint16_t value, uint16_t high){
    //x must always be less than z!
-   return sMax(low, sMin(value, high));
+   return u16Max(low, u16Min(value, high));
+}
+
+static inline uint32_t u32Min(uint32_t x, uint32_t y){
+   return x < y ? x : y;
+}
+
+static inline uint32_t u32Max(uint32_t x, uint32_t y){
+   return x > y ? x : y;
+}
+
+static inline uint32_t u32Clamp(uint32_t low, uint32_t value, uint32_t high){
+   //x must always be less than z!
+   return u32Max(low, u32Min(value, high));
+}
+
+static inline uint64_t u64Min(uint64_t x, uint64_t y){
+   return x < y ? x : y;
+}
+
+static inline uint64_t u64Max(uint64_t x, uint64_t y){
+   return x > y ? x : y;
+}
+
+static inline uint64_t u64Clamp(uint64_t low, uint64_t value, uint64_t high){
+   //x must always be less than z!
+   return u64Max(low, u64Min(value, high));
+}
+
+static inline int8_t s8Min(int8_t x, int8_t y){
+   return x < y ? x : y;
+}
+
+static inline int8_t s8Max(int8_t x, int8_t y){
+   return x > y ? x : y;
+}
+
+static inline int8_t s8Clamp(int8_t low, int8_t value, int8_t high){
+   //x must always be less than z!
+   return s8Max(low, s8Min(value, high));
+}
+
+static inline int16_t s16Min(int16_t x, int16_t y){
+   return x < y ? x : y;
+}
+
+static inline int16_t s16Max(int16_t x, int16_t y){
+   return x > y ? x : y;
+}
+
+static inline int16_t s16Clamp(int16_t low, int16_t value, int16_t high){
+   //x must always be less than z!
+   return s16Max(low, s16Min(value, high));
+}
+
+static inline int32_t s32Min(int32_t x, int32_t y){
+   return x < y ? x : y;
+}
+
+static inline int32_t s32Max(int32_t x, int32_t y){
+   return x > y ? x : y;
+}
+
+static inline int32_t s32Clamp(int32_t low, int32_t value, int32_t high){
+   //x must always be less than z!
+   return s32Max(low, s32Min(value, high));
+}
+
+static inline int64_t s64Min(int64_t x, int64_t y){
+   return x < y ? x : y;
+}
+
+static inline int64_t s64Max(int64_t x, int64_t y){
+   return x > y ? x : y;
+}
+
+static inline int64_t s64Clamp(int64_t low, int64_t value, int64_t high){
+   //x must always be less than z!
+   return s64Max(low, s64Min(value, high));
+}
+
+static inline float fMin(float x, float y){
+   return x < y ? x : y;
+}
+
+static inline float fMax(float x, float y){
+   return x > y ? x : y;
+}
+
+static inline float fClamp(float low, float value, float high){
+   //x must always be less than z!
+   return fMax(low, fMin(value, high));
 }
 
 static inline double dMin(double x, double y){
@@ -68,7 +158,7 @@ static inline double dClamp(double low, double value, double high){
    return dMax(low, dMin(value, high));
 }
 
-
+//float platform safety
 static inline uint64_t getUint64FromDouble(double data){
    //1.32.31 fixed point
    uint64_t fixedPointDouble = 0x0000000000000000;
@@ -99,6 +189,7 @@ static inline double getDoubleFromUint64(uint64_t data){
    return floatingPointDouble;
 }
 
+//savestate platform safety
 static inline uint64_t readStateValue64(uint8_t* where){
    return (uint64_t)where[0] << 56 | (uint64_t)where[1] << 48 | (uint64_t)where[2] << 40 | (uint64_t)where[3] << 32 | (uint64_t)where[4] << 24 | (uint64_t)where[5] << 16 | (uint64_t)where[6] << 8 | (uint64_t)where[7];
 }
@@ -157,3 +248,5 @@ static inline bool readStateValueBool(uint8_t* where){
 static inline void writeStateValueBool(uint8_t* where, bool value){
    where[0] = value;
 }
+
+#endif

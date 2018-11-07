@@ -37,10 +37,11 @@ static char* takeStackDump(uint32_t bytes){
    char* textBytes = malloc(bytes * 2);
    uint32_t textBytesOffset = 0;
    uint32_t stackAddress = m68k_get_reg(NULL, M68K_REG_SP);
+   uint32_t count;
 
    textBytes[0] = '\0';
 
-   for(uint32_t count = 0; count < bytes; count++){
+   for(count = 0; count < bytes; count++){
       sprintf(textBytes + textBytesOffset, "%02X", m68k_read_memory_8(stackAddress + count));
       textBytesOffset = strlen(textBytes);
    }
@@ -104,7 +105,9 @@ static bool isAlphanumeric(char chr){
 }
 
 static bool readable6CharsBack(uint32_t address){
-   for(uint8_t count = 0; count < 6; count++)
+   uint8_t count;
+
+   for(count = 0; count < 6; count++)
       if(!isAlphanumeric(m68k_read_memory_8(address - count)))
          return false;
    return true;
@@ -112,16 +115,18 @@ static bool readable6CharsBack(uint32_t address){
 
 static uint32_t find68kString(const char* str, uint32_t rangeStart, uint32_t rangeEnd){
    uint32_t strLength = strlen(str) + 1;//include null terminator
+   uint32_t scanAddress;
 
-   for(uint32_t scanAddress = rangeStart; scanAddress <= rangeEnd - (strLength - 1); scanAddress++){
+   for(scanAddress = rangeStart; scanAddress <= rangeEnd - (strLength - 1); scanAddress++){
       //since only the first char is range checked remove the rest from the range to prevent reading off the end
 
       //check every byte against the start character
       if(m68k_read_memory_8(scanAddress) == str[0]){
          bool wrongString = false;
+         uint32_t strIndex;
 
           //character match found, check for string
-         for(uint32_t strIndex = 1; strIndex < strLength; strIndex++){
+         for(strIndex = 1; strIndex < strLength; strIndex++){
             if(m68k_read_memory_8(scanAddress + strIndex) != str[strIndex]){
                wrongString = true;
                break;
@@ -239,6 +244,7 @@ static uint32_t callFunction(bool fallthrough, uint32_t address, uint16_t trap, 
    uint8_t functionReturnPointerIndex = 0;
    uint32_t callWriteOut = 0xFFFFFFE0;
    uint32_t callStart;
+   uint8_t count;
 
    va_start(args, prototype);
    while(*params != ')'){
@@ -343,7 +349,7 @@ static uint32_t callFunction(bool fallthrough, uint32_t address, uint16_t trap, 
       m68k_set_reg(M68K_REG_D0, oldD0);
 
       //remap all argument pointers
-      for(uint8_t count = 0; count < functionReturnPointerIndex; count++){
+      for(count = 0; count < functionReturnPointerIndex; count++){
          switch(functionReturnPointers[count].bytes){
             case 1:
                *(uint8_t*)functionReturnPointers[count].hostPointer = m68k_read_memory_8(functionReturnPointers[count].emuPointer);
@@ -368,9 +374,13 @@ static uint32_t makePalmString(const char* str){
    uint32_t strLength = strlen(str) + 1;
    uint32_t strData = callFunction(false, 0x00000000, MemPtrNew, "p(l)", strLength);
 
-   if(strData != 0)
-      for(uint32_t count = 0; count < strLength; count++)
+   if(strData != 0){
+      uint32_t count;
+
+      for(count = 0; count < strLength; count++)
          m68k_write_memory_8(strData + count, str[count]);
+   }
+
    return strData;
 }
 
@@ -378,8 +388,9 @@ static char* makeNativeString(uint32_t address){
    if(address != 0){
       int16_t strLength = callFunction(false, 0x00000000, StrLen, "w(p)", address) + 1;
       char* nativeStr = malloc(strLength);
+      int16_t count;
 
-      for(int16_t count = 0; count < strLength; count++)
+      for(count = 0; count < strLength; count++)
          nativeStr[count] = m68k_read_memory_8(address + count);
       return nativeStr;
    }
@@ -393,12 +404,13 @@ static void freePalmString(uint32_t address){
 static bool installResourceToDevice(buffer_t resourceBuffer){
    uint32_t palmSideResourceData = callFunction(false, 0x00000000, MemPtrNew, "p(l)", (uint32_t)resourceBuffer.size);
    uint16_t error;
+   uint32_t count;
 
    //buffer not allocated
    if(!palmSideResourceData)
       return false;
 
-   for(uint32_t count = 0; count < resourceBuffer.size; count++)
+   for(count = 0; count < resourceBuffer.size; count++)
       m68k_write_memory_8(palmSideResourceData + count, resourceBuffer.data[count]);
    error = callFunction(false, 0x00000000, DmCreateDatabaseFromImage, "w(p)", palmSideResourceData);//Err DmCreateDatabaseFromImage(MemPtr bufferP);//this looks best
    callFunction(false, 0x00000000, MemChunkFree, "w(p)", palmSideResourceData);
@@ -499,8 +511,9 @@ void sandboxOnOpcodeRun(){
          //to add a emulator breakpoint add a new line above here|^^^
          {
             uint32_t m68kRegisters[M68K_REG_CPU_TYPE];
+            uint8_t count;
 
-            for(uint8_t count = 0; count < M68K_REG_CPU_TYPE; count++)
+            for(count = 0; count < M68K_REG_CPU_TYPE; count++)
                m68kRegisters[count] = m68k_get_reg(NULL, count);
 
             /*
@@ -539,7 +552,9 @@ void sandboxOnOpcodeRun(){
             */
 
             //set host breakpoint here|vvv
-            bool breakHere = true;
+            if(1 == 1){
+               bool breakpoint = true;
+            }
             //set host breakpoint here|^^^
          }
          break;

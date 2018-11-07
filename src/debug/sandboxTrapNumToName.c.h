@@ -1153,14 +1153,18 @@ mameList traps[] = {
 };
 
 const char* lookupTrap(uint16_t trap){
-   for(uint32_t i = 0; i < sizeof(traps) / sizeof(traps[0]); i++)
+   uint32_t i;
+
+   for(i = 0; i < sizeof(traps) / sizeof(traps[0]); i++)
       if(traps[i].trap == trap)
          return traps[i].name;
    return "Trap function ID unknown";
 }
 
 uint16_t reverseLookupTrap(const char* name){
-   for(uint32_t i = 0; i < sizeof(traps) / sizeof(traps[0]); i++)
+   uint32_t i;
+
+   for(i = 0; i < sizeof(traps) / sizeof(traps[0]); i++)
       if(!strcmp(traps[i].name, name))
          return traps[i].trap;
    return 0x0000;

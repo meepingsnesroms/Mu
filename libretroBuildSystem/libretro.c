@@ -9,7 +9,6 @@
 #include <time.h>
 
 #include <compat/strl.h>
-#include <file/file_path.h>
 #include <retro_miscellaneous.h>
 #include <streams/file_stream.h>
 
@@ -44,21 +43,27 @@ static void renderMouseCursor(int16_t screenX, int16_t screenY){
    static const uint16_t* joystickCursor32 = cursor32x32;
    
    if(screenHires){
+      int8_t x;
+      int8_t y;
+      
       //align cursor to side of image
       screenX -= 6;
       
-      for(int8_t y = 0; y < 32; y++)
-         for(int8_t x = 6; x < 26; x++)
+      for(y = 0; y < 32; y++)
+         for(x = 6; x < 26; x++)
             if(screenX + x >= 0 && screenY + y >= 0 && screenX + x < 320 && screenY + y < 440)
                if(joystickCursor32[y * 32 + x] != 0x0000)
                   screenData[(screenY + y) * 320 + screenX + x] = joystickCursor32[y * 32 + x];
    }
    else{
+      int8_t x;
+      int8_t y;
+      
       //align cursor to side of image
       screenX -= 3;
       
-      for(int8_t y = 0; y < 16; y++)
-         for(int8_t x = 3; x < 13; x++)
+      for(y = 0; y < 16; y++)
+         for(x = 3; x < 13; x++)
             if(screenX + x >= 0 && screenY + y >= 0 && screenX + x < 160 && screenY + y < 220)
                if(joystickCursor16[y * 16 + x] != 0x0000)
                   screenData[(screenY + y) * 160 + screenX + x] = joystickCursor16[y * 16 + x];

@@ -143,7 +143,7 @@ bool MainWindow::eventFilter(QObject* object, QEvent* event){
       }
 
       if(object->objectName() == "centralWidget"){
-         double smallestRatio;
+         float smallestRatio;
 
          //update displayContainer first, make the display occupy the top 2/3 of the screen
          ui->displayContainer->setFixedHeight(ui->centralWidget->height() * 0.66);
