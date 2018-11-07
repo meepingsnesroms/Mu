@@ -87,8 +87,9 @@ int32_t pwm1FifoRunSample(int32_t now, int32_t clockOffset){
    int32_t audioNow = now + clockOffset;
    int32_t audioSampleDuration = (pwmc1 & 0x8000)/*usingClk32*/ ? audioGetFramePercentIncrementFromClk32s(period * prescaler * clockDivider) : audioGetFramePercentIncrementFromSysclks(period * prescaler * clockDivider);
    float dutyCycle = dMin((float)sample / period, 1.00);
+   uint8_t index;
 
-   for(uint8_t index = 0; index < repeat; index++){
+   for(index = 0; index < repeat; index++){
       inductorPwmDutyCycle(audioNow, audioSampleDuration, dutyCycle);
       audioNow += audioSampleDuration;
    }
@@ -321,9 +322,10 @@ static void setSpiCont1(uint16_t value){
       while(spi1TxFifoEntrys() > 0){
          uint16_t currentTxFifoEntry = spi1TxFifoRead();
          uint16_t newRxFifoEntry = 0;
+         uint8_t bits;
 
-         for(uint8_t bits = 0; bits < bitCount; bits++){
-            newRxFifoEntry |= sdCardExchangeBit(currentTxFifoEntry & startBit);
+         for(bits = 0; bits < bitCount; bits++){
+            newRxFifoEntry |= sdCardExchangeBit(!!(currentTxFifoEntry & startBit));
             newRxFifoEntry <<= 1;
             currentTxFifoEntry <<= 1;
          }
@@ -362,8 +364,10 @@ static void setSpiCont2(uint16_t value){
 
       //the input data is shifted into the unused bits if the transfer is less than 16 bits
       if(spiClk2Enabled){
+         uint8_t bits;
+
          //shift in valid data
-         for(uint8_t bits = 0; bits < bitCount; bits++){
+         for(bits = 0; bits < bitCount; bits++){
             bool newBit = ads7846ExchangeBit(!!(spi2Data & startBit));
             spi2Data <<= 1;
             spi2Data |= newBit;
