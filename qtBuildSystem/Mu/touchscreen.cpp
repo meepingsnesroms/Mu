@@ -17,7 +17,7 @@ TouchScreen::~TouchScreen(){
 
 }
 
-double TouchScreen::rangeSwap(double newRange, double oldRange, double value){
+float TouchScreen::rangeSwap(float newRange, float oldRange, float value){
    return value / oldRange * newRange;
 }
 

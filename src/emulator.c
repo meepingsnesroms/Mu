@@ -86,12 +86,12 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t spec
 
    //memory
    memset(palmRam, 0x00, (specialFeatures & FEATURE_RAM_HUGE) ? SUPERMASSIVE_RAM_SIZE : RAM_SIZE);
-   memcpy(palmRom, palmRomDump.data, uMin(palmRomDump.size, ROM_SIZE));
+   memcpy(palmRom, palmRomDump.data, u64Min(palmRomDump.size, ROM_SIZE));
    if(palmRomDump.size < ROM_SIZE)
       memset(palmRom + palmRomDump.size, 0x00, ROM_SIZE - palmRomDump.size);
    swap16BufferIfLittle(palmRom, ROM_SIZE / sizeof(uint16_t));
    if(palmBootDump.data){
-      memcpy(palmReg + REG_SIZE - 1 - BOOTLOADER_SIZE, palmBootDump.data, uMin(palmBootDump.size, BOOTLOADER_SIZE));
+      memcpy(palmReg + REG_SIZE - 1 - BOOTLOADER_SIZE, palmBootDump.data, u64Min(palmBootDump.size, BOOTLOADER_SIZE));
       if(palmBootDump.size < BOOTLOADER_SIZE)
          memset(palmReg + REG_SIZE - 1 - BOOTLOADER_SIZE + palmBootDump.size, 0x00, BOOTLOADER_SIZE - palmBootDump.size);
       swap16BufferIfLittle(palmReg + REG_SIZE - 1 - BOOTLOADER_SIZE, BOOTLOADER_SIZE / sizeof(uint16_t));

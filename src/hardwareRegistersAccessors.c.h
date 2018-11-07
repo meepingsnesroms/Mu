@@ -86,7 +86,7 @@ int32_t pwm1FifoRunSample(int32_t now, int32_t clockOffset){
    uint8_t repeat = 1 << (pwmc1 >> 2 & 0x03);
    int32_t audioNow = now + clockOffset;
    int32_t audioSampleDuration = (pwmc1 & 0x8000)/*usingClk32*/ ? audioGetFramePercentIncrementFromClk32s(period * prescaler * clockDivider) : audioGetFramePercentIncrementFromSysclks(period * prescaler * clockDivider);
-   double dutyCycle = dMin((double)sample / period, 1.00);
+   float dutyCycle = dMin((float)sample / period, 1.00);
 
    for(uint8_t index = 0; index < repeat; index++){
       inductorPwmDutyCycle(audioNow, audioSampleDuration, dutyCycle);
@@ -364,7 +364,7 @@ static void setSpiCont2(uint16_t value){
       if(spiClk2Enabled){
          //shift in valid data
          for(uint8_t bits = 0; bits < bitCount; bits++){
-            bool newBit = ads7846ExchangeBit(spi2Data & startBit);
+            bool newBit = ads7846ExchangeBit(!!(spi2Data & startBit));
             spi2Data <<= 1;
             spi2Data |= newBit;
          }

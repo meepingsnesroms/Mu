@@ -8,14 +8,13 @@
 bool ads7846PenIrqEnabled;
 
 static const uint16_t ads7846DockResistorValues[PORT_END] = {0xFFF/*none*/, 0x1EB/*USB cradle*/, 0/*serial cradle*/, 0/*USB peripheral*/, 0/*serial peripheral*/};
-//static const uint8_t ads7846BatteryValues[100];//need to map battery level to voltage
 static uint8_t  ads7846BitsToNextControl;//bits before starting a new control byte
 static uint8_t  ads7846ControlByte;
 static uint16_t ads7846OutputValue;
 static bool     ads7846ChipSelect;
 
 
-static double ads7846RangeMap(double oldMin, double oldMax, double value, double newMin, double newMax){
+static float ads7846RangeMap(float oldMin, float oldMax, float value, float newMin, float newMax){
    return (value - oldMin) / (oldMax - oldMin) * (newMax - newMin) + newMin;
 }
 
@@ -106,7 +105,7 @@ bool ads7846ExchangeBit(bool bitIn){
    }
    else if(ads7846BitsToNextControl == 6){
       //control byte and busy cycle finished, get output value
-      bool bitMode = ads7846ControlByte & 0x08;
+      bool bitMode = !!(ads7846ControlByte & 0x08);
       //bool differentialMode = !(ads7846ControlByte & 0x04);
       uint8_t channel = (ads7846ControlByte & 0x70) >> 4;
       uint8_t powerSave = ads7846ControlByte & 0x03;
@@ -268,10 +267,4 @@ bool ads7846ExchangeBit(bool bitIn){
    }
 
    return ads7846GetAdcBit();
-}
-
-bool ads7846Busy(){
-   if(ads7846BitsToNextControl == 7)
-      return true;
-   return false;
 }

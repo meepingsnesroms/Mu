@@ -1,4 +1,5 @@
-#pragma once
+#ifndef TRAP_NAMES_H
+#define TRAP_NAMES_H
 
 // ======================================================================
 // Palm OS 1.0 Traps
@@ -1481,3 +1482,5 @@
 
 #define DmSync                           0xA475
 #define DmSyncDatabase                   0xA476
+
+#endif

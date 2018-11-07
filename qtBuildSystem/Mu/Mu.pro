@@ -31,6 +31,7 @@ windows{
 }
 
 macx{
+    # QMAKE_CFLAGS += -std=c89 -D__STDBOOL_H -Dinline= -Dbool=char -Dtrue=1 -Dfalse=0 # tests C89 mode
     CONFIG += sdk_no_version_check # using 10.14 SDK which Qt only unofficialy supports
     ICON = macos/Mu.icns
     QMAKE_INFO_PLIST = macos/Info.plist
