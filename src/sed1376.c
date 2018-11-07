@@ -153,6 +153,7 @@ void sed1376SaveState(uint8_t* data){
 
 void sed1376LoadState(uint8_t* data){
    uint64_t offset = 0;
+   uint16_t index;
 
    memcpy(sed1376Registers, data + offset, SED1376_REG_SIZE);
    offset += SED1376_REG_SIZE;
@@ -166,12 +167,12 @@ void sed1376LoadState(uint8_t* data){
    offset += SED1376_FB_SIZE;
 
    //refresh LUT
-   MULTITHREAD_LOOP for(uint16_t count = 0; count < SED1376_LUT_SIZE; count++)
-      sed1376OutputLut[count] = makeRgb16FromSed666(sed1376RLut[count], sed1376GLut[count], sed1376BLut[count]);
+   MULTITHREAD_LOOP for(index = 0; index < SED1376_LUT_SIZE; index++)
+      sed1376OutputLut[index] = makeRgb16FromSed666(sed1376RLut[index], sed1376GLut[index], sed1376BLut[index]);
 }
 
 bool sed1376PowerSaveEnabled(){
-   return sed1376Registers[PWR_SAVE_CFG] & 0x01;
+   return sed1376Registers[PWR_SAVE_CFG] & 0x01;//no need for a bool cast, already using the lowest bit
 }
 
 uint8_t sed1376GetRegister(uint8_t address){
@@ -325,6 +326,7 @@ void sed1376Render(){
       bool pictureInPictureEnabled = !!(sed1376Registers[SPECIAL_EFFECT] & 0x10);
       uint8_t bitDepth = 1 << (sed1376Registers[DISP_MODE] & 0x07);
       uint16_t rotation = 90 * (sed1376Registers[SPECIAL_EFFECT] & 0x03);
+      uint32_t index;
 
       screenStartAddress = getBufferStartAddress();
       lineSize = (sed1376Registers[LINE_SIZE_1] << 8 | sed1376Registers[LINE_SIZE_0]) * 4;
@@ -346,6 +348,7 @@ void sed1376Render(){
             uint16_t pipStartY = sed1376Registers[PIP_Y_START_1] << 8 | sed1376Registers[PIP_Y_START_0];
             uint16_t pipEndX = (sed1376Registers[PIP_X_END_1] << 8 | sed1376Registers[PIP_X_END_0]) + 1;
             uint16_t pipEndY = (sed1376Registers[PIP_Y_END_1] << 8 | sed1376Registers[PIP_Y_END_0]) + 1;
+
             if(rotation == 0 || rotation == 180){
                pipStartX *= 32 / bitDepth;
                pipEndX *= 32 / bitDepth;
@@ -358,11 +361,11 @@ void sed1376Render(){
             //render PIP only if PIP window is onscreen
             if(pipStartX < 160 && pipStartY < 160){
                pipEndX = uMin(pipEndX, 160);
-               pipEndY = uMin(pipEndX, 160);
+               pipEndY = uMin(pipEndY, 160);
                screenStartAddress = getPipStartAddress();
                lineSize = (sed1376Registers[PIP_LINE_SZ_1] << 8 | sed1376Registers[PIP_LINE_SZ_0]) * 4;
-               MULTITHREAD_DOUBLE_LOOP for(uint16_t pixelY = pipStartY; pixelY < pipEndY; pixelY++)
-                  for(uint16_t pixelX = pipStartX; pixelX < pipEndX; pixelX++)
+               MULTITHREAD_DOUBLE_LOOP for(pixelY = pipStartY; pixelY < pipEndY; pixelY++)
+                  for(pixelX = pipStartX; pixelX < pipEndX; pixelX++)
                      palmFramebuffer[pixelY * 160 + pixelX] = renderPixel(pixelX, pixelY);
             }
          }
@@ -372,21 +375,22 @@ void sed1376Render(){
 
          //display inversion
          if((sed1376Registers[DISP_MODE] & 0x30) == 0x10)
-            MULTITHREAD_LOOP for(uint32_t count = 0; count < 160 * 160; count++)
-               palmFramebuffer[count] = ~palmFramebuffer[count];
+            MULTITHREAD_LOOP for(index = 0; index < 160 * 160; index++)
+               palmFramebuffer[index] = ~palmFramebuffer[index];
+
 
          //backlight level, 0 = 1/4 color intensity, 1 = 1/2 color intensity, 2 = full color intensity
          switch(palmMisc.backlightLevel){
             case 0:
-               MULTITHREAD_LOOP for(uint32_t count = 0; count < 160 * 160; count++){
-                  palmFramebuffer[count] >>= 2;
-                  palmFramebuffer[count] &= 0x39E7;
+               MULTITHREAD_LOOP for(index = 0; index < 160 * 160; index++){
+                  palmFramebuffer[index] >>= 2;
+                  palmFramebuffer[index] &= 0x39E7;
                }
                break;
             case 1:
-               MULTITHREAD_LOOP for(uint32_t count = 0; count < 160 * 160; count++){
-                  palmFramebuffer[count] >>= 1;
-                  palmFramebuffer[count] &= 0x7BEF;
+               MULTITHREAD_LOOP for(index = 0; index < 160 * 160; index++){
+                  palmFramebuffer[index] >>= 1;
+                  palmFramebuffer[index] &= 0x7BEF;
                }
                break;
             case 2:
@@ -401,6 +405,6 @@ void sed1376Render(){
    else{
       //black screen
       memset(palmFramebuffer, 0x00, 160 * 160 * sizeof(uint16_t));
-      //debugLog("Cant draw screen, LCD on:%s, PLL on:%s, power save on:%s, forced blank on:%s\n", boolString(palmMisc.lcdOn), boolString(pllIsOn()), boolString(sed1376PowerSaveEnabled()), boolString(sed1376Registers[DISP_MODE] & 0x80));
+      //debugLog("Cant draw screen, LCD on:%s, PLL on:%s, power save on:%s, forced blank on:%s\n", palmMisc.lcdOn ? "true" : "false", pllIsOn() ? "true" : "false", sed1376PowerSaveEnabled() ? "true" : "false", !!(sed1376Registers[DISP_MODE] & 0x80) ? "true" : "false");
    }
 }

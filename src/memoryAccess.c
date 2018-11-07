@@ -375,12 +375,16 @@ static uint8_t getProperBankType(uint32_t bank){
 }
 
 void setRegisterXXFFAccessMode(){
-   MULTITHREAD_LOOP for(uint32_t topByte = 0; topByte < 0x100; topByte++)
+   uint32_t topByte;
+
+   MULTITHREAD_LOOP for(topByte = 0; topByte < 0x100; topByte++)
       bankType[START_BANK(topByte << 24 | 0x00FFF000)] = CHIP_REGISTERS;
 }
 
 void setRegisterFFFFAccessMode(){
-   MULTITHREAD_LOOP for(uint32_t topByte = 0; topByte < 0x100; topByte++){
+   uint32_t topByte;
+
+   MULTITHREAD_LOOP for(topByte = 0; topByte < 0x100; topByte++){
       uint32_t bank = START_BANK(topByte << 24 | 0x00FFF000);
       bankType[bank] = getProperBankType(bank);
    }
@@ -392,7 +396,9 @@ void setSed1376Attached(bool attached){
 }
 
 void resetAddressSpace(){
-   MULTITHREAD_LOOP for(uint32_t bank = 0; bank < TOTAL_MEMORY_BANKS; bank++)
+   uint32_t bank;
+
+   MULTITHREAD_LOOP for(bank = 0; bank < TOTAL_MEMORY_BANKS; bank++)
       bankType[bank] = getProperBankType(bank);
    flx68000RefreshAddressing();
 }
