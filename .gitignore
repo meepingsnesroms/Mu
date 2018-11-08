@@ -4,6 +4,7 @@
 *.so
 *.dylib
 *.pro.user
+*_emscripten.bc
 /libretroBuildSystem/obj
 /libretroBuildSystem/libs
 /qtBuildSystem/build-Mu-*
