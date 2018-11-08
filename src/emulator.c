@@ -360,6 +360,8 @@ bool emulatorSaveState(buffer_t buffer){
 bool emulatorLoadState(buffer_t buffer){
    uint64_t offset = 0;
    uint8_t index;
+   uint64_t stateSdCardSize;
+   uint8_t* stateSdCardBuffer;
 
    //state validation, wont load states that are not from the same state version
    if(readStateValue32(buffer.data + offset) != SAVE_STATE_VERSION)
@@ -372,8 +374,8 @@ bool emulatorLoadState(buffer_t buffer){
    offset += sizeof(uint32_t);
 
    //SD card size, the malloc when loading can make it fail, make sure if it fails the emulator state doesnt change
-   uint64_t stateSdCardSize = readStateValue64(buffer.data + offset);
-   uint8_t* stateSdCardBuffer = stateSdCardSize > 0 ? malloc(stateSdCardSize) : NULL;
+   stateSdCardSize = readStateValue64(buffer.data + offset);
+   stateSdCardBuffer = stateSdCardSize > 0 ? malloc(stateSdCardSize) : NULL;
    if(stateSdCardSize > 0 && !stateSdCardBuffer)
       return false;
    offset += sizeof(uint64_t);
