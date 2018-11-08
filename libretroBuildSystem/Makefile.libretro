@@ -5,7 +5,7 @@ STATIC_LINKING_LINK=0
 
 CORE_DIR := .
 BUILD_DIR = build
-OBJOUT = -o
+OBJOUT = -o 
 
 ifeq ($(platform),android_arm64-v8a)
 include $(BUILD_DIR)/Makefile.android_arm64-v8a
@@ -481,8 +481,8 @@ else
 	LD = link.exe
 endif
 else
-	OBJOUT   = -o
-	LINKOUT  = -o
+	OBJOUT   = -o 
+	LINKOUT  = -o 
 	LD = $(CC)
 endif
 
