@@ -408,21 +408,20 @@ else ifeq ($(platform), libnx)
 
 # Windows MSVC 2003 Xbox 1
 else ifeq ($(platform), xbox1_msvc2003)
-TARGET := $(TARGET_NAME)_libretro_xdk1.lib
-CC  = CL.exe
-CXX  = CL.exe
-LD   = lib.exe
+   TARGET := $(TARGET_NAME)_libretro_xdk1.lib
+   CC  = CL.exe
+   CXX  = CL.exe
+   LD   = lib.exe
 
-export INCLUDE := $(XDK)\xbox\include
-export LIB := $(XDK)\xbox\lib
-PATH := $(call unixcygpath,$(XDK)/xbox/bin/vc71):$(PATH)
+   export INCLUDE := $(XDK)\xbox\include
+   export LIB := $(XDK)\xbox\lib
+   PATH := $(call unixcygpath,$(XDK)/xbox/bin/vc71):$(PATH)
 
-PSS_STYLE :=2
-CFLAGS   += -D_XBOX -D_XBOX1
-CXXFLAGS += -D_XBOX -D_XBOX1
-STATIC_LINKING=1
-STATIC_LINKING_LINK=1
-
+   PSS_STYLE :=2
+   CFLAGS   += -D_XBOX -D_XBOX1
+   CXXFLAGS += -D_XBOX -D_XBOX1
+   STATIC_LINKING=1
+   STATIC_LINKING_LINK=1
 
 # Windows
 else
@@ -431,7 +430,6 @@ else
 	CC = gcc
 	SHARED := -shared -static-libgcc -static-libstdc++ -s -Wl,--version-script=build/link.T
 	CFLAGS += -D__WIN32__ -D__WIN32_LIBRETRO__
-
 endif
 
 ifeq ($(STATIC_LINKING),1)
@@ -491,7 +489,7 @@ endif
 ifeq ($(platform), theos_ios)
 COMMON_FLAGS := -DIOS -DARM $(COMMON_DEFINES) $(INCFLAGS) -I$(THEOS_INCLUDE_PATH) -Wno-error
 $(LIBRARY_NAME)_CFLAGS += $(COMMON_FLAGS)
-${LIBRARY_NAME}_FILES = $(SOURCES_CXX) $(SOURCES_C) $(SOURCES_ASM)
+${LIBRARY_NAME}_FILES = $(SOURCES_C) $(SOURCES_ASM)
 include $(THEOS_MAKE_PATH)/library.mk
 else
 all: $(TARGET)
