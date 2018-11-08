@@ -5,19 +5,19 @@ COREDEFINES =
 INCFLAGS := -I$(LIBRETRO_COMM_DIR)/include
 
 ifeq ($(DEBUG), 1)
-   COREDEFINES += -DEMU_DEBUG -DEMU_SANDBOX
+	COREDEFINES += -DEMU_DEBUG -DEMU_SANDBOX
 else
-   COREDEFINES += -DEMU_NO_SAFETY
+	COREDEFINES += -DEMU_NO_SAFETY
 endif
 
 ifneq (,$(findstring msvc200,$(platform)))
-   INCFLAGS += -I$(LIBRETRO_COMM_DIR)/include/compat/msvc
+	INCFLAGS += -I$(LIBRETRO_COMM_DIR)/include/compat/msvc
 endif
 
 ifneq (,$(findstring msvc20,$(platform)))
-   #Mu is dependent on stdbool.h and the standard inline directive existing
-   INCFLAGS += -I$(CORE_DIR)/fixIncludes/stdbool
-   COREDEFINES += -Dinline=_inline -DINLINE=_inline
+	#Mu is dependent on stdbool.h and the standard inline directive existing
+	INCFLAGS += -I$(CORE_DIR)/fixIncludes/stdbool
+	COREDEFINES += -Dinline=_inline -DINLINE=_inline
 endif
 
 include $(EMU_PATH)/makefile.all
@@ -25,15 +25,18 @@ include $(EMU_PATH)/makefile.all
 COREDEFINES += $(EMU_DEFINES)
 
 SOURCES_C := $(CORE_DIR)/libretro.c \
-   $(CORE_DIR)/cursors.c \
-   $(LIBRETRO_COMM_DIR)/compat/compat_posix_string.c \
-   $(LIBRETRO_COMM_DIR)/compat/compat_strl.c \
-   $(LIBRETRO_COMM_DIR)/compat/fopen_utf8.c \
-   $(LIBRETRO_COMM_DIR)/encodings/encoding_utf.c \
-   $(LIBRETRO_COMM_DIR)/memmap/memmap.c \
-   $(LIBRETRO_COMM_DIR)/streams/file_stream.c \
-   $(LIBRETRO_COMM_DIR)/string/stdstring.c \
-   $(LIBRETRO_COMM_DIR)/vfs/vfs_implementation.c \
-   $(EMU_SOURCES_C)
+	$(CORE_DIR)/cursors.c \
+	$(EMU_SOURCES_C)
+
+ifneq ($(STATIC_LINKING), 1)
+	SOURCES_C += $(LIBRETRO_COMM_DIR)/compat/compat_strl.c \
+		$(LIBRETRO_COMM_DIR)/compat/compat_posix_string.c \
+		$(LIBRETRO_COMM_DIR)/compat/fopen_utf8.c \
+		$(LIBRETRO_COMM_DIR)/encodings/encoding_utf.c \
+		$(LIBRETRO_COMM_DIR)/memmap/memmap.c \
+		$(LIBRETRO_COMM_DIR)/streams/file_stream.c \
+		$(LIBRETRO_COMM_DIR)/string/stdstring.c \
+		$(LIBRETRO_COMM_DIR)/vfs/vfs_implementation.c
+endif
 
 SOURCES_ASM := $(EMU_SOURCES_ASM)
