@@ -66,7 +66,7 @@ static void printTrapInfo(uint16_t trap){
    debugLog("name:%s, API:0x%04X, location:0x%08X\n", lookupTrap(trap), trap, m68k_read_memory_32(0x000008CC + (trap & 0x0FFF) * 4));
 }
 
-static void logApiCalls(){
+static void logApiCalls(void){
    uint32_t programCounter = m68k_get_reg(NULL, M68K_REG_PPC);
    uint16_t instruction = m68k_get_reg(NULL, M68K_REG_IR);
 
@@ -422,7 +422,7 @@ static bool installResourceToDevice(buffer_t resourceBuffer){
    return true;
 }
 
-void sandboxInit(){
+void sandboxInit(void){
    inSandbox = false;
 #if defined(EMU_SANDBOX_OPCODE_LEVEL_DEBUG)
    m68k_set_instr_hook_callback(sandboxOnOpcodeRun);
@@ -500,7 +500,7 @@ uint32_t sandboxCommand(uint32_t test, void* data){
    return result;
 }
 
-void sandboxOnOpcodeRun(){
+void sandboxOnOpcodeRun(void){
 #if defined(EMU_SANDBOX_LOG_APIS)
    logApiCalls();
 #endif
@@ -561,18 +561,18 @@ void sandboxOnOpcodeRun(){
    }
 }
 
-bool sandboxRunning(){
+bool sandboxRunning(void){
    return inSandbox;
 }
 
-void sandboxReturn(){
+void sandboxReturn(void){
    inSandbox = false;
 }
 
 #else
-void sandboxInit(){}
+void sandboxInit(void){}
 uint32_t sandboxCommand(uint32_t test, void* data){return 0;}
-void sandboxOnOpcodeRun(){}
-bool sandboxRunning(){return false;}
-void sandboxReturn(){}
+void sandboxOnOpcodeRun(void){}
+bool sandboxRunning(void){return false;}
+void sandboxReturn(void){}
 #endif

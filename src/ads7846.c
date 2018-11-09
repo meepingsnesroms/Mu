@@ -18,13 +18,13 @@ static float ads7846RangeMap(float oldMin, float oldMax, float value, float newM
    return (value - oldMin) / (oldMax - oldMin) * (newMax - newMin) + newMin;
 }
 
-static bool ads7846GetAdcBit(){
+static bool ads7846GetAdcBit(void){
    bool bit = !!(ads7846OutputValue & 0x8000);
    ads7846OutputValue <<= 1;
    return bit;
 }
 
-void ads7846Reset(){
+void ads7846Reset(void){
    ads7846BitsToNextControl = 0;
    ads7846ControlByte = 0x00;
    ads7846PenIrqEnabled = true;
@@ -32,7 +32,7 @@ void ads7846Reset(){
    ads7846ChipSelect = false;
 }
 
-uint64_t ads7846StateSize(){
+uint64_t ads7846StateSize(void){
    uint64_t size = 0;
 
    size += sizeof(uint8_t) * 4;

@@ -6,7 +6,7 @@
 extern float inductorCurrentCharge;
 extern float inductorChargeAtLastSample;
 
-void inductorReset();
+void inductorReset(void);
 
 void inductorPwmDutyCycle(int32_t now, int32_t clocks, float dutyCycle);
 void inductorPwmOff(int32_t now, int32_t clocks);

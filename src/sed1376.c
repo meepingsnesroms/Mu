@@ -42,7 +42,7 @@ static uint16_t (*renderPixel)(uint16_t x, uint16_t y);
 
 #include "sed1376Accessors.c.h"
 
-static uint32_t getBufferStartAddress(){
+static uint32_t getBufferStartAddress(void){
    uint32_t screenStartAddress = sed1376Registers[DISP_ADDR_2] << 16 | sed1376Registers[DISP_ADDR_1] << 8 | sed1376Registers[DISP_ADDR_0];
    switch((sed1376Registers[SPECIAL_EFFECT] & 0x03) * 90){
       case 0:
@@ -74,7 +74,7 @@ static uint32_t getBufferStartAddress(){
    return screenStartAddress;
 }
 
-static uint32_t getPipStartAddress(){
+static uint32_t getPipStartAddress(void){
    uint32_t pipStartAddress = sed1376Registers[PIP_ADDR_2] << 16 | sed1376Registers[PIP_ADDR_1] << 8 | sed1376Registers[PIP_ADDR_0];
    switch((sed1376Registers[SPECIAL_EFFECT] & 0x03) * 90){
       case 0:
@@ -106,7 +106,7 @@ static uint32_t getPipStartAddress(){
    return pipStartAddress;
 }
 
-void sed1376Reset(){
+void sed1376Reset(void){
    memset(sed1376Registers, 0x00, SED1376_REG_SIZE);
    memset(sed1376OutputLut, 0x00, SED1376_LUT_SIZE * sizeof(uint16_t));
    memset(sed1376RLut, 0x00, SED1376_LUT_SIZE);
@@ -126,7 +126,7 @@ void sed1376Reset(){
    sed1376Registers[PWR_SAVE_CFG] = 0x80;
 }
 
-uint64_t sed1376StateSize(){
+uint64_t sed1376StateSize(void){
    uint64_t size = 0;
 
    size += SED1376_REG_SIZE;
@@ -171,7 +171,7 @@ void sed1376LoadState(uint8_t* data){
       sed1376OutputLut[index] = makeRgb16FromSed666(sed1376RLut[index], sed1376GLut[index], sed1376BLut[index]);
 }
 
-bool sed1376PowerSaveEnabled(){
+bool sed1376PowerSaveEnabled(void){
    return sed1376Registers[PWR_SAVE_CFG] & 0x01;//no need for a bool cast, already using the lowest bit
 }
 
@@ -319,7 +319,7 @@ void sed1376SetRegister(uint8_t address, uint8_t value){
    }
 }
 
-void sed1376Render(){
+void sed1376Render(void){
    if(palmMisc.lcdOn && pllIsOn() && !sed1376PowerSaveEnabled() && !(sed1376Registers[DISP_MODE] & 0x80)){
       //only render if LCD on, PLL on, power save off, and force blank off, SED1376 clock is provided by the CPU, if its off so is the SED
       bool color = !!(sed1376Registers[PANEL_TYPE] & 0x40);

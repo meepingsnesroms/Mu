@@ -83,16 +83,16 @@ extern uint8_t  pwm1ReadPosition;
 extern uint8_t  pwm1WritePosition;
 
 //timing
-void beginClk32();
-void endClk32();
+void beginClk32(void);
+void endClk32(void);
 void addSysclks(double value);//only call between begin/endClk32
 
 //CPU
-bool pllIsOn();
-bool backlightAmplifierState();
-bool registersAreXXFFMapped();
-bool sed1376ClockConnected();
-void refreshInputState();
+bool pllIsOn(void);
+bool backlightAmplifierState(void);
+bool registersAreXXFFMapped(void);
+bool sed1376ClockConnected(void);
+void refreshInputState(void);
 int interruptAcknowledge(int intLevel);
 
 //memory errors
@@ -111,7 +111,7 @@ void setHwRegister32(uint32_t address, uint32_t value);
 void setEmuRegister(uint32_t address, uint32_t value);
 
 //config
-void resetHwRegisters();
+void resetHwRegisters(void);
 void setRtc(uint16_t days, uint8_t hours, uint8_t minutes, uint8_t seconds);
 
 #endif

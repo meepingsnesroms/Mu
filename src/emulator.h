@@ -36,7 +36,8 @@ void frontendHandleDebugPrint();
 #define debugLog(...) printf(__VA_ARGS__)
 #endif
 #else
-#define debugLog(...)
+//msvc2003 doesnt support variadic macros, so just use an empty variadic function instead, EMU_DEBUG is not supported at all on msvc2003
+static void debugLog(char* str, ...){};
 #endif
 
 //emu errors
@@ -138,21 +139,21 @@ extern double    palmClk32Sysclks;//dont touch
 
 //functions
 uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t specialFeatures);//calling any emulator functions before emulatorInit results in undefined behavior
-void emulatorExit();
-void emulatorHardReset();
-void emulatorSoftReset();
+void emulatorExit(void);
+void emulatorHardReset(void);
+void emulatorSoftReset(void);
 void emulatorSetRtc(uint16_t days, uint8_t hours, uint8_t minutes, uint8_t seconds);
-uint64_t emulatorGetStateSize();
+uint64_t emulatorGetStateSize(void);
 bool emulatorSaveState(buffer_t buffer);//true = success
 bool emulatorLoadState(buffer_t buffer);//true = success
-uint64_t emulatorGetRamSize();
+uint64_t emulatorGetRamSize(void);
 bool emulatorSaveRam(buffer_t buffer);//true = success
 bool emulatorLoadRam(buffer_t buffer);//true = success
 buffer_t emulatorGetSdCardBuffer();//this is a direct pointer to the SD card data, do not free it
 uint32_t emulatorInsertSdCard(buffer_t image);//use (NULL, desired size) to create a new empty SD card
-void emulatorEjectSdCard();
+void emulatorEjectSdCard(void);
 uint32_t emulatorInstallPrcPdb(buffer_t file);
-void emulatorRunFrame();
+void emulatorRunFrame(void);
    
 #ifdef __cplusplus
 }

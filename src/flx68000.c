@@ -53,7 +53,7 @@ unsigned int checkPc(unsigned int pc){
 }
 #endif
 
-void flx68000Init(){
+void flx68000Init(void){
    static bool inited = false;
 
    if(!inited){
@@ -84,7 +84,7 @@ void flx68000Init(){
    }
 }
 
-void flx68000Reset(){
+void flx68000Reset(void){
    resetHwRegisters();
    resetAddressSpace();//address space must be reset after hardware registers because it is dependent on them
 #if defined(EMU_OPTIMIZE_FOR_ARM)
@@ -94,7 +94,7 @@ void flx68000Reset(){
 #endif
 }
 
-uint64_t flx68000StateSize(){
+uint64_t flx68000StateSize(void){
    uint64_t size = 0;
 
 #if defined(EMU_OPTIMIZE_FOR_ARM)
@@ -253,7 +253,7 @@ void flx68000LoadState(uint8_t* data){
 #endif
 }
 
-void flx68000Execute(){
+void flx68000Execute(void){
    double cyclesRemaining = palmSysclksPerClk32;
 
    beginClk32();
@@ -287,7 +287,7 @@ void flx68000SetIrq(uint8_t irqLevel){
 #endif
 }
 
-void flx68000RefreshAddressing(){
+void flx68000RefreshAddressing(void){
 #if defined(EMU_OPTIMIZE_FOR_ARM)
    //cycloneCpu.pc = cycloneCpu.checkpc(cycloneCpu.pc);
 #else
@@ -295,7 +295,7 @@ void flx68000RefreshAddressing(){
 #endif
 }
 
-bool flx68000IsSupervisor(){
+bool flx68000IsSupervisor(void){
 #if defined(EMU_OPTIMIZE_FOR_ARM)
    return CycloneGetSr(&cycloneCpu) & 0x2000;
 #else
@@ -349,7 +349,7 @@ uint32_t flx68000GetRegister(uint8_t reg){
 #endif
 }
 
-uint32_t flx68000GetPc(){
+uint32_t flx68000GetPc(void){
 #if defined(EMU_OPTIMIZE_FOR_ARM)
    return cycloneCpu.prev_pc;
 #else

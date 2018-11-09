@@ -11,10 +11,10 @@ enum{
    SANDBOX_INSTALL_APP
 };
 
-void sandboxInit();
+void sandboxInit(void);
 uint32_t sandboxCommand(uint32_t test, void* data);
-void sandboxOnOpcodeRun();
-bool sandboxRunning();
-void sandboxReturn();//should only be called called by 68k code
+void sandboxOnOpcodeRun(void);
+bool sandboxRunning(void);
+void sandboxReturn(void);//should only be called called by 68k code
 
 #endif
