@@ -149,7 +149,7 @@ bool emulatorLoadState(buffer_t buffer);//true = success
 uint64_t emulatorGetRamSize(void);
 bool emulatorSaveRam(buffer_t buffer);//true = success
 bool emulatorLoadRam(buffer_t buffer);//true = success
-buffer_t emulatorGetSdCardBuffer();//this is a direct pointer to the SD card data, do not free it
+buffer_t emulatorGetSdCardBuffer(void);//this is a direct pointer to the SD card data, do not free it
 uint32_t emulatorInsertSdCard(buffer_t image);//use (NULL, desired size) to create a new empty SD card
 void emulatorEjectSdCard(void);
 uint32_t emulatorInstallPrcPdb(buffer_t file);
