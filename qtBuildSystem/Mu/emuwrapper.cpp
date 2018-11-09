@@ -19,10 +19,10 @@
 #endif
 
 #include "emuwrapper.h"
-#include "src/emulator.h"
+#include "../../src/emulator.h"
 
 extern "C"{
-#include "src/flx68000.h"
+#include "../../src/flx68000.h"
 }
 
 

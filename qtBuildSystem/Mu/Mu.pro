@@ -84,15 +84,15 @@ CONFIG += c++11
 INCLUDEPATH += $$PWD/qt-common/include
 
 optimize_for_arm{
-    SOURCES += src/m68k/cyclone/Cyclone.s
+    SOURCES += ../../src/m68k/cyclone/Cyclone.s
     DEFINES += EMU_OPTIMIZE_FOR_ARM
 }else{
-    SOURCES += src/m68k/musashi/m68kcpu.c \
-        src/m68k/musashi/m68kdasm.c \
-        src/m68k/musashi/m68kopac.c \
-        src/m68k/musashi/m68kopdm.c \
-        src/m68k/musashi/m68kopnz.c \
-        src/m68k/musashi/m68kops.c
+    SOURCES += ../../src/m68k/musashi/m68kcpu.c \
+        ../../src/m68k/musashi/m68kdasm.c \
+        ../../src/m68k/musashi/m68kopac.c \
+        ../../src/m68k/musashi/m68kopdm.c \
+        ../../src/m68k/musashi/m68kopnz.c \
+        ../../src/m68k/musashi/m68kops.c
 }
 
 SOURCES += \
@@ -102,52 +102,53 @@ SOURCES += \
     mainwindow.cpp \
     statemanager.cpp \
     touchscreen.cpp \
-    src/audio/blip_buf.c \
-    src/audio/inductor.c \
-    src/debug/sandbox.c \
-    src/ads7846.c \
-    src/emulator.c \
-    src/flx68000.c \
-    src/hardwareRegisters.c \
-    src/memoryAccess.c \
-    src/pdiUsbD12.c \
-    src/sdCard.c \
-    src/sed1376.c \
-    src/silkscreen.c
+    ../../src/audio/blip_buf.c \
+    ../../src/audio/inductor.c \
+    ../../src/debug/sandbox.c \
+    ../../src/ads7846.c \
+    ../../src/emulator.c \
+    ../../src/flx68000.c \
+    ../../src/hardwareRegisters.c \
+    ../../src/memoryAccess.c \
+    ../../src/pdiUsbD12.c \
+    ../../src/sdCard.c \
+    ../../src/sed1376.c \
+    ../../src/silkscreen.c
 
 HEADERS += \
-    src/audio/blip_buf.h \
-    src/audio/inductor.h \
-    src/debug/sandbox.h \
-    src/debug/sandboxTrapNumToName.c.h \
-    src/debug/trapNames.h \
-    src/m68k/cyclone/Cyclone.h \
-    src/m68k/musashi/m68k.h \
-    src/m68k/musashi/m68kconf.h \
-    src/m68k/musashi/m68kcpu.h \
-    src/m68k/musashi/m68kops.h \
-    src/specs/emuFeatureRegistersSpec.h \
-    src/specs/hardwareRegisterNames.h \
-    src/specs/pdiUsbD12Commands.h \
-    src/specs/sed1376RegisterNames.h \
-    src/ads7846.h \
-    src/emulator.h \
-    src/flx68000.h \
-    src/hardwareRegisters.h \
-    src/hardwareRegistersAccessors.c.h \
-    src/hardwareRegistersTiming.c.h \
-    src/memoryAccess.h \
-    src/pdiUsbD12.h \
-    src/portability.h \
-    src/sdCard.h \
-    src/sed1376.h \
-    src/sed1376Accessors.c.h \
-    src/silkscreen.h \
     debugviewer.h \
     emuwrapper.h \
     mainwindow.h \
     statemanager.h \
-    touchscreen.h
+    touchscreen.h \
+    ../../src/audio/blip_buf.h \
+    ../../src/audio/inductor.h \
+    ../../src/debug/sandbox.h \
+    ../../src/debug/sandboxTrapNumToName.c.h \
+    ../../src/debug/trapNames.h \
+    ../../src/m68k/cyclone/Cyclone.h \
+    ../../src/m68k/musashi/m68k.h \
+    ../../src/m68k/musashi/m68kconf.h \
+    ../../src/m68k/musashi/m68kcpu.h \
+    ../../src/m68k/musashi/m68kops.h \
+    ../../src/specs/emuFeatureRegistersSpec.h \
+    ../../src/specs/hardwareRegisterNames.h \
+    ../../src/specs/pdiUsbD12Commands.h \
+    ../../src/specs/sed1376RegisterNames.h \
+    ../../src/ads7846.h \
+    ../../src/emulator.h \
+    ../../src/endianness.h \
+    ../../src/flx68000.h \
+    ../../src/hardwareRegisters.h \
+    ../../src/hardwareRegistersAccessors.c.h \
+    ../../src/hardwareRegistersTiming.c.h \
+    ../../src/memoryAccess.h \
+    ../../src/pdiUsbD12.h \
+    ../../src/portability.h \
+    ../../src/sdCard.h \
+    ../../src/sed1376.h \
+    ../../src/sed1376Accessors.c.h \
+    ../../src/silkscreen.h
 
 FORMS += \
     mainwindow.ui \
@@ -184,7 +185,8 @@ DISTFILES += \
     images/stateManager.svg \
     images/stop.svg \
     images/todo.svg \
-    images/up.svg
+    images/up.svg \
+    ../../src/m68k/cyclone/Cyclone.s
 
 RESOURCES += \
     mainwindow.qrc
