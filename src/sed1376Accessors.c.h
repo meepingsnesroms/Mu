@@ -115,7 +115,7 @@ static void selectRenderer(bool color, uint8_t bpp){
 }
 
 //updaters
-static void updateLcdStatus(){
+static void updateLcdStatus(void){
    bool backlightEnabled = !!(sed1376Registers[GPIO_CONT_0] & sed1376Registers[GPIO_CONF_0] & 0x10);
 
    palmMisc.lcdOn = !!(sed1376Registers[GPIO_CONT_0] & sed1376Registers[GPIO_CONF_0] & 0x20);

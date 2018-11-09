@@ -9,7 +9,7 @@
 #include <vector>
 #include <stdint.h>
 
-#include "src/emulator.h"
+#include "../../src/emulator.h"
 
 class EmuWrapper{
 private:

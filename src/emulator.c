@@ -85,7 +85,7 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t spec
    palmCycleCounter = 0.0;
 
    //memory
-   memset(palmRam, 0x00, (specialFeatures & FEATURE_RAM_HUGE) ? SUPERMASSIVE_RAM_SIZE : RAM_SIZE);
+   memset(palmRam, 0x00, specialFeatures & FEATURE_RAM_HUGE ? SUPERMASSIVE_RAM_SIZE : RAM_SIZE);
    memcpy(palmRom, palmRomDump.data, u64Min(palmRomDump.size, ROM_SIZE));
    if(palmRomDump.size < ROM_SIZE)
       memset(palmRom + palmRomDump.size, 0x00, ROM_SIZE - palmRomDump.size);
@@ -133,7 +133,7 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t spec
    return EMU_ERROR_NONE;
 }
 
-void emulatorExit(){
+void emulatorExit(void){
    if(emulatorInitialized){
       free(palmRam);
       free(palmRom);
@@ -147,21 +147,33 @@ void emulatorExit(){
    }
 }
 
-void emulatorReset(){
-   //reset doesnt clear RAM or SD card, all programs are stored in RAM or on SD card
-   debugLog("Reset triggered, PC:0x%08X\n", flx68000GetPc());
+void emulatorHardReset(void){
+   //equivalent to taking the battery out and putting it back in
+   memset(palmRam, 0x00, palmSpecialFeatures & FEATURE_RAM_HUGE ? SUPERMASSIVE_RAM_SIZE : RAM_SIZE);
+   memset(palmFramebuffer, 0x00, 160 * 160 * sizeof(uint16_t));
+   if(palmExtendedFramebuffer)
+      memset(palmExtendedFramebuffer, 0x00, 320 * 320 * sizeof(uint16_t));
    flx68000Reset();
    sed1376Reset();
    ads7846Reset();
    pdiUsbD12Reset();
    inductorReset();
+   setRtc(0, 0, 0, 0);
+}
+
+void emulatorSoftReset(void){
+   //equivalent to pushing the reset button on the back of the device
+   flx68000Reset();
+   sed1376Reset();
+   ads7846Reset();
+   pdiUsbD12Reset();
 }
 
 void emulatorSetRtc(uint16_t days, uint8_t hours, uint8_t minutes, uint8_t seconds){
    setRtc(days, hours, minutes, seconds);
 }
 
-uint64_t emulatorGetStateSize(){
+uint64_t emulatorGetStateSize(void){
    uint64_t size = 0;
 
    size += sizeof(uint32_t);//save state version
@@ -520,7 +532,7 @@ bool emulatorLoadState(buffer_t buffer){
    return true;
 }
 
-uint64_t emulatorGetRamSize(){
+uint64_t emulatorGetRamSize(void){
    return palmSpecialFeatures & FEATURE_RAM_HUGE ? SUPERMASSIVE_RAM_SIZE : RAM_SIZE;
 }
 
@@ -548,7 +560,7 @@ bool emulatorLoadRam(buffer_t buffer){
    return true;
 }
 
-buffer_t emulatorGetSdCardBuffer(){
+buffer_t emulatorGetSdCardBuffer(void){
    return palmSdCard.flashChip;
 }
 
@@ -571,7 +583,7 @@ uint32_t emulatorInsertSdCard(buffer_t image){
    return EMU_ERROR_NONE;
 }
 
-void emulatorEjectSdCard(){
+void emulatorEjectSdCard(void){
    //clear SD flash chip and controller
    if(palmSdCard.flashChip.data)
       free(palmSdCard.flashChip.data);
@@ -583,7 +595,7 @@ uint32_t emulatorInstallPrcPdb(buffer_t file){
    //return EMU_ERROR_NONE;
 }
 
-void emulatorRunFrame(){
+void emulatorRunFrame(void){
    uint32_t samples;
 
    //I/O

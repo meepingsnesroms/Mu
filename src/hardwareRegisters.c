@@ -35,36 +35,36 @@ uint8_t  pwm1ReadPosition;
 uint8_t  pwm1WritePosition;
 
 
-static void checkInterrupts();
-static void checkPortDInterrupts();
-static void pllWakeCpuIfOff();
-static double sysclksPerClk32();
+static void checkInterrupts(void);
+static void checkPortDInterrupts(void);
+static void pllWakeCpuIfOff(void);
+static double sysclksPerClk32(void);
 static int32_t audioGetFramePercentIncrementFromClk32s(int32_t count);
 static int32_t audioGetFramePercentIncrementFromSysclks(double count);
-static int32_t audioGetFramePercentage();
+static int32_t audioGetFramePercentage(void);
 
 #include "hardwareRegistersAccessors.c.h"
 #include "hardwareRegistersTiming.c.h"
 
-bool pllIsOn(){
+bool pllIsOn(void){
    return !(palmSysclksPerClk32 < 1.0);
 }
 
-bool backlightAmplifierState(){
+bool backlightAmplifierState(void){
    return !!(getPortKValue() & 0x02);
 }
 
-bool registersAreXXFFMapped(){
+bool registersAreXXFFMapped(void){
    return !!(registerArrayRead8(SCR) & 0x04);
 }
 
-bool sed1376ClockConnected(){
+bool sed1376ClockConnected(void){
    //this is the clock output pin for the SED1376, if its disabled so is the LCD controller
    //port f pin 2 is not GPIO and PLLCR CLKEN is false enabling clock output on port f pin 2
    return !(registerArrayRead8(PFSEL) & 0x04) && !(registerArrayRead16(PLLCR) & 0x0010);
 }
 
-void refreshInputState(){
+void refreshInputState(void){
    //update power button LED state if palmMisc.batteryCharging changed
    updatePowerButtonLedStatus();
 
@@ -117,7 +117,7 @@ void setWriteProtectViolation(uint32_t address){
       flx68000BusError(address, true);
 }
 
-static void pllWakeCpuIfOff(){
+static void pllWakeCpuIfOff(void){
    if(!pllIsOn() && pllWakeWait == -1){
       //PLL is off and not already in the process of waking up
       int8_t pllWaitTable[4] = {32, 48, 64, 96};
@@ -125,7 +125,7 @@ static void pllWakeCpuIfOff(){
    }
 }
 
-static void checkInterrupts(){
+static void checkInterrupts(void){
    uint32_t activeInterrupts = registerArrayRead32(ISR);
    uint16_t interruptLevelControlRegister = registerArrayRead16(ILCR);
    uint8_t intLevel = 0;
@@ -201,7 +201,7 @@ static void checkInterrupts(){
    flx68000SetIrq(intLevel);//should be called even if intLevel is 0, that is how the interrupt state gets cleared
 }
 
-static void checkPortDInterrupts(){
+static void checkPortDInterrupts(void){
    uint8_t portDInputValues = getPortDInputPinValues();
    uint8_t portDInputValuesWithPolarity = portDInputValues ^ registerArrayRead8(PDPOL);
    uint8_t portDDir = registerArrayRead8(PDDIR);
@@ -1061,7 +1061,7 @@ void setHwRegister32(uint32_t address, uint32_t value){
    }
 }
 
-void resetHwRegisters(){
+void resetHwRegisters(void){
    uint32_t oldRtc = registerArrayRead32(RTCTIME);//preserve RTCTIME
    uint16_t oldDayr = registerArrayRead16(DAYR);//preserve DAYR
 

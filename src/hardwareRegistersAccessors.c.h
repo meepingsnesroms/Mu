@@ -1,14 +1,14 @@
 //declare I/O port functions in advance
-static uint8_t getPortAValue();
-static uint8_t getPortBValue();
-static uint8_t getPortCValue();
-static uint8_t getPortDValue();
-static uint8_t getPortEValue();
-static uint8_t getPortFValue();
-static uint8_t getPortGValue();
-static uint8_t getPortJValue();
-static uint8_t getPortKValue();
-static uint8_t getPortMValue();
+static uint8_t getPortAValue(void);
+static uint8_t getPortBValue(void);
+static uint8_t getPortCValue(void);
+static uint8_t getPortDValue(void);
+static uint8_t getPortEValue(void);
+static uint8_t getPortFValue(void);
+static uint8_t getPortGValue(void);
+static uint8_t getPortJValue(void);
+static uint8_t getPortKValue(void);
+static uint8_t getPortMValue(void);
 
 //basic accessors
 static uint8_t registerArrayRead8(uint32_t address){return BUFFER_READ_8(palmReg, address, 0xFFF);}
@@ -33,7 +33,7 @@ static void clearIprIsrBit(uint32_t interruptBit){
 }
 
 //SPI1 FIFO accessors
-static uint16_t spi1RxFifoRead(){
+static uint16_t spi1RxFifoRead(void){
    uint16_t value = spi1RxFifo[spi1RxReadPosition];
    spi1RxReadPosition = (spi1RxReadPosition + 1) % 9;
    return value;
@@ -44,14 +44,14 @@ static void spi1RxFifoWrite(uint16_t value){
    spi1RxWritePosition = (spi1RxWritePosition + 1) % 9;
 }
 
-static uint8_t spi1RxFifoEntrys(){
+static uint8_t spi1RxFifoEntrys(void){
    //check for wraparound
    if(spi1RxWritePosition < spi1RxReadPosition)
       return spi1RxWritePosition + 9 - spi1RxReadPosition;
    return spi1RxWritePosition - spi1RxReadPosition;
 }
 
-static uint16_t spi1TxFifoRead(){
+static uint16_t spi1TxFifoRead(void){
    uint16_t value = spi1TxFifo[spi1TxReadPosition];
    spi1TxReadPosition = (spi1TxReadPosition + 1) % 9;
    return value;
@@ -62,7 +62,7 @@ static void spi1TxFifoWrite(uint16_t value){
    spi1TxWritePosition = (spi1TxWritePosition + 1) % 9;
 }
 
-static uint8_t spi1TxFifoEntrys(){
+static uint8_t spi1TxFifoEntrys(void){
    //check for wraparound
    if(spi1TxWritePosition < spi1TxReadPosition)
       return spi1TxWritePosition + 9 - spi1TxReadPosition;
@@ -70,7 +70,7 @@ static uint8_t spi1TxFifoEntrys(){
 }
 
 //PWM1 FIFO accessors
-static uint8_t pwm1FifoEntrys(){
+static uint8_t pwm1FifoEntrys(void){
    //check for wraparound
    if(pwm1WritePosition < pwm1ReadPosition)
       return pwm1WritePosition + 6 - pwm1ReadPosition;
@@ -118,7 +118,7 @@ static void pwm1FifoWrite(uint8_t value){
    }
 }
 
-static void pwm1FifoFlush(){
+static void pwm1FifoFlush(void){
    pwm1ReadPosition = pwm1WritePosition;
 }
 
@@ -217,7 +217,7 @@ static void setCsgbd(uint16_t value){
    registerArrayWrite16(CSGBD, value & 0xFFFE);
 }
 
-static void updateCsdAddressLines(){
+static void updateCsdAddressLines(void){
    uint16_t dramc = registerArrayRead16(DRAMC);
    uint16_t sdctrl = registerArrayRead16(SDCTRL);
 
@@ -506,7 +506,7 @@ static void setIsr(uint32_t value, bool useTopWord, bool useBottomWord){
 }
 
 //register getters
-static uint8_t getPortDInputPinValues(){
+static uint8_t getPortDInputPinValues(void){
    uint8_t requestedRow = ~getPortKValue();
    uint8_t portDInputValues = 0x00;
 
@@ -531,21 +531,21 @@ static uint8_t getPortDInputPinValues(){
    return ~portDInputValues;
 }
 
-static uint8_t getPortAValue(){
+static uint8_t getPortAValue(void){
    //not attached, used as data lines
    return 0x00;
 }
 
-static uint8_t getPortBValue(){
+static uint8_t getPortBValue(void){
    return ((registerArrayRead8(PBDATA) & registerArrayRead8(PBDIR)) | ~registerArrayRead8(PBDIR)) & registerArrayRead8(PBSEL);
 }
 
-static uint8_t getPortCValue(){
+static uint8_t getPortCValue(void){
    //port c uses pull downs not pull ups
    return registerArrayRead8(PCDATA) & registerArrayRead8(PCDIR) & registerArrayRead8(PCSEL);
 }
 
-static uint8_t getPortDValue(){
+static uint8_t getPortDValue(void){
    uint8_t portDValue = getPortDInputPinValues();
    uint8_t portDData = registerArrayRead8(PDDATA);
    uint8_t portDDir = registerArrayRead8(PDDIR);
@@ -558,11 +558,11 @@ static uint8_t getPortDValue(){
    return portDValue;
 }
 
-static uint8_t getPortEValue(){
+static uint8_t getPortEValue(void){
    return ((registerArrayRead8(PEDATA) & registerArrayRead8(PEDIR)) | ~registerArrayRead8(PEDIR)) & registerArrayRead8(PESEL);
 }
 
-static uint8_t getPortFValue(){
+static uint8_t getPortFValue(void){
    uint8_t portFValue = 0x00;
    uint8_t portFData = registerArrayRead8(PKDATA);
    uint8_t portFDir = registerArrayRead8(PKDIR);
@@ -577,7 +577,7 @@ static uint8_t getPortFValue(){
    return portFValue;
 }
 
-static uint8_t getPortGValue(){
+static uint8_t getPortGValue(void){
    //port g only has 6 pins not 8
    uint8_t portGValue = 0x00;
    uint8_t portGData = registerArrayRead8(PGDATA);
@@ -592,11 +592,11 @@ static uint8_t getPortGValue(){
    return portGValue;
 }
 
-static uint8_t getPortJValue(){
+static uint8_t getPortJValue(void){
    return ((registerArrayRead8(PJDATA) & registerArrayRead8(PJDIR)) | ~registerArrayRead8(PJDIR)) & registerArrayRead8(PJSEL);
 }
 
-static uint8_t getPortKValue(){
+static uint8_t getPortKValue(void){
    uint8_t portKValue = 0x00;
    uint8_t portKData = registerArrayRead8(PKDATA);
    uint8_t portKDir = registerArrayRead8(PKDIR);
@@ -610,7 +610,7 @@ static uint8_t getPortKValue(){
    return portKValue;
 }
 
-static uint8_t getPortMValue(){
+static uint8_t getPortMValue(void){
    //bit 5 has a pull up not pull down, bits 4-0 have a pull down, bit 7-6 are not active at all
    return ((registerArrayRead8(PMDATA) & registerArrayRead8(PMDIR)) | (~registerArrayRead8(PMDIR) & 0x20)) & registerArrayRead8(PMSEL);
 }
@@ -648,7 +648,7 @@ static void samplePwm1(bool forClk32, double sysclks){
    }
 }
 
-static uint16_t getPwmc1(){
+static uint16_t getPwmc1(void){
    uint16_t returnValue = registerArrayRead16(PWMC1);
 
    //have FIFOAV set if a slot is available
@@ -669,23 +669,23 @@ static uint16_t getPwmc1(){
 }
 
 //updaters
-static void updatePowerButtonLedStatus(){
+static void updatePowerButtonLedStatus(void){
    palmMisc.powerButtonLed = !!(getPortBValue() & 0x40) != palmMisc.batteryCharging;
 }
 
-static void updateVibratorStatus(){
+static void updateVibratorStatus(void){
    palmMisc.vibratorOn = !!(getPortKValue() & 0x10);
 }
 
-static void updateAds7846ChipSelectStatus(){
+static void updateAds7846ChipSelectStatus(void){
    ads7846SetChipSelect(!!(getPortGValue() & 0x04));
 }
 
-static void updateBacklightAmplifierStatus(){
+static void updateBacklightAmplifierStatus(void){
    palmMisc.backlightLevel = (palmMisc.backlightLevel > 0) ? (1 + backlightAmplifierState()) : 0;
 }
 
-static void updateTouchState(){
+static void updateTouchState(void){
    if(!(registerArrayRead8(PFSEL) & 0x02)){
       uint16_t icr = registerArrayRead16(ICR);
       bool penIrqPin = !(ads7846PenIrqEnabled && palmInput.touchscreenTouched);//penIrqPin pulled low on touch

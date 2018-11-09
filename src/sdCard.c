@@ -6,7 +6,7 @@
 
 //command format:01IIIIIIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACCCCCCC1//I = index, A = argument, C = CRC
 
-static inline void sdCardInvalidFormat(){
+static inline void sdCardInvalidFormat(void){
    palmSdCard.commandBitsRemaining = 63;
 }
 
@@ -35,7 +35,7 @@ bool sdCardExchangeBit(bool bit){
       switch(command){
 
          default:
-            debugLog("SD command:cmd:0x%02X, arg:0x%08X, CRC:0x%02X\n", command, argument, crc);
+            //debugLog("SD command:cmd:0x%02X, arg:0x%08X, CRC:0x%02X\n", command, argument, crc);
             break;
       }
    }

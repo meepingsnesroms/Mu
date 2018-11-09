@@ -59,9 +59,9 @@
 
 extern uint8_t bankType[];
 
-void setRegisterXXFFAccessMode();
-void setRegisterFFFFAccessMode();
+void setRegisterXXFFAccessMode(void);
+void setRegisterFFFFAccessMode(void);
 void setSed1376Attached(bool attached);
-void resetAddressSpace();
+void resetAddressSpace(void);
 
 #endif

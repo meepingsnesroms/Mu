@@ -136,7 +136,7 @@ static void timer2(uint8_t reason, double sysclks){
    }
 }
 
-static double dmaclksPerClk32(){
+static double dmaclksPerClk32(void){
    uint16_t pllcr = registerArrayRead16(PLLCR);
    uint16_t pllfsr = registerArrayRead16(PLLFSR);
    uint8_t p = pllfsr & 0x00FF;
@@ -154,7 +154,7 @@ static double dmaclksPerClk32(){
    return dmaclks;
 }
 
-static double sysclksPerClk32(){
+static double sysclksPerClk32(void){
    uint8_t sysclkSelect = registerArrayRead16(PLLCR) >> 8 & 0x0007;
 
    //>= 4 means run at full speed, no divider
@@ -165,7 +165,7 @@ static double sysclksPerClk32(){
    return dmaclksPerClk32() / (2 << sysclkSelect);
 }
 
-static void rtiInterruptClk32(){
+static void rtiInterruptClk32(void){
    //this function is part of endClk32();
    uint16_t triggeredRtiInterrupts = 0x0000;
 
@@ -209,7 +209,7 @@ static void rtiInterruptClk32(){
    }
 }
 
-static void watchdogSecondTickClk32(){
+static void watchdogSecondTickClk32(void){
    //this function is part of endClk32();
    uint16_t watchdogState = registerArrayRead16(WATCHDOG);
 
@@ -226,7 +226,8 @@ static void watchdogSecondTickClk32(){
          }
          else{
             //reset
-            emulatorReset();
+            debugLog("Watchdog reset triggered, PC:0x%08X\n", flx68000GetPc());
+            emulatorSoftReset();
             return;
          }
       }
@@ -234,7 +235,7 @@ static void watchdogSecondTickClk32(){
    }
 }
 
-static void rtcAddSecondClk32(){
+static void rtcAddSecondClk32(void){
    //this function is part of endClk32();
    if(registerArrayRead16(RTCCTL) & 0x0080){
       //RTC enable bit set
@@ -300,11 +301,11 @@ static void rtcAddSecondClk32(){
    watchdogSecondTickClk32();
 }
 
-void beginClk32(){
+void beginClk32(void){
    palmClk32Sysclks = 0.0;
 }
 
-void endClk32(){
+void endClk32(void){
    registerArrayWrite16(PLLFSR, registerArrayRead16(PLLFSR) ^ 0x8000);
 
    //second position counter
@@ -365,7 +366,7 @@ static int32_t audioGetFramePercentIncrementFromSysclks(double count){
    return count / (palmSysclksPerClk32 * ((double)CRYSTAL_FREQUENCY / EMU_FPS)) * AUDIO_END_OF_FRAME;
 }
 
-static int32_t audioGetFramePercentage(){
+static int32_t audioGetFramePercentage(void){
    //returns how much of the frame has executed
    //0% = 0, 100% = AUDIO_END_OF_FRAME
    return audioGetFramePercentIncrementFromClk32s(palmFrameClk32s) + audioGetFramePercentIncrementFromSysclks(palmClk32Sysclks);

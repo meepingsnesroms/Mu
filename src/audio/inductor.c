@@ -13,7 +13,7 @@ float inductorCurrentCharge;
 float inductorChargeAtLastSample;
 
 
-void inductorReset(){
+void inductorReset(void){
    inductorCurrentCharge = 0.0;
    inductorChargeAtLastSample = 0.0;
 }
