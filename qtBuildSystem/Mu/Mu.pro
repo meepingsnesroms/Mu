@@ -185,8 +185,7 @@ DISTFILES += \
     images/stateManager.svg \
     images/stop.svg \
     images/todo.svg \
-    images/up.svg \
-    ../../src/m68k/cyclone/Cyclone.s
+    images/up.svg
 
 RESOURCES += \
     mainwindow.qrc

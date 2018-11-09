@@ -172,7 +172,7 @@ void sed1376LoadState(uint8_t* data){
 }
 
 bool sed1376PowerSaveEnabled(void){
-   return sed1376Registers[PWR_SAVE_CFG] & 0x01;//no need for a bool cast, already using the lowest bit
+   return sed1376Registers[PWR_SAVE_CFG] & 0x01;
 }
 
 uint8_t sed1376GetRegister(uint8_t address){

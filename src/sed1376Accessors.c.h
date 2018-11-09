@@ -4,10 +4,10 @@ static uint32_t handlePanelDataSwaps(uint32_t address){
    //word swap
    if(sed1376Registers[SPECIAL_EFFECT] & 0x80)
       address ^= 0x00000002;
-   //byte swap
+#endif
+   //byte swap, used in 16 bpp mode
    if(sed1376Registers[SPECIAL_EFFECT] & 0x40)
       address ^= 0x00000001;
-#endif
    return address;
 }
 
@@ -61,7 +61,8 @@ static uint16_t get8BppColor(uint16_t x, uint16_t y){
    return sed1376OutputLut[sed1376Framebuffer[handlePanelDataSwaps(screenStartAddress + y * lineSize + x)]];
 }
 static uint16_t get16BppColor(uint16_t x, uint16_t y){
-   return sed1376Framebuffer[handlePanelDataSwaps(screenStartAddress + (y * lineSize + x) * 2)] << 8 | sed1376Framebuffer[handlePanelDataSwaps(screenStartAddress + (y * lineSize + x) * 2 + 1)];
+   //this format is little endian, to use big endian data sed1376Registers[SPECIAL_EFFECT] & 0x40 must be set
+   return sed1376Framebuffer[handlePanelDataSwaps(screenStartAddress + (y * lineSize + x * 2) + 1)] << 8 | sed1376Framebuffer[handlePanelDataSwaps(screenStartAddress + (y * lineSize + x * 2))];
 }
 
 static void selectRenderer(bool color, uint8_t bpp){
