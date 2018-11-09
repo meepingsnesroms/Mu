@@ -226,7 +226,8 @@ static void watchdogSecondTickClk32(){
          }
          else{
             //reset
-            emulatorReset();
+            debugLog("Watchdog reset triggered, PC:0x%08X\n", flx68000GetPc());
+            emulatorSoftReset();
             return;
          }
       }

@@ -139,7 +139,8 @@ extern double    palmClk32Sysclks;//dont touch
 //functions
 uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t specialFeatures);//calling any emulator functions before emulatorInit results in undefined behavior
 void emulatorExit();
-void emulatorReset();
+void emulatorHardReset();
+void emulatorSoftReset();
 void emulatorSetRtc(uint16_t days, uint8_t hours, uint8_t minutes, uint8_t seconds);
 uint64_t emulatorGetStateSize();
 bool emulatorSaveState(buffer_t buffer);//true = success

@@ -70,14 +70,14 @@ void flx68000Init(){
       cycloneCpu.write32 = m68k_write_memory_32;
       cycloneCpu.checkpc = checkPc;
       cycloneCpu.IrqCallback = interruptAcknowledge;
-      cycloneCpu.ResetCallback = emulatorReset;
+      cycloneCpu.ResetCallback = emulatorSoftReset;
 #else
       m68k_init();
       m68k_set_cpu_type(M68K_CPU_TYPE_68000);
 
       CPU_ADDRESS_MASK = 0xFFFFFFFF;
 
-      m68k_set_reset_instr_callback(emulatorReset);
+      m68k_set_reset_instr_callback(emulatorSoftReset);
       m68k_set_int_ack_callback(interruptAcknowledge);
 #endif
       inited = true;

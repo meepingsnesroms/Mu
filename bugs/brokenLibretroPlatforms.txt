@@ -1,0 +1,11 @@
+PSP
+msvc2003
+msvc2010
+classics/new haxchi(should work)
+xbox(don't know)
+xbox360(don't know)
+
+Fixed:
+remove old haxchi
+emscripten
+msvc2005
