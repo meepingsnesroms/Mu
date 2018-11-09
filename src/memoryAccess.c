@@ -380,14 +380,14 @@ static uint8_t getProperBankType(uint32_t bank){
    return CHIP_NONE;
 }
 
-void setRegisterXXFFAccessMode(){
+void setRegisterXXFFAccessMode(void){
    uint32_t topByte;
 
    MULTITHREAD_LOOP for(topByte = 0; topByte < 0x100; topByte++)
       bankType[START_BANK(topByte << 24 | 0x00FFF000)] = CHIP_REGISTERS;
 }
 
-void setRegisterFFFFAccessMode(){
+void setRegisterFFFFAccessMode(void){
    uint32_t topByte;
 
    MULTITHREAD_LOOP for(topByte = 0; topByte < 0x100; topByte++){
@@ -401,7 +401,7 @@ void setSed1376Attached(bool attached){
       memset(&bankType[START_BANK(chips[CHIP_B0_SED].start)], attached ? CHIP_B0_SED : CHIP_NONE, END_BANK(chips[CHIP_B0_SED].start, chips[CHIP_B0_SED].lineSize) - START_BANK(chips[CHIP_B0_SED].start) + 1);
 }
 
-void resetAddressSpace(){
+void resetAddressSpace(void){
    uint32_t bank;
 
    MULTITHREAD_LOOP for(bank = 0; bank < TOTAL_MEMORY_BANKS; bank++)
