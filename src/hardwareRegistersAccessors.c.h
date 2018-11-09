@@ -125,7 +125,7 @@ static void pwm1FifoFlush(void){
 //register setters
 static void setCsa(uint16_t value){
    chips[CHIP_A0_ROM].enable = value & 0x0001;
-   chips[CHIP_A0_ROM].readOnly = value & 0x8000;
+   chips[CHIP_A0_ROM].readOnly = !!(value & 0x8000);
    chips[CHIP_A0_ROM].lineSize = 0x20000/*128kb*/ << (value >> 1 & 0x0007);
 
    //CSA is now just a normal chip select
@@ -144,12 +144,12 @@ static void setCsb(uint16_t value){
    uint16_t csControl1 = registerArrayRead16(CSCTRL1);
 
    chips[CHIP_B0_SED].enable = value & 0x0001;
-   chips[CHIP_B0_SED].readOnly = value & 0x8000;
+   chips[CHIP_B0_SED].readOnly = !!(value & 0x8000);
    chips[CHIP_B0_SED].lineSize = 0x20000/*128kb*/ << (value >> 1 & 0x0007);
 
    //attributes
-   chips[CHIP_B0_SED].supervisorOnlyProtectedMemory = value & 0x4000;
-   chips[CHIP_B0_SED].readOnlyForProtectedMemory = value & 0x2000;
+   chips[CHIP_B0_SED].supervisorOnlyProtectedMemory = !!(value & 0x4000);
+   chips[CHIP_B0_SED].readOnlyForProtectedMemory = !!(value & 0x2000);
    if(csControl1 & 0x4000 && csControl1 & 0x0001)
       chips[CHIP_B0_SED].unprotectedSize = chips[CHIP_B0_SED].lineSize / (1 << 7 - ((value >> 11 & 0x0003) | 0x0004));
    else
@@ -162,15 +162,15 @@ static void setCsd(uint16_t value){
    uint16_t csControl1 = registerArrayRead16(CSCTRL1);
 
    chips[CHIP_DX_RAM].enable = value & 0x0001;
-   chips[CHIP_DX_RAM].readOnly = value & 0x8000;
+   chips[CHIP_DX_RAM].readOnly = !!(value & 0x8000);
    if(csControl1 & 0x0040 && value & 0x0200)
       chips[CHIP_DX_RAM].lineSize = 0x800000/*8mb*/ << (value >> 1 & 0x0001);
    else
       chips[CHIP_DX_RAM].lineSize = 0x8000/*32kb*/ << (value >> 1 & 0x0007);
 
    //attributes
-   chips[CHIP_DX_RAM].supervisorOnlyProtectedMemory = value & 0x4000;
-   chips[CHIP_DX_RAM].readOnlyForProtectedMemory = value & 0x2000;
+   chips[CHIP_DX_RAM].supervisorOnlyProtectedMemory = !!(value & 0x4000);
+   chips[CHIP_DX_RAM].readOnlyForProtectedMemory = !!(value & 0x2000);
    if(csControl1 & 0x4000 && csControl1 & 0x0010)
       chips[CHIP_DX_RAM].unprotectedSize = chips[CHIP_DX_RAM].lineSize / (1 << 7 - ((value >> 11 & 0x0003) | 0x0004));
    else

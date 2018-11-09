@@ -41,6 +41,7 @@ the unemulated chip selects(CSB1, CSC0/1) privilege violation interrupts will no
 
 SED1376:
 swivelview register
+16 bpp mode is broken and crushed to the top of the screen
 
 ADS7846:
 verify chip select(no test has been done yet, put everything points to port g bit 2)

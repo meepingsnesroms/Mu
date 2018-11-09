@@ -402,7 +402,28 @@ static void freePalmString(uint32_t address){
 }
 
 static bool installResourceToDevice(buffer_t resourceBuffer){
-   uint32_t palmSideResourceData = callFunction(false, 0x00000000, MemPtrNew, "p(l)", (uint32_t)resourceBuffer.size);
+   /*
+   #define memNewChunkFlagNonMovable    0x0200
+   #define memNewChunkFlagAllowLarge    0x1000  // this is not in the sdk *g*
+
+   void *MemPtrNewL ( UInt32 size ) {
+
+     SysAppInfoPtr appInfoP;
+     UInt16        ownerID;
+
+     ownerID =
+       ((SysAppInfoPtr)SysGetAppInfo(&appInfoP, &appInfoP))->memOwnerID;
+
+     return MemChunkNew ( 0, size, ownerID |
+                memNewChunkFlagNonMovable |
+                memNewChunkFlagAllowLarge );
+
+   }
+   */
+
+   //uint32_t palmSideResourceData = callFunction(false, 0x00000000, MemPtrNew, "p(l)", (uint32_t)resourceBuffer.size);
+   uint32_t palmSideResourceData = callFunction(false, 0x00000000, MemChunkNew, "p(wlw)", 1/*heapID, storage RAM*/, (uint32_t)resourceBuffer.size, 0x1200/*attr, seems to work without memOwnerID*/);
+   bool storageRamReadOnly = chips[CHIP_DX_RAM].readOnlyForProtectedMemory;
    uint16_t error;
    uint32_t count;
 
@@ -410,8 +431,10 @@ static bool installResourceToDevice(buffer_t resourceBuffer){
    if(!palmSideResourceData)
       return false;
 
+   chips[CHIP_DX_RAM].readOnlyForProtectedMemory = false;//need to unprotect storage RAM
    for(count = 0; count < resourceBuffer.size; count++)
       m68k_write_memory_8(palmSideResourceData + count, resourceBuffer.data[count]);
+   chips[CHIP_DX_RAM].readOnlyForProtectedMemory = storageRamReadOnly;//restore old protection state
    error = callFunction(false, 0x00000000, DmCreateDatabaseFromImage, "w(p)", palmSideResourceData);//Err DmCreateDatabaseFromImage(MemPtr bufferP);//this looks best
    callFunction(false, 0x00000000, MemChunkFree, "w(p)", palmSideResourceData);
 
