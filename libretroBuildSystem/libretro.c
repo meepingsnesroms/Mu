@@ -39,9 +39,6 @@ static double   touchCursorY;
 
 
 static void renderMouseCursor(int16_t screenX, int16_t screenY){
-   static const uint16_t* joystickCursor16 = cursor16x16;
-   static const uint16_t* joystickCursor32 = cursor32x32;
-   
    if(screenHires){
       int8_t x;
       int8_t y;
@@ -52,8 +49,8 @@ static void renderMouseCursor(int16_t screenX, int16_t screenY){
       for(y = 0; y < 32; y++)
          for(x = 6; x < 26; x++)
             if(screenX + x >= 0 && screenY + y >= 0 && screenX + x < 320 && screenY + y < 440)
-               if(joystickCursor32[y * 32 + x] != 0x0000)
-                  screenData[(screenY + y) * 320 + screenX + x] = joystickCursor32[y * 32 + x];
+               if(cursor32x32[y * 32 + x] != 0xFFFF)
+                  screenData[(screenY + y) * 320 + screenX + x] = cursor32x32[y * 32 + x];
    }
    else{
       int8_t x;
@@ -65,8 +62,8 @@ static void renderMouseCursor(int16_t screenX, int16_t screenY){
       for(y = 0; y < 16; y++)
          for(x = 3; x < 13; x++)
             if(screenX + x >= 0 && screenY + y >= 0 && screenX + x < 160 && screenY + y < 220)
-               if(joystickCursor16[y * 16 + x] != 0x0000)
-                  screenData[(screenY + y) * 160 + screenX + x] = joystickCursor16[y * 16 + x];
+               if(cursor16x16[y * 16 + x] != 0xFFFF)
+                  screenData[(screenY + y) * 160 + screenX + x] = cursor16x16[y * 16 + x];
    }
 }
 

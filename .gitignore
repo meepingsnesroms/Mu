@@ -16,3 +16,4 @@
 /tools/palm/hwTestSuite/TstSuite-sections.ld
 /tools/desktop/build-BufferGraphViewer-*
 /tools/desktop/build-MakePalmIcon-*
+/tools/desktop/export16BitImageProperly/convert

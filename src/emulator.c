@@ -100,10 +100,10 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t spec
       memset(palmReg + REG_SIZE - 1 - BOOTLOADER_SIZE, 0x00, BOOTLOADER_SIZE);
    }
    memset(palmFramebuffer, 0x00, 160 * 160 * sizeof(uint16_t));
-   memcpy(&palmFramebuffer[160 * 160], silkscreenData, SILKSCREEN_WIDTH * SILKSCREEN_HEIGHT * (SILKSCREEN_BPP / 8));
+   memcpy(palmFramebuffer + 160 * 160, silkscreen160x60, 160 * 60 * sizeof(uint16_t));
    if(palmExtendedFramebuffer){
       memset(palmExtendedFramebuffer, 0x00, 320 * 320 * sizeof(uint16_t));
-      //add 320*320 silkscreen image later, 2xBRZ should be able to make 320*320 version of the 160*160 silkscreen
+      memcpy(palmExtendedFramebuffer + 320 * 320, silkscreen320x120, 320 * 120 * sizeof(uint16_t));
    }
    memset(palmAudio, 0x00, AUDIO_SAMPLES_PER_FRAME * 2/*channels*/ * sizeof(int16_t));
    blip_set_rates(palmAudioResampler, AUDIO_CLOCK_RATE, AUDIO_SAMPLE_RATE);

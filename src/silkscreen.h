@@ -1,10 +1,9 @@
 #ifndef SILKSCREEN_H
 #define SILKSCREEN_H
 
-#define SILKSCREEN_WIDTH   160
-#define SILKSCREEN_HEIGHT  60
-#define SILKSCREEN_BPP     16
+#include <stdint.h>
 
-extern const unsigned char silkscreenData[];
+extern const uint16_t silkscreen160x60[];
+extern const uint16_t silkscreen320x120[];
 
 #endif
