@@ -70,7 +70,6 @@ extern uint32_t clk32Counter;
 extern double   pctlrCpuClockDivider;
 extern double   timerCycleCounter[];
 extern uint16_t timerStatusReadAcknowledge[];
-extern uint32_t interruptEdgeTriggered;
 extern uint16_t spi1RxFifo[];
 extern uint16_t spi1TxFifo[];
 extern uint8_t  spi1RxReadPosition;

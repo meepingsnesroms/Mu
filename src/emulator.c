@@ -197,7 +197,6 @@ uint64_t emulatorGetStateSize(void){
    size += sizeof(uint32_t);//clk32Counter
    size += sizeof(uint64_t);//pctlrCpuClockDivider
    size += sizeof(uint16_t) * 2;//timerStatusReadAcknowledge
-   size += sizeof(uint32_t);//interruptEdgeTriggered
    size += sizeof(uint16_t) * 9;//RX 8 * 16 SPI1 FIFO, 1 index is for FIFO full
    size += sizeof(uint16_t) * 9;//TX 8 * 16 SPI1 FIFO, 1 index is for FIFO full
    size += sizeof(uint8_t) * 4;//spi1(R/T)x(Read/Write)Position
@@ -301,8 +300,6 @@ bool emulatorSaveState(buffer_t buffer){
    offset += sizeof(uint16_t);
    writeStateValue16(buffer.data + offset, timerStatusReadAcknowledge[1]);
    offset += sizeof(uint16_t);
-   writeStateValue32(buffer.data + offset, interruptEdgeTriggered);
-   offset += sizeof(uint32_t);
 
    //SPI1
    for(index = 0; index < 9; index++){
@@ -460,8 +457,6 @@ bool emulatorLoadState(buffer_t buffer){
    offset += sizeof(uint16_t);
    timerStatusReadAcknowledge[1] = readStateValue16(buffer.data + offset);
    offset += sizeof(uint16_t);
-   interruptEdgeTriggered = readStateValue32(buffer.data + offset);
-   offset += sizeof(uint32_t);
 
    //SPI1
    for(index = 0; index < 9; index++){

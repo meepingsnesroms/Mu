@@ -22,7 +22,6 @@ uint32_t clk32Counter;
 double   pctlrCpuClockDivider;
 double   timerCycleCounter[2];
 uint16_t timerStatusReadAcknowledge[2];
-uint32_t interruptEdgeTriggered;
 uint16_t spi1RxFifo[9];
 uint16_t spi1TxFifo[9];
 uint8_t  spi1RxReadPosition;
@@ -203,15 +202,16 @@ static void checkInterrupts(void){
 
 static void checkPortDInterrupts(void){
    uint8_t portDValue = getPortDValue();
-   //uint8_t portDKeyboardEnable = registerArrayRead8(PDKBEN);
    uint8_t portDIrqPins = ~registerArrayRead8(PDSEL);
    uint8_t portDEdgeTriggered = registerArrayRead8(PDIRQEG);
    uint16_t interruptControlRegister = registerArrayRead16(ICR);
    uint8_t triggeredIntXInterrupts = portDValue & registerArrayRead8(PDIRQEN);
+   bool pllOn = pllIsOn();
 
    //On hardware PDIRQEG seems not to actually work at all(CPUID:0x57000000), unimplementedHardware.txt
    //the correct behavior is not being used right now because it doesnt seem to happen on the actual device
 
+   /*
    if(triggeredIntXInterrupts & 0x01)
       setIprIsrBit(INT_INT0);
    else
@@ -231,100 +231,51 @@ static void checkPortDInterrupts(void){
       setIprIsrBit(INT_INT3);
    else
       clearIprIsrBit(INT_INT3);
-
-   /*
-   if(triggeredIntXInterrupts & 0x01){
-      if(!(portDEdgeTriggered & 0x01) || (!(interruptEdgeTriggered & INT_INT0)/* && pllIsOn()*/))
-         setIprIsrBit(INT_INT0);
-      interruptEdgeTriggered |= INT_INT0;
-   }
-   else{
-      if(!(portDEdgeTriggered & 0x01))
-         clearIprIsrBit(INT_INT0);
-      interruptEdgeTriggered &= ~INT_INT0;
-   }
-
-   if(triggeredIntXInterrupts & 0x02){
-      if(!(portDEdgeTriggered & 0x02) || (!(interruptEdgeTriggered & INT_INT1)/* && pllIsOn()*/))
-         setIprIsrBit(INT_INT1);
-      interruptEdgeTriggered |= INT_INT1;
-   }
-   else{
-      if(!(portDEdgeTriggered & 0x02))
-         clearIprIsrBit(INT_INT1);
-      interruptEdgeTriggered &= ~INT_INT1;
-   }
-
-   if(triggeredIntXInterrupts & 0x04){
-      if(!(portDEdgeTriggered & 0x04) || (!(interruptEdgeTriggered & INT_INT2)/* && pllIsOn()*/))
-         setIprIsrBit(INT_INT2);
-      interruptEdgeTriggered |= INT_INT2;
-   }
-   else{
-      if(!(portDEdgeTriggered & 0x04))
-         clearIprIsrBit(INT_INT2);
-      interruptEdgeTriggered &= ~INT_INT2;
-   }
-
-   if(triggeredIntXInterrupts & 0x08){
-      if(!(portDEdgeTriggered & 0x08) || (!(interruptEdgeTriggered & INT_INT3)/* && pllIsOn()*/))
-         setIprIsrBit(INT_INT3);
-      interruptEdgeTriggered |= INT_INT3;
-   }
-   else{
-      if(!(portDEdgeTriggered & 0x08))
-         clearIprIsrBit(INT_INT3);
-      interruptEdgeTriggered &= ~INT_INT3;
-   }
    */
 
+   if(triggeredIntXInterrupts & 0x01/* && (!(portDEdgeTriggered & 0x01) || pllOn)*/)
+      setIprIsrBit(INT_INT0);
+   else if(!(portDEdgeTriggered & 0x01))
+      clearIprIsrBit(INT_INT0);
+
+   if(triggeredIntXInterrupts & 0x02/* && (!(portDEdgeTriggered & 0x02) || pllOn)*/)
+      setIprIsrBit(INT_INT1);
+   else if(!(portDEdgeTriggered & 0x02))
+      clearIprIsrBit(INT_INT1);
+
+   if(triggeredIntXInterrupts & 0x04/* && (!(portDEdgeTriggered & 0x04) || pllOn)*/)
+      setIprIsrBit(INT_INT2);
+   else if(!(portDEdgeTriggered & 0x04))
+      clearIprIsrBit(INT_INT2);
+
+   if(triggeredIntXInterrupts & 0x08/* && (!(portDEdgeTriggered & 0x08) || pllOn)*/)
+      setIprIsrBit(INT_INT3);
+   else if(!(portDEdgeTriggered & 0x08))
+      clearIprIsrBit(INT_INT3);
+
    //IRQ1, polarity set in ICR
-   if(portDIrqPins & 0x10 && !!(portDValue & 0x10) == !!(interruptControlRegister & 0x8000)){
-      if(!(interruptControlRegister & 0x0800) || !(interruptEdgeTriggered & INT_IRQ1))
-         setIprIsrBit(INT_IRQ1);
-      interruptEdgeTriggered |= INT_IRQ1;
-   }
-   else{
-      if(!(interruptControlRegister & 0x0800))
-         clearIprIsrBit(INT_IRQ1);
-      interruptEdgeTriggered &= ~INT_IRQ1;
-   }
+   if(portDIrqPins & 0x10 && !!(portDValue & 0x10) == !!(interruptControlRegister & 0x8000))
+      setIprIsrBit(INT_IRQ1);
+   else if(!(interruptControlRegister & 0x0800))
+      clearIprIsrBit(INT_IRQ1);
 
    //IRQ2, polarity set in ICR
-   if(portDIrqPins & 0x20 && !!(portDValue & 0x20) == !!(interruptControlRegister & 0x4000)){
-      if(!(interruptControlRegister & 0x0400) || !(interruptEdgeTriggered & INT_IRQ2))
-         setIprIsrBit(INT_IRQ2);
-      interruptEdgeTriggered |= INT_IRQ2;
-   }
-   else{
-      if(!(interruptControlRegister & 0x0400))
-         clearIprIsrBit(INT_IRQ2);
-      interruptEdgeTriggered &= ~INT_IRQ2;
-   }
+   if(portDIrqPins & 0x20 && !!(portDValue & 0x20) == !!(interruptControlRegister & 0x4000))
+      setIprIsrBit(INT_IRQ2);
+   else if(!(interruptControlRegister & 0x0400))
+      clearIprIsrBit(INT_IRQ2);
 
    //IRQ3, polarity set in ICR
-   if(portDIrqPins & 0x40 && !!(portDValue & 0x40) == !!(interruptControlRegister & 0x2000)){
-      if(!(interruptControlRegister & 0x0200) || !(interruptEdgeTriggered & INT_IRQ3))
-         setIprIsrBit(INT_IRQ3);
-      interruptEdgeTriggered |= INT_IRQ3;
-   }
-   else{
-      if(!(interruptControlRegister & 0x0200))
-         clearIprIsrBit(INT_IRQ3);
-      interruptEdgeTriggered &= ~INT_IRQ3;
-   }
+   if(portDIrqPins & 0x40 && !!(portDValue & 0x40) == !!(interruptControlRegister & 0x2000))
+      setIprIsrBit(INT_IRQ3);
+   else if(!(interruptControlRegister & 0x0200))
+      clearIprIsrBit(INT_IRQ3);
 
    //IRQ6, polarity set in ICR
-   if(portDIrqPins & 0x80 && !!(portDValue & 0x80) == !!(interruptControlRegister & 0x1000)){
-      if(!(interruptControlRegister & 0x0100) || !(interruptEdgeTriggered & INT_IRQ6))
-         setIprIsrBit(INT_IRQ6);
-      interruptEdgeTriggered |= INT_IRQ6;
-   }
-   else{
-      if(!(interruptControlRegister & 0x0100))
-         clearIprIsrBit(INT_IRQ6);
-      interruptEdgeTriggered &= ~INT_IRQ6;
-   }
+   if(portDIrqPins & 0x80 && !!(portDValue & 0x80) == !!(interruptControlRegister & 0x1000))
+      setIprIsrBit(INT_IRQ6);
+   else if(!(interruptControlRegister & 0x0100))
+      clearIprIsrBit(INT_IRQ6);
 
    //active low/off level triggered interrupt
    //The SELx, POLx, IQENx, and IQEGx bits have no effect on the functionality of KBENx, 10.4.5.8 Port D Keyboard Enable Register MC68VZ328UM.pdf
@@ -332,7 +283,7 @@ static void checkPortDInterrupts(void){
    //completely removing PDKBEN is not accurate but makes the buttons function properly
    //I am fairly sure that port d is not documented properly by the data sheet so Im going with what works properly right now
    /*
-   if(portDKeyboardEnable & ~portDValue)
+   if(registerArrayRead8(PDKBEN) & portDValue)
       setIprIsrBit(INT_KB);
    else
       clearIprIsrBit(INT_KB);
@@ -1081,7 +1032,6 @@ void resetHwRegisters(void){
    timerCycleCounter[1] = 0.0;
    timerStatusReadAcknowledge[0] = 0x0000;
    timerStatusReadAcknowledge[1] = 0x0000;
-   interruptEdgeTriggered = 0x00000000;
    memset(spi1RxFifo, 0x00, sizeof(spi1RxFifo));
    memset(spi1TxFifo, 0x00, sizeof(spi1TxFifo));
    spi1RxReadPosition = 0;
