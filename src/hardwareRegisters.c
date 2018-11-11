@@ -202,14 +202,12 @@ static void checkInterrupts(void){
 }
 
 static void checkPortDInterrupts(void){
-   uint8_t portDInputValues = getPortDInputPinValues();
-   uint8_t portDInputValuesWithPolarity = portDInputValues ^ registerArrayRead8(PDPOL);
-   uint8_t portDDir = registerArrayRead8(PDDIR);
-   uint8_t portDKeyboardEnable = registerArrayRead8(PDKBEN);
+   uint8_t portDValue = getPortDValue();
+   //uint8_t portDKeyboardEnable = registerArrayRead8(PDKBEN);
    uint8_t portDIrqPins = ~registerArrayRead8(PDSEL);
    uint8_t portDEdgeTriggered = registerArrayRead8(PDIRQEG);
    uint16_t interruptControlRegister = registerArrayRead16(ICR);
-   uint8_t triggeredIntXInterrupts = portDInputValuesWithPolarity & registerArrayRead8(PDIRQEN) & ~portDDir;
+   uint8_t triggeredIntXInterrupts = portDValue & registerArrayRead8(PDIRQEN);
 
    //On hardware PDIRQEG seems not to actually work at all(CPUID:0x57000000), unimplementedHardware.txt
    //the correct behavior is not being used right now because it doesnt seem to happen on the actual device
@@ -236,7 +234,7 @@ static void checkPortDInterrupts(void){
 
    /*
    if(triggeredIntXInterrupts & 0x01){
-      if(!(portDEdgeTriggered & 0x01) || (!(interruptEdgeTriggered & INT_INT0) && pllIsOn()))
+      if(!(portDEdgeTriggered & 0x01) || (!(interruptEdgeTriggered & INT_INT0)/* && pllIsOn()*/))
          setIprIsrBit(INT_INT0);
       interruptEdgeTriggered |= INT_INT0;
    }
@@ -247,7 +245,7 @@ static void checkPortDInterrupts(void){
    }
 
    if(triggeredIntXInterrupts & 0x02){
-      if(!(portDEdgeTriggered & 0x02) || (!(interruptEdgeTriggered & INT_INT1) && pllIsOn()))
+      if(!(portDEdgeTriggered & 0x02) || (!(interruptEdgeTriggered & INT_INT1)/* && pllIsOn()*/))
          setIprIsrBit(INT_INT1);
       interruptEdgeTriggered |= INT_INT1;
    }
@@ -258,7 +256,7 @@ static void checkPortDInterrupts(void){
    }
 
    if(triggeredIntXInterrupts & 0x04){
-      if(!(portDEdgeTriggered & 0x04) || (!(interruptEdgeTriggered & INT_INT2) && pllIsOn()))
+      if(!(portDEdgeTriggered & 0x04) || (!(interruptEdgeTriggered & INT_INT2)/* && pllIsOn()*/))
          setIprIsrBit(INT_INT2);
       interruptEdgeTriggered |= INT_INT2;
    }
@@ -269,7 +267,7 @@ static void checkPortDInterrupts(void){
    }
 
    if(triggeredIntXInterrupts & 0x08){
-      if(!(portDEdgeTriggered & 0x08) || (!(interruptEdgeTriggered & INT_INT3) && pllIsOn()))
+      if(!(portDEdgeTriggered & 0x08) || (!(interruptEdgeTriggered & INT_INT3)/* && pllIsOn()*/))
          setIprIsrBit(INT_INT3);
       interruptEdgeTriggered |= INT_INT3;
    }
@@ -281,7 +279,7 @@ static void checkPortDInterrupts(void){
    */
 
    //IRQ1, polarity set in ICR
-   if(portDIrqPins & ~portDDir & 0x10 && !!(portDInputValues & 0x10) == !!(interruptControlRegister & 0x8000)){
+   if(portDIrqPins & 0x10 && !!(portDValue & 0x10) == !!(interruptControlRegister & 0x8000)){
       if(!(interruptControlRegister & 0x0800) || !(interruptEdgeTriggered & INT_IRQ1))
          setIprIsrBit(INT_IRQ1);
       interruptEdgeTriggered |= INT_IRQ1;
@@ -293,7 +291,7 @@ static void checkPortDInterrupts(void){
    }
 
    //IRQ2, polarity set in ICR
-   if(portDIrqPins & ~portDDir & 0x20 && !!(portDInputValues & 0x20) == !!(interruptControlRegister & 0x4000)){
+   if(portDIrqPins & 0x20 && !!(portDValue & 0x20) == !!(interruptControlRegister & 0x4000)){
       if(!(interruptControlRegister & 0x0400) || !(interruptEdgeTriggered & INT_IRQ2))
          setIprIsrBit(INT_IRQ2);
       interruptEdgeTriggered |= INT_IRQ2;
@@ -305,7 +303,7 @@ static void checkPortDInterrupts(void){
    }
 
    //IRQ3, polarity set in ICR
-   if(portDIrqPins & ~portDDir & 0x40 && !!(portDInputValues & 0x40) == !!(interruptControlRegister & 0x2000)){
+   if(portDIrqPins & 0x40 && !!(portDValue & 0x40) == !!(interruptControlRegister & 0x2000)){
       if(!(interruptControlRegister & 0x0200) || !(interruptEdgeTriggered & INT_IRQ3))
          setIprIsrBit(INT_IRQ3);
       interruptEdgeTriggered |= INT_IRQ3;
@@ -317,7 +315,7 @@ static void checkPortDInterrupts(void){
    }
 
    //IRQ6, polarity set in ICR
-   if(portDIrqPins & ~portDDir & 0x80 && !!(portDInputValues & 0x80) == !!(interruptControlRegister & 0x1000)){
+   if(portDIrqPins & 0x80 && !!(portDValue & 0x80) == !!(interruptControlRegister & 0x1000)){
       if(!(interruptControlRegister & 0x0100) || !(interruptEdgeTriggered & INT_IRQ6))
          setIprIsrBit(INT_IRQ6);
       interruptEdgeTriggered |= INT_IRQ6;
@@ -329,11 +327,16 @@ static void checkPortDInterrupts(void){
    }
 
    //active low/off level triggered interrupt
-   //The SELx, POLx, IQENx, and IQEGx bits have no effect on the functionality of KBENx
-   if(portDKeyboardEnable & ~portDInputValues & ~portDDir)
+   //The SELx, POLx, IQENx, and IQEGx bits have no effect on the functionality of KBENx, 10.4.5.8 Port D Keyboard Enable Register MC68VZ328UM.pdf
+   //the above seems like a lie, 10.4.4 Port D Operation MC68VZ328UM.pdf
+   //completely removing PDKBEN is not accurate but makes the buttons function properly
+   //I am fairly sure that port d is not documented properly by the data sheet so Im going with what works properly right now
+   /*
+   if(portDKeyboardEnable & ~portDValue)
       setIprIsrBit(INT_KB);
    else
       clearIprIsrBit(INT_KB);
+   */
 
    checkInterrupts();
 }
@@ -659,6 +662,13 @@ void setHwRegister8(uint32_t address, uint8_t value){
          checkPortDInterrupts();
          break;
 
+      case PDDATA:
+      case PDKBEN:
+         //can change interrupt state
+         registerArrayWrite8(address, value);
+         checkPortDInterrupts();
+         break;
+
       case PFSEL:
          //this is the clock output pin for the SED1376, if its disabled so is the LCD controller
          registerArrayWrite8(PFSEL, value);
@@ -721,13 +731,9 @@ void setHwRegister8(uint32_t address, uint8_t value){
 
       //port data value, nothing known is attached to port
       case PCDATA:
-      case PDDATA:
       case PEDATA:
       case PFDATA:
       case PJDATA:
-
-      //misc port config
-      case PDKBEN:
 
       //dragonball LCD controller, not attached to anything in Palm m515
       case LCKCON:
