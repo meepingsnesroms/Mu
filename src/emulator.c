@@ -620,7 +620,7 @@ void emulatorRunFrame(void){
          memcpy(palmExtendedFramebuffer + pixCopyY * 320 * 2 + 320, palmExtendedFramebuffer + pixCopyY * 320 * 2, 320 * sizeof(uint16_t));
       }
 
-      //replace all black pixels in 120x120 with those from 320x320 framebuffer memory, only if black in both buffers will the display color be black, this allows all the 160x160 APIs to work on the larger framebuffer seamlessly
+      //replace all black pixels in 160x160 with those from 320x320 framebuffer memory, only if black in both buffers will the display color be black, this allows all the 160x160 APIs to work on the larger framebuffer seamlessly
       //DRIVER NEEDS TO BE WRITTEN STILL
       //the above was enabled early so using the hires silkscreen and mouse cursor was possible in RetroArch
    }
