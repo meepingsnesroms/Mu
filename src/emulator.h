@@ -67,22 +67,22 @@ typedef struct{
 }buffer_t;
 
 typedef struct{
-   bool     buttonUp;
-   bool     buttonDown;
-   bool     buttonLeft;//only used in hybrid mode
-   bool     buttonRight;//only used in hybrid mode
-   bool     buttonSelect;//only used in hybrid mode
+   bool  buttonUp;
+   bool  buttonDown;
+   bool  buttonLeft;//only used in hybrid mode
+   bool  buttonRight;//only used in hybrid mode
+   bool  buttonSelect;//only used in hybrid mode
    
-   bool     buttonCalendar;//hw button 1
-   bool     buttonAddress;//hw button 2
-   bool     buttonTodo;//hw button 3
-   bool     buttonNotes;//hw button 4
+   bool  buttonCalendar;//hw button 1
+   bool  buttonAddress;//hw button 2
+   bool  buttonTodo;//hw button 3
+   bool  buttonNotes;//hw button 4
    
-   bool     buttonPower;
+   bool  buttonPower;
    
-   uint16_t touchscreenX;
-   uint16_t touchscreenY;
-   bool     touchscreenTouched;
+   float touchscreenX;//0.0 = left, 1.0 = right
+   float touchscreenY;//0.0 = top, 1.0 = bottom
+   bool  touchscreenTouched;
 }input_t;
 
 typedef struct{
