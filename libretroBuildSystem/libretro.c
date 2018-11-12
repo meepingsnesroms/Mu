@@ -302,7 +302,7 @@ void retro_run(void){
    
    //draw mouse
    if(useJoystickAsMouse)
-       renderMouseCursor(palmInput.touchscreenX, palmInput.touchscreenY);
+      renderMouseCursor(palmInput.touchscreenX, palmInput.touchscreenY);
    
    video_cb(screenData, screenWidth, screenHeight, screenWidth * sizeof(uint16_t));
    audio_cb(palmAudio, AUDIO_SAMPLES_PER_FRAME);

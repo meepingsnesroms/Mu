@@ -206,7 +206,7 @@ static void checkPortDInterrupts(void){
    uint8_t portDEdgeTriggered = registerArrayRead8(PDIRQEG);
    uint16_t interruptControlRegister = registerArrayRead16(ICR);
    uint8_t triggeredIntXInterrupts = portDValue & registerArrayRead8(PDIRQEN);
-   bool pllOn = pllIsOn();
+   //bool pllOn = pllIsOn();
 
    //On hardware PDIRQEG seems not to actually work at all(CPUID:0x57000000), unimplementedHardware.txt
    //the correct behavior is not being used right now because it doesnt seem to happen on the actual device
