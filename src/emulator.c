@@ -4,7 +4,6 @@
 #include <string.h>
 
 #include "audio/blip_buf.h"
-#include "audio/inductor.h"
 #include "flx68000.h"
 #include "emulator.h"
 #include "hardwareRegisters.h"
@@ -111,7 +110,6 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t spec
    sed1376Reset();
    ads7846Reset();
    pdiUsbD12Reset();
-   inductorReset();
    sandboxInit();
 
    memset(&palmInput, 0x00, sizeof(palmInput));
@@ -157,7 +155,6 @@ void emulatorHardReset(void){
    sed1376Reset();
    ads7846Reset();
    pdiUsbD12Reset();
-   inductorReset();
    setRtc(0, 0, 0, 0);
 }
 
@@ -203,7 +200,6 @@ uint64_t emulatorGetStateSize(void){
    size += sizeof(int32_t);//pwm1ClocksToNextSample
    size += sizeof(uint8_t) * 6;//pwm1Fifo[6]
    size += sizeof(uint8_t) * 2;//pwm1(Read/Write)
-   size += sizeof(uint64_t) * 2;//inductorCurrentCharge / inductorChargeAtLastSample
    size += sizeof(uint8_t) * 7;//palmMisc
    size += sizeof(uint32_t);//palmSdCard.command
    size += sizeof(uint8_t) * 2;//palmSdCard.response / palmSdCard.commandBitsRemaining
@@ -330,10 +326,6 @@ bool emulatorSaveState(buffer_t buffer){
    offset += sizeof(uint8_t);
    writeStateValue8(buffer.data + offset, pwm1WritePosition);
    offset += sizeof(uint8_t);
-   writeStateValueDouble(buffer.data + offset, inductorCurrentCharge);
-   offset += sizeof(uint64_t);
-   writeStateValueDouble(buffer.data + offset, inductorChargeAtLastSample);
-   offset += sizeof(uint64_t);
 
    //misc
    writeStateValueBool(buffer.data + offset, palmMisc.powerButtonLed);
@@ -487,10 +479,6 @@ bool emulatorLoadState(buffer_t buffer){
    offset += sizeof(uint8_t);
    pwm1WritePosition = readStateValue8(buffer.data + offset);
    offset += sizeof(uint8_t);
-   inductorCurrentCharge = readStateValueDouble(buffer.data + offset);
-   offset += sizeof(uint64_t);
-   inductorChargeAtLastSample = readStateValueDouble(buffer.data + offset);
-   offset += sizeof(uint64_t);
 
    //misc
    palmMisc.powerButtonLed = readStateValueBool(buffer.data + offset);
