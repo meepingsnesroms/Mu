@@ -1,9 +1,9 @@
-PSP
 classics/new haxchi(should work)
 xbox(don't know)
 xbox360(don't know)
 
 Fixed:
+PSP
 msvc2010
 msvc2003
 remove old haxchi

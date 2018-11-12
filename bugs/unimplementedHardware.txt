@@ -23,7 +23,6 @@ power button must be pushed twice to turn the CPU back on(when debugging it work
 RxOverflow on SPI1, don't know if back or front of FIFO is overwritten on overflow(currently losing oldest entry)
 ICR POL(1,2,3,6) may flip the pin value as well as the interrupt, POL5 does not flip the INT5 pin though, this was confirmed with a hardware test(it doesnt seem to but there is instability on the pin when the SD card is plugged in, this may have to do with card detect also being a data line on the SD pinout)
 edge triggered INT* don't clear on write to ISR when masked in IMR(at least that seems to be the reason)
-if a sound interrupt is triggered while the button interrupt is disabled the button interrupt will still trigger(in galax game)
 Cyclone will cause SIGSEGVs, don't know why yet
 PWM2 is not implemented
 don't know if flushing the PWM1 FIFO sets all the bytes to 0x00, or just sets the read pointer to the write pointer preserving the newest sample and making the size 0(readPtr = writePtr has significantly cleaner audio then 0ing it out though)
@@ -36,20 +35,21 @@ MakePalmBitmap:
 Memory:
 SD card can't be read or written to by Palm OS
 unknown if DRAM bit expanded address space is used for CSC when its not an extension of CSD
-there is conflicting information on wether the DRAM bit effects CSC, needs a test made
+there is conflicting information on whether the DRAM bit effects CSC, needs a test made
 the unemulated chip selects(CSB1, CSC0/1) privilege violation interrupts will not be handled properly
 
 SED1376:
 swivelview register
 
 ADS7846:
-verify chip select(no test has been done yet, put everything points to port g bit 2)
+verify chip select(no test has been done yet, but everything points to port g bit 2)
 need to trigger a false PENIRQ interrupt on reading certain channels
 electrical noise on lines(conversions probably should have +-20 added to values)(probably no need for this, it works so theres no need to use less precise values)
 in the edge case that SPICLK2 is disabled while using ADS7846 and a 1 was the last bit shifted out 0s will still be shifted in
 
 
 Fixed:
+if a sound interrupt is triggered while the button interrupt is disabled the button interrupt will still trigger(in galax game)(seems to be an issue with FIFOAV always = true hack and how INT_PWM1 needed to be cleared on read or write)
 SED1376 16 bpp mode is broken and crushed to the top of the screen
 audio can max out the resampler buffer, the max 1 FIFO sample can play is around 2.16 minutes(CLK32 / period(257) / clockDivider(16) / prescaler(128) / repeat(8))(257 * 16 * 128 * 8 / 32768=128.5 seconds)(safety check added, >= 1 second duty cycle is useless and will just make annoying cracks anyway)
 Cyclone CPU emulator is not working

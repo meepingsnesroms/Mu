@@ -34,8 +34,8 @@ static uint16_t screenHeight;
 static uint16_t screenData[320 * 440];
 static uint32_t emuFeatures;
 static bool     useJoystickAsMouse;
-static double   touchCursorX;
-static double   touchCursorY;
+static float    touchCursorX;
+static float    touchCursorY;
 
 
 static void renderMouseCursor(int16_t screenX, int16_t screenY){
@@ -274,7 +274,10 @@ void retro_run(void){
       palmInput.touchscreenTouched = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R2);
    }
    else{
-      //TODO use physical touchscreen of host device
+      //use RetroArch internal pointer
+      palmInput.touchscreenX = ((float)input_state_cb(0, RETRO_DEVICE_POINTER, 0, RETRO_DEVICE_ID_POINTER_X) / 0x7FFF + 1.0) / 2.0 * 159;
+      palmInput.touchscreenY = ((float)input_state_cb(0, RETRO_DEVICE_POINTER, 0, RETRO_DEVICE_ID_POINTER_Y) / 0x7FFF + 1.0) / 2.0 * 219;
+      palmInput.touchscreenTouched = input_state_cb(0, RETRO_DEVICE_POINTER, 0, RETRO_DEVICE_ID_POINTER_PRESSED);
    }
 
    //dpad
@@ -299,7 +302,7 @@ void retro_run(void){
    
    //draw mouse
    if(useJoystickAsMouse)
-      renderMouseCursor(touchCursorX, touchCursorY);
+      renderMouseCursor(palmInput.touchscreenX, palmInput.touchscreenY);
    
    video_cb(screenData, screenWidth, screenHeight, screenWidth * sizeof(uint16_t));
    audio_cb(palmAudio, AUDIO_SAMPLES_PER_FRAME);

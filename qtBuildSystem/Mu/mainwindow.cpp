@@ -193,7 +193,7 @@ void MainWindow::selectHomePath(){
 //display
 void MainWindow::updateDisplay(){
    if(emu.newFrameReady()){
-      //video
+      //video, this is doing bilinear filitering in software, this is why the Qt port is broken on Android, move this to a new thread if possible
       ui->display->setPixmap(emu.getFramebuffer().scaled(ui->display->size().width(), ui->display->size().height(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
 
       //audio
@@ -213,7 +213,7 @@ void MainWindow::updateDisplay(){
    //printLastRun();
 }
 
-//palm buttons
+//Palm buttons
 void MainWindow::on_power_pressed(){
    emu.emuInput.buttonPower = true;
 }
