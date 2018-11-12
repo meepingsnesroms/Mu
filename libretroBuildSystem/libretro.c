@@ -254,29 +254,29 @@ void retro_run(void){
       int16_t y = input_state_cb(0, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_LEFT, RETRO_DEVICE_ID_ANALOG_Y);
       
       if(x < -JOYSTICK_DEADZONE || x > JOYSTICK_DEADZONE)
-         touchCursorX += x * (screenHires ? JOYSTICK_MULTIPLIER * 2.0 : JOYSTICK_MULTIPLIER);
+         touchCursorX += x * JOYSTICK_MULTIPLIER * (screenHires ? 2.0 : 1.0);
       
       if(y < -JOYSTICK_DEADZONE || y > JOYSTICK_DEADZONE)
-         touchCursorY += y * (screenHires ? JOYSTICK_MULTIPLIER * 2.0 : JOYSTICK_MULTIPLIER);
+         touchCursorY += y * JOYSTICK_MULTIPLIER * (screenHires ? 2.0 : 1.0);
       
       if(touchCursorX < 0)
          touchCursorX = 0;
-      else if(touchCursorX > 159)
-         touchCursorX = 159;
+      else if(touchCursorX > screenWidth - 1)
+         touchCursorX = screenWidth - 1;
       
       if(touchCursorY < 0)
          touchCursorY = 0;
-      else if(touchCursorY > 219)
-         touchCursorY = 219;
+      else if(touchCursorY > screenHeight - 1)
+         touchCursorY = screenHeight - 1;
       
-      palmInput.touchscreenX = touchCursorX;
-      palmInput.touchscreenY = touchCursorY;
+      palmInput.touchscreenX = touchCursorX / (screenWidth - 1);
+      palmInput.touchscreenY = touchCursorY / (screenHeight - 1);
       palmInput.touchscreenTouched = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R2);
    }
    else{
       //use RetroArch internal pointer
-      palmInput.touchscreenX = ((float)input_state_cb(0, RETRO_DEVICE_POINTER, 0, RETRO_DEVICE_ID_POINTER_X) / 0x7FFF + 1.0) / 2.0 * 159;
-      palmInput.touchscreenY = ((float)input_state_cb(0, RETRO_DEVICE_POINTER, 0, RETRO_DEVICE_ID_POINTER_Y) / 0x7FFF + 1.0) / 2.0 * 219;
+      palmInput.touchscreenX = ((float)input_state_cb(0, RETRO_DEVICE_POINTER, 0, RETRO_DEVICE_ID_POINTER_X) / 0x7FFF + 1.0) / 2.0;
+      palmInput.touchscreenY = ((float)input_state_cb(0, RETRO_DEVICE_POINTER, 0, RETRO_DEVICE_ID_POINTER_Y) / 0x7FFF + 1.0) / 2.0;
       palmInput.touchscreenTouched = input_state_cb(0, RETRO_DEVICE_POINTER, 0, RETRO_DEVICE_ID_POINTER_PRESSED);
    }
 
@@ -302,7 +302,7 @@ void retro_run(void){
    
    //draw mouse
    if(useJoystickAsMouse)
-      renderMouseCursor(palmInput.touchscreenX, palmInput.touchscreenY);
+      renderMouseCursor(touchCursorX, touchCursorY);
    
    video_cb(screenData, screenWidth, screenHeight, screenWidth * sizeof(uint16_t));
    audio_cb(palmAudio, AUDIO_SAMPLES_PER_FRAME);

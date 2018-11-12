@@ -42,7 +42,7 @@ enum { time_bits = pre_shift + 20 };
 
 static fixed_t const time_unit = (fixed_t) 1 << time_bits;
 
-enum { bass_shift  = 9 }; /* affects high-pass filter breakpoint frequency */
+enum { bass_shift  = 2 }; /* affects high-pass filter breakpoint frequency */
 enum { end_frame_extra = 2 }; /* allows deltas slightly after frame length */
 
 enum { half_width  = 8 };

@@ -9,40 +9,21 @@
 #define INDUCTOR_SPEAKER_RANGE 0x6000//prevent hitting the top or bottom of the speaker when switching direction rapidly
 
 
-float inductorCurrentCharge;
-float inductorChargeAtLastSample;
-
-
-void inductorReset(void){
-   inductorCurrentCharge = 0.0;
-   inductorChargeAtLastSample = 0.0;
-}
-
 void inductorPwmDutyCycle(int32_t now, int32_t clocks, float dutyCycle){
    int32_t onClocks = clocks * dutyCycle;
    int32_t offClocks = clocks * (1.00 - dutyCycle);
+   float inductorCurrentCharge;
+   float inductorChargeAtLastSample;
 
 #if !defined(EMU_NO_SAFETY)
    if(now + clocks >= AUDIO_CLOCK_RATE)
       return;
 #endif
 
-   inductorCurrentCharge = fMin(inductorCurrentCharge + onClocks * INDUCTOR_CLOCK_POWER, 1.0);
-   blip_add_delta(palmAudioResampler, now, (inductorCurrentCharge - inductorChargeAtLastSample) * INDUCTOR_SPEAKER_RANGE);
+   inductorCurrentCharge = fMin(onClocks * INDUCTOR_CLOCK_POWER, 1.0);
+   blip_add_delta(palmAudioResampler, now, inductorCurrentCharge * INDUCTOR_SPEAKER_RANGE);
    inductorChargeAtLastSample = inductorCurrentCharge;
 
    inductorCurrentCharge = fMax(-1.0, inductorCurrentCharge - offClocks * INDUCTOR_CLOCK_POWER);
    blip_add_delta(palmAudioResampler, now + onClocks, (inductorCurrentCharge - inductorChargeAtLastSample) * INDUCTOR_SPEAKER_RANGE);
-   inductorChargeAtLastSample = inductorCurrentCharge;
-}
-
-void inductorPwmOff(int32_t now, int32_t clocks){
-   //drift towards 0
-   if(inductorCurrentCharge > 0.0)
-      inductorCurrentCharge = fMax(0.0, inductorCurrentCharge - clocks * INDUCTOR_CLOCK_POWER);
-   else
-      inductorCurrentCharge = fMin(inductorCurrentCharge + clocks * INDUCTOR_CLOCK_POWER, 0.0);
-
-   blip_add_delta(palmAudioResampler, now, (inductorCurrentCharge - inductorChargeAtLastSample) * INDUCTOR_SPEAKER_RANGE);
-   inductorChargeAtLastSample = inductorCurrentCharge;
 }
