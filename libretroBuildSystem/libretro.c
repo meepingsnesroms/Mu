@@ -275,8 +275,8 @@ void retro_run(void){
    }
    else{
       //use RetroArch internal pointer
-      palmInput.touchscreenX = ((float)input_state_cb(0, RETRO_DEVICE_POINTER, 0, RETRO_DEVICE_ID_POINTER_X) / 0x7FFF + 1.0) / 0.5 * 159;
-      palmInput.touchscreenY = ((float)input_state_cb(0, RETRO_DEVICE_POINTER, 0, RETRO_DEVICE_ID_POINTER_Y) / 0x7FFF + 1.0) / 0.5 * 219;
+      palmInput.touchscreenX = ((float)input_state_cb(0, RETRO_DEVICE_POINTER, 0, RETRO_DEVICE_ID_POINTER_X) / 0x7FFF + 1.0) / 2.0 * 159;
+      palmInput.touchscreenY = ((float)input_state_cb(0, RETRO_DEVICE_POINTER, 0, RETRO_DEVICE_ID_POINTER_Y) / 0x7FFF + 1.0) / 2.0 * 219;
       palmInput.touchscreenTouched = input_state_cb(0, RETRO_DEVICE_POINTER, 0, RETRO_DEVICE_ID_POINTER_PRESSED);
    }
 
@@ -301,12 +301,8 @@ void retro_run(void){
    memcpy(screenData, screenHires ? palmExtendedFramebuffer : palmFramebuffer, screenWidth * screenHeight * sizeof(uint16_t));
    
    //draw mouse
-#if defined(FRONTEND_HAS_TOUCHSCREEN)
    if(useJoystickAsMouse)
        renderMouseCursor(palmInput.touchscreenX, palmInput.touchscreenY);
-#else
-   renderMouseCursor(palmInput.touchscreenX, palmInput.touchscreenY);
-#endif
    
    video_cb(screenData, screenWidth, screenHeight, screenWidth * sizeof(uint16_t));
    audio_cb(palmAudio, AUDIO_SAMPLES_PER_FRAME);
