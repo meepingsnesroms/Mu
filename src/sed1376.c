@@ -167,7 +167,7 @@ void sed1376LoadState(uint8_t* data){
    offset += SED1376_FB_SIZE;
 
    //refresh LUT
-   MULTITHREAD_LOOP for(index = 0; index < SED1376_LUT_SIZE; index++)
+   MULTITHREAD_LOOP(index) for(index = 0; index < SED1376_LUT_SIZE; index++)
       sed1376OutputLut[index] = makeRgb16FromSed666(sed1376RLut[index], sed1376GLut[index], sed1376BLut[index]);
 }
 
@@ -336,7 +336,7 @@ void sed1376Render(void){
          uint16_t pixelX;
          uint16_t pixelY;
 
-         MULTITHREAD_DOUBLE_LOOP for(pixelY = 0; pixelY < 160; pixelY++)
+         MULTITHREAD_DOUBLE_LOOP(pixelX, pixelY) for(pixelY = 0; pixelY < 160; pixelY++)
             for(pixelX = 0; pixelX < 160; pixelX++)
                palmFramebuffer[pixelY * 160 + pixelX] = renderPixel(pixelX, pixelY);
 
@@ -364,7 +364,7 @@ void sed1376Render(void){
                pipEndY = u16Min(pipEndY, 160);
                screenStartAddress = getPipStartAddress();
                lineSize = (sed1376Registers[PIP_LINE_SZ_1] << 8 | sed1376Registers[PIP_LINE_SZ_0]) * 4;
-               MULTITHREAD_DOUBLE_LOOP for(pixelY = pipStartY; pixelY < pipEndY; pixelY++)
+               MULTITHREAD_DOUBLE_LOOP(pixelX, pixelY) for(pixelY = pipStartY; pixelY < pipEndY; pixelY++)
                   for(pixelX = pipStartX; pixelX < pipEndX; pixelX++)
                      palmFramebuffer[pixelY * 160 + pixelX] = renderPixel(pixelX, pixelY);
             }
@@ -375,20 +375,20 @@ void sed1376Render(void){
 
          //display inversion
          if((sed1376Registers[DISP_MODE] & 0x30) == 0x10)
-            MULTITHREAD_LOOP for(index = 0; index < 160 * 160; index++)
+            MULTITHREAD_LOOP(index) for(index = 0; index < 160 * 160; index++)
                palmFramebuffer[index] = ~palmFramebuffer[index];
 
 
          //backlight level, 0 = 1/4 color intensity, 1 = 1/2 color intensity, 2 = full color intensity
          switch(palmMisc.backlightLevel){
             case 0:
-               MULTITHREAD_LOOP for(index = 0; index < 160 * 160; index++){
+               MULTITHREAD_LOOP(index) for(index = 0; index < 160 * 160; index++){
                   palmFramebuffer[index] >>= 2;
                   palmFramebuffer[index] &= 0x39E7;
                }
                break;
             case 1:
-               MULTITHREAD_LOOP for(index = 0; index < 160 * 160; index++){
+               MULTITHREAD_LOOP(index) for(index = 0; index < 160 * 160; index++){
                   palmFramebuffer[index] >>= 1;
                   palmFramebuffer[index] &= 0x7BEF;
                }

@@ -20,11 +20,12 @@ static inline void swap16BufferIfLittle(uint8_t* buffer, uint64_t count){
 
 //threads
 #if defined(EMU_MULTITHREADED)
-#define MULTITHREAD_LOOP _Pragma("omp parallel for")
-#define MULTITHREAD_DOUBLE_LOOP _Pragma("omp parallel for collapse(2)")
+#define PRAGMA_STRINGIFY(x) _Pragma(#x)
+#define MULTITHREAD_LOOP(x) PRAGMA_STRINGIFY(omp parallel for private(x))
+#define MULTITHREAD_DOUBLE_LOOP(x, y) PRAGMA_STRINGIFY(omp parallel for collapse(2) private(x, y))
 #else
-#define MULTITHREAD_LOOP
-#define MULTITHREAD_DOUBLE_LOOP
+#define MULTITHREAD_LOOP(x)
+#define MULTITHREAD_DOUBLE_LOOP(x, y)
 #endif
 
 //range capping
