@@ -599,7 +599,7 @@ void emulatorRunFrame(void){
       printf("There are %d audio samples available, %d should be available\n", blip_samples_avail(palmAudioResampler), AUDIO_SAMPLES_PER_FRAME);
    */
    blip_read_samples(palmAudioResampler, palmAudio, AUDIO_SAMPLES_PER_FRAME, true);
-   MULTITHREAD_LOOP for(samples = 0; samples < AUDIO_SAMPLES_PER_FRAME * 2; samples += 2)
+   MULTITHREAD_LOOP(samples) for(samples = 0; samples < AUDIO_SAMPLES_PER_FRAME * 2; samples += 2)
       palmAudio[samples + 1] = palmAudio[samples];
 
    //video
@@ -611,14 +611,17 @@ void emulatorRunFrame(void){
       uint16_t pixCopyY;
 
       //scale original framebuffer to large one if enabled, this alone doesnt increase resolution, that requires a driver
-      MULTITHREAD_DOUBLE_LOOP for(pixCopyY = 0; pixCopyY < 160; pixCopyY++){
+      //scale horizontal
+      MULTITHREAD_DOUBLE_LOOP(pixCopyX, pixCopyY) for(pixCopyY = 0; pixCopyY < 160; pixCopyY++){
          for(pixCopyX = 0; pixCopyX < 160; pixCopyX++){
             palmExtendedFramebuffer[pixCopyY * 320 * 2 + pixCopyX * 2] = palmFramebuffer[pixCopyY * 160 + pixCopyX];
             palmExtendedFramebuffer[pixCopyY * 320 * 2 + pixCopyX * 2 + 1] = palmFramebuffer[pixCopyY * 160 + pixCopyX];
          }
-
-         memcpy(palmExtendedFramebuffer + pixCopyY * 320 * 2 + 320, palmExtendedFramebuffer + pixCopyY * 320 * 2, 320 * sizeof(uint16_t));
       }
+      //scale vertical
+      MULTITHREAD_LOOP(pixCopyY) for(pixCopyY = 0; pixCopyY < 160; pixCopyY++)
+         memcpy(palmExtendedFramebuffer + pixCopyY * 320 * 2 + 320, palmExtendedFramebuffer + pixCopyY * 320 * 2, 320 * sizeof(uint16_t));
+
 
       //replace all black pixels in 160x160 with those from 320x320 framebuffer memory, only if black in both buffers will the display color be black, this allows all the 160x160 APIs to work on the larger framebuffer seamlessly
       //DRIVER NEEDS TO BE WRITTEN STILL
