@@ -11,7 +11,7 @@
 #include "flx68000.h"
 #include "ads7846.h"
 #include "sdCard.h"
-#include "audio/inductor.h"
+#include "audio/blip_buf.h"
 #include "debug/sandbox.h"
 
 

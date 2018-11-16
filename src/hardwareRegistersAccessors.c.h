@@ -90,7 +90,13 @@ int32_t pwm1FifoRunSample(int32_t now, int32_t clockOffset){
    uint8_t index;
 
    for(index = 0; index < repeat; index++){
-      inductorPwmDutyCycle(audioNow, audioSampleDuration, dutyCycle);
+#if !defined(EMU_NO_SAFETY)
+      if(audioNow + audioSampleDuration >= AUDIO_CLOCK_RATE)
+         break;
+#endif
+
+      blip_add_delta(palmAudioResampler, audioNow, dutyCycle * AUDIO_SPEAKER_RANGE);
+      blip_add_delta(palmAudioResampler, audioNow + audioSampleDuration * dutyCycle, (dutyCycle - 1.00) * AUDIO_SPEAKER_RANGE);
       audioNow += audioSampleDuration;
    }
 
