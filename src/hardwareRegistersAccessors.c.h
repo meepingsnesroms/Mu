@@ -33,22 +33,35 @@ static void clearIprIsrBit(uint32_t interruptBit){
 }
 
 //SPI1 FIFO accessors
+static uint8_t spi1RxFifoEntrys(void){
+   //check for wraparound
+   if(spi1RxWritePosition < spi1RxReadPosition)
+      return spi1RxWritePosition + 9 - spi1RxReadPosition;
+   return spi1RxWritePosition - spi1RxReadPosition;
+}
+
 static uint16_t spi1RxFifoRead(void){
    uint16_t value = spi1RxFifo[spi1RxReadPosition];
    spi1RxReadPosition = (spi1RxReadPosition + 1) % 9;
    return value;
 }
 
-static void spi1RxFifoWrite(uint16_t value){
-   spi1RxFifo[spi1RxWritePosition] = value;
-   spi1RxWritePosition = (spi1RxWritePosition + 1) % 9;
+static void spi1RxFifoFlush(void){
+   spi1RxReadPosition = spi1RxWritePosition;
 }
 
-static uint8_t spi1RxFifoEntrys(void){
+static void spi1RxFifoWrite(uint16_t value){
+   if(spi1RxFifoEntrys() < 8){
+      spi1RxWritePosition = (spi1RxWritePosition + 1) % 9;
+      spi1RxFifo[spi1RxWritePosition] = value;
+   }
+}
+
+static uint8_t spi1TxFifoEntrys(void){
    //check for wraparound
-   if(spi1RxWritePosition < spi1RxReadPosition)
-      return spi1RxWritePosition + 9 - spi1RxReadPosition;
-   return spi1RxWritePosition - spi1RxReadPosition;
+   if(spi1TxWritePosition < spi1TxReadPosition)
+      return spi1TxWritePosition + 9 - spi1TxReadPosition;
+   return spi1TxWritePosition - spi1TxReadPosition;
 }
 
 static uint16_t spi1TxFifoRead(void){
@@ -58,15 +71,14 @@ static uint16_t spi1TxFifoRead(void){
 }
 
 static void spi1TxFifoWrite(uint16_t value){
-   spi1TxFifo[spi1TxWritePosition] = value;
-   spi1TxWritePosition = (spi1TxWritePosition + 1) % 9;
+   if(spi1TxFifoEntrys() < 8){
+      spi1TxWritePosition = (spi1TxWritePosition + 1) % 9;
+      spi1TxFifo[spi1TxWritePosition] = value;
+   }
 }
 
-static uint8_t spi1TxFifoEntrys(void){
-   //check for wraparound
-   if(spi1TxWritePosition < spi1TxReadPosition)
-      return spi1TxWritePosition + 9 - spi1TxReadPosition;
-   return spi1TxWritePosition - spi1TxReadPosition;
+static void spi1TxFifoFlush(void){
+   spi1TxReadPosition = spi1TxWritePosition;
 }
 
 //PWM1 FIFO accessors
@@ -277,7 +289,7 @@ static void setScr(uint8_t value){
 
 static void setIlcr(uint16_t value){
    uint16_t oldIlcr = registerArrayRead16(ILCR);
-   uint16_t newIlcr = 0;
+   uint16_t newIlcr = 0x0000;
 
    //SPI1, interrupt level 0 an 7 are invalid values that cause the register not to update
    if((value & 0x7000) != 0x0000 && (value & 0x7000) != 0x7000)
@@ -307,19 +319,23 @@ static void setIlcr(uint16_t value){
 }
 
 static void setSpiCont1(uint16_t value){
-   //only master mode is implemented!!!
+   //only master mode is implemented(even then only partially)!!!
    uint16_t oldSpiCont1 = registerArrayRead16(SPICONT1);
 
    debugLog("SPI1 write, old value:0x%04X, value:0x%04X\n", oldSpiCont1, value);
 
-   if(!(value & 0x0400) && value & 0x0200){
-      //slave mode and enabled, mode is irrelevent fo SPI is off, dont know what to do
-      debugLog("SPI1 set to slave mode, PC:0x%08X\n", flx68000GetPc());
+   //SPI1 disabled
+   if(oldSpiCont1 & 0x0200 && !(value & 0x2000)){
+      spi1RxFifoFlush();
+      spi1TxFifoFlush();
    }
 
-   //do a transfer
+   //slave mode and enabled, dont know what to do
+   if(!(value & 0x0400) && value & 0x0200)
+      debugLog("SPI1 set to slave mode, PC:0x%08X\n", flx68000GetPc());
+
+   //do a transfer if enabled(this register write and last) and exchange set
    if(value & oldSpiCont1 & 0x0200 && value & 0x0100){
-      //enabled and exchange set
       uint8_t bitCount = (value & 0x000F) + 1;
       uint16_t startBit = 1 << (bitCount - 1);
 
@@ -330,6 +346,7 @@ static void setSpiCont1(uint16_t value){
          uint16_t newRxFifoEntry = 0;
          uint8_t bits;
 
+         //I dont actually know if bits are shifted out the top or bottom of the newest TX FIFO entry, using top right now because thats what SPI2 does
          for(bits = 0; bits < bitCount; bits++){
             newRxFifoEntry |= sdCardExchangeBit(!!(currentTxFifoEntry & startBit));
             newRxFifoEntry <<= 1;
@@ -340,8 +357,8 @@ static void setSpiCont1(uint16_t value){
 
          //overflow occured, remove 1 FIFO entry
          //I do not currently know if the FIFO entry is removed from the back or front of the FIFO, going with the back for now
-         if(spi1RxFifoEntrys() == 0)
-            spi1RxFifoRead();
+         //if(spi1RxFifoEntrys() == 0)
+         //   spi1RxFifoRead();
       }
    }
 
@@ -359,9 +376,8 @@ static void setSpiCont2(uint16_t value){
    else
       clearIprIsrBit(INT_SPI2);
 
-   //do a transfer
+   //do a transfer if enabled(this register write and last) and exchange set
    if(value & oldSpiCont2 & 0x0200 && value & 0x0100){
-      //enabled and exchange set
       uint8_t bitCount = (value & 0x000F) + 1;
       uint16_t startBit = 1 << (bitCount - 1);
       uint16_t spi2Data = registerArrayRead16(SPIDATA2);
@@ -380,7 +396,7 @@ static void setSpiCont2(uint16_t value){
          }
       }
       else{
-         //shift in 0s
+         //shift in 0s, this is inaccurate, it should be whatever the last bit on SPIRXD(the SPI2 pin, not the SPI1 register) was
          spi2Data <<= bitCount;
       }
       registerArrayWrite16(SPIDATA2, spi2Data);
@@ -444,7 +460,7 @@ static void setPwmc1(uint16_t value){
    //PWM1 enabled, set IRQ
    if(!(oldPwmc1 & 0x0010) && value & 0x0010){
       value |= 0x0080;//enable IRQ
-      pwm1ClocksToNextSample = 0;//when first sample is written output it immediatly
+      pwm1ClocksToNextSample = 0;//when first sample is written output it immediately
    }
 
    //clear interrupt by write(reading can also clear the interrupt)
@@ -478,25 +494,21 @@ static void setIsr(uint32_t value, bool useTopWord, bool useBottomWord){
    if(useTopWord){
       uint16_t interruptControlRegister = registerArrayRead16(ICR);
 
-      if(!(interruptControlRegister & 0x0800)){
-         //IRQ1 is not edge triggered
+      //IRQ1 is not edge triggered
+      if(!(interruptControlRegister & 0x0800))
          value &= ~INT_IRQ1;
-      }
 
-      if(!(interruptControlRegister & 0x0400)){
-         //IRQ2 is not edge triggered
+      //IRQ2 is not edge triggered
+      if(!(interruptControlRegister & 0x0400))
          value &= ~INT_IRQ2;
-      }
 
-      if(!(interruptControlRegister & 0x0200)){
-         //IRQ3 is not edge triggered
+      //IRQ3 is not edge triggered
+      if(!(interruptControlRegister & 0x0200))
          value &= ~INT_IRQ3;
-      }
 
-      if(!(interruptControlRegister & 0x0100)){
-         //IRQ6 is not edge triggered
+      //IRQ6 is not edge triggered
+      if(!(interruptControlRegister & 0x0100))
          value &= ~INT_IRQ6;
-      }
 
       registerArrayWrite16(IPR, registerArrayRead16(IPR) & ~(value >> 16));
       registerArrayWrite16(ISR, registerArrayRead16(ISR) & ~(value >> 16));

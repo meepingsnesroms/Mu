@@ -926,9 +926,7 @@ void setHwRegister16(uint32_t address, uint16_t value){
          break;
 
       case SPITXD:
-         //Writing to TxFIFO is permitted as long as TxFIFO is not full, from MC68VZ328UM.pdf
-         if(spi1TxFifoEntrys() < 8)
-            spi1TxFifoWrite(value);
+         spi1TxFifoWrite(value);
          break;
 
       case SPICONT2:

@@ -86,14 +86,10 @@ typedef struct{
 }input_t;
 
 typedef struct{
-   //CPU -> SD
    uint64_t command;
    uint8_t  commandBitsRemaining;
-
-   //SD -> CPU
-   uint8_t  response;
-   uint8_t  dataPacket[1 + 2048 + 2];
-
+   uint64_t index;
+   uint8_t  currentAction;
    buffer_t flashChip;
 }sd_card_t;
 

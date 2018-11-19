@@ -7,7 +7,7 @@
 
 bool ads7846PenIrqEnabled;
 
-static const uint16_t ads7846DockResistorValues[PORT_END] = {0xFFF/*none*/, 0x1EB/*USB cradle*/, 0/*serial cradle*/, 0/*USB peripheral*/, 0/*serial peripheral*/};
+static const uint16_t ads7846DockResistorValues[PORT_END] = {0xFFF/*none*/, 0x1EB/*USB cradle*/, 0x000/*serial cradle, untested*/, 0x000/*USB peripheral, untested*/, 0x000/*serial peripheral, untested*/};
 static uint8_t  ads7846BitsToNextControl;//bits before starting a new control byte
 static uint8_t  ads7846ControlByte;
 static uint16_t ads7846OutputValue;
@@ -206,7 +206,7 @@ bool ads7846ExchangeBit(bool bitIn){
                      //ads7846OutputValue = 0x67C;//80%
                      //ads7846OutputValue = 0x68C;//100%
                      ads7846OutputValue = 0x69C;//100%
-                     //ads7846OutputValue = ads7846RangeMap(0, 100, palmMisc.batteryLevel, 0x0000, 0x07F8);
+                     //ads7846OutputValue = ads7846RangeMap(0, 100, palmMisc.batteryLevel, 0x000, 0x7F8);
                      break;
 
                   case 3:
@@ -235,10 +235,7 @@ bool ads7846ExchangeBit(bool bitIn){
 
                   case 6:
                      //dock
-                     if(palmMisc.dataPort < PORT_END)
-                        ads7846OutputValue = ads7846DockResistorValues[palmMisc.dataPort];
-                     else
-                        ads7846OutputValue = ads7846DockResistorValues[PORT_NONE];
+                     ads7846OutputValue = ads7846DockResistorValues[palmMisc.dataPort];
                      break;
 
                   case 7:

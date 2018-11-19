@@ -3,6 +3,8 @@
 
 #include <stdbool.h>
 
+void sdCardReset(void);
+
 bool sdCardExchangeBit(bool bit);
 
 #endif
