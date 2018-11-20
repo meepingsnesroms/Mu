@@ -191,7 +191,7 @@ static void checkInterrupts(void){
          intLevel = 4;
    }
 
-   //even masked interrupts turn off PCTLR, Chapter 4.5.4 MC68VZ328UM.pdf
+   //even masked interrupts turn off PCTLR, 4.5.4 Power Control Register MC68VZ328UM.pdf
    if(intLevel > 0 && registerArrayRead8(PCTLR) & 0x80){
       registerArrayWrite8(PCTLR, registerArrayRead8(PCTLR) & 0x1F);
       pctlrCpuClockDivider = 1.0;

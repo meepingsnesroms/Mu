@@ -336,30 +336,28 @@ static void setSpiCont1(uint16_t value){
 
    //do a transfer if enabled(this register write and last) and exchange set
    if(value & oldSpiCont1 & 0x0200 && value & 0x0100){
+      uint16_t currentTxFifoEntry = spi1TxFifoRead();
+      uint16_t newRxFifoEntry = 0;
       uint8_t bitCount = (value & 0x000F) + 1;
       uint16_t startBit = 1 << (bitCount - 1);
+      uint8_t bits;
 
       debugLog("SPI1 transfer, PC:0x%08X\n", flx68000GetPc());
 
-      while(spi1TxFifoEntrys() > 0){
-         uint16_t currentTxFifoEntry = spi1TxFifoRead();
-         uint16_t newRxFifoEntry = 0;
-         uint8_t bits;
-
-         //I dont actually know if bits are shifted out the top or bottom of the newest TX FIFO entry, using top right now because thats what SPI2 does
-         for(bits = 0; bits < bitCount; bits++){
-            newRxFifoEntry |= sdCardExchangeBit(!!(currentTxFifoEntry & startBit));
-            newRxFifoEntry <<= 1;
-            currentTxFifoEntry <<= 1;
-         }
-
-         spi1RxFifoWrite(newRxFifoEntry);
-
-         //overflow occured, remove 1 FIFO entry
-         //I do not currently know if the FIFO entry is removed from the back or front of the FIFO, going with the back for now
-         //if(spi1RxFifoEntrys() == 0)
-         //   spi1RxFifoRead();
+      //The most significant bit is output when the CPU loads the transmitted data, 13.2.3 SPI 1 Phase and Polarity Configurations MC68VZ328UM.pdf
+      for(bits = 0; bits < bitCount; bits++){
+         newRxFifoEntry |= sdCardExchangeBit(!!(currentTxFifoEntry & startBit));
+         newRxFifoEntry <<= 1;
+         currentTxFifoEntry <<= 1;
       }
+
+      //since exact timing isnt implemented reads have to be done at the same time as writes
+      spi1RxFifoWrite(newRxFifoEntry);
+
+      //overflow occured, remove 1 FIFO entry
+      //I do not currently know if the FIFO entry is removed from the back or front of the FIFO, going with the back for now
+      //if(spi1RxFifoEntrys() == 0)
+      //   spi1RxFifoRead();
    }
 
    registerArrayWrite16(SPICONT1, value);
@@ -550,7 +548,7 @@ static uint8_t getPortDInputPinValues(void){
 }
 
 static uint8_t getPortAValue(void){
-   //not attached, used as data lines
+   //not attached, used as CPU data lines
    return 0x00;
 }
 

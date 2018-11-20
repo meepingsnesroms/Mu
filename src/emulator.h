@@ -88,8 +88,8 @@ typedef struct{
 typedef struct{
    uint64_t command;
    uint8_t  commandBitsRemaining;
-   uint64_t index;
-   uint8_t  currentAction;
+   uint64_t index;//this is in bits not bytes
+   uint8_t  currentExchange;
    buffer_t flashChip;
 }sd_card_t;
 
