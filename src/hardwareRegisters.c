@@ -26,6 +26,7 @@ uint16_t spi1RxFifo[9];
 uint16_t spi1TxFifo[9];
 uint8_t  spi1RxReadPosition;
 uint8_t  spi1RxWritePosition;
+bool     spi1RxOverflowed;//not in savestates yet!!!
 uint8_t  spi1TxReadPosition;
 uint8_t  spi1TxWritePosition;
 int32_t  pwm1ClocksToNextSample;
@@ -386,6 +387,12 @@ uint8_t getHwRegister8(uint32_t address){
          debugLog("PWMCNT1 not implimented\n");
          break;
 
+      //16 bit registers being read as 8 bit
+      case SPICONT1:
+      case SPICONT1 + 1:
+      case SPIINTCS:
+      case SPIINTCS + 1:
+
       //basic non GPIO functions
       case SCR:
       case LCKCON:
@@ -464,10 +471,6 @@ uint16_t getHwRegister16(uint32_t address){
       case PWMC1:
          return getPwmc1();
 
-      case SPIINTCS:
-         debugLog("SPIINTCS read not implented yet\n");
-         return 0x0000;
-
       case SPITEST:
          //SSTATUS is unemulated because the datasheet has no descrption of how it works
          return spi1RxFifoEntrys() << 4 | spi1TxFifoEntrys();
@@ -476,6 +479,8 @@ uint16_t getHwRegister16(uint32_t address){
          return spi1RxFifoRead();
 
       //32 bit registers accessed as 16 bit
+      case IDR:
+      case IDR + 2:
       case IMR:
       case IMR + 2:
       case IPR:
@@ -508,6 +513,7 @@ uint16_t getHwRegister16(uint32_t address){
       case TCTL1:
       case TCTL2:
       case SPICONT1:
+      case SPIINTCS:
       case SPICONT2:
       case SPIDATA2:
          //simple read, no actions needed
@@ -786,8 +792,7 @@ void setHwRegister16(uint32_t address, uint16_t value){
          break;
 
       case ICR:
-         //missing bottom 7 bits
-         registerArrayWrite16(address, value & 0xFF80);
+         registerArrayWrite16(ICR, value & 0xFF80);
          updateTouchState();
          checkPortDInterrupts();//this calls checkInterrupts() so it doesnt need to be called above
          break;
@@ -800,7 +805,7 @@ void setHwRegister16(uint32_t address, uint16_t value){
          //somewhat unemulated
          //missing bit 7 and 6
          //debugLog("Set DRAMC, old value:0x%04X, new value:0x%04X, PC:0x%08X\n", registerArrayRead16(address), value, flx68000GetPc());
-         registerArrayWrite16(address, value & 0xFF3F);
+         registerArrayWrite16(DRAMC, value & 0xFF3F);
          updateCsdAddressLines();//the EDO bit can disable SDRAM access
          break;
 
@@ -812,7 +817,7 @@ void setHwRegister16(uint32_t address, uint16_t value){
       case SDCTRL:
          //missing bits 13, 9, 8 and 7
          //debugLog("Set SDCTRL, old value:0x%04X, new value:0x%04X, PC:0x%08X\n", registerArrayRead16(address), value, flx68000GetPc());
-         registerArrayWrite16(address, value & 0xDC7F);
+         registerArrayWrite16(SDCTRL, value & 0xDC7F);
          updateCsdAddressLines();
          break;
 
@@ -918,7 +923,7 @@ void setHwRegister16(uint32_t address, uint16_t value){
          break;
 
       case SPIINTCS:
-         debugLog("SPIINTCS write not implented yet\n");
+         setSpiIntCs(value);
          break;
 
       case SPITEST:
@@ -927,6 +932,8 @@ void setHwRegister16(uint32_t address, uint16_t value){
 
       case SPITXD:
          spi1TxFifoWrite(value);
+         //check if SPI1 interrupt changed
+         setSpiIntCs(registerArrayRead16(SPIINTCS));
          break;
 
       case SPICONT2:

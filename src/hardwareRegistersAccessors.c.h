@@ -18,9 +18,8 @@ static void registerArrayWrite8(uint32_t address, uint8_t value){BUFFER_WRITE_8(
 static void registerArrayWrite16(uint32_t address, uint16_t value){BUFFER_WRITE_16(palmReg, address, 0xFFF, value);}
 static void registerArrayWrite32(uint32_t address, uint32_t value){BUFFER_WRITE_32(palmReg, address, 0xFFF, value);}
 
-//interrupt setters
+//interrupt setters, used for setting an interrupt with masking by IMR and logging in IPR
 static void setIprIsrBit(uint32_t interruptBit){
-   //allows for setting an interrupt with masking by IMR and logging in IPR
    uint32_t newIpr = registerArrayRead32(IPR) | interruptBit;
    registerArrayWrite32(IPR, newIpr);
    registerArrayWrite32(ISR, newIpr & ~registerArrayRead32(IMR));
@@ -42,12 +41,10 @@ static uint8_t spi1RxFifoEntrys(void){
 
 static uint16_t spi1RxFifoRead(void){
    uint16_t value = spi1RxFifo[spi1RxReadPosition];
-   spi1RxReadPosition = (spi1RxReadPosition + 1) % 9;
+   if(spi1RxFifoEntrys() > 0)
+      spi1RxReadPosition = (spi1RxReadPosition + 1) % 9;
+   spi1RxOverflowed = false;
    return value;
-}
-
-static void spi1RxFifoFlush(void){
-   spi1RxReadPosition = spi1RxWritePosition;
 }
 
 static void spi1RxFifoWrite(uint16_t value){
@@ -55,6 +52,13 @@ static void spi1RxFifoWrite(uint16_t value){
       spi1RxWritePosition = (spi1RxWritePosition + 1) % 9;
       spi1RxFifo[spi1RxWritePosition] = value;
    }
+   else{
+      spi1RxOverflowed = true;
+   }
+}
+
+static void spi1RxFifoFlush(void){
+   spi1RxReadPosition = spi1RxWritePosition;
 }
 
 static uint8_t spi1TxFifoEntrys(void){
@@ -66,6 +70,7 @@ static uint8_t spi1TxFifoEntrys(void){
 
 static uint16_t spi1TxFifoRead(void){
    uint16_t value = spi1TxFifo[spi1TxReadPosition];
+   //dont need a safety check here, the emulator will always check that data is present before trying to access it
    spi1TxReadPosition = (spi1TxReadPosition + 1) % 9;
    return value;
 }
@@ -318,11 +323,38 @@ static void setIlcr(uint16_t value){
    registerArrayWrite16(ILCR, newIlcr);
 }
 
+static void setSpiIntCs(uint16_t value){
+   uint16_t oldSpiIntCs = registerArrayRead16(SPIINTCS);
+   uint16_t newSpiIntCs = value & 0xFF00;
+   uint8_t rxEntrys = spi1RxFifoEntrys();
+   uint8_t txEntrys = spi1TxFifoEntrys();
+
+   //newSpiIntCs |= spi1TxOverflowed << 7;//BO, slave mode not supported
+   newSpiIntCs |= spi1RxOverflowed << 6;//RO
+   newSpiIntCs |= (rxEntrys == 8) << 5;//RF
+   newSpiIntCs |= (rxEntrys >= 4) << 4;//RH
+   newSpiIntCs |= (rxEntrys > 0) << 3;//RR
+   newSpiIntCs |= (txEntrys == 8) << 2;//TF
+   newSpiIntCs |= (txEntrys >= 4) << 1;//TH
+   newSpiIntCs |= txEntrys == 0;//TE
+
+   //if interrupt state changed update interrupts too, top 8 bits are just the enable bits for the bottom 8
+   if(!!(newSpiIntCs >> 8 & newSpiIntCs) != !!(oldSpiIntCs >> 8 & oldSpiIntCs)){
+      if(newSpiIntCs >> 8 & newSpiIntCs)
+         setIprIsrBit(INT_SPI1);
+      else
+         clearIprIsrBit(INT_SPI1);
+      checkInterrupts();
+   }
+
+   registerArrayWrite16(SPIINTCS, newSpiIntCs);
+}
+
 static void setSpiCont1(uint16_t value){
    //only master mode is implemented(even then only partially)!!!
    uint16_t oldSpiCont1 = registerArrayRead16(SPICONT1);
 
-   debugLog("SPI1 write, old value:0x%04X, value:0x%04X\n", oldSpiCont1, value);
+   debugLog("SPICONT1 write, old value:0x%04X, value:0x%04X\n", oldSpiCont1, value);
 
    //SPI1 disabled
    if(oldSpiCont1 & 0x0200 && !(value & 0x2000)){
@@ -336,29 +368,34 @@ static void setSpiCont1(uint16_t value){
 
    //do a transfer if enabled(this register write and last) and exchange set
    if(value & oldSpiCont1 & 0x0200 && value & 0x0100){
-      uint16_t currentTxFifoEntry = spi1TxFifoRead();
-      uint16_t newRxFifoEntry = 0;
-      uint8_t bitCount = (value & 0x000F) + 1;
-      uint16_t startBit = 1 << (bitCount - 1);
-      uint8_t bits;
+      while(spi1TxFifoEntrys() > 0){
+         uint16_t currentTxFifoEntry = spi1TxFifoRead();
+         uint16_t newRxFifoEntry = 0x0000;
+         uint8_t bitCount = (value & 0x000F) + 1;
+         uint16_t startBit = 1 << (bitCount - 1);
+         uint8_t bits;
 
-      debugLog("SPI1 transfer, PC:0x%08X\n", flx68000GetPc());
+         debugLog("SPI1 transfer, PC:0x%08X\n", flx68000GetPc());
 
-      //The most significant bit is output when the CPU loads the transmitted data, 13.2.3 SPI 1 Phase and Polarity Configurations MC68VZ328UM.pdf
-      for(bits = 0; bits < bitCount; bits++){
-         newRxFifoEntry |= sdCardExchangeBit(!!(currentTxFifoEntry & startBit));
-         newRxFifoEntry <<= 1;
-         currentTxFifoEntry <<= 1;
+         //The most significant bit is output when the CPU loads the transmitted data, 13.2.3 SPI 1 Phase and Polarity Configurations MC68VZ328UM.pdf
+         for(bits = 0; bits < bitCount; bits++){
+            newRxFifoEntry |= sdCardExchangeBit(!!(currentTxFifoEntry & startBit));
+            newRxFifoEntry <<= 1;
+            currentTxFifoEntry <<= 1;
+         }
+
+         //add received data back to RX FIFO
+         spi1RxFifoWrite(newRxFifoEntry);
+
+         //overflow occured, remove 1 FIFO entry
+         //I do not currently know if the FIFO entry is removed from the back or front of the FIFO, going with the back for now
+         //if(spi1RxFifoEntrys() == 0)
+         //   spi1RxFifoRead();
       }
-
-      //since exact timing isnt implemented reads have to be done at the same time as writes
-      spi1RxFifoWrite(newRxFifoEntry);
-
-      //overflow occured, remove 1 FIFO entry
-      //I do not currently know if the FIFO entry is removed from the back or front of the FIFO, going with the back for now
-      //if(spi1RxFifoEntrys() == 0)
-      //   spi1RxFifoRead();
    }
+
+   //update SPIINTCS interrupt bits
+   setSpiIntCs(registerArrayRead16(SPIINTCS));
 
    registerArrayWrite16(SPICONT1, value);
 }
