@@ -291,7 +291,7 @@ void flx68000RefreshAddressing(void){
 #if defined(EMU_OPTIMIZE_FOR_ARM)
    //cycloneCpu.pc = cycloneCpu.checkpc(cycloneCpu.pc);
 #else
-   //C implimentation doesnt cache address information
+   //C implementation doesnt cache address information
 #endif
 }
 
@@ -361,7 +361,7 @@ uint64_t flx68000ReadArbitraryMemory(uint32_t address, uint8_t size){
    uint64_t data = UINT64_MAX;//invalid access
 
 #if defined(EMU_OPTIMIZE_FOR_ARM)
-   //until SPI and UART destructive reads are implemented all reads to mapped addresses are safe, SPI is now implemented, this needs to be fixed
+   //reading from a hardware register FIFO will corrupt it!
    if(bankType[START_BANK(address)] != CHIP_NONE){
       uint16_t m68kSr = CycloneGetSr(&cycloneCpu);
       CycloneSetSr(&cycloneCpu, m68kSr | 0x2000);//prevent privilege violations
@@ -381,7 +381,7 @@ uint64_t flx68000ReadArbitraryMemory(uint32_t address, uint8_t size){
       CycloneSetSr(&cycloneCpu, m68kSr);
    }
 #else
-   //until SPI and UART destructive reads are implemented all reads to mapped addresses are safe, SPI is now implemented, this needs to be fixed
+   //reading from a hardware register FIFO will corrupt it!
    if(bankType[START_BANK(address)] != CHIP_NONE){
       uint16_t m68kSr = m68k_get_reg(NULL, M68K_REG_SR);
       m68k_set_reg(M68K_REG_SR, 0x2000);//prevent privilege violations
