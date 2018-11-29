@@ -597,10 +597,6 @@ void emulatorRunFrame(void){
 
    //audio
    blip_end_frame(palmAudioResampler, blip_clocks_needed(palmAudioResampler, AUDIO_SAMPLES_PER_FRAME));
-   /*
-   if(blip_samples_avail(palmAudioResampler) != AUDIO_SAMPLES_PER_FRAME)
-      printf("There are %d audio samples available, %d should be available\n", blip_samples_avail(palmAudioResampler), AUDIO_SAMPLES_PER_FRAME);
-   */
    blip_read_samples(palmAudioResampler, palmAudio, AUDIO_SAMPLES_PER_FRAME, true);
    MULTITHREAD_LOOP(samples) for(samples = 0; samples < AUDIO_SAMPLES_PER_FRAME * 2; samples += 2)
       palmAudio[samples + 1] = palmAudio[samples];

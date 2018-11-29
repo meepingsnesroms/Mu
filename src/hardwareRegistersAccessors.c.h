@@ -103,7 +103,7 @@ int32_t pwm1FifoRunSample(int32_t now, int32_t clockOffset){
    uint8_t repeat = 1 << (pwmc1 >> 2 & 0x03);
    int32_t audioNow = now + clockOffset;
    int32_t audioSampleDuration = (pwmc1 & 0x8000)/*usingClk32*/ ? audioGetFramePercentIncrementFromClk32s(period * prescaler * clockDivider) : audioGetFramePercentIncrementFromSysclks(period * prescaler * clockDivider);
-   float dutyCycle = dMin((float)sample / period, 1.00);
+   float dutyCycle = fMin((float)sample / period, 1.00);
    uint8_t index;
 
    for(index = 0; index < repeat; index++){
@@ -578,7 +578,7 @@ static uint8_t getPortDInputPinValues(void){
 
    //kbd row 2
    if(requestedRow & 0x80)
-      portDInputValues |= palmInput.buttonPower | palmInput.buttonAddress << 3;
+      portDInputValues |= palmInput.buttonPower;
 
    //the port d pins state is high for false, invert them on return, Palm OS uses PDPOL to swap back to pressed == 1
    return ~portDInputValues;
@@ -669,27 +669,21 @@ static uint8_t getPortMValue(void){
 }
 
 static void samplePwm1(bool forClk32, double sysclks){
-   //clear PWM1 FIFO values if enough time has passed
    uint16_t pwmc1 = registerArrayRead16(PWMC1);
-   int32_t audioNow;
-   int32_t audioClocks;
 
-   //check if enabled and validate clock mode
+   //validate clock mode
    if(forClk32 != !!(pwmc1 & 0x8000))
       return;
 
-   //these calculations are fairly heavy, only do them after we know the clock mode is valid
-   audioNow = audioGetFramePercentage();
-   audioClocks = forClk32 ? audioGetFramePercentIncrementFromClk32s(1) : audioGetFramePercentIncrementFromSysclks(sysclks);
-
    if(pwmc1 & 0x0010){
+      int32_t audioNow = audioGetFramePercentage();
+
       //add cycles
-      pwm1ClocksToNextSample -= audioClocks;
+      pwm1ClocksToNextSample -= forClk32 ? audioGetFramePercentIncrementFromClk32s(1) : audioGetFramePercentIncrementFromSysclks(sysclks);
 
       //use samples
       while(pwm1ClocksToNextSample <= 0){
-         //switch out samples until waiting(pwm1ClocksToNextSample is positive)
-         //continue processing existing sample stream
+         //play samples until waiting(pwm1ClocksToNextSample is positive), if no new samples are available the newest old sample will be played
          int32_t audioUsed = pwm1FifoRunSample(audioNow, pwm1ClocksToNextSample);
          pwm1ClocksToNextSample += audioUsed;
          audioNow += audioUsed;

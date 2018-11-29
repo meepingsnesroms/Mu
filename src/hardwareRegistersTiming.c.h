@@ -369,5 +369,5 @@ static int32_t audioGetFramePercentIncrementFromSysclks(double count){
 static int32_t audioGetFramePercentage(void){
    //returns how much of the frame has executed
    //0% = 0, 100% = AUDIO_END_OF_FRAME
-   return audioGetFramePercentIncrementFromClk32s(palmFrameClk32s) + audioGetFramePercentIncrementFromSysclks(palmClk32Sysclks);
+   return audioGetFramePercentIncrementFromClk32s(palmFrameClk32s) + (pllIsOn() ? audioGetFramePercentIncrementFromSysclks(palmClk32Sysclks) : 0);
 }

@@ -16,34 +16,16 @@
 
 var testButtonInput(){
    static Boolean firstRun = true;
-   /*
-   static Boolean polaritySwap;
-   static uint8_t frameCount;
-   static uint8_t portDOriginalPolarity;
-   */
    uint16_t y = 0;
+   uint8_t oldPkdata = readArbitraryMemory8(HW_REG_ADDR(PKDATA));
    
    if(firstRun){
       debugSafeScreenClear(C_WHITE);
-      /*
-      polaritySwap = false;
-      frameCount = 0;
-      portDOriginalPolarity = readArbitraryMemory8(HW_REG_ADDR(PDPOL));
-      */
       firstRun = false;
    }
    
-   /*
-   frameCount++;
-   if(frameCount >= 30){
-      writeArbitraryMemory8(HW_REG_ADDR(PDPOL), ~readArbitraryMemory8(HW_REG_ADDR(PDPOL)) & 0x07);
-      frameCount = 0;
-   }
-   */
-   
    if(getButton(buttonUp) && !getButton(buttonDown)){
       firstRun = true;
-      /*writeArbitraryMemory8(HW_REG_ADDR(PDPOL), portDOriginalPolarity);*/
       exitSubprogram();
    }
    
@@ -53,27 +35,31 @@ var testButtonInput(){
    UG_PutString(0, y, "This requirement is to allow button testing.");
    y += (FONT_HEIGHT + 1) * 2;
    
-   StrPrintF(sharedDataBuffer, "PDDIR:0x%02X", readArbitraryMemory8(HW_REG_ADDR(PDDIR)));
-   UG_PutString(0, y, sharedDataBuffer);
-   y += FONT_HEIGHT + 1;
-   StrPrintF(sharedDataBuffer, "PDSEL:0x%02X", readArbitraryMemory8(HW_REG_ADDR(PDSEL)));
-   UG_PutString(0, y, sharedDataBuffer);
-   y += FONT_HEIGHT + 1;
-   StrPrintF(sharedDataBuffer, "PDPOL:0x%02X", readArbitraryMemory8(HW_REG_ADDR(PDPOL)));
+   writeArbitraryMemory8(HW_REG_ADDR(PKDATA), 0xC0 | oldPkdata & 0x1F);
+   StrPrintF(sharedDataBuffer, "PKDATA Key Bits = 110");
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
    StrPrintF(sharedDataBuffer, "PDDATA:0x%02X", readArbitraryMemory8(HW_REG_ADDR(PDDATA)));
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
-   StrPrintF(sharedDataBuffer, "PDIRQEN:0x%02X", readArbitraryMemory8(HW_REG_ADDR(PDIRQEN)));
+   
+   writeArbitraryMemory8(HW_REG_ADDR(PKDATA), 0xA0 | oldPkdata & 0x1F);
+   StrPrintF(sharedDataBuffer, "PKDATA Key Bits = 101");
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
-   StrPrintF(sharedDataBuffer, "PDIRQEG:0x%02X", readArbitraryMemory8(HW_REG_ADDR(PDIRQEG)));
+   StrPrintF(sharedDataBuffer, "PDDATA:0x%02X", readArbitraryMemory8(HW_REG_ADDR(PDDATA)));
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
-   StrPrintF(sharedDataBuffer, "PDKBEN:0x%02X", readArbitraryMemory8(HW_REG_ADDR(PDKBEN)));
+   
+   writeArbitraryMemory8(HW_REG_ADDR(PKDATA), 0x60 | oldPkdata & 0x1F);
+   StrPrintF(sharedDataBuffer, "PKDATA Key Bits = 011");
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
+   StrPrintF(sharedDataBuffer, "PDDATA:0x%02X", readArbitraryMemory8(HW_REG_ADDR(PDDATA)));
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   
+   writeArbitraryMemory8(HW_REG_ADDR(PKDATA), oldPkdata);
    
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
