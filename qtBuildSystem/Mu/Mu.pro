@@ -103,7 +103,6 @@ SOURCES += \
     statemanager.cpp \
     touchscreen.cpp \
     ../../src/audio/blip_buf.c \
-    ../../src/audio/inductor.c \
     ../../src/debug/sandbox.c \
     ../../src/ads7846.c \
     ../../src/emulator.c \
@@ -122,7 +121,6 @@ HEADERS += \
     statemanager.h \
     touchscreen.h \
     ../../src/audio/blip_buf.h \
-    ../../src/audio/inductor.h \
     ../../src/debug/sandbox.h \
     ../../src/debug/sandboxTrapNumToName.c.h \
     ../../src/debug/trapNames.h \

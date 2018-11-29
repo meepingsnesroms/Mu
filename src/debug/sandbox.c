@@ -15,6 +15,7 @@
 #include "../emulator.h"
 #include "../ads7846.h"
 #include "../hardwareRegisters.h"
+#include "../portability.h"
 #include "../specs/emuFeatureRegistersSpec.h"
 #include "sandbox.h"
 #include "trapNames.h"
@@ -505,6 +506,7 @@ uint32_t sandboxCommand(uint32_t test, void* data){
             palmRom[0x83653] = 0x71;
             palmRom[0x83654] = 0x4E;
             palmRom[0x83655] = 0x71;
+            swap16BufferIfLittle(&palmRom[0x83652], 4 / sizeof(uint16_t));
          }
          break;
 

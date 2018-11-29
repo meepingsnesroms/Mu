@@ -18,9 +18,8 @@ static void registerArrayWrite8(uint32_t address, uint8_t value){BUFFER_WRITE_8(
 static void registerArrayWrite16(uint32_t address, uint16_t value){BUFFER_WRITE_16(palmReg, address, 0xFFF, value);}
 static void registerArrayWrite32(uint32_t address, uint32_t value){BUFFER_WRITE_32(palmReg, address, 0xFFF, value);}
 
-//interrupt setters
+//interrupt setters, used for setting an interrupt with masking by IMR and logging in IPR
 static void setIprIsrBit(uint32_t interruptBit){
-   //allows for setting an interrupt with masking by IMR and logging in IPR
    uint32_t newIpr = registerArrayRead32(IPR) | interruptBit;
    registerArrayWrite32(IPR, newIpr);
    registerArrayWrite32(ISR, newIpr & ~registerArrayRead32(IMR));
@@ -33,17 +32,6 @@ static void clearIprIsrBit(uint32_t interruptBit){
 }
 
 //SPI1 FIFO accessors
-static uint16_t spi1RxFifoRead(void){
-   uint16_t value = spi1RxFifo[spi1RxReadPosition];
-   spi1RxReadPosition = (spi1RxReadPosition + 1) % 9;
-   return value;
-}
-
-static void spi1RxFifoWrite(uint16_t value){
-   spi1RxFifo[spi1RxWritePosition] = value;
-   spi1RxWritePosition = (spi1RxWritePosition + 1) % 9;
-}
-
 static uint8_t spi1RxFifoEntrys(void){
    //check for wraparound
    if(spi1RxWritePosition < spi1RxReadPosition)
@@ -51,15 +39,26 @@ static uint8_t spi1RxFifoEntrys(void){
    return spi1RxWritePosition - spi1RxReadPosition;
 }
 
-static uint16_t spi1TxFifoRead(void){
-   uint16_t value = spi1TxFifo[spi1TxReadPosition];
-   spi1TxReadPosition = (spi1TxReadPosition + 1) % 9;
+static uint16_t spi1RxFifoRead(void){
+   uint16_t value = spi1RxFifo[spi1RxReadPosition];
+   if(spi1RxFifoEntrys() > 0)
+      spi1RxReadPosition = (spi1RxReadPosition + 1) % 9;
+   spi1RxOverflowed = false;
    return value;
 }
 
-static void spi1TxFifoWrite(uint16_t value){
-   spi1TxFifo[spi1TxWritePosition] = value;
-   spi1TxWritePosition = (spi1TxWritePosition + 1) % 9;
+static void spi1RxFifoWrite(uint16_t value){
+   if(spi1RxFifoEntrys() < 8){
+      spi1RxWritePosition = (spi1RxWritePosition + 1) % 9;
+      spi1RxFifo[spi1RxWritePosition] = value;
+   }
+   else{
+      spi1RxOverflowed = true;
+   }
+}
+
+static void spi1RxFifoFlush(void){
+   spi1RxReadPosition = spi1RxWritePosition;
 }
 
 static uint8_t spi1TxFifoEntrys(void){
@@ -67,6 +66,24 @@ static uint8_t spi1TxFifoEntrys(void){
    if(spi1TxWritePosition < spi1TxReadPosition)
       return spi1TxWritePosition + 9 - spi1TxReadPosition;
    return spi1TxWritePosition - spi1TxReadPosition;
+}
+
+static uint16_t spi1TxFifoRead(void){
+   uint16_t value = spi1TxFifo[spi1TxReadPosition];
+   //dont need a safety check here, the emulator will always check that data is present before trying to access it
+   spi1TxReadPosition = (spi1TxReadPosition + 1) % 9;
+   return value;
+}
+
+static void spi1TxFifoWrite(uint16_t value){
+   if(spi1TxFifoEntrys() < 8){
+      spi1TxWritePosition = (spi1TxWritePosition + 1) % 9;
+      spi1TxFifo[spi1TxWritePosition] = value;
+   }
+}
+
+static void spi1TxFifoFlush(void){
+   spi1TxReadPosition = spi1TxWritePosition;
 }
 
 //PWM1 FIFO accessors
@@ -90,7 +107,13 @@ int32_t pwm1FifoRunSample(int32_t now, int32_t clockOffset){
    uint8_t index;
 
    for(index = 0; index < repeat; index++){
-      inductorPwmDutyCycle(audioNow, audioSampleDuration, dutyCycle);
+#if !defined(EMU_NO_SAFETY)
+      if(audioNow + audioSampleDuration >= AUDIO_CLOCK_RATE)
+         break;
+#endif
+
+      blip_add_delta(palmAudioResampler, audioNow, dutyCycle * AUDIO_SPEAKER_RANGE);
+      blip_add_delta(palmAudioResampler, audioNow + audioSampleDuration * dutyCycle, (dutyCycle - 1.00) * AUDIO_SPEAKER_RANGE);
       audioNow += audioSampleDuration;
    }
 
@@ -271,7 +294,7 @@ static void setScr(uint8_t value){
 
 static void setIlcr(uint16_t value){
    uint16_t oldIlcr = registerArrayRead16(ILCR);
-   uint16_t newIlcr = 0;
+   uint16_t newIlcr = 0x0000;
 
    //SPI1, interrupt level 0 an 7 are invalid values that cause the register not to update
    if((value & 0x7000) != 0x0000 && (value & 0x7000) != 0x7000)
@@ -300,44 +323,79 @@ static void setIlcr(uint16_t value){
    registerArrayWrite16(ILCR, newIlcr);
 }
 
-static void setSpiCont1(uint16_t value){
-   //only master mode is implemented!!!
-   uint16_t oldSpiCont1 = registerArrayRead16(SPICONT1);
+static void setSpiIntCs(uint16_t value){
+   uint16_t oldSpiIntCs = registerArrayRead16(SPIINTCS);
+   uint16_t newSpiIntCs = value & 0xFF00;
+   uint8_t rxEntrys = spi1RxFifoEntrys();
+   uint8_t txEntrys = spi1TxFifoEntrys();
 
-   debugLog("SPI1 write, old value:0x%04X, value:0x%04X\n", oldSpiCont1, value);
+   //newSpiIntCs |= spi1TxOverflowed << 7;//BO, slave mode not supported
+   newSpiIntCs |= spi1RxOverflowed << 6;//RO
+   newSpiIntCs |= (rxEntrys == 8) << 5;//RF
+   newSpiIntCs |= (rxEntrys >= 4) << 4;//RH
+   newSpiIntCs |= (rxEntrys > 0) << 3;//RR
+   newSpiIntCs |= (txEntrys == 8) << 2;//TF
+   newSpiIntCs |= (txEntrys >= 4) << 1;//TH
+   newSpiIntCs |= txEntrys == 0;//TE
 
-   if(!(value & 0x0400) && value & 0x0200){
-      //slave mode and enabled, mode is irrelevent fo SPI is off, dont know what to do
-      debugLog("SPI1 set to slave mode, PC:0x%08X\n", flx68000GetPc());
+   //if interrupt state changed update interrupts too, top 8 bits are just the enable bits for the bottom 8
+   if(!!(newSpiIntCs >> 8 & newSpiIntCs) != !!(oldSpiIntCs >> 8 & oldSpiIntCs)){
+      if(newSpiIntCs >> 8 & newSpiIntCs)
+         setIprIsrBit(INT_SPI1);
+      else
+         clearIprIsrBit(INT_SPI1);
+      checkInterrupts();
    }
 
-   //do a transfer
+   registerArrayWrite16(SPIINTCS, newSpiIntCs);
+}
+
+static void setSpiCont1(uint16_t value){
+   //only master mode is implemented(even then only partially)!!!
+   uint16_t oldSpiCont1 = registerArrayRead16(SPICONT1);
+
+   debugLog("SPICONT1 write, old value:0x%04X, value:0x%04X\n", oldSpiCont1, value);
+
+   //SPI1 disabled
+   if(oldSpiCont1 & 0x0200 && !(value & 0x2000)){
+      spi1RxFifoFlush();
+      spi1TxFifoFlush();
+   }
+
+   //slave mode and enabled, dont know what to do
+   if(!(value & 0x0400) && value & 0x0200)
+      debugLog("SPI1 set to slave mode, PC:0x%08X\n", flx68000GetPc());
+
+   //do a transfer if enabled(this register write and last) and exchange set
    if(value & oldSpiCont1 & 0x0200 && value & 0x0100){
-      //enabled and exchange set
-      uint8_t bitCount = (value & 0x000F) + 1;
-      uint16_t startBit = 1 << (bitCount - 1);
-
-      debugLog("SPI1 transfer, PC:0x%08X\n", flx68000GetPc());
-
       while(spi1TxFifoEntrys() > 0){
          uint16_t currentTxFifoEntry = spi1TxFifoRead();
-         uint16_t newRxFifoEntry = 0;
+         uint16_t newRxFifoEntry = 0x0000;
+         uint8_t bitCount = (value & 0x000F) + 1;
+         uint16_t startBit = 1 << (bitCount - 1);
          uint8_t bits;
 
+         debugLog("SPI1 transfer, PC:0x%08X\n", flx68000GetPc());
+
+         //The most significant bit is output when the CPU loads the transmitted data, 13.2.3 SPI 1 Phase and Polarity Configurations MC68VZ328UM.pdf
          for(bits = 0; bits < bitCount; bits++){
             newRxFifoEntry |= sdCardExchangeBit(!!(currentTxFifoEntry & startBit));
             newRxFifoEntry <<= 1;
             currentTxFifoEntry <<= 1;
          }
 
+         //add received data back to RX FIFO
          spi1RxFifoWrite(newRxFifoEntry);
 
          //overflow occured, remove 1 FIFO entry
          //I do not currently know if the FIFO entry is removed from the back or front of the FIFO, going with the back for now
-         if(spi1RxFifoEntrys() == 0)
-            spi1RxFifoRead();
+         //if(spi1RxFifoEntrys() == 0)
+         //   spi1RxFifoRead();
       }
    }
+
+   //update SPIINTCS interrupt bits
+   setSpiIntCs(registerArrayRead16(SPIINTCS));
 
    registerArrayWrite16(SPICONT1, value);
 }
@@ -353,9 +411,8 @@ static void setSpiCont2(uint16_t value){
    else
       clearIprIsrBit(INT_SPI2);
 
-   //do a transfer
+   //do a transfer if enabled(this register write and last) and exchange set
    if(value & oldSpiCont2 & 0x0200 && value & 0x0100){
-      //enabled and exchange set
       uint8_t bitCount = (value & 0x000F) + 1;
       uint16_t startBit = 1 << (bitCount - 1);
       uint16_t spi2Data = registerArrayRead16(SPIDATA2);
@@ -374,7 +431,7 @@ static void setSpiCont2(uint16_t value){
          }
       }
       else{
-         //shift in 0s
+         //shift in 0s, this is inaccurate, it should be whatever the last bit on SPIRXD(the SPI2 pin, not the SPI1 register) was
          spi2Data <<= bitCount;
       }
       registerArrayWrite16(SPIDATA2, spi2Data);
@@ -438,7 +495,7 @@ static void setPwmc1(uint16_t value){
    //PWM1 enabled, set IRQ
    if(!(oldPwmc1 & 0x0010) && value & 0x0010){
       value |= 0x0080;//enable IRQ
-      pwm1ClocksToNextSample = 0;//when first sample is written output it immediatly
+      pwm1ClocksToNextSample = 0;//when first sample is written output it immediately
    }
 
    //clear interrupt by write(reading can also clear the interrupt)
@@ -472,25 +529,21 @@ static void setIsr(uint32_t value, bool useTopWord, bool useBottomWord){
    if(useTopWord){
       uint16_t interruptControlRegister = registerArrayRead16(ICR);
 
-      if(!(interruptControlRegister & 0x0800)){
-         //IRQ1 is not edge triggered
+      //IRQ1 is not edge triggered
+      if(!(interruptControlRegister & 0x0800))
          value &= ~INT_IRQ1;
-      }
 
-      if(!(interruptControlRegister & 0x0400)){
-         //IRQ2 is not edge triggered
+      //IRQ2 is not edge triggered
+      if(!(interruptControlRegister & 0x0400))
          value &= ~INT_IRQ2;
-      }
 
-      if(!(interruptControlRegister & 0x0200)){
-         //IRQ3 is not edge triggered
+      //IRQ3 is not edge triggered
+      if(!(interruptControlRegister & 0x0200))
          value &= ~INT_IRQ3;
-      }
 
-      if(!(interruptControlRegister & 0x0100)){
-         //IRQ6 is not edge triggered
+      //IRQ6 is not edge triggered
+      if(!(interruptControlRegister & 0x0100))
          value &= ~INT_IRQ6;
-      }
 
       registerArrayWrite16(IPR, registerArrayRead16(IPR) & ~(value >> 16));
       registerArrayWrite16(ISR, registerArrayRead16(ISR) & ~(value >> 16));
@@ -532,7 +585,7 @@ static uint8_t getPortDInputPinValues(void){
 }
 
 static uint8_t getPortAValue(void){
-   //not attached, used as data lines
+   //not attached, used as CPU data lines
    return 0x00;
 }
 

@@ -10,7 +10,6 @@ EMU_SOURCES_C := $(EMU_PATH)/emulator.c \
 	$(EMU_PATH)/silkscreen.c \
 	$(EMU_PATH)/flx68000.c \
 	$(EMU_PATH)/audio/blip_buf.c \
-	$(EMU_PATH)/audio/inductor.c \
 	$(EMU_PATH)/debug/sandbox.c
 
 ifeq ($(EMU_OPTIMIZE_FOR_ARM), true)

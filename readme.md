@@ -47,7 +47,7 @@ Bonus:        Has Adware(Addit)
 The lack of ARM CPU will be fixed in my emulator see "OS improvements".
 
 ## Credits
-Musashi v3.4 (last version that builds outside of mame)(68k Core)  
+Musashi v3.4 (last version that builds outside of MAME)(68k Core)  
 Cyclone 68000 (68k Core)  
 blip_buf 1.1.0 (Audio Resampler)  
 http://www.iconarchive.com/show/crystal-clear-icons-by-everaldo/App-palm-icon.html (Desktop Icon)  
@@ -74,12 +74,21 @@ Open the .pro file in Qt Creator and click "Run" or build from command line
     make
 
 #### TestSuite for Palm OS
-Install prc-tools from the below link(self compiled or prepackaged vm)  
+Install prc-tools from the below link(self compiled or prepackaged VM)  
 
     cd ./hwTestSuite
     ./make.sh
 
 ## Running
+#### Files
+palmos41-en-m515.rom(all euro languages, from Palm dev program): 412557a221933a8be12622de7a21320a (MD5)  
+palmos41-en-m515.rom(English only, verified authentic from device): 83cb1d1c76e568b916dc2e7c0bf669f6 (MD5)  
+bootloader-en-m515.rom(v1): 9da101cd2317830649a31f8fa46debec (MD5)  
+bootloader-en-m515.rom(v2): e64c755205bc3e79d1bc5b70128f688d (MD5)  
+
+If you can read English or intend to install your own language pack use the verified version:  
+I understand not everyone speaks English so I list both ROMs, I do all my testing on the English only build because I have verified it with an actual device, but will do my best to support the Palm dev version as well(it runs on the same hardware anyway).
+
 #### For Qt
  1. Run once to create the directory tree
  2. Copy "palmos41-en-m515.rom" to "~/Mu"

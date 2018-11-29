@@ -1,9 +1,10 @@
-#include <QMouseEvent>
+#include "touchscreen.h"
+
 #include <QLabel>
+#include <QMouseEvent>
 
 #include <stdint.h>
 
-#include "touchscreen.h"
 #include "mainwindow.h"
 #include "emuwrapper.h"
 

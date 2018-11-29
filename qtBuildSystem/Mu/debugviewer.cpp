@@ -155,9 +155,9 @@ void DebugViewer::on_debugShowRegisters_clicked(){
    std::vector<uint32_t> registers = ((MainWindow*)parentWidget())->emu.getCpuRegisters();
 
    ui->debugValueList->clear();
-   for(uint8_t dRegs = 0; dRegs <= 7; dRegs++)
+   for(uint8_t dRegs = 0; dRegs < 8; dRegs++)
       ui->debugValueList->addItem("D" + stringFromNumber(dRegs, false, 0) + ":" + stringFromNumber(registers[dRegs], true, 8));
-   for(uint8_t aRegs = 0; aRegs <= 7; aRegs++)
+   for(uint8_t aRegs = 0; aRegs < 8; aRegs++)
       ui->debugValueList->addItem("A" + stringFromNumber(aRegs, false, 0) + ":" + stringFromNumber(registers[8 + aRegs], true, 8));
    ui->debugValueList->addItem("SP:" + stringFromNumber(registers[15], true, 8));
    ui->debugValueList->addItem("PC:" + stringFromNumber(registers[16], true, 8));

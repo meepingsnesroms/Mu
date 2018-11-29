@@ -363,7 +363,7 @@ std::vector<uint64_t>& EmuWrapper::getDuplicateCallCount(){
 std::vector<uint32_t> EmuWrapper::getCpuRegisters(){
    std::vector<uint32_t> registers;
 
-   for(uint8_t reg = 0; reg <= 17; reg++)
+   for(uint8_t reg = 0; reg < 18; reg++)
       registers.push_back(flx68000GetRegister(reg));
    return registers;
 }
