@@ -89,7 +89,6 @@ int interruptAcknowledge(int intLevel){
    pllWakeCpuIfOff();
 
    //the interrupt should only be cleared after its been handled
-
    return vector;
 }
 
@@ -128,69 +127,46 @@ static void pllWakeCpuIfOff(void){
 static void checkInterrupts(void){
    uint32_t activeInterrupts = registerArrayRead32(ISR);
    uint16_t interruptLevelControlRegister = registerArrayRead16(ILCR);
+   uint8_t spi1IrqLevel = interruptLevelControlRegister >> 12;
+   uint8_t uart2IrqLevel = interruptLevelControlRegister >> 8 & 0x0007;
+   uint8_t pwm2IrqLevel = interruptLevelControlRegister >> 4 & 0x0007;
+   uint8_t timer2IrqLevel = interruptLevelControlRegister & 0x0007;
    uint8_t intLevel = 0;
 
-   if(activeInterrupts & INT_EMIQ){
-      //EMIQ - Emulator IRQ, has nothing to do with emulation, used for debugging on a dev board
-      intLevel = 7;
-   }
+   //static interrupts
+   if(activeInterrupts & INT_EMIQ)
+      intLevel = 7;//EMIQ - Emulator IRQ, has nothing to do with emulation, used for debugging on a dev board
 
-   if(activeInterrupts & INT_SPI1){
-      uint8_t spi1IrqLevel = interruptLevelControlRegister >> 12;
-      if(intLevel < spi1IrqLevel)
-         intLevel = spi1IrqLevel;
-   }
+   if(intLevel < 6 && activeInterrupts & (INT_TMR1 | INT_PWM1 | INT_IRQ6))
+      intLevel = 6;
 
-   if(activeInterrupts & INT_IRQ5){
-      if(intLevel < 5)
-         intLevel = 5;
-   }
+   if(intLevel < 5 && activeInterrupts & INT_IRQ5)
+      intLevel = 5;
 
-   if(activeInterrupts & INT_IRQ3){
-      if(intLevel < 3)
-         intLevel = 3;
-   }
+   if(intLevel < 4 && activeInterrupts & (INT_SPI2 | INT_UART1 | INT_WDT | INT_RTC | INT_KB | INT_RTI | INT_INT0 | INT_INT1 | INT_INT2 | INT_INT3))
+      intLevel = 4;
 
-   if(activeInterrupts & INT_IRQ2){
-      if(intLevel < 2)
-         intLevel = 2;
-   }
+   if(intLevel < 3 && activeInterrupts & INT_IRQ3)
+      intLevel = 3;
 
-   if(activeInterrupts & INT_IRQ1){
-      if(intLevel < 1)
-         intLevel = 1;
-   }
+   if(intLevel < 2 && activeInterrupts & INT_IRQ2)
+      intLevel = 2;
 
-   if(activeInterrupts & INT_PWM2){
-      uint8_t pwm2IrqLevel = interruptLevelControlRegister >> 4 & 0x0007;
-      if(intLevel < pwm2IrqLevel)
-         intLevel = pwm2IrqLevel;
-   }
+   if(intLevel < 1 && activeInterrupts & INT_IRQ1)
+      intLevel = 1;
 
-   if(activeInterrupts & INT_UART2){
-      uint8_t uart2IrqLevel = interruptLevelControlRegister >> 8 & 0x0007;
-      if(intLevel < uart2IrqLevel)
-         intLevel = uart2IrqLevel;
-   }
+   //configureable interrupts
+   if(intLevel < spi1IrqLevel && activeInterrupts & INT_SPI1)
+      intLevel = spi1IrqLevel;
 
-   if(activeInterrupts & INT_TMR2){
-      //TMR2 - Timer 2
-      uint8_t timer2IrqLevel = interruptLevelControlRegister & 0x0007;
-      if(intLevel < timer2IrqLevel)
-         intLevel = timer2IrqLevel;
-   }
+   if(intLevel < uart2IrqLevel && activeInterrupts & INT_UART2)
+      intLevel = uart2IrqLevel;
 
-   if(activeInterrupts & (INT_TMR1 | INT_PWM1 | INT_IRQ6)){
-      //All Fixed Level 6 Interrupts
-      if(intLevel < 6)
-         intLevel = 6;
-   }
+   if(intLevel < pwm2IrqLevel && activeInterrupts & INT_PWM2)
+      intLevel = pwm2IrqLevel;
 
-   if(activeInterrupts & (INT_SPI2 | INT_UART1 | INT_WDT | INT_RTC | INT_KB | INT_RTI | INT_INT0 | INT_INT1 | INT_INT2 | INT_INT3)){
-      //All Fixed Level 4 Interrupts
-      if(intLevel < 4)
-         intLevel = 4;
-   }
+   if(intLevel < timer2IrqLevel && activeInterrupts & INT_TMR2)
+      intLevel = timer2IrqLevel;
 
    //even masked interrupts turn off PCTLR, 4.5.4 Power Control Register MC68VZ328UM.pdf
    if(intLevel > 0 && registerArrayRead8(PCTLR) & 0x80){
@@ -198,7 +174,8 @@ static void checkInterrupts(void){
       pctlrCpuClockDivider = 1.0;
    }
 
-   flx68000SetIrq(intLevel);//should be called even if intLevel is 0, that is how the interrupt state gets cleared
+   //should be called even if intLevel is 0, that is how the interrupt state gets cleared
+   flx68000SetIrq(intLevel);
 }
 
 static void checkPortDInterrupts(void){
@@ -207,10 +184,11 @@ static void checkPortDInterrupts(void){
    uint8_t portDEdgeTriggered = registerArrayRead8(PDIRQEG);
    uint16_t interruptControlRegister = registerArrayRead16(ICR);
    uint8_t triggeredIntXInterrupts = portDValue & registerArrayRead8(PDIRQEN);
-   //bool pllOn = pllIsOn();
+   bool pllOn = pllIsOn();
 
    //On hardware PDIRQEG seems not to actually work at all(CPUID:0x57000000), unimplementedHardware.txt
    //the correct behavior is not being used right now because it doesnt seem to happen on the actual device
+   //this may be because the interrupts are change to level triggered after they are triggered?
 
    /*
    if(triggeredIntXInterrupts & 0x01)
@@ -234,22 +212,22 @@ static void checkPortDInterrupts(void){
       clearIprIsrBit(INT_INT3);
    */
 
-   if(triggeredIntXInterrupts & 0x01/* && (!(portDEdgeTriggered & 0x01) || pllOn)*/)
+   if(triggeredIntXInterrupts & 0x01 && (!(portDEdgeTriggered & 0x01) || pllOn))
       setIprIsrBit(INT_INT0);
    else if(!(portDEdgeTriggered & 0x01))
       clearIprIsrBit(INT_INT0);
 
-   if(triggeredIntXInterrupts & 0x02/* && (!(portDEdgeTriggered & 0x02) || pllOn)*/)
+   if(triggeredIntXInterrupts & 0x02 && (!(portDEdgeTriggered & 0x02) || pllOn))
       setIprIsrBit(INT_INT1);
    else if(!(portDEdgeTriggered & 0x02))
       clearIprIsrBit(INT_INT1);
 
-   if(triggeredIntXInterrupts & 0x04/* && (!(portDEdgeTriggered & 0x04) || pllOn)*/)
+   if(triggeredIntXInterrupts & 0x04 && (!(portDEdgeTriggered & 0x04) || pllOn))
       setIprIsrBit(INT_INT2);
    else if(!(portDEdgeTriggered & 0x04))
       clearIprIsrBit(INT_INT2);
 
-   if(triggeredIntXInterrupts & 0x08/* && (!(portDEdgeTriggered & 0x08) || pllOn)*/)
+   if(triggeredIntXInterrupts & 0x08 && (!(portDEdgeTriggered & 0x08) || pllOn))
       setIprIsrBit(INT_INT3);
    else if(!(portDEdgeTriggered & 0x08))
       clearIprIsrBit(INT_INT3);
@@ -283,12 +261,11 @@ static void checkPortDInterrupts(void){
    //the above seems like a lie, 10.4.4 Port D Operation MC68VZ328UM.pdf
    //completely removing PDKBEN is not accurate but makes the buttons function properly
    //I am fairly sure that port d is not documented properly by the data sheet so Im going with what works properly right now
-   /*
-   if(registerArrayRead8(PDKBEN) & portDValue)
+   //the "!pllOn &&" is a hack, it prevents rapid button presses, but allows INT_KB to turn the device back on
+   if(!pllOn && registerArrayRead8(PDKBEN) & portDValue)
       setIprIsrBit(INT_KB);
    else
       clearIprIsrBit(INT_KB);
-   */
 
    checkInterrupts();
 }
@@ -735,7 +712,7 @@ void setHwRegister16(uint32_t address, uint16_t value){
          break;
       case IMR + 2:
          //this is a 32 bit register but Palm OS writes to it as 16 bit chunks
-         registerArrayWrite16(IMR + 2, value & 0x3FFF);
+         registerArrayWrite16(IMR + 2, value & 0xFFFF);//Palm OS writes to reserved bits 14 and 15
          registerArrayWrite16(ISR + 2, registerArrayRead16(IPR + 2) & registerArrayRead16(IMR + 2));
          checkInterrupts();
          break;
@@ -1006,7 +983,7 @@ void setHwRegister32(uint32_t address, uint32_t value){
          break;
 
       case IMR:
-         registerArrayWrite32(IMR, value & 0x00FF3FFF);
+         registerArrayWrite32(IMR, value & 0x00FFFFFF);//Palm OS writes to reserved bits 14 and 15
          registerArrayWrite32(ISR, registerArrayRead32(IPR) & registerArrayRead32(IMR));
          checkInterrupts();
          break;
@@ -1091,7 +1068,7 @@ void resetHwRegisters(void){
    registerArrayWrite8(PCTLR, 0x1F);
 
    //interrupts
-   registerArrayWrite32(IMR, 0x00FF3FFF);//the data sheet says 0x00FFFFFF and 0x00FF3FFF, since I am anding out all reserved bits I am using 0x00FF3FFF
+   registerArrayWrite32(IMR, 0x00FFFFFF);//the data sheet says 0x00FFFFFF and 0x00FF3FFF, using 0x00FFFFFF because thats how its set on the device
    registerArrayWrite16(ILCR, 0x6533);
 
    //GPIO ports

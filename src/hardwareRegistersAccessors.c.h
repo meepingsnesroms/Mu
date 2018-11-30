@@ -102,7 +102,7 @@ int32_t pwm1FifoRunSample(int32_t now, int32_t clockOffset){
    uint8_t clockDivider = 2 << (pwmc1 & 0x03);
    uint8_t repeat = 1 << (pwmc1 >> 2 & 0x03);
    int32_t audioNow = now + clockOffset;
-   int32_t audioSampleDuration = (pwmc1 & 0x8000)/*usingClk32*/ ? audioGetFramePercentIncrementFromClk32s(period * prescaler * clockDivider) : audioGetFramePercentIncrementFromSysclks(period * prescaler * clockDivider);
+   int32_t audioSampleDuration = (pwmc1 & 0x8000)/*CLKSRC*/ ? audioGetFramePercentIncrementFromClk32s(period * prescaler * clockDivider) : audioGetFramePercentIncrementFromSysclks(period * prescaler * clockDivider);
    float dutyCycle = fMin((float)sample / period, 1.00);
    uint8_t index;
 

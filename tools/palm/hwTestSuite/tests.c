@@ -506,7 +506,16 @@ var getInterruptInfo(){
    StrPrintF(sharedDataBuffer, "ILCR:0x%04X", readArbitraryMemory16(HW_REG_ADDR(ILCR)));
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
-   StrPrintF(sharedDataBuffer, "ICR:0x%02X", readArbitraryMemory16(HW_REG_ADDR(ICR)));
+   StrPrintF(sharedDataBuffer, "ICR:0x%04X", readArbitraryMemory16(HW_REG_ADDR(ICR)));
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   StrPrintF(sharedDataBuffer, "PDIRQEN:0x%02X", readArbitraryMemory8(HW_REG_ADDR(PDIRQEN)));
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   StrPrintF(sharedDataBuffer, "PDIRQEG:0x%02X", readArbitraryMemory8(HW_REG_ADDR(PDIRQEG)));
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   StrPrintF(sharedDataBuffer, "PDKBEN:0x%02X", readArbitraryMemory8(HW_REG_ADDR(PDKBEN)));
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
    
