@@ -264,8 +264,9 @@ static void updateCsdAddressLines(void){
 
 static void setPllfsr(uint16_t value){
    uint16_t oldPllfsr = registerArrayRead16(PLLFSR);
+
+   //change frequency if frequency protect bit isnt set
    if(!(oldPllfsr & 0x4000)){
-      //frequency protect bit not set
       registerArrayWrite16(PLLFSR, (value & 0x4FFF) | (oldPllfsr & 0x8000));//preserve CLK32 bit
       palmSysclksPerClk32 = sysclksPerClk32();
    }

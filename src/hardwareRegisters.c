@@ -118,11 +118,11 @@ void setWriteProtectViolation(uint32_t address){
 }
 
 static void pllWakeCpuIfOff(void){
-   if(!pllIsOn() && pllWakeWait == -1){
-      //PLL is off and not already in the process of waking up
-      int8_t pllWaitTable[4] = {32, 48, 64, 96};
+   const int8_t pllWaitTable[4] = {32, 48, 64, 96};
+
+   //PLL is off and not already in the process of waking up
+   if(!pllIsOn() && pllWakeWait == -1)
       pllWakeWait = pllWaitTable[registerArrayRead16(PLLCR) & 0x0003];
-   }
 }
 
 static void checkInterrupts(void){
@@ -728,14 +728,16 @@ void setHwRegister16(uint32_t address, uint16_t value){
          break;
 
       case IMR:
-         //this is a 32 bit register but Palm OS writes it as 16 bit chunks
+         //this is a 32 bit register but Palm OS writes to it as 16 bit chunks
          registerArrayWrite16(IMR, value & 0x00FF);
          registerArrayWrite16(ISR, registerArrayRead16(IPR) & registerArrayRead16(IMR));
+         checkInterrupts();
          break;
       case IMR + 2:
-         //this is a 32 bit register but Palm OS writes it as 16 bit chunks
-         registerArrayWrite16(IMR + 2, value & 0x03FF);
+         //this is a 32 bit register but Palm OS writes to it as 16 bit chunks
+         registerArrayWrite16(IMR + 2, value & 0x3FFF);
          registerArrayWrite16(ISR + 2, registerArrayRead16(IPR + 2) & registerArrayRead16(IMR + 2));
+         checkInterrupts();
          break;
 
       case ISR:
@@ -1006,6 +1008,7 @@ void setHwRegister32(uint32_t address, uint32_t value){
       case IMR:
          registerArrayWrite32(IMR, value & 0x00FF3FFF);
          registerArrayWrite32(ISR, registerArrayRead32(IPR) & registerArrayRead32(IMR));
+         checkInterrupts();
          break;
 
       case LSSA:
