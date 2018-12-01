@@ -29,6 +29,8 @@ PWM2 is not implemented
 don't know if flushing the PWM1 FIFO sets all the bytes to 0x00, or just sets the read pointer to the write pointer preserving the newest sample and making the size 0(readPtr = writePtr has significantly cleaner audio then 0ing it out though)
 while it is stated that the PLL is turned off "30 clocks" after the DISPLL bit is set, it doesnt state where the clocks come from, CLK32 or SYSCLK
 the power button double press issue may be because the button map I am using was taken from POSE source, the power button may be mapped to other locations on the button matrix than expected
+SPI1 SPISPC register
+UART1 USTCNT1
 
 Debug tools:
 ADS7846 channels can't be read in single reference mode in hwTestSuite

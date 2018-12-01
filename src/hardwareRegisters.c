@@ -931,10 +931,25 @@ void setHwRegister16(uint32_t address, uint16_t value){
 
       case PWMS1:
          //write only if PWM1 enabled
-         if(registerArrayRead16(PWMC1) & 0x0001){
+         if(registerArrayRead16(PWMC1) & 0x0010){
             pwm1FifoWrite(value >> 8);
             pwm1FifoWrite(value & 0xFF);
          }
+         break;
+
+      case USTCNT1:
+         registerArrayWrite16(UBAUD1, value);
+         //needs to recalculate interrupts here
+         break;
+
+      case UBAUD1:
+         //just does timing stuff, should be OK to ignore
+         registerArrayWrite16(UBAUD1, value & 0x2F3F);
+         break;
+
+      case NIPR1:
+         //just does timing stuff, should be OK to ignore
+         registerArrayWrite16(NIPR1, value & 0x87FF);
          break;
 
       case SPISPC:
