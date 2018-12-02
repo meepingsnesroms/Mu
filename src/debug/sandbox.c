@@ -28,9 +28,11 @@ typedef struct{
 }return_pointer_t;
 
 
-//used to "log out" of the emulator once a test has finished
-static bool inSandbox;
+static bool inSandbox;//used to "log out" of the emulator once a test has finished
+static bool sandboxControlHandoff;//used for functions that depend on timing, hands full control to the 68k
 
+
+static uint32_t sandboxCallGuestFunction(bool fallthrough, uint32_t address, uint16_t trap, const char* prototype, ...);
 
 #include "sandboxTrapNumToName.c.h"
 
@@ -97,7 +99,6 @@ static int64_t randomRange(int64_t start, int64_t end){
 
    return result;
 }
-
 
 static bool isAlphanumeric(char chr){
    if((chr >= 'a' && chr <= 'z') || (chr >= 'A' && chr <= 'Z') || (chr >= '0' && chr <= '9'))
@@ -192,6 +193,81 @@ static uint32_t scanForPrivateFunctionAddress(const char* name){
    return 0x00000000;
 }
 
+static uint32_t makePalmString(const char* str){
+   uint32_t strLength = strlen(str) + 1;
+   uint32_t strData = sandboxCallGuestFunction(false, 0x00000000, MemPtrNew, "p(l)", strLength);
+
+   if(strData != 0){
+      uint32_t count;
+
+      for(count = 0; count < strLength; count++)
+         m68k_write_memory_8(strData + count, str[count]);
+   }
+
+   return strData;
+}
+
+static char* makeNativeString(uint32_t address){
+   if(address != 0){
+      int16_t strLength = sandboxCallGuestFunction(false, 0x00000000, StrLen, "w(p)", address) + 1;
+      char* nativeStr = malloc(strLength);
+      int16_t count;
+
+      for(count = 0; count < strLength; count++)
+         nativeStr[count] = m68k_read_memory_8(address + count);
+      return nativeStr;
+   }
+   return NULL;
+}
+
+static void freePalmString(uint32_t address){
+   sandboxCallGuestFunction(false, 0x00000000, MemChunkFree, "w(p)", address);
+}
+
+static bool installResourceToDevice(buffer_t resourceBuffer){
+   /*
+   #define memNewChunkFlagNonMovable    0x0200
+   #define memNewChunkFlagAllowLarge    0x1000  // this is not in the sdk *g*
+
+   void *MemPtrNewL ( UInt32 size ) {
+
+     SysAppInfoPtr appInfoP;
+     UInt16        ownerID;
+
+     ownerID =
+       ((SysAppInfoPtr)SysGetAppInfo(&appInfoP, &appInfoP))->memOwnerID;
+
+     return MemChunkNew ( 0, size, ownerID |
+                memNewChunkFlagNonMovable |
+                memNewChunkFlagAllowLarge );
+
+   }
+   */
+
+   //uint32_t palmSideResourceData = callFunction(false, 0x00000000, MemPtrNew, "p(l)", (uint32_t)resourceBuffer.size);
+   uint32_t palmSideResourceData = sandboxCallGuestFunction(false, 0x00000000, MemChunkNew, "p(wlw)", 1/*heapID, storage RAM*/, (uint32_t)resourceBuffer.size, 0x1200/*attr, seems to work without memOwnerID*/);
+   bool storageRamReadOnly = chips[CHIP_DX_RAM].readOnlyForProtectedMemory;
+   uint16_t error;
+   uint32_t count;
+
+   //buffer not allocated
+   if(!palmSideResourceData)
+      return false;
+
+   chips[CHIP_DX_RAM].readOnlyForProtectedMemory = false;//need to unprotect storage RAM
+   for(count = 0; count < resourceBuffer.size; count++)
+      m68k_write_memory_8(palmSideResourceData + count, resourceBuffer.data[count]);
+   chips[CHIP_DX_RAM].readOnlyForProtectedMemory = storageRamReadOnly;//restore old protection state
+   error = sandboxCallGuestFunction(false, 0x00000000, DmCreateDatabaseFromImage, "w(p)", palmSideResourceData);//Err DmCreateDatabaseFromImage(MemPtr bufferP);//this looks best
+   sandboxCallGuestFunction(false, 0x00000000, MemChunkFree, "w(p)", palmSideResourceData);
+
+   //didnt install
+   if(error != 0)
+      return false;
+
+   return true;
+}
+
 static uint32_t getNewStackFrameSize(const char* prototype){
    const char* params = prototype + 2;
    uint32_t size = 0;
@@ -225,8 +301,8 @@ static uint32_t getNewStackFrameSize(const char* prototype){
    return size;
 }
 
-static uint32_t callFunction(bool fallthrough, uint32_t address, uint16_t trap, const char* prototype, ...){
-   //prototype is a java style function signature describing values passed and returned "v(wllp)"
+static uint32_t sandboxCallGuestFunction(bool fallthrough, uint32_t address, uint16_t trap, const char* prototype, ...){
+   //prototype is a Java style function signature describing values passed and returned "v(wllp)"
    //is return void and pass a uint16_t(word), 2 uint32_t(long) and 1 pointer
    //valid types are b(yte), w(ord), l(ong), p(ointer) and v(oid), a capital letter means its a return pointer
    //EvtGetPen v(WWB) returns nothing but writes back to the calling function with 3 pointers,
@@ -235,7 +311,7 @@ static uint32_t callFunction(bool fallthrough, uint32_t address, uint16_t trap, 
    const char* params = prototype + 2;
    uint32_t stackFrameStart = m68k_get_reg(NULL, M68K_REG_SP);
    uint32_t newStackFrameSize = getNewStackFrameSize(prototype);
-   uint32_t stackWriteAddr = stackFrameStart - newStackFrameSize;
+   uint32_t stackWriteAddr = stackFrameStart - newStackFrameSize - (fallthrough ? 8 : 0);//fallthrough needs to store the old SP and PC
    uint32_t oldStopped = m68ki_cpu.stopped;
    uint32_t oldPc = m68k_get_reg(NULL, M68K_REG_PC);
    uint32_t oldA0 = m68k_get_reg(NULL, M68K_REG_A0);
@@ -247,12 +323,20 @@ static uint32_t callFunction(bool fallthrough, uint32_t address, uint16_t trap, 
    uint32_t callStart;
    uint8_t count;
 
+   if(fallthrough){
+      //put return location on stack
+      m68k_write_memory_32(stackWriteAddr, stackFrameStart);
+      stackWriteAddr += 4;
+      m68k_write_memory_32(stackWriteAddr, oldPc);
+      stackWriteAddr += 4;
+   }
+
    va_start(args, prototype);
    while(*params != ')'){
       switch(*params){
          case 'v':
          case 'V':
-            //do nothing
+            //do nothing, this is wrong for "V"
             break;
 
          case 'b':
@@ -330,12 +414,24 @@ static uint32_t callFunction(bool fallthrough, uint32_t address, uint16_t trap, 
    m68k_write_memory_32(callWriteOut, EMU_REG_ADDR(EMU_CMD));
    callWriteOut += 4;
 
+   if(fallthrough){
+      //remove call args from stack
+
+      //put old A0 and D0 back
+
+      //return
+      m68k_write_memory_16(callWriteOut, 0x4E75);//rts
+      callWriteOut += 2;
+   }
+
    inSandbox = true;
+   if(fallthrough)
+      sandboxControlHandoff = true;
    m68ki_cpu.stopped = 0;
    m68k_set_reg(M68K_REG_SP, stackFrameStart - newStackFrameSize);
    m68k_set_reg(M68K_REG_PC, callStart);
 
-   //only setup the trap then fallthrough to normal execution, may be needed on app switch since the trap may not return
+   //only setup the trap or jump then fallthrough to normal execution, may be needed on app switch since the trap may not return
    if(!fallthrough){
       while(inSandbox)
          m68k_execute(1);//m68k_execute() always runs requested cycles + extra cycles of the final opcode, this executes 1 opcode
@@ -371,100 +467,27 @@ static uint32_t callFunction(bool fallthrough, uint32_t address, uint16_t trap, 
    return functionReturn;
 }
 
-static uint32_t makePalmString(const char* str){
-   uint32_t strLength = strlen(str) + 1;
-   uint32_t strData = callFunction(false, 0x00000000, MemPtrNew, "p(l)", strLength);
-
-   if(strData != 0){
-      uint32_t count;
-
-      for(count = 0; count < strLength; count++)
-         m68k_write_memory_8(strData + count, str[count]);
-   }
-
-   return strData;
-}
-
-static char* makeNativeString(uint32_t address){
-   if(address != 0){
-      int16_t strLength = callFunction(false, 0x00000000, StrLen, "w(p)", address) + 1;
-      char* nativeStr = malloc(strLength);
-      int16_t count;
-
-      for(count = 0; count < strLength; count++)
-         nativeStr[count] = m68k_read_memory_8(address + count);
-      return nativeStr;
-   }
-   return NULL;
-}
-
-static void freePalmString(uint32_t address){
-   callFunction(false, 0x00000000, MemChunkFree, "w(p)", address);
-}
-
-static bool installResourceToDevice(buffer_t resourceBuffer){
-   /*
-   #define memNewChunkFlagNonMovable    0x0200
-   #define memNewChunkFlagAllowLarge    0x1000  // this is not in the sdk *g*
-
-   void *MemPtrNewL ( UInt32 size ) {
-
-     SysAppInfoPtr appInfoP;
-     UInt16        ownerID;
-
-     ownerID =
-       ((SysAppInfoPtr)SysGetAppInfo(&appInfoP, &appInfoP))->memOwnerID;
-
-     return MemChunkNew ( 0, size, ownerID |
-                memNewChunkFlagNonMovable |
-                memNewChunkFlagAllowLarge );
-
-   }
-   */
-
-   //uint32_t palmSideResourceData = callFunction(false, 0x00000000, MemPtrNew, "p(l)", (uint32_t)resourceBuffer.size);
-   uint32_t palmSideResourceData = callFunction(false, 0x00000000, MemChunkNew, "p(wlw)", 1/*heapID, storage RAM*/, (uint32_t)resourceBuffer.size, 0x1200/*attr, seems to work without memOwnerID*/);
-   bool storageRamReadOnly = chips[CHIP_DX_RAM].readOnlyForProtectedMemory;
-   uint16_t error;
-   uint32_t count;
-
-   //buffer not allocated
-   if(!palmSideResourceData)
-      return false;
-
-   chips[CHIP_DX_RAM].readOnlyForProtectedMemory = false;//need to unprotect storage RAM
-   for(count = 0; count < resourceBuffer.size; count++)
-      m68k_write_memory_8(palmSideResourceData + count, resourceBuffer.data[count]);
-   chips[CHIP_DX_RAM].readOnlyForProtectedMemory = storageRamReadOnly;//restore old protection state
-   error = callFunction(false, 0x00000000, DmCreateDatabaseFromImage, "w(p)", palmSideResourceData);//Err DmCreateDatabaseFromImage(MemPtr bufferP);//this looks best
-   callFunction(false, 0x00000000, MemChunkFree, "w(p)", palmSideResourceData);
-
-   //didnt install
-   if(error != 0)
-      return false;
-
-   return true;
-}
 
 void sandboxInit(void){
    inSandbox = false;
+   sandboxControlHandoff = false;
 #if defined(EMU_SANDBOX_OPCODE_LEVEL_DEBUG)
    m68k_set_instr_hook_callback(sandboxOnOpcodeRun);
 #endif
 }
 
-uint32_t sandboxCommand(uint32_t test, void* data){
+uint32_t sandboxCommand(uint32_t command, void* data){
    uint32_t result = EMU_ERROR_NONE;
 
    //tests cant run properly(hang forever) unless the debug return hook is enabled, it also completly destroys accuracy to execute hacked in asm buffers
    if(!(palmSpecialFeatures & FEATURE_DEBUG))
       return EMU_ERROR_NOT_IMPLEMENTED;
 
-   debugLog("Sandbox: Test %d started\n", test);
+   debugLog("Sandbox: Command %d started\n", command);
 
-   switch(test){
+   switch(command){
       case SANDBOX_TEST_OS_VER:{
-            uint32_t verStrAddr = callFunction(false, 0x00000000, SysGetOSVersionString, "p()");
+            uint32_t verStrAddr = sandboxCallGuestFunction(false, 0x00000000, SysGetOSVersionString, "p()");
             char* nativeStr = makeNativeString(verStrAddr);
 
             debugLog("Sandbox: OS version is:\"%s\"\n", nativeStr);
@@ -473,7 +496,6 @@ uint32_t sandboxCommand(uint32_t test, void* data){
          break;
 
       case SANDBOX_SEND_OS_TOUCH:{
-            //this will not be in the v1.0 release
             if(!m68k_read_memory_8(0x00000253)){
                //0x00000253 seems to be a mutex for accessing the event queue
                //the hack only seems to work when in an interrupt, a hack for a hack :(
@@ -483,15 +505,15 @@ uint32_t sandboxCommand(uint32_t test, void* data){
                   //press
                   m68k_write_memory_16(0xFFFFFFE0 - 4, palmInput.touchscreenX);
                   m68k_write_memory_16(0xFFFFFFE0 - 2, palmInput.touchscreenY);
-                  callFunction(false, 0x00000000, PenScreenToRaw, "w(p)", 0xFFFFFFE0 - 4);
-                  callFunction(false, 0x00000000, EvtEnqueuePenPoint, "w(p)", 0xFFFFFFE0 - 4);
+                  sandboxCallGuestFunction(false, 0x00000000, PenScreenToRaw, "w(p)", 0xFFFFFFE0 - 4);
+                  sandboxCallGuestFunction(false, 0x00000000, EvtEnqueuePenPoint, "w(p)", 0xFFFFFFE0 - 4);
                }
                else{
                   //release
                   m68k_write_memory_16(0xFFFFFFE0 - 4, (uint16_t)-1);
                   m68k_write_memory_16(0xFFFFFFE0 - 2, (uint16_t)-1);
-                  callFunction(false, 0x00000000, PenScreenToRaw, "w(p)", 0xFFFFFFE0 - 4);
-                  callFunction(false, 0x00000000, EvtEnqueuePenPoint, "w(p)", 0xFFFFFFE0 - 4);
+                  sandboxCallGuestFunction(false, 0x00000000, PenScreenToRaw, "w(p)", 0xFFFFFFE0 - 4);
+                  sandboxCallGuestFunction(false, 0x00000000, EvtEnqueuePenPoint, "w(p)", 0xFFFFFFE0 - 4);
                }
             }
          }
@@ -518,9 +540,23 @@ uint32_t sandboxCommand(uint32_t test, void* data){
                result = EMU_ERROR_OUT_OF_MEMORY;
          }
          break;
+
+      case SANDBOX_CALL_POWER_OFF:{
+            //call power off, get a register access log
+            sandboxCallGuestFunction(false, 0, SysDoze, "v(w)", false);
+            result = EMU_ERROR_UNKNOWN;//does not return
+         }
+         break;
+
+      case SANDBOX_CALL_POWER_ON:{
+            //call power on, get a register access log
+            //callFunction(false, 0x10087130, 0, "v()");
+            result = EMU_ERROR_UNKNOWN;//does not return
+         }
+         break;
    }
 
-   debugLog("Sandbox: Test %d finished\n", test);
+   debugLog("Sandbox: Command %d finished\n", command);
 
    return result;
 }
@@ -592,11 +628,16 @@ bool sandboxRunning(void){
 
 void sandboxReturn(void){
    inSandbox = false;
+   if(sandboxControlHandoff){
+      //control was just handed back to the host
+      sandboxControlHandoff = false;
+      debugLog("Sandbox: Control returned to host\n");
+   }
 }
 
 #else
 void sandboxInit(void){}
-uint32_t sandboxCommand(uint32_t test, void* data){return 0;}
+uint32_t sandboxCommand(uint32_t command, void* data){return 0;}
 void sandboxOnOpcodeRun(void){}
 bool sandboxRunning(void){return false;}
 void sandboxReturn(void){}

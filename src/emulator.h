@@ -43,6 +43,7 @@ static void debugLog(char* str, ...){};
 //emu errors
 enum{
    EMU_ERROR_NONE = 0,
+   EMU_ERROR_UNKNOWN,
    EMU_ERROR_NOT_IMPLEMENTED,
    EMU_ERROR_CALLBACKS_NOT_SET,
    EMU_ERROR_OUT_OF_MEMORY,
