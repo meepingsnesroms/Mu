@@ -27,9 +27,18 @@ typedef struct{
    uint64_t bytes;//may be used for strings or structs in the future
 }return_pointer_t;
 
+typedef struct{
+   uint32_t sp;
+   uint32_t pc;
+   uint16_t sr;
+   uint32_t a0;
+   uint32_t d0;
+}local_cpu_state_t;
 
-static bool inSandbox;//used to "log out" of the emulator once a test has finished
-static bool sandboxControlHandoff;//used for functions that depend on timing, hands full control to the 68k
+
+static bool              sandboxActive;//used to "log out" of the emulator once a test has finished
+static bool              sandboxControlHandoff;//used for functions that depend on timing, hands full control to the 68k
+static local_cpu_state_t sandboxOldFunctionCpuState;
 
 
 static uint32_t sandboxCallGuestFunction(bool fallthrough, uint32_t address, uint16_t trap, const char* prototype, ...);
@@ -268,7 +277,7 @@ static bool installResourceToDevice(buffer_t resourceBuffer){
    return true;
 }
 
-static uint32_t getNewStackFrameSize(const char* prototype){
+static uint32_t sandboxGetStackFrameSize(const char* prototype){
    const char* params = prototype + 2;
    uint32_t size = 0;
 
@@ -301,6 +310,22 @@ static uint32_t getNewStackFrameSize(const char* prototype){
    return size;
 }
 
+static void sandboxBackupCpuState(void){
+   sandboxOldFunctionCpuState.sp = m68k_get_reg(NULL, M68K_REG_SP);
+   sandboxOldFunctionCpuState.pc = m68k_get_reg(NULL, M68K_REG_PC);
+   sandboxOldFunctionCpuState.sr = m68k_get_reg(NULL, M68K_REG_SR);
+   sandboxOldFunctionCpuState.a0 = m68k_get_reg(NULL, M68K_REG_A0);
+   sandboxOldFunctionCpuState.d0 = m68k_get_reg(NULL, M68K_REG_D0);
+}
+
+static void sandboxRestoreCpuState(void){
+   m68k_set_reg(M68K_REG_SP, sandboxOldFunctionCpuState.sp);
+   m68k_set_reg(M68K_REG_PC, sandboxOldFunctionCpuState.pc);
+   m68k_set_reg(M68K_REG_SR, sandboxOldFunctionCpuState.sr);
+   m68k_set_reg(M68K_REG_A0, sandboxOldFunctionCpuState.a0);
+   m68k_set_reg(M68K_REG_D0, sandboxOldFunctionCpuState.d0);
+}
+
 static uint32_t sandboxCallGuestFunction(bool fallthrough, uint32_t address, uint16_t trap, const char* prototype, ...){
    //prototype is a Java style function signature describing values passed and returned "v(wllp)"
    //is return void and pass a uint16_t(word), 2 uint32_t(long) and 1 pointer
@@ -310,12 +335,9 @@ static uint32_t sandboxCallGuestFunction(bool fallthrough, uint32_t address, uin
    va_list args;
    const char* params = prototype + 2;
    uint32_t stackFrameStart = m68k_get_reg(NULL, M68K_REG_SP);
-   uint32_t newStackFrameSize = getNewStackFrameSize(prototype);
-   uint32_t stackWriteAddr = stackFrameStart - newStackFrameSize - (fallthrough ? 8 : 0);//fallthrough needs to store the old SP and PC
+   uint32_t newStackFrameSize = sandboxGetStackFrameSize(prototype);
+   uint32_t stackWriteAddr = stackFrameStart - newStackFrameSize;
    uint32_t oldStopped = m68ki_cpu.stopped;
-   uint32_t oldPc = m68k_get_reg(NULL, M68K_REG_PC);
-   uint32_t oldA0 = m68k_get_reg(NULL, M68K_REG_A0);
-   uint32_t oldD0 = m68k_get_reg(NULL, M68K_REG_D0);
    uint32_t functionReturn = 0x00000000;
    return_pointer_t functionReturnPointers[10];
    uint8_t functionReturnPointerIndex = 0;
@@ -323,13 +345,7 @@ static uint32_t sandboxCallGuestFunction(bool fallthrough, uint32_t address, uin
    uint32_t callStart;
    uint8_t count;
 
-   if(fallthrough){
-      //put return location on stack
-      m68k_write_memory_32(stackWriteAddr, stackFrameStart);
-      stackWriteAddr += 4;
-      m68k_write_memory_32(stackWriteAddr, oldPc);
-      stackWriteAddr += 4;
-   }
+   sandboxBackupCpuState();
 
    va_start(args, prototype);
    while(*params != ')'){
@@ -414,36 +430,23 @@ static uint32_t sandboxCallGuestFunction(bool fallthrough, uint32_t address, uin
    m68k_write_memory_32(callWriteOut, EMU_REG_ADDR(EMU_CMD));
    callWriteOut += 4;
 
-   if(fallthrough){
-      //remove call args from stack
-
-      //put old A0 and D0 back
-
-      //return
-      m68k_write_memory_16(callWriteOut, 0x4E75);//rts
-      callWriteOut += 2;
-   }
-
-   inSandbox = true;
+   sandboxActive = true;
    if(fallthrough)
       sandboxControlHandoff = true;
-   m68ki_cpu.stopped = 0;
+   else
+      m68ki_cpu.stopped = 0;
    m68k_set_reg(M68K_REG_SP, stackFrameStart - newStackFrameSize);
    m68k_set_reg(M68K_REG_PC, callStart);
 
-   //only setup the trap or jump then fallthrough to normal execution, may be needed on app switch since the trap may not return
    if(!fallthrough){
-      while(inSandbox)
+      while(sandboxActive)
          m68k_execute(1);//m68k_execute() always runs requested cycles + extra cycles of the final opcode, this executes 1 opcode
       if(prototype[0] == 'p')
          functionReturn = m68k_get_reg(NULL, M68K_REG_A0);
       else if(prototype[0] == 'b' || prototype[0] == 'w' || prototype[0] == 'l')
          functionReturn = m68k_get_reg(NULL, M68K_REG_D0);
       m68ki_cpu.stopped = oldStopped;
-      m68k_set_reg(M68K_REG_PC, oldPc);
-      m68k_set_reg(M68K_REG_SP, stackFrameStart);
-      m68k_set_reg(M68K_REG_A0, oldA0);
-      m68k_set_reg(M68K_REG_D0, oldD0);
+      sandboxRestoreCpuState();
 
       //remap all argument pointers
       for(count = 0; count < functionReturnPointerIndex; count++){
@@ -469,7 +472,7 @@ static uint32_t sandboxCallGuestFunction(bool fallthrough, uint32_t address, uin
 
 
 void sandboxInit(void){
-   inSandbox = false;
+   sandboxActive = false;
    sandboxControlHandoff = false;
 #if defined(EMU_SANDBOX_OPCODE_LEVEL_DEBUG)
    m68k_set_instr_hook_callback(sandboxOnOpcodeRun);
@@ -623,14 +626,15 @@ void sandboxOnOpcodeRun(void){
 }
 
 bool sandboxRunning(void){
-   return inSandbox;
+   return sandboxActive;
 }
 
 void sandboxReturn(void){
-   inSandbox = false;
+   sandboxActive = false;
    if(sandboxControlHandoff){
       //control was just handed back to the host
       sandboxControlHandoff = false;
+      sandboxRestoreCpuState();
       debugLog("Sandbox: Control returned to host\n");
    }
 }
