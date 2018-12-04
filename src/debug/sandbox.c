@@ -546,7 +546,7 @@ uint32_t sandboxCommand(uint32_t command, void* data){
 
       case SANDBOX_CALL_POWER_OFF:{
             //call power off, get a register access log
-            sandboxCallGuestFunction(false, 0, SysDoze, "v(w)", false);
+            sandboxCallGuestFunction(true, 0, SysDoze, "v(w)", false);
             result = EMU_ERROR_UNKNOWN;//does not return
          }
          break;
