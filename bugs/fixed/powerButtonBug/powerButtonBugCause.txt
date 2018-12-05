@@ -1,0 +1,3 @@
+HwrDelay wasn't finishing fast enough, I just made each read count as a clock cycle since no apps should use it.
+
+It could be that bit just needs to toggle twice as fast since it is the current value of the CLK32 pin, which has an up and a down as 1 clock cycle but I was toggling it just once at the end of each clock cycle.

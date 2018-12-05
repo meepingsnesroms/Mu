@@ -321,7 +321,7 @@ static void sandboxBackupCpuState(void){
 static void sandboxRestoreCpuState(void){
    m68k_set_reg(M68K_REG_SP, sandboxOldFunctionCpuState.sp);
    m68k_set_reg(M68K_REG_PC, sandboxOldFunctionCpuState.pc);
-   m68k_set_reg(M68K_REG_SR, sandboxOldFunctionCpuState.sr);
+   m68k_set_reg(M68K_REG_SR, sandboxOldFunctionCpuState.sr & 0xF0FF | m68k_get_reg(NULL, M68K_REG_SR) & 0x0700);//dont restore intMask
    m68k_set_reg(M68K_REG_A0, sandboxOldFunctionCpuState.a0);
    m68k_set_reg(M68K_REG_D0, sandboxOldFunctionCpuState.d0);
 }
@@ -554,7 +554,8 @@ uint32_t sandboxCommand(uint32_t command, void* data){
       case SANDBOX_CALL_POWER_ON:{
             //call power on, get a register access log
             //callFunction(false, 0x10087130, 0, "v()");
-            result = EMU_ERROR_UNKNOWN;//does not return
+            sandboxActive = true;
+            //result = EMU_ERROR_UNKNOWN;//does not return
          }
          break;
    }

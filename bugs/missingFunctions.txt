@@ -3,9 +3,9 @@ This is like unimplementedHardware.txt but only lists things that have functiona
 State manager goes bezerk and crashes when saving on android, also can't close the window or it won't open again(also only on Android)
 If there is no userdata-en-m515.ram on Android the emu won't create it(this is likely because theres no graceful exit being done on Android only goto home menu and kill process)
 app install hack needs to be removed when SD card works
-double pressing power button issue(better without PDKBEN but still not correct)
 
 Fixed:
+double pressing power button issue(better without PDKBEN but still not correct)
 Holding the buttons emulates pressing them like a turbo button(may be caused by the lack of sound emulation(wrong, sound works now))(may be because the minimum length of a button press is a whole frame(wrong, increasing the framerate doesn't change this behavior))(port d doesn't seem to be documented properly)
 16 bpp mode is broken
 64k app install limit

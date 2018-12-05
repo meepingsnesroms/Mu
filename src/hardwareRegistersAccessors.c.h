@@ -267,7 +267,7 @@ static void setPllfsr(uint16_t value){
 
    //change frequency if frequency protect bit isnt set
    if(!(oldPllfsr & 0x4000)){
-      registerArrayWrite16(PLLFSR, (value & 0x4FFF) | (oldPllfsr & 0x8000));//preserve CLK32 bit
+      registerArrayWrite16(PLLFSR, (value & 0x4CFF) | (oldPllfsr & 0x8000));//preserve CLK32 bit
       palmSysclksPerClk32 = sysclksPerClk32();
    }
 }

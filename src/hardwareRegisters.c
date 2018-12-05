@@ -455,6 +455,11 @@ uint16_t getHwRegister16(uint32_t address){
       case SPIRXD:
          return spi1RxFifoRead();
 
+      case PLLFSR:
+         //this is a hack, it makes the busy wait in HwrDelay finish instantly
+         registerArrayWrite16(PLLFSR, registerArrayRead16(PLLFSR) ^ 0x8000);
+         return registerArrayRead16(PLLFSR);
+
       //32 bit registers accessed as 16 bit
       case IDR:
       case IDR + 2:
@@ -475,7 +480,6 @@ uint16_t getHwRegister16(uint32_t address){
       case CSGBD:
       case CSUGBA:
       case PLLCR:
-      case PLLFSR:
       case DRAMC:
       case SDCTRL:
       case RTCISR:
@@ -516,9 +520,6 @@ uint32_t getHwRegister32(uint32_t address){
       printUnknownHwAccess(address, 0, 32, false);
 
    switch(address){
-      //16 bit registers being read as 32 bit
-      case PLLFSR:
-
       case ISR:
       case IPR:
       case IMR:
