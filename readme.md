@@ -94,17 +94,20 @@ I understand not everyone speaks English so I list both ROMs, I do all my testin
  2. Copy "palmos41-en-m515.rom" to "~/Mu"
  3. Copy "bootloader-en-m515.rom" to "~/Mu"
  4. Run emu and press start button
- 
- #### For RetroArch 
- 1. Copy the same files as above but to the RetroArch "system" directory
- 2. Copy mu_libretro.(so/dylib/dll) to the RetroArch "cores" directory
- 3. Run RetroArch, select "Load Core",  select "Mu", select "Start Core"
+
+ #### For RetroArch
+ 1. Download "Palm OS(Mu)" from "Online Updater->Core Updater"
+ 2. Go back, select "Load Core", select "Palm OS(Mu)"
+ 3. Run "palmos41-en-m515.rom"
 
 ## Tools
 [Prc-tools, Palm OS SDKs, pilrc, pilot-link](https://github.com/meepingsnesroms/prc-tools-remix)
 
 ## License
 <a rel="license" href="http://creativecommons.org/licenses/by-nc/3.0/us/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc/3.0/us/88x31.png" /></a><br />This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc/3.0/us/">Creative Commons Attribution-NonCommercial 3.0 United States License</a>.
+
+## Links
+[Discord](https://discord.gg/hWSz8VN)
 
 ## Also see Mu's sister project
 [🐿SquirrelJME](https://multiphasicapps.net)

@@ -134,6 +134,7 @@
 #define URX1      0x904/*UART Unit 1 RX Register*/
 #define UTX1      0x906/*UART Unit 1 TX Register*/
 #define UMISC1    0x908/*UART Unit 1 Misc Register*/
+#define NIPR1     0x90A/*UART Unit 1 Non-Integer Prescaler Register*/
 
 #define USTCNT2   0x910/*UART Unit 2 Status/Control Register*/
 #define UBAUD2    0x912/*UART Unit 2 Baud Control Register*/

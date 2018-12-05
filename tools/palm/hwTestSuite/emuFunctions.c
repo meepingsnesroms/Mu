@@ -23,6 +23,9 @@ static const uint16_t skipBusError[5] = {
 };
 
 Boolean isEmulator(){
+   return false;
+   
+#if 0
    static uint8_t emuStatus = EMU_STATE_UNTESTED;
    uint32_t osVer;
    
@@ -59,6 +62,7 @@ Boolean isEmulator(){
    }
    
    return emuStatus == EMU_STATE_TRUE;
+#endif
 }
 
 Boolean isEmulatorFeatureEnabled(uint32_t feature){

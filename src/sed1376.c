@@ -257,7 +257,7 @@ void sed1376SetRegister(uint8_t address, uint8_t value){
          sed1376BLut[value] = sed1376Registers[LUT_B_WRITE];
          sed1376GLut[value] = sed1376Registers[LUT_G_WRITE];
          sed1376RLut[value] = sed1376Registers[LUT_R_WRITE];
-         //wheter or not these are changed on a write, or if that depends on the LUT_READ_LOC register is yet to be tested, turn this off for now
+         //whether or not these are changed on a write, or if that depends on the LUT_READ_LOC register is yet to be tested, turn this off for now
          /*
          sed1376Registers[LUT_B_READ] = sed1376BLut[value];
          sed1376Registers[LUT_G_READ] = sed1376GLut[value];
@@ -405,6 +405,6 @@ void sed1376Render(void){
    else{
       //black screen
       memset(palmFramebuffer, 0x00, 160 * 160 * sizeof(uint16_t));
-      //debugLog("Cant draw screen, LCD on:%s, PLL on:%s, power save on:%s, forced blank on:%s\n", palmMisc.lcdOn ? "true" : "false", pllIsOn() ? "true" : "false", sed1376PowerSaveEnabled() ? "true" : "false", !!(sed1376Registers[DISP_MODE] & 0x80) ? "true" : "false");
+      debugLog("Cant draw screen, LCD on:%s, PLL on:%s, power save on:%s, forced blank on:%s\n", palmMisc.lcdOn ? "true" : "false", pllIsOn() ? "true" : "false", sed1376PowerSaveEnabled() ? "true" : "false", !!(sed1376Registers[DISP_MODE] & 0x80) ? "true" : "false");
    }
 }

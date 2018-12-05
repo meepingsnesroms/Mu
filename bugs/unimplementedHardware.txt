@@ -4,6 +4,7 @@ Trace T1 bit, should be unused by the OS and applications anyway
 Test what bits of IMR are writable
 On hardware PDIRQEG seems not to actually work at all(CPUID:0x57000000)
 SCR privilege violation doesnt trigger the same as on hardware(likely has to do with not emulating the unused chip selects)
+TCN2 is unimplemented and seems to be used by the same routines that turn the CPU off for sleep mode
 
 CPU I/O:
 Peripheral Control Register, audio ppm mixing selection
@@ -18,8 +19,7 @@ When SPICLK2, SPITXD or SPIRXD on port e is disabled ADS7846 functions should re
 REFREQ clock frequency in RTCCTL should slow down the RTC when enabled
 Dont know if it possible to have the backlight on and the display off at the same time(theres no reason for it but it may be possible)
 SPI1 slave mode, should never be used
-port d data register INT* bits seem to have there data bits cleared when an edge triggered interrupt is cleared(according to MC68VZ328UM.pdf Page 10-15)(may be the cause of the power button issue)
-power button must be pushed twice to turn the CPU back on(when debugging it works the first time, then must be pushed twice to turn off instead of on)(this also occurs in the RetroArch build)
+port d data register INT* bits seem to have there data bits cleared when an edge triggered interrupt is cleared(according to MC68VZ328UM.pdf Page 10-15)
 RxOverflow on SPI1, don't know if back or front of FIFO is overwritten on overflow(currently losing oldest entry)
 ICR POL(1,2,3,6) may flip the pin value as well as the interrupt, POL5 does not flip the INT5 pin though, this was confirmed with a hardware test(it doesnt seem to but there is instability on the pin when the SD card is plugged in, this may have to do with card detect also being a data line on the SD pinout)
 edge triggered INT* don't clear on write to ISR when masked in IMR(at least that seems to be the reason)
@@ -27,7 +27,10 @@ Cyclone will cause SIGSEGVs, don't know why yet
 PWM2 is not implemented
 don't know if flushing the PWM1 FIFO sets all the bytes to 0x00, or just sets the read pointer to the write pointer preserving the newest sample and making the size 0(readPtr = writePtr has significantly cleaner audio then 0ing it out though)
 while it is stated that the PLL is turned off "30 clocks" after the DISPLL bit is set, it doesnt state where the clocks come from, CLK32 or SYSCLK
-the power button double press issue may be because the button map I am using was taken from POSE source, the power button may be mapped to other locations on the button matrix than expected
+SPI1 SPISPC register
+UART1 USTCNT1
+PLLFSR has a hack that makes busy wait loops finish faster by toggling the CLK32 bit on read, for power button issue
+PDKBEN also has a hack for power on
 
 Debug tools:
 ADS7846 channels can't be read in single reference mode in hwTestSuite
@@ -51,6 +54,8 @@ in the edge case that SPICLK2 is disabled while using ADS7846 and a 1 was the la
 
 
 Fixed:
+power button must be pushed twice to turn the CPU back on(when debugging it works the first time, then must be pushed twice to turn off instead of on)(this also occurs in the RetroArch build)
+the power button double press issue may be because the button map I am using was taken from POSE source, the power button may be mapped to other locations on the button matrix than expected
 if a sound interrupt is triggered while the button interrupt is disabled the button interrupt will still trigger(in galax game)(seems to be an issue with FIFOAV always = true hack and how INT_PWM1 needed to be cleared on read or write)
 SED1376 16 bpp mode is broken and crushed to the top of the screen
 audio can max out the resampler buffer, the max 1 FIFO sample can play is around 2.16 minutes(CLK32 / period(257) / clockDivider(16) / prescaler(128) / repeat(8))(257 * 16 * 128 * 8 / 32768=128.5 seconds)(safety check added, >= 1 second duty cycle is useless and will just make annoying cracks anyway)
