@@ -306,7 +306,8 @@ void beginClk32(void){
 }
 
 void endClk32(void){
-   registerArrayWrite16(PLLFSR, registerArrayRead16(PLLFSR) ^ 0x8000);
+   //currently using toggle on read hack
+   //registerArrayWrite16(PLLFSR, registerArrayRead16(PLLFSR) ^ 0x8000);
 
    //second position counter
    if(clk32Counter >= CRYSTAL_FREQUENCY - 1){

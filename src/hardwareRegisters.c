@@ -456,7 +456,7 @@ uint16_t getHwRegister16(uint32_t address){
          return spi1RxFifoRead();
 
       case PLLFSR:
-         //this is a hack, it makes the busy wait in HwrDelay finish instantly
+         //this is a hack, it makes the busy wait in HwrDelay finish instantly, prevents issues with the power button
          registerArrayWrite16(PLLFSR, registerArrayRead16(PLLFSR) ^ 0x8000);
          return registerArrayRead16(PLLFSR);
 
