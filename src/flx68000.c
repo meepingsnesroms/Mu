@@ -344,6 +344,8 @@ uint32_t flx68000GetRegister(uint8_t reg){
       return cycloneCpu.pc;
    else if(reg == 17)
       return CycloneGetSr(&cycloneCpu);
+
+   return 0x00000000;
 #else
    return m68k_get_reg(NULL, reg);
 #endif

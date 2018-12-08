@@ -85,8 +85,8 @@ INCLUDEPATH += $$PWD/qt-common/include
 
 # only use with ARMv4<->7, ARMv8 is its own architecture
 optimize_for_arm{
-    SOURCES += ../../src/m68k/cyclone/Cyclone.S
     DEFINES += EMU_OPTIMIZE_FOR_ARM
+    SOURCES += ../../src/m68k/cyclone/CycloneClang.S
 }else{
     SOURCES += ../../src/m68k/musashi/m68kcpu.c \
         ../../src/m68k/musashi/m68kdasm.c \
