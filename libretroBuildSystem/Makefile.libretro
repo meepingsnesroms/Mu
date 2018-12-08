@@ -144,6 +144,7 @@ ifeq ($(platform),ios-arm64)
 else
 	CC = cc -arch armv7 -isysroot $(IOSSDK)
 	EMU_OPTIMIZE_FOR_ARM = 1
+	EMU_NEW_ASM_SYNTAX = 1
 endif
 
 	LD = armv7-apple-darwin11-ld
