@@ -13,7 +13,7 @@ LDFLAGS  +=
 OBJOUT   = -o 
 LINKOUT  = -o 
 
-OBJS    = $(SOURCES_C:.c=$(OBJEXT)) $(SOURCES_CXX:.cpp=$(OBJEXT))
+OBJS    = $(SOURCES_C:.c=$(OBJEXT)) $(SOURCES_CXX:.cpp=$(OBJEXT)) $(SOURCES_ASM:.S=$(OBJEXT))
 
 ifneq (,$(findstring msvc,$(platform)))
 	OBJOUT = -Fo
@@ -30,7 +30,7 @@ endif
 	$(CC) -c $(OBJOUT)$@ $< $(INCFLAGS) $(CFLAGS)
 
 %$(OBJEXT): %.S
-	$(CC_AS) -c $(OBJOUT)$@ $< $(CFLAGS)
+	$(CC) -c $(OBJOUT)$@ $< $(INCFLAGS) $(CFLAGS)
 
 all: $(TARGET)
 
