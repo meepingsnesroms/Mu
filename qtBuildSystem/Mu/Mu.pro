@@ -32,14 +32,13 @@ windows{
 
 macx{
     # QMAKE_CFLAGS += -std=c89 -D__STDBOOL_H -Dinline= -Dbool=char -Dtrue=1 -Dfalse=0 # tests C89 mode
-    CONFIG += sdk_no_version_check # using 10.14 SDK which Qt only unofficialy supports
+    # CONFIG += sdk_no_version_check # using 10.14 SDK which Qt only unofficialy supports
     ICON = macos/Mu.icns
     QMAKE_INFO_PLIST = macos/Info.plist
     DEFINES += EMU_MULTITHREADED
 }
 
 linux-g++{
-    message(This really shouldnt trigger yet!)
     QMAKE_CFLAGS += -fopenmp
     QMAKE_CXXFLAGS += -fopenmp
     QMAKE_LFLAGS += -fopenmp
@@ -51,20 +50,20 @@ android{
     QMAKE_CXXFLAGS += -fopenmp
     QMAKE_LFLAGS += -fopenmp
     DEFINES += EMU_MULTITHREADED
-    # CONFIG += optimize_for_arm # for now, later this will check if building for ARMv4<->7
+    CONFIG += optimize_for_arm32 # for now, later this will check if building for ARMv4<->7
 }
 
-# ios{
-#     QMAKE_INFO_PLIST = ios/Info.plist
-#     DEFINES += EMU_MULTITHREADED
-#     CONFIG += optimize_for_arm
-# }
+ios{
+    # QMAKE_INFO_PLIST = ios/Info.plist
+    DEFINES += EMU_MULTITHREADED
+    # iOS is now ARMv8 only, cyclone wont work
+}
 
 
 CONFIG(debug, debug|release){
     # debug build, be accurate, fail hard, and add logging
     DEFINES += EMU_DEBUG EMU_CUSTOM_DEBUG_LOG_HANDLER
-    !optimize_for_arm:DEFINES += EMU_SANDBOX
+    !optimize_for_arm32:DEFINES += EMU_SANDBOX
     macx|linux-g++{
         # DEFINES += EMU_SANDBOX_OPCODE_LEVEL_DEBUG
         # DEFINES += EMU_SANDBOX_LOG_APIS
@@ -84,8 +83,8 @@ CONFIG += c++11
 INCLUDEPATH += $$PWD/qt-common/include
 
 # only use with ARMv4<->7, ARMv8 is its own architecture
-optimize_for_arm{
-    DEFINES += EMU_OPTIMIZE_FOR_ARM
+optimize_for_arm32{
+    DEFINES += EMU_OPTIMIZE_FOR_ARM32
     SOURCES += ../../src/m68k/cyclone/CycloneNew.S
 }else{
     SOURCES += ../../src/m68k/musashi/m68kcpu.c \
