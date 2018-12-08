@@ -1,5 +1,5 @@
 DEBUG = 0
-GIT_VERSION := " $(shell git rev-parse --short HEAD)"
+GIT_VERSION := " $(shell git rev-parse --short HEAD || echo unknown)"
 STATIC_LINKING = 0
 STATIC_LINKING_LINK = 0
 
@@ -89,12 +89,12 @@ TARGET_NAME	:= mu
 LIBM		= -lm
 
 ifeq ($(STATIC_LINKING),1)
-EXT=a
+EXT = a
 
 ifeq ($(platform), unix)
-PLAT=_unix
-STATIC_LINKING=1
-STATIC_LINKING_LINK=1
+PLAT = _unix
+STATIC_LINKING = 1
+STATIC_LINKING_LINK = 1
 endif
 endif
 
@@ -182,7 +182,7 @@ else ifeq ($(platform), qnx)
 
 # PS3
 else ifeq ($(platform), ps3)
-	EXT=a
+	EXT = a
 	TARGET := $(TARGET_NAME)_libretro_ps3.$(EXT)
 	CC = $(CELL_SDK)/host-win32/ppu/bin/ppu-lv2-gcc.exe
 	AR = $(CELL_SDK)/host-win32/ppu/bin/ppu-lv2-ar.exe
@@ -192,7 +192,7 @@ else ifeq ($(platform), ps3)
 
 # PS3 (SNC)
 else ifeq ($(platform), sncps3)
-	EXT=a
+	EXT = a
 	TARGET := $(TARGET_NAME)_libretro_ps3.$(EXT)
 	CC = $(CELL_SDK)/host-win32/sn/bin/ps3ppusnc.exe
 	AR = $(CELL_SDK)/host-win32/sn/bin/ps3snarl.exe
@@ -202,7 +202,7 @@ else ifeq ($(platform), sncps3)
 
 # Lightweight PS3 Homebrew SDK
 else ifeq ($(platform), psl1ght)
-	EXT=a
+	EXT = a
 	TARGET := $(TARGET_NAME)_libretro_$(platform).$(EXT)
 	CC = $(PS3DEV)/ppu/bin/ppu-gcc$(EXE_EXT)
 	AR = $(PS3DEV)/ppu/bin/ppu-ar$(EXE_EXT)
@@ -212,7 +212,7 @@ else ifeq ($(platform), psl1ght)
 
 # PSP
 else ifeq ($(platform), psp1)
-	EXT=a
+	EXT = a
 	TARGET := $(TARGET_NAME)_libretro_$(platform).$(EXT)
 	CC = psp-gcc$(EXE_EXT)
 	AR = psp-ar$(EXE_EXT)
@@ -222,7 +222,7 @@ else ifeq ($(platform), psp1)
 
 # DOS
 else ifeq ($(platform), dos)
-	EXT=a
+	EXT = a
 	TARGET := $(TARGET_NAME)_libretro_$(platform).$(EXT)
 	CC = i686-pc-msdosdjgpp-gcc
 	AR = i686-pc-msdosdjgpp-ar
@@ -232,7 +232,7 @@ else ifeq ($(platform), dos)
 
 # Vita
 else ifeq ($(platform), vita)
-	EXT=a
+	EXT = a
 	TARGET := $(TARGET_NAME)_libretro_$(platform).$(EXT)
 	CC = arm-vita-eabi-gcc$(EXE_EXT)
 	AR = arm-vita-eabi-ar$(EXE_EXT)
@@ -242,7 +242,7 @@ else ifeq ($(platform), vita)
 
 # CTR (3DS)
 else ifeq ($(platform), ctr)
-	EXT=a
+	EXT = a
 	TARGET := $(TARGET_NAME)_libretro_$(platform).$(EXT)
 	CC = $(DEVKITARM)/bin/arm-none-eabi-gcc$(EXE_EXT)
 	AR = $(DEVKITARM)/bin/arm-none-eabi-ar$(EXE_EXT)
@@ -308,7 +308,7 @@ else ifeq ($(platform), classic_armv7_a7)
 
 # Xbox 360
 else ifeq ($(platform), xenon)
-	EXT=a
+	EXT = a
 	TARGET := $(TARGET_NAME)_libretro_xenon360.$(EXT)
 	CC = xenon-gcc$(EXE_EXT)
 	AR = xenon-ar$(EXE_EXT)
@@ -318,7 +318,7 @@ else ifeq ($(platform), xenon)
 
 # Nintendo Game Cube
 else ifeq ($(platform), ngc)
-	EXT=a
+	EXT = a
 	TARGET := $(TARGET_NAME)_libretro_$(platform).$(EXT)
 	CC = $(DEVKITPPC)/bin/powerpc-eabi-gcc$(EXE_EXT)
 	AR = $(DEVKITPPC)/bin/powerpc-eabi-ar$(EXE_EXT)
@@ -329,7 +329,7 @@ else ifeq ($(platform), ngc)
 
 # Nintendo Wii
 else ifeq ($(platform), wii)
-	EXT=a
+	EXT = a
 	TARGET := $(TARGET_NAME)_libretro_$(platform).$(EXT)
 	CC = $(DEVKITPPC)/bin/powerpc-eabi-gcc$(EXE_EXT)
 	AR = $(DEVKITPPC)/bin/powerpc-eabi-ar$(EXE_EXT)
@@ -340,7 +340,7 @@ else ifeq ($(platform), wii)
 
 # Nintendo WiiU
 else ifeq ($(platform), wiiu)
-	EXT=a
+	EXT = a
 	TARGET := $(TARGET_NAME)_libretro_$(platform).$(EXT)
 	CC = $(DEVKITPPC)/bin/powerpc-eabi-gcc$(EXE_EXT)
 	AR = $(DEVKITPPC)/bin/powerpc-eabi-ar$(EXE_EXT)
@@ -399,7 +399,7 @@ else ifeq ($(platform), msvc)
 
 # Nintendo Switch (libtransistor)
 else ifeq ($(platform), switch)
-	EXT=a
+	EXT = a
 	TARGET := $(TARGET_NAME)_libretro_$(platform).$(EXT)
 	include $(LIBTRANSISTOR_HOME)/libtransistor.mk
 	STATIC_LINKING = 1
@@ -408,14 +408,14 @@ else ifeq ($(platform), switch)
 # Nintendo Switch (libnx)
 else ifeq ($(platform), libnx)
 	include $(DEVKITPRO)/libnx/switch_rules
-	EXT=a
+	EXT = a
 	TARGET := $(TARGET_NAME)_libretro_$(platform).$(EXT)
 	DEFINES :=  -DSWITCH=1 -U__linux__ -U__linux -DRARCH_INTERNAL
 	CFLAGS :=   $(DEFINES) -g \
 				-O3 \
 				-fPIE -I$(LIBNX)/include/ -ffunction-sections -fdata-sections -ftls-model=local-exec -Wl,--allow-multiple-definition -specs=$(LIBNX)/switch.specs
 	CFLAGS += $(INCDIRS)
-	CFLAGS	+=	$(INCLUDE)  -D__SWITCH__ -DARM -march=armv8-a -mtune=cortex-a57 -mtp=soft
+	CFLAGS += $(INCLUDE)  -D__SWITCH__ -DARM -march=armv8-a -mtune=cortex-a57 -mtp=soft
 	CXXFLAGS := $(ASFLAGS) $(CFLAGS) -fno-rtti -fno-exceptions -std=gnu++11
 	CFLAGS += -std=gnu11
 	STATIC_LINKING = 1
@@ -424,7 +424,7 @@ else ifeq ($(platform), libnx)
 # Windows MSVC 2003 Xbox 1
 else ifeq ($(platform), xbox1_msvc2003)
 	TARGET := $(TARGET_NAME)_libretro_xdk1.lib
-	CC  = CL.exe
+	CC   = CL.exe
 	CXX  = CL.exe
 	LD   = lib.exe
 
@@ -455,7 +455,10 @@ endif
 ifeq ($(DEBUG), 1)
 	CFLAGS += -O0 -g
 else
-	CFLAGS += -O2 -DNDEBUG -DGIT_VERSION=\"$(GIT_VERSION)\"
+	CFLAGS += -O2 -DNDEBUG
+	ifneq ($(GIT_VERSION), " unknown")
+		CFLAGS += -DGIT_VERSION=\"$(GIT_VERSION)\"
+	endif
 endif
 
 include $(BUILD_DIR)/Makefile.common
@@ -465,7 +468,7 @@ OBJECTS := $(SOURCES_C:.c=.o) $(SOURCES_ASM:.S=.o)
 DEFINES = $(COREDEFINES)
 
 ifeq ($(STATIC_LINKING), 1)
-DEFINES += -DSTATIC_LINKING
+	DEFINES += -DSTATIC_LINKING
 endif
 
 ifeq ($(platform), sncps3)

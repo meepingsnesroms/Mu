@@ -1,6 +1,6 @@
 EMU_PATH := $(CORE_DIR)/../src
 LIBRETRO_COMM_DIR := $(CORE_DIR)/libretro-common
-COREDEFINES =
+COREDEFINES :=
 
 INCFLAGS := -I$(LIBRETRO_COMM_DIR)/include
 
@@ -46,8 +46,7 @@ SOURCES_C := $(CORE_DIR)/libretro.c \
 	$(CORE_DIR)/cursors.c \
 	$(EMU_SOURCES_C)
 
-ifeq ($(STATIC_LINKING),1)
-else
+ifneq ($(STATIC_LINKING), 1)
 	SOURCES_C += $(LIBRETRO_COMM_DIR)/compat/compat_strl.c \
 		$(LIBRETRO_COMM_DIR)/compat/compat_posix_string.c \
 		$(LIBRETRO_COMM_DIR)/compat/fopen_utf8.c \
