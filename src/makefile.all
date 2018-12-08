@@ -12,9 +12,10 @@ EMU_SOURCES_C := $(EMU_PATH)/emulator.c \
 	$(EMU_PATH)/audio/blip_buf.c \
 	$(EMU_PATH)/debug/sandbox.c
 
-ifeq ($(EMU_OPTIMIZE_FOR_ARM), true)
+#only use with ARMv4<->7, ARMv8 is its own architecture
+ifeq ($(EMU_OPTIMIZE_FOR_ARM), 1)
 	EMU_DEFINES += -DEMU_OPTIMIZE_FOR_ARM
-	EMU_SOURCES_ASM += $(EMU_PATH)/m68k/cyclone/Cyclone.s
+	EMU_SOURCES_ASM += $(EMU_PATH)/m68k/cyclone/Cyclone.S
 else
 	EMU_SOURCES_C += $(EMU_PATH)/m68k/musashi/m68kops.c \
 		$(EMU_PATH)/m68k/musashi/m68kopnz.c \

@@ -51,7 +51,7 @@ android{
     QMAKE_CXXFLAGS += -fopenmp
     QMAKE_LFLAGS += -fopenmp
     DEFINES += EMU_MULTITHREADED
-    # CONFIG += optimize_for_arm # for now, later this will check if building for ARM, should probably also only be enabled on ARMv5/6/7
+    # CONFIG += optimize_for_arm # for now, later this will check if building for ARMv4<->7
 }
 
 # ios{
@@ -83,8 +83,9 @@ CONFIG += c++11
 
 INCLUDEPATH += $$PWD/qt-common/include
 
+# only use with ARMv4<->7, ARMv8 is its own architecture
 optimize_for_arm{
-    SOURCES += ../../src/m68k/cyclone/Cyclone.s
+    SOURCES += ../../src/m68k/cyclone/Cyclone.S
     DEFINES += EMU_OPTIMIZE_FOR_ARM
 }else{
     SOURCES += ../../src/m68k/musashi/m68kcpu.c \
