@@ -15,9 +15,27 @@ ifneq (,$(findstring msvc200,$(platform)))
 endif
 
 ifneq (,$(findstring msvc20,$(platform)))
-	#Mu is dependent on stdbool.h and the standard inline directive existing
+	# Mu is dependent on stdbool.h and the standard inline directive existing
 	INCFLAGS += -I$(CORE_DIR)/fixIncludes/stdbool
 	COREDEFINES += -Dinline=_inline -DINLINE=_inline
+endif
+
+ifneq (,$(filter ps3 sncps3 psl1ght ngc wii wiiu,$(platform)))
+	COREDEFINES += -DEMU_BIG_ENDIAN
+else ifeq ($(platform), osx)
+	ifeq ($(arch), ppc)
+		COREDEFINES += -DEMU_BIG_ENDIAN
+	endif
+endif
+
+ifneq (,$(filter qnx vita ctr rpi2 classic_armv7_a7,$(platform)))
+	EMU_OPTIMIZE_FOR_ARM32 = 1
+else ifneq (,$(findstring armv7,$(platform)))
+	EMU_OPTIMIZE_FOR_ARM32 = 1
+else ifneq (,$(findstring armv6,$(platform)))
+	EMU_OPTIMIZE_FOR_ARM32 = 1
+else ifneq (,$(findstring armhf,$(platform)))
+	EMU_OPTIMIZE_FOR_ARM32 = 1
 endif
 
 include $(EMU_PATH)/makefile.all

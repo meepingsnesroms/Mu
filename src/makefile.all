@@ -13,8 +13,8 @@ EMU_SOURCES_C := $(EMU_PATH)/emulator.c \
 	$(EMU_PATH)/debug/sandbox.c
 
 #only use with ARMv4<->7, ARMv8 is its own architecture
-ifeq ($(EMU_OPTIMIZE_FOR_ARM), 1)
-	EMU_DEFINES += -DEMU_OPTIMIZE_FOR_ARM
+ifeq ($(EMU_OPTIMIZE_FOR_ARM32), 1)
+	EMU_DEFINES += -DEMU_OPTIMIZE_FOR_ARM32
 	ifeq ($(EMU_NEW_ASM_SYNTAX), 1)
 		EMU_SOURCES_ASM += $(EMU_PATH)/m68k/cyclone/CycloneNew.S
 	else

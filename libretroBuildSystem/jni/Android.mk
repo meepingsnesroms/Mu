@@ -14,7 +14,7 @@ endif
 #set ASM CPU core, only use with ARMv4<->7, ARMv8 is its own architecture
 ifeq ($(TARGET_ARCH),arm)
 	ifneq ($(TARGET_ARCH_ABI),arm64-v8a)
-		EMU_OPTIMIZE_FOR_ARM = 1
+		EMU_OPTIMIZE_FOR_ARM32 = 1
 	endif
 endif
 

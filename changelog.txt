@@ -14,6 +14,7 @@ Core:
 *add ARM optimized 68k CPU core(not fully working yet, SIGSEGVs when running)
 *allow safety checks to be disabled with EMU_NO_SAFETY, accuracy is maintained when its not defined
 *switch byte buffer orders to optimize for 16 bit opcode fetches
+*cyclone68000 reenabled for ARM devices, SIGSEGVs seem to be gone
 
 ------------------------------------------
 v0.9 to v0.9.5(Sept 22 2018 - Oct 18 2018)

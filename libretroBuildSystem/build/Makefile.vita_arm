@@ -46,7 +46,6 @@ PLATCFLAGS     = -ftree-vectorize -mfloat-abi=hard -ffast-math -fsingle-precisio
 PLATCXXFLAGS   = -ftree-vectorize -mfloat-abi=hard -ffast-math -fsingle-precision-constant -funroll-loops -fno-short-enums
 PLATLDFLAGS    = -shared -lm -mthumb -mcpu=cortex-a9 -mfloat-abi=hard
 PLATLDXFLAGS   = -shared -lm -mthumb -mcpu=cortex-a9 -mfloat-abi=hard
-EMU_OPTIMIZE_FOR_ARM = 1
 
 ################
 # libretro setup
