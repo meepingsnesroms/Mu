@@ -51,7 +51,7 @@ android{
     QMAKE_CXXFLAGS += -fopenmp
     QMAKE_LFLAGS += -fopenmp
     DEFINES += EMU_MULTITHREADED
-    # CONFIG += optimize_for_arm # for now, later this will check if building for ARM
+    # CONFIG += optimize_for_arm # for now, later this will check if building for ARM, should probably also only be enabled on ARMv5/6/7
 }
 
 # ios{

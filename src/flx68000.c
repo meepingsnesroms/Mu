@@ -26,20 +26,20 @@ extern void m68k_write_memory_16(unsigned int address, unsigned short value);
 extern void m68k_write_memory_32(unsigned int address, unsigned int value);
 
 unsigned int checkPc(unsigned int pc){
-   unsigned int dataBuffer;
-   unsigned int dataBufferAddress;
+   unsigned int dataBufferHost;
+   unsigned int dataBufferGuest;
    unsigned int windowSize;
 
    pc -= cycloneCpu.membase;//get the real program counter
 
    if(chips[CHIP_A0_ROM].inBootMode || pc >= chips[CHIP_A0_ROM].start && pc < chips[CHIP_A0_ROM].start + chips[CHIP_A0_ROM].lineSize){
-      dataBuffer = (unsigned int)palmRom;
-      dataBufferAddress = chips[CHIP_A0_ROM].start;
+      dataBufferHost = (unsigned int)palmRom;
+      dataBufferGuest = chips[CHIP_A0_ROM].start;
       windowSize = chips[CHIP_A0_ROM].mask + 1;
    }
    else if(pc >= chips[CHIP_DX_RAM].start && pc < chips[CHIP_DX_RAM].start + chips[CHIP_DX_RAM].lineSize){
-      dataBuffer = (unsigned int)palmRam;
-      dataBufferAddress = chips[CHIP_DX_RAM].start;
+      dataBufferHost = (unsigned int)palmRam;
+      dataBufferGuest = chips[CHIP_DX_RAM].start;
       windowSize = chips[CHIP_DX_RAM].mask + 1;
    }
    else{
@@ -47,7 +47,7 @@ unsigned int checkPc(unsigned int pc){
       exit(1);
    }
 
-   cycloneCpu.membase = dataBuffer - dataBufferAddress - windowSize * ((pc - dataBufferAddress) / windowSize);
+   cycloneCpu.membase = dataBufferHost - dataBufferGuest - windowSize * ((pc - dataBufferGuest) / windowSize);
 
    return cycloneCpu.membase + pc;//new program counter
 }
