@@ -15,10 +15,10 @@ EMU_SOURCES_C := $(EMU_PATH)/emulator.c \
 #only use with ARMv4<->7, ARMv8 is its own architecture
 ifeq ($(EMU_OPTIMIZE_FOR_ARM), 1)
 	EMU_DEFINES += -DEMU_OPTIMIZE_FOR_ARM
-	ifeq ($(EMU_COMPILER_CLANG), 1)
-		EMU_SOURCES_ASM += $(EMU_PATH)/m68k/cyclone/CycloneClang.S
+	ifeq ($(EMU_NEW_ASM_SYNTAX), 1)
+		EMU_SOURCES_ASM += $(EMU_PATH)/m68k/cyclone/CycloneNew.S
 	else
-		EMU_SOURCES_ASM += $(EMU_PATH)/m68k/cyclone/CycloneGcc.S
+		EMU_SOURCES_ASM += $(EMU_PATH)/m68k/cyclone/CycloneOld.S
 	endif
 else
 	EMU_SOURCES_C += $(EMU_PATH)/m68k/musashi/m68kops.c \
