@@ -129,10 +129,7 @@ HEADERS += \
     ../../src/m68k/musashi/m68kconf.h \
     ../../src/m68k/musashi/m68kcpu.h \
     ../../src/m68k/musashi/m68kops.h \
-    ../../src/specs/emuFeatureRegistersSpec.h \
-    ../../src/specs/hardwareRegisterNames.h \
-    ../../src/specs/pdiUsbD12Commands.h \
-    ../../src/specs/sed1376RegisterNames.h \
+    ../../src/specs/dragonballVzRegisterSpec.h \
     ../../src/ads7846.h \
     ../../src/emulator.h \
     ../../src/endianness.h \
@@ -146,7 +143,11 @@ HEADERS += \
     ../../src/sdCard.h \
     ../../src/sed1376.h \
     ../../src/sed1376Accessors.c.h \
-    ../../src/silkscreen.h
+    ../../src/silkscreen.h \
+    ../../src/specs/sed1376RegisterSpec.h \
+    ../../src/specs/pdiUsbD12CommandSpec.h \
+    ../../src/specs/emuFeatureRegisterSpec.h \
+    ../../src/specs/sdCardCommandSpec.h
 
 FORMS += \
     mainwindow.ui \

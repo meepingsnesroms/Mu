@@ -13,7 +13,7 @@ extern "C" {
 
 #include "audio/blip_buf.h"
 #include "memoryAccess.h"//for size macros
-#include "specs/emuFeatureRegistersSpec.h"//for feature names
+#include "specs/emuFeatureRegisterSpec.h"//for feature names
 
 //DEFINE INFO!!!
 //define EMU_MULTITHREADED to speed up long loops

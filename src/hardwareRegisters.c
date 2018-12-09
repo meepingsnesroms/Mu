@@ -3,8 +3,8 @@
 #include <string.h>
 
 #include "emulator.h"
-#include "specs/hardwareRegisterNames.h"
-#include "specs/emuFeatureRegistersSpec.h"
+#include "specs/dragonballVzRegisterSpec.h"
+#include "specs/emuFeatureRegisterSpec.h"
 #include "hardwareRegisters.h"
 #include "memoryAccess.h"
 #include "portability.h"

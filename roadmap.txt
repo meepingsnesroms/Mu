@@ -35,3 +35,4 @@ v(1/3*3) to v1.0.0(Christmas 2018 - *** ** 2019)
 Core:
 *SD card support
 *fix power button double press bug
+*FAME 68k core

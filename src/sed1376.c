@@ -5,7 +5,7 @@
 #include "portability.h"
 #include "hardwareRegisters.h"
 #include "flx68000.h"//for flx68000GetPc()
-#include "specs/sed1376RegisterNames.h"
+#include "specs/sed1376RegisterSpec.h"
 #include "debug/sandbox.h"
 
 

@@ -15,7 +15,7 @@
 #include "silkscreen.h"
 #include "portability.h"
 #include "debug/sandbox.h"
-#include "specs/emuFeatureRegistersSpec.h"
+#include "specs/emuFeatureRegisterSpec.h"
 
 
 //Memory Map of Palm m515
