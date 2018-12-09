@@ -23,6 +23,17 @@
   .global CycloneVer
   .global CycloneJumpTab
 
+  .type CycloneInitJT,%function
+  .type CycloneResetJT,%function
+  .type CycloneRun,%function
+  .type CycloneSetSr,%function
+  .type CycloneGetSr,%function
+  .type CycloneFlushIrq,%function
+  .type CyclonePack,%function
+  .type CycloneUnpack,%function
+  .type CycloneVer,%object
+  .type CycloneJumpTab,%object
+
 CycloneVer: .long 0x0099
 
 ;@ --------------------------- Framework --------------------------

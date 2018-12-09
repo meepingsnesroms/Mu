@@ -1,6 +1,6 @@
 EMU_PATH := $(CORE_DIR)/../src
 LIBRETRO_COMM_DIR := $(CORE_DIR)/libretro-common
-COREDEFINES =
+COREDEFINES :=
 
 INCFLAGS := -I$(LIBRETRO_COMM_DIR)/include
 
@@ -28,7 +28,7 @@ else ifeq ($(platform), osx)
 	endif
 endif
 
-ifneq (,$(filter qnx vita ctr rpi2 classic_armv7_a7,$(platform)))
+ifneq (,$(filter qnx vita ctr rpi2 classic_armv7_a7 ios ios9 theos_ios,$(platform)))
 	EMU_OPTIMIZE_FOR_ARM32 = 1
 else ifneq (,$(findstring armv7,$(platform)))
 	EMU_OPTIMIZE_FOR_ARM32 = 1
@@ -36,6 +36,10 @@ else ifneq (,$(findstring armv6,$(platform)))
 	EMU_OPTIMIZE_FOR_ARM32 = 1
 else ifneq (,$(findstring armhf,$(platform)))
 	EMU_OPTIMIZE_FOR_ARM32 = 1
+endif
+
+ifneq (,$(filter ios ios9 theos_ios,$(platform)))
+	EMU_NEW_ASM_SYNTAX = 1
 endif
 
 include $(EMU_PATH)/makefile.all
@@ -46,8 +50,7 @@ SOURCES_C := $(CORE_DIR)/libretro.c \
 	$(CORE_DIR)/cursors.c \
 	$(EMU_SOURCES_C)
 
-ifeq ($(STATIC_LINKING),1)
-else
+ifneq ($(STATIC_LINKING), 1)
 	SOURCES_C += $(LIBRETRO_COMM_DIR)/compat/compat_strl.c \
 		$(LIBRETRO_COMM_DIR)/compat/compat_posix_string.c \
 		$(LIBRETRO_COMM_DIR)/compat/fopen_utf8.c \
