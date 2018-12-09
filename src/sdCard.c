@@ -2,27 +2,8 @@
 #include <stdbool.h>
 
 #include "emulator.h"
+#include "specs/sdCardCommandSpec.h"
 
-
-//command format:01IIIIIIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACCCCCCC1
-//I = index, A = argument, C = CRC
-
-
-enum{
-   //see http://elm-chan.org/docs/mmc/mmc_e.html for more command information
-   SD_CARD_CMD_GO_IDLE_STATE = 0,//software reset
-   SD_CARD_CMD_SEND_OP_COND = 1,//initiate initialization process
-   SD_CARD_CMD_SEND_CSD = 9,//read CSD register
-   SD_CARD_CMD_SEND_CID = 10,//read CID register
-   SD_CARD_CMD_STOP_TRANSMISSION = 12,//stop to read data
-   SD_CARD_CMD_SET_BLOCKLEN = 16,//change R/W block size
-   SD_CARD_CMD_READ_SINGLE_BLOCK = 17,//read a block
-   SD_CARD_CMD_READ_MULTIPLE_BLOCK = 18,//read multiple blocks
-   SD_CARD_CMD_WRITE_SINGLE_BLOCK = 24,//write a block
-   SD_CARD_CMD_WRITE_MULTIPLE_BLOCK = 25,//write multiple blocks
-   SD_CARD_CMD_READ_OCR = 58,//read OCR(operation condtion register)
-   SD_CARD_CMD_NOTHING = 0xFF//no command is currently being processed
-};
 
 enum{
    SD_CARD_EXCHANGE_NOTHING = 0,
@@ -64,7 +45,7 @@ void sdCardReset(void){
    palmSdCard.command = 0x0000000000000000;
    palmSdCard.commandBitsRemaining = 48;
    palmSdCard.index = 0;
-   palmSdCard.currentExchange = SD_CARD_CMD_NOTHING;
+   palmSdCard.currentExchange = SD_CARD_EXCHANGE_NOTHING;
 }
 
 bool sdCardExchangeBit(bool bit){
@@ -102,7 +83,7 @@ bool sdCardExchangeBit(bool bit){
             uint8_t crc = palmSdCard.command >> 1 & 0x7F;
 
             switch(command){
-               case SD_CARD_CMD_GO_IDLE_STATE:
+               case GO_IDLE_STATE:
                   sdCardReset();
                   break;
 

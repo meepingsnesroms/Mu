@@ -16,7 +16,7 @@
 #include "../ads7846.h"
 #include "../hardwareRegisters.h"
 #include "../portability.h"
-#include "../specs/emuFeatureRegistersSpec.h"
+#include "../specs/emuFeatureRegisterSpec.h"
 #include "sandbox.h"
 #include "trapNames.h"
 

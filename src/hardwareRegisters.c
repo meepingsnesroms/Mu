@@ -26,7 +26,7 @@ uint16_t spi1RxFifo[9];
 uint16_t spi1TxFifo[9];
 uint8_t  spi1RxReadPosition;
 uint8_t  spi1RxWritePosition;
-bool     spi1RxOverflowed;//not in savestates yet!!!
+bool     spi1RxOverflowed;
 uint8_t  spi1TxReadPosition;
 uint8_t  spi1TxWritePosition;
 int32_t  pwm1ClocksToNextSample;

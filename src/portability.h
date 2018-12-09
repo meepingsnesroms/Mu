@@ -242,12 +242,4 @@ static inline void writeStateValueDouble(uint8_t* where, double value){
    writeStateValue64(where, getUint64FromDouble(value));
 }
 
-static inline bool readStateValueBool(uint8_t* where){
-   return where[0];
-}
-
-static inline void writeStateValueBool(uint8_t* where, bool value){
-   where[0] = value;
-}
-
 #endif
