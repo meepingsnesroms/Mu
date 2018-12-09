@@ -9,11 +9,15 @@
 
 //this is only emulating the commands and USB transfer, the internals of the chip are not documented so any invalid behavior may not match that of the original chip
 //running a new command before finishing the previous one will result in corruption
-
+enum{
+   PDIUSBD12_COMMAND_SET_DMA = 0xFB,
+   PDIUSBD12_NONE = 0x00
+};
 
 #define PDIUSBD12_TRANSFER_BUFFER_SIZE 130
 
 
+static uint8_t pdiUsbD12Command;
 static uint8_t pdiUsbD12FifoBuffer[PDIUSBD12_TRANSFER_BUFFER_SIZE];
 static uint8_t pdiUsbD12ReadIndex;
 static uint8_t pdiUsbD12WriteIndex;
