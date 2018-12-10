@@ -201,9 +201,8 @@ uint64_t emulatorGetStateSize(void){
    size += sizeof(uint8_t) * 6;//pwm1Fifo[6]
    size += sizeof(uint8_t) * 2;//pwm1(Read/Write)
    size += sizeof(uint8_t) * 7;//palmMisc
-   size += sizeof(uint64_t);//palmSdCard.command
-   size += sizeof(uint8_t) * 2;//palmSdCard.commandBitsRemaining / palmSdCard.currentExchange
-   size += sizeof(uint64_t);//palmSdCard.index
+   size += sizeof(uint64_t) * 2;//palmSdCard.command / palmSdCard.responseState
+   size += sizeof(uint8_t) * 2;//palmSdCard.commandBitsRemaining / palmSdCard.response
    size += palmSdCard.flashChip.size;//palmSdCard.flashChip.data
 
    return size;
@@ -350,10 +349,10 @@ bool emulatorSaveState(buffer_t buffer){
    offset += sizeof(uint64_t);
    writeStateValue8(buffer.data + offset, palmSdCard.commandBitsRemaining);
    offset += sizeof(uint8_t);
-   writeStateValue64(buffer.data + offset, palmSdCard.index);
-   offset += sizeof(uint64_t);
-   writeStateValue8(buffer.data + offset, palmSdCard.currentExchange);
+   writeStateValue8(buffer.data + offset, palmSdCard.response);
    offset += sizeof(uint8_t);
+   writeStateValue64(buffer.data + offset, palmSdCard.responseState);
+   offset += sizeof(uint64_t);
    memcpy(buffer.data + offset, palmSdCard.flashChip.data, palmSdCard.flashChip.size);
    offset += palmSdCard.flashChip.size;
 
@@ -505,10 +504,10 @@ bool emulatorLoadState(buffer_t buffer){
    offset += sizeof(uint64_t);
    palmSdCard.commandBitsRemaining = readStateValue8(buffer.data + offset);
    offset += sizeof(uint8_t);
-   palmSdCard.index = readStateValue64(buffer.data + offset);
-   offset += sizeof(uint64_t);
-   palmSdCard.currentExchange = readStateValue8(buffer.data + offset);
+   palmSdCard.response = readStateValue8(buffer.data + offset);
    offset += sizeof(uint8_t);
+   palmSdCard.responseState = readStateValue64(buffer.data + offset);
+   offset += sizeof(uint64_t);
    if(palmSdCard.flashChip.data)
       free(palmSdCard.flashChip.data);
    palmSdCard.flashChip.data = stateSdCardBuffer;

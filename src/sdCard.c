@@ -6,14 +6,14 @@
 
 
 enum{
-   SD_CARD_EXCHANGE_NOTHING = 0,
-   SD_CARD_EXCHANGE_WAIT_RETURN_0,
-   SD_CARD_EXCHANGE_WAIT_RETURN_1,
-   SD_CARD_EXCHANGE_R1_RESPONCE,
-   SD_CARD_EXCHANGE_R3_RESPONCE,
-   SD_CARD_EXCHANGE_DATA_PACKET,
-   SD_CARD_EXCHANGE_READ_DATA_AT_INDEX,
-   SD_CARD_EXCHANGE_WRITE_DATA_AT_INDEX
+   SD_CARD_RESPONSE_NOTHING = 0,
+   SD_CARD_RESPONSE_SHIFT_OUT,
+   SD_CARD_RESPONSE_WAIT_RETURN_0,
+   SD_CARD_RESPONSE_WAIT_RETURN_1,
+   SD_CARD_RESPONSE_R1_RESPONCE,
+   SD_CARD_RESPONSE_R3_RESPONCE,
+   SD_CARD_RESPONSE_DATA_PACKET,
+   SD_CARD_RESPONSE_READ_DATA_AT_INDEX
 };
 
 
@@ -22,8 +22,7 @@ static const uint64_t sdCardCid[2] = {0x0000000000000000, 0x0000000000000000};
 static const uint32_t sdCardOcr = 0x00000000;
 
 
-static void sdCardCmdInvalidFormat(void){
-   debugLog("SD command invalid:0x%012X, bits remaining:%d\n", palmSdCard.command, palmSdCard.commandBitsRemaining);
+static void sdCardCmdStart(void){
    palmSdCard.command = 0x0000000000000000;
    palmSdCard.commandBitsRemaining = 48;
 }
@@ -43,11 +42,15 @@ static bool sdCardCmdIsCrcValid(uint64_t command){
 #endif
 }
 
+static void sdCardDoResponseR1(bool addressError, bool eraseError, bool badCrc, bool illegalCommand, bool idle){
+
+}
+
 void sdCardReset(void){
    palmSdCard.command = 0x0000000000000000;
    palmSdCard.commandBitsRemaining = 48;
-   palmSdCard.index = 0;
-   palmSdCard.currentExchange = SD_CARD_EXCHANGE_NOTHING;
+   palmSdCard.responseState = 0;
+   palmSdCard.response = SD_CARD_RESPONSE_NOTHING;
 }
 
 bool sdCardExchangeBit(bool bit){
@@ -55,35 +58,42 @@ bool sdCardExchangeBit(bool bit){
 
    //make sure SD is actually plugged in
    if(palmSdCard.flashChip.data){
+      bool bitValid = true;
 
 #if defined(EMU_DEBUG)
-    //since logs go to the debug window I can use the console to dump the raw SPI bitstream
-    printf("%d", bit);
+      //since logs go to the debug window I can use the console to dump the raw SPI bitstream
+      printf("%d", bit);
 #endif
 
       //check validity of incoming bit, needed even when safety checks are disabled to determine command start
       switch(palmSdCard.commandBitsRemaining - 1){
          case 47:
             if(bit)
-               sdCardCmdInvalidFormat();
-            return true;
+               bitValid = false;
+            break;
+
 
          case 46:
          case 0:
             if(!bit)
-               sdCardCmdInvalidFormat();
-            return true;
+               bitValid = false;
+            break;
       }
 
-#if defined(EMU_DEBUG)
-      //mark this bit as valid
-      printf("V");
-#endif
+      //add the bit or start new command if invalid
+      if(bitValid){
+         palmSdCard.command <<= 1;
+         palmSdCard.command |= bit;
+         palmSdCard.commandBitsRemaining--;
 
-      //add the bit
-      palmSdCard.command <<= 1;
-      palmSdCard.command |= bit;
-      palmSdCard.commandBitsRemaining--;
+#if defined(EMU_DEBUG)
+         //mark this bit as valid
+         printf("V");
+#endif
+      }
+      else{
+         sdCardCmdStart();
+      }
 
       //process command if all bits are present
       if(palmSdCard.commandBitsRemaining == 0){
@@ -93,30 +103,43 @@ bool sdCardExchangeBit(bool bit){
             uint32_t argument = palmSdCard.command >> 8 & 0xFFFFFFFF;
             uint8_t crc = palmSdCard.command >> 1 & 0x7F;
 
+#if defined(EMU_DEBUG)
+            //acknowledge the end of a command
+            printf("CMD");
+#endif
+
+            debugLog("SD command:cmd:0x%02X, arg:0x%08X, CRC:0x%02X\n", command, argument, crc);
+
             switch(command){
                case GO_IDLE_STATE:
                   sdCardReset();
+                  palmSdCard.response = SD_CARD_RESPONSE_R1_RESPONCE;
                   break;
 
                default:
-                  debugLog("SD command:cmd:0x%02X, arg:0x%08X, CRC:0x%02X\n", command, argument, crc);
+                  debugLog("SD unknown command:cmd:0x%02X, arg:0x%08X, CRC:0x%02X\n", command, argument, crc);
                   break;
             }
+         }
 
-            palmSdCard.commandBitsRemaining = 48;
-         }
-         else{
-            sdCardCmdInvalidFormat();
-         }
+         //start next command
+         sdCardCmdStart();
       }
 
       //process current exchange
-      switch(palmSdCard.currentExchange){
-         case SD_CARD_EXCHANGE_NOTHING:
+      switch(palmSdCard.response){
+         case SD_CARD_RESPONSE_NOTHING:
+            break;
+
+         case SD_CARD_RESPONSE_SHIFT_OUT:
+            sdCardOutputValue = !!(palmSdCard.responseState & 0x8000000000000000);
+            palmSdCard.responseState <<= 1;
+            if(palmSdCard.responseState == 0x8000000000000000)
+               palmSdCard.response = SD_CARD_RESPONSE_NOTHING;
             break;
 
          default:
-            debugLog("SD exchange:%d\n", palmSdCard.currentExchange);
+            debugLog("SD exchange:%d\n", palmSdCard.response);
             break;
       }
    }

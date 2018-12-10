@@ -89,8 +89,8 @@ typedef struct{
 typedef struct{
    uint64_t command;
    uint8_t  commandBitsRemaining;
-   uint64_t index;//this is in bits not bytes
-   uint8_t  currentExchange;
+   uint8_t  response;
+   uint64_t responseState;//this can contain many different types of data depending on the response type
    buffer_t flashChip;
 }sd_card_t;
 
