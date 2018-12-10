@@ -52,12 +52,12 @@ double    palmClk32Sysclks;//how many SYSCLKs have happened in the current CLK32
 
 uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t specialFeatures){
    if(emulatorInitialized)
-      return EMU_ERROR_NONE;
+      return EMU_ERROR_RESOURCE_LOCKED;
 
    if(!palmRomDump.data)
       return EMU_ERROR_INVALID_PARAMETER;
 
-   //allocate the buffers, add 4 to memory regions to prevent SIGSEGV from accessing off the end
+   //allocate buffers, add 4 to memory regions to prevent SIGSEGV from accessing off the end
    palmRam = malloc(((specialFeatures & FEATURE_RAM_HUGE) ? SUPERMASSIVE_RAM_SIZE : RAM_SIZE) + 4);
    palmRom = malloc(ROM_SIZE + 4);
    palmReg = malloc(REG_SIZE + 4);
@@ -79,11 +79,7 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t spec
       return EMU_ERROR_OUT_OF_MEMORY;
    }
 
-   //CPU
-   flx68000Init();
-   palmCycleCounter = 0.0;
-
-   //memory
+   //set default values
    memset(palmRam, 0x00, specialFeatures & FEATURE_RAM_HUGE ? SUPERMASSIVE_RAM_SIZE : RAM_SIZE);
    memcpy(palmRom, palmRomDump.data, u64Min(palmRomDump.size, ROM_SIZE));
    if(palmRomDump.size < ROM_SIZE)
@@ -105,22 +101,24 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t spec
       memcpy(palmExtendedFramebuffer + 320 * 320, silkscreen320x120, 320 * 120 * sizeof(uint16_t));
    }
    memset(palmAudio, 0x00, AUDIO_SAMPLES_PER_FRAME * 2/*channels*/ * sizeof(int16_t));
+   memset(&palmInput, 0x00, sizeof(palmInput));
+   memset(&palmMisc, 0x00, sizeof(palmMisc));
+   palmMisc.batteryLevel = 100;
+   palmCycleCounter = 0.0;
+   palmClockMultiplier = (specialFeatures & FEATURE_FAST_CPU) ? 2.00 : 1.00;//overclock
+   palmSpecialFeatures = specialFeatures;
+
+   //initialize components
    blip_set_rates(palmAudioResampler, AUDIO_CLOCK_RATE, AUDIO_SAMPLE_RATE);
+   flx68000Init();
+   sandboxInit();
+
+   //reset everything
    flx68000Reset();
    sed1376Reset();
    ads7846Reset();
    pdiUsbD12Reset();
    sdCardReset();
-   sandboxInit();
-
-   memset(&palmInput, 0x00, sizeof(palmInput));
-   memset(&palmMisc, 0x00, sizeof(palmMisc));
-   palmMisc.batteryLevel = 100;
-
-   //config
-   palmClockMultiplier = (specialFeatures & FEATURE_FAST_CPU) ? 2.00 : 1.00;//overclock
-   //palmClockMultiplier *= 0.80;//run at 80% speed, 20% is likely memory waitstates
-   palmSpecialFeatures = specialFeatures;
    setRtc(0, 0, 0, 0);//RTCTIME and DAYR are not cleared by reset, clear them manually in case the frontend doesnt set the RTC
 
    emulatorInitialized = true;

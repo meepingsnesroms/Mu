@@ -34,8 +34,10 @@ static bool sdCardCmdIsCrcValid(uint64_t command){
    uint8_t crc = palmSdCard.command >> 1 & 0x7F;
 
    //add real check
+   if(true)
+      return true;
 
-   return true;
+   return false;
 #else
    return true;
 #endif
@@ -53,8 +55,13 @@ bool sdCardExchangeBit(bool bit){
 
    //make sure SD is actually plugged in
    if(palmSdCard.flashChip.data){
-#if !defined(EMU_NO_SAFETY)
-      //check validity of incoming bit
+
+#if defined(EMU_DEBUG)
+    //since logs go to the debug window I can use the console to dump the raw SPI bitstream
+    printf("%d", bit);
+#endif
+
+      //check validity of incoming bit, needed even when safety checks are disabled to determine command start
       switch(palmSdCard.commandBitsRemaining - 1){
          case 47:
             if(bit)
@@ -67,6 +74,10 @@ bool sdCardExchangeBit(bool bit){
                sdCardCmdInvalidFormat();
             return true;
       }
+
+#if defined(EMU_DEBUG)
+      //mark this bit as valid
+      printf("V");
 #endif
 
       //add the bit

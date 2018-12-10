@@ -2,7 +2,7 @@
 #define SD_CARD_COMMAND_SPEC_HEADER
 /*SD Card Commands*/
 /*Command Format:01IIIIIIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACCCCCCC1*/
-/*I = index, A = argument, C = CRC*/
+/*48 bits, I = index, A = argument, C = CRC*/
 /*see http://elm-chan.org/docs/mmc/mmc_e.html for more command information*/
 
 #define GO_IDLE_STATE        0/*software reset*/
