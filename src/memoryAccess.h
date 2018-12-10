@@ -29,6 +29,7 @@
 
 //the read/write stuff looks messy here but makes the memory access functions alot cleaner
 #if defined(EMU_BIG_ENDIAN)
+//memory layout is the same as the Palm m515, just cast to pointer and access
 #define BUFFER_READ_8(segment, accessAddress, mask)  (*(uint8_t*)(segment + ((accessAddress) & (mask))))
 #define BUFFER_READ_16(segment, accessAddress, mask) (*(uint16_t*)(segment + ((accessAddress) & (mask))))
 #define BUFFER_READ_32(segment, accessAddress, mask) (*(uint32_t*)(segment + ((accessAddress) & (mask))))
@@ -42,7 +43,7 @@
 #define BUFFER_WRITE_16_BIG_ENDIAN(segment, accessAddress, mask, value) (*(uint16_t*)(segment + ((accessAddress) & (mask))) = (value))
 #define BUFFER_WRITE_32_BIG_ENDIAN(segment, accessAddress, mask, value) (*(uint32_t*)(segment + ((accessAddress) & (mask))) = (value))
 #else
-//optimize for opcode fetches(16 bit reads)
+//memory layout is different from the Palm m515, optimize for opcode fetches(16 bit reads)
 #define BUFFER_READ_8(segment, accessAddress, mask)  (*(uint8_t*)(segment + ((accessAddress) & (mask) ^ 1)))
 #define BUFFER_READ_16(segment, accessAddress, mask) (*(uint16_t*)(segment + ((accessAddress) & (mask))))
 #define BUFFER_READ_32(segment, accessAddress, mask) (*(uint16_t*)(segment + ((accessAddress) & (mask))) << 16 | *(uint16_t*)(segment + ((accessAddress) + 2 & (mask))))

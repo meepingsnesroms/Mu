@@ -74,6 +74,7 @@ extern uint16_t spi1RxFifo[];
 extern uint16_t spi1TxFifo[];
 extern uint8_t  spi1RxReadPosition;
 extern uint8_t  spi1RxWritePosition;
+extern bool     spi1RxOverflowed;
 extern uint8_t  spi1TxReadPosition;
 extern uint8_t  spi1TxWritePosition;
 extern int32_t  pwm1ClocksToNextSample;

@@ -1,5 +1,5 @@
-#ifndef EMU_FEATURE_REGISTERS_SPEC_HEADER
-#define EMU_FEATURE_REGISTERS_SPEC_HEADER
+#ifndef EMU_FEATURE_REGISTER_SPEC_H
+#define EMU_FEATURE_REGISTER_SPEC_H
 
 /*
 All emu feature registers are 32 bit accessing them in any other way will be undefined behavior.

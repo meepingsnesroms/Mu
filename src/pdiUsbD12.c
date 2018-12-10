@@ -4,15 +4,12 @@
 
 #include "emulator.h"
 #include "portability.h"
-#include "specs/pdiUsbD12Commands.h"
+#include "specs/pdiUsbD12CommandSpec.h"
 
 
 //this is only emulating the commands and USB transfer, the internals of the chip are not documented so any invalid behavior may not match that of the original chip
 //running a new command before finishing the previous one will result in corruption
-enum{
-   PDIUSBD12_COMMAND_SET_DMA = 0xFB,
-   PDIUSBD12_NONE = 0x00
-};
+
 
 #define PDIUSBD12_TRANSFER_BUFFER_SIZE 130
 
@@ -49,7 +46,7 @@ uint64_t pdiUsbD12StateSize(void){
    uint64_t size = 0;
 
    size += PDIUSBD12_TRANSFER_BUFFER_SIZE;
-   size += sizeof(uint8_t) * 2;
+   size += sizeof(uint8_t) * 3;
 
    return size;
 }
@@ -57,6 +54,8 @@ uint64_t pdiUsbD12StateSize(void){
 void pdiUsbD12SaveState(uint8_t* data){
    uint64_t offset = 0;
 
+   writeStateValue8(data + offset, pdiUsbD12Command);
+   offset += sizeof(uint8_t);
    memcpy(data + offset, pdiUsbD12FifoBuffer, PDIUSBD12_TRANSFER_BUFFER_SIZE);
    offset += PDIUSBD12_TRANSFER_BUFFER_SIZE;
    writeStateValue8(data + offset, pdiUsbD12ReadIndex);
@@ -68,6 +67,8 @@ void pdiUsbD12SaveState(uint8_t* data){
 void pdiUsbD12LoadState(uint8_t* data){
    uint64_t offset = 0;
 
+   pdiUsbD12Command = readStateValue8(data + offset);
+   offset += sizeof(uint8_t);
    memcpy(pdiUsbD12FifoBuffer, data + offset, PDIUSBD12_TRANSFER_BUFFER_SIZE);
    offset += PDIUSBD12_TRANSFER_BUFFER_SIZE;
    pdiUsbD12ReadIndex = readStateValue8(data + offset);
@@ -77,32 +78,29 @@ void pdiUsbD12LoadState(uint8_t* data){
 }
 
 uint8_t pdiUsbD12GetRegister(bool address){
-   //just log all USB accesses for now
-   //debugLog("USB read, address:0x%01X\n", address);
-
    if(!address){
       //0x0 data
+      debugLog("USB read data\n");
       return pdiUsbD12FifoRead();
    }
    else{
       //0x1 commands
+      debugLog("USB read command\n", address);
       //may just return 0x00(or random 0xXX) or may return current command(not read by Palm OS during boot up)
-      debugLog("USB command readback, response unknown, address:0x%01X\n", address);
    }
 
    return 0x00;
 }
 
 void pdiUsbD12SetRegister(bool address, uint8_t value){
-   //just log all USB accesses for now
-   //debugLog("USB write, address:0x%01X, value:0x%02X\n", address, value);
-
    if(!address){
       //0x0 data
+      debugLog("USB write data, value:0x%02X\n", value);
       pdiUsbD12FifoWrite(value);
    }
    else{
       //0x1 commands
+      debugLog("USB write command, value:0x%02X\n", value);
       pdiUsbD12FifoStartNewCommand();
 
       switch(value){

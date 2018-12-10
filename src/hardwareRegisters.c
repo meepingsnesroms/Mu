@@ -3,8 +3,8 @@
 #include <string.h>
 
 #include "emulator.h"
-#include "specs/hardwareRegisterNames.h"
-#include "specs/emuFeatureRegistersSpec.h"
+#include "specs/dragonballVzRegisterSpec.h"
+#include "specs/emuFeatureRegisterSpec.h"
 #include "hardwareRegisters.h"
 #include "memoryAccess.h"
 #include "portability.h"
@@ -26,7 +26,7 @@ uint16_t spi1RxFifo[9];
 uint16_t spi1TxFifo[9];
 uint8_t  spi1RxReadPosition;
 uint8_t  spi1RxWritePosition;
-bool     spi1RxOverflowed;//not in savestates yet!!!
+bool     spi1RxOverflowed;
 uint8_t  spi1TxReadPosition;
 uint8_t  spi1TxWritePosition;
 int32_t  pwm1ClocksToNextSample;
@@ -452,8 +452,12 @@ uint16_t getHwRegister16(uint32_t address){
          //SSTATUS is unemulated because the datasheet has no descrption of how it works
          return spi1RxFifoEntrys() << 4 | spi1TxFifoEntrys();
 
-      case SPIRXD:
-         return spi1RxFifoRead();
+      case SPIRXD:{
+            uint16_t fifoVal = spi1RxFifoRead();
+            //check if SPI1 interrupts changed
+            setSpiIntCs(registerArrayRead16(SPIINTCS));
+            return fifoVal;
+         }
 
       case PLLFSR:
          //this is a hack, it makes the busy wait in HwrDelay finish instantly, prevents issues with the power button
@@ -912,7 +916,7 @@ void setHwRegister16(uint32_t address, uint16_t value){
 
       case SPITXD:
          spi1TxFifoWrite(value);
-         //check if SPI1 interrupt changed
+         //check if SPI1 interrupts changed
          setSpiIntCs(registerArrayRead16(SPIINTCS));
          break;
 

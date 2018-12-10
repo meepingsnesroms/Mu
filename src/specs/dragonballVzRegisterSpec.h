@@ -1,14 +1,14 @@
-#ifndef HARDWARE_REGISTER_NAMES_HEADER
-#define HARDWARE_REGISTER_NAMES_HEADER
+#ifndef DRAGONBALL_VZ_REGISTER_SPEC_H
+#define DRAGONBALL_VZ_REGISTER_SPEC_H
 
-/*Dragonball VZ Hardware Register Definitions*/
+/*Dragonball VZ Register Definitions*/
 #define HW_REG_ADDR(x) (0xFFFFF000 | (x))
 
 /*SIM - System Integration Module*/
 #define SCR       0x000/*System Control Register*/
-#define PCR       0x003/*Peripheral control register*/
-#define IDR       0x004/*Silicon ID register*/
-#define IODCR     0x008/*I/O drive control register*/
+#define PCR       0x003/*Peripheral Control Register*/
+#define IDR       0x004/*Silicon ID Register*/
+#define IODCR     0x008/*I/O Drive Control Register*/
 
 /*CS - Chip Select*/
 #define CSGBA     0x100/*Chip Select Group A Base Register*/
@@ -23,7 +23,7 @@
 #define CSB       0x112/*Group B Chip Select Register*/
 #define CSC       0x114/*Group C Chip Select Register*/
 #define CSD       0x116/*Group D Chip Select Register*/
-#define EMUCS     0x118/*Emulation chip-select register*/
+#define EMUCS     0x118/*Emulation Chip Select Register*/
 
 /*PLL - Phase Locked Loop*/
 #define PLLCR     0x200/*PLL Control Register*/
