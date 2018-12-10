@@ -452,8 +452,12 @@ uint16_t getHwRegister16(uint32_t address){
          //SSTATUS is unemulated because the datasheet has no descrption of how it works
          return spi1RxFifoEntrys() << 4 | spi1TxFifoEntrys();
 
-      case SPIRXD:
-         return spi1RxFifoRead();
+      case SPIRXD:{
+            uint16_t fifoVal = spi1RxFifoRead();
+            //check if SPI1 interrupts changed
+            setSpiIntCs(registerArrayRead16(SPIINTCS));
+            return fifoVal;
+         }
 
       case PLLFSR:
          //this is a hack, it makes the busy wait in HwrDelay finish instantly, prevents issues with the power button
@@ -912,7 +916,7 @@ void setHwRegister16(uint32_t address, uint16_t value){
 
       case SPITXD:
          spi1TxFifoWrite(value);
-         //check if SPI1 interrupt changed
+         //check if SPI1 interrupts changed
          setSpiIntCs(registerArrayRead16(SPIINTCS));
          break;
 
