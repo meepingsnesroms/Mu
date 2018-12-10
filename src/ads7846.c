@@ -7,8 +7,8 @@
 
 bool ads7846PenIrqEnabled;
 
-static const uint16_t ads7846DockResistorValues[PORT_END] = {0xFFF/*none*/, 0x1EB/*USB cradle*/, 0x000/*serial cradle, untested*/, 0x000/*USB peripheral, untested*/, 0x000/*serial peripheral, untested*/};
-static uint8_t  ads7846BitsToNextControl;//bits before starting a new control byte
+static const uint16_t ads7846DockResistorValues[PORT_END] = {0xFFF/*none*/, 0x1EB/*USB cradle*/, 0x000/*serial cradle, unknown*/, 0x000/*USB peripheral, unknown*/, 0x000/*serial peripheral, unknown*/};
+static uint8_t  ads7846BitsToNextControl;
 static uint8_t  ads7846ControlByte;
 static uint16_t ads7846OutputValue;
 static bool     ads7846ChipSelect;

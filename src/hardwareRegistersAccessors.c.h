@@ -355,7 +355,7 @@ static void setSpiCont1(uint16_t value){
    //only master mode is implemented(even then only partially)!!!
    uint16_t oldSpiCont1 = registerArrayRead16(SPICONT1);
 
-   debugLog("SPICONT1 write, old value:0x%04X, value:0x%04X\n", oldSpiCont1, value);
+   //debugLog("SPICONT1 write, old value:0x%04X, value:0x%04X\n", oldSpiCont1, value);
 
    //SPI1 disabled
    if(oldSpiCont1 & 0x0200 && !(value & 0x2000)){
@@ -364,8 +364,8 @@ static void setSpiCont1(uint16_t value){
    }
 
    //slave mode and enabled, dont know what to do
-   if(!(value & 0x0400) && value & 0x0200)
-      debugLog("SPI1 set to slave mode, PC:0x%08X\n", flx68000GetPc());
+   //if(!(value & 0x0400) && value & 0x0200)
+   //   debugLog("SPI1 set to slave mode, PC:0x%08X\n", flx68000GetPc());
 
    //do a transfer if enabled(this register write and last) and exchange set
    if(value & oldSpiCont1 & 0x0200 && value & 0x0100){
@@ -376,7 +376,7 @@ static void setSpiCont1(uint16_t value){
          uint16_t startBit = 1 << (bitCount - 1);
          uint8_t bits;
 
-         debugLog("SPI1 transfer, PC:0x%08X\n", flx68000GetPc());
+         //debugLog("SPI1 transfer, PC:0x%08X\n", flx68000GetPc());
 
          //The most significant bit is output when the CPU loads the transmitted data, 13.2.3 SPI 1 Phase and Polarity Configurations MC68VZ328UM.pdf
          for(bits = 0; bits < bitCount; bits++){
