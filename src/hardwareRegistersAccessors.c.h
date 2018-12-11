@@ -730,7 +730,8 @@ static void updateBacklightAmplifierStatus(void){
 }
 
 static void updateTouchState(void){
-   if(!(registerArrayRead8(PFSEL) & 0x02)){
+   //check if interrupt enabled and is input
+   if(!(registerArrayRead8(PFSEL) & registerArrayRead8(PFDIR) & 0x02)){
       uint16_t icr = registerArrayRead16(ICR);
       bool penIrqPin = !(ads7846PenIrqEnabled && palmInput.touchscreenTouched);//penIrqPin pulled low on touch
 
