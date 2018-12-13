@@ -32,11 +32,6 @@ UART1 USTCNT1
 PLLFSR has a hack that makes busy wait loops finish faster by toggling the CLK32 bit on read, for power button issue
 PDKBEN also has a hack for power on
 
-Debug tools:
-ADS7846 channels can't be read in single reference mode in hwTestSuite
-
-MakePalmBitmap:
-
 Memory:
 SD card can't be read or written to by Palm OS
 unknown if DRAM bit expanded address space is used for CSC when its not an extension of CSD
@@ -51,6 +46,14 @@ verify chip select(no test has been done yet, but everything points to port g bi
 need to trigger a false PENIRQ interrupt on reading certain channels
 electrical noise on lines(conversions probably should have +-20 added to values)(probably no need for this, it works so theres no need to use less precise values)
 in the edge case that SPICLK2 is disabled while using ADS7846 and a 1 was the last bit shifted out 0s will still be shifted in
+
+SD Card:
+IRQ2 may actually be attached to the SD Card data out pin, triggering an interrupt when a 0 is received to process the return data
+
+Debug tools:
+ADS7846 channels can't be read in single reference mode in hwTestSuite
+
+MakePalmBitmap:
 
 
 Fixed:

@@ -22,6 +22,7 @@ uint32_t clk32Counter;
 double   pctlrCpuClockDivider;
 double   timerCycleCounter[2];
 uint16_t timerStatusReadAcknowledge[2];
+uint8_t  portDInterruptLastValue;//used for edge triggered interrupt timing
 uint16_t spi1RxFifo[9];
 uint16_t spi1TxFifo[9];
 uint8_t  spi1RxReadPosition;
@@ -179,81 +180,53 @@ static void checkInterrupts(void){
 }
 
 static void checkPortDInterrupts(void){
-   uint8_t portDValue = getPortDValue();
-   uint8_t portDIrqPins = ~registerArrayRead8(PDSEL);
-   uint8_t portDEdgeTriggered = registerArrayRead8(PDIRQEG);
-   uint16_t interruptControlRegister = registerArrayRead16(ICR);
-   uint8_t triggeredIntXInterrupts = portDValue & registerArrayRead8(PDIRQEN);
-   bool pllOn = pllIsOn();
+   uint16_t icr = registerArrayRead16(ICR);
+   uint8_t icrPolSwap = (!!(icr & 0x1000) << 7 | !!(icr & 0x2000) << 6 | !!(icr & 0x4000) << 5 | !!(icr & 0x8000) << 4) ^ 0xF0;//shifted to match port d layout
+   uint8_t icrEdgeTriggered = !!(icr & 0x0100) << 7 | !!(icr & 0x0200) << 6 | !!(icr & 0x0400) << 5 | !!(icr & 0x0800) << 4;//shifted to match port d layout
+   uint8_t portDInterruptValue = getPortDValue() ^ icrPolSwap;//not the same as the actual pin values, this already has all polarity swaps applied
+   uint8_t portDInterruptEdgeTriggered = icrEdgeTriggered | registerArrayRead8(PDIRQEG);
+   uint8_t portDInterruptEnabled = (~registerArrayRead8(PDSEL) & 0xF0) | registerArrayRead8(PDIRQEN);
+   uint8_t portDIsInput = ~registerArrayRead8(PDDIR);
+   uint8_t portDInterruptTriggered = portDInterruptValue & portDInterruptEnabled & portDIsInput & (~portDInterruptEdgeTriggered | ~portDInterruptLastValue/* & (pllIsOn() ? 0xFF : 0xF0)*/);
 
-   //On hardware PDIRQEG seems not to actually work at all(CPUID:0x57000000), unimplementedHardware.txt
-   //the correct behavior is not being used right now because it doesnt seem to happen on the actual device
-   //this may be because the interrupts are change to level triggered after they are triggered?
-
-   /*
-   if(triggeredIntXInterrupts & 0x01)
+   if(portDInterruptTriggered & 0x01)
       setIprIsrBit(INT_INT0);
-   else
+   else if(!(portDInterruptEdgeTriggered & 0x01))
       clearIprIsrBit(INT_INT0);
 
-   if(triggeredIntXInterrupts & 0x02)
+   if(portDInterruptTriggered & 0x02)
       setIprIsrBit(INT_INT1);
-   else
+   else if(!(portDInterruptEdgeTriggered & 0x02))
       clearIprIsrBit(INT_INT1);
 
-   if(triggeredIntXInterrupts & 0x04)
+   if(portDInterruptTriggered & 0x04)
       setIprIsrBit(INT_INT2);
-   else
+   else if(!(portDInterruptEdgeTriggered & 0x04))
       clearIprIsrBit(INT_INT2);
 
-   if(triggeredIntXInterrupts & 0x08)
+   if(portDInterruptTriggered & 0x08)
       setIprIsrBit(INT_INT3);
-   else
-      clearIprIsrBit(INT_INT3);
-   */
-
-   if(triggeredIntXInterrupts & 0x01 && (!(portDEdgeTriggered & 0x01) || pllOn))
-      setIprIsrBit(INT_INT0);
-   else if(!(portDEdgeTriggered & 0x01))
-      clearIprIsrBit(INT_INT0);
-
-   if(triggeredIntXInterrupts & 0x02 && (!(portDEdgeTriggered & 0x02) || pllOn))
-      setIprIsrBit(INT_INT1);
-   else if(!(portDEdgeTriggered & 0x02))
-      clearIprIsrBit(INT_INT1);
-
-   if(triggeredIntXInterrupts & 0x04 && (!(portDEdgeTriggered & 0x04) || pllOn))
-      setIprIsrBit(INT_INT2);
-   else if(!(portDEdgeTriggered & 0x04))
-      clearIprIsrBit(INT_INT2);
-
-   if(triggeredIntXInterrupts & 0x08 && (!(portDEdgeTriggered & 0x08) || pllOn))
-      setIprIsrBit(INT_INT3);
-   else if(!(portDEdgeTriggered & 0x08))
+   else if(!(portDInterruptEdgeTriggered & 0x08))
       clearIprIsrBit(INT_INT3);
 
-   //IRQ1, polarity set in ICR
-   if(portDIrqPins & 0x10 && !!(portDValue & 0x10) == !!(interruptControlRegister & 0x8000))
+   if(portDInterruptTriggered & 0x10)
       setIprIsrBit(INT_IRQ1);
-   else if(!(interruptControlRegister & 0x0800))
+   else if(!(portDInterruptEdgeTriggered & 0x10))
       clearIprIsrBit(INT_IRQ1);
 
-   //IRQ2, polarity set in ICR
-   if(portDIrqPins & 0x20 && !!(portDValue & 0x20) == !!(interruptControlRegister & 0x4000))
+   if(portDInterruptTriggered & 0x20)
       setIprIsrBit(INT_IRQ2);
-   else if(!(interruptControlRegister & 0x0400))
+   else if(!(portDInterruptEdgeTriggered & 0x20))
       clearIprIsrBit(INT_IRQ2);
 
-   //IRQ3, polarity set in ICR
-   if(portDIrqPins & 0x40 && !!(portDValue & 0x40) == !!(interruptControlRegister & 0x2000))
+   if(portDInterruptTriggered & 0x40)
       setIprIsrBit(INT_IRQ3);
-   else if(!(interruptControlRegister & 0x0200))
+   else if(!(portDInterruptEdgeTriggered & 0x40))
       clearIprIsrBit(INT_IRQ3);
 
-   //IRQ6, polarity set in ICR
-   if(portDIrqPins & 0x80 && !!(portDValue & 0x80) == !!(interruptControlRegister & 0x1000))
+   if(portDInterruptTriggered & 0x80)
       setIprIsrBit(INT_IRQ6);
-   else if(!(interruptControlRegister & 0x0100))
+   else if(!(portDInterruptEdgeTriggered & 0x80))
       clearIprIsrBit(INT_IRQ6);
 
    //active low/off level triggered interrupt
@@ -261,11 +234,16 @@ static void checkPortDInterrupts(void){
    //the above seems like a lie, 10.4.4 Port D Operation MC68VZ328UM.pdf
    //completely removing PDKBEN is not accurate but makes the buttons function properly
    //I am fairly sure that port d is not documented properly by the data sheet so Im going with what works properly right now
-   //the "!pllOn &&" is a hack, it prevents rapid button presses, but allows INT_KB to turn the device back on
-   if(!pllOn && registerArrayRead8(PDKBEN) & portDValue)
+   //the "!pllIsOn() &&" is a hack, it prevents rapid button presses, but allows INT_KB to turn the device back on
+   /*
+   if(!pllIsOn() && registerArrayRead8(PDKBEN) & getPortDValue() ^ registerArrayRead8(PDPOL))
       setIprIsrBit(INT_KB);
    else
       clearIprIsrBit(INT_KB);
+   */
+
+   //save to check against next time this function is called
+   portDInterruptLastValue = portDInterruptTriggered;
 
    checkInterrupts();
 }
@@ -1037,6 +1015,7 @@ void resetHwRegisters(void){
    timerCycleCounter[1] = 0.0;
    timerStatusReadAcknowledge[0] = 0x0000;
    timerStatusReadAcknowledge[1] = 0x0000;
+   portDInterruptLastValue = 0x00;
    memset(spi1RxFifo, 0x00, sizeof(spi1RxFifo));
    memset(spi1TxFifo, 0x00, sizeof(spi1TxFifo));
    spi1RxReadPosition = 0;
