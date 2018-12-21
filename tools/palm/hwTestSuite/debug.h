@@ -1,5 +1,5 @@
-#ifndef DEBUG_HEADER
-#define DEBUG_HEADER
+#ifndef DEBUG_H
+#define DEBUG_H
 
 #include "ugui.h"
 

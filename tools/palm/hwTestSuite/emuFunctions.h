@@ -1,5 +1,5 @@
-#ifndef EMU_FUNCTIONS_HEADER
-#define EMU_FUNCTIONS_HEADER
+#ifndef EMU_FUNCTIONS_H
+#define EMU_FUNCTIONS_H
 
 #include <PalmOS.h>
 #include <stdint.h>

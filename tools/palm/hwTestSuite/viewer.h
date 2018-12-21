@@ -1,5 +1,5 @@
-#ifndef VIEWER_HEADER
-#define VIEWER_HEADER
+#ifndef VIEWER_H
+#define VIEWER_H
 
 #include "testSuite.h"
 
