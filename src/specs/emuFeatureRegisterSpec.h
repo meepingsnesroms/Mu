@@ -3,7 +3,7 @@
 
 /*
 All emu feature registers are 32 bit accessing them in any other way will be undefined behavior.
-These registers will do nothing it there corresponding feature bit is not set on launch.
+These registers will do nothing if their corresponding feature bit is not set on launch.
 */
 
 #define EMU_REGISTER_BASE 0xFFFC0000/*EMUCS on hardware*/

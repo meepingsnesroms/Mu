@@ -5,8 +5,8 @@
 
 #include "testSuite.h"
 #include "testSuiteConfig.h"
-#include "specs/hardwareRegisterNames.h"
-#include "specs/sed1376RegisterNames.h"
+#include "specs/dragonballVzRegisterSpec.h"
+#include "specs/sed1376RegisterSpec.h"
 #include "debug.h"
 #include "tools.h"
 #include "cpu.h"
