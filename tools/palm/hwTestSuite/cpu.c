@@ -3,7 +3,7 @@
 
 #include "testSuite.h"
 #include "emuFunctions.h"
-#include "specs/hardwareRegisterNames.h"
+#include "specs/dragonballVzRegisterSpec.h"
 #include "viewer.h"
 #include "cpu.h"
 

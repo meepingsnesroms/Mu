@@ -2,8 +2,8 @@
 #include <stdint.h>
 
 #include "testSuite.h"
-#include "specs/hardwareRegisterNames.h"
-#include "specs/emuFeatureRegistersSpec.h"
+#include "specs/dragonballVzRegisterSpec.h"
+#include "specs/emuFeatureRegisterSpec.h"
 
 
 enum{

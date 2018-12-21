@@ -4,7 +4,7 @@
 #include <PalmOS.h>
 #include <stdint.h>
 
-#include "specs/emuFeatureRegistersSpec.h"/*needed for feature names*/
+#include "specs/emuFeatureRegisterSpec.h"/*needed for feature names*/
 
 Boolean isEmulator();
 Boolean isEmulatorFeatureEnabled(uint32_t feature);
