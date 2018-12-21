@@ -1,5 +1,5 @@
-#ifndef UNDOCUMENTED_APIS_HEADER
-#define UNDOCUMENTED_APIS_HEADER
+#ifndef UNDOCUMENTED_APIS_H
+#define UNDOCUMENTED_APIS_H
 
 #include <PalmOS.h>
 #include <stdint.h>

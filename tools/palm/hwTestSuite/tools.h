@@ -1,5 +1,5 @@
-#ifndef TOOLS_HEADER
-#define TOOLS_HEADER
+#ifndef TOOLS_H
+#define TOOLS_H
 
 #include <PalmOS.h>
 

@@ -1,5 +1,5 @@
-#ifndef TEST_SUITE_HEADER
-#define TEST_SUITE_HEADER
+#ifndef TEST_SUITE_H
+#define TEST_SUITE_H
 
 #include <PalmOS.h>
 #include <stdint.h>

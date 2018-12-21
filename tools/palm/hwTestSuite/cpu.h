@@ -1,5 +1,5 @@
-#ifndef CPU_HEADER
-#define CPU_HEADER
+#ifndef CPU_H
+#define CPU_H
 
 #include <stdint.h>
 

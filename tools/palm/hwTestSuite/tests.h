@@ -1,5 +1,5 @@
-#ifndef TESTS_HEADER
-#define TESTS_HEADER
+#ifndef TESTS_H
+#define TESTS_H
 
 #include "testSuite.h"
 
