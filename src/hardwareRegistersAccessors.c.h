@@ -618,9 +618,9 @@ static uint8_t getPortEValue(void){
 
 static uint8_t getPortFValue(void){
    uint8_t portFValue = 0x00;
-   uint8_t portFData = registerArrayRead8(PKDATA);
-   uint8_t portFDir = registerArrayRead8(PKDIR);
-   uint8_t portFSel = registerArrayRead8(PKSEL);
+   uint8_t portFData = registerArrayRead8(PFDATA);
+   uint8_t portFDir = registerArrayRead8(PFDIR);
+   uint8_t portFSel = registerArrayRead8(PFSEL);
    bool penIrqPin = !(ads7846PenIrqEnabled && palmInput.touchscreenTouched);//penIrqPin pulled low on touch
 
    portFValue |= penIrqPin << 1;
