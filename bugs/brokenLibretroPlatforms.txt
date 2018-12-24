@@ -1,3 +1,4 @@
+Lakka(needs makefile)
 classics/new haxchi(should work)
 xbox(don't know)
 xbox360(don't know)
