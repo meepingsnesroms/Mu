@@ -39,7 +39,8 @@ input_t   palmInput;
 sd_card_t palmSdCard;
 misc_hw_t palmMisc;
 uint16_t* palmFramebuffer;
-uint16_t* palmExtendedFramebuffer;
+uint16_t  palmFramebufferWidth;
+uint16_t  palmFramebufferHeight;
 int16_t*  palmAudio;
 blip_t*   palmAudioResampler;
 uint32_t  palmSpecialFeatures;
@@ -61,21 +62,16 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t spec
    palmRam = malloc(((specialFeatures & FEATURE_RAM_HUGE) ? SUPERMASSIVE_RAM_SIZE : RAM_SIZE) + 4);
    palmRom = malloc(ROM_SIZE + 4);
    palmReg = malloc(REG_SIZE + 4);
-   palmFramebuffer = malloc(160 * (160 + 60) * sizeof(uint16_t));//really 160*160, the extra pixels are the silkscreened digitizer area
+   palmFramebuffer = malloc(480 * 480 * sizeof(uint16_t));
    palmAudio = malloc(AUDIO_SAMPLES_PER_FRAME * 2 * sizeof(int16_t));
    palmAudioResampler = blip_new(AUDIO_SAMPLE_RATE);//have 1 second of samples
-   if(specialFeatures & FEATURE_CUSTOM_FB)
-      palmExtendedFramebuffer = malloc(480 * 480 * sizeof(uint16_t));
-   else
-      palmExtendedFramebuffer = NULL;
-   if(!palmRam || !palmRom || !palmReg || !palmFramebuffer || !palmAudio || !palmAudioResampler || (!palmExtendedFramebuffer && (specialFeatures & FEATURE_CUSTOM_FB))){
+   if(!palmRam || !palmRom || !palmReg || !palmFramebuffer || !palmAudio || !palmAudioResampler){
       free(palmRam);
       free(palmRom);
       free(palmReg);
       free(palmFramebuffer);
       free(palmAudio);
       blip_delete(palmAudioResampler);
-      free(palmExtendedFramebuffer);
       return EMU_ERROR_OUT_OF_MEMORY;
    }
 
@@ -94,15 +90,11 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t spec
    else{
       memset(palmReg + REG_SIZE - 1 - BOOTLOADER_SIZE, 0x00, BOOTLOADER_SIZE);
    }
-   memset(palmFramebuffer, 0x00, 160 * 160 * sizeof(uint16_t));
-   memcpy(palmFramebuffer + 160 * 160, silkscreen160x60, 160 * 60 * sizeof(uint16_t));
-   if(palmExtendedFramebuffer){
-      memset(palmExtendedFramebuffer, 0x00, 320 * 320 * sizeof(uint16_t));
-      memcpy(palmExtendedFramebuffer + 320 * 320, silkscreen320x120, 320 * 120 * sizeof(uint16_t));
-   }
    memset(palmAudio, 0x00, AUDIO_SAMPLES_PER_FRAME * 2/*channels*/ * sizeof(int16_t));
    memset(&palmInput, 0x00, sizeof(palmInput));
    memset(&palmMisc, 0x00, sizeof(palmMisc));
+   palmFramebufferWidth = 160;
+   palmFramebufferHeight = 220;
    palmMisc.batteryLevel = 100;
    palmCycleCounter = 0.0;
    palmClockMultiplier = (specialFeatures & FEATURE_FAST_CPU) ? 2.00 : 1.00;//overclock
@@ -137,7 +129,6 @@ void emulatorExit(void){
       free(palmFramebuffer);
       free(palmAudio);
       blip_delete(palmAudioResampler);
-      free(palmExtendedFramebuffer);
       free(palmSdCard.flashChip.data);
       emulatorInitialized = false;
    }
@@ -146,9 +137,8 @@ void emulatorExit(void){
 void emulatorHardReset(void){
    //equivalent to taking the battery out and putting it back in
    memset(palmRam, 0x00, palmSpecialFeatures & FEATURE_RAM_HUGE ? SUPERMASSIVE_RAM_SIZE : RAM_SIZE);
-   memset(palmFramebuffer, 0x00, 160 * 160 * sizeof(uint16_t));
-   if(palmExtendedFramebuffer)
-      memset(palmExtendedFramebuffer, 0x00, 320 * 320 * sizeof(uint16_t));
+   palmFramebufferWidth = 160;
+   palmFramebufferHeight = 220;
    flx68000Reset();
    sed1376Reset();
    ads7846Reset();
@@ -159,6 +149,8 @@ void emulatorHardReset(void){
 
 void emulatorSoftReset(void){
    //equivalent to pushing the reset button on the back of the device
+   palmFramebufferWidth = 160;
+   palmFramebufferHeight = 220;
    flx68000Reset();
    sed1376Reset();
    ads7846Reset();
@@ -176,6 +168,7 @@ uint64_t emulatorGetStateSize(void){
    size += sizeof(uint32_t);//save state version
    size += sizeof(uint32_t);//palmSpecialFeatures
    size += sizeof(uint64_t);//palmSdCard.flashChip.size, needs to be done first to verify the malloc worked
+   size += sizeof(uint16_t) * 2;//palmFramebuffer(Width/Height)
    size += flx68000StateSize();
    size += sed1376StateSize();
    size += ads7846StateSize();
@@ -227,6 +220,12 @@ bool emulatorSaveState(buffer_t buffer){
    //SD card size
    writeStateValue64(buffer.data + offset, palmSdCard.flashChip.size);
    offset += sizeof(uint64_t);
+
+   //screen state
+   writeStateValue16(buffer.data + offset, palmFramebufferWidth);
+   offset += sizeof(uint16_t);
+   writeStateValue16(buffer.data + offset, palmFramebufferHeight);
+   offset += sizeof(uint16_t);
 
    //chips
    flx68000SaveState(buffer.data + offset);
@@ -384,6 +383,12 @@ bool emulatorLoadState(buffer_t buffer){
    if(stateSdCardSize > 0 && !stateSdCardBuffer)
       return false;
    offset += sizeof(uint64_t);
+
+   //screen state
+   palmFramebufferWidth = readStateValue16(buffer.data + offset);
+   offset += sizeof(uint16_t);
+   palmFramebufferHeight = readStateValue16(buffer.data + offset);
+   offset += sizeof(uint16_t);
 
    //chips
    flx68000LoadState(buffer.data + offset);
@@ -609,27 +614,13 @@ void emulatorRunFrame(void){
 
    //video
    sed1376Render();
-
-   //render in 320x320 mode
-   if(palmExtendedFramebuffer){
-      uint16_t pixCopyX;
-      uint16_t pixCopyY;
-
-      //scale original framebuffer to large one if enabled, this alone doesnt increase resolution, that requires a driver
-      //scale horizontal
-      MULTITHREAD_DOUBLE_LOOP(pixCopyX, pixCopyY) for(pixCopyY = 0; pixCopyY < 160; pixCopyY++){
-         for(pixCopyX = 0; pixCopyX < 160; pixCopyX++){
-            palmExtendedFramebuffer[pixCopyY * 320 * 2 + pixCopyX * 2] = palmFramebuffer[pixCopyY * 160 + pixCopyX];
-            palmExtendedFramebuffer[pixCopyY * 320 * 2 + pixCopyX * 2 + 1] = palmFramebuffer[pixCopyY * 160 + pixCopyX];
-         }
-      }
-      //scale vertical
-      MULTITHREAD_LOOP(pixCopyY) for(pixCopyY = 0; pixCopyY < 160; pixCopyY++)
-         memcpy(palmExtendedFramebuffer + pixCopyY * 320 * 2 + 320, palmExtendedFramebuffer + pixCopyY * 320 * 2, 320 * sizeof(uint16_t));
-
-
-      //replace all black pixels in 160x160 with those from 320x320 framebuffer memory, only if black in both buffers will the display color be black, this allows all the 160x160 APIs to work on the larger framebuffer seamlessly
+   if(palmFramebufferWidth == 160 && palmFramebufferHeight == 220){
+      //simple render
+      memcpy(palmFramebuffer, sed1376Framebuffer, 160 * 160 * sizeof(uint16_t));
+      memcpy(palmFramebuffer + 160 * 160, silkscreen160x60, 160 * 60 * sizeof(uint16_t));
+   }
+   else{
+      //advanced render
       //DRIVER NEEDS TO BE WRITTEN STILL
-      //the above was enabled early so using the hires silkscreen and mouse cursor was possible in RetroArch
    }
 }

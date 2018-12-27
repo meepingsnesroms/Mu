@@ -4,7 +4,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-extern uint8_t sed1376Framebuffer[];
+extern uint16_t sed1376Framebuffer[];
+extern uint8_t sed1376Ram[];
 
 void sed1376Reset(void);
 uint64_t sed1376StateSize(void);
