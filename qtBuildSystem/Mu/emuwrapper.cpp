@@ -189,7 +189,7 @@ uint32_t EmuWrapper::init(const QString& romPath, const QString& bootloaderPath,
             }
          }
 
-         if(features & FEATURE_320x320){
+         if(features & FEATURE_CUSTOM_FB){
             emuVideoWidth = 320;
             emuVideoHeight = 320 + 120;
          }
