@@ -316,7 +316,7 @@ uint32_t EmuWrapper::loadState(const QString& path){
    return error;
 }
 
-uint32_t EmuWrapper::installApplication(QString path){
+uint32_t EmuWrapper::installApplication(const QString& path){
    bool wasPaused = isPaused();
    uint32_t error = EMU_ERROR_INVALID_PARAMETER;
    QFile appFile(path);

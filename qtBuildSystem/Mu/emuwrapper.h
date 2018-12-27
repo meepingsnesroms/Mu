@@ -43,7 +43,7 @@ public:
    bool isRunning() const{return emuRunning;}
    bool isPaused() const{return emuPaused;}
 
-   uint32_t installApplication(QString path);
+   uint32_t installApplication(const QString& path);
 
    std::vector<QString>& getDebugStrings();
    std::vector<uint64_t>& getDuplicateCallCount();

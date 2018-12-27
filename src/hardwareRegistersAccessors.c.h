@@ -40,21 +40,22 @@ static uint8_t spi1RxFifoEntrys(void){
 }
 
 static uint16_t spi1RxFifoRead(void){
-   uint16_t value = spi1RxFifo[spi1RxReadPosition];
    if(spi1RxFifoEntrys() > 0)
       spi1RxReadPosition = (spi1RxReadPosition + 1) % 9;
    spi1RxOverflowed = false;
-   return value;
+
+   return spi1RxFifo[spi1RxReadPosition];
 }
 
 static void spi1RxFifoWrite(uint16_t value){
    if(spi1RxFifoEntrys() < 8){
       spi1RxWritePosition = (spi1RxWritePosition + 1) % 9;
-      spi1RxFifo[spi1RxWritePosition] = value;
    }
    else{
       spi1RxOverflowed = true;
+      debugLog("SPI1 RX FIFO overflowed\n");
    }
+   spi1RxFifo[spi1RxWritePosition] = value;
 }
 
 static void spi1RxFifoFlush(void){
@@ -69,10 +70,9 @@ static uint8_t spi1TxFifoEntrys(void){
 }
 
 static uint16_t spi1TxFifoRead(void){
-   uint16_t value = spi1TxFifo[spi1TxReadPosition];
    //dont need a safety check here, the emulator will always check that data is present before trying to access it
    spi1TxReadPosition = (spi1TxReadPosition + 1) % 9;
-   return value;
+   return spi1TxFifo[spi1TxReadPosition];
 }
 
 static void spi1TxFifoWrite(uint16_t value){
@@ -95,7 +95,6 @@ static uint8_t pwm1FifoEntrys(void){
 }
 
 int32_t pwm1FifoRunSample(int32_t now, int32_t clockOffset){
-   uint8_t sample = pwm1Fifo[pwm1ReadPosition];
    uint16_t period = registerArrayRead8(PWMP1) + 2;
    uint16_t pwmc1 = registerArrayRead16(PWMC1);
    uint8_t prescaler = (pwmc1 >> 8 & 0x7F) + 1;
@@ -103,8 +102,13 @@ int32_t pwm1FifoRunSample(int32_t now, int32_t clockOffset){
    uint8_t repeat = 1 << (pwmc1 >> 2 & 0x03);
    int32_t audioNow = now + clockOffset;
    int32_t audioSampleDuration = (pwmc1 & 0x8000)/*CLKSRC*/ ? audioGetFramePercentIncrementFromClk32s(period * prescaler * clockDivider) : audioGetFramePercentIncrementFromSysclks(period * prescaler * clockDivider);
-   float dutyCycle = fMin((float)sample / period, 1.00);
+   float dutyCycle;
    uint8_t index;
+
+   //try to get next sample, if none are available play old sample
+   if(pwm1FifoEntrys() > 0)
+      pwm1ReadPosition = (pwm1ReadPosition + 1) % 6;
+   dutyCycle = fMin((float)pwm1Fifo[pwm1ReadPosition] / period, 1.00);
 
    for(index = 0; index < repeat; index++){
 #if !defined(EMU_NO_SAFETY)
@@ -116,10 +120,6 @@ int32_t pwm1FifoRunSample(int32_t now, int32_t clockOffset){
       blip_add_delta(palmAudioResampler, audioNow + audioSampleDuration * dutyCycle, (dutyCycle - 1.00) * AUDIO_SPEAKER_RANGE);
       audioNow += audioSampleDuration;
    }
-
-   //remove used entry
-   if(pwm1FifoEntrys() > 0)
-      pwm1ReadPosition = (pwm1ReadPosition + 1) % 6;
 
    //check for interrupt
    if(pwm1FifoEntrys() < 2){
@@ -336,7 +336,7 @@ static void setSpiIntCs(uint16_t value){
    newSpiIntCs |= (rxEntrys >= 4) << 4;//RH
    newSpiIntCs |= (rxEntrys > 0) << 3;//RR
    newSpiIntCs |= (txEntrys == 8) << 2;//TF
-   newSpiIntCs |= (txEntrys >= 4) << 1;//TH
+   newSpiIntCs |= (txEntrys >= 4) << 1;//TH, the datasheet contradicts itself on whether its more than or equal to 4 empty or full slots
    newSpiIntCs |= txEntrys == 0;//TE
 
    //if interrupt state changed update interrupts too, top 8 bits are just the enable bits for the bottom 8
@@ -358,7 +358,7 @@ static void setSpiCont1(uint16_t value){
    //debugLog("SPICONT1 write, old value:0x%04X, value:0x%04X\n", oldSpiCont1, value);
 
    //SPI1 disabled
-   if(oldSpiCont1 & 0x0200 && !(value & 0x2000)){
+   if(oldSpiCont1 & 0x0200 && !(value & 0x0200)){
       spi1RxFifoFlush();
       spi1TxFifoFlush();
    }
@@ -380,8 +380,8 @@ static void setSpiCont1(uint16_t value){
 
          //The most significant bit is output when the CPU loads the transmitted data, 13.2.3 SPI 1 Phase and Polarity Configurations MC68VZ328UM.pdf
          for(bits = 0; bits < bitCount; bits++){
-            newRxFifoEntry |= sdCardExchangeBit(!!(currentTxFifoEntry & startBit));
             newRxFifoEntry <<= 1;
+            newRxFifoEntry |= sdCardExchangeBit(!!(currentTxFifoEntry & startBit));
             currentTxFifoEntry <<= 1;
          }
 
@@ -397,6 +397,8 @@ static void setSpiCont1(uint16_t value){
 
    //update SPIINTCS interrupt bits
    setSpiIntCs(registerArrayRead16(SPIINTCS));
+
+   debugLog("Transfer complete, SPIINTCS:0x%04X\n", registerArrayRead16(SPIINTCS));
 
    registerArrayWrite16(SPICONT1, value);
 }

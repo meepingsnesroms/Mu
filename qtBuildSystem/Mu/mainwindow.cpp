@@ -53,9 +53,10 @@ void printLastRun(){
 MainWindow::MainWindow(QWidget* parent) :
    QMainWindow(parent),
    ui(new Ui::MainWindow){
-   ui->setupUi(this);
-
    QAudioFormat format;
+   QString resourceDirPath;
+
+   //audio output
    format.setSampleRate(AUDIO_SAMPLE_RATE);
    format.setChannelCount(2);
    format.setSampleSize(16);
@@ -67,12 +68,34 @@ MainWindow::MainWindow(QWidget* parent) :
 #endif
    format.setSampleType(QAudioFormat::SignedInt);
 
+   //submodules
    settings = new QSettings(QDir::homePath() + "/MuCfg.txt", QSettings::IniFormat);//settings is public, create it first
    stateManager = new StateManager(this);
    emuDebugger = new DebugViewer(this);
    refreshDisplay = new QTimer(this);
    audioDevice = new QAudioOutput(format, this);
    audioOut = audioDevice->start();
+
+   //resource directory
+   resourceDirPath = settings->value("resourceDirectory", "").toString();
+
+   //get default path if path not set
+   if(resourceDirPath == ""){
+#if defined(Q_OS_ANDROID)
+      resourceDirPath = "/sdcard/Mu";
+#elif defined(Q_OS_IOS)
+      resourceDirPath = "/var/mobile/Media/Mu";
+#else
+      resourceDirPath = QDir::homePath() + "/Mu";
+#endif
+      settings->setValue("resourceDirectory", resourceDirPath);
+   }
+
+   //create directory tree, in case someone deleted it since the emu was last run or it was never created
+   createHomeDirectoryTree(resourceDirPath);
+
+   //GUI
+   ui->setupUi(this);
 
    //this makes the display window and button icons resize properly
    ui->centralWidget->installEventFilter(this);
@@ -97,29 +120,9 @@ MainWindow::MainWindow(QWidget* parent) :
    ui->screenshot->installEventFilter(this);
    ui->stateManager->installEventFilter(this);
 
-
-   QString resourceDirPath = settings->value("resourceDirectory", "").toString();
-
-   //use default path if path not set
-   if(resourceDirPath == ""){
-#if defined(Q_OS_ANDROID)
-      resourceDirPath = "/sdcard/Mu";
-#elif defined(Q_OS_IOS)
-      resourceDirPath = "/var/mobile/Media/Mu";
-#else
-      resourceDirPath = QDir::homePath() + "/Mu";
-#endif
-      settings->setValue("resourceDirectory", resourceDirPath);
-   }
-
-   //create directory tree, in case someone deleted it since the emu was last run
-   createHomeDirectoryTree(resourceDirPath);
-
-
 #if !defined(EMU_DEBUG) || defined(Q_OS_ANDROID) || defined(Q_OS_IOS)
    ui->debugger->hide();
 #endif
-
    connect(refreshDisplay, SIGNAL(timeout()), this, SLOT(updateDisplay()));
    refreshDisplay->start(1000 / EMU_FPS);//update display every X milliseconds
 }
@@ -372,7 +375,6 @@ void MainWindow::on_stateManager_clicked(){
       if(!wasPaused)
          emu.pause();
 
-      stateManager->updateStateList();
       stateManager->exec();
 
       if(!wasPaused)

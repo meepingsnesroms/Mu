@@ -67,6 +67,7 @@ static void sdCardDoResponseR1(uint8_t r1){
    palmSdCard.response = SD_CARD_RESPONSE_SHIFT_OUT;
    palmSdCard.responseState = (uint64_t)r1 << 56;
    palmSdCard.responseState |= (uint64_t)1 << 55;//add shift termination bit
+   //palmSdCard.responseState >>= 8;
 }
 
 static void sdCardDoResponseR3(uint8_t r1){
@@ -74,6 +75,7 @@ static void sdCardDoResponseR3(uint8_t r1){
    palmSdCard.responseState = (uint64_t)r1 << 56;
    palmSdCard.responseState |= (uint64_t)sdCardOcr << 24;
    palmSdCard.responseState |= (uint64_t)1 << 23;//add shift termination bit
+   //palmSdCard.responseState >>= 8;
 }
 
 void sdCardReset(void){
