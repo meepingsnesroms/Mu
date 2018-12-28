@@ -91,8 +91,8 @@ typedef struct{
    uint8_t  commandBitsRemaining;
    uint8_t  response;
    uint64_t responseState;//this can contain many different types of data depending on the response type
-   bool     allowInvalidCrc;//not in savestate yet
-   bool     chipSelect;//not in savestate yet
+   bool     allowInvalidCrc;
+   bool     chipSelect;
    buffer_t flashChip;
 }sd_card_t;
 

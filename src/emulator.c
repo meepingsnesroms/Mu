@@ -106,11 +106,11 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t spec
    sandboxInit();
 
    //reset everything
-   flx68000Reset();
    sed1376Reset();
    ads7846Reset();
    pdiUsbD12Reset();
    sdCardReset();
+   flx68000Reset();
    setRtc(0, 0, 0, 0);//RTCTIME and DAYR are not cleared by reset, clear them manually in case the frontend doesnt set the RTC
 
    emulatorInitialized = true;
@@ -139,11 +139,11 @@ void emulatorHardReset(void){
    memset(palmRam, 0x00, palmSpecialFeatures & FEATURE_RAM_HUGE ? SUPERMASSIVE_RAM_SIZE : RAM_SIZE);
    palmFramebufferWidth = 160;
    palmFramebufferHeight = 220;
-   flx68000Reset();
    sed1376Reset();
    ads7846Reset();
    pdiUsbD12Reset();
    sdCardReset();
+   flx68000Reset();
    setRtc(0, 0, 0, 0);
 }
 
@@ -151,11 +151,11 @@ void emulatorSoftReset(void){
    //equivalent to pushing the reset button on the back of the device
    palmFramebufferWidth = 160;
    palmFramebufferHeight = 220;
-   flx68000Reset();
    sed1376Reset();
    ads7846Reset();
    pdiUsbD12Reset();
    sdCardReset();
+   flx68000Reset();
 }
 
 void emulatorSetRtc(uint16_t days, uint8_t hours, uint8_t minutes, uint8_t seconds){
@@ -196,7 +196,7 @@ uint64_t emulatorGetStateSize(void){
    size += sizeof(uint8_t) * 2;//pwm1(Read/Write)
    size += sizeof(uint8_t) * 7;//palmMisc
    size += sizeof(uint64_t) * 2;//palmSdCard.command / palmSdCard.responseState
-   size += sizeof(uint8_t) * 2;//palmSdCard.commandBitsRemaining / palmSdCard.response
+   size += sizeof(uint8_t) * 4;//palmSdCard.commandBitsRemaining / palmSdCard.response / palmSdCard.allowInvalidCrc / palmSdCard.chipSelect
    size += palmSdCard.flashChip.size;//palmSdCard.flashChip.data
 
    return size;
@@ -355,6 +355,10 @@ bool emulatorSaveState(buffer_t buffer){
    offset += sizeof(uint8_t);
    writeStateValue64(buffer.data + offset, palmSdCard.responseState);
    offset += sizeof(uint64_t);
+   writeStateValue8(buffer.data + offset, palmSdCard.allowInvalidCrc);
+   offset += sizeof(uint8_t);
+   writeStateValue8(buffer.data + offset, palmSdCard.chipSelect);
+   offset += sizeof(uint8_t);
    memcpy(buffer.data + offset, palmSdCard.flashChip.data, palmSdCard.flashChip.size);
    offset += palmSdCard.flashChip.size;
 
@@ -518,6 +522,10 @@ bool emulatorLoadState(buffer_t buffer){
    offset += sizeof(uint8_t);
    palmSdCard.responseState = readStateValue64(buffer.data + offset);
    offset += sizeof(uint64_t);
+   palmSdCard.allowInvalidCrc = readStateValue8(buffer.data + offset);
+   offset += sizeof(uint8_t);
+   palmSdCard.chipSelect = readStateValue8(buffer.data + offset);
+   offset += sizeof(uint8_t);
    if(palmSdCard.flashChip.data)
       free(palmSdCard.flashChip.data);
    palmSdCard.flashChip.data = stateSdCardBuffer;
