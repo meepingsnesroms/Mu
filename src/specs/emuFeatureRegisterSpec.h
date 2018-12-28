@@ -15,7 +15,7 @@ These registers will do nothing if their corresponding feature bit is not set on
 #define FEATURE_RAM_HUGE   0x00000001/*128mb RAM*/
 #define FEATURE_FAST_CPU   0x00000002/*doubles CPU speed*/
 #define FEATURE_HYBRID_CPU 0x00000004/*allows running ARM opcodes in an OS 4 enviroment*/
-#define FEATURE_320x320    0x00000008/*creates a 320x320 framebuffer for hires mode, the 160x160 framebuffer is a transparent overlay over the 320x320 framebuffer*/
+#define FEATURE_CUSTOM_FB  0x00000008/*creates a dynamicly sized framebuffer for hires mode, the 160x160 framebuffer is a transparent overlay over the extended framebuffer*/
 #define FEATURE_SYNCED_RTC 0x00000010/*RTC always equals host system time*/
 #define FEATURE_HLE_APIS   0x00000020/*memcpy, memcmp, wait on timer will be replaced with the hosts function*/
 #define FEATURE_EMU_HONEST 0x00000040/*tell the OS that its running in an emu, does nothing else*/
@@ -27,7 +27,7 @@ These registers will do nothing if their corresponding feature bit is not set on
 
 /*registers*/
 #define EMU_INFO    0x000/*gets the feature bits, read only*/
-#define EMU_HIRESFB 0x004/*sets the address of the 320x320 framebuffer, read/write*/
+#define EMU_HIRESFB 0x004/*sets the address of the dynamic framebuffer, read/write, EMU_SIZE must have width in the top 16 bits and height in the bottom 16 bits*/
 #define EMU_SRC     0x008/*write only*/
 #define EMU_DST     0x00C/*write only*/
 #define EMU_SIZE    0x010/*write only*/

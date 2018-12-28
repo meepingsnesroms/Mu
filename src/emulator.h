@@ -91,6 +91,8 @@ typedef struct{
    uint8_t  commandBitsRemaining;
    uint8_t  response;
    uint64_t responseState;//this can contain many different types of data depending on the response type
+   bool     allowInvalidCrc;
+   bool     chipSelect;
    buffer_t flashChip;
 }sd_card_t;
 
@@ -124,8 +126,9 @@ extern uint8_t*  palmReg;//dont touch
 extern input_t   palmInput;//write allowed
 extern sd_card_t palmSdCard;//dont touch
 extern misc_hw_t palmMisc;//read/write allowed
-extern uint16_t* palmFramebuffer;//read allowed if FEATURE_320x320 is off, or else invalid data will be displayed
-extern uint16_t* palmExtendedFramebuffer;//read allowed if FEATURE_320x320 is on, or else SIGSEGV
+extern uint16_t* palmFramebuffer;//read allowed
+extern uint16_t  palmFramebufferWidth;//read allowed
+extern uint16_t  palmFramebufferHeight;//read allowed
 extern int16_t*  palmAudio;//read allowed, 2 channel signed 16 bit audio
 extern blip_t*   palmAudioResampler;//dont touch
 extern uint32_t  palmSpecialFeatures;//read allowed

@@ -19,6 +19,7 @@
 
 #define JOYSTICK_DEADZONE 4000
 #define JOYSTICK_MULTIPLIER 0.0001
+#define SCREEN_HIRES (!(palmFramebufferWidth == 160 && palmFramebufferHeight == 220))
 
 
 static retro_log_printf_t          log_cb;
@@ -28,10 +29,6 @@ static retro_environment_t         environ_cb;
 static retro_input_poll_t          input_poll_cb;
 static retro_input_state_t         input_state_cb;
 
-static bool     screenHires;
-static uint16_t screenWidth;
-static uint16_t screenHeight;
-static uint16_t screenData[320 * 440];
 static uint32_t emuFeatures;
 static bool     useJoystickAsMouse;
 static float    touchCursorX;
@@ -39,7 +36,7 @@ static float    touchCursorY;
 
 
 static void renderMouseCursor(int16_t screenX, int16_t screenY){
-   if(screenHires){
+   if(SCREEN_HIRES){
       int8_t x;
       int8_t y;
       
@@ -48,9 +45,9 @@ static void renderMouseCursor(int16_t screenX, int16_t screenY){
       
       for(y = 0; y < 32; y++)
          for(x = 6; x < 26; x++)
-            if(screenX + x >= 0 && screenY + y >= 0 && screenX + x < 320 && screenY + y < 440)
+            if(screenX + x >= 0 && screenY + y >= 0 && screenX + x < palmFramebufferWidth && screenY + y < palmFramebufferHeight)
                if(cursor32x32[y * 32 + x] != 0xFFFF)
-                  screenData[(screenY + y) * 320 + screenX + x] = cursor32x32[y * 32 + x];
+                  palmFramebuffer[(screenY + y) * palmFramebufferWidth + screenX + x] = cursor32x32[y * 32 + x];
    }
    else{
       int8_t x;
@@ -61,9 +58,9 @@ static void renderMouseCursor(int16_t screenX, int16_t screenY){
       
       for(y = 0; y < 16; y++)
          for(x = 3; x < 13; x++)
-            if(screenX + x >= 0 && screenY + y >= 0 && screenX + x < 160 && screenY + y < 220)
+            if(screenX + x >= 0 && screenY + y >= 0 && screenX + x < palmFramebufferWidth && screenY + y < palmFramebufferHeight)
                if(cursor16x16[y * 16 + x] != 0xFFFF)
-                  screenData[(screenY + y) * 160 + screenX + x] = cursor16x16[y * 16 + x];
+                  palmFramebuffer[(screenY + y) * palmFramebufferWidth + screenX + x] = cursor16x16[y * 16 + x];
    }
 }
 
@@ -98,10 +95,10 @@ static void check_variables(bool booting){
          if (!strcmp(var.value, "enabled"))
             emuFeatures |= FEATURE_HYBRID_CPU;
       
-      var.key = "palm_emu_feature_320x320";
+      var.key = "palm_emu_feature_custom_fb";
       if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
          if (!strcmp(var.value, "enabled"))
-            emuFeatures |= FEATURE_320x320;
+            emuFeatures |= FEATURE_CUSTOM_FB;
       
       var.key = "palm_emu_feature_synced_rtc";
       if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
@@ -170,8 +167,8 @@ void retro_get_system_av_info(struct retro_system_av_info *info){
 
    info->geometry.base_width   = 160;
    info->geometry.base_height  = 220;
-   info->geometry.max_width    = 320;
-   info->geometry.max_height   = 440;
+   info->geometry.max_width    = 480;
+   info->geometry.max_height   = 480;
    info->geometry.aspect_ratio = 160.0 / 220.0;
 }
 
@@ -182,7 +179,7 @@ void retro_set_environment(retro_environment_t cb){
       { "palm_emu_feature_ram_huge", "Extra RAM Hack; disabled|enabled" },
       { "palm_emu_feature_fast_cpu", "Overclock 2x; disabled|enabled" },
       { "palm_emu_feature_hybrid_cpu", "Extra RAM Hack; disabled|enabled" },
-      { "palm_emu_feature_320x320", "Double Resolution; disabled|enabled" },
+      { "palm_emu_feature_custom_fb", "Custom Resolution; disabled|enabled" },
       { "palm_emu_feature_synced_rtc", "Force Match System Clock; disabled|enabled" },
       { "palm_emu_feature_hle_apis", "HLE API Implementations; disabled|enabled" },
       { "palm_emu_feature_emu_honest", "Tell Programs They're In An Emulator(for test programs); disabled|enabled" },
@@ -254,23 +251,23 @@ void retro_run(void){
       int16_t y = input_state_cb(0, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_LEFT, RETRO_DEVICE_ID_ANALOG_Y);
       
       if(x < -JOYSTICK_DEADZONE || x > JOYSTICK_DEADZONE)
-         touchCursorX += x * JOYSTICK_MULTIPLIER * (screenHires ? 2.0 : 1.0);
+         touchCursorX += x * JOYSTICK_MULTIPLIER * (SCREEN_HIRES ? 2.0 : 1.0);
       
       if(y < -JOYSTICK_DEADZONE || y > JOYSTICK_DEADZONE)
-         touchCursorY += y * JOYSTICK_MULTIPLIER * (screenHires ? 2.0 : 1.0);
+         touchCursorY += y * JOYSTICK_MULTIPLIER * (SCREEN_HIRES ? 2.0 : 1.0);
       
       if(touchCursorX < 0)
          touchCursorX = 0;
-      else if(touchCursorX > screenWidth - 1)
-         touchCursorX = screenWidth - 1;
+      else if(touchCursorX > palmFramebufferWidth - 1)
+         touchCursorX = palmFramebufferWidth - 1;
       
       if(touchCursorY < 0)
          touchCursorY = 0;
-      else if(touchCursorY > screenHeight - 1)
-         touchCursorY = screenHeight - 1;
+      else if(touchCursorY > palmFramebufferHeight - 1)
+         touchCursorY = palmFramebufferHeight - 1;
       
-      palmInput.touchscreenX = touchCursorX / (screenWidth - 1);
-      palmInput.touchscreenY = touchCursorY / (screenHeight - 1);
+      palmInput.touchscreenX = touchCursorX / (palmFramebufferWidth - 1);
+      palmInput.touchscreenY = touchCursorY / (palmFramebufferHeight - 1);
       palmInput.touchscreenTouched = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R2);
    }
    else{
@@ -298,13 +295,12 @@ void retro_run(void){
    
    //run emulator
    emulatorRunFrame();
-   memcpy(screenData, screenHires ? palmExtendedFramebuffer : palmFramebuffer, screenWidth * screenHeight * sizeof(uint16_t));
    
    //draw mouse
    if(useJoystickAsMouse)
       renderMouseCursor(touchCursorX, touchCursorY);
    
-   video_cb(screenData, screenWidth, screenHeight, screenWidth * sizeof(uint16_t));
+   video_cb(palmFramebuffer, palmFramebufferWidth, palmFramebufferHeight, palmFramebufferWidth * sizeof(uint16_t));
    audio_cb(palmAudio, AUDIO_SAMPLES_PER_FRAME);
 }
 
@@ -378,11 +374,9 @@ bool retro_load_game(const struct retro_game_info *info){
    timeInfo = localtime(&rawTime);
    emulatorSetRtc(timeInfo->tm_yday, timeInfo->tm_hour, timeInfo->tm_min, timeInfo->tm_sec);
    
-   screenHires = emuFeatures & FEATURE_320x320;
-   screenWidth = screenHires ? 320 : 160;
-   screenHeight = screenHires ? 440 : 220;
-   touchCursorX = screenWidth / 2;
-   touchCursorY = screenHeight / 2;
+   //set mouse position
+   touchCursorX = palmFramebufferWidth / 2;
+   touchCursorY = palmFramebufferHeight / 2;
 
    return true;
 }

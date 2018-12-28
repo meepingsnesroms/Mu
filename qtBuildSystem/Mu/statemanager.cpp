@@ -20,10 +20,19 @@ StateManager::StateManager(QWidget* parent) :
    //this allows resizing the screenshot of the savestate
    ui->statePreview->installEventFilter(this);
    ui->statePreview->setObjectName("statePreview");
+
+   updateStateList();
 }
 
 StateManager::~StateManager(){
    delete ui;
+}
+
+bool StateManager::eventFilter(QObject* object, QEvent* event){
+   if(object->objectName() == "statePreview" && event->type() == QEvent::Resize)
+      updateStatePreview();
+
+   return QDialog::eventFilter(object, event);
 }
 
 void StateManager::updateStateList(){
@@ -47,21 +56,27 @@ void StateManager::updateStateList(){
    }
 }
 
-bool StateManager::eventFilter(QObject* object, QEvent* event){
-   if(object->objectName() == "statePreview" && event->type() == QEvent::Resize)
-      updateStatePreview();
-
-   return QDialog::eventFilter(object, event);
-}
-
 void StateManager::updateStatePreview(){
    if(ui->states->currentItem()){
       MainWindow* parent = (MainWindow*)parentWidget();
       QString statePath = parent->settings->value("resourceDirectory", "").toString() + "/saveStates/" + ui->states->currentItem()->text();
 
       ui->statePreview->setPixmap(QPixmap(statePath + ".png").scaled(ui->statePreview->width() * 0.98, ui->statePreview->height() * 0.98, Qt::KeepAspectRatio, Qt::SmoothTransformation));
-      ui->statePreview->update();
    }
+   else{
+      //remove outdated image
+      ui->statePreview->clear();
+   }
+
+   ui->statePreview->update();
+}
+
+int StateManager::getStateIndexRowByName(const QString& name){
+   for(int index = 0; index < ui->states->count(); index++)
+      if(ui->states->item(index)->text() == name)
+         return index;
+
+   return -1;//nothing by that name exists
 }
 
 void StateManager::on_saveState_clicked(){
@@ -72,6 +87,8 @@ void StateManager::on_saveState_clicked(){
       parent->emu.saveState(statePath + ".state");
       parent->emu.getFramebuffer().save(statePath + ".png");
       updateStateList();
+
+      ui->states->setCurrentRow(getStateIndexRowByName(ui->newStateName->text()));//this also updates the preview image
    }
 }
 
@@ -92,6 +109,7 @@ void StateManager::on_deleteState_clicked(){
       QFile(statePath + ".state").remove();
       QFile(statePath + ".png").remove();
       updateStateList();
+
       ui->states->setCurrentRow(0);//pick first valid entry since the old one is no longer valid
    }
 }

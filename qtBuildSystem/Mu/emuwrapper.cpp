@@ -67,8 +67,6 @@ EmuWrapper::EmuWrapper(){
    emuThreadJoin = false;
    emuRunning = false;
    emuPaused = false;
-   emuVideoWidth = 0;
-   emuVideoHeight = 0;
    emuNewFrameReady = false;
 
    frontendDebugString = new char[200];
@@ -187,15 +185,6 @@ uint32_t EmuWrapper::init(const QString& romPath, const QString& bootloaderPath,
                   emulatorInsertSdCard(newSdCard);
                }
             }
-         }
-
-         if(features & FEATURE_320x320){
-            emuVideoWidth = 320;
-            emuVideoHeight = 320 + 120;
-         }
-         else{
-            emuVideoWidth = 160;
-            emuVideoHeight = 160 + 60;
          }
 
          emuInput = palmInput;
@@ -327,7 +316,7 @@ uint32_t EmuWrapper::loadState(const QString& path){
    return error;
 }
 
-uint32_t EmuWrapper::installApplication(QString path){
+uint32_t EmuWrapper::installApplication(const QString& path){
    bool wasPaused = isPaused();
    uint32_t error = EMU_ERROR_INVALID_PARAMETER;
    QFile appFile(path);

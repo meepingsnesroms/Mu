@@ -25,10 +25,11 @@
 
 #define SED1376_REG_SIZE 0xB4
 #define SED1376_LUT_SIZE 0x100
-#define SED1376_FB_SIZE  0x20000//actual size is 0x14000, but that cant be masked off by address lines so size is increased to prevent buffer overflow
+#define SED1376_RAM_SIZE  0x20000//actual size is 0x14000, but that cant be masked off by address lines so size is increased to prevent buffer overflow
 
 
-uint8_t sed1376Framebuffer[SED1376_FB_SIZE];
+uint16_t sed1376Framebuffer[160 * 160];
+uint8_t sed1376Ram[SED1376_RAM_SIZE];
 
 static uint8_t  sed1376Registers[SED1376_REG_SIZE];
 static uint8_t  sed1376RLut[SED1376_LUT_SIZE];
@@ -112,7 +113,7 @@ void sed1376Reset(void){
    memset(sed1376RLut, 0x00, SED1376_LUT_SIZE);
    memset(sed1376GLut, 0x00, SED1376_LUT_SIZE);
    memset(sed1376BLut, 0x00, SED1376_LUT_SIZE);
-   memset(sed1376Framebuffer, 0x00, SED1376_FB_SIZE);
+   memset(sed1376Ram, 0x00, SED1376_RAM_SIZE);
 
    palmMisc.backlightLevel = 0;
    palmMisc.lcdOn = false;
@@ -131,7 +132,7 @@ uint64_t sed1376StateSize(void){
 
    size += SED1376_REG_SIZE;
    size += SED1376_LUT_SIZE * 3;
-   size += SED1376_FB_SIZE;
+   size += SED1376_RAM_SIZE;
 
    return size;
 }
@@ -147,8 +148,8 @@ void sed1376SaveState(uint8_t* data){
    offset += SED1376_LUT_SIZE;
    memcpy(data + offset, sed1376BLut, SED1376_LUT_SIZE);
    offset += SED1376_LUT_SIZE;
-   memcpy(data + offset, sed1376Framebuffer, SED1376_FB_SIZE);
-   offset += SED1376_FB_SIZE;
+   memcpy(data + offset, sed1376Ram, SED1376_RAM_SIZE);
+   offset += SED1376_RAM_SIZE;
 }
 
 void sed1376LoadState(uint8_t* data){
@@ -163,8 +164,8 @@ void sed1376LoadState(uint8_t* data){
    offset += SED1376_LUT_SIZE;
    memcpy(sed1376BLut, data + offset, SED1376_LUT_SIZE);
    offset += SED1376_LUT_SIZE;
-   memcpy(sed1376Framebuffer, data + offset, SED1376_FB_SIZE);
-   offset += SED1376_FB_SIZE;
+   memcpy(sed1376Ram, data + offset, SED1376_RAM_SIZE);
+   offset += SED1376_RAM_SIZE;
 
    //refresh LUT
    MULTITHREAD_LOOP(index) for(index = 0; index < SED1376_LUT_SIZE; index++)
@@ -338,7 +339,7 @@ void sed1376Render(void){
 
          MULTITHREAD_DOUBLE_LOOP(pixelX, pixelY) for(pixelY = 0; pixelY < 160; pixelY++)
             for(pixelX = 0; pixelX < 160; pixelX++)
-               palmFramebuffer[pixelY * 160 + pixelX] = renderPixel(pixelX, pixelY);
+               sed1376Framebuffer[pixelY * 160 + pixelX] = renderPixel(pixelX, pixelY);
 
          //debugLog("Screen start address:0x%08X, buffer width:%d, swivel view:%d degrees\n", screenStartAddress, lineSize, rotation);
          //debugLog("Screen format, color:%s, BPP:%d\n", boolString(color), bitDepth);
@@ -366,7 +367,7 @@ void sed1376Render(void){
                lineSize = (sed1376Registers[PIP_LINE_SZ_1] << 8 | sed1376Registers[PIP_LINE_SZ_0]) * 4;
                MULTITHREAD_DOUBLE_LOOP(pixelX, pixelY) for(pixelY = pipStartY; pixelY < pipEndY; pixelY++)
                   for(pixelX = pipStartX; pixelX < pipEndX; pixelX++)
-                     palmFramebuffer[pixelY * 160 + pixelX] = renderPixel(pixelX, pixelY);
+                     sed1376Framebuffer[pixelY * 160 + pixelX] = renderPixel(pixelX, pixelY);
             }
          }
 
@@ -376,21 +377,21 @@ void sed1376Render(void){
          //display inversion
          if((sed1376Registers[DISP_MODE] & 0x30) == 0x10)
             MULTITHREAD_LOOP(index) for(index = 0; index < 160 * 160; index++)
-               palmFramebuffer[index] = ~palmFramebuffer[index];
+               sed1376Framebuffer[index] = ~sed1376Framebuffer[index];
 
 
          //backlight level, 0 = 1/4 color intensity, 1 = 1/2 color intensity, 2 = full color intensity
          switch(palmMisc.backlightLevel){
             case 0:
                MULTITHREAD_LOOP(index) for(index = 0; index < 160 * 160; index++){
-                  palmFramebuffer[index] >>= 2;
-                  palmFramebuffer[index] &= 0x39E7;
+                  sed1376Framebuffer[index] >>= 2;
+                  sed1376Framebuffer[index] &= 0x39E7;
                }
                break;
             case 1:
                MULTITHREAD_LOOP(index) for(index = 0; index < 160 * 160; index++){
-                  palmFramebuffer[index] >>= 1;
-                  palmFramebuffer[index] &= 0x7BEF;
+                  sed1376Framebuffer[index] >>= 1;
+                  sed1376Framebuffer[index] &= 0x7BEF;
                }
                break;
             case 2:
@@ -404,7 +405,7 @@ void sed1376Render(void){
    }
    else{
       //black screen
-      memset(palmFramebuffer, 0x00, 160 * 160 * sizeof(uint16_t));
+      memset(sed1376Framebuffer, 0x00, 160 * 160 * sizeof(uint16_t));
       debugLog("Cant draw screen, LCD on:%s, PLL on:%s, power save on:%s, forced blank on:%s\n", palmMisc.lcdOn ? "true" : "false", pllIsOn() ? "true" : "false", sed1376PowerSaveEnabled() ? "true" : "false", !!(sed1376Registers[DISP_MODE] & 0x80) ? "true" : "false");
    }
 }

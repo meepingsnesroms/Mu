@@ -21,8 +21,6 @@ private:
    std::atomic<bool> emuThreadJoin;
    std::atomic<bool> emuRunning;
    std::atomic<bool> emuPaused;
-   uint16_t          emuVideoWidth;
-   uint16_t          emuVideoHeight;
    std::atomic<bool> emuNewFrameReady;
    QString           emuRamFilePath;
    QString           emuSdCardFilePath;
@@ -45,19 +43,19 @@ public:
    bool isRunning() const{return emuRunning;}
    bool isPaused() const{return emuPaused;}
 
-   uint32_t installApplication(QString path);
+   uint32_t installApplication(const QString& path);
 
    std::vector<QString>& getDebugStrings();
    std::vector<uint64_t>& getDuplicateCallCount();
    std::vector<uint32_t> getCpuRegisters();
 
-   uint16_t screenWidth() const{return emuVideoWidth;}
-   uint16_t screenHeight() const{return emuVideoHeight;}
+   uint16_t screenWidth() const{return palmFramebufferWidth;}
+   uint16_t screenHeight() const{return palmFramebufferHeight;}
    bool newFrameReady() const{return emuNewFrameReady;}
    void frameHandled(){emuNewFrameReady = false;}
 
    //calling these while newFrameReady() == false is undefined behavior, the other thread may be writing to them
-   const QPixmap getFramebuffer(){return QPixmap::fromImage(QImage((uchar*)(emuVideoWidth == 320 ? palmExtendedFramebuffer : palmFramebuffer), emuVideoWidth, emuVideoHeight, emuVideoWidth * sizeof(uint16_t), QImage::Format_RGB16));}
+   const QPixmap getFramebuffer(){return QPixmap::fromImage(QImage((uchar*)palmFramebuffer, palmFramebufferWidth, palmFramebufferHeight, palmFramebufferWidth * sizeof(uint16_t), QImage::Format_RGB16));}
    const int16_t* getAudioSamples() const{return palmAudio;}
    bool getPowerButtonLed() const{return palmMisc.powerButtonLed;}
 
