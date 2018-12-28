@@ -27,7 +27,7 @@ These registers will do nothing if their corresponding feature bit is not set on
 
 /*registers*/
 #define EMU_INFO    0x000/*gets the feature bits, read only*/
-#define EMU_HIRESFB 0x004/*sets the address of the dynamic framebuffer, read/write, EMU_SIZE must have x width in the top 16 bits and y width in the bottom 16 bits*/
+#define EMU_HIRESFB 0x004/*sets the address of the dynamic framebuffer, read/write, EMU_SIZE must have width in the top 16 bits and height in the bottom 16 bits*/
 #define EMU_SRC     0x008/*write only*/
 #define EMU_DST     0x00C/*write only*/
 #define EMU_SIZE    0x010/*write only*/
