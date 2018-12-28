@@ -67,7 +67,6 @@ static void sdCardDoResponseR1(uint8_t r1){
    palmSdCard.response = SD_CARD_RESPONSE_SHIFT_OUT;
    palmSdCard.responseState = (uint64_t)r1 << 56;
    palmSdCard.responseState |= (uint64_t)1 << 55;//add shift termination bit
-   //palmSdCard.responseState >>= 8;
 }
 
 static void sdCardDoResponseR3(uint8_t r1){
@@ -75,7 +74,6 @@ static void sdCardDoResponseR3(uint8_t r1){
    palmSdCard.responseState = (uint64_t)r1 << 56;
    palmSdCard.responseState |= (uint64_t)sdCardOcr << 24;
    palmSdCard.responseState |= (uint64_t)1 << 23;//add shift termination bit
-   //palmSdCard.responseState >>= 8;
 }
 
 void sdCardReset(void){
@@ -88,9 +86,12 @@ void sdCardReset(void){
 }
 
 void sdCardSetChipSelect(bool value){
-   //may need to perform other actions on chip select toggle
+   if(value != palmSdCard.chipSelect){
+      //may need to perform other actions on chip select toggle too
+      debugLog("SD card chip select set to:%s\n", value ? "true" : "false");
 
-   palmSdCard.chipSelect = value;
+      palmSdCard.chipSelect = value;
+   }
 }
 
 bool sdCardExchangeBit(bool bit){
@@ -171,6 +172,7 @@ bool sdCardExchangeBit(bool bit){
 
             switch(command){
                case GO_IDLE_STATE:
+                  palmSdCard.allowInvalidCrc = true;
                   sdCardDoResponseR1(0x01);//"idle state" bit set should be set
                   break;
 
