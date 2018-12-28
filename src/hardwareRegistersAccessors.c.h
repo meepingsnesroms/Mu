@@ -398,7 +398,7 @@ static void setSpiCont1(uint16_t value){
    //update SPIINTCS interrupt bits
    setSpiIntCs(registerArrayRead16(SPIINTCS));
 
-   debugLog("Transfer complete, SPIINTCS:0x%04X\n", registerArrayRead16(SPIINTCS));
+   //debugLog("Transfer complete, SPIINTCS:0x%04X\n", registerArrayRead16(SPIINTCS));
 
    registerArrayWrite16(SPICONT1, value);
 }
@@ -725,6 +725,10 @@ static void updateVibratorStatus(void){
 
 static void updateAds7846ChipSelectStatus(void){
    ads7846SetChipSelect(!!(getPortGValue() & 0x04));
+}
+
+static void updateSdCardChipSelectStatus(void){
+   sdCardSetChipSelect(!!(getPortJValue() & 0x08));
 }
 
 static void updateBacklightAmplifierStatus(void){

@@ -5,6 +5,7 @@
 
 void sdCardReset(void);
 
+void sdCardSetChipSelect(bool value);
 bool sdCardExchangeBit(bool bit);
 
 #endif

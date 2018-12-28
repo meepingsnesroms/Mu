@@ -2,7 +2,6 @@ CPU:
 sysTrapPceNativeCall, ARM Emulator
 Trace T1 bit, should be unused by the OS and applications anyway
 Test what bits of IMR are writable
-On hardware PDIRQEG seems not to actually work at all(CPUID:0x57000000)
 SCR privilege violation doesnt trigger the same as on hardware(likely has to do with not emulating the unused chip selects)
 TCN2 is unimplemented and seems to be used by the same routines that turn the CPU off for sleep mode
 
@@ -14,23 +13,20 @@ Port M Infrared shutdown (PMDATA 0x20)
 some undocumented I/O might be on port e and port j
 SPI1, probably the SD card since SD cards use SPI for data transfer
 SPITEST SSTATUS is undocumented and therefore unemulated
-may need to trigger an interrupt if a IMR masked interrupt becomes unmasked and its bit is still set in IPR
 When SPICLK2, SPITXD or SPIRXD on port e is disabled ADS7846 functions should respond appropriately(not transmitting or receiving or blocking both for the clock)
 REFREQ clock frequency in RTCCTL should slow down the RTC when enabled
 Dont know if it possible to have the backlight on and the display off at the same time(theres no reason for it but it may be possible)
 SPI1 slave mode, should never be used
-port d data register INT* bits seem to have there data bits cleared when an edge triggered interrupt is cleared(according to MC68VZ328UM.pdf Page 10-15)
 RxOverflow on SPI1, don't know if back or front of FIFO is overwritten on overflow(currently losing oldest entry)
 ICR POL(1,2,3,6) may flip the pin value as well as the interrupt, POL5 does not flip the INT5 pin though, this was confirmed with a hardware test(it doesnt seem to but there is instability on the pin when the SD card is plugged in, this may have to do with card detect also being a data line on the SD pinout)
-edge triggered INT* don't clear on write to ISR when masked in IMR(at least that seems to be the reason)
-Cyclone will cause SIGSEGVs, don't know why yet
 PWM2 is not implemented
 don't know if flushing the PWM1 FIFO sets all the bytes to 0x00, or just sets the read pointer to the write pointer preserving the newest sample and making the size 0(readPtr = writePtr has significantly cleaner audio then 0ing it out though)
 while it is stated that the PLL is turned off "30 clocks" after the DISPLL bit is set, it doesnt state where the clocks come from, CLK32 or SYSCLK
 SPI1 SPISPC register
 UART1 USTCNT1
 PLLFSR has a hack that makes busy wait loops finish faster by toggling the CLK32 bit on read, for power button issue
-PDKBEN also has a hack for power on
+should also not transfer data to SD card when MOSI, MISO or SPICLK1 are disabled
+port d data register INT* bits seem to have there data bits cleared when an edge triggered interrupt is cleared(according to MC68VZ328UM.pdf Page 10-15)
 
 Memory:
 SD card can't be read or written to by Palm OS
@@ -57,6 +53,11 @@ MakePalmBitmap:
 
 
 Fixed:
+edge triggered INT* don't clear on write to ISR when masked in IMR(I needed to use (ints & ~IMR) not (ints & IMR) which only triggers disable interrupts while blocking active ones)
+PDKBEN also has a hack for power on(its been removed)
+On hardware PDIRQEG seems not to actually work at all(CPUID:0x57000000)(it does)
+may need to trigger an interrupt if a IMR masked interrupt becomes unmasked and its bit is still set in IPR(already doing that)
+Cyclone will cause SIGSEGVs, don't know why yet(seems to have been caused by compressed jumptable)
 power button must be pushed twice to turn the CPU back on(when debugging it works the first time, then must be pushed twice to turn off instead of on)(this also occurs in the RetroArch build)
 the power button double press issue may be because the button map I am using was taken from POSE source, the power button may be mapped to other locations on the button matrix than expected
 if a sound interrupt is triggered while the button interrupt is disabled the button interrupt will still trigger(in galax game)(seems to be an issue with FIFOAV always = true hack and how INT_PWM1 needed to be cleared on read or write)

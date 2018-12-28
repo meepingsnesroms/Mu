@@ -187,7 +187,7 @@ static void checkPortDInterrupts(void){
    uint8_t portDInterruptEdgeTriggered = icrEdgeTriggered | registerArrayRead8(PDIRQEG);
    uint8_t portDInterruptEnabled = (~registerArrayRead8(PDSEL) & 0xF0) | registerArrayRead8(PDIRQEN);
    uint8_t portDIsInput = ~registerArrayRead8(PDDIR);
-   uint8_t portDInterruptTriggered = portDInterruptValue & portDInterruptEnabled & portDIsInput & (~portDInterruptEdgeTriggered | ~portDInterruptLastValue/* & (pllIsOn() ? 0xFF : 0xF0)*/);
+   uint8_t portDInterruptTriggered = portDInterruptValue & portDInterruptEnabled & portDIsInput & (~portDInterruptEdgeTriggered | ~portDInterruptLastValue & (pllIsOn() ? 0xFF : 0xF0));
 
    if(portDInterruptTriggered & 0x01)
       setIprIsrBit(INT_INT0);
@@ -229,18 +229,13 @@ static void checkPortDInterrupts(void){
    else if(!(portDInterruptEdgeTriggered & 0x80))
       clearIprIsrBit(INT_IRQ6);
 
-   //active low/off level triggered interrupt
+   //active low/off level triggered interrupt(triggers on 0, not a pull down resistor)
    //The SELx, POLx, IQENx, and IQEGx bits have no effect on the functionality of KBENx, 10.4.5.8 Port D Keyboard Enable Register MC68VZ328UM.pdf
-   //the above seems like a lie, 10.4.4 Port D Operation MC68VZ328UM.pdf
-   //completely removing PDKBEN is not accurate but makes the buttons function properly
-   //I am fairly sure that port d is not documented properly by the data sheet so Im going with what works properly right now
-   //the "!pllIsOn() &&" is a hack, it prevents rapid button presses, but allows INT_KB to turn the device back on
-   /*
-   if(!pllIsOn() && registerArrayRead8(PDKBEN) & getPortDValue() ^ registerArrayRead8(PDPOL))
+   //the above has finally been verified to be correct!
+   if(registerArrayRead8(PDKBEN) & ~(getPortDValue() ^ registerArrayRead8(PDPOL)) & portDIsInput)
       setIprIsrBit(INT_KB);
    else
       clearIprIsrBit(INT_KB);
-   */
 
    //save to check against next time this function is called
    portDInterruptLastValue = portDInterruptTriggered;
@@ -601,6 +596,13 @@ void setHwRegister8(uint32_t address, uint8_t value){
          updateAds7846ChipSelectStatus();
          break;
 
+      case PJSEL:
+      case PJDIR:
+      case PJDATA:
+         registerArrayWrite8(address, value);
+         updateSdCardChipSelectStatus();
+         break;
+
       case PKSEL:
       case PKDIR:
       case PKDATA:
@@ -627,7 +629,6 @@ void setHwRegister8(uint32_t address, uint8_t value){
       //select between GPIO or special function
       case PCSEL:
       case PESEL:
-      case PJSEL:
 
       //direction select
       case PADIR:
@@ -635,7 +636,6 @@ void setHwRegister8(uint32_t address, uint8_t value){
       case PDDIR:
       case PEDIR:
       case PFDIR:
-      case PJDIR:
 
       //pull up/down enable
       case PAPUEN:
@@ -651,7 +651,6 @@ void setHwRegister8(uint32_t address, uint8_t value){
       case PCDATA:
       case PEDATA:
       case PFDATA:
-      case PJDATA:
 
       //dragonball LCD controller, not attached to anything in Palm m515
       case LCKCON:
@@ -691,13 +690,13 @@ void setHwRegister16(uint32_t address, uint16_t value){
       case IMR:
          //this is a 32 bit register but Palm OS writes to it as 16 bit chunks
          registerArrayWrite16(IMR, value & 0x00FF);
-         registerArrayWrite16(ISR, registerArrayRead16(IPR) & registerArrayRead16(IMR));
+         registerArrayWrite16(ISR, registerArrayRead16(IPR) & ~registerArrayRead16(IMR));
          checkInterrupts();
          break;
       case IMR + 2:
          //this is a 32 bit register but Palm OS writes to it as 16 bit chunks
          registerArrayWrite16(IMR + 2, value & 0xFFFF);//Palm OS writes to reserved bits 14 and 15
-         registerArrayWrite16(ISR + 2, registerArrayRead16(IPR + 2) & registerArrayRead16(IMR + 2));
+         registerArrayWrite16(ISR + 2, registerArrayRead16(IPR + 2) & ~registerArrayRead16(IMR + 2));
          checkInterrupts();
          break;
 
@@ -983,7 +982,7 @@ void setHwRegister32(uint32_t address, uint32_t value){
 
       case IMR:
          registerArrayWrite32(IMR, value & 0x00FFFFFF);//Palm OS writes to reserved bits 14 and 15
-         registerArrayWrite32(ISR, registerArrayRead32(IPR) & registerArrayRead32(IMR));
+         registerArrayWrite32(ISR, registerArrayRead32(IPR) & ~registerArrayRead32(IMR));
          checkInterrupts();
          break;
 
@@ -1148,6 +1147,7 @@ void resetHwRegisters(void){
    updatePowerButtonLedStatus();
    updateVibratorStatus();
    updateAds7846ChipSelectStatus();
+   updateSdCardChipSelectStatus();
    updateBacklightAmplifierStatus();
 
    palmSysclksPerClk32 = sysclksPerClk32();

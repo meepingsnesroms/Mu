@@ -83,6 +83,14 @@ void sdCardReset(void){
    palmSdCard.commandBitsRemaining = 48;
    palmSdCard.responseState = 0;
    palmSdCard.response = SD_CARD_RESPONSE_NOTHING;
+   palmSdCard.allowInvalidCrc = false;
+   palmSdCard.chipSelect = false;
+}
+
+void sdCardSetChipSelect(bool value){
+   //may need to perform other actions on chip select toggle
+
+   palmSdCard.chipSelect = value;
 }
 
 bool sdCardExchangeBit(bool bit){
@@ -157,7 +165,8 @@ bool sdCardExchangeBit(bool bit){
 #endif
          debugLog("SD command:cmd:0x%02X, arg:0x%08X, CRC:0x%02X\n", command, argument, crc);
 
-         if(sdCardCmdIsCrcValid(command, argument, crc)){
+         if(palmSdCard.allowInvalidCrc || sdCardCmdIsCrcValid(command, argument, crc)){
+            //respond with command value
             debugLog("SD valid CRC\n");
 
             switch(command){
@@ -172,6 +181,7 @@ bool sdCardExchangeBit(bool bit){
          }
          else{
             //send back R1 response with CRC error set
+            debugLog("SD invalid CRC\n");
             sdCardDoResponseR1(0x08);//"command CRC error" bit set
          }
 
