@@ -176,8 +176,8 @@ unsigned int m68k_read_disassembler_16 (unsigned int address);
 unsigned int m68k_read_disassembler_32 (unsigned int address);
 
 /* Write to anywhere */
-void m68k_write_memory_8(unsigned int address, unsigned int value);
-void m68k_write_memory_16(unsigned int address, unsigned int value);
+void m68k_write_memory_8(unsigned int address, unsigned char value);
+void m68k_write_memory_16(unsigned int address, unsigned short value);
 void m68k_write_memory_32(unsigned int address, unsigned int value);
 
 /* Special call to simulate undocumented 68k behavior when move.l with a

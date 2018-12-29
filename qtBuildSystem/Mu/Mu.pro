@@ -50,7 +50,6 @@ android{
     QMAKE_CXXFLAGS += -fopenmp
     QMAKE_LFLAGS += -fopenmp
     DEFINES += EMU_MULTITHREADED
-    # CONFIG += optimize_for_arm32 # for now, later this will check if building for ARMv4<->7
 }
 
 ios{
@@ -63,7 +62,8 @@ ios{
 CONFIG(debug, debug|release){
     # debug build, be accurate, fail hard, and add logging
     DEFINES += EMU_DEBUG EMU_CUSTOM_DEBUG_LOG_HANDLER
-    !optimize_for_arm32:DEFINES += EMU_SANDBOX
+    # EMU_SANDBOX
+    CONFIG += emu_fast_cpu
     macx|linux-g++{
         # DEFINES += EMU_SANDBOX_OPCODE_LEVEL_DEBUG
         # DEFINES += EMU_SANDBOX_LOG_APIS
@@ -75,6 +75,7 @@ CONFIG(debug, debug|release){
     }
 }else{
     # release build, go fast
+    CONFIG += emu_fast_cpu
     DEFINES += EMU_NO_SAFETY
 }
 
@@ -82,10 +83,15 @@ CONFIG += c++11
 
 INCLUDEPATH += $$PWD/qt-common/include
 
-# only use with ARMv4<->7, ARMv8 is its own architecture
-optimize_for_arm32{
-    DEFINES += EMU_OPTIMIZE_FOR_ARM32
-    SOURCES += ../../src/m68k/cyclone/CycloneNew.S
+emu_fast_cpu{
+    DEFINES += EMU_FAST_CPU
+    optimize_for_arm32{
+        # only use with ARMv4<->7, ARMv8 is its own architecture
+        DEFINES += EMU_OPTIMIZE_FOR_ARM32
+        SOURCES += ../../src/m68k/cyclone/CycloneNew.S
+    }else{
+        SOURCES += ../../src/m68k/fame/famec.c
+    }
 }else{
     SOURCES += ../../src/m68k/musashi/m68kcpu.c \
         ../../src/m68k/musashi/m68kdasm.c \
@@ -147,7 +153,9 @@ HEADERS += \
     ../../src/specs/sed1376RegisterSpec.h \
     ../../src/specs/pdiUsbD12CommandSpec.h \
     ../../src/specs/emuFeatureRegisterSpec.h \
-    ../../src/specs/sdCardCommandSpec.h
+    ../../src/specs/sdCardCommandSpec.h \
+    ../../src/m68k/fame/fame.h \
+    ../../src/m68k/fame/famec_opcodes.h
 
 FORMS += \
     mainwindow.ui \

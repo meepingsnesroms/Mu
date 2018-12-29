@@ -17,7 +17,8 @@ extern "C" {
 
 //DEFINE INFO!!!
 //define EMU_MULTITHREADED to speed up long loops
-//define EMU_OPTIMIZE_FOR_ARM32 to use ASM CPU core
+//define EMU_FAST_CPU to use fast CPU cores
+//define EMU_OPTIMIZE_FOR_ARM32 to use ASM CPU core, EMU_FAST_CPU must be on too
 //define EMU_NO_SAFETY to remove all safety checks
 //define EMU_BIG_ENDIAN on big endian systems
 //to enable degguging define EMU_DEBUG, all options below do nothing unless EMU_DEBUG is defined

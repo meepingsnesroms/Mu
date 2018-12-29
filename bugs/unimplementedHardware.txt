@@ -27,6 +27,7 @@ UART1 USTCNT1
 PLLFSR has a hack that makes busy wait loops finish faster by toggling the CLK32 bit on read, for power button issue
 should also not transfer data to SD card when MOSI, MISO or SPICLK1 are disabled
 port d data register INT* bits seem to have there data bits cleared when an edge triggered interrupt is cleared(according to MC68VZ328UM.pdf Page 10-15)
+Cyclone will cause SIGSEGVs, don't know why yet(seems to have been caused by compressed jumptable)
 
 Memory:
 SD card can't be read or written to by Palm OS
@@ -57,13 +58,11 @@ edge triggered INT* don't clear on write to ISR when masked in IMR(I needed to u
 PDKBEN also has a hack for power on(its been removed)
 On hardware PDIRQEG seems not to actually work at all(CPUID:0x57000000)(it does)
 may need to trigger an interrupt if a IMR masked interrupt becomes unmasked and its bit is still set in IPR(already doing that)
-Cyclone will cause SIGSEGVs, don't know why yet(seems to have been caused by compressed jumptable)
 power button must be pushed twice to turn the CPU back on(when debugging it works the first time, then must be pushed twice to turn off instead of on)(this also occurs in the RetroArch build)
 the power button double press issue may be because the button map I am using was taken from POSE source, the power button may be mapped to other locations on the button matrix than expected
 if a sound interrupt is triggered while the button interrupt is disabled the button interrupt will still trigger(in galax game)(seems to be an issue with FIFOAV always = true hack and how INT_PWM1 needed to be cleared on read or write)
 SED1376 16 bpp mode is broken and crushed to the top of the screen
 audio can max out the resampler buffer, the max 1 FIFO sample can play is around 2.16 minutes(CLK32 / period(257) / clockDivider(16) / prescaler(128) / repeat(8))(257 * 16 * 128 * 8 / 32768=128.5 seconds)(safety check added, >= 1 second duty cycle is useless and will just make annoying cracks anyway)
-Cyclone CPU emulator is not working
 PWM1 output value is not a direct range cast of 0<->255 to 0<->32767, its additive, see properPwmSineWave.png
 inductor dosent properly drain when PWM1 gets disabled
 PWM1 FIFOAV is always set true
