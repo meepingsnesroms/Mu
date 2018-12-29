@@ -28,15 +28,15 @@ else ifeq ($(platform), osx)
 	endif
 endif
 
-ifneq (,$(filter qnx vita ctr rpi2 classic_armv7_a7,$(platform)))
-	EMU_OPTIMIZE_FOR_ARM32 = 1
-else ifneq (,$(findstring armv7,$(platform)))
-	EMU_OPTIMIZE_FOR_ARM32 = 1
-else ifneq (,$(findstring armv6,$(platform)))
-	EMU_OPTIMIZE_FOR_ARM32 = 1
-else ifneq (,$(findstring armhf,$(platform)))
-	EMU_OPTIMIZE_FOR_ARM32 = 1
-endif
+# ifneq (,$(filter qnx vita ctr rpi2 classic_armv7_a7,$(platform)))
+# 	EMU_OPTIMIZE_FOR_ARM32 = 1
+# else ifneq (,$(findstring armv7,$(platform)))
+# 	EMU_OPTIMIZE_FOR_ARM32 = 1
+# else ifneq (,$(findstring armv6,$(platform)))
+# 	EMU_OPTIMIZE_FOR_ARM32 = 1
+# else ifneq (,$(findstring armhf,$(platform)))
+# 	EMU_OPTIMIZE_FOR_ARM32 = 1
+# endif
 
 include $(EMU_PATH)/makefile.all
 
