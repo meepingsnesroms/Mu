@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdlib.h>
 
 #include "emulator.h"
 #include "portability.h"
@@ -8,22 +9,23 @@
 #include "m68k/m68kcpu.h"
 
 
-/*
-//saving this little snippet to optimize musashi
-unsigned int checkPc(unsigned int pc){
-   unsigned int dataBufferHost;
-   unsigned int dataBufferGuest;
-   unsigned int windowSize;
+//memory speed hack, used by cyclone, cyclone always crashed so I decided to just port over one of its biggest speed ups and only use musashi
+#if M68K_SEPARATE_READS
+static uintptr_t memBase;
 
-   pc -= cycloneCpu.membase;//get the real program counter
 
-   if(chips[CHIP_A0_ROM].inBootMode || pc >= chips[CHIP_A0_ROM].start && pc < chips[CHIP_A0_ROM].start + chips[CHIP_A0_ROM].lineSize){
-      dataBufferHost = (unsigned int)palmRom;
+void flx68000PcLongJump(uint32_t newPc){
+   uintptr_t dataBufferHost;
+   uint32_t dataBufferGuest;
+   uint32_t windowSize;
+
+   if(chips[CHIP_A0_ROM].inBootMode || newPc >= chips[CHIP_A0_ROM].start && newPc < chips[CHIP_A0_ROM].start + chips[CHIP_A0_ROM].lineSize){
+      dataBufferHost = (uintptr_t)palmRom;
       dataBufferGuest = chips[CHIP_A0_ROM].start;
       windowSize = chips[CHIP_A0_ROM].mask + 1;
    }
-   else if(pc >= chips[CHIP_DX_RAM].start && pc < chips[CHIP_DX_RAM].start + chips[CHIP_DX_RAM].lineSize){
-      dataBufferHost = (unsigned int)palmRam;
+   else if(newPc >= chips[CHIP_DX_RAM].start && newPc < chips[CHIP_DX_RAM].start + chips[CHIP_DX_RAM].lineSize){
+      dataBufferHost = (uintptr_t)palmRam;
       dataBufferGuest = chips[CHIP_DX_RAM].start;
       windowSize = chips[CHIP_DX_RAM].mask + 1;
    }
@@ -32,11 +34,45 @@ unsigned int checkPc(unsigned int pc){
       exit(1);
    }
 
-   cycloneCpu.membase = dataBufferHost - dataBufferGuest - windowSize * ((pc - dataBufferGuest) / windowSize);
-
-   return cycloneCpu.membase + pc;//new program counter
+   memBase = dataBufferHost - dataBufferGuest - windowSize * ((newPc - dataBufferGuest) / windowSize);
 }
-*/
+
+//everything must be 16 bit aligned(accept 8 bit accesses) due to m68k unaligned access rules,
+//32 bit reads are 2 16 bit reads because on some platforms 32 bit reads that arnt on 32 bit boundrys will crash the program
+#if defined(EMU_BIG_ENDIAN)
+uint16_t m68k_read_immediate_16(uint32_t address){
+   return *(uint16_t*)(memBase + address);
+}
+uint32_t m68k_read_immediate_32(uint32_t address){
+   return *(uint16_t*)(memBase + address) << 16 | *(uint16_t*)(memBase + address + 2);
+}
+uint8_t  m68k_read_pcrelative_8(uint32_t address){
+   return *(uint8_t*)(memBase + address);
+}
+uint16_t  m68k_read_pcrelative_16(uint32_t address){
+   return *(uint16_t*)(memBase + address);
+}
+uint32_t  m68k_read_pcrelative_32(uint32_t address){
+   return *(uint16_t*)(memBase + address) << 16 | *(uint16_t*)(memBase + address + 2);
+}
+#else
+uint16_t m68k_read_immediate_16(uint32_t address){
+   return *(uint16_t*)(memBase + address);
+}
+uint32_t m68k_read_immediate_32(uint32_t address){
+   return *(uint16_t*)(memBase + address) << 16 | *(uint16_t*)(memBase + address + 2);
+}
+uint8_t  m68k_read_pcrelative_8(uint32_t address){
+   return *(uint8_t*)(memBase + (address ^ 1));
+}
+uint16_t  m68k_read_pcrelative_16(uint32_t address){
+   return *(uint16_t*)(memBase + address);
+}
+uint32_t  m68k_read_pcrelative_32(uint32_t address){
+   return *(uint16_t*)(memBase + address) << 16 | *(uint16_t*)(memBase + address + 2);
+}
+#endif
+#endif
 
 void flx68000Init(void){
    static bool inited = false;

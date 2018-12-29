@@ -32,6 +32,12 @@
 #ifndef M68KCONF_HEADER
 #define M68KCONF_HEADER
 
+/* Function declarations.
+ * Declare any callback functions used by musashi that arnt called through
+ * pointers.
+ */
+#include "m68kexternal.h"
+
 /* Configuration switches.
  * Use OPT_SPECIFY_HANDLER for configuration options that allow callbacks.
  * OPT_SPECIFY_HANDLER causes the core to link directly to the function
@@ -57,7 +63,11 @@
  * and m68k_read_pcrelative_xx() for PC-relative addressing.
  * If off, all read requests from the CPU will be redirected to m68k_read_xx()
  */
+#if !defined(EMU_NO_SAFETY)
 #define M68K_SEPARATE_READS         OPT_OFF
+#else
+#define M68K_SEPARATE_READS         OPT_ON
+#endif
 
 /* If ON, the CPU will call m68k_write_32_pd() when it executes move.l with a
  * predecrement destination EA mode instead of m68k_write_32().
@@ -108,8 +118,8 @@
  * large value.  This allows host programs to be nicer when it comes to
  * fetching immediate data and instructions on a banked memory system.
  */
-#define M68K_MONITOR_PC             OPT_OFF
-#define M68K_SET_PC_CALLBACK(A)     your_pc_changed_handler_function(A)
+#define M68K_MONITOR_PC             OPT_SPECIFY_HANDLER
+#define M68K_SET_PC_CALLBACK(A)     flx68000PcLongJump(A)
 
 
 /* If ON, CPU will call the instruction hook callback before every
