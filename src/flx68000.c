@@ -47,8 +47,6 @@ void flx68000Init(void){
 
       CPU_ADDRESS_MASK = 0xFFFFFFFF;
 
-      m68k_set_reset_instr_callback(emulatorSoftReset);
-      m68k_set_int_ack_callback(interruptAcknowledge);
       inited = true;
    }
 }

@@ -94,7 +94,7 @@ bool backlightAmplifierState(void);
 bool registersAreXXFFMapped(void);
 bool sed1376ClockConnected(void);
 void refreshInputState(void);
-int interruptAcknowledge(int intLevel);
+int32_t interruptAcknowledge(int32_t intLevel);
 
 //memory errors
 void setBusErrorTimeOut(uint32_t address, bool isWrite);
