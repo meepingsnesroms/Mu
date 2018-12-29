@@ -5,26 +5,11 @@
 #include "portability.h"
 #include "hardwareRegisters.h"
 #include "memoryAccess.h"
-
-#if defined(EMU_OPTIMIZE_FOR_ARM32)
-#include <stdlib.h>//for exit(1)
-#include "m68k/cyclone/Cyclone.h"
-#else
-#include "m68k/musashi/m68kcpu.h"
-#endif
+#include "m68k/m68kcpu.h"
 
 
-#if defined(EMU_OPTIMIZE_FOR_ARM32)
-static struct Cyclone cycloneCpu;
-
-
-extern unsigned int m68k_read_memory_8(unsigned int address);
-extern unsigned int m68k_read_memory_16(unsigned int address);
-extern unsigned int m68k_read_memory_32(unsigned int address);
-extern void m68k_write_memory_8(unsigned int address, unsigned char value);
-extern void m68k_write_memory_16(unsigned int address, unsigned short value);
-extern void m68k_write_memory_32(unsigned int address, unsigned int value);
-
+/*
+//saving this little snippet to optimize musashi
 unsigned int checkPc(unsigned int pc){
    unsigned int dataBufferHost;
    unsigned int dataBufferGuest;
@@ -51,27 +36,12 @@ unsigned int checkPc(unsigned int pc){
 
    return cycloneCpu.membase + pc;//new program counter
 }
-#endif
+*/
 
 void flx68000Init(void){
    static bool inited = false;
 
    if(!inited){
-#if defined(EMU_OPTIMIZE_FOR_ARM32)
-      CycloneInit();
-      cycloneCpu.read8 = m68k_read_memory_8;
-      cycloneCpu.read16 = m68k_read_memory_16;
-      cycloneCpu.read32 = m68k_read_memory_32;
-      cycloneCpu.fetch8 = m68k_read_memory_8;
-      cycloneCpu.fetch16 = m68k_read_memory_16;
-      cycloneCpu.fetch32 = m68k_read_memory_32;
-      cycloneCpu.write8 = m68k_write_memory_8;
-      cycloneCpu.write16 = m68k_write_memory_16;
-      cycloneCpu.write32 = m68k_write_memory_32;
-      cycloneCpu.checkpc = checkPc;
-      cycloneCpu.IrqCallback = interruptAcknowledge;
-      cycloneCpu.ResetCallback = emulatorSoftReset;
-#else
       m68k_init();
       m68k_set_cpu_type(M68K_CPU_TYPE_68000);
 
@@ -79,7 +49,6 @@ void flx68000Init(void){
 
       m68k_set_reset_instr_callback(emulatorSoftReset);
       m68k_set_int_ack_callback(interruptAcknowledge);
-#endif
       inited = true;
    }
 }
@@ -87,31 +56,19 @@ void flx68000Init(void){
 void flx68000Reset(void){
    resetHwRegisters();
    resetAddressSpace();//address space must be reset after hardware registers because it is dependent on them
-#if defined(EMU_OPTIMIZE_FOR_ARM32)
-   CycloneReset(&cycloneCpu);
-#else
    m68k_pulse_reset();
-#endif
 }
 
 uint64_t flx68000StateSize(void){
    uint64_t size = 0;
 
-#if defined(EMU_OPTIMIZE_FOR_ARM32)
-   size += 0x80;//specified in Cyclone.h, line 82
-#else
    size += sizeof(uint32_t) * 50;//m68ki_cpu
-#endif
 
    return size;
 }
 
 void flx68000SaveState(uint8_t* data){
    uint64_t offset = 0;
-#if defined(EMU_OPTIMIZE_FOR_ARM32)
-   CyclonePack(&cycloneCpu, data + offset);
-   offset += 0x80;//specified in Cyclone.h, line 82
-#else
    uint8_t index;
 
    for(index = 0; index < 16; index++){
@@ -176,16 +133,10 @@ void flx68000SaveState(uint8_t* data){
    offset += sizeof(uint32_t);
    writeStateValue32(data + offset, m68ki_cpu.run_mode);
    offset += sizeof(uint32_t);
-#endif
 }
 
 void flx68000LoadState(uint8_t* data){
    uint64_t offset = 0;
-
-#if defined(EMU_OPTIMIZE_FOR_ARM32)
-   CycloneUnpack(&cycloneCpu, data + offset);
-   offset += 0x80;//specified in Cyclone.h, line 82
-#else
    uint8_t index;
 
    for(index = 0; index < 16; index++){
@@ -250,7 +201,6 @@ void flx68000LoadState(uint8_t* data){
    offset += sizeof(uint32_t);
    m68ki_cpu.run_mode = readStateValue32(data + offset);
    offset += sizeof(uint32_t);
-#endif
 }
 
 void flx68000Execute(void){
@@ -262,14 +212,8 @@ void flx68000Execute(void){
       double sysclks = dMin(cyclesRemaining, EMU_SYSCLK_PRECISION);
       int32_t cpuCycles = sysclks * pctlrCpuClockDivider * palmClockMultiplier;
 
-      if(cpuCycles > 0){
-#if defined(EMU_OPTIMIZE_FOR_ARM32)
-         cycloneCpu.cycles = cpuCycles;
-         CycloneRun(&cycloneCpu);
-#else
+      if(cpuCycles > 0)
          m68k_execute(cpuCycles);
-#endif
-      }
       addSysclks(sysclks);
 
       cyclesRemaining -= sysclks;
@@ -279,110 +223,31 @@ void flx68000Execute(void){
 }
 
 void flx68000SetIrq(uint8_t irqLevel){
-#if defined(EMU_OPTIMIZE_FOR_ARM32)
-   cycloneCpu.irq = irqLevel;
-   CycloneFlushIrq(&cycloneCpu);
-#else
    m68k_set_irq(irqLevel);
-#endif
-}
-
-void flx68000RefreshAddressing(void){
-#if defined(EMU_OPTIMIZE_FOR_ARM32)
-   //cycloneCpu.pc = cycloneCpu.checkpc(cycloneCpu.pc);
-#else
-   //C implementation doesnt cache address information
-#endif
 }
 
 bool flx68000IsSupervisor(void){
-#if defined(EMU_OPTIMIZE_FOR_ARM32)
-   return CycloneGetSr(&cycloneCpu) & 0x2000;
-#else
    return !!(m68k_get_reg(NULL, M68K_REG_SR) & 0x2000);
-#endif
 }
 
 void flx68000BusError(uint32_t address, bool isWrite){
-#if defined(EMU_OPTIMIZE_FOR_ARM32)
-   //no bus error callback
-#else
+#if !defined(EMU_NO_SAFETY)
    //never call outsize of a 68k opcode, behavior is undefined due to longjmp
    m68ki_trigger_bus_error(address, isWrite ? MODE_WRITE : MODE_READ, FLAG_S | m68ki_get_address_space());
 #endif
 }
 
 uint32_t flx68000GetRegister(uint8_t reg){
-   //register standard, applys to all CPU cores
-   /*
-   M68K_REG_D0 = 0,
-   M68K_REG_D1,
-   M68K_REG_D2,
-   M68K_REG_D3,
-   M68K_REG_D4,
-   M68K_REG_D5,
-   M68K_REG_D6,
-   M68K_REG_D7,
-   M68K_REG_A0,
-   M68K_REG_A1,
-   M68K_REG_A2,
-   M68K_REG_A3,
-   M68K_REG_A4,
-   M68K_REG_A5,
-   M68K_REG_A6,
-   M68K_REG_A7,
-   M68K_REG_PC,
-   M68K_REG_SR
-   */
-
-#if defined(EMU_OPTIMIZE_FOR_ARM32)
-   if(reg < 8)
-      return cycloneCpu.d[reg];
-   else if(reg < 16)
-      return cycloneCpu.a[reg - 8];
-   else if(reg == 16)
-      return cycloneCpu.pc;
-   else if(reg == 17)
-      return CycloneGetSr(&cycloneCpu);
-
-   return 0x00000000;
-#else
    return m68k_get_reg(NULL, reg);
-#endif
 }
 
 uint32_t flx68000GetPc(void){
-#if defined(EMU_OPTIMIZE_FOR_ARM32)
-   return cycloneCpu.prev_pc;
-#else
    return m68k_get_reg(NULL, M68K_REG_PPC);
-#endif
 }
 
 uint64_t flx68000ReadArbitraryMemory(uint32_t address, uint8_t size){
    uint64_t data = UINT64_MAX;//invalid access
 
-#if defined(EMU_OPTIMIZE_FOR_ARM32)
-   //reading from a hardware register FIFO will corrupt it!
-   if(bankType[START_BANK(address)] != CHIP_NONE){
-      uint16_t m68kSr = CycloneGetSr(&cycloneCpu);
-      CycloneSetSr(&cycloneCpu, m68kSr | 0x2000);//prevent privilege violations
-      switch(size){
-         case 8:
-            data = m68k_read_memory_8(address);
-            break;
-
-         case 16:
-            data = m68k_read_memory_16(address);
-            break;
-
-         case 32:
-            data = m68k_read_memory_32(address);
-            break;
-      }
-      CycloneSetSr(&cycloneCpu, m68kSr);
-   }
-#else
    //reading from a hardware register FIFO will corrupt it!
    if(bankType[START_BANK(address)] != CHIP_NONE){
       uint16_t m68kSr = m68k_get_reg(NULL, M68K_REG_SR);
@@ -402,7 +267,6 @@ uint64_t flx68000ReadArbitraryMemory(uint32_t address, uint8_t size){
       }
       m68k_set_reg(M68K_REG_SR, m68kSr);
    }
-#endif
 
    return data;
 }

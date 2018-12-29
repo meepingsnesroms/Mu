@@ -355,7 +355,7 @@ void m68k_write_memory_32(unsigned int address, unsigned int value){
    return;
 }
 
-//memory access for the disassembler
+//memory access for the disassembler, unused but must be defined
 uint8_t m68k_read_disassembler_8(uint32_t address){return m68k_read_memory_8(address);}
 uint16_t m68k_read_disassembler_16(uint32_t address){return m68k_read_memory_16(address);}
 uint32_t m68k_read_disassembler_32(uint32_t address){return m68k_read_memory_32(address);}
@@ -406,5 +406,4 @@ void resetAddressSpace(void){
 
    MULTITHREAD_LOOP(bank) for(bank = 0; bank < TOTAL_MEMORY_BANKS; bank++)
       bankType[bank] = getProperBankType(bank);
-   flx68000RefreshAddressing();
 }

@@ -50,20 +50,17 @@ android{
     QMAKE_CXXFLAGS += -fopenmp
     QMAKE_LFLAGS += -fopenmp
     DEFINES += EMU_MULTITHREADED
-    # CONFIG += optimize_for_arm32 # for now, later this will check if building for ARMv4<->7
 }
 
 ios{
     # QMAKE_INFO_PLIST = ios/Info.plist
     DEFINES += EMU_MULTITHREADED
-    # iOS is now ARMv8 only, cyclone wont work
 }
 
 
 CONFIG(debug, debug|release){
     # debug build, be accurate, fail hard, and add logging
-    DEFINES += EMU_DEBUG EMU_CUSTOM_DEBUG_LOG_HANDLER
-    !optimize_for_arm32:DEFINES += EMU_SANDBOX
+    DEFINES += EMU_DEBUG EMU_CUSTOM_DEBUG_LOG_HANDLER EMU_SANDBOX
     macx|linux-g++{
         # DEFINES += EMU_SANDBOX_OPCODE_LEVEL_DEBUG
         # DEFINES += EMU_SANDBOX_LOG_APIS
@@ -82,19 +79,6 @@ CONFIG += c++11
 
 INCLUDEPATH += $$PWD/qt-common/include
 
-# only use with ARMv4<->7, ARMv8 is its own architecture
-optimize_for_arm32{
-    DEFINES += EMU_OPTIMIZE_FOR_ARM32
-    SOURCES += ../../src/m68k/cyclone/CycloneNew.S
-}else{
-    SOURCES += ../../src/m68k/musashi/m68kcpu.c \
-        ../../src/m68k/musashi/m68kdasm.c \
-        ../../src/m68k/musashi/m68kopac.c \
-        ../../src/m68k/musashi/m68kopdm.c \
-        ../../src/m68k/musashi/m68kopnz.c \
-        ../../src/m68k/musashi/m68kops.c
-}
-
 SOURCES += \
     debugviewer.cpp \
     emuwrapper.cpp \
@@ -112,7 +96,13 @@ SOURCES += \
     ../../src/pdiUsbD12.c \
     ../../src/sdCard.c \
     ../../src/sed1376.c \
-    ../../src/silkscreen.c
+    ../../src/silkscreen.c \
+    ../../src/m68k/m68kcpu.c \
+    ../../src/m68k/m68kdasm.c \
+    ../../src/m68k/m68kopac.c \
+    ../../src/m68k/m68kopdm.c \
+    ../../src/m68k/m68kopnz.c \
+    ../../src/m68k/m68kops.c
 
 HEADERS += \
     debugviewer.h \
@@ -124,11 +114,10 @@ HEADERS += \
     ../../src/debug/sandbox.h \
     ../../src/debug/sandboxTrapNumToName.c.h \
     ../../src/debug/trapNames.h \
-    ../../src/m68k/cyclone/Cyclone.h \
-    ../../src/m68k/musashi/m68k.h \
-    ../../src/m68k/musashi/m68kconf.h \
-    ../../src/m68k/musashi/m68kcpu.h \
-    ../../src/m68k/musashi/m68kops.h \
+    ../../src/m68k/m68k.h \
+    ../../src/m68k/m68kconf.h \
+    ../../src/m68k/m68kcpu.h \
+    ../../src/m68k/m68kops.h \
     ../../src/specs/dragonballVzRegisterSpec.h \
     ../../src/ads7846.h \
     ../../src/emulator.h \
