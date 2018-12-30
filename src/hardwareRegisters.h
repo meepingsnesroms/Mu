@@ -29,9 +29,9 @@
 #define INT_SPI2   0x00000001//level 4
 
 //reasons a timer is triggered
-#define TIMER_REASON_SYSCLK 0x0000
-#define TIMER_REASON_TIN    0x0001
-#define TIMER_REASON_CLK32  0x0002
+#define TIMER_REASON_SYSCLK 0x00
+#define TIMER_REASON_TIN    0x01
+#define TIMER_REASON_CLK32  0x02
 
 //chip names
 enum{
@@ -94,7 +94,7 @@ bool backlightAmplifierState(void);
 bool registersAreXXFFMapped(void);
 bool sed1376ClockConnected(void);
 void refreshInputState(void);
-int interruptAcknowledge(int intLevel);
+int32_t interruptAcknowledge(int32_t intLevel);
 
 //memory errors
 void setBusErrorTimeOut(uint32_t address, bool isWrite);

@@ -108,7 +108,7 @@ static bool probeWrite(uint8_t bank, uint32_t address){
    return true;
 }
 
-unsigned int m68k_read_memory_8(unsigned int address){
+uint8_t m68k_read_memory_8(uint32_t address){
    uint8_t addressType = bankType[START_BANK(address)];
 
 #if !defined(EMU_NO_SAFETY)
@@ -147,7 +147,7 @@ unsigned int m68k_read_memory_8(unsigned int address){
    return 0x00;
 }
 
-unsigned int m68k_read_memory_16(unsigned int address){
+uint16_t m68k_read_memory_16(uint32_t address){
    uint8_t addressType = bankType[START_BANK(address)];
 
 #if !defined(EMU_NO_SAFETY)
@@ -186,7 +186,7 @@ unsigned int m68k_read_memory_16(unsigned int address){
    return 0x0000;
 }
 
-unsigned int m68k_read_memory_32(unsigned int address){
+uint32_t m68k_read_memory_32(uint32_t address){
    uint8_t addressType = bankType[START_BANK(address)];
 
 #if !defined(EMU_NO_SAFETY)
@@ -225,7 +225,7 @@ unsigned int m68k_read_memory_32(unsigned int address){
    return 0x00000000;
 }
 
-void m68k_write_memory_8(unsigned int address, unsigned char value){
+void m68k_write_memory_8(uint32_t address, uint8_t value){
    uint8_t addressType = bankType[START_BANK(address)];
 
 #if !defined(EMU_NO_SAFETY)
@@ -268,7 +268,7 @@ void m68k_write_memory_8(unsigned int address, unsigned char value){
    return;
 }
 
-void m68k_write_memory_16(unsigned int address, unsigned short value){
+void m68k_write_memory_16(uint32_t address, uint16_t value){
    uint8_t addressType = bankType[START_BANK(address)];
 
 #if !defined(EMU_NO_SAFETY)
@@ -311,7 +311,7 @@ void m68k_write_memory_16(unsigned int address, unsigned short value){
    return;
 }
 
-void m68k_write_memory_32(unsigned int address, unsigned int value){
+void m68k_write_memory_32(uint32_t address, uint32_t value){
    uint8_t addressType = bankType[START_BANK(address)];
 
 #if !defined(EMU_NO_SAFETY)
@@ -355,7 +355,7 @@ void m68k_write_memory_32(unsigned int address, unsigned int value){
    return;
 }
 
-//memory access for the disassembler
+//memory access for the disassembler, unused but must be defined
 uint8_t m68k_read_disassembler_8(uint32_t address){return m68k_read_memory_8(address);}
 uint16_t m68k_read_disassembler_16(uint32_t address){return m68k_read_memory_16(address);}
 uint32_t m68k_read_disassembler_32(uint32_t address){return m68k_read_memory_32(address);}
@@ -406,5 +406,4 @@ void resetAddressSpace(void){
 
    MULTITHREAD_LOOP(bank) for(bank = 0; bank < TOTAL_MEMORY_BANKS; bank++)
       bankType[bank] = getProperBankType(bank);
-   flx68000RefreshAddressing();
 }

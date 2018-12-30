@@ -28,16 +28,6 @@ else ifeq ($(platform), osx)
 	endif
 endif
 
-# ifneq (,$(filter qnx vita ctr rpi2 classic_armv7_a7,$(platform)))
-# 	EMU_OPTIMIZE_FOR_ARM32 = 1
-# else ifneq (,$(findstring armv7,$(platform)))
-# 	EMU_OPTIMIZE_FOR_ARM32 = 1
-# else ifneq (,$(findstring armv6,$(platform)))
-# 	EMU_OPTIMIZE_FOR_ARM32 = 1
-# else ifneq (,$(findstring armhf,$(platform)))
-# 	EMU_OPTIMIZE_FOR_ARM32 = 1
-# endif
-
 include $(EMU_PATH)/makefile.all
 
 COREDEFINES += $(EMU_DEFINES)
@@ -45,6 +35,8 @@ COREDEFINES += $(EMU_DEFINES)
 SOURCES_C := $(CORE_DIR)/libretro.c \
 	$(CORE_DIR)/cursors.c \
 	$(EMU_SOURCES_C)
+
+SOURCES_ASM := 
 
 ifneq ($(STATIC_LINKING), 1)
 	SOURCES_C += $(LIBRETRO_COMM_DIR)/compat/compat_strl.c \
@@ -56,5 +48,3 @@ ifneq ($(STATIC_LINKING), 1)
 		$(LIBRETRO_COMM_DIR)/string/stdstring.c \
 		$(LIBRETRO_COMM_DIR)/vfs/vfs_implementation.c
 endif
-
-SOURCES_ASM := $(EMU_SOURCES_ASM)

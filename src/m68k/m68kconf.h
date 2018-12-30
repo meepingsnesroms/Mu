@@ -29,9 +29,14 @@
 
 
 
-#ifndef M68KCONF__HEADER
-#define M68KCONF__HEADER
+#ifndef M68KCONF_HEADER
+#define M68KCONF_HEADER
 
+/* Function declarations.
+ * Declare any callback functions used by musashi that arnt called through
+ * pointers.
+ */
+#include "m68kexternal.h"
 
 /* Configuration switches.
  * Use OPT_SPECIFY_HANDLER for configuration options that allow callbacks.
@@ -42,21 +47,6 @@
 #define OPT_OFF             0
 #define OPT_ON              1
 #define OPT_SPECIFY_HANDLER 2
-
-
-/* ======================================================================== */
-/* ============================== MAME STUFF ============================== */
-/* ======================================================================== */
-
-/* If you're compiling this for MAME, only change M68K_COMPILE_FOR_MAME
- * to OPT_ON and use m68kmame.h to configure the 68k core.
- */
-#ifndef M68K_COMPILE_FOR_MAME
-#define M68K_COMPILE_FOR_MAME      OPT_OFF
-#endif /* M68K_COMPILE_FOR_MAME */
-
-
-#if M68K_COMPILE_FOR_MAME == OPT_OFF
 
 
 /* ======================================================================== */
@@ -73,7 +63,11 @@
  * and m68k_read_pcrelative_xx() for PC-relative addressing.
  * If off, all read requests from the CPU will be redirected to m68k_read_xx()
  */
+#if !defined(EMU_NO_SAFETY)
 #define M68K_SEPARATE_READS         OPT_OFF
+#else
+#define M68K_SEPARATE_READS         OPT_ON
+#endif
 
 /* If ON, the CPU will call m68k_write_32_pd() when it executes move.l with a
  * predecrement destination EA mode instead of m68k_write_32().
@@ -87,8 +81,8 @@
  * If off, all interrupts will be autovectored and all interrupt requests will
  * auto-clear when the interrupt is serviced.
  */
-#define M68K_EMULATE_INT_ACK        OPT_ON
-#define M68K_INT_ACK_CALLBACK(A)    your_int_ack_handler_function(A)
+#define M68K_EMULATE_INT_ACK        OPT_SPECIFY_HANDLER
+#define M68K_INT_ACK_CALLBACK(A)    interruptAcknowledge(A)
 
 
 /* If ON, CPU will call the breakpoint acknowledge callback when it encounters
@@ -106,8 +100,8 @@
 /* If ON, CPU will call the output reset callback when it encounters a reset
  * instruction.
  */
-#define M68K_EMULATE_RESET          OPT_ON
-#define M68K_RESET_CALLBACK()       your_reset_handler_function()
+#define M68K_EMULATE_RESET          OPT_SPECIFY_HANDLER
+#define M68K_RESET_CALLBACK()       emulatorSoftReset()
 
 
 /* If ON, CPU will call the set fc callback on every memory access to
@@ -124,14 +118,18 @@
  * large value.  This allows host programs to be nicer when it comes to
  * fetching immediate data and instructions on a banked memory system.
  */
-#define M68K_MONITOR_PC             OPT_OFF
-#define M68K_SET_PC_CALLBACK(A)     your_pc_changed_handler_function(A)
+#define M68K_MONITOR_PC             OPT_SPECIFY_HANDLER
+#define M68K_SET_PC_CALLBACK(A)     flx68000PcLongJump(A)
 
 
 /* If ON, CPU will call the instruction hook callback before every
  * instruction.
  */
+#if defined(EMU_DEBUG) && defined(EMU_SANDBOX) && defined(EMU_SANDBOX_OPCODE_LEVEL_DEBUG)
+#define M68K_INSTRUCTION_HOOK       OPT_ON
+#else
 #define M68K_INSTRUCTION_HOOK       OPT_OFF
+#endif
 #define M68K_INSTRUCTION_CALLBACK() your_instruction_hook_function()
 
 
@@ -170,6 +168,8 @@
  * operations.
  */
 #define M68K_USE_64_BIT  OPT_OFF
+//it seems MASK_OUT_ABOVE_32 is has to be called on every 32 bit operation when using this option,
+//possibly even making the speed worse than with just 32 bits
 
 
 /* Set to your compiler's static inline keyword to enable it, or
@@ -181,11 +181,9 @@
 #define MUSASHI_INLINE static inline
 #endif /* MUSASHI_INLINE */
 
-#endif /* M68K_COMPILE_FOR_MAME */
-
 
 /* ======================================================================== */
 /* ============================== END OF FILE ============================= */
 /* ======================================================================== */
 
-#endif /* M68KCONF__HEADER */
+#endif /* M68KCONF_HEADER */

@@ -935,3 +935,33 @@ var playConstantTone(){
    
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
+
+var unaligned32bitAccess(){
+   static Boolean firstRun = true;
+
+   if(firstRun){
+      uint8_t buffer[10];
+      uint8_t* align16Buffer = buffer;
+      uint32_t* test;
+      
+      //make sure its 16 bit aligned but not 32 bit aligned
+      while(((uint32_t)align16Buffer & 0x3) != 0x2)
+         align16Buffer++;
+      
+      test = align16Buffer;
+      
+      *test = 0xF1EAF1EA;
+      if(*test == 0xF1EAF1EA){
+         debugSafeScreenClear(C_WHITE);
+         StrPrintF(sharedDataBuffer, "It works!");
+         UG_PutString(0, 0, sharedDataBuffer);
+      }
+   }
+   
+   if(getButtonPressed(buttonBack)){
+      firstRun = true;
+      exitSubprogram();
+   }
+
+   return makeVar(LENGTH_0, TYPE_NULL, 0);
+}

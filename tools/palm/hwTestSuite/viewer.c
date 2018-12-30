@@ -287,6 +287,10 @@ void resetFunctionViewer(){
    hwTests[totalHwTests].testFunction = getPenPosition;
    totalHwTests++;
    
+   StrNCopy(hwTests[totalHwTests].name, "Unaligned 32 Bit Acs", TEST_NAME_LENGTH);
+   hwTests[totalHwTests].testFunction = unaligned32bitAccess;
+   totalHwTests++;
+   
    if(cpuType & CPU_M68K || cpuType == CPU_NONE){
       /*68k only functions*/
       if((cpuType & CPU_M68K_TYPES) != CPU_M68K_328){
