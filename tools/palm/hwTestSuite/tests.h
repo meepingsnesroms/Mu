@@ -23,5 +23,6 @@ var toggleAlarmLed();
 var watchPenIrq();
 var getPenPosition();
 var playConstantTone();
+var unaligned32bitAccess();
 
 #endif

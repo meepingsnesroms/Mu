@@ -32,16 +32,16 @@
 //memory layout is the same as the Palm m515, just cast to pointer and access
 #define BUFFER_READ_8(segment, accessAddress, mask)  (*(uint8_t*)(segment + ((accessAddress) & (mask))))
 #define BUFFER_READ_16(segment, accessAddress, mask) (*(uint16_t*)(segment + ((accessAddress) & (mask))))
-#define BUFFER_READ_32(segment, accessAddress, mask) (*(uint32_t*)(segment + ((accessAddress) & (mask))))
+#define BUFFER_READ_32(segment, accessAddress, mask) (*(uint16_t*)(segment + ((accessAddress) & (mask))) << 16 | *(uint16_t*)(segment + ((accessAddress) + 2 & (mask))))
 #define BUFFER_WRITE_8(segment, accessAddress, mask, value)  (*(uint8_t*)(segment + ((accessAddress) & (mask))) = (value))
 #define BUFFER_WRITE_16(segment, accessAddress, mask, value) (*(uint16_t*)(segment + ((accessAddress) & (mask))) = (value))
-#define BUFFER_WRITE_32(segment, accessAddress, mask, value) (*(uint32_t*)(segment + ((accessAddress) & (mask))) = (value))
-#define BUFFER_READ_8_BIG_ENDIAN(segment, accessAddress, mask)  (*(uint8_t*)(segment + ((accessAddress) & (mask))))
-#define BUFFER_READ_16_BIG_ENDIAN(segment, accessAddress, mask) (*(uint16_t*)(segment + ((accessAddress) & (mask))))
-#define BUFFER_READ_32_BIG_ENDIAN(segment, accessAddress, mask) (*(uint32_t*)(segment + ((accessAddress) & (mask))))
-#define BUFFER_WRITE_8_BIG_ENDIAN(segment, accessAddress, mask, value)  (*(uint8_t*)(segment + ((accessAddress) & (mask))) = (value))
-#define BUFFER_WRITE_16_BIG_ENDIAN(segment, accessAddress, mask, value) (*(uint16_t*)(segment + ((accessAddress) & (mask))) = (value))
-#define BUFFER_WRITE_32_BIG_ENDIAN(segment, accessAddress, mask, value) (*(uint32_t*)(segment + ((accessAddress) & (mask))) = (value))
+#define BUFFER_WRITE_32(segment, accessAddress, mask, value) (*(uint16_t*)(segment + ((accessAddress) & (mask))) = (value) >> 16 , *(uint16_t*)(segment + ((accessAddress) + 2 & (mask))) = (value) & 0xFFFF)
+#define BUFFER_READ_8_BIG_ENDIAN  BUFFER_READ_8
+#define BUFFER_READ_16_BIG_ENDIAN BUFFER_READ_16
+#define BUFFER_READ_32_BIG_ENDIAN BUFFER_READ_32
+#define BUFFER_WRITE_8_BIG_ENDIAN  BUFFER_WRITE_8
+#define BUFFER_WRITE_16_BIG_ENDIAN BUFFER_WRITE_16
+#define BUFFER_WRITE_32_BIG_ENDIAN BUFFER_WRITE_32
 #else
 //memory layout is different from the Palm m515, optimize for opcode fetches(16 bit reads)
 #define BUFFER_READ_8(segment, accessAddress, mask)  (*(uint8_t*)(segment + ((accessAddress) & (mask) ^ 1)))
