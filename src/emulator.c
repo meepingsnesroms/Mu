@@ -533,6 +533,9 @@ bool emulatorLoadState(buffer_t buffer){
    memcpy(palmSdCard.flashChip.data, buffer.data + offset, stateSdCardSize);
    offset += stateSdCardSize;
 
+   //some modules depend on all the state memory being loaded before certian required actions can occur(refreshing cached data, freeing memory blocks)
+   flx68000LoadStateFinished();
+
    return true;
 }
 

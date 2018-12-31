@@ -10,6 +10,7 @@ Qt GUI:
 *removed unneeded buffers on the GUI side and replaced them with a mutex
 
 Core:
+*fix power button double press bug
 *sound works perfectly as far as I can tell(unless a program purposely sets the sample length > 1 second, which is useless for generating sound anyway)
 *add ARM optimized 68k CPU core(not fully working yet, SIGSEGVs when running)
 *allow safety checks to be disabled with EMU_NO_SAFETY, accuracy is maintained when its not defined

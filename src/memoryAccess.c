@@ -355,6 +355,10 @@ void m68k_write_memory_32(uint32_t address, uint32_t value){
    return;
 }
 
+void m68k_write_memory_32_pd(uint32_t address, uint32_t value){
+   m68k_write_memory_32(address, value >> 16 | value << 16);
+}
+
 //memory access for the disassembler, unused but must be defined
 uint8_t m68k_read_disassembler_8(uint32_t address){return m68k_read_memory_8(address);}
 uint16_t m68k_read_disassembler_16(uint32_t address){return m68k_read_memory_16(address);}

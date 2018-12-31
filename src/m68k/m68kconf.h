@@ -74,7 +74,7 @@
  * To simulate real 68k behavior, m68k_write_32_pd() must first write the high
  * word to [address+2], and then write the low word to [address].
  */
-#define M68K_SIMULATE_PD_WRITES     OPT_OFF
+#define M68K_SIMULATE_PD_WRITES     OPT_ON
 
 /* If ON, CPU will call the interrupt acknowledge callback when it services an
  * interrupt.
@@ -94,7 +94,11 @@
 
 /* If ON, the CPU will monitor the trace flags and take trace exceptions
  */
+#if !defined(EMU_NO_SAFETY)
+#define M68K_EMULATE_TRACE          OPT_ON
+#else
 #define M68K_EMULATE_TRACE          OPT_OFF
+#endif
 
 
 /* If ON, CPU will call the output reset callback when it encounters a reset
@@ -118,7 +122,11 @@
  * large value.  This allows host programs to be nicer when it comes to
  * fetching immediate data and instructions on a banked memory system.
  */
+#if !defined(EMU_NO_SAFETY)
+#define M68K_MONITOR_PC             OPT_OFF
+#else
 #define M68K_MONITOR_PC             OPT_SPECIFY_HANDLER
+#endif
 #define M68K_SET_PC_CALLBACK(A)     flx68000PcLongJump(A)
 
 
@@ -126,12 +134,11 @@
  * instruction.
  */
 #if defined(EMU_DEBUG) && defined(EMU_SANDBOX) && defined(EMU_SANDBOX_OPCODE_LEVEL_DEBUG)
-#define M68K_INSTRUCTION_HOOK       OPT_ON
+#define M68K_INSTRUCTION_HOOK       OPT_SPECIFY_HANDLER
 #else
 #define M68K_INSTRUCTION_HOOK       OPT_OFF
 #endif
-#define M68K_INSTRUCTION_CALLBACK() your_instruction_hook_function()
-
+#define M68K_INSTRUCTION_CALLBACK() sandboxOnOpcodeRun()
 
 /* If ON, the CPU will emulate the 4-byte prefetch queue of a real 68000 */
 #define M68K_EMULATE_PREFETCH       OPT_OFF

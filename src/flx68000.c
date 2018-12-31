@@ -1,6 +1,5 @@
 #include <stdint.h>
 #include <stdbool.h>
-#include <stdlib.h>
 
 #include "emulator.h"
 #include "portability.h"
@@ -28,10 +27,6 @@ void flx68000PcLongJump(uint32_t newPc){
       dataBufferHost = (uintptr_t)palmRam;
       dataBufferGuest = chips[CHIP_DX_RAM].start;
       windowSize = chips[CHIP_DX_RAM].mask + 1;
-   }
-   else{
-      //executing from anywhere else is not supported, just crash to prevent corrupting the user RAM file with invalid accesses
-      exit(1);
    }
 
    memBase = dataBufferHost - dataBufferGuest - windowSize * ((newPc - dataBufferGuest) / windowSize);
@@ -235,6 +230,13 @@ void flx68000LoadState(uint8_t* data){
    offset += sizeof(uint32_t);
    m68ki_cpu.run_mode = readStateValue32(data + offset);
    offset += sizeof(uint32_t);
+}
+
+void flx68000LoadStateFinished(void){
+#if M68K_SEPARATE_READS
+   //set PC accessor to the PC from the state
+   flx68000PcLongJump(m68ki_cpu.pc);
+#endif
 }
 
 void flx68000Execute(void){
