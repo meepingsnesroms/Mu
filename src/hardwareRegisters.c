@@ -294,8 +294,12 @@ void setEmuRegister(uint32_t address, uint32_t value){
 }
 
 uint8_t getHwRegister8(uint32_t address){
-   if((address & 0x0000F000) != 0x0000F000)
+#if !defined(EMU_NO_SAFETY)
+   if((address & 0x0000F000) != 0x0000F000){
+      setBusErrorTimeOut(address, false);
       return 0x00;
+   }
+#endif
 
    address &= 0x00000FFF;
 
@@ -401,8 +405,12 @@ uint8_t getHwRegister8(uint32_t address){
 }
 
 uint16_t getHwRegister16(uint32_t address){
-   if((address & 0x0000F000) != 0x0000F000)
+#if !defined(EMU_NO_SAFETY)
+   if((address & 0x0000F000) != 0x0000F000){
+      setBusErrorTimeOut(address, false);
       return 0x0000;
+   }
+#endif
 
    address &= 0x00000FFF;
 
@@ -489,8 +497,12 @@ uint16_t getHwRegister16(uint32_t address){
 }
 
 uint32_t getHwRegister32(uint32_t address){
-   if((address & 0x0000F000) != 0x0000F000)
+#if !defined(EMU_NO_SAFETY)
+   if((address & 0x0000F000) != 0x0000F000){
+      setBusErrorTimeOut(address, false);
       return 0x00000000;
+   }
+#endif
 
    address &= 0x00000FFF;
 
@@ -516,10 +528,13 @@ uint32_t getHwRegister32(uint32_t address){
    }
 }
 
-
 void setHwRegister8(uint32_t address, uint8_t value){
-   if((address & 0x0000F000) != 0x0000F000)
+#if !defined(EMU_NO_SAFETY)
+   if((address & 0x0000F000) != 0x0000F000){
+      setBusErrorTimeOut(address, true);
       return;
+   }
+#endif
 
    address &= 0x00000FFF;
 
@@ -669,8 +684,12 @@ void setHwRegister8(uint32_t address, uint8_t value){
 }
 
 void setHwRegister16(uint32_t address, uint16_t value){
-   if((address & 0x0000F000) != 0x0000F000)
+#if !defined(EMU_NO_SAFETY)
+   if((address & 0x0000F000) != 0x0000F000){
+      setBusErrorTimeOut(address, true);
       return;
+   }
+#endif
 
    address &= 0x00000FFF;
 
@@ -957,8 +976,12 @@ void setHwRegister16(uint32_t address, uint16_t value){
 }
 
 void setHwRegister32(uint32_t address, uint32_t value){
-   if((address & 0x0000F000) != 0x0000F000)
+#if !defined(EMU_NO_SAFETY)
+   if((address & 0x0000F000) != 0x0000F000){
+      setBusErrorTimeOut(address, true);
       return;
+   }
+#endif
 
    address &= 0x00000FFF;
 

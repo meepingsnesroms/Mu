@@ -18,15 +18,25 @@ void flx68000PcLongJump(uint32_t newPc){
    uint32_t dataBufferGuest;
    uint32_t windowSize;
 
-   if(chips[CHIP_A0_ROM].inBootMode || newPc >= chips[CHIP_A0_ROM].start && newPc < chips[CHIP_A0_ROM].start + chips[CHIP_A0_ROM].lineSize){
-      dataBufferHost = (uintptr_t)palmRom;
-      dataBufferGuest = chips[CHIP_A0_ROM].start;
-      windowSize = chips[CHIP_A0_ROM].mask + 1;
-   }
-   else if(newPc >= chips[CHIP_DX_RAM].start && newPc < chips[CHIP_DX_RAM].start + chips[CHIP_DX_RAM].lineSize){
-      dataBufferHost = (uintptr_t)palmRam;
-      dataBufferGuest = chips[CHIP_DX_RAM].start;
-      windowSize = chips[CHIP_DX_RAM].mask + 1;
+   switch(bankType[START_BANK(newPc)]){
+      case CHIP_A0_ROM:
+         dataBufferHost = (uintptr_t)palmRom;
+         dataBufferGuest = chips[CHIP_A0_ROM].start;
+         windowSize = chips[CHIP_A0_ROM].mask + 1;
+         break;
+
+      case CHIP_DX_RAM:
+         dataBufferHost = (uintptr_t)palmRam;
+         dataBufferGuest = chips[CHIP_DX_RAM].start;
+         windowSize = chips[CHIP_DX_RAM].mask + 1;
+         break;
+
+      case CHIP_REGISTERS:
+         //needed for when EMU_NO_SAFETY is set and a function is run in the sandbox
+         dataBufferHost = (uintptr_t)palmReg;
+         dataBufferGuest = BANK_ADDRESS(START_BANK(newPc));
+         windowSize = REG_SIZE;
+         break;
    }
 
    memBase = dataBufferHost - dataBufferGuest - windowSize * ((newPc - dataBufferGuest) / windowSize);
