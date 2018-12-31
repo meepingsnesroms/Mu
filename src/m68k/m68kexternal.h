@@ -6,5 +6,6 @@
 int32_t interruptAcknowledge(int32_t intLevel);
 void emulatorSoftReset(void);
 void flx68000PcLongJump(uint32_t newPc);
+void sandboxOnOpcodeRun(void);
 
 #endif

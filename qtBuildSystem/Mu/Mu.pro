@@ -117,6 +117,7 @@ HEADERS += \
     ../../src/m68k/m68k.h \
     ../../src/m68k/m68kconf.h \
     ../../src/m68k/m68kcpu.h \
+    ../../src/m68k/m68kexternal.h \
     ../../src/m68k/m68kops.h \
     ../../src/specs/dragonballVzRegisterSpec.h \
     ../../src/ads7846.h \

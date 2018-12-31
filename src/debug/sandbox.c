@@ -474,9 +474,6 @@ static uint32_t sandboxCallGuestFunction(bool fallthrough, uint32_t address, uin
 void sandboxInit(void){
    sandboxActive = false;
    sandboxControlHandoff = false;
-#if defined(EMU_SANDBOX_OPCODE_LEVEL_DEBUG)
-   m68k_set_instr_hook_callback(sandboxOnOpcodeRun);
-#endif
 }
 
 uint32_t sandboxCommand(uint32_t command, void* data){
