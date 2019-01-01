@@ -38,12 +38,12 @@ uint8_t*  palmReg;
 input_t   palmInput;
 sd_card_t palmSdCard;
 misc_hw_t palmMisc;
+emu_reg_t palmEmuFeatures;
 uint16_t* palmFramebuffer;
 uint16_t  palmFramebufferWidth;
 uint16_t  palmFramebufferHeight;
 int16_t*  palmAudio;
 blip_t*   palmAudioResampler;
-uint32_t  palmSpecialFeatures;
 double    palmSysclksPerClk32;//how many SYSCLK cycles before toggling the 32.768 kHz crystal
 double    palmCycleCounter;//can be greater then 0 if too many cycles where run
 double    palmClockMultiplier;//used by the emulator to overclock the emulated Palm
@@ -51,7 +51,7 @@ uint32_t  palmFrameClk32s;//how many CLK32s have happened in the current frame
 double    palmClk32Sysclks;//how many SYSCLKs have happened in the current CLK32
 
 
-uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t specialFeatures){
+uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t enabledEmuFeatures){
    if(emulatorInitialized)
       return EMU_ERROR_RESOURCE_LOCKED;
 
@@ -59,7 +59,7 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t spec
       return EMU_ERROR_INVALID_PARAMETER;
 
    //allocate buffers, add 4 to memory regions to prevent SIGSEGV from accessing off the end
-   palmRam = malloc(((specialFeatures & FEATURE_RAM_HUGE) ? SUPERMASSIVE_RAM_SIZE : RAM_SIZE) + 4);
+   palmRam = malloc(((enabledEmuFeatures & FEATURE_RAM_HUGE) ? SUPERMASSIVE_RAM_SIZE : RAM_SIZE) + 4);
    palmRom = malloc(ROM_SIZE + 4);
    palmReg = malloc(REG_SIZE + 4);
    palmFramebuffer = malloc(480 * 480 * sizeof(uint16_t));
@@ -76,7 +76,7 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t spec
    }
 
    //set default values
-   memset(palmRam, 0x00, specialFeatures & FEATURE_RAM_HUGE ? SUPERMASSIVE_RAM_SIZE : RAM_SIZE);
+   memset(palmRam, 0x00, enabledEmuFeatures & FEATURE_RAM_HUGE ? SUPERMASSIVE_RAM_SIZE : RAM_SIZE);
    memcpy(palmRom, palmRomDump.data, u64Min(palmRomDump.size, ROM_SIZE));
    if(palmRomDump.size < ROM_SIZE)
       memset(palmRom + palmRomDump.size, 0x00, ROM_SIZE - palmRomDump.size);
@@ -93,12 +93,13 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t spec
    memset(palmAudio, 0x00, AUDIO_SAMPLES_PER_FRAME * 2/*channels*/ * sizeof(int16_t));
    memset(&palmInput, 0x00, sizeof(palmInput));
    memset(&palmMisc, 0x00, sizeof(palmMisc));
+   memset(&palmEmuFeatures, 0x00, sizeof(palmEmuFeatures));
    palmFramebufferWidth = 160;
    palmFramebufferHeight = 220;
    palmMisc.batteryLevel = 100;
    palmCycleCounter = 0.0;
-   palmClockMultiplier = (specialFeatures & FEATURE_FAST_CPU) ? 2.00 : 1.00;//overclock
-   palmSpecialFeatures = specialFeatures;
+   palmClockMultiplier = (enabledEmuFeatures & FEATURE_FAST_CPU) ? 2.00 : 1.00;//overclock
+   palmEmuFeatures.info = enabledEmuFeatures;
 
    //initialize components
    blip_set_rates(palmAudioResampler, AUDIO_CLOCK_RATE, AUDIO_SAMPLE_RATE);
@@ -136,9 +137,10 @@ void emulatorExit(void){
 
 void emulatorHardReset(void){
    //equivalent to taking the battery out and putting it back in
-   memset(palmRam, 0x00, palmSpecialFeatures & FEATURE_RAM_HUGE ? SUPERMASSIVE_RAM_SIZE : RAM_SIZE);
+   memset(palmRam, 0x00, palmEmuFeatures.info & FEATURE_RAM_HUGE ? SUPERMASSIVE_RAM_SIZE : RAM_SIZE);
    palmFramebufferWidth = 160;
    palmFramebufferHeight = 220;
+   palmEmuFeatures.value = 0x00000000;
    sed1376Reset();
    ads7846Reset();
    pdiUsbD12Reset();
@@ -151,6 +153,7 @@ void emulatorSoftReset(void){
    //equivalent to pushing the reset button on the back of the device
    palmFramebufferWidth = 160;
    palmFramebufferHeight = 220;
+   palmEmuFeatures.value = 0x00000000;
    sed1376Reset();
    ads7846Reset();
    pdiUsbD12Reset();
@@ -173,7 +176,7 @@ uint64_t emulatorGetStateSize(void){
    size += sed1376StateSize();
    size += ads7846StateSize();
    size += pdiUsbD12StateSize();
-   if(palmSpecialFeatures & FEATURE_RAM_HUGE)
+   if(palmEmuFeatures.info & FEATURE_RAM_HUGE)
       size += SUPERMASSIVE_RAM_SIZE;//system RAM buffer
    else
       size += RAM_SIZE;//system RAM buffer
@@ -214,7 +217,7 @@ bool emulatorSaveState(buffer_t buffer){
    offset += sizeof(uint32_t);
 
    //features, hotpluging emulated hardware is not supported
-   writeStateValue32(buffer.data + offset, palmSpecialFeatures);
+   writeStateValue32(buffer.data + offset, palmEmuFeatures.info);
    offset += sizeof(uint32_t);
 
    //SD card size
@@ -238,7 +241,7 @@ bool emulatorSaveState(buffer_t buffer){
    offset += pdiUsbD12StateSize();
 
    //memory
-   if(palmSpecialFeatures & FEATURE_RAM_HUGE){
+   if(palmEmuFeatures.info & FEATURE_RAM_HUGE){
       memcpy(buffer.data + offset, palmRam, SUPERMASSIVE_RAM_SIZE);
       swap16BufferIfLittle(buffer.data + offset, SUPERMASSIVE_RAM_SIZE / sizeof(uint16_t));
       offset += SUPERMASSIVE_RAM_SIZE;
@@ -377,7 +380,7 @@ bool emulatorLoadState(buffer_t buffer){
    offset += sizeof(uint32_t);
 
    //features, hotpluging emulated hardware is not supported
-   if(readStateValue32(buffer.data + offset) != palmSpecialFeatures)
+   if(readStateValue32(buffer.data + offset) != palmEmuFeatures.info)
       return false;
    offset += sizeof(uint32_t);
 
@@ -405,7 +408,7 @@ bool emulatorLoadState(buffer_t buffer){
    offset += pdiUsbD12StateSize();
 
    //memory
-   if(palmSpecialFeatures & FEATURE_RAM_HUGE){
+   if(palmEmuFeatures.info & FEATURE_RAM_HUGE){
       memcpy(palmRam, buffer.data + offset, SUPERMASSIVE_RAM_SIZE);
       swap16BufferIfLittle(palmRam, SUPERMASSIVE_RAM_SIZE / sizeof(uint16_t));
       offset += SUPERMASSIVE_RAM_SIZE;
@@ -540,11 +543,11 @@ bool emulatorLoadState(buffer_t buffer){
 }
 
 uint64_t emulatorGetRamSize(void){
-   return palmSpecialFeatures & FEATURE_RAM_HUGE ? SUPERMASSIVE_RAM_SIZE : RAM_SIZE;
+   return palmEmuFeatures.info & FEATURE_RAM_HUGE ? SUPERMASSIVE_RAM_SIZE : RAM_SIZE;
 }
 
 bool emulatorSaveRam(buffer_t buffer){
-   uint64_t size = palmSpecialFeatures & FEATURE_RAM_HUGE ? SUPERMASSIVE_RAM_SIZE : RAM_SIZE;
+   uint64_t size = palmEmuFeatures.info & FEATURE_RAM_HUGE ? SUPERMASSIVE_RAM_SIZE : RAM_SIZE;
 
    if(buffer.size < size)
       return false;
@@ -556,7 +559,7 @@ bool emulatorSaveRam(buffer_t buffer){
 }
 
 bool emulatorLoadRam(buffer_t buffer){
-   uint64_t size = palmSpecialFeatures & FEATURE_RAM_HUGE ? SUPERMASSIVE_RAM_SIZE : RAM_SIZE;
+   uint64_t size = palmEmuFeatures.info & FEATURE_RAM_HUGE ? SUPERMASSIVE_RAM_SIZE : RAM_SIZE;
 
    if(buffer.size < size)
       return false;

@@ -27,13 +27,11 @@ These registers will do nothing if their corresponding feature bit is not set on
 
 /*registers*/
 #define EMU_INFO    0x000/*gets the feature bits, read only*/
-#define EMU_HIRESFB 0x004/*sets the address of the dynamic framebuffer, read/write, EMU_SIZE must have width in the top 16 bits and height in the bottom 16 bits*/
-#define EMU_SRC     0x008/*write only*/
-#define EMU_DST     0x00C/*write only*/
-#define EMU_SIZE    0x010/*write only*/
-#define EMU_VALUE   0x014/*read/write*/
-#define EMU_CMD     0x018/*the command actually runs once this register is written with a value, write only*/
-#define EMU_KEYS    0x01C/*read only, stores the extra left/right/select keys that OS 4 Palms lack*/
+#define EMU_SRC     0x004/*write only*/
+#define EMU_DST     0x008/*write only*/
+#define EMU_SIZE    0x00C/*write only*/
+#define EMU_VALUE   0x010/*read/write*/
+#define EMU_CMD     0x014/*the command actually runs once this register is written with a value, write only*/
 /*new registers go here*/
 
 /*commands*/
@@ -46,10 +44,13 @@ These registers will do nothing if their corresponding feature bit is not set on
 #define CMD_STRNCPY      0x0004
 #define CMD_STRCMP       0x0005
 #define CMD_STRNCMP      0x0006
-#define CMD_PRINTF       0x0007
 /*new HLE API cmds go here*/
 
 /*new system cmds go here*/
+#define CMD_SET_ARM_STACK  0xFFF5/*EMU_VALUE = address of ARM stack, must be set before running ARM code*/
+#define CMD_SET_RESOLUTION 0xFFF6/*EMU_VALUE >> 16 = width, EMU_VALUE & 0x0000FFFF = height*/
+#define CMD_GET_KEYS       0xFFF7/*EMU_VALUE = OS 5 keys*/
+#define CMD_PRINTF         0xFFF8/*EMU_SRC = pointer to string*/
 #define CMD_SHELL_EXECUTE  0xFFF9/*execute shell commands from inside the emulator, will be used for a cool web project*/
 #define CMD_SOUND          0xFFFA/*may be needed to work around the overhead of emulating SYSCLK, will be needed fo OS5 advanced sound*/
 #define CMD_EXECUTION_DONE 0xFFFB/*terminates execution, used when a function is called from outside the emulator*/

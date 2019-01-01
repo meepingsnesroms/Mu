@@ -480,7 +480,7 @@ uint32_t sandboxCommand(uint32_t command, void* data){
    uint32_t result = EMU_ERROR_NONE;
 
    //tests cant run properly(hang forever) unless the debug return hook is enabled, it also completly destroys accuracy to execute hacked in asm buffers
-   if(!(palmSpecialFeatures & FEATURE_DEBUG))
+   if(!(palmEmuFeatures.info & FEATURE_DEBUG))
       return EMU_ERROR_NOT_IMPLEMENTED;
 
    debugLog("Sandbox: Command %d started\n", command);

@@ -105,6 +105,15 @@ typedef struct{
    uint8_t dataPort;
 }misc_hw_t;
 
+typedef struct{
+   uint32_t info;
+   uint32_t src;//not in savestate yet!
+   uint32_t dst;//not in savestate yet!
+   uint32_t size;//not in savestate yet!
+   uint32_t value;//not in savestate yet!
+   //uint32_t cmd;//one time use, has no variable
+}emu_reg_t;
+
 //config options
 #define EMU_FPS 60
 #define EMU_SYSCLK_PRECISION 2000000//the amount of cycles to run before adding SYSCLKs, higher = faster, higher values may skip timer events and lower audio accuracy
@@ -125,12 +134,12 @@ extern uint8_t*  palmReg;//dont touch
 extern input_t   palmInput;//write allowed
 extern sd_card_t palmSdCard;//dont touch
 extern misc_hw_t palmMisc;//read/write allowed
+extern emu_reg_t palmEmuFeatures;//dont touch
 extern uint16_t* palmFramebuffer;//read allowed
 extern uint16_t  palmFramebufferWidth;//read allowed
 extern uint16_t  palmFramebufferHeight;//read allowed
 extern int16_t*  palmAudio;//read allowed, 2 channel signed 16 bit audio
 extern blip_t*   palmAudioResampler;//dont touch
-extern uint32_t  palmSpecialFeatures;//read allowed
 extern double    palmSysclksPerClk32;//dont touch
 extern double    palmCycleCounter;//dont touch
 extern double    palmClockMultiplier;//read/write allowed
@@ -138,7 +147,7 @@ extern uint32_t  palmFrameClk32s;//dont touch
 extern double    palmClk32Sysclks;//dont touch
 
 //functions
-uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t specialFeatures);//calling any emulator functions before emulatorInit results in undefined behavior
+uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t enabledEmuFeatures);//calling any emulator functions before emulatorInit results in undefined behavior
 void emulatorExit(void);
 void emulatorHardReset(void);
 void emulatorSoftReset(void);
