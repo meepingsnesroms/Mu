@@ -101,7 +101,10 @@ SOURCES += \
     ../../src/m68k/m68kopac.c \
     ../../src/m68k/m68kopdm.c \
     ../../src/m68k/m68kopnz.c \
-    ../../src/m68k/m68kops.c
+    ../../src/m68k/m68kops.c \
+    ../../src/armv5/CPU.c \
+    ../../src/armv5/icache.c \
+    ../../src/armv5.c
 
 HEADERS += \
     debugviewer.h \
@@ -121,7 +124,6 @@ HEADERS += \
     ../../src/specs/dragonballVzRegisterSpec.h \
     ../../src/ads7846.h \
     ../../src/emulator.h \
-    ../../src/endianness.h \
     ../../src/flx68000.h \
     ../../src/hardwareRegisters.h \
     ../../src/hardwareRegistersAccessors.c.h \
@@ -136,7 +138,12 @@ HEADERS += \
     ../../src/specs/sed1376RegisterSpec.h \
     ../../src/specs/pdiUsbD12CommandSpec.h \
     ../../src/specs/emuFeatureRegisterSpec.h \
-    ../../src/specs/sdCardCommandSpec.h
+    ../../src/specs/sdCardCommandSpec.h \
+    ../../src/armv5/CPU.h \
+    ../../src/armv5/math64.h \
+    ../../src/armv5/types.h \
+    ../../src/armv5/icache.h \
+    ../../src/armv5.h
 
 FORMS += \
     mainwindow.ui \

@@ -47,6 +47,7 @@ Bonus:        Has Adware(Addit)
 The lack of ARM CPU will be fixed in my emulator see "OS improvements".
 
 ## Credits
+uARM (ARMv5 Core)  
 Musashi v3.4 (last version that builds outside of MAME)(68k Core)  
 blip_buf 1.1.0 (Audio Resampler)  
 http://www.iconarchive.com/show/crystal-clear-icons-by-everaldo/App-palm-icon.html (Desktop Icon)  
