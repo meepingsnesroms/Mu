@@ -107,10 +107,10 @@ typedef struct{
 
 typedef struct{
    uint32_t info;
-   uint32_t src;//not in savestate yet!
-   uint32_t dst;//not in savestate yet!
-   uint32_t size;//not in savestate yet!
-   uint32_t value;//not in savestate yet!
+   uint32_t src;
+   uint32_t dst;
+   uint32_t size;
+   uint32_t value;
    //uint32_t cmd;//one time use, has no variable
 }emu_reg_t;
 

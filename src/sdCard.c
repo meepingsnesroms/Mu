@@ -38,7 +38,7 @@ static const uint32_t sdCardOcr = 0x00000000;
 
 
 static void sdCardCmdStart(void){
-   palmSdCard.command = 0x0000000000000000;
+   palmSdCard.command = UINT64_C(0x0000000000000000);
    palmSdCard.commandBitsRemaining = 48;
 }
 
@@ -77,7 +77,7 @@ static void sdCardDoResponseR3(uint8_t r1){
 }
 
 void sdCardReset(void){
-   palmSdCard.command = 0x0000000000000000;
+   palmSdCard.command = UINT64_C(0x0000000000000000);
    palmSdCard.commandBitsRemaining = 48;
    palmSdCard.responseState = 0;
    palmSdCard.response = SD_CARD_RESPONSE_NOTHING;
@@ -143,9 +143,9 @@ bool sdCardExchangeBit(bool bit){
 
          case SD_CARD_RESPONSE_SHIFT_OUT:
             //debugLog("SD shift out state:0x%016lX\n", palmSdCard.responseState);
-            sdCardOutputValue = !!(palmSdCard.responseState & 0x8000000000000000);
+            sdCardOutputValue = !!(palmSdCard.responseState & UINT64_C(0x8000000000000000));
             palmSdCard.responseState <<= 1;
-            if(palmSdCard.responseState == 0x8000000000000000)
+            if(palmSdCard.responseState == UINT64_C(0x8000000000000000))
                palmSdCard.response = SD_CARD_RESPONSE_NOTHING;
             break;
 

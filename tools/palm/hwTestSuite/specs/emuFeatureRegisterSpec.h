@@ -6,9 +6,7 @@ All emu feature registers are 32 bit accessing them in any other way will be und
 These registers will do nothing if their corresponding feature bit is not set on launch.
 */
 
-#define EMU_REGISTER_BASE 0xFFFC0000/*EMUCS on hardware*/
-#define EMU_REGISTER_SIZE 0x1000
-#define EMU_REG_ADDR(x) (EMU_REGISTER_BASE | x)
+#define EMU_REG_ADDR(x) (0xFFFC0000 | x)
 
 /*features*/
 #define FEATURE_ACCURATE   0x00000000/*no hacks/addons*/
@@ -35,31 +33,27 @@ These registers will do nothing if their corresponding feature bit is not set on
 /*new registers go here*/
 
 /*commands*/
-#define EMU_CMD_KEY 0xF1EA/*must be the top 16 bits of command to trigger execution, prevents programs that are write testing this address space from executing commands*/
-
-#define CMD_MEMCPY       0x0000
-#define CMD_MEMSET       0x0001
-#define CMD_MEMCMP       0x0002
-#define CMD_STRCPY       0x0003
-#define CMD_STRNCPY      0x0004
-#define CMD_STRCMP       0x0005
-#define CMD_STRNCMP      0x0006
+#define CMD_MEMCPY       0x00000000
+#define CMD_MEMSET       0x00000001
+#define CMD_MEMCMP       0x00000002
+#define CMD_STRCPY       0x00000003
+#define CMD_STRNCPY      0x00000004
+#define CMD_STRCMP       0x00000005
+#define CMD_STRNCMP      0x00000006
 /*new HLE API cmds go here*/
 
 /*new system cmds go here*/
-#define CMD_SET_ARM_STACK  0xFFF5/*EMU_VALUE = address of ARM stack, must be set before running ARM code*/
-#define CMD_SET_RESOLUTION 0xFFF6/*EMU_VALUE >> 16 = width, EMU_VALUE & 0x0000FFFF = height*/
-#define CMD_GET_KEYS       0xFFF7/*EMU_VALUE = OS 5 keys*/
-#define CMD_PRINTF         0xFFF8/*EMU_SRC = pointer to string*/
-#define CMD_SHELL_EXECUTE  0xFFF9/*execute shell commands from inside the emulator, will be used for a cool web project*/
-#define CMD_SOUND          0xFFFA/*may be needed to work around the overhead of emulating SYSCLK, will be needed fo OS5 advanced sound*/
-#define CMD_EXECUTION_DONE 0xFFFB/*terminates execution, used when a function is called from outside the emulator*/
-#define CMD_IDLE_X_CLK32   0xFFFC/*used to remove idle loops*/
-#define CMD_RUN_AS_M68K    0xFFFD/*emulStateP is ignored, EMU_SRC = argsOnStackP, EMU_SIZE = argsSizeAndwantA0, EMU_VALUE = trapOrFunction, on exit EMU_VALUE = Call68KFuncType() return value*/
-#define CMD_RUN_AS_ARM     0xFFFE/*EMU_SRC = nativeFuncP, EMU_DST = userDataP, on exit EMU_VALUE = PceNativeCall() return value*/
-#define CMD_SET_CYCLE_COST 0xFFFF/*EMU_DST = HLE API number, EMU_VALUE = how many cycles it takes*/
-
-#define MAKE_EMU_CMD(cmd) ((EMU_CMD_KEY << 16) | cmd)
+#define CMD_SET_ARM_STACK  0x0000FFF5/*EMU_VALUE = address of ARM stack, must be set before running ARM code*/
+#define CMD_SET_RESOLUTION 0x0000FFF6/*EMU_VALUE >> 16 = width, EMU_VALUE & 0x0000FFFF = height*/
+#define CMD_GET_KEYS       0x0000FFF7/*EMU_VALUE = OS 5 keys*/
+#define CMD_PRINTF         0x0000FFF8/*EMU_SRC = pointer to string*/
+#define CMD_SHELL_EXECUTE  0x0000FFF9/*execute shell commands from inside the emulator, will be used for a cool web project*/
+#define CMD_SOUND          0x0000FFFA/*needed for OS 5 advanced sound*/
+#define CMD_EXECUTION_DONE 0x0000FFFB/*terminates execution, used when a function is called from outside the emulator*/
+#define CMD_IDLE_X_CLK32   0x0000FFFC/*used to remove idle loops*/
+#define CMD_RUN_AS_M68K    0x0000FFFD/*emulStateP is ignored, EMU_SRC = argsOnStackP, EMU_SIZE = argsSizeAndwantA0, EMU_VALUE = trapOrFunction, on exit EMU_VALUE = Call68KFuncType() return value*/
+#define CMD_RUN_AS_ARM     0x0000FFFE/*EMU_SRC = nativeFuncP, EMU_DST = userDataP, on exit EMU_VALUE = PceNativeCall() return value*/
+#define CMD_SET_CYCLE_COST 0x0000FFFF/*EMU_DST = HLE API number, EMU_VALUE = how many cycles it takes*/
 
 /*buttons*/
 #define EXT_BUTTON_LEFT   0x01000000

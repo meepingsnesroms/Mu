@@ -286,38 +286,35 @@ void setEmuRegister(uint32_t address, uint32_t value){
          break;
 
       case EMU_CMD:
-         if(value >> 16 == EMU_CMD_KEY){
-            value &= 0xFFFF;
-            switch(value){
-               case CMD_SET_ARM_STACK:
-                  if(palmEmuFeatures.info & FEATURE_HYBRID_CPU)
-                     armv5SetStackLocation(palmEmuFeatures.value);
-                  break;
+         switch(value){
+            case CMD_SET_ARM_STACK:
+               if(palmEmuFeatures.info & FEATURE_HYBRID_CPU)
+                  armv5SetStackLocation(palmEmuFeatures.value);
+               break;
 
-               case CMD_RUN_AS_ARM:
-                  //not done yet
-                  /*
-                  if(palmEmuFeatures.info & FEATURE_HYBRID_CPU){
-                     //armv5PceNativeCall(uint32_t armFunctionPtr, uint32_t userdataPtr);
+            case CMD_RUN_AS_ARM:
+               //not done yet
+               /*
+               if(palmEmuFeatures.info & FEATURE_HYBRID_CPU){
+                  //armv5PceNativeCall(uint32_t armFunctionPtr, uint32_t userdataPtr);
 
-                  }
-                  */
-                  break;
+               }
+               */
+               break;
 
-               case CMD_GET_KEYS:
-                  if(palmEmuFeatures.info & FEATURE_EXT_KEYS)
-                     palmEmuFeatures.value = (palmInput.buttonLeft ? EXT_BUTTON_LEFT : 0) | (palmInput.buttonRight ? EXT_BUTTON_RIGHT : 0) | (palmInput.buttonSelect ? EXT_BUTTON_SELECT : 0);
-                  break;
+            case CMD_GET_KEYS:
+               if(palmEmuFeatures.info & FEATURE_EXT_KEYS)
+                  palmEmuFeatures.value = (palmInput.buttonLeft ? EXT_BUTTON_LEFT : 0) | (palmInput.buttonRight ? EXT_BUTTON_RIGHT : 0) | (palmInput.buttonSelect ? EXT_BUTTON_SELECT : 0);
+               break;
 
-               case CMD_EXECUTION_DONE:
-                  if(palmEmuFeatures.info & FEATURE_DEBUG)
-                     sandboxReturn();
-                  break;
+            case CMD_EXECUTION_DONE:
+               if(palmEmuFeatures.info & FEATURE_DEBUG)
+                  sandboxReturn();
+               break;
 
-               default:
-                  debugLog("Invalid emu command 0x%04X.\n", value);
-                  break;
-            }
+            default:
+               debugLog("Invalid emu command 0x%04X.\n", value);
+               break;
          }
          break;
 

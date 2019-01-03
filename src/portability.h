@@ -162,11 +162,11 @@ static inline double dClamp(double low, double value, double high){
 //float platform safety
 static inline uint64_t getUint64FromDouble(double data){
    //1.32.31 fixed point
-   uint64_t fixedPointDouble = 0x0000000000000000;
+   uint64_t fixedPointDouble = UINT64_C(0x0000000000000000);
 
    if(data < 0.0){
       data = -data;
-      fixedPointDouble |= 0x8000000000000000;
+      fixedPointDouble |= UINT64_C(0x8000000000000000);
    }
 
    fixedPointDouble |= (uint64_t)data << 31;
@@ -181,10 +181,10 @@ static inline double getDoubleFromUint64(uint64_t data){
    //1.32.31 fixed point
    double floatingPointDouble;
 
-   floatingPointDouble = (double)(data & 0x000000007FFFFFFF);
+   floatingPointDouble = (double)(data & UINT64_C(0x000000007FFFFFFF));
    floatingPointDouble /= (double)0x7FFFFFFF;
-   floatingPointDouble += (double)(data >> 31 & 0x00000000FFFFFFFF);
-   if(data & 0x8000000000000000)
+   floatingPointDouble += (double)(data >> 31 & UINT64_C(0x00000000FFFFFFFF));
+   if(data & UINT64_C(0x8000000000000000))
       floatingPointDouble = -floatingPointDouble;
    
    return floatingPointDouble;

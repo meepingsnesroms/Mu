@@ -169,7 +169,7 @@ uint64_t emulatorGetStateSize(void){
    uint64_t size = 0;
 
    size += sizeof(uint32_t);//save state version
-   size += sizeof(uint32_t);//palmSpecialFeatures
+   size += sizeof(uint32_t);//palmEmuFeatures.info
    size += sizeof(uint64_t);//palmSdCard.flashChip.size, needs to be done first to verify the malloc worked
    size += sizeof(uint16_t) * 2;//palmFramebuffer(Width/Height)
    size += flx68000StateSize();
@@ -198,6 +198,7 @@ uint64_t emulatorGetStateSize(void){
    size += sizeof(uint8_t) * 6;//pwm1Fifo[6]
    size += sizeof(uint8_t) * 2;//pwm1(Read/Write)
    size += sizeof(uint8_t) * 7;//palmMisc
+   size += sizeof(uint32_t) * 4;//palmEmuFeatures.src / palmEmuFeatures.dst / palmEmuFeatures.size / palmEmuFeatures.value
    size += sizeof(uint64_t) * 2;//palmSdCard.command / palmSdCard.responseState
    size += sizeof(uint8_t) * 4;//palmSdCard.commandBitsRemaining / palmSdCard.response / palmSdCard.allowInvalidCrc / palmSdCard.chipSelect
    size += palmSdCard.flashChip.size;//palmSdCard.flashChip.data
@@ -348,6 +349,16 @@ bool emulatorSaveState(buffer_t buffer){
    offset += sizeof(uint8_t);
    writeStateValue8(buffer.data + offset, palmMisc.dataPort);
    offset += sizeof(uint8_t);
+
+   //emu features
+   writeStateValue32(buffer.data + offset, palmEmuFeatures.src);
+   offset += sizeof(uint32_t);
+   writeStateValue32(buffer.data + offset, palmEmuFeatures.dst);
+   offset += sizeof(uint32_t);
+   writeStateValue32(buffer.data + offset, palmEmuFeatures.size);
+   offset += sizeof(uint32_t);
+   writeStateValue32(buffer.data + offset, palmEmuFeatures.value);
+   offset += sizeof(uint32_t);
 
    //SD card
    writeStateValue64(buffer.data + offset, palmSdCard.command);
@@ -515,6 +526,16 @@ bool emulatorLoadState(buffer_t buffer){
    offset += sizeof(uint8_t);
    palmMisc.dataPort = readStateValue8(buffer.data + offset);
    offset += sizeof(uint8_t);
+
+   //emu features
+   palmEmuFeatures.src = readStateValue32(buffer.data + offset);
+   offset += sizeof(uint32_t);
+   palmEmuFeatures.dst = readStateValue32(buffer.data + offset);
+   offset += sizeof(uint32_t);
+   palmEmuFeatures.size = readStateValue32(buffer.data + offset);
+   offset += sizeof(uint32_t);
+   palmEmuFeatures.value = readStateValue32(buffer.data + offset);
+   offset += sizeof(uint32_t);
 
    //SD card
    palmSdCard.command = readStateValue64(buffer.data + offset);

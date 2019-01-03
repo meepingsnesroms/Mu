@@ -425,7 +425,7 @@ static uint32_t sandboxCallGuestFunction(bool fallthrough, uint32_t address, uin
    //end execution with CMD_EXECUTION_DONE
    m68k_write_memory_16(callWriteOut, 0x23FC);//move.l data imm to address at imm2 opcode
    callWriteOut += 2;
-   m68k_write_memory_32(callWriteOut, MAKE_EMU_CMD(CMD_EXECUTION_DONE));
+   m68k_write_memory_32(callWriteOut, CMD_EXECUTION_DONE);
    callWriteOut += 4;
    m68k_write_memory_32(callWriteOut, EMU_REG_ADDR(EMU_CMD));
    callWriteOut += 4;
