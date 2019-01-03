@@ -44,9 +44,9 @@ These registers will do nothing if their corresponding feature bit is not set on
 
 /*new system cmds go here*/
 #define CMD_SET_ARM_STACK  0x0000FFF5/*EMU_VALUE = address of ARM stack, must be set before running ARM code*/
-#define CMD_SET_RESOLUTION 0x0000FFF6/*EMU_VALUE >> 16 = width, EMU_VALUE & 0x0000FFFF = height*/
+#define CMD_SET_RESOLUTION 0x0000FFF6/*EMU_VALUE >> 16 = width, EMU_VALUE & 0xFFFF = height*/
 #define CMD_GET_KEYS       0x0000FFF7/*EMU_VALUE = OS 5 keys*/
-#define CMD_PRINTF         0x0000FFF8/*EMU_SRC = pointer to string*/
+#define CMD_PRINT          0x0000FFF8/*EMU_SRC = pointer to string*/
 #define CMD_SHELL_EXECUTE  0x0000FFF9/*execute shell commands from inside the emulator, will be used for a cool web project*/
 #define CMD_SOUND          0x0000FFFA/*needed for OS 5 advanced sound*/
 #define CMD_EXECUTION_DONE 0x0000FFFB/*terminates execution, used when a function is called from outside the emulator*/

@@ -293,13 +293,28 @@ void setEmuRegister(uint32_t address, uint32_t value){
                break;
 
             case CMD_RUN_AS_ARM:
-               //not done yet
-               /*
-               if(palmEmuFeatures.info & FEATURE_HYBRID_CPU){
-                  //armv5PceNativeCall(uint32_t armFunctionPtr, uint32_t userdataPtr);
+               if(palmEmuFeatures.info & FEATURE_HYBRID_CPU)
+                  armv5PceNativeCall(palmEmuFeatures.src, palmEmuFeatures.dst);
+               break;
 
+            case CMD_PRINT:
+               if(palmEmuFeatures.info & FEATURE_DEBUG){
+                  char tempString[200];
+                  uint16_t offset = 0;
+                  uint8_t newChar;//cant use char, if its signed < 128 will allow non ascii chars through
+
+                  while(true){
+                     newChar = flx68000ReadArbitraryMemory(palmEmuFeatures.src + offset, 8);
+                     newChar = newChar < 128 ? newChar : 0;
+                     tempString[offset] = newChar;
+                     offset++;
+
+                     if(newChar == 0 || offset >= 200)
+                        break;
+                  }
+
+                  debugLog("CMD_PRINT:%s\n", tempString);
                }
-               */
                break;
 
             case CMD_GET_KEYS:

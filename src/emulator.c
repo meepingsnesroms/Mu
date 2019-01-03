@@ -5,6 +5,7 @@
 
 #include "audio/blip_buf.h"
 #include "flx68000.h"
+#include "armv5.h"
 #include "emulator.h"
 #include "hardwareRegisters.h"
 #include "memoryAccess.h"
@@ -104,13 +105,17 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t enab
    //initialize components
    blip_set_rates(palmAudioResampler, AUDIO_CLOCK_RATE, AUDIO_SAMPLE_RATE);
    flx68000Init();
-   sandboxInit();
+   if(enabledEmuFeatures & FEATURE_HYBRID_CPU)
+      armv5Init();
+   sandboxInit(); 
 
    //reset everything
    sed1376Reset();
    ads7846Reset();
    pdiUsbD12Reset();
    sdCardReset();
+   if(enabledEmuFeatures & FEATURE_HYBRID_CPU)
+      armv5Reset();
    flx68000Reset();
    setRtc(0, 0, 0, 0);//RTCTIME and DAYR are not cleared by reset, clear them manually in case the frontend doesnt set the RTC
 
@@ -145,6 +150,8 @@ void emulatorHardReset(void){
    ads7846Reset();
    pdiUsbD12Reset();
    sdCardReset();
+   if(palmEmuFeatures.info & FEATURE_HYBRID_CPU)
+      armv5Reset();
    flx68000Reset();
    setRtc(0, 0, 0, 0);
 }
@@ -158,6 +165,8 @@ void emulatorSoftReset(void){
    ads7846Reset();
    pdiUsbD12Reset();
    sdCardReset();
+   if(palmEmuFeatures.info & FEATURE_HYBRID_CPU)
+      armv5Reset();
    flx68000Reset();
 }
 
@@ -173,6 +182,8 @@ uint64_t emulatorGetStateSize(void){
    size += sizeof(uint64_t);//palmSdCard.flashChip.size, needs to be done first to verify the malloc worked
    size += sizeof(uint16_t) * 2;//palmFramebuffer(Width/Height)
    size += flx68000StateSize();
+   if(palmEmuFeatures.info & FEATURE_HYBRID_CPU)
+      size += armv5StateSize();
    size += sed1376StateSize();
    size += ads7846StateSize();
    size += pdiUsbD12StateSize();
@@ -234,6 +245,10 @@ bool emulatorSaveState(buffer_t buffer){
    //chips
    flx68000SaveState(buffer.data + offset);
    offset += flx68000StateSize();
+   if(palmEmuFeatures.info & FEATURE_HYBRID_CPU){
+      armv5SaveState(buffer.data + offset);
+      offset += armv5StateSize();
+   }
    sed1376SaveState(buffer.data + offset);
    offset += sed1376StateSize();
    ads7846SaveState(buffer.data + offset);
@@ -411,6 +426,10 @@ bool emulatorLoadState(buffer_t buffer){
    //chips
    flx68000LoadState(buffer.data + offset);
    offset += flx68000StateSize();
+   if(palmEmuFeatures.info & FEATURE_HYBRID_CPU){
+      armv5LoadState(buffer.data + offset);
+      offset += armv5StateSize();
+   }
    sed1376LoadState(buffer.data + offset);
    offset += sed1376StateSize();
    ads7846LoadState(buffer.data + offset);

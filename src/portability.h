@@ -181,9 +181,9 @@ static inline double getDoubleFromUint64(uint64_t data){
    //1.32.31 fixed point
    double floatingPointDouble;
 
-   floatingPointDouble = (double)(data & UINT64_C(0x000000007FFFFFFF));
+   floatingPointDouble = (double)(data & 0x7FFFFFFF);
    floatingPointDouble /= (double)0x7FFFFFFF;
-   floatingPointDouble += (double)(data >> 31 & UINT64_C(0x00000000FFFFFFFF));
+   floatingPointDouble += (double)(data >> 31 & 0xFFFFFFFF);
    if(data & UINT64_C(0x8000000000000000))
       floatingPointDouble = -floatingPointDouble;
    

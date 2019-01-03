@@ -6,7 +6,7 @@
 //address space
 //new bank size (0x4000)
 #define BANK_SCOOT 14
-#define NUM_BANKS(areaSize) (((areaSize) >> BANK_SCOOT) + ((areaSize) & 0x00003FFF ? 1 : 0))
+#define NUM_BANKS(areaSize) (((areaSize) >> BANK_SCOOT) + ((areaSize) & ((1 << BANK_SCOOT) - 1) ? 1 : 0))
 #define START_BANK(address) ((address) >> BANK_SCOOT)
 #define END_BANK(address, size) (START_BANK(address) + NUM_BANKS(size) - 1)
 #define BANK_IN_RANGE(bank, address, size) ((bank) >= START_BANK(address) && (bank) <= END_BANK(address, size))
@@ -57,6 +57,10 @@
 #define BUFFER_WRITE_16_BIG_ENDIAN(segment, accessAddress, mask, value) (segment[(accessAddress) & (mask)] = (value) >> 8, segment[(accessAddress) + 1 & (mask)] = (value) & 0xFF)
 #define BUFFER_WRITE_32_BIG_ENDIAN(segment, accessAddress, mask, value) (segment[(accessAddress) & (mask)] = (value) >> 24, segment[(accessAddress) + 1 & (mask)] = ((value) >> 16) & 0xFF, segment[(accessAddress) + 2 & (mask)] = ((value) >> 8) & 0xFF, segment[(accessAddress) + 3 & (mask)] = (value) & 0xFF)
 #endif
+
+#define SWAP_16(x) ((uint16_t)((((uint16_t)(x) & 0x00FF) << 8) | (((uint16_t)(x) & 0xFF00) >> 8)))
+#define SWAP_32(x) ((uint32_t)((((uint32_t)(x) & 0x000000FF) << 24) | (((uint32_t)(x) & 0x0000FF00) <<  8) | (((uint32_t)(x) & 0x00FF0000) >>  8) | (((uint32_t)(x) & 0xFF000000) >> 24)))
+#define SWAP_64(val) ((((uint64_t)(val) & UINT64_C(0x00000000000000FF)) << 56) | (((uint64_t)(val) & UINT64_C(0x000000000000FF00)) << 40) | (((uint64_t)(val) & UINT64_C(0x0000000000FF0000)) << 24) | (((uint64_t)(val) & UINT64_C(0x00000000FF000000)) << 8) | (((uint64_t)(val) & UINT64_C(0x000000FF00000000)) >> 8) | (((uint64_t)(val) & UINT64_C(0x0000FF0000000000)) >> 24) | (((uint64_t)(val) & UINT64_C(0x00FF000000000000)) >> 40) | (((uint64_t)(val) & UINT64_C(0xFF00000000000000)) >> 56))
 
 extern uint8_t bankType[];
 
