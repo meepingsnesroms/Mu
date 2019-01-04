@@ -14,7 +14,7 @@
 #include "undocumentedApis.h"
 
 
-var testButtonInput(){
+var testButtonInput(void){
    static Boolean firstRun = true;
    uint16_t y = 0;
    uint8_t oldPkdata = readArbitraryMemory8(HW_REG_ADDR(PKDATA));
@@ -64,7 +64,7 @@ var testButtonInput(){
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
 
-var listDataRegisters(){
+var listDataRegisters(void){
    static Boolean firstRun = true;
    uint16_t y = 0;
    
@@ -109,7 +109,7 @@ var listDataRegisters(){
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
 
-var listRegisterFunctions(){
+var listRegisterFunctions(void){
    static Boolean firstRun = true;
    uint16_t y = 0;
    
@@ -154,7 +154,7 @@ var listRegisterFunctions(){
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
 
-var listRegisterDirections(){
+var listRegisterDirections(void){
    static Boolean firstRun = true;
    uint16_t y = 0;
    
@@ -199,7 +199,7 @@ var listRegisterDirections(){
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
 
-var checkSpi2EnableBitDelay(){
+var checkSpi2EnableBitDelay(void){
    static Boolean firstRun = true;
    
    if(firstRun){
@@ -258,7 +258,7 @@ var checkSpi2EnableBitDelay(){
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
 
-var tstat1GetSemaphoreLockOrder(){
+var tstat1GetSemaphoreLockOrder(void){
    static Boolean firstRun = true;
    uint16_t testWriteValue = 0xF0F1;
    uint16_t y = 0;
@@ -294,7 +294,7 @@ var tstat1GetSemaphoreLockOrder(){
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
 
-var ads7846Read(){
+var ads7846Read(void){
    static Boolean firstRun = true;
    static Boolean referenceMode;
    static Boolean mode8Bit;
@@ -367,7 +367,7 @@ var ads7846Read(){
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
 
-var ads7846ReadOsVersion(){
+var ads7846ReadOsVersion(void){
    static Boolean firstRun = true;
    static uint16_t mode;
    uint8_t ads7846Channel;
@@ -408,7 +408,7 @@ var ads7846ReadOsVersion(){
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
 
-var getClk32Frequency(){
+var getClk32Frequency(void){
    static Boolean firstRun = true;
    
    if(firstRun){
@@ -426,7 +426,7 @@ var getClk32Frequency(){
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
 
-var getDeviceInfo(){
+var getDeviceInfo(void){
    static Boolean firstRun = true;
    
    if(firstRun){
@@ -453,7 +453,7 @@ var getDeviceInfo(){
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
 
-var getCpuInfo(){
+var getCpuInfo(void){
    static Boolean firstRun = true;
    
    if(firstRun){
@@ -480,7 +480,7 @@ var getCpuInfo(){
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
 
-var getInterruptInfo(){
+var getInterruptInfo(void){
    static Boolean firstRun = true;
    uint16_t y = 0;
    
@@ -522,7 +522,7 @@ var getInterruptInfo(){
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
 
-var getIcrInversion(){
+var getIcrInversion(void){
    static Boolean firstRun = true;
    uint16_t oldIcr;
    uint8_t portDValues[2];
@@ -563,7 +563,7 @@ var getIcrInversion(){
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
 
-var doesIsrClearChangePinValue(){
+var doesIsrClearChangePinValue(void){
    static Boolean firstRun = true;
    
    if(firstRun){
@@ -726,7 +726,7 @@ var doesIsrClearChangePinValue(){
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
 
-var toggleBacklight(){
+var toggleBacklight(void){
    static Boolean firstRun = true;
    uint16_t y = 0;
    
@@ -778,7 +778,7 @@ var toggleBacklight(){
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
 
-var toggleMotor(){
+var toggleMotor(void){
    static Boolean firstRun = true;
    
    if(firstRun){
@@ -800,7 +800,7 @@ var toggleMotor(){
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
 
-var toggleAlarmLed(){
+var toggleAlarmLed(void){
    static Boolean firstRun = true;
    
    if(firstRun){
@@ -822,7 +822,7 @@ var toggleAlarmLed(){
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
 
-var watchPenIrq(){
+var watchPenIrq(void){
    static Boolean firstRun = true;
    uint16_t y = 0;
    
@@ -857,7 +857,7 @@ var watchPenIrq(){
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
 
-var getPenPosition(){
+var getPenPosition(void){
    static Boolean firstRun = true;
    uint16_t y = 0;
    PointType rawPen;
@@ -894,7 +894,7 @@ var getPenPosition(){
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
 
-var playConstantTone(){
+var playConstantTone(void){
    /*static const uint16_t testFreq = 10000;*/
    static const uint8_t samples[10] = {0x50, 0x60, 0x70, 0x80, 0x90, 0xA0, 0x90, 0x80, 0x70, 0x60};/*this buffer needs to pe played testFreq times a second*/
    static Boolean firstRun = true;
@@ -936,7 +936,7 @@ var playConstantTone(){
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
 
-var unaligned32bitAccess(){
+var unaligned32bitAccess(void){
    static Boolean firstRun = true;
 
    if(firstRun){

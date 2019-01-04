@@ -6,6 +6,6 @@
 
 uint16_t (*customCall_HwrADC)(uint16_t mode, uint16_t* returnData);
 
-Boolean initUndocumentedApiHandlers();
+Boolean initUndocumentedApiHandlers(void);
 
 #endif

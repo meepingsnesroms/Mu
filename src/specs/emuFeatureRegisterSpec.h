@@ -45,7 +45,6 @@ These registers will do nothing if their corresponding feature bit is not set on
 /*new system cmds go here*/
 #define CMD_IDLE_X_CLK32   0x0000FFF4/*EMU_VALUE = CLK32s to waste, used to remove idle loops*/
 #define CMD_SET_CYCLE_COST 0x0000FFF5/*EMU_DST = HLE API number, EMU_VALUE = how many cycles it takes*/
-#define CMD_SET_CYCLE_COST 0x0000FFF5/*EMU_DST = HLE API number, EMU_VALUE = how many cycles it takes*/
 #define CMD_SET_RESOLUTION 0x0000FFF6/*EMU_VALUE >> 16 = width, EMU_VALUE & 0xFFFF = height*/
 #define CMD_GET_KEYS       0x0000FFF7/*EMU_VALUE = OS 5 keys*/
 #define CMD_PRINT          0x0000FFF8/*EMU_SRC = pointer to string*/

@@ -43,7 +43,7 @@ static uint32_t bufferAddress;/*used to put the hex viewer in buffer mode instea
 
 
 /*functions*/
-CODE_SECTION("viewer") static void renderListFrame(){
+CODE_SECTION("viewer") static void renderListFrame(void){
    uint16_t textBoxes;
    uint16_t y = 0;
    
@@ -121,7 +121,7 @@ CODE_SECTION("viewer") static void testPickerHandler(uint32_t command){
    }
 }
 
-CODE_SECTION("viewer") static void resetListHandler(){
+CODE_SECTION("viewer") static void resetListHandler(void){
    uint16_t i;
    
    listLength = 0;
@@ -134,7 +134,7 @@ CODE_SECTION("viewer") static void resetListHandler(){
    setDebugTag("List Handler Reset");
 }
 
-CODE_SECTION("viewer") static var listModeFrame(){
+CODE_SECTION("viewer") static var listModeFrame(void){
    setDebugTag("List Mode Running");
    
    if(getButtonPressed(buttonUp))
@@ -176,7 +176,7 @@ CODE_SECTION("viewer") static var listModeFrame(){
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
 
-var valueViewer(){
+var valueViewer(void){
    static Boolean clearNeeded = true;
    var value = getSubprogramArgs();
    uint64_t varData = getVarValue(value);
@@ -226,7 +226,7 @@ var valueViewer(){
    }
 }
 
-var hexViewer(){
+var hexViewer(void){
    var where = getSubprogramArgs();
    
    resetListHandler();
@@ -250,7 +250,7 @@ var hexViewer(){
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
 
-var functionPicker(){
+var functionPicker(void){
    resetListHandler();
    listLength = totalHwTests;
    listHandler = testPickerHandler;
@@ -261,7 +261,7 @@ var functionPicker(){
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
 
-void resetFunctionViewer(){
+void resetFunctionViewer(void){
    var nullVar = makeVar(LENGTH_0, TYPE_NULL, 0);
    uint8_t cpuType = getPhysicalCpuType();
    

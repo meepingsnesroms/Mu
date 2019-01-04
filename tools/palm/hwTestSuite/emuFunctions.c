@@ -22,7 +22,7 @@ static const uint16_t skipBusError[5] = {
    0x4E73/*rte              ; return*/
 };
 
-Boolean isEmulator(){
+Boolean isEmulator(void){
    return false;
    
 #if 0

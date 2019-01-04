@@ -6,7 +6,7 @@
 
 #include "specs/emuFeatureRegisterSpec.h"/*needed for feature names*/
 
-Boolean isEmulator();
+Boolean isEmulator(void);
 Boolean isEmulatorFeatureEnabled(uint32_t feature);
 
 #endif

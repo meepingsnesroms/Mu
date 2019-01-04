@@ -13,14 +13,14 @@ static Boolean interruptsEnabled = true;
 static uint16_t statusRegister;
 
 
-void turnInterruptsOff(){
+void turnInterruptsOff(void){
    if(interruptsEnabled){
       statusRegister = SysDisableInts();
       interruptsEnabled = false;
    }
 }
 
-void turnInterruptsOn(){
+void turnInterruptsOn(void){
    if(!interruptsEnabled){
       SysRestoreStatus(statusRegister);
       interruptsEnabled = true;
@@ -33,7 +33,7 @@ void wasteXOpcodes(uint32_t opcodes){
       blockOptimize--;
 }
 
-uint8_t getPhysicalCpuType(){
+uint8_t getPhysicalCpuType(void){
    uint32_t osVer;
    uint32_t dragonballType;
    
@@ -52,14 +52,14 @@ uint8_t getPhysicalCpuType(){
    return dragonballType | CPU_M68K;
 }
 
-uint8_t getSupportedInstructionSets(){
+uint8_t getSupportedInstructionSets(void){
    /*emulated m68k on physical ARM or running both CPUs from emulator*/
    if((getPhysicalCpuType() & CPU_ARM) || isEmulator())
       return CPU_BOTH;
    return CPU_M68K;
 }
 
-const char* getCpuString(){
+const char* getCpuString(void){
    const char* cpuTypeNames[3] = {"Emulator", "Dragonball ", "ARM(Type Unknown)"};
    const char* dragonballTypeNames[5] = {"", "328", "EZ", "VZ", "SZ"};
    uint8_t cpuModel = getPhysicalCpuType();

@@ -3,26 +3,26 @@
 
 #include "testSuite.h"
 
-var testButtonInput();
-var listDataRegisters();
-var listRegisterFunctions();
-var listRegisterDirections();
-var checkSpi2EnableBitDelay();
-var tstat1GetSemaphoreLockOrder();
-var ads7846Read();
-var ads7846ReadOsVersion();
-var getClk32Frequency();
-var getDeviceInfo();
-var getCpuInfo();
-var getInterruptInfo();
-var getIcrInversion();
-var doesIsrClearChangePinValue();
-var toggleBacklight();
-var toggleMotor();
-var toggleAlarmLed();
-var watchPenIrq();
-var getPenPosition();
-var playConstantTone();
-var unaligned32bitAccess();
+var testButtonInput(void);
+var listDataRegisters(void);
+var listRegisterFunctions(void);
+var listRegisterDirections(void);
+var checkSpi2EnableBitDelay(void);
+var tstat1GetSemaphoreLockOrder(void);
+var ads7846Read(void);
+var ads7846ReadOsVersion(void);
+var getClk32Frequency(void);
+var getDeviceInfo(void);
+var getCpuInfo(void);
+var getInterruptInfo(void);
+var getIcrInversion(void);
+var doesIsrClearChangePinValue(void);
+var toggleBacklight(void);
+var toggleMotor(void);
+var toggleAlarmLed(void);
+var watchPenIrq(void);
+var getPenPosition(void);
+var playConstantTone(void);
+var unaligned32bitAccess(void);
 
 #endif

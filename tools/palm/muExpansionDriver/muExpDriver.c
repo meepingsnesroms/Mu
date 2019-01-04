@@ -7,6 +7,7 @@
 #include "MuExpDriverRsc.h"
 
 #include "traps.h"
+#include "armv5.h"
 #include "palmGlobalDefines.h"
 #include "specs/emuFeatureRegisterSpec.h"
 
@@ -21,33 +22,30 @@ enum{
 
 
 static uint32_t* configFile;
+static uint8_t*  armStack;
 
 
-static void installTrapHandlers(){
-   uint32_t enabledFeatures = readArbitraryMemory32(EMU_REG_ADDR(EMU_INFO));
-   
-   if(enabledFeatures & FEATURE_HYBRID_CPU){
-      SysSetTrapAddress(sysTrapPceNativeCall, &emuPceNativeCall);
-   }
-}
-
-static void setArmStack(){
-   if(configFile[ARM_STACK_SIZE] > 0){
-      uint8_t* armStack = MemPtrNew(configFile[ARM_STACK_SIZE]);/*this pointer never gets freed*/
-      
-      writeArbitraryMemory32(EMU_REG_ADDR(EMU_VALUE), (uint32_t)armStack);
-      writeArbitraryMemory32(EMU_REG_ADDR(EMU_CMD), CMD_SET_ARM_STACK);
-   }
-}
-
-void setConfigDefaults(){
+static void setConfigDefaults(void){
    configFile[ARM_STACK_SIZE] = 0x4000;
    configFile[LCD_WIDTH] = 160;
    configFile[LCD_HEIGHT] = 220;
 }
 
-void showGui(){
+static void showGui(void){
    //TODO
+}
+
+static void initBoot(void){
+   uint32_t enabledFeatures = readArbitraryMemory32(EMU_REG_ADDR(EMU_INFO));
+   
+   if(enabledFeatures & FEATURE_HYBRID_CPU){
+      SysSetTrapAddress(sysTrapPceNativeCall, &emuPceNativeCall);
+      
+      if(configFile[ARM_STACK_SIZE] > 0){
+         armStack = MemPtrNew(configFile[ARM_STACK_SIZE]);/*this pointer never gets freed*/
+         armv5SetStack(armStack, ARM_STACK_SIZE)
+      }
+   }
 }
 
 DWord PilotMain(Word cmd, Ptr cmdBPB, Word launchFlags){
@@ -71,10 +69,8 @@ DWord PilotMain(Word cmd, Ptr cmdBPB, Word launchFlags){
    
    if(cmd == sysAppLaunchCmdNormalLaunch)
       showGui();
-   else if(cmd == sysAppLaunchCmdSystemReset){
-      installTrapHandlers();
-      setArmStack();
-   }
+   else if(cmd == sysAppLaunchCmdSystemReset)
+      initBoot();
    
    MemHandleUnlock(configHandle);
    DmReleaseResource(configHandle);
