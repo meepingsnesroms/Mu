@@ -1,8 +1,8 @@
-#include <PalmOS.h>
-#include <PalmCompatibility.h>
+#include "sdkPatch/PalmOSPatched.h"
 #include <stdint.h>
 
 #include "armv5.h"
+#include "palmGlobalDefines.h"
 #include "specs/emuFeatureRegisterSpec.h"
 
 
@@ -10,13 +10,13 @@
 
 
 void armv5SetStack(uint8_t* location, uint32_t size){
-   uint8_t* firstStackEntry = location + size - 1;
+   uint32_t firstStackEntry = (uint32_t)location + size - 1;
 
    /*must be 32 bit aligned, m68k only enforces 16 bit aligned even for 32 bit access so MemPtrNew may return a word aligned address*/
    while((firstStackEntry & 0x3) != 0)
       firstStackEntry--;
    
-   armv5SetRegister(13, (uint32_t)firstStackEntry);
+   armv5SetRegister(13, firstStackEntry);
 }
 
 void armv5StackPush(uint32_t value){

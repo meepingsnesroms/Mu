@@ -1,6 +1,4 @@
-#include <PalmOS.h>
-#include <PalmCompatibility.h>
-#include <PceNativeCall.h>
+#include "sdkPatch/PalmOSPatched.h"
 #include <stdint.h>
 
 /*dont include this anywhere else*/
@@ -14,11 +12,9 @@
 /*config vars*/
 #define CONFIG_FILE_SIZE (20 * sizeof(uint32_t))
 
-enum{
-   ARM_STACK_SIZE = 0,
-   LCD_WIDTH,
-   LCD_HEIGHT
-};
+#define ARM_STACK_SIZE 0
+#define LCD_WIDTH      1
+#define LCD_HEIGHT     2
 
 
 static uint32_t* configFile;
@@ -48,7 +44,7 @@ static void initBoot(void){
    }
 }
 
-DWord PilotMain(Word cmd, Ptr cmdBPB, Word launchFlags){
+UInt32 PilotMain(UInt16 cmd, MemPtr cmdBPB, UInt16 launchFlags){
    DmOpenRef configDb;
    MemHandle configHandle;
    

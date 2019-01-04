@@ -1,5 +1,4 @@
 #include <PalmOS.h>
-#include <PalmCompatibility.h>
 #include <stdint.h>
 
 #include "ugui.h"
@@ -290,7 +289,7 @@ static void testerFrameLoop(void){
    skipFrameDelay = false;
 }
 
-DWord PilotMain(Word cmd, Ptr cmdBPB, Word launchFlags){
+UInt32 PilotMain(UInt16 cmd, MemPtr cmdBPB, UInt16 launchFlags){
    if(cmd == sysAppLaunchCmdNormalLaunch){
       Boolean initSuccess = testerInit();
       
