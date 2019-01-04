@@ -6,9 +6,6 @@
 #include "specs/emuFeatureRegisterSpec.h"
 
 
-#define SWAP_32(x) ((uint32_t)((((uint32_t)(x) & 0x000000FF) << 24) | (((uint32_t)(x) & 0x0000FF00) <<  8) | (((uint32_t)(x) & 0x00FF0000) >>  8) | (((uint32_t)(x) & 0xFF000000) >> 24)))
-
-
 void armv5SetStack(uint8_t* location, uint32_t size){
    uint32_t firstStackEntry = (uint32_t)location + size - 1;
 
@@ -23,13 +20,13 @@ void armv5StackPush(uint32_t value){
    uint32_t stackPtr = armv5GetRegister(13);
    
    stackPtr -= sizeof(uint32_t);
-   writeArbitraryMemory32(stackPtr, SWAP_32(value));
+   writeArbitraryMemory32(stackPtr, EndianSwap32(value));
    armv5SetRegister(13, stackPtr);
 }
 
 uint32_t armv5StackPop(void){
    uint32_t stackPtr = armv5GetRegister(13);
-   uint32_t value = SWAP_32(readArbitraryMemory32(stackPtr));
+   uint32_t value = EndianSwap32(readArbitraryMemory32(stackPtr));
    
    stackPtr += sizeof(uint32_t);
    armv5SetRegister(13, stackPtr);

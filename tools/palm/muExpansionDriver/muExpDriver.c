@@ -13,9 +13,11 @@
 /*config vars*/
 #define CONFIG_FILE_SIZE (20 * sizeof(uint32_t))
 
-#define ARM_STACK_SIZE 0
-#define LCD_WIDTH      1
-#define LCD_HEIGHT     2
+enum{
+   ARM_STACK_SIZE = 0,
+   LCD_WIDTH,
+   LCD_HEIGHT
+};
 
 
 static uint32_t* configFile;
