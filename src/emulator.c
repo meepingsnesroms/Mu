@@ -100,13 +100,12 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t enab
    palmMisc.batteryLevel = 100;
    palmCycleCounter = 0.0;
    palmClockMultiplier = (enabledEmuFeatures & FEATURE_FAST_CPU) ? 2.00 : 1.00;//overclock
+   palmClockMultiplier *= 0.70;//account for wait states when reading memory, tested with SysInfo.prc
    palmEmuFeatures.info = enabledEmuFeatures;
 
    //initialize components
    blip_set_rates(palmAudioResampler, AUDIO_CLOCK_RATE, AUDIO_SAMPLE_RATE);
    flx68000Init();
-   if(enabledEmuFeatures & FEATURE_HYBRID_CPU)
-      armv5Init();
    sandboxInit(); 
 
    //reset everything

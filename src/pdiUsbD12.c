@@ -85,7 +85,7 @@ uint8_t pdiUsbD12GetRegister(bool address){
    }
    else{
       //0x1 commands
-      debugLog("USB read command\n", address);
+      debugLog("USB read command\n");
       //may just return 0x00(or random 0xXX) or may return current command(not read by Palm OS during boot up)
    }
 

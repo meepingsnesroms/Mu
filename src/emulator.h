@@ -142,7 +142,7 @@ extern int16_t*  palmAudio;//read allowed, 2 channel signed 16 bit audio
 extern blip_t*   palmAudioResampler;//dont touch
 extern double    palmSysclksPerClk32;//dont touch
 extern double    palmCycleCounter;//dont touch
-extern double    palmClockMultiplier;//read/write allowed
+extern double    palmClockMultiplier;//dont touch
 extern uint32_t  palmFrameClk32s;//dont touch
 extern double    palmClk32Sysclks;//dont touch
 

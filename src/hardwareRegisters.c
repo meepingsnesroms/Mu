@@ -287,14 +287,31 @@ void setEmuRegister(uint32_t address, uint32_t value){
 
       case EMU_CMD:
          switch(value){
-            case CMD_SET_ARM_STACK:
+            case CMD_ARM_SERVICE:
                if(palmEmuFeatures.info & FEATURE_HYBRID_CPU)
-                  armv5SetStackLocation(palmEmuFeatures.value);
+                  palmEmuFeatures.value = armv5ServiceRequest;
                break;
 
-            case CMD_RUN_AS_ARM:
+            case CMD_ARM_SET_REG:
                if(palmEmuFeatures.info & FEATURE_HYBRID_CPU)
-                  armv5PceNativeCall(palmEmuFeatures.src, palmEmuFeatures.dst);
+                  armv5SetRegister(palmEmuFeatures.dst, palmEmuFeatures.value);
+               break;
+
+            case CMD_ARM_GET_REG:
+               if(palmEmuFeatures.info & FEATURE_HYBRID_CPU)
+                  palmEmuFeatures.value = armv5GetRegister(palmEmuFeatures.src);
+               break;
+
+            case CMD_ARM_RUN:
+               if(palmEmuFeatures.info & FEATURE_HYBRID_CPU)
+                  palmEmuFeatures.value = armv5Execute(palmEmuFeatures.value);
+               break;
+
+            case CMD_SET_RESOLUTION:
+               if(palmEmuFeatures.info & FEATURE_CUSTOM_FB){
+                  palmFramebufferWidth = palmEmuFeatures.value >> 16;
+                  palmFramebufferHeight = palmEmuFeatures.value & 0xFFFF;
+               }
                break;
 
             case CMD_PRINT:
