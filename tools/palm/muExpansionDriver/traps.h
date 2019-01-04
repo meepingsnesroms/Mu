@@ -1,9 +1,8 @@
 #ifndef TRAPS_H
 #define TRAPS_H
 
-#include <PalmOS.h>
-#include <PalmCompatibility.h>
+#include "sdkPatch/PalmOSPatched.h"
 
-UInt32 emuPceNativeCall(NativeFuncType *nativeFuncP, void *userDataP)
+UInt32 emuPceNativeCall(NativeFuncType *nativeFuncP, void *userDataP);
 
 #endif

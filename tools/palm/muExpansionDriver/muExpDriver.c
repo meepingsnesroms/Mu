@@ -9,6 +9,7 @@
 #include "palmGlobalDefines.h"
 #include "specs/emuFeatureRegisterSpec.h"
 
+
 /*config vars*/
 #define CONFIG_FILE_SIZE (20 * sizeof(uint32_t))
 
@@ -35,11 +36,11 @@ static void initBoot(void){
    uint32_t enabledFeatures = readArbitraryMemory32(EMU_REG_ADDR(EMU_INFO));
    
    if(enabledFeatures & FEATURE_HYBRID_CPU){
-      SysSetTrapAddress(sysTrapPceNativeCall, &emuPceNativeCall);
+      SysSetTrapAddress(sysTrapPceNativeCall, (void*)emuPceNativeCall);
       
       if(configFile[ARM_STACK_SIZE] > 0){
          armStack = MemPtrNew(configFile[ARM_STACK_SIZE]);/*this pointer never gets freed*/
-         armv5SetStack(armStack, ARM_STACK_SIZE)
+         armv5SetStack(armStack, configFile[ARM_STACK_SIZE]);
       }
    }
 }
@@ -52,7 +53,7 @@ UInt32 PilotMain(UInt16 cmd, MemPtr cmdBPB, UInt16 launchFlags){
    
    /*create db and set defaults if config doesnt exist*/
    if(!configDb){
-      DmCreateDatabase(0/*cardNo*/, 'Emu Config', 'GuiC', 'EMUC', true);
+      DmCreateDatabase(0/*cardNo*/, "Emu Config", 'GuiC', 'EMUC', true);
       configDb = DmOpenDatabaseByTypeCreator('EMUC', 'GuiC', dmModeReadOnly);
       configHandle = DmNewResource(configDb, 'CONF', 0, CONFIG_FILE_SIZE);
       configFile = MemHandleLock(configHandle);

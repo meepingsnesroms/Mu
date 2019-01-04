@@ -1,7 +1,7 @@
 #ifndef PALM_GLOBAL_DEFINES_HEADER
 #define PALM_GLOBAL_DEFINES_HEADER
 
-#include <PalmOS.h>
+#include "sdkPatch/PalmOSPatched.h"
 #include <stdint.h>
 
 #define CODE_SECTION(codeSection) __attribute__((section(codeSection)))
