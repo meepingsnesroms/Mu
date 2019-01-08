@@ -27,10 +27,13 @@
 #include <SystemPublic.h>
 #include <UIPublic.h>
 
+// Include changed pieces of the SDK that arnt in the one of the new files
+#include "MissingFunctions.h"
+
 #include "CoreTrapsPatch.h"
 #include "PceNativeCall.h"
 #include "ByteOrderUtils.h"
 #include "PalmChars.h"
 #include "PenInputMgr.h"
 
-#endif	// __PALMOS_H__
+#endif // __PALMOS_H__

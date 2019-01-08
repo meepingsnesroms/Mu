@@ -18,9 +18,10 @@
 
 #include <Chars.h>
 
-#if (vchrPalmMin != 0x0500) || (vchrPalmMax != 0x05FF)
-#error "please check Palm vchr range or update the above assertion"
-#endif
+#undef vchrPalmMin
+#undef vchrPalmMax
+#define vchrPalmMin 0x0500 // 256 command keys
+#define vchrPalmMax 0x05FF
 
 #define vchrSilkClock           (vchrPalmMin + 0)
 #define vchrClock               (vchrPalmMin + 1)

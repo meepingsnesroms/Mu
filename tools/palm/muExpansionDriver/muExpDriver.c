@@ -1,6 +1,5 @@
 #include "sdkPatch/PalmOSPatched.h"
 #include <stdint.h>
-#include <stdbool.h>
 
 /*dont include this anywhere else*/
 #include "MuExpDriverRsc.h"
@@ -30,7 +29,7 @@ static void setConfigDefaults(uint32_t* configFile){
    configFile[LCD_HEIGHT] = 220;
 }
 
-static void setProperDeviceId(uint16_t screenWidth, uint16_t screenHeight, bool hasArmCpu, bool hasDpad){
+static void setProperDeviceId(uint16_t screenWidth, uint16_t screenHeight, Boolean hasArmCpu, Boolean hasDpad){
    uint32_t osVer;
    uint32_t companyId;
    uint32_t deviceId;
@@ -39,16 +38,28 @@ static void setProperDeviceId(uint16_t screenWidth, uint16_t screenHeight, bool 
    if(hasArmCpu){
       /*get matching OS 5 device*/
       switch((uint32_t)screenWidth << 16 | screenHeight){
+         case (uint32_t)480 << 16 | 320:
+            /*Tapwave Zodiac 2*/
+            osVer = sysMakeROMVersion(5, 4, 0, sysROMStageRelease, 0);/*needs to be verifyed!!!*/
+            companyId = 'Tpwv';
+            deviceId = 'Rdog';
+            halId = 'MX1a';
+            break;
+            
          case (uint32_t)320 << 16 | 440:
             /*Tungsten E2*/
+            osVer = sysMakeROMVersion(5, 4, 0, sysROMStageRelease, 0);/*needs to be verifyed!!!*/
+            companyId = 'Palm';
+            deviceId = 'Zir4';
+            halId = 'hspr';
             break;
          
          default:
             /*use Palm Z22, has the same resolution as the Palm m515*/
-            osVer = ;
-            companyId = ;
-            deviceId = ;
-            halId = ;
+            osVer = sysMakeROMVersion(5, 4, 0, sysROMStageRelease, 0);/*needs to be verifyed!!!*/
+            companyId = 'Palm';
+            deviceId = 'D051';
+            halId = 'S051';
             break;
       }
    }
@@ -56,13 +67,21 @@ static void setProperDeviceId(uint16_t screenWidth, uint16_t screenHeight, bool 
       /*get matching OS 4 device*/
       switch((uint32_t)screenWidth << 16 | screenHeight){
          case (uint32_t)320 << 16 | 440:
-            /*Tungsten E2 running OS 4, there are no 320x320 + digitizer, 16 bit color, OS 4 devices, this is not a real device*/
-            
+            /*Tungsten E running OS 4*/
+            /*there are no 320x320 + digitizer, 16 bit color, OS 4 devices*/
+            /*this is not a real device, using it may cause issues*/
+            FtrGet(sysFileCSystem, sysFtrNumROMVersion, &osVer);
+            companyId = 'Palm';
+            deviceId = 'Cct1';
+            halId = 'Ect1';
             break;
             
          case (uint32_t)320 << 16 | 320:
             /*Tungsten W*/
-            
+            osVer = sysMakeROMVersion(4, 1, 0, sysROMStageRelease, 0);/*needs to be verifyed!!!*/
+            companyId = 'palm';
+            deviceId = 'atc1';
+            halId = 'atlc';
             break;
             
          default:
@@ -83,7 +102,8 @@ static void setProperDeviceId(uint16_t screenWidth, uint16_t screenHeight, bool 
    if(screenHeight != 220 && screenHeight != 440)
       FtrSet(pinCreator, pinFtrAPIVersion, pinAPIVersion1_1);
    
-   /*later Sony specific stuff will go here to allow running Clie apps*/
+   /*later Sony specific stuff may go here to allow running Clie apps*/
+   /*later Tapwave specific stuff may go here to allow running Zodiac apps*/
    
    FtrSet(sysFileCSystem, sysFtrNumROMVersion, osVer);
    FtrSet(sysFileCSystem, sysFtrNumOEMCompanyID, companyId);
@@ -121,6 +141,8 @@ static void initBoot(uint32_t* configFile){
          setGlobalVar(ARM_STACK_START, (uint32_t)armStackStart);
       }
    }
+   
+   setProperDeviceId(configFile[LCD_WIDTH], configFile[LCD_HEIGHT], !!(enabledFeatures & FEATURE_HYBRID_CPU), !!(enabledFeatures & FEATURE_EXT_KEYS));
 }
 
 UInt32 PilotMain(UInt16 cmd, MemPtr cmdBPB, UInt16 launchFlags){

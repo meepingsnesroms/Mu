@@ -4,7 +4,7 @@
 
 uint32_t getGlobalVar(uint16_t id){
    uint32_t value;
-   FtrGet('EMUG', id, &value)
+   FtrGet('EMUG', id, &value);
    return value;
 }
 
