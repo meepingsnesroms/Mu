@@ -44,7 +44,7 @@ static void showGui(uint32_t* configFile){
    }
 }
 
-static void initBoot(void){
+static void initBoot(uint32_t* configFile){
    uint32_t enabledFeatures = readArbitraryMemory32(EMU_REG_ADDR(EMU_INFO));
    
    debugLog("OS booting!\n");

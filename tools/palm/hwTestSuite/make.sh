@@ -12,12 +12,10 @@ if [ "$1" = "clean" ]; then
 fi
 
 declare -a FILES=("testSuite" "viewer" "tools" "tests" "cpu" "emuFunctions" "ugui" "undocumentedApis" "debug")
-DEFINES=""
-CFLAGS="-palmos4 -O3 $DEFINES"
+CFLAGS="-palmos4 -O3"
 
 if [ "$1" = "debug" ]; then
-   DEFINES="$DEFINES -DDEBUG"
-   CFLAGS="$CFLAGS -g"
+   CFLAGS="$CFLAGS -DDEBUG -g"
 fi
 
 m68k-palmos-multigen $APPNAME.def
