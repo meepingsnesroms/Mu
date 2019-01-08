@@ -30,5 +30,7 @@
 #include "CoreTrapsPatch.h"
 #include "PceNativeCall.h"
 #include "ByteOrderUtils.h"
+#include "PalmChars.h"
+#include "PenInputMgr.h"
 
 #endif	// __PALMOS_H__

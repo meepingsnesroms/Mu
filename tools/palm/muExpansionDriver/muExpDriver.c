@@ -1,5 +1,6 @@
 #include "sdkPatch/PalmOSPatched.h"
 #include <stdint.h>
+#include <stdbool.h>
 
 /*dont include this anywhere else*/
 #include "MuExpDriverRsc.h"
@@ -7,6 +8,7 @@
 #include "debug.h"
 #include "traps.h"
 #include "armv5.h"
+#include "globals.h"
 #include "palmGlobalDefines.h"
 #include "specs/emuFeatureRegisterSpec.h"
 
@@ -26,6 +28,67 @@ static void setConfigDefaults(uint32_t* configFile){
    configFile[ARM_STACK_SIZE] = 0x4000;
    configFile[LCD_WIDTH] = 160;
    configFile[LCD_HEIGHT] = 220;
+}
+
+static void setProperDeviceId(uint16_t screenWidth, uint16_t screenHeight, bool hasArmCpu, bool hasDpad){
+   uint32_t osVer;
+   uint32_t companyId;
+   uint32_t deviceId;
+   uint32_t halId;
+   
+   if(hasArmCpu){
+      /*get matching OS 5 device*/
+      switch((uint32_t)screenWidth << 16 | screenHeight){
+         case (uint32_t)320 << 16 | 440:
+            /*Tungsten E2*/
+            break;
+         
+         default:
+            /*use Palm Z22, has the same resolution as the Palm m515*/
+            osVer = ;
+            companyId = ;
+            deviceId = ;
+            halId = ;
+            break;
+      }
+   }
+   else{
+      /*get matching OS 4 device*/
+      switch((uint32_t)screenWidth << 16 | screenHeight){
+         case (uint32_t)320 << 16 | 440:
+            /*Tungsten E2 running OS 4, there are no 320x320 + digitizer, 16 bit color, OS 4 devices, this is not a real device*/
+            
+            break;
+            
+         case (uint32_t)320 << 16 | 320:
+            /*Tungsten W*/
+            
+            break;
+            
+         default:
+            /*use device defaults*/
+            FtrGet(sysFileCSystem, sysFtrNumROMVersion, &osVer);
+            FtrGet(sysFileCSystem, sysFtrNumOEMCompanyID, &companyId);
+            FtrGet(sysFileCSystem, sysFtrNumOEMDeviceID, &deviceId);
+            FtrGet(sysFileCSystem, sysFtrNumOEMHALID, &halId);
+            break;
+      }
+   }
+   
+   /*enable dpad API*/
+   if(hasDpad)
+      FtrSet(navFtrCreator, navFtrVersion, navVersion);
+   
+   /*no fixed digitizer, enable digitizer APIs*/
+   if(screenHeight != 220 && screenHeight != 440)
+      FtrSet(pinCreator, pinFtrAPIVersion, pinAPIVersion1_1);
+   
+   /*later Sony specific stuff will go here to allow running Clie apps*/
+   
+   FtrSet(sysFileCSystem, sysFtrNumROMVersion, osVer);
+   FtrSet(sysFileCSystem, sysFtrNumOEMCompanyID, companyId);
+   FtrSet(sysFileCSystem, sysFtrNumOEMDeviceID, deviceId);
+   FtrSet(sysFileCSystem, sysFtrNumOEMHALID, halId);
 }
 
 static void showGui(uint32_t* configFile){
@@ -48,14 +111,16 @@ static void initBoot(uint32_t* configFile){
    uint32_t enabledFeatures = readArbitraryMemory32(EMU_REG_ADDR(EMU_INFO));
    
    debugLog("OS booting!\n");
-#if 0
    if(enabledFeatures & FEATURE_HYBRID_CPU){
       SysSetTrapAddress(sysTrapPceNativeCall, (void*)emuPceNativeCall);
       
-      if(configFile[ARM_STACK_SIZE] > 0)
-         armv5SetStack(MemPtrNew(configFile[ARM_STACK_SIZE]), configFile[ARM_STACK_SIZE]);
+      if(configFile[ARM_STACK_SIZE] > 0){
+         uint8_t* armStackStart = MemPtrNew(configFile[ARM_STACK_SIZE]);/*currently isnt ever freed*/
+         
+         armv5SetStack(armStackStart, configFile[ARM_STACK_SIZE]);
+         setGlobalVar(ARM_STACK_START, (uint32_t)armStackStart);
+      }
    }
-#endif
 }
 
 UInt32 PilotMain(UInt16 cmd, MemPtr cmdBPB, UInt16 launchFlags){

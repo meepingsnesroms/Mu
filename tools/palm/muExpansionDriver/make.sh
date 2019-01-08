@@ -11,7 +11,7 @@ if [ "$1" = "clean" ]; then
    exit
 fi
 
-declare -a FILES=("muExpDriver" "armv5" "soundDriver" "traps" "debug")
+declare -a FILES=("muExpDriver" "armv5" "soundDriver" "globals" "traps" "debug")
 CFLAGS="-palmos4 -O3"
 
 if [ "$1" = "debug" ]; then
