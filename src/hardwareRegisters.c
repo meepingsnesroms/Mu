@@ -317,16 +317,16 @@ void setEmuRegister(uint32_t address, uint32_t value){
             case CMD_PRINT:
                if(palmEmuFeatures.info & FEATURE_DEBUG){
                   char tempString[200];
-                  uint16_t offset = 0;
-                  uint8_t newChar;//cant use char, if its signed < 128 will allow non ascii chars through
+                  uint16_t offset;
 
-                  while(true){
-                     newChar = flx68000ReadArbitraryMemory(palmEmuFeatures.src + offset, 8);
-                     newChar = newChar < 128 ? newChar : 0;
+                  for(offset = 0; offset < 200; offset++){
+                     uint8_t newChar = flx68000ReadArbitraryMemory(palmEmuFeatures.src + offset, 8);//cant use char, if its signed < 128 will allow non ascii chars through
+
+                     newChar = newChar < 128 ? newChar : '\0';
+                     newChar = (newChar != '\t' && newChar != '\n') ? newChar : ' ';
                      tempString[offset] = newChar;
-                     offset++;
 
-                     if(newChar == 0 || offset >= 200)
+                     if(newChar == '\0')
                         break;
                   }
 

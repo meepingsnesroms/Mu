@@ -11,13 +11,12 @@ if [ "$1" = "clean" ]; then
    exit
 fi
 
-declare -a FILES=("testSuite" "viewer" "tools" "tests" "cpu" "emuFunctions" "ugui" "undocumentedApis")
+declare -a FILES=("testSuite" "viewer" "tools" "tests" "cpu" "emuFunctions" "ugui" "undocumentedApis" "debug")
 DEFINES=""
 CFLAGS="-palmos4 -O3 $DEFINES"
 
 if [ "$1" = "debug" ]; then
    DEFINES="$DEFINES -DDEBUG"
-   FILES+="debug"
    CFLAGS="$CFLAGS -g"
 fi
 

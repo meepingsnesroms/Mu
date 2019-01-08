@@ -143,6 +143,7 @@ static void pwm1FifoWrite(uint8_t value){
 
 static void pwm1FifoFlush(void){
    pwm1ReadPosition = pwm1WritePosition;
+   pwm1Fifo[pwm1WritePosition] = 0x00;
 }
 
 //register setters
@@ -738,14 +739,7 @@ static void updateBacklightAmplifierStatus(void){
 static void updateTouchState(void){
    //check if interrupt enabled and is input
    if(!(registerArrayRead8(PFSEL) & registerArrayRead8(PFDIR) & 0x02)){
-      uint16_t icr = registerArrayRead16(ICR);
-      bool penIrqPin = !(ads7846PenIrqEnabled && palmInput.touchscreenTouched);//penIrqPin pulled low on touch
-
-      //switch polarity
-      if(icr & 0x0080)
-         penIrqPin = !penIrqPin;
-
-      if(!penIrqPin)
+      if(!(ads7846PenIrqEnabled && palmInput.touchscreenTouched) == !!(registerArrayRead16(ICR) & 0x0080))
          setIprIsrBit(INT_IRQ5);
       else
          clearIprIsrBit(INT_IRQ5);
