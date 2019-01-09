@@ -44,3 +44,14 @@ uint32_t armv5GetRegister(uint8_t reg){
    writeArbitraryMemory32(EMU_REG_ADDR(EMU_CMD), CMD_ARM_GET_REG);
    return readArbitraryMemory32(EMU_REG_ADDR(EMU_VALUE));
 }
+
+int32_t armv5Execute(int32_t cycles){
+   writeArbitraryMemory32(EMU_REG_ADDR(EMU_VALUE), cycles);
+   writeArbitraryMemory32(EMU_REG_ADDR(EMU_CMD), CMD_ARM_RUN);
+   return readArbitraryMemory32(EMU_REG_ADDR(EMU_VALUE));
+}
+
+Boolean armv5NeedsService(void){
+   writeArbitraryMemory32(EMU_REG_ADDR(EMU_CMD), CMD_ARM_SERVICE);
+   return readArbitraryMemory32(EMU_REG_ADDR(EMU_VALUE));
+}

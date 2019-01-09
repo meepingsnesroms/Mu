@@ -22,13 +22,6 @@ enum{
 };
 
 
-static void setConfigDefaults(uint32_t* configFile){
-   debugLog("First load, setting default config.\n");
-   configFile[ARM_STACK_SIZE] = 0x4000;
-   configFile[LCD_WIDTH] = 160;
-   configFile[LCD_HEIGHT] = 220;
-}
-
 static void setProperDeviceId(uint16_t screenWidth, uint16_t screenHeight, Boolean hasArmCpu, Boolean hasDpad){
    uint32_t osVer;
    uint32_t companyId;
@@ -109,6 +102,13 @@ static void setProperDeviceId(uint16_t screenWidth, uint16_t screenHeight, Boole
    FtrSet(sysFileCSystem, sysFtrNumOEMCompanyID, companyId);
    FtrSet(sysFileCSystem, sysFtrNumOEMDeviceID, deviceId);
    FtrSet(sysFileCSystem, sysFtrNumOEMHALID, halId);
+}
+
+static void setConfigDefaults(uint32_t* configFile){
+   debugLog("First load, setting default config.\n");
+   configFile[ARM_STACK_SIZE] = 0x4000;
+   configFile[LCD_WIDTH] = 160;
+   configFile[LCD_HEIGHT] = 220;
 }
 
 static void showGui(uint32_t* configFile){
