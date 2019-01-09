@@ -5,16 +5,19 @@
     ORG    $1000
 START:                  ; first instruction of program
 
+    *setup fake OS enviroment
     lea stack, sp
     move.l #$12345678, a0
     move.l #$87654321, d0
 
+    *setup stack
     sub.l #2, sp
     move.w #1, (sp)
     pea (6)
     pea stackBlob
-    pea function
+    pea functionTest
     jsr m68kCallWithBlobFunc
+    SIMHALT
    
 *uint32_t m68kCallWithBlobFunc(uint32_t functionAddress, uint32_t stackBlob, uint32_t stackBlobSize, uint16_t returnA0);
 *Extract:vvv
@@ -37,7 +40,7 @@ copy:
 done:
     *update SP with new stack
     sub.l d1, sp
-    jmp (a3)
+    jsr (a3)
     add.l d1, sp
     *new stack has been used and removed, SP is safe again
     tst.w d2
@@ -49,8 +52,10 @@ useD0:
     rts
 *Extract:^^^
 
-function
-    SIMHALT             ; halt simulator
+functionTest:
+    *test that calling works and the return value respects returnA0
+    move.l #$10101010, a0
+    rts
 
 *Stack
     ORG    $2000
