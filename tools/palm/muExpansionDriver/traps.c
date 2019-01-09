@@ -12,6 +12,7 @@
 UInt32 emuPceNativeCall(NativeFuncType* nativeFuncP, void* userDataP){
    /*AAPCS calling convention*/
    /*on a function call R0<->R3 store the function arguments if they fit, extras will go on the stack*/
+   /*first arg goes in R0, second in R1, ..., up to 4 args can go in registers*/
    /*on function return R0 and R1 store the return value of the last function, R1 is only used if the return value is 64 bit*/
    /*R4<->R7 are always local variables*/
    
@@ -23,7 +24,6 @@ UInt32 emuPceNativeCall(NativeFuncType* nativeFuncP, void* userDataP){
    uint32_t call68kFunc = getGlobalVar(ARM_CALL_68K_FUNC);/*points to an ARM asm snippet that calls a 68k function*/
    uint32_t emulState = getGlobalVar(ARM_EMUL_STATE);/*required by OS 5 functions, but should be unused*/
    
-   /*all args fit in registers, dont know what order the argument registers are used in*/
    armv5SetRegister(0, emulState);
    armv5SetRegister(1, (uint32_t)userDataP);
    armv5SetRegister(2, call68kFunc);
