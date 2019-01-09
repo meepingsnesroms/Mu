@@ -1,5 +1,1 @@
 This project can't use global variables, its executed without being launched so writing to globals will corrupt the currently running application, reading will just retrieve random numbers or crash because of invalid access.
-
-*.func files are binary blobs containing ASM code to perform sensitive functions:
-armCall68k.func is ARM asm that sets up a path back to 68k code without ending ARM execution
-armExit.func is ARM asm that terminates ARM execution

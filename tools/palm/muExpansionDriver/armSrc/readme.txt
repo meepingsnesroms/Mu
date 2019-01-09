@@ -1,0 +1,1 @@
+These are standalone code resources compiled in ARM mode, no global variables or accessing 68k code is allowed.

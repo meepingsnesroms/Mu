@@ -1,2 +1,0 @@
-LDR R4, 0
-HYPERCALL
