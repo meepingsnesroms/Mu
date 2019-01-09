@@ -1,1 +1,13 @@
-TODO
+MOVL A1, $stackBlob
+MOVL A2, SP - $stackBlobSize
+copy:
+CMP A2, SP
+BEQ done
+MOVW @A2, @A1
+ADD A1, 2, A1
+ADD A2, 2, A2
+JMP copy
+done:
+JMP $function
+SUB SP, $stackBlobSize, SP
+RTS
