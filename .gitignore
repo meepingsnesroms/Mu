@@ -21,6 +21,8 @@
 /tools/palm/muExpansionDriver/muExpDriver
 /tools/palm/muExpansionDriver/muExpDriver-sections.s
 /tools/palm/muExpansionDriver/muExpDriver-sections.ld
+/tools/palm/muExpansionDriver/asmSrcs/*.L68
+/tools/palm/muExpansionDriver/asmSrcs/*.S68
 /tools/desktop/build-BufferGraphViewer-*
 /tools/desktop/build-MakePalmIcon-*
 /tools/desktop/export16BitImageProperly/convert
