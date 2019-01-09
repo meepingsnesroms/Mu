@@ -1,10 +1,5 @@
 This project can't use global variables, its executed without being launched so writing to globals will corrupt the currently running application, reading will just retrieve random numbers or crash because of invalid access.
 
 *.func files are binary blobs containing ASM code to perform sensitive functions:
-m68kCallWithBlob.func is 68k ASM that copys the stack args blob requested by the armCall68k.func to the 68k stack and executes the function pointer returning A0 or D0
 armCall68k.func is ARM asm that sets up a path back to 68k code without ending ARM execution
 armExit.func is ARM asm that terminates ARM execution
-
-m68kCallWithBlob.func function prototype is:
-uint32_t m68kCallWithBlobFunc(uint32_t functionAddress, uint32_t stackBlob, uint32_t stackBlobSize, uint16_t returnA0);
-The smallest type on the 68k stack allowed is uint16_t, this is because of alignment restrictions.

@@ -9,6 +9,42 @@
 /*functions in this file are called directly by the Palm OS trap dispatch this means they can be called when the app isnt loaded and the globals are just a random data buffer*/
 
 
+static uint32_t m68kCallWithBlobFunc(uint32_t functionAddress, uint32_t stackBlob, uint32_t stackBlobSize, uint16_t returnA0){
+   register uint32_t d0 asm("d0");
+   register uint32_t d1 asm("d1");
+   register uint32_t d2 asm("d2");
+   register uint32_t a0 asm("a0");
+   register uint32_t a1 asm("a1");
+   register uint32_t a2 asm("a2");
+   register uint32_t a3 asm("a3");
+   register uint32_t sp asm("sp");
+   
+   d1 = stackBlobSize;
+   d2 = returnA0;
+   
+   a1 = stackBlob;
+   a2 = sp - stackBlobSize;
+   a3 = functionAddress;
+   
+   /*copy blob*/
+   while(a2 != sp){
+      *((uint16_t*)a2) = *((uint16_t*)a1);
+      a1 += 2;
+      a2 += 2;
+   }
+   
+   /*call function*/
+   ((void (*)(void))a3)();
+   
+   /*remove old args*/
+   sp += d1;
+   
+   if(d2)
+      return a0;
+   
+   return d0;
+};
+
 UInt32 emuPceNativeCall(NativeFuncType* nativeFuncP, void* userDataP){
    /*AAPCS calling convention*/
    /*on a function call R0<->R3 store the function arguments if they fit, extras will go on the stack*/
@@ -40,7 +76,6 @@ UInt32 emuPceNativeCall(NativeFuncType* nativeFuncP, void* userDataP){
             uint32_t function = armv5GetRegister(5);
             uint32_t stackBlob = armv5GetRegister(6);
             uint32_t stackBlobSizeAndWantA0 = armv5GetRegister(7);
-            uint32_t (*m68kCallWithBlobFunc)(uint32_t functionAddress, uint32_t stackBlob, uint32_t stackBlobSize, uint16_t returnA0) = getGlobalVar(M68K_CALL_WITH_BLOB_FUNC);
             
             /*API call, convert to address first*/
             if(function < 0x1000)
