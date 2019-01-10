@@ -7,7 +7,7 @@ cd $DIR
 APPNAME="MuExpDriver"
 
 if [ "$1" = "clean" ]; then
-   rm -rf *.o *.a $APPNAME ./armExit ./armCall68k $APPNAME.prc *.bin
+   rm -rf *.o *.a $APPNAME $APPNAME.prc *.bin
    exit
 fi
 
@@ -18,11 +18,8 @@ if [ "$1" = "debug" ]; then
    CFLAGS="$CFLAGS -DDEBUG -g"
 fi
 
-# -O0 and -g need to be set to prevent register writes from being removed from compiled code
-arm-palmos-gcc -palmos-none -c ./armSrc/armExit.c -o ./armSrc/armExit.o
-arm-palmos-gcc -palmos-none -c ./armSrc/armCall68k.c -o ./armSrc/armCall68k.o
-arm-palmos-gcc -nostartfiles -o ./armExit ./armSrc/armExit.o
-arm-palmos-gcc -nostartfiles -o ./armCall68k ./armSrc/armCall68k.o
+cp ./armBlobs/armExit.func ./armc0000.bin
+cp ./armBlobs/armCall68k.func ./armc0001.bin
 for I in "${FILES[@]}"; do
    m68k-palmos-gcc $CFLAGS -c $I.c -o $I.o
 done
@@ -34,4 +31,4 @@ if type "MakePalmIcon" &> /dev/null; then
 fi
 
 pilrc $APPNAME.rcp
-build-prc $APPNAME.def $APPNAME ./armExit ./armCall68k *.bin
+build-prc $APPNAME.def $APPNAME *.bin
