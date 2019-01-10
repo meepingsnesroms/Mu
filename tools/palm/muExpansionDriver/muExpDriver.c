@@ -107,24 +107,45 @@ static void setProperDeviceId(uint16_t screenWidth, uint16_t screenHeight, Boole
 
 static void setConfigDefaults(uint32_t* configFile){
    debugLog("First load, setting default config.\n");
+   configFile[USER_WARNING_GIVEN] = false;
    configFile[ARM_STACK_SIZE] = 0x4000;
    configFile[LCD_WIDTH] = 160;
    configFile[LCD_HEIGHT] = 220;
 }
 
 static Boolean appHandleEvent(EventPtr eventP){
+   Boolean handled = false;
    
-   
+   /*
+   if(event->eType == frmOpenEvent){
+      FormType* form = FrmGetActiveForm();
+      
+      FrmDrawForm(form);
+      handled = true;
+   }
+   */
    
    /*wrong event handler, pass the event down*/
-   return false;
+   return handled;
 }
 
 static void showGui(uint32_t* configFile){
    EventType event;
-   Error unused;
+   Err unused;
+   FormType* currentWindow = NULL;
    
-   debugLog("Attemped to load GUI.\n");
+   debugLog("Attempting to load GUI.\n");
+   
+   /*popup warning dialog*/
+   if(!configFile[USER_WARNING_GIVEN]){
+      /*continue if user pressed "No", not a real device*/
+      if(!FrmAlert(GUI_ALERT_USER_WARNING))
+         configFile[USER_WARNING_GIVEN] = true;
+   }
+   
+   /*set starting window*/
+   currentWindow = FrmInitForm(GUI_FORM_MAIN_WINDOW);
+   FrmSetActiveForm(currentWindow);
    
    do{
       EvtGetEvent(&event, evtWaitForever);
@@ -135,6 +156,9 @@ static void showGui(uint32_t* configFile){
                FrmDispatchEvent(&event);
    }
    while(event.eType != appStopEvent);
+   
+   /*free form memory*/
+   FrmDeleteForm(currentWindow);
 }
 
 static void initBoot(uint32_t* configFile){

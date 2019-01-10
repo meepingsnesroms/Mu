@@ -27,7 +27,7 @@
 #include <SystemPublic.h>
 #include <UIPublic.h>
 
-// Include changed pieces of the SDK that arnt in the one of the new files
+// Include changed or missing pieces of the SDK that arnt in the one of the new files
 #include "MissingFunctions.h"
 
 #include "CoreTrapsPatch.h"

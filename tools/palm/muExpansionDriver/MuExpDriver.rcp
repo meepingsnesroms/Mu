@@ -1,12 +1,21 @@
 #include "MuExpDriverRsc.h"
 
-ALERT ID alt_incompatible
-ERROR
+ALERT ID GUI_ALERT_USER_WARNING
+WARNING
 BEGIN
-TITLE "Incompatible Device"
-MESSAGE "^1"
+TITLE "Warning!"
+MESSAGE "This program does not work on actual hardware, if you are running this on an actual device answer \"Yes\" and delete this program immediately!"
 
-BUTTONS "OK"
+BUTTONS "No" "Yes"
+END
+
+FORM ID GUI_FORM_MAIN_WINDOW AT (2 2 156 156) USABLE MODAL
+BEGIN
+TITLE   "Emulator Options"
+
+LABEL   "All hardware options are set in the emulator config of the frontend, only OS options are set here." AUTOID AT (CENTER 16) 
+CHECKBOX "Patch Inconsistent APIs" ID GUI_CHECKBOX_PATCH_INCONSISTENT_APIS AT (20 16 AUTO AUTO)
+
 END
 
 APPLICATION ID 1 "MuDv"
