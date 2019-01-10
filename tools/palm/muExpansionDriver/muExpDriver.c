@@ -16,7 +16,8 @@
 #define CONFIG_FILE_SIZE (20 * sizeof(uint32_t))
 
 enum{
-   ARM_STACK_SIZE = 0,
+   USER_WARNING_GIVEN = 0,
+   ARM_STACK_SIZE,
    LCD_WIDTH,
    LCD_HEIGHT
 };
@@ -111,38 +112,50 @@ static void setConfigDefaults(uint32_t* configFile){
    configFile[LCD_HEIGHT] = 220;
 }
 
+static Boolean appHandleEvent(EventPtr eventP){
+   
+   
+   
+   /*wrong event handler, pass the event down*/
+   return false;
+}
+
 static void showGui(uint32_t* configFile){
+   EventType event;
+   Error unused;
+   
    debugLog("Attemped to load GUI.\n");
    
-   while(true){
-      EventType event;
-   
-      do{
-         EvtGetEvent(&event, 1);
-         SysHandleEvent(&event);
-         if(event.eType == appStopEvent)
-            return;
-      }
-      while(event.eType != nilEvent);
+   do{
+      EvtGetEvent(&event, evtWaitForever);
+      
+      if(!appHandleEvent(&event))
+         if(!SysHandleEvent(&event))
+            if(!MenuHandleEvent(0, &event, &unused))
+               FrmDispatchEvent(&event);
    }
+   while(event.eType != appStopEvent);
 }
 
 static void initBoot(uint32_t* configFile){
-   uint32_t enabledFeatures = readArbitraryMemory32(EMU_REG_ADDR(EMU_INFO));
+   debugLog("OS booting!\n"); 
    
-   debugLog("OS booting!\n");   
-   if(enabledFeatures & FEATURE_HYBRID_CPU){
-      SysSetTrapAddress(sysTrapPceNativeCall, (void*)emuPceNativeCall);
+   if(configFile[USER_WARNING_GIVEN]){
+      uint32_t enabledFeatures = readArbitraryMemory32(EMU_REG_ADDR(EMU_INFO));
       
-      if(configFile[ARM_STACK_SIZE] > 0){
-         uint8_t* armStackStart = MemPtrNew(configFile[ARM_STACK_SIZE]);/*currently isnt ever freed*/
+      if(enabledFeatures & FEATURE_HYBRID_CPU){
+         SysSetTrapAddress(sysTrapPceNativeCall, (void*)emuPceNativeCall);
          
-         armv5SetStack(armStackStart, configFile[ARM_STACK_SIZE]);
-         setGlobalVar(ARM_STACK_START, (uint32_t)armStackStart);
+         if(configFile[ARM_STACK_SIZE] > 0){
+            uint8_t* armStackStart = MemPtrNew(configFile[ARM_STACK_SIZE]);/*currently isnt ever freed*/
+            
+            armv5SetStack(armStackStart, configFile[ARM_STACK_SIZE]);
+            setGlobalVar(ARM_STACK_START, (uint32_t)armStackStart);
+         }
       }
+      
+      setProperDeviceId(configFile[LCD_WIDTH], configFile[LCD_HEIGHT], !!(enabledFeatures & FEATURE_HYBRID_CPU), !!(enabledFeatures & FEATURE_EXT_KEYS));
    }
-   
-   setProperDeviceId(configFile[LCD_WIDTH], configFile[LCD_HEIGHT], !!(enabledFeatures & FEATURE_HYBRID_CPU), !!(enabledFeatures & FEATURE_EXT_KEYS));
 }
 
 UInt32 PilotMain(UInt16 cmd, MemPtr cmdBPB, UInt16 launchFlags){
