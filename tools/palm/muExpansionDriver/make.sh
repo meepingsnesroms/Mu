@@ -18,8 +18,9 @@ if [ "$1" = "debug" ]; then
    CFLAGS="$CFLAGS -DDEBUG -g"
 fi
 
-arm-palmos-gcc $CFLAGS -c ./armSrc/armExit.c -o ./armSrc/armExit.o
-arm-palmos-gcc $CFLAGS -c ./armSrc/armCall68k.c -o ./armSrc/armCall68k.o
+# -O0 and -g need to be set to prevent register writes from being removed from compiled code
+arm-palmos-gcc -palmos-none -c ./armSrc/armExit.c -o ./armSrc/armExit.o
+arm-palmos-gcc -palmos-none -c ./armSrc/armCall68k.c -o ./armSrc/armCall68k.o
 arm-palmos-gcc -nostartfiles -o ./armExit ./armSrc/armExit.o
 arm-palmos-gcc -nostartfiles -o ./armCall68k ./armSrc/armCall68k.o
 for I in "${FILES[@]}"; do
