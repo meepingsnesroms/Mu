@@ -130,7 +130,7 @@ static void showGui(uint32_t* configFile){
 static void initBoot(uint32_t* configFile){
    uint32_t enabledFeatures = readArbitraryMemory32(EMU_REG_ADDR(EMU_INFO));
    
-   debugLog("OS booting!\n");
+   debugLog("OS booting!\n");   
    if(enabledFeatures & FEATURE_HYBRID_CPU){
       SysSetTrapAddress(sysTrapPceNativeCall, (void*)emuPceNativeCall);
       
@@ -146,7 +146,7 @@ static void initBoot(uint32_t* configFile){
 }
 
 UInt32 PilotMain(UInt16 cmd, MemPtr cmdBPB, UInt16 launchFlags){
-#if 0
+#if 1
    /*use config file*/
    DmOpenRef configDb;
    MemHandle configHandle;

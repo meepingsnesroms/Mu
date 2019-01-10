@@ -18,8 +18,6 @@ if [ "$1" = "debug" ]; then
    CFLAGS="$CFLAGS -DDEBUG -g"
 fi
 
-cp ./armBlobs/armExit.func ./armc0000.bin
-cp ./armBlobs/armCall68k.func ./armc0001.bin
 for I in "${FILES[@]}"; do
    m68k-palmos-gcc $CFLAGS -c $I.c -o $I.o
 done
