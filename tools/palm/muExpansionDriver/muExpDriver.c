@@ -13,15 +13,21 @@
 
 
 /*config vars*/
-#define CONFIG_FILE_SIZE (20 * sizeof(uint32_t))
-
 enum{
    USER_WARNING_GIVEN = 0,
    ARM_STACK_SIZE,
    LCD_WIDTH,
-   LCD_HEIGHT
+   LCD_HEIGHT,
+   EXTRA_RAM_MB_DYNAMIC_HEAP,
+   /*add new entries above*/
+   CONFIG_FILE_ENTRIES
 };
 
+
+void install128mbRam(uint8_t mbDynamicHeap){
+   /*installs a new virtual card with the extra RAM(128mb - 16mb)*/
+   
+}
 
 static void setProperDeviceId(uint16_t screenWidth, uint16_t screenHeight, Boolean hasArmCpu, Boolean hasDpad){
    uint32_t osVer;
@@ -107,23 +113,26 @@ static void setProperDeviceId(uint16_t screenWidth, uint16_t screenHeight, Boole
 
 static void setConfigDefaults(uint32_t* configFile){
    debugLog("First load, setting default config.\n");
+   
    configFile[USER_WARNING_GIVEN] = false;
    configFile[ARM_STACK_SIZE] = 0x4000;
    configFile[LCD_WIDTH] = 160;
    configFile[LCD_HEIGHT] = 220;
+   configFile[EXTRA_RAM_MB_DYNAMIC_HEAP] = 10;
 }
 
 static Boolean appHandleEvent(EventPtr eventP){
    Boolean handled = false;
    
-   /*
-   if(event->eType == frmOpenEvent){
+   if(eventP->eType == frmOpenEvent){
       FormType* form = FrmGetActiveForm();
       
       FrmDrawForm(form);
       handled = true;
    }
-   */
+   else if(eventP->eType == frmCloseEvent){
+      /*nothing for now*/
+   }
    
    /*wrong event handler, pass the event down*/
    return handled;
@@ -162,10 +171,31 @@ static void showGui(uint32_t* configFile){
 }
 
 static void initBoot(uint32_t* configFile){
-   debugLog("OS booting!\n"); 
+   Err error;
+   uint32_t heapFree;
+   uint32_t heapBiggestBlock;
+   
+   debugLog("OS booting!\n");
+   
+   debugLog("RAM size:%d bytes\n", MemHeapSize(0));
+   error = MemHeapFreeBytes(0, &heapFree, &heapBiggestBlock);
+   if(!error)
+      debugLog("RAM free:%d, RAM biggest block:%d bytes\n", heapFree, heapBiggestBlock);
+   else
+      debugLog("RAM free:check failed, RAM biggest block:check failed\n");
+   
+   debugLog("Storage size:%d bytes\n", MemHeapSize(1));
+   error = MemHeapFreeBytes(1, &heapFree, &heapBiggestBlock);
+   if(!error)
+      debugLog("Storage free:%d bytes, Storage biggest block:%d bytes\n", heapFree, heapBiggestBlock);
+   else
+      debugLog("Storage free:check failed, Storage biggest block:check failed\n");
    
    if(configFile[USER_WARNING_GIVEN]){
       uint32_t enabledFeatures = readArbitraryMemory32(EMU_REG_ADDR(EMU_INFO));
+      
+      if(enabledFeatures & FEATURE_RAM_HUGE)
+         install128mbRam(configFile[EXTRA_RAM_MB_DYNAMIC_HEAP]);
       
       if(enabledFeatures & FEATURE_HYBRID_CPU){
          SysSetTrapAddress(sysTrapPceNativeCall, (void*)emuPceNativeCall);
@@ -183,24 +213,38 @@ static void initBoot(uint32_t* configFile){
 }
 
 UInt32 PilotMain(UInt16 cmd, MemPtr cmdBPB, UInt16 launchFlags){
-#if 1
-   /*use config file*/
    DmOpenRef configDb;
    MemHandle configHandle;
    uint32_t* configFile;
+   Err error;
    
-   configDb = DmOpenDatabaseByTypeCreator('EMUC', 'GuiC', dmModeReadOnly);
+   configDb = DmOpenDatabaseByTypeCreator('EMUC', 'GuiC', dmModeReadWrite);
    
    /*create db and set defaults if config doesnt exist*/
    if(!configDb){
-      DmCreateDatabase(0/*cardNo*/, "Emu Config", 'GuiC', 'EMUC', true);
-      configDb = DmOpenDatabaseByTypeCreator('EMUC', 'GuiC', dmModeReadOnly);
-      configHandle = DmNewResource(configDb, 'CONF', 0, CONFIG_FILE_SIZE);
+      error = DmCreateDatabase(0/*cardNo*/, "Emu Config", 'GuiC', 'EMUC', true);
+      
+      debugLog("Tried to create db, err:%d\n", error);
+      
+      configDb = DmOpenDatabaseByTypeCreator('EMUC', 'GuiC', dmModeReadWrite);
+      
+      if(!configDb)
+         debugLog("Cant find created db!\n");
+      
+      configHandle = DmNewResource(configDb, 'CONF', 0, CONFIG_FILE_ENTRIES * sizeof(uint32_t));
+      
+      if(!configHandle)
+         debugLog("Cant open db resource!\n");
+      
       configFile = MemHandleLock(configHandle);
       setConfigDefaults(configFile);
    }
    else{
-      configHandle = DmGet1Resource('CONF', 0);
+      configHandle = DmGetResource('CONF', 0);
+      
+      if(!configHandle)
+         debugLog("Cant open db resource!\n");
+      
       configFile = MemHandleLock(configHandle);
    }
    
@@ -212,19 +256,6 @@ UInt32 PilotMain(UInt16 cmd, MemPtr cmdBPB, UInt16 launchFlags){
    MemHandleUnlock(configHandle);
    DmReleaseResource(configHandle);
    DmCloseDatabase(configDb);
-#else
-   /*dont use config file*/
-   uint32_t* configFile = MemPtrNew(CONFIG_FILE_SIZE);
-   
-   setConfigDefaults(configFile);
-   
-   if(cmd == sysAppLaunchCmdNormalLaunch)
-      showGui(configFile);
-   else if(cmd == sysAppLaunchCmdSystemReset)
-      initBoot(configFile);
-   
-   MemPtrFree(configFile);
-#endif
    
    return 0;
 }

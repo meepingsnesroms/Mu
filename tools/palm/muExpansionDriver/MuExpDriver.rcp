@@ -4,9 +4,9 @@ ALERT ID GUI_ALERT_USER_WARNING
 WARNING
 BEGIN
 TITLE "Warning!"
-MESSAGE "This program does not work on actual hardware, if you are running this on an actual device answer \"Yes\" and delete this program immediately!"
+MESSAGE "This program does not work on actual hardware, if you are running this on an actual device answer \"Real\" and delete this program immediately!"
 
-BUTTONS "No" "Yes"
+BUTTONS "Emulator" "Real"
 END
 
 FORM ID GUI_FORM_MAIN_WINDOW AT (2 2 156 156) USABLE MODAL
