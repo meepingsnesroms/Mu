@@ -115,8 +115,6 @@ void pdiUsbD12LoadState(uint8_t* data){
 }
 
 uint8_t pdiUsbD12GetRegister(bool address){
-   uint8_t value;
-
    if(!address){
       //0x0 data
       switch(pdiUsbD12Command){
@@ -124,44 +122,35 @@ uint8_t pdiUsbD12GetRegister(bool address){
             switch(pdiUsbD12CommandState){
                case 0:
                   pdiUsbD12CommandState++;
-                  value = 0xE7;//random byte
-                  break;
+                  return 0xE7;//random byte
 
                case 1:
                   debugLog("Invalid behavior, READ_WRITE_BUFFER read\n");
                   pdiUsbD12CommandState++;
-                  value = 0x00;//bytes to read, need to actually implement this
-                  break;
+                  return 0x00;//bytes to read, need to actually implement this
 
                default:
-                  value = pdiUsbD12FifoRead(PDIUSBD12_FIFO_FROM_USB);//the actual data
-                  break;
+                  return pdiUsbD12FifoRead(PDIUSBD12_FIFO_FROM_USB);//the actual data
             }
-            break;
 
          case READ_INTERRUPT_REGISTER:
             //most functions belong here
-            value = pdiUsbD12FifoRead(PDIUSBD12_FIFO_TO_CPU);
-            break;
+            return pdiUsbD12FifoRead(PDIUSBD12_FIFO_TO_CPU);
 
          case PDIUSBD12_CMD_NONE:
-            value = 0x00;
-            break;
+            return 0x00;
 
          default:
             debugLog("USB command 0x%02X, read not handeled\n", pdiUsbD12Command);
-            value = 0x00;
-            break;
+            return 0x00;
       }
    }
    else{
       //0x1 commands
       debugLog("USB read command\n");
       //may just return 0x00(or random byte) or may return current command(not read by Palm OS during boot up)
-      value = 0x00;
+      return 0x00;
    }
-
-   return value;
 }
 
 void pdiUsbD12SetRegister(bool address, uint8_t value){
