@@ -276,6 +276,9 @@ void m68k_write_memory_16(uint32_t address, uint16_t value){
       return;
 #endif
 
+   if(address == 0x00100000 && value == 0x5555)
+      debugLog("0x5555 memory filler at PC:0x%08X\n", flx68000GetPc());
+
    switch(addressType){
       case CHIP_A0_ROM:
          break;

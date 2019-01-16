@@ -377,7 +377,7 @@ static void setSpiCont1(uint16_t value){
          uint16_t startBit = 1 << (bitCount - 1);
          uint8_t bits;
 
-         //debugLog("SPI1 transfer, PC:0x%08X\n", flx68000GetPc());
+         debugLog("SPI1 transfer, bitCount:%d, PC:0x%08X\n", bitCount, flx68000GetPc());
 
          //The most significant bit is output when the CPU loads the transmitted data, 13.2.3 SPI 1 Phase and Polarity Configurations MC68VZ328UM.pdf
          for(bits = 0; bits < bitCount; bits++){

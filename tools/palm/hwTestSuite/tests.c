@@ -956,6 +956,8 @@ var unaligned32bitAccess(void){
          StrPrintF(sharedDataBuffer, "It works!");
          UG_PutString(0, 0, sharedDataBuffer);
       }
+      
+      firstRun = false;
    }
    
    if(getButtonPressed(buttonBack)){
@@ -963,5 +965,40 @@ var unaligned32bitAccess(void){
       exitSubprogram();
    }
 
+   return makeVar(LENGTH_0, TYPE_NULL, 0);
+}
+
+var isIrq2AttachedToSdCardChipSelect(void){
+   static Boolean firstRun = true;
+   uint16_t y = 0;
+   
+   if(firstRun){
+      firstRun = false;
+      debugSafeScreenClear(C_WHITE);
+      
+      turnInterruptsOff();
+      
+      StrPrintF(sharedDataBuffer, "IRQ2 value:%s", (readArbitraryMemory8(HW_REG_ADDR(PDDATA)) & 0x20) ? "true " : "false");/*"true " needs the space to clear the e from "false"*/
+      UG_PutString(0, y, sharedDataBuffer);
+      y += FONT_HEIGHT + 1;
+      
+      writeArbitraryMemory8(HW_REG_ADDR(PJDATA), readArbitraryMemory8(HW_REG_ADDR(PJDATA)) ^ 0x08);
+      StrPrintF(sharedDataBuffer, "Chip Select Toggled");
+      UG_PutString(0, y, sharedDataBuffer);
+      y += FONT_HEIGHT + 1;
+      
+      StrPrintF(sharedDataBuffer, "IRQ2 value:%s", (readArbitraryMemory8(HW_REG_ADDR(PDDATA)) & 0x20) ? "true " : "false");/*"true " needs the space to clear the e from "false"*/
+      UG_PutString(0, y, sharedDataBuffer);
+      y += FONT_HEIGHT + 1;
+      
+      writeArbitraryMemory8(HW_REG_ADDR(PJDATA), readArbitraryMemory8(HW_REG_ADDR(PJDATA)) ^ 0x08);/*restore old chip select state*/
+      turnInterruptsOn();
+   }
+   
+   if(getButtonPressed(buttonBack)){
+      firstRun = true;
+      exitSubprogram();
+   }
+   
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }

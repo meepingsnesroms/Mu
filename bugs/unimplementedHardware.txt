@@ -31,7 +31,7 @@ Memory:
 SD card can't be read or written to by Palm OS
 unknown if DRAM bit expanded address space is used for CSC when its not an extension of CSD
 there is conflicting information on whether the DRAM bit effects CSC, needs a test made
-the unemulated chip selects(CSB1, CSC0/1) privilege violation interrupts will not be handled properly
+the unemulated chip selects(CSB1, CSC0/1) privilege violation interrupts are not handled properly
 
 SED1376:
 swivelview register
@@ -44,11 +44,14 @@ in the edge case that SPICLK2 is disabled while using ADS7846 and a 1 was the la
 
 SD Card:
 IRQ2 may actually be attached to the SD Card data out pin, triggering an interrupt when a 0 is received to process the return data
+need to test if Port J Pin 3(SD card chip select) is attached to Port D Pin 5(SD Card Status(IRQ2))(pinouts.ru says chip select and card detect are the same line)
 
 Debug tools:
 ADS7846 channels can't be read in single reference mode in hwTestSuite
 
 MakePalmBitmap:
+the small icons are corrupt
+the non 16 bpp large icons are corrupt
 
 
 Fixed:

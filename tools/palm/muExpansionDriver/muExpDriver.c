@@ -24,9 +24,32 @@ enum{
 };
 
 
-void install128mbRam(uint8_t mbDynamicHeap){
+static void install128mbRam(uint8_t mbDynamicHeap){
+   /*these functions are called by HwrInit, which can be called directly by apps*/
+   /*PrvGetRAMSize_10002C5E, small ROM*/
+   /*PrvGetRAMSize_1008442E, big ROM*/
+   /*HwrPreDebugInit_10002B06, small ROM*/
+   /*HwrPreDebugInit_100842DC, big ROM, sets up the default RAM card*/
+   /*HwrCalcDynamicHeapSize_10005D10, small ROM*/
+   /*HwrCalcDynamicHeapSize_10083B54, big ROM, sets up the heap size*/
+   
+   
    /*installs a new virtual card with the extra RAM(128mb - 16mb)*/
    
+   /*
+   Err         MemCardFormat(UInt16 cardNo, const Char *cardNameP, 
+                             const Char *manufNameP, const Char *ramStoreNameP)
+   SYS_TRAP(sysTrapMemCardFormat);
+   */
+   
+   /*
+   Err         MemStoreSetInfo(UInt16 cardNo, UInt16 storeNumber,
+                               UInt16 *versionP, UInt16 *flagsP,  Char *nameP, 
+                               UInt32 *crDateP, UInt32 *bckUpDateP, 
+                               UInt32 *heapListOffsetP, UInt32 *initCodeOffset1P,
+                               UInt32 *initCodeOffset2P, LocalID*   databaseDirIDP)
+   SYS_TRAP(sysTrapMemStoreSetInfo);
+   */
 }
 
 static void setProperDeviceId(uint16_t screenWidth, uint16_t screenHeight, Boolean hasArmCpu, Boolean hasDpad){
@@ -177,21 +200,22 @@ static void initBoot(uint32_t* configFile){
    
    debugLog("OS booting!\n");
    
-   debugLog("RAM size:%d bytes\n", MemHeapSize(0));
+   debugLog("RAM size:%ld bytes\n", MemHeapSize(0));
    error = MemHeapFreeBytes(0, &heapFree, &heapBiggestBlock);
    if(!error)
-      debugLog("RAM free:%d, RAM biggest block:%d bytes\n", heapFree, heapBiggestBlock);
+      debugLog("RAM free:%ld, RAM biggest block:%ld bytes\n", heapFree, heapBiggestBlock);
    else
       debugLog("RAM free:check failed, RAM biggest block:check failed\n");
    
-   debugLog("Storage size:%d bytes\n", MemHeapSize(1));
+   debugLog("Storage size:%ld bytes\n", MemHeapSize(1));
    error = MemHeapFreeBytes(1, &heapFree, &heapBiggestBlock);
    if(!error)
-      debugLog("Storage free:%d bytes, Storage biggest block:%d bytes\n", heapFree, heapBiggestBlock);
+      debugLog("Storage free:%ld bytes, Storage biggest block:%ld bytes\n", heapFree, heapBiggestBlock);
    else
       debugLog("Storage free:check failed, Storage biggest block:check failed\n");
    
    if(configFile[USER_WARNING_GIVEN]){
+      Boolean wantCfw = false;
       uint32_t enabledFeatures = readArbitraryMemory32(EMU_REG_ADDR(EMU_INFO));
       
       if(enabledFeatures & FEATURE_RAM_HUGE)

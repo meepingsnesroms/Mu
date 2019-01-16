@@ -29,7 +29,7 @@
 
 
 uint16_t sed1376Framebuffer[160 * 160];
-uint8_t sed1376Ram[SED1376_RAM_SIZE];
+uint8_t  sed1376Ram[SED1376_RAM_SIZE];
 
 static uint8_t  sed1376Registers[SED1376_REG_SIZE];
 static uint8_t  sed1376RLut[SED1376_LUT_SIZE];

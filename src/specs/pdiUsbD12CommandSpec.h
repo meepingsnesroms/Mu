@@ -13,6 +13,7 @@
 
 #define SET_ENDPOINT_ENABLE      0xD8
 
+#define READ_WRITE_BUFFER        0xF0
 #define CLEAR_BUFFER             0xF2
 #define SET_MODE                 0xF3
 #define READ_INTERRUPT_REGISTER  0xF4

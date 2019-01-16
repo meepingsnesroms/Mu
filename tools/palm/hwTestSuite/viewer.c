@@ -391,5 +391,9 @@ void resetFunctionViewer(void){
       StrNCopy(hwTests[totalHwTests].name, "Get SPI2 ENABLE Delay", TEST_NAME_LENGTH);
       hwTests[totalHwTests].testFunction = checkSpi2EnableBitDelay;
       totalHwTests++;
+      
+      StrNCopy(hwTests[totalHwTests].name, "Is IRQ2 = SD Card CS", TEST_NAME_LENGTH);
+      hwTests[totalHwTests].testFunction = isIrq2AttachedToSdCardChipSelect;
+      totalHwTests++;
    }
 }

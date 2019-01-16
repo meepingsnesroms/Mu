@@ -330,7 +330,7 @@ void setEmuRegister(uint32_t address, uint32_t value){
                         break;
                   }
 
-                  debugLog("CMD_PRINT:%s\n", tempString);
+                  debugLog("CMD_PRINT: %s\n", tempString);
                }
                break;
 
