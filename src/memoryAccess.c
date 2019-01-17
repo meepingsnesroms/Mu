@@ -141,10 +141,8 @@ uint8_t m68k_read_memory_8(uint32_t address){
 
       default:
          debugLog("Unknown bank type:%d\n", bankType[START_BANK(address)]);
-         break;
+         return 0x00;
    }
-
-   return 0x00;
 }
 
 uint16_t m68k_read_memory_16(uint32_t address){
@@ -180,10 +178,8 @@ uint16_t m68k_read_memory_16(uint32_t address){
 
       default:
          debugLog("Unknown bank type:%d\n", bankType[START_BANK(address)]);
-         break;
+         return 0x0000;
    }
-
-   return 0x0000;
 }
 
 uint32_t m68k_read_memory_32(uint32_t address){
@@ -219,10 +215,8 @@ uint32_t m68k_read_memory_32(uint32_t address){
 
       default:
          debugLog("Unknown bank type:%d\n", bankType[START_BANK(address)]);
-         break;
+         return 0x00000000;
    }
-
-   return 0x00000000;
 }
 
 void m68k_write_memory_8(uint32_t address, uint8_t value){
@@ -235,37 +229,35 @@ void m68k_write_memory_8(uint32_t address, uint8_t value){
 
    switch(addressType){
       case CHIP_A0_ROM:
-         break;
+         return;
 
       case CHIP_A1_USB:
          pdiUsbD12SetRegister(!!(address & chips[CHIP_A1_USB].mask), value);
-         break;
+         return;
 
       case CHIP_B0_SED:
          sed1376Write8(address, value);
-         break;
+         return;
 
       case CHIP_DX_RAM:
          ramWrite8(address, value);
-         break;
+         return;
 
       case CHIP_00_EMU:
-         break;
+         return;
 
       case CHIP_REGISTERS:
          setHwRegister8(address, value);
-         break;
+         return;
 
       case CHIP_NONE:
          setBusErrorTimeOut(address, true);
-         break;
+         return;
 
       default:
          debugLog("Unknown bank type:%d\n", bankType[START_BANK(address)]);
-         break;
+         return;
    }
-
-   return;
 }
 
 void m68k_write_memory_16(uint32_t address, uint16_t value){
@@ -276,42 +268,37 @@ void m68k_write_memory_16(uint32_t address, uint16_t value){
       return;
 #endif
 
-   if(address == 0x00100000 && value == 0x5555)
-      debugLog("0x5555 memory filler at PC:0x%08X\n", flx68000GetPc());
-
    switch(addressType){
       case CHIP_A0_ROM:
-         break;
+         return;
 
       case CHIP_A1_USB:
          pdiUsbD12SetRegister(!!(address & chips[CHIP_A1_USB].mask), value);
-         break;
+         return;
 
       case CHIP_B0_SED:
          sed1376Write16(address, value);
-         break;
+         return;
 
       case CHIP_DX_RAM:
          ramWrite16(address, value);
-         break;
+         return;
 
       case CHIP_00_EMU:
-         break;
+         return;
 
       case CHIP_REGISTERS:
          setHwRegister16(address, value);
-         break;
+         return;
 
       case CHIP_NONE:
          setBusErrorTimeOut(address, true);
-         break;
+         return;
 
       default:
          debugLog("Unknown bank type:%d\n", bankType[START_BANK(address)]);
-         break;
+         return;
    }
-
-   return;
 }
 
 void m68k_write_memory_32(uint32_t address, uint32_t value){
@@ -324,38 +311,36 @@ void m68k_write_memory_32(uint32_t address, uint32_t value){
 
    switch(addressType){
       case CHIP_A0_ROM:
-         break;
+         return;
 
       case CHIP_A1_USB:
          pdiUsbD12SetRegister(!!(address & chips[CHIP_A1_USB].mask), value);
-         break;
+         return;
 
       case CHIP_B0_SED:
          sed1376Write32(address, value);
-         break;
+         return;
 
       case CHIP_DX_RAM:
          ramWrite32(address, value);
-         break;
+         return;
 
       case CHIP_00_EMU:
          setEmuRegister(address, value);
-         break;
+         return;
 
       case CHIP_REGISTERS:
          setHwRegister32(address, value);
-         break;
+         return;
 
       case CHIP_NONE:
          setBusErrorTimeOut(address, true);
-         break;
+         return;
 
       default:
          debugLog("Unknown bank type:%d\n", bankType[START_BANK(address)]);
-         break;
+         return;
    }
-
-   return;
 }
 
 void m68k_write_memory_32_pd(uint32_t address, uint32_t value){

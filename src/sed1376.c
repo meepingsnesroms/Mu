@@ -213,8 +213,6 @@ uint8_t sed1376GetRegister(uint8_t address){
       default:
          return 0x00;
    }
-   
-   return 0x00;//silence warnings
 }
 
 void sed1376SetRegister(uint8_t address, uint8_t value){
@@ -226,24 +224,24 @@ void sed1376SetRegister(uint8_t address, uint8_t value){
       case PWR_SAVE_CFG:
          //bit 7 must always be set, timing hack
          sed1376Registers[address] = (value & 0x01) | 0x80;
-         break;
+         return;
 
       case DISP_MODE:
          sed1376Registers[address] = value & 0xF7;
-         break;
+         return;
 
       case PANEL_TYPE:
          sed1376Registers[address] = value & 0xFB;
-         break;
+         return;
 
       case SPECIAL_EFFECT:
          sed1376Registers[address] = value & 0xD3;
-         break;
+         return;
 
       case DISP_ADDR_2:
       case PIP_ADDR_2:
          sed1376Registers[address] = value & 0x01;
-         break;
+         return;
 
       case LINE_SIZE_1:
       case PIP_LINE_SZ_1:
@@ -252,7 +250,7 @@ void sed1376SetRegister(uint8_t address, uint8_t value){
       case PIP_Y_START_1:
       case PIP_Y_END_1:
          sed1376Registers[address] = value & 0x03;
-         break;
+         return;
 
       case LUT_WRITE_LOC:
          sed1376BLut[value] = sed1376Registers[LUT_B_WRITE];
@@ -266,38 +264,38 @@ void sed1376SetRegister(uint8_t address, uint8_t value){
          */
          //debugLog("Writing R:0x%02X, G:0x%02X, B:0x%02X to LUT:0x%02X\n", sed1376RLut[value], sed1376GLut[value], sed1376BLut[value], value);
          sed1376OutputLut[value] = makeRgb16FromSed666(sed1376RLut[value], sed1376GLut[value], sed1376BLut[value]);
-         break;
+         return;
 
       case LUT_READ_LOC:
          sed1376Registers[LUT_B_READ] = sed1376BLut[value];
          sed1376Registers[LUT_G_READ] = sed1376GLut[value];
          sed1376Registers[LUT_R_READ] = sed1376RLut[value];
-         break;
+         return;
 
       case GPIO_CONF_0:
       case GPIO_CONT_0:
          sed1376Registers[address] = value & 0x7F;
          updateLcdStatus();
-         break;
+         return;
 
       case GPIO_CONF_1:
       case GPIO_CONT_1:
          sed1376Registers[address] = value & 0x80;
-         break;
+         return;
 
       case MEM_CLK:
          sed1376Registers[address] = value & 0x30;
-         break;
+         return;
 
       case PIXEL_CLK:
          sed1376Registers[address] = value & 0x73;
-         break;
+         return;
 
       case LUT_B_WRITE:
       case LUT_G_WRITE:
       case LUT_R_WRITE:
          sed1376Registers[address] = value & 0xFC;
-         break;
+         return;
 
       case SCRATCH_0:
       case SCRATCH_1:
@@ -313,10 +311,10 @@ void sed1376SetRegister(uint8_t address, uint8_t value){
       case PIP_Y_END_0:
          //simple write, no actions needed
          sed1376Registers[address] = value;
-         break;
+         return;
 
       default:
-         break;
+         return;
    }
 }
 

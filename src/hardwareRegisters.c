@@ -271,48 +271,48 @@ void setEmuRegister(uint32_t address, uint32_t value){
    switch(address){
       case EMU_SRC:
          palmEmuFeatures.src = value;
-         break;
+         return;
 
       case EMU_DST:
          palmEmuFeatures.dst = value;
-         break;
+         return;
 
       case EMU_SIZE:
          palmEmuFeatures.size = value;
-         break;
+         return;
 
       case EMU_VALUE:
          palmEmuFeatures.value = value;
-         break;
+         return;
 
       case EMU_CMD:
          switch(value){
             case CMD_ARM_SERVICE:
                if(palmEmuFeatures.info & FEATURE_HYBRID_CPU)
                   palmEmuFeatures.value = armv5ServiceRequest;
-               break;
+               return;
 
             case CMD_ARM_SET_REG:
                if(palmEmuFeatures.info & FEATURE_HYBRID_CPU)
                   armv5SetRegister(palmEmuFeatures.dst, palmEmuFeatures.value);
-               break;
+               return;
 
             case CMD_ARM_GET_REG:
                if(palmEmuFeatures.info & FEATURE_HYBRID_CPU)
                   palmEmuFeatures.value = armv5GetRegister(palmEmuFeatures.src);
-               break;
+               return;
 
             case CMD_ARM_RUN:
                if(palmEmuFeatures.info & FEATURE_HYBRID_CPU)
                   palmEmuFeatures.value = armv5Execute(palmEmuFeatures.value);
-               break;
+               return;
 
             case CMD_SET_RESOLUTION:
                if(palmEmuFeatures.info & FEATURE_CUSTOM_FB){
                   palmFramebufferWidth = palmEmuFeatures.value >> 16;
                   palmFramebufferHeight = palmEmuFeatures.value & 0xFFFF;
                }
-               break;
+               return;
 
             case CMD_PRINT:
                if(palmEmuFeatures.info & FEATURE_DEBUG){
@@ -332,27 +332,26 @@ void setEmuRegister(uint32_t address, uint32_t value){
 
                   debugLog("CMD_PRINT: %s\n", tempString);
                }
-               break;
+               return;
 
             case CMD_GET_KEYS:
                if(palmEmuFeatures.info & FEATURE_EXT_KEYS)
                   palmEmuFeatures.value = (palmInput.buttonLeft ? EXT_BUTTON_LEFT : 0) | (palmInput.buttonRight ? EXT_BUTTON_RIGHT : 0) | (palmInput.buttonSelect ? EXT_BUTTON_SELECT : 0);
-               break;
+               return;
 
             case CMD_EXECUTION_DONE:
                if(palmEmuFeatures.info & FEATURE_DEBUG)
                   sandboxReturn();
-               break;
+               return;
 
             default:
                debugLog("Invalid emu command 0x%04X.\n", value);
-               break;
+               return;
          }
-         break;
 
       default:
          debugLog("Invalid write 0x%08X to emu register 0x%08X.\n", value, address);
-         break;
+         return;
    }
 }
 
@@ -402,7 +401,7 @@ uint8_t getHwRegister8(uint32_t address){
 
       case PWMCNT1:
          debugLog("PWMCNT1 not implimented\n");
-         break;
+         return 0x00;
 
       //16 bit registers being read as 8 bit
       case SPICONT1:
@@ -461,8 +460,8 @@ uint8_t getHwRegister8(uint32_t address){
          //bootloader
          if(address >= 0xE00)
             return registerArrayRead8(address);
-         if(address < 0xE00)
-            printUnknownHwAccess(address, 0, 8, false);
+
+         printUnknownHwAccess(address, 0, 8, false);
          return 0x00;
    }
 }
@@ -553,8 +552,8 @@ uint16_t getHwRegister16(uint32_t address){
          //bootloader
          if(address >= 0xE00)
             return registerArrayRead16(address);
-         if(address < 0xE00)
-            printUnknownHwAccess(address, 0, 16, false);
+
+         printUnknownHwAccess(address, 0, 16, false);
          return 0x0000;
    }
 }
@@ -585,8 +584,8 @@ uint32_t getHwRegister32(uint32_t address){
          //bootloader
          if(address >= 0xE00)
             return registerArrayRead32(address);
-         if(address < 0xE00)
-            printUnknownHwAccess(address, 0, 32, false);
+
+         printUnknownHwAccess(address, 0, 32, false);
          return 0x00000000;
    }
 }
@@ -607,43 +606,43 @@ void setHwRegister8(uint32_t address, uint8_t value){
    switch(address){
       case SCR:
          setScr(value);
-         break;
+         return;
 
       case PWMS1 + 1:
          //write only if PWM1 enabled
          if(registerArrayRead16(PWMC1) & 0x0010)
             pwm1FifoWrite(value);
-         break;
+         return;
 
       case PWMP1:
          //write only if PWM1 enabled
          if(registerArrayRead16(PWMC1) & 0x0010)
             registerArrayWrite8(address, value);
-         break;
+         return;
 
       case PCTLR:
          registerArrayWrite8(address, value & 0x9F);
          if(value & 0x80)
             pctlrCpuClockDivider = (value & 0x1F) / 31.0;
-         break;
+         return;
 
       case IVR:
          //write without the bottom 3 bits
          registerArrayWrite8(address, value & 0xF8);
-         break;
+         return;
 
       case PBSEL:
       case PBDIR:
       case PBDATA:
          registerArrayWrite8(address, value);
          updatePowerButtonLedStatus();
-         break;
+         return;
 
       case PDSEL:
          //write without the bottom 4 bits
          registerArrayWrite8(address, value & 0xF0);
          checkPortDInterrupts();
-         break;
+         return;
 
       case PDPOL:
       case PDIRQEN:
@@ -651,20 +650,20 @@ void setHwRegister8(uint32_t address, uint8_t value){
          //write without the top 4 bits
          registerArrayWrite8(address, value & 0x0F);
          checkPortDInterrupts();
-         break;
+         return;
 
       case PDDATA:
       case PDKBEN:
          //can change interrupt state
          registerArrayWrite8(address, value);
          checkPortDInterrupts();
-         break;
+         return;
 
       case PFSEL:
          //this is the clock output pin for the SED1376, if its disabled so is the LCD controller
          registerArrayWrite8(PFSEL, value);
          setSed1376Attached(sed1376ClockConnected());
-         break;
+         return;
 
       case PGSEL:
       case PGDIR:
@@ -672,14 +671,14 @@ void setHwRegister8(uint32_t address, uint8_t value){
          //write without the top 2 bits
          registerArrayWrite8(address, value & 0x3F);
          updateAds7846ChipSelectStatus();
-         break;
+         return;
 
       case PJSEL:
       case PJDIR:
       case PJDATA:
          registerArrayWrite8(address, value);
          updateSdCardChipSelectStatus();
-         break;
+         return;
 
       case PKSEL:
       case PKDIR:
@@ -688,7 +687,7 @@ void setHwRegister8(uint32_t address, uint8_t value){
          checkPortDInterrupts();
          updateVibratorStatus();
          updateBacklightAmplifierStatus();
-         break;
+         return;
 
       case PMSEL:
       case PMDIR:
@@ -696,13 +695,13 @@ void setHwRegister8(uint32_t address, uint8_t value){
          //unemulated
          //infrared shutdown
          registerArrayWrite8(address, value & 0x3F);
-         break;
+         return;
 
       case PMPUEN:
       case PGPUEN:
          //write without the top 2 bits
          registerArrayWrite8(address, value & 0x3F);
-         break;
+         return;
 
       //select between GPIO or special function
       case PCSEL:
@@ -734,15 +733,17 @@ void setHwRegister8(uint32_t address, uint8_t value){
       case LCKCON:
          //simple write, no actions needed
          registerArrayWrite8(address, value);
-         break;
+         return;
 
       default:
          //writeable bootloader region
-         if(address >= 0xFC0)
+         if(address >= 0xFC0){
             registerArrayWrite32(address, value);
-         if(address < 0xE00)
-            printUnknownHwAccess(address, value, 8, true);
-         break;
+            return;
+         }
+
+         printUnknownHwAccess(address, value, 8, true);
+         return;
    }
 }
 
@@ -763,44 +764,44 @@ void setHwRegister16(uint32_t address, uint16_t value){
       case RTCIENR:
          //missing bits 6 and 7
          registerArrayWrite16(address, value & 0xFF3F);
-         break;
+         return;
 
       case RTCCTL:
          registerArrayWrite16(address, value & 0x00A0);
-         break;
+         return;
 
       case IMR:
          //this is a 32 bit register but Palm OS writes to it as 16 bit chunks
          registerArrayWrite16(IMR, value & 0x00FF);
          registerArrayWrite16(ISR, registerArrayRead16(IPR) & ~registerArrayRead16(IMR));
          checkInterrupts();
-         break;
+         return;
       case IMR + 2:
          //this is a 32 bit register but Palm OS writes to it as 16 bit chunks
          registerArrayWrite16(IMR + 2, value & 0xFFFF);//Palm OS writes to reserved bits 14 and 15
          registerArrayWrite16(ISR + 2, registerArrayRead16(IPR + 2) & ~registerArrayRead16(IMR + 2));
          checkInterrupts();
-         break;
+         return;
 
       case ISR:
          setIsr(value << 16, true, false);
-         break;
+         return;
       case ISR + 2:
          setIsr(value, false, true);
-         break;
+         return;
 
       case TCTL1:
       case TCTL2:
          registerArrayWrite16(address, value & 0x01FF);
-         break;
+         return;
 
       case TSTAT1:
          setTstat1(value);
-         break;
+         return;
 
       case TSTAT2:
          setTstat2(value);
-         break;
+         return;
 
       case WATCHDOG:
          //writing to the watchdog resets the counter bits(8 and 9) to 0
@@ -808,7 +809,7 @@ void setHwRegister16(uint32_t address, uint16_t value){
          registerArrayWrite16(WATCHDOG, (value & 0x0003) | (registerArrayRead16(WATCHDOG) & (~value & 0x0080)));
          if(!(registerArrayRead16(WATCHDOG) & 0x0080))
             clearIprIsrBit(INT_WDT);
-         break;
+         return;
 
       case RTCISR:
          registerArrayWrite16(RTCISR, registerArrayRead16(RTCISR) & ~value);
@@ -817,11 +818,11 @@ void setHwRegister16(uint32_t address, uint16_t value){
          if(!(registerArrayRead16(RTCISR) & 0x003F))
             clearIprIsrBit(INT_RTC);
          checkInterrupts();
-         break;
+         return;
 
       case PLLFSR:
          setPllfsr(value);
-         break;
+         return;
 
       case PLLCR:
          //CLKEN is required for SED1376 operation
@@ -833,17 +834,17 @@ void setHwRegister16(uint32_t address, uint16_t value){
             pllSleepWait = 30;//The PLL shuts down 30 clocks of CLK32 after the DISPLL bit is set in the PLLCR
          else
             pllSleepWait = -1;//allow the CPU to cancel the shut down
-         break;
+         return;
 
       case ICR:
          registerArrayWrite16(ICR, value & 0xFF80);
          updateTouchState();
          checkPortDInterrupts();//this calls checkInterrupts() so it doesnt need to be called above
-         break;
+         return;
 
       case ILCR:
          setIlcr(value);
-         break;
+         return;
 
       case DRAMC:
          //somewhat unemulated
@@ -851,19 +852,19 @@ void setHwRegister16(uint32_t address, uint16_t value){
          //debugLog("Set DRAMC, old value:0x%04X, new value:0x%04X, PC:0x%08X\n", registerArrayRead16(address), value, flx68000GetPc());
          registerArrayWrite16(DRAMC, value & 0xFF3F);
          updateCsdAddressLines();//the EDO bit can disable SDRAM access
-         break;
+         return;
 
       case DRAMMC:
          //unemulated, address line remapping, too CPU intensive to emulate
          registerArrayWrite16(address, value);
-         break;
+         return;
 
       case SDCTRL:
          //missing bits 13, 9, 8 and 7
          //debugLog("Set SDCTRL, old value:0x%04X, new value:0x%04X, PC:0x%08X\n", registerArrayRead16(address), value, flx68000GetPc());
          registerArrayWrite16(SDCTRL, value & 0xDC7F);
          updateCsdAddressLines();
-         break;
+         return;
 
       case CSA:{
             uint16_t oldCsa = registerArrayRead16(CSA);
@@ -875,7 +876,7 @@ void setHwRegister16(uint32_t address, uint16_t value){
             if((value & 0x000F) != (oldCsa & 0x000F) || chips[CHIP_A0_ROM].inBootMode != oldBootMode)
                resetAddressSpace();
          }
-         break;
+         return;
 
       case CSB:{
             uint16_t oldCsb = registerArrayRead16(CSB);
@@ -886,11 +887,11 @@ void setHwRegister16(uint32_t address, uint16_t value){
             if((value & 0x000F) != (oldCsb & 0x000F))
                resetAddressSpace();
          }
-         break;
+         return;
 
       case CSC:
          registerArrayWrite16(CSC, value & 0xF9FF);
-         break;
+         return;
 
       case CSD:{
             uint16_t oldCsd = registerArrayRead16(CSD);
@@ -906,7 +907,7 @@ void setHwRegister16(uint32_t address, uint16_t value){
             if((value & 0x020F) != (oldCsd & 0x020F))
                resetAddressSpace();
          }
-         break;
+         return;
 
       case CSGBA:
          //sets the starting location of ROM(0x10000000) and the PDIUSBD12 chip
@@ -914,7 +915,7 @@ void setHwRegister16(uint32_t address, uint16_t value){
             setCsgba(value);
             resetAddressSpace();
          }
-         break;
+         return;
 
       case CSGBB:
          //sets the starting location of the SED1376(0x1FF80000)
@@ -922,11 +923,11 @@ void setHwRegister16(uint32_t address, uint16_t value){
             setCsgbb(value);
             resetAddressSpace();
          }
-         break;
+         return;
 
       case CSGBC:
          registerArrayWrite16(CSGBC, value & 0xFFFE);
-         break;
+         return;
 
       case CSGBD:
          //sets the starting location of RAM(0x00000000)
@@ -934,7 +935,7 @@ void setHwRegister16(uint32_t address, uint16_t value){
             setCsgbd(value);
             resetAddressSpace();
          }
-         break;
+         return;
 
       case CSUGBA:
          if((value & 0xF777) != registerArrayRead16(CSUGBA)){
@@ -945,7 +946,7 @@ void setHwRegister16(uint32_t address, uint16_t value){
             setCsgbd(registerArrayRead16(CSGBD));
             resetAddressSpace();
          }
-         break;
+         return;
 
       case CSCTRL1:{
             uint16_t oldCsctrl1 = registerArrayRead16(CSCTRL1);
@@ -960,39 +961,39 @@ void setHwRegister16(uint32_t address, uint16_t value){
                resetAddressSpace();
             }
          }
-         break;
+         return;
 
       case SPICONT1:
          setSpiCont1(value);
-         break;
+         return;
 
       case SPIINTCS:
          setSpiIntCs(value);
-         break;
+         return;
 
       case SPITEST:
          debugLog("SPITEST write not implented yet\n");
-         break;
+         return;
 
       case SPITXD:
          spi1TxFifoWrite(value);
          //check if SPI1 interrupts changed
          setSpiIntCs(registerArrayRead16(SPIINTCS));
-         break;
+         return;
 
       case SPICONT2:
          setSpiCont2(value);
-         break;
+         return;
 
       case SPIDATA2:
          //ignore writes when SPICONT2 ENABLE is not set
          if(registerArrayRead16(SPICONT2) & 0x0200)
             registerArrayWrite16(SPIDATA2, value);
-         break;
+         return;
 
       case PWMC1:
          setPwmc1(value);
-         break;
+         return;
 
       case PWMS1:
          //write only if PWM1 enabled
@@ -1000,22 +1001,22 @@ void setHwRegister16(uint32_t address, uint16_t value){
             pwm1FifoWrite(value >> 8);
             pwm1FifoWrite(value & 0xFF);
          }
-         break;
+         return;
 
       case USTCNT1:
          registerArrayWrite16(UBAUD1, value);
          //needs to recalculate interrupts here
-         break;
+         return;
 
       case UBAUD1:
          //just does timing stuff, should be OK to ignore
          registerArrayWrite16(UBAUD1, value & 0x2F3F);
-         break;
+         return;
 
       case NIPR1:
          //just does timing stuff, should be OK to ignore
          registerArrayWrite16(NIPR1, value & 0x87FF);
-         break;
+         return;
 
       case SPISPC:
          //SPI1 timing, unemulated for now
@@ -1026,15 +1027,17 @@ void setHwRegister16(uint32_t address, uint16_t value){
       case TPRER2:
          //simple write, no actions needed
          registerArrayWrite16(address, value);
-         break;
+         return;
 
       default:
          //writeable bootloader region
-         if(address >= 0xFC0)
+         if(address >= 0xFC0){
             registerArrayWrite16(address, value);
-         if(address < 0xE00)
-            printUnknownHwAccess(address, value, 16, true);
-         break;
+            return;
+         }
+
+         printUnknownHwAccess(address, value, 16, true);
+         return;
    }
 }
 
@@ -1055,35 +1058,37 @@ void setHwRegister32(uint32_t address, uint32_t value){
       case RTCTIME:
       case RTCALRM:
          registerArrayWrite32(address, value & 0x1F3F003F);
-         break;
+         return;
 
       case IDR:
       case IPR:
          //write to read only register, do nothing
-         break;
+         return;
 
       case ISR:
          setIsr(value, true, true);
-         break;
+         return;
 
       case IMR:
          registerArrayWrite32(IMR, value & 0x00FFFFFF);//Palm OS writes to reserved bits 14 and 15
          registerArrayWrite32(ISR, registerArrayRead32(IPR) & ~registerArrayRead32(IMR));
          checkInterrupts();
-         break;
+         return;
 
       case LSSA:
          //simple write, no actions needed
          registerArrayWrite32(address, value);
-         break;
+         return;
 
       default:
          //writeable bootloader region
-         if(address >= 0xFC0)
+         if(address >= 0xFC0){
             registerArrayWrite32(address, value);
-         if(address < 0xE00)
-            printUnknownHwAccess(address, value, 32, true);
-         break;
+            return;
+         }
+
+         printUnknownHwAccess(address, value, 32, true);
+         return;
    }
 }
 

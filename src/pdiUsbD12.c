@@ -162,26 +162,25 @@ void pdiUsbD12SetRegister(bool address, uint8_t value){
                case 0:
                   //random byte
                   pdiUsbD12CommandState++;
-                  break;
+                  return;
 
                case 1:
                   //bytes to write, actually need to implement this
                   debugLog("Invalid behavior, READ_WRITE_BUFFER write\n");
                   pdiUsbD12CommandState++;
-                  break;
+                  return;
 
                default:
                   pdiUsbD12FifoWrite(PDIUSBD12_FIFO_TO_USB, value);
-                  break;
+                  return;
             }
-            break;
 
          case PDIUSBD12_CMD_NONE:
-            break;
+            return;
 
          default:
             debugLog("USB command 0x%02X, write not handeled\n", pdiUsbD12Command);
-            break;
+            return;
       }
    }
    else{
@@ -196,11 +195,11 @@ void pdiUsbD12SetRegister(bool address, uint8_t value){
             pdiUsbD12FifoWrite(PDIUSBD12_FIFO_TO_CPU, 0x00);
             pdiUsbD12FifoWrite(PDIUSBD12_FIFO_TO_CPU, 0x00);
             pdiUsbD12CommandState = 0;
-            break;
+            return;
 
          default:
             debugLog("USB unknown command, value:0x%02X\n", value);
-            break;
+            return;
       }
    }
 }
