@@ -26,6 +26,7 @@ UART1 USTCNT1
 PLLFSR has a hack that makes busy wait loops finish faster by toggling the CLK32 bit on read, for power button issue
 should also not transfer data to SD card when MOSI, MISO or SPICLK1 are disabled
 port d data register INT* bits seem to have there data bits cleared when an edge triggered interrupt is cleared(according to MC68VZ328UM.pdf Page 10-15)
+sound plays too long when the category's menu is selected on the home screen and the pen is pressed and held in the middle of the screen(only happens there, other views of the same type don't have this issue)
 
 Memory:
 SD card can't be read or written to by Palm OS

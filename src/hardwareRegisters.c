@@ -66,6 +66,29 @@ bool sed1376ClockConnected(void){
    return !(registerArrayRead8(PFSEL) & 0x04) && !(registerArrayRead16(PLLCR) & 0x0010);
 }
 
+void ads7846OverridePenState(bool value){
+   //causes a temporary override of the touchscreen value, used to trigger fake interrupts from line noise when reading from the ADS7846
+   if(value != (ads7846PenIrqEnabled ? !palmInput.touchscreenTouched : true)){
+      if(!(registerArrayRead8(PFSEL) & registerArrayRead8(PFDIR) & 0x02)){
+         if(value == !!(registerArrayRead16(ICR) & 0x0080))
+            setIprIsrBit(INT_IRQ5);
+         else
+            clearIprIsrBit(INT_IRQ5);
+      }
+      checkInterrupts();
+
+      //override over, put back real state
+      updateTouchState();
+      checkInterrupts();
+   }
+}
+
+void refreshTouchState(void){
+   //called when ads7846PenIrqEnabled is changed
+   updateTouchState();
+   checkInterrupts();
+}
+
 void refreshInputState(void){
    //update power button LED state if palmMisc.batteryCharging changed
    updatePowerButtonLedStatus();
@@ -408,6 +431,8 @@ uint8_t getHwRegister8(uint32_t address){
       case SPICONT1 + 1:
       case SPIINTCS:
       case SPIINTCS + 1:
+      case PLLFSR:
+      case PLLFSR + 1:
 
       //basic non GPIO functions
       case SCR:
@@ -660,9 +685,22 @@ void setHwRegister8(uint32_t address, uint8_t value){
          return;
 
       case PFSEL:
-         //this is the clock output pin for the SED1376, if its disabled so is the LCD controller
+         //this register controls the clock output pin for the SED1376 and IRQ line for PENIRQ
          registerArrayWrite8(PFSEL, value);
          setSed1376Attached(sed1376ClockConnected());
+#if !defined(EMU_NO_SAFETY)
+         updateTouchState();
+         checkInterrupts();
+#endif
+         return;
+
+      case PFDIR:
+         //this register controls the IRQ line for PENIRQ
+         registerArrayWrite8(PFDIR, value);
+#if !defined(EMU_NO_SAFETY)
+         updateTouchState();
+         checkInterrupts();
+#endif
          return;
 
       case PGSEL:
@@ -712,7 +750,6 @@ void setHwRegister8(uint32_t address, uint8_t value){
       case PCDIR:
       case PDDIR:
       case PEDIR:
-      case PFDIR:
 
       //pull up/down enable
       case PAPUEN:

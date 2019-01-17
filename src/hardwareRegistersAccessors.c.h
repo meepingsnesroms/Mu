@@ -624,7 +624,7 @@ static uint8_t getPortFValue(void){
    uint8_t portFData = registerArrayRead8(PFDATA);
    uint8_t portFDir = registerArrayRead8(PFDIR);
    uint8_t portFSel = registerArrayRead8(PFSEL);
-   bool penIrqPin = !(ads7846PenIrqEnabled && palmInput.touchscreenTouched);//penIrqPin pulled low on touch
+   bool penIrqPin = ads7846PenIrqEnabled ? !palmInput.touchscreenTouched : true;//penIrqPin pulled low on touch
 
    portFValue |= penIrqPin << 1;
    portFValue |= 0x85;//bit 7 & 2-0 have pull ups, bits 6-3 have pull downs, bit 2 is occupied by PENIRQ
@@ -737,9 +737,8 @@ static void updateBacklightAmplifierStatus(void){
 }
 
 static void updateTouchState(void){
-   //check if interrupt enabled and is input
    if(!(registerArrayRead8(PFSEL) & registerArrayRead8(PFDIR) & 0x02)){
-      if(!(ads7846PenIrqEnabled && palmInput.touchscreenTouched) == !!(registerArrayRead16(ICR) & 0x0080))
+      if((ads7846PenIrqEnabled ? !palmInput.touchscreenTouched : true) == !!(registerArrayRead16(ICR) & 0x0080))
          setIprIsrBit(INT_IRQ5);
       else
          clearIprIsrBit(INT_IRQ5);

@@ -406,7 +406,8 @@ uint32_t sandboxCommand(uint32_t command, void* data){
             patchOsRom(0x2C5E, "203C020000004E75");//move.l 0x2000000, d0; rts
             patchOsRom(0x8442E, "203C020000004E75");//move.l 0x2000000, d0; rts
             //bus error at 0x1001DEDA when 128MB is present
-            //0x55555555 memory filler, 32 bit, at PC:0x1001FFDC
+            //0x55 memory filler, 32 bit, at PC:0x1001FFDC, and of course, its MemSet, need a stack trace now
+            //PrvInitHeapPtr_10021908 sets up the 0x55 stuff in RAM
          }
          break;
 

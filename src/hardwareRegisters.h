@@ -93,8 +93,10 @@ bool pllIsOn(void);
 bool backlightAmplifierState(void);
 bool registersAreXXFFMapped(void);
 bool sed1376ClockConnected(void);
-void refreshInputState(void);
-int32_t interruptAcknowledge(int32_t intLevel);
+void ads7846OverridePenState(bool value);
+void refreshTouchState(void);//just refreshes the touchscreen
+void refreshInputState(void);//refreshes touchscreen, buttons and docked status
+//int32_t interruptAcknowledge(int32_t intLevel);//this is in m68kexternal.h
 
 //memory errors
 void setBusErrorTimeOut(uint32_t address, bool isWrite);

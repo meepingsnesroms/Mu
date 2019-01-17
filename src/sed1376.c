@@ -211,6 +211,7 @@ uint8_t sed1376GetRegister(uint8_t address){
          return sed1376Registers[address];
 
       default:
+         debugLog("SED1376 unknown register read 0x%02X, PC 0x%08X.\n", address, flx68000GetPc());
          return 0x00;
    }
 }
@@ -256,11 +257,13 @@ void sed1376SetRegister(uint8_t address, uint8_t value){
          sed1376BLut[value] = sed1376Registers[LUT_B_WRITE];
          sed1376GLut[value] = sed1376Registers[LUT_G_WRITE];
          sed1376RLut[value] = sed1376Registers[LUT_R_WRITE];
-         //whether or not these are changed on a write, or if that depends on the LUT_READ_LOC register is yet to be tested, turn this off for now
+         //whether or not LUT_X_READ are changed on a write when LUT_WRITE_LOC == LUT_READ_LOC is yet to be tested, turn this off for now
          /*
-         sed1376Registers[LUT_B_READ] = sed1376BLut[value];
-         sed1376Registers[LUT_G_READ] = sed1376GLut[value];
-         sed1376Registers[LUT_R_READ] = sed1376RLut[value];
+         if(sed1376Registers[LUT_WRITE_LOC] == sed1376Registers[LUT_READ_LOC]){
+            sed1376Registers[LUT_B_READ] = sed1376BLut[value];
+            sed1376Registers[LUT_G_READ] = sed1376GLut[value];
+            sed1376Registers[LUT_R_READ] = sed1376RLut[value];
+         }
          */
          //debugLog("Writing R:0x%02X, G:0x%02X, B:0x%02X to LUT:0x%02X\n", sed1376RLut[value], sed1376GLut[value], sed1376BLut[value], value);
          sed1376OutputLut[value] = makeRgb16FromSed666(sed1376RLut[value], sed1376GLut[value], sed1376BLut[value]);
@@ -314,13 +317,14 @@ void sed1376SetRegister(uint8_t address, uint8_t value){
          return;
 
       default:
+         debugLog("SED1376 unknown register write, wrote 0x%02X to 0x%02X, PC 0x%08X.\n", value, address, flx68000GetPc());
          return;
    }
 }
 
 void sed1376Render(void){
+   //render if LCD on, PLL on, power save off and force blank off, SED1376 clock is provided by the CPU, if its off so is the SED
    if(palmMisc.lcdOn && pllIsOn() && !sed1376PowerSaveEnabled() && !(sed1376Registers[DISP_MODE] & 0x80)){
-      //only render if LCD on, PLL on, power save off, and force blank off, SED1376 clock is provided by the CPU, if its off so is the SED
       bool color = !!(sed1376Registers[PANEL_TYPE] & 0x40);
       bool pictureInPictureEnabled = !!(sed1376Registers[SPECIAL_EFFECT] & 0x10);
       uint8_t bitDepth = 1 << (sed1376Registers[DISP_MODE] & 0x07);
