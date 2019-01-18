@@ -11,7 +11,7 @@
 #define ARMV5_CYCLES_PER_OPCODE 2
 
 
-bool armv5ServiceRequest;//not in states yet!
+bool armv5ServiceRequest;
 
 static ArmCpu armv5Cpu;
 
@@ -21,9 +21,7 @@ static Boolean armv5MemoryAccess(ArmCpu* cpu, void* buf, UInt32 vaddr, UInt8 siz
    vaddr &= chips[CHIP_DX_RAM].mask;
 
 #if !defined(EMU_NO_SAFETY)
-   if(size & (size - 1))//size is not a power of two
-      return false;
-   if(vaddr & (size - 1))//bad alignment
+   if(size & (size - 1) || vaddr & (size - 1))//size is not a power of two or address isnt aligned to size
       return false;
 #endif
 
@@ -32,15 +30,15 @@ static Boolean armv5MemoryAccess(ArmCpu* cpu, void* buf, UInt32 vaddr, UInt8 siz
       switch(size){
          case 1:
             *(uint8_t*)(palmRam + vaddr) = *(uint8_t*)buf;
-            break;
+            return true;
 
          case 2:
             *(uint16_t*)(palmRam + vaddr) = SWAP_16(*(uint16_t*)buf);
-            break;
+            return true;
 
          case 4:
             *(uint32_t*)(palmRam + vaddr) = SWAP_32(*(uint32_t*)buf);
-            break;
+            return true;
 
          default:
             return false;
@@ -50,15 +48,15 @@ static Boolean armv5MemoryAccess(ArmCpu* cpu, void* buf, UInt32 vaddr, UInt8 siz
       switch(size){
          case 1:
             *(uint8_t*)buf = *(uint8_t*)(palmRam + vaddr);
-            break;
+            return true;
 
          case 2:
             *(uint16_t*)buf = SWAP_16(*(uint16_t*)(palmRam + vaddr));
-            break;
+            return true;
 
          case 4:
             *(uint32_t*)buf = SWAP_32(*(uint32_t*)(palmRam + vaddr));
-            break;
+            return true;
 
          default:
             return false;
@@ -69,16 +67,16 @@ static Boolean armv5MemoryAccess(ArmCpu* cpu, void* buf, UInt32 vaddr, UInt8 siz
       switch(size){
          case 1:
             *(uint8_t*)(palmRam + (vaddr ^ 1)) = *(uint8_t*)buf;
-            break;
+            return true;
 
          case 2:
             *(uint16_t*)(palmRam + vaddr) = SWAP_16(*(uint16_t*)buf);
-            break;
+            return true;
 
          case 4:
             *(uint16_t*)(palmRam + vaddr) = SWAP_16(*(uint32_t*)buf & 0xFFFF);
             *(uint16_t*)(palmRam + vaddr + 2) = SWAP_16(*(uint32_t*)buf >> 16);
-            break;
+            return true;
 
          default:
             return false;
@@ -88,23 +86,21 @@ static Boolean armv5MemoryAccess(ArmCpu* cpu, void* buf, UInt32 vaddr, UInt8 siz
       switch(size){
          case 1:
             *(uint8_t*)buf = *(uint8_t*)(palmRam + (vaddr ^ 1));
-            break;
+            return true;
 
          case 2:
             *(uint16_t*)buf = SWAP_16(*(uint16_t*)(palmRam + vaddr));
-            break;
+            return true;
 
          case 4:
             *(uint32_t*)buf = SWAP_16(*(uint16_t*)(palmRam + vaddr + 2)) << 16 | SWAP_16(*(uint16_t*)(palmRam + vaddr));
-            break;
+            return true;
 
          default:
             return false;
       }
    }
 #endif
-
-   return true;
 }
 
 static Boolean armv5Hypercall(ArmCpu* cpu){
@@ -129,6 +125,7 @@ uint64_t armv5StateSize(void){
    uint64_t size = 0;
 
    //need to add armv5Cpu here
+   size += sizeof(uint8_t);
 
    return size;
 }
@@ -137,12 +134,16 @@ void armv5SaveState(uint8_t* data){
    uint64_t offset = 0;
 
    //need to add armv5Cpu here
+   writeStateValue8(data + offset, armv5ServiceRequest);
+   offset += sizeof(uint8_t);
 }
 
 void armv5LoadState(uint8_t* data){
    uint64_t offset = 0;
 
    //need to add armv5Cpu here
+   armv5ServiceRequest = readStateValue8(data + offset);
+   offset += sizeof(uint8_t);
 }
 
 uint32_t armv5GetRegister(uint8_t reg){

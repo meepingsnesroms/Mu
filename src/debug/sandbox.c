@@ -398,16 +398,63 @@ uint32_t sandboxCommand(uint32_t command, void* data){
             //remove ErrDisplayFileLineMsg from HwrIRQ2Handler, device locks on USB polling without this
             patchOsRom(0x83652, "4E714E71");//nop; nop
 
+            //set RAM to 32MB
+            //patchOsRom(0x2C5E, "203C020000004E75");//move.l 0x2000000, d0; rts
+            //patchOsRom(0x8442E, "203C020000004E75");//move.l 0x2000000, d0; rts
+            //HwrCalcDynamicRAMSize_10005CC6
+
             //set RAM to 128MB
             //PrvGetRAMSize_10002C5E, small ROM
             //PrvGetRAMSize_1008442E, big ROM
             //patchOsRom(0x2C5E, "203C080000004E75");//move.l 0x8000000, d0; rts
             //patchOsRom(0x8442E, "203C080000004E75");//move.l 0x8000000, d0; rts
-            patchOsRom(0x2C5E, "203C020000004E75");//move.l 0x2000000, d0; rts
-            patchOsRom(0x8442E, "203C020000004E75");//move.l 0x2000000, d0; rts
+            //ROM:100219D0                 move.l  #unk_FFFFFF,d0
+            //patchOsRom(0x219D0, "203C01FFFFFF4E75");//move.l 0x1FFFFFF, d0; rts
             //bus error at 0x1001DEDA when 128MB is present
             //0x55 memory filler, 32 bit, at PC:0x1001FFDC, and of course, its MemSet, need a stack trace now
             //PrvInitHeapPtr_10021908 sets up the 0x55 stuff in RAM
+            /*
+            ROM:100219C2                 move.l  d0,6(a4)        ; Move Data from Source to Destination
+            ROM:100219C6                 tst.b   arg_A(a6)       ; Test an Operand
+            ROM:100219CA                 beq.s   loc_100219EA    ; Branch if Equal
+            ROM:100219CC                 move.b  #$55,-(sp) ; 'U' ; Move Data from Source to Destination
+            ROM:100219D0                 move.l  #unk_FFFFFF,d0  ; Move Data from Source to Destination
+            ROM:100219D6                 and.l   (a3),d0         ; AND Logical
+            ROM:100219D8                 subq.l  #8,d0           ; Subtract Quick
+            ROM:100219DA                 move.l  d0,-(sp)        ; Move Data from Source to Destination
+            ROM:100219DC                 movea.l a3,a0           ; Move Address
+            ROM:100219DE                 pea     8(a0)           ; Push Effective Address
+            ROM:100219E2                 trap    #$F             ; Trap sysTrapMemSet
+            ROM:100219E2                 dc.w    $A027
+            ROM:100219E6                 lea     $A(sp),sp       ; Load Effective Address
+            */
+            //D0 is 0x3E1CC(254412) at PC:0x10021988
+
+            // Add the heap, as long as it's not the dynamic heap.  During
+            // bootup, the memory initialization sequence goes like:
+            //
+            //	if hard reset required:
+            //		MemCardFormat
+            //			lay out the card
+            //			MemStoreInit
+            //				for each heap
+            //					MemHeapInit
+            //	MemInit
+            //		for each card:
+            //			MemInitHeapTable
+            //		for each dynamic heap:
+            //			MemHeapInit
+            //		for each RAM heap:
+            //			Unlock all chunks
+            //			Compact
+            //
+            // Which means that if there's no hard reset, MemHeapInit
+            // has not been called on the dynamic heap at the time
+            // MemInitHeapTable is called.  And since the dynamic heap
+            // is currently in a corrupted state (because the boot stack
+            // and initial LCD buffer have been whapped over it), we
+            // can't perform the heap walk we'd normally do when adding
+            // a heap object.
          }
          break;
 
@@ -434,7 +481,8 @@ void sandboxOnOpcodeRun(void){
       //case 0x10083652://USB issue location //address based on PPC
       //case 0x100846C0://HwrDelay, before mysterious jump //address based on PPC
       //case 0x100846CC://HwrDelay, after mysterious jump //address based on PPC
-      case 0x100AD514://HwrSpiSdioInterrupts, SD card interrupt handler
+      //case 0x100AD514://HwrSpiSdioInterrupts, SD card interrupt handler
+      case 0x10021988://just before "andi.l #unk_FFFFFF, d0"
          //to add a emulator breakpoint add a new line above here|^^^
          {
             uint32_t m68kRegisters[M68K_REG_CPU_TYPE];
