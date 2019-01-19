@@ -627,7 +627,7 @@ static uint8_t getPortFValue(void){
    bool penIrqPin = ads7846PenIrqEnabled ? !palmInput.touchscreenTouched : true;//penIrqPin pulled low on touch
 
    portFValue |= penIrqPin << 1;
-   portFValue |= 0x85;//bit 7 & 2-0 have pull ups, bits 6-3 have pull downs, bit 2 is occupied by PENIRQ
+   portFValue |= 0x85;//bit 7 & 2<->0 have pull ups, bits 6<->3 have pull downs, bit 2 is occupied by PENIRQ
    portFValue &= ~portFDir & (portFSel | 0x02);//IRQ5 is readable even when PFSEL bit 2 is false
    portFValue |= portFData & portFDir & portFSel;
 
@@ -668,7 +668,7 @@ static uint8_t getPortKValue(void){
 }
 
 static uint8_t getPortMValue(void){
-   //bit 5 has a pull up not pull down, bits 4-0 have a pull down, bit 7-6 are not active at all
+   //bit 5 has a pull up not pull down, bits 4<->0 have a pull down, bit 7<->6 are not active at all
    return ((registerArrayRead8(PMDATA) & registerArrayRead8(PMDIR)) | (~registerArrayRead8(PMDIR) & 0x20)) & registerArrayRead8(PMSEL);
 }
 

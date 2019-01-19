@@ -292,7 +292,7 @@ void MainWindow::on_right_released(){
 //emu control
 void MainWindow::on_ctrlBtn_clicked(){
    if(!emu.isInited()){
-      uint32_t enabledFeatures = FEATURE_EXT_KEYS | FEATURE_EMU_HONEST | FEATURE_HYBRID_CPU | FEATURE_RAM_HUGE | FEATURE_CUSTOM_FB | FEATURE_DEBUG;
+      uint32_t enabledFeatures = FEATURE_EXT_KEYS | FEATURE_EMU_HONEST | FEATURE_HYBRID_CPU | /*FEATURE_RAM_HUGE |*/ FEATURE_CUSTOM_FB | FEATURE_DEBUG;
       QString sysDir = settings->value("resourceDirectory", "").toString();
       uint32_t error = emu.init(sysDir + "/palmos41-en-m515.rom", QFile(sysDir + "/bootloader-en-m515.rom").exists() ? sysDir + "/bootloader-en-m515.rom" : "", sysDir + "/userdata-en-m515.ram", sysDir + "/sd-en-m515.img", enabledFeatures);
 

@@ -212,7 +212,6 @@ void EmuWrapper::exit(){
    if(emuThread.joinable())
       emuThread.join();
    if(emuInited){
-      /*
       if(emuRamFilePath != ""){
          QFile ramFile(emuRamFilePath);
          buffer_t emuRam;
@@ -229,7 +228,6 @@ void EmuWrapper::exit(){
 
          delete[] emuRam.data;
       }
-      */
       if(emuSdCardFilePath != ""){
          buffer_t emuSdCard = emulatorGetSdCardBuffer();
 

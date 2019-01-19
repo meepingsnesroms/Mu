@@ -64,7 +64,7 @@ static char* takeStackDump(uint32_t bytes){
 void patchOsRom(uint32_t address, char* patch){
    uint32_t offset;
    uint32_t patchBytes = strlen(patch) / 2;//1 char per nibble
-   uint32_t swapBegin = address & ~1;
+   uint32_t swapBegin = address & 0xFFFFFFFE;
    uint32_t swapSize = patchBytes / sizeof(uint16_t) + 1;
    char conv[5] = "0xXX";
 
@@ -398,10 +398,15 @@ uint32_t sandboxCommand(uint32_t command, void* data){
             //remove ErrDisplayFileLineMsg from HwrIRQ2Handler, device locks on USB polling without this
             patchOsRom(0x83652, "4E714E71");//nop; nop
 
+            //double dynamic heap size, verified working
+            //HwrCalcDynamicRAMSize_10005CC6
+            //HwrCalcDynamicRAMSize_10083B0A:
+            patchOsRom(0x5CC6, "203C000800004E75");//move.l 0x80000, d0; rts
+            patchOsRom(0x83B0A, "203C000800004E75");//move.l 0x80000, d0; rts
+
             //set RAM to 32MB
             //patchOsRom(0x2C5E, "203C020000004E75");//move.l 0x2000000, d0; rts
             //patchOsRom(0x8442E, "203C020000004E75");//move.l 0x2000000, d0; rts
-            //HwrCalcDynamicRAMSize_10005CC6
 
             //set RAM to 128MB
             //PrvGetRAMSize_10002C5E, small ROM
@@ -455,6 +460,39 @@ uint32_t sandboxCommand(uint32_t command, void* data){
             // and initial LCD buffer have been whapped over it), we
             // can't perform the heap walk we'd normally do when adding
             // a heap object.
+
+            //need to investigate what these vars are
+            /*
+            ROM:100148EE                 move.l  #$3BE,(dword_15C).w ; Move Data from Source to Destination
+            ROM:100148F6                 move.l  #$422,(dword_112).w ; Move Data from Source to Destination
+            ROM:100148FE                 move.l  #$890,(dword_11A).w ; Move Data from Source to Destination
+            ROM:10014906                 move.l  #$8CC,(TrapTablePointer).w ; Move Data from Source to Destination
+            ROM:1001490E                 move.w  #$45A,(word_13E).w ; Move Data from Source to Destination
+            ROM:10014914                 move.w  #$1000,(word_28E).w ; Move Data from Source to Destination
+            */
+
+            //may be able to use these to set the border colors like in OS 5
+            /*
+            RAM:00001758                 dc.l UIColorInit_10074672
+            RAM:0000175C                 dc.l UIColorGetTableEntryIndex_100746F6
+            RAM:00001760                 dc.l UIColorGetTableEntryRGB_1007472A
+            RAM:00001760                                         ; DATA XREF: ROM:101D66A1↓o
+            RAM:00001764                 dc.l UIColorSetTableEntry_10074762
+            RAM:00001768 off_1768:       dc.l UIColorPushTable_100747B0
+            */
+
+            //another road block surfaces
+            /*
+            When a Palm Powered handheld is presented with multiple dynamic heaps,
+            the first heap (heap 0) on card 0 is the active dynamic heap.
+            All other potential dynamic heaps are ignored. For example, it
+            is possible that a future Palm Powered handheld supporting multiple
+            cards might be presented with two cards, each having its own dynamic heap;
+            if so, only the dynamic heap residing on card 0 would be active—the system
+            would not treat any heaps on other cards as dynamic heaps, nor would heap
+            IDs be assigned to these heaps. Subsequent storage heaps would be assigned
+            IDs in sequential order, as always beginning with RAM heaps, followed by ROM heaps.
+            */
          }
          break;
 
