@@ -11,7 +11,7 @@ These registers will do nothing if their corresponding feature bit is not set on
 /*features*/
 #define FEATURE_ACCURATE   0x00000000/*no hacks/addons*/
 #define FEATURE_RAM_HUGE   0x00000001/*128mb RAM*/
-#define FEATURE_FAST_CPU   0x00000002/*doubles CPU speed*/
+#define FEATURE_FAST_CPU   0x00000002/*allows the emulator to set its CPU speed*/
 #define FEATURE_HYBRID_CPU 0x00000004/*allows running ARM opcodes in an OS 4 enviroment*/
 #define FEATURE_CUSTOM_FB  0x00000008/*creates a dynamicly sized framebuffer for hires mode, the 160x160 framebuffer is a transparent overlay over the extended framebuffer*/
 #define FEATURE_SYNCED_RTC 0x00000010/*RTC always equals host system time*/
@@ -43,6 +43,7 @@ These registers will do nothing if their corresponding feature bit is not set on
 /*new HLE API cmds go here*/
 
 /*new system cmds go here*/
+#define CMD_SET_CPU_SPEED  0x0000FFF3/*EMU_VALUE = CPU speed percent, 100% = normal*/
 #define CMD_IDLE_X_CLK32   0x0000FFF4/*EMU_VALUE = CLK32s to waste, used to remove idle loops*/
 #define CMD_SET_CYCLE_COST 0x0000FFF5/*EMU_DST = HLE API number, EMU_VALUE = how many cycles it takes*/
 #define CMD_SET_RESOLUTION 0x0000FFF6/*EMU_VALUE >> 16 = width, EMU_VALUE & 0xFFFF = height*/

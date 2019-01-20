@@ -99,8 +99,7 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t enab
    palmFramebufferHeight = 220;
    palmMisc.batteryLevel = 100;
    palmCycleCounter = 0.0;
-   palmClockMultiplier = (enabledEmuFeatures & FEATURE_FAST_CPU) ? 2.00 : 1.00;//overclock
-   palmClockMultiplier *= 0.70;//account for wait states when reading memory, tested with SysInfo.prc
+   palmClockMultiplier = 1.00 - EMU_CPU_PERCENT_WAITING;
    palmEmuFeatures.info = enabledEmuFeatures;
 
    //initialize components
@@ -145,6 +144,7 @@ void emulatorHardReset(void){
    palmFramebufferWidth = 160;
    palmFramebufferHeight = 220;
    palmEmuFeatures.value = 0x00000000;
+   palmClockMultiplier = 1.00 - EMU_CPU_PERCENT_WAITING;
    sed1376Reset();
    ads7846Reset();
    pdiUsbD12Reset();
@@ -160,6 +160,7 @@ void emulatorSoftReset(void){
    palmFramebufferWidth = 160;
    palmFramebufferHeight = 220;
    palmEmuFeatures.value = 0x00000000;
+   palmClockMultiplier = 1.00 - EMU_CPU_PERCENT_WAITING;
    sed1376Reset();
    ads7846Reset();
    pdiUsbD12Reset();
@@ -194,7 +195,7 @@ uint64_t emulatorGetStateSize(void){
    size += TOTAL_MEMORY_BANKS;//bank handlers
    size += sizeof(uint32_t) * 4 * CHIP_END;//chip select states
    size += sizeof(uint8_t) * 5 * CHIP_END;//chip select states
-   size += sizeof(uint64_t) * 4;//32.32 fixed point double, timerXCycleCounter and CPU cycle timers
+   size += sizeof(uint64_t) * 5;//32.32 fixed point double, timerXCycleCounter and CPU cycle timers
    size += sizeof(int8_t);//pllSleepWait
    size += sizeof(int8_t);//pllWakeWait
    size += sizeof(uint32_t);//clk32Counter
@@ -296,6 +297,8 @@ bool emulatorSaveState(buffer_t buffer){
    writeStateValueDouble(buffer.data + offset, palmSysclksPerClk32);
    offset += sizeof(uint64_t);
    writeStateValueDouble(buffer.data + offset, palmCycleCounter);
+   offset += sizeof(uint64_t);
+   writeStateValueDouble(buffer.data + offset, palmClockMultiplier);
    offset += sizeof(uint64_t);
    writeStateValue8(buffer.data + offset, pllSleepWait);
    offset += sizeof(int8_t);
@@ -477,6 +480,8 @@ bool emulatorLoadState(buffer_t buffer){
    palmSysclksPerClk32 = readStateValueDouble(buffer.data + offset);
    offset += sizeof(uint64_t);
    palmCycleCounter = readStateValueDouble(buffer.data + offset);
+   offset += sizeof(uint64_t);
+   palmClockMultiplier = readStateValueDouble(buffer.data + offset);
    offset += sizeof(uint64_t);
    pllSleepWait = readStateValue8(buffer.data + offset);
    offset += sizeof(int8_t);

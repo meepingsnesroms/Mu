@@ -310,6 +310,11 @@ void setEmuRegister(uint32_t address, uint32_t value){
 
       case EMU_CMD:
          switch(value){
+            case CMD_SET_CPU_SPEED:
+               if(palmEmuFeatures.info & FEATURE_FAST_CPU)
+                  palmClockMultiplier = (double)palmEmuFeatures.value / 100.0 * (1.00 - EMU_CPU_PERCENT_WAITING);
+               return;
+
             case CMD_ARM_SERVICE:
                if(palmEmuFeatures.info & FEATURE_HYBRID_CPU)
                   palmEmuFeatures.value = armv5ServiceRequest;

@@ -176,14 +176,14 @@ void retro_set_environment(retro_environment_t cb){
    struct retro_log_callback logging;
    struct retro_vfs_interface_info vfs_getter = { 1, NULL };
    struct retro_variable vars[] = {
-      { "palm_emu_feature_ram_huge", "Extra RAM Hack; disabled|enabled" },
-      { "palm_emu_feature_fast_cpu", "Overclock 2x; disabled|enabled" },
-      { "palm_emu_feature_hybrid_cpu", "Extra RAM Hack; disabled|enabled" },
+      { "palm_emu_feature_ram_huge", "128mb RAM; disabled|enabled" },
+      { "palm_emu_feature_fast_cpu", "Custom CPU Speeds; disabled|enabled" },
+      { "palm_emu_feature_hybrid_cpu", "ARM Instruction Set; disabled|enabled" },
       { "palm_emu_feature_custom_fb", "Custom Resolution; disabled|enabled" },
       { "palm_emu_feature_synced_rtc", "Force Match System Clock; disabled|enabled" },
       { "palm_emu_feature_hle_apis", "HLE API Implementations; disabled|enabled" },
-      { "palm_emu_feature_emu_honest", "Tell Programs They're In An Emulator(for test programs); disabled|enabled" },
-      { "palm_emu_feature_ext_keys", "Enable OS5 Keys; disabled|enabled" },
+      { "palm_emu_feature_emu_honest", "Is Emulator(for test programs); disabled|enabled" },
+      { "palm_emu_feature_ext_keys", "Left, Right, Center Keys; disabled|enabled" },
       { "palm_emu_use_joystick_as_mouse", "Use Left Joystick As Mouse; disabled|enabled" },
       { 0 }
    };
