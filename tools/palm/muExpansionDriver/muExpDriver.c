@@ -19,10 +19,10 @@ enum{
    LCD_WIDTH,
    LCD_HEIGHT,
    EXTRA_RAM_MB_DYNAMIC_HEAP,
+   BOOT_CPU_SPEED,
    /*add new entries above*/
    CONFIG_FILE_ENTRIES
 };
-
 
 static void install128mbRam(uint8_t mbDynamicHeap){
    /*these functions are called by HwrInit, which can be called directly by apps*/
@@ -141,6 +141,7 @@ static void setConfigDefaults(uint32_t* configFile){
    configFile[ARM_STACK_SIZE] = 0x4000;
    configFile[LCD_WIDTH] = 160;
    configFile[LCD_HEIGHT] = 220;
+   configFile[BOOT_CPU_SPEED] = 800;/*temp, hack for Chuzzle demo*/
    configFile[EXTRA_RAM_MB_DYNAMIC_HEAP] = 10;
 }
 
@@ -233,6 +234,9 @@ static void initBoot(uint32_t* configFile){
       }
       
       setProperDeviceId(configFile[LCD_WIDTH], configFile[LCD_HEIGHT], !!(enabledFeatures & FEATURE_HYBRID_CPU), !!(enabledFeatures & FEATURE_EXT_KEYS));
+      
+      writeArbitraryMemory32(EMU_REG_ADDR(EMU_VALUE), configFile[BOOT_CPU_SPEED]);
+      writeArbitraryMemory32(EMU_REG_ADDR(EMU_CMD), CMD_SET_CPU_SPEED);
    }
 }
 
