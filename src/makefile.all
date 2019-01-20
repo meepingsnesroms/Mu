@@ -8,6 +8,9 @@ EMU_SOURCES_C := $(EMU_PATH)/emulator.c \
 	$(EMU_PATH)/sdCard.c \
 	$(EMU_PATH)/silkscreen.c \
 	$(EMU_PATH)/flx68000.c \
+	$(EMU_PATH)/armv5.c \
+	$(EMU_PATH)/armv5/CPU.c \
+	$(EMU_PATH)/armv5/icache.c \
 	$(EMU_PATH)/audio/blip_buf.c \
 	$(EMU_PATH)/m68k/m68kops.c \
 	$(EMU_PATH)/m68k/m68kopnz.c \

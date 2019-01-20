@@ -5,12 +5,8 @@
 #include <stdbool.h>
 
 enum{
-   SANDBOX_TEST_OS_VER = 0,
-   SANDBOX_SEND_OS_TOUCH,
-   SANDBOX_PATCH_OS,
-   SANDBOX_INSTALL_APP,
-   SANDBOX_CALL_POWER_OFF,
-   SANDBOX_CALL_POWER_ON
+   SANDBOX_PATCH_OS = 0,
+   SANDBOX_INSTALL_APP
 };
 
 void sandboxInit(void);

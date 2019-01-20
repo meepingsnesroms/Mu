@@ -1,5 +1,4 @@
 #include <PalmOS.h>
-#include <PalmCompatibility.h>
 #include <stdint.h>
 
 #include "ugui.h"
@@ -84,7 +83,7 @@ static Boolean    subprogramArgsSet;
 static Boolean    applicationRunning;
 
 
-static var errorSubprogramStackOverflow(){
+static var errorSubprogramStackOverflow(void){
    static Boolean wipedScreen = false;
    
    if(!wipedScreen){
@@ -99,7 +98,7 @@ static var errorSubprogramStackOverflow(){
    /*do nothing, this is a safe crash*/
 }
 
-var memoryAllocationError(){
+var memoryAllocationError(void){
    static Boolean wipedScreen = false;
    
    if(!wipedScreen){
@@ -134,7 +133,7 @@ static void uguiDrawPixel(UG_S16 x, UG_S16 y, UG_COLOR color){
 }
 
 /*needed to redraw after every call to setDebugTag(char*)*/
-void forceFrameRedraw(){
+void forceFrameRedraw(void){
    WinDrawBitmap(offscreenBitmap, 0, 0);
 }
 
@@ -154,7 +153,7 @@ void callSubprogram(activity_t activity){
    }
 }
 
-void exitSubprogram(){
+void exitSubprogram(void){
    if(subprogramIndex > 0){
       subprogramIndex--;
       currentSubprogram = parentSubprograms[subprogramIndex];
@@ -175,11 +174,11 @@ void execSubprogram(activity_t activity){
    setDebugTag("Subprogram Swapped Out");
 }
 
-var getSubprogramReturnValue(){
+var getSubprogramReturnValue(void){
    return lastSubprogramReturnValue;
 }
 
-var getSubprogramArgs(){
+var getSubprogramArgs(void){
    return subprogramArgs;
 }
 
@@ -188,7 +187,7 @@ void setSubprogramArgs(var args){
    subprogramArgsSet = true;
 }
 
-var subprogramGetData(){
+var subprogramGetData(void){
    return subprogramData[subprogramIndex];
 }
 
@@ -196,7 +195,7 @@ void subprogramSetData(var data){
    subprogramData[subprogramIndex] = data;
 }
 
-static Boolean testerInit(){
+static Boolean testerInit(void){
    uint32_t osVer;
    uint32_t deviceId;
    Err error;
@@ -252,11 +251,11 @@ static Boolean testerInit(){
    return true;
 }
 
-static void testerExit(){
+static void testerExit(void){
    MemPtrFree(sharedDataBuffer);
 }
 
-static void testerFrameLoop(){
+static void testerFrameLoop(void){
    static uint32_t lastResetTime = 0;
    EventType event;
    
@@ -290,7 +289,7 @@ static void testerFrameLoop(){
    skipFrameDelay = false;
 }
 
-DWord PilotMain(Word cmd, Ptr cmdBPB, Word launchFlags){
+UInt32 PilotMain(UInt16 cmd, MemPtr cmdBPB, UInt16 launchFlags){
    if(cmd == sysAppLaunchCmdNormalLaunch){
       Boolean initSuccess = testerInit();
       

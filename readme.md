@@ -19,7 +19,7 @@ The Palm keyboard attachment will likely be emulated later on so the PC keyboard
 
 ## OS improvements
 
-If there is something the OS does not support(like an OS 5 API) I may add it manually, this will be in the form of a custom firmware as a ROM image or a .bps patch, not a patch to the emulator with only 1 exception "sysTrapPceNativeCall" which would require an ARM interpreter, it would also be an option to not apply this patch leaving you with an accurately emulated stock Palm m515.
+If there is something the OS does not support(like an OS 5 API) I may add it manually, this will be in the form of a custom firmware as a ROM image or a .bps patch, not a patch to the emulator with only 1 exception "PceNativeCall" which would require an ARM interpreter, it would also be an option to not apply this patch leaving you with an accurately emulated stock Palm m515.
 
 These patches will not be worked on until the emulator is actually running.
 
@@ -47,6 +47,7 @@ Bonus:        Has Adware(Addit)
 The lack of ARM CPU will be fixed in my emulator see "OS improvements".
 
 ## Credits
+uARM (ARMv5 Core)  
 Musashi v3.4 (last version that builds outside of MAME)(68k Core)  
 blip_buf 1.1.0 (Audio Resampler)  
 http://www.iconarchive.com/show/crystal-clear-icons-by-everaldo/App-palm-icon.html (Desktop Icon)  

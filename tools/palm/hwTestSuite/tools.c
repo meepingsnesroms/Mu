@@ -105,7 +105,7 @@ uint16_t ads7846GetValue(uint8_t channel, Boolean referenceMode, Boolean mode8Bi
    return value;
 }
 
-var hexRamBrowser(){
+var hexRamBrowser(void){
    static Boolean firstRun = true;
    static uint32_t nibble;
    static uint32_t pointerValue;
@@ -149,7 +149,7 @@ var hexRamBrowser(){
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
 
-var getTrapAddress(){
+var getTrapAddress(void){
    static Boolean firstRun = true;
    static uint16_t nibble;
    static uint16_t trapNum;
@@ -193,7 +193,7 @@ var getTrapAddress(){
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
 
-var manualLssa(){
+var manualLssa(void){
    static Boolean firstRun = true;
    static uint32_t nibble;
    static uint32_t hexValue;
@@ -244,13 +244,13 @@ var manualLssa(){
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
 
-var dumpBootloaderToFile(){
+var dumpBootloaderToFile(void){
    makeFile((uint8_t*)0xFFFFFE00, 0x200, "BOOTLOADER.BIN");
    exitSubprogram();
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
 
-var listRomInfo(){
+var listRomInfo(void){
    static Boolean firstRun = true;
    uint16_t y = 0;
    
@@ -315,7 +315,7 @@ var listRomInfo(){
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
 
-var listRamInfo(){
+var listRamInfo(void){
    static Boolean firstRun = true;
    uint16_t y = 0;
    
@@ -381,7 +381,7 @@ var listRamInfo(){
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
 
-var listChipSelects(){
+var listChipSelects(void){
    static Boolean firstRun = true;
    uint16_t y = 0;
    
@@ -428,7 +428,7 @@ var listChipSelects(){
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
 
-var getTouchscreenLut(){
+var getTouchscreenLut(void){
    static Boolean firstRun = true;
    static uint16_t bufferStrip;
    static uint16_t* pixelData;

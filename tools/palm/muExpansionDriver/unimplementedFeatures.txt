@@ -1,0 +1,10 @@
+Builtin Dragonball VZ LCD controller emulation
+Reading OS 5 keys
+Huge RAM support
+Unverified OS version strings need to be verified
+ARM support
+OS 5 audio API
+Custom FB mode
+GUI
+
+Fixed:

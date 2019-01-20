@@ -38,7 +38,7 @@ static const uint32_t sdCardOcr = 0x00000000;
 
 
 static void sdCardCmdStart(void){
-   palmSdCard.command = 0x0000000000000000;
+   palmSdCard.command = UINT64_C(0x0000000000000000);
    palmSdCard.commandBitsRemaining = 48;
 }
 
@@ -66,18 +66,18 @@ static bool sdCardCmdIsCrcValid(uint8_t command, uint32_t argument, uint8_t crc)
 static void sdCardDoResponseR1(uint8_t r1){
    palmSdCard.response = SD_CARD_RESPONSE_SHIFT_OUT;
    palmSdCard.responseState = (uint64_t)r1 << 56;
-   palmSdCard.responseState |= (uint64_t)1 << 55;//add shift termination bit
+   palmSdCard.responseState |= UINT64_C(1) << 55;//add shift termination bit
 }
 
 static void sdCardDoResponseR3(uint8_t r1){
    palmSdCard.response = SD_CARD_RESPONSE_SHIFT_OUT;
    palmSdCard.responseState = (uint64_t)r1 << 56;
    palmSdCard.responseState |= (uint64_t)sdCardOcr << 24;
-   palmSdCard.responseState |= (uint64_t)1 << 23;//add shift termination bit
+   palmSdCard.responseState |= UINT64_C(1) << 23;//add shift termination bit
 }
 
 void sdCardReset(void){
-   palmSdCard.command = 0x0000000000000000;
+   palmSdCard.command = UINT64_C(0x0000000000000000);
    palmSdCard.commandBitsRemaining = 48;
    palmSdCard.responseState = 0;
    palmSdCard.response = SD_CARD_RESPONSE_NOTHING;
@@ -97,8 +97,8 @@ void sdCardSetChipSelect(bool value){
 bool sdCardExchangeBit(bool bit){
    bool sdCardOutputValue = true;//default output value is true, if an action is ongoing it will be set to the data provided by that action
 
-   //make sure SD is actually plugged in
-   if(palmSdCard.flashChip.data){
+   //make sure SD is actually plugged in and selected
+   if(palmSdCard.flashChip.data && !palmSdCard.chipSelect){
       bool bitValid = true;
 
 #if defined(EMU_DEBUG)
@@ -143,9 +143,9 @@ bool sdCardExchangeBit(bool bit){
 
          case SD_CARD_RESPONSE_SHIFT_OUT:
             //debugLog("SD shift out state:0x%016lX\n", palmSdCard.responseState);
-            sdCardOutputValue = !!(palmSdCard.responseState & 0x8000000000000000);
+            sdCardOutputValue = !!(palmSdCard.responseState & UINT64_C(0x8000000000000000));
             palmSdCard.responseState <<= 1;
-            if(palmSdCard.responseState == 0x8000000000000000)
+            if(palmSdCard.responseState == UINT64_C(0x8000000000000000))
                palmSdCard.response = SD_CARD_RESPONSE_NOTHING;
             break;
 

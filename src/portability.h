@@ -38,7 +38,7 @@ static inline uint8_t u8Max(uint8_t x, uint8_t y){
 }
 
 static inline uint8_t u8Clamp(uint8_t low, uint8_t value, uint8_t high){
-   //x must always be less than z!
+   //low must always be less than high!
    return u8Max(low, u8Min(value, high));
 }
 
@@ -51,7 +51,7 @@ static inline uint16_t u16Max(uint16_t x, uint16_t y){
 }
 
 static inline uint16_t u16Clamp(uint16_t low, uint16_t value, uint16_t high){
-   //x must always be less than z!
+   //low must always be less than high!
    return u16Max(low, u16Min(value, high));
 }
 
@@ -64,7 +64,7 @@ static inline uint32_t u32Max(uint32_t x, uint32_t y){
 }
 
 static inline uint32_t u32Clamp(uint32_t low, uint32_t value, uint32_t high){
-   //x must always be less than z!
+   //low must always be less than high!
    return u32Max(low, u32Min(value, high));
 }
 
@@ -77,7 +77,7 @@ static inline uint64_t u64Max(uint64_t x, uint64_t y){
 }
 
 static inline uint64_t u64Clamp(uint64_t low, uint64_t value, uint64_t high){
-   //x must always be less than z!
+   //low must always be less than high!
    return u64Max(low, u64Min(value, high));
 }
 
@@ -90,7 +90,7 @@ static inline int8_t s8Max(int8_t x, int8_t y){
 }
 
 static inline int8_t s8Clamp(int8_t low, int8_t value, int8_t high){
-   //x must always be less than z!
+   //low must always be less than high!
    return s8Max(low, s8Min(value, high));
 }
 
@@ -103,7 +103,7 @@ static inline int16_t s16Max(int16_t x, int16_t y){
 }
 
 static inline int16_t s16Clamp(int16_t low, int16_t value, int16_t high){
-   //x must always be less than z!
+   //low must always be less than high!
    return s16Max(low, s16Min(value, high));
 }
 
@@ -116,7 +116,7 @@ static inline int32_t s32Max(int32_t x, int32_t y){
 }
 
 static inline int32_t s32Clamp(int32_t low, int32_t value, int32_t high){
-   //x must always be less than z!
+   //low must always be less than high!
    return s32Max(low, s32Min(value, high));
 }
 
@@ -129,7 +129,7 @@ static inline int64_t s64Max(int64_t x, int64_t y){
 }
 
 static inline int64_t s64Clamp(int64_t low, int64_t value, int64_t high){
-   //x must always be less than z!
+   //low must always be less than high!
    return s64Max(low, s64Min(value, high));
 }
 
@@ -142,7 +142,7 @@ static inline float fMax(float x, float y){
 }
 
 static inline float fClamp(float low, float value, float high){
-   //x must always be less than z!
+   //low must always be less than high!
    return fMax(low, fMin(value, high));
 }
 
@@ -155,18 +155,18 @@ static inline double dMax(double x, double y){
 }
 
 static inline double dClamp(double low, double value, double high){
-   //x must always be less than z!
+   //low must always be less than high!
    return dMax(low, dMin(value, high));
 }
 
 //float platform safety
 static inline uint64_t getUint64FromDouble(double data){
    //1.32.31 fixed point
-   uint64_t fixedPointDouble = 0x0000000000000000;
+   uint64_t fixedPointDouble = UINT64_C(0x0000000000000000);
 
    if(data < 0.0){
       data = -data;
-      fixedPointDouble |= 0x8000000000000000;
+      fixedPointDouble |= UINT64_C(0x8000000000000000);
    }
 
    fixedPointDouble |= (uint64_t)data << 31;
@@ -181,10 +181,10 @@ static inline double getDoubleFromUint64(uint64_t data){
    //1.32.31 fixed point
    double floatingPointDouble;
 
-   floatingPointDouble = (double)(data & 0x000000007FFFFFFF);
+   floatingPointDouble = (double)(data & 0x7FFFFFFF);
    floatingPointDouble /= (double)0x7FFFFFFF;
    floatingPointDouble += (double)(data >> 31 & 0xFFFFFFFF);
-   if(data & 0x8000000000000000)
+   if(data & UINT64_C(0x8000000000000000))
       floatingPointDouble = -floatingPointDouble;
    
    return floatingPointDouble;

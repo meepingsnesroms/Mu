@@ -20,19 +20,19 @@ SPI1 slave mode, should never be used
 RxOverflow on SPI1, don't know if back or front of FIFO is overwritten on overflow(currently losing oldest entry)
 ICR POL(1,2,3,6) may flip the pin value as well as the interrupt, POL5 does not flip the INT5 pin though, this was confirmed with a hardware test(it doesnt seem to but there is instability on the pin when the SD card is plugged in, this may have to do with card detect also being a data line on the SD pinout)
 PWM2 is not implemented
-don't know if flushing the PWM1 FIFO sets all the bytes to 0x00, or just sets the read pointer to the write pointer preserving the newest sample and making the size 0(readPtr = writePtr has significantly cleaner audio then 0ing it out though)
 while it is stated that the PLL is turned off "30 clocks" after the DISPLL bit is set, it doesnt state where the clocks come from, CLK32 or SYSCLK
 SPI1 SPISPC register
 UART1 USTCNT1
 PLLFSR has a hack that makes busy wait loops finish faster by toggling the CLK32 bit on read, for power button issue
 should also not transfer data to SD card when MOSI, MISO or SPICLK1 are disabled
 port d data register INT* bits seem to have there data bits cleared when an edge triggered interrupt is cleared(according to MC68VZ328UM.pdf Page 10-15)
+sound plays too long when the category's menu is selected on the home screen and the pen is pressed and held in the middle of the screen(only happens there, other views of the same type don't have this issue)(effected by CPU speed, turning it up reduces the duration of the excess squeal)
 
 Memory:
 SD card can't be read or written to by Palm OS
 unknown if DRAM bit expanded address space is used for CSC when its not an extension of CSD
 there is conflicting information on whether the DRAM bit effects CSC, needs a test made
-the unemulated chip selects(CSB1, CSC0/1) privilege violation interrupts will not be handled properly
+the unemulated chip selects(CSB1, CSC0/1) privilege violation interrupts are not handled properly
 
 SED1376:
 swivelview register
@@ -45,14 +45,20 @@ in the edge case that SPICLK2 is disabled while using ADS7846 and a 1 was the la
 
 SD Card:
 IRQ2 may actually be attached to the SD Card data out pin, triggering an interrupt when a 0 is received to process the return data
+need to test if Port J Pin 3(SD card chip select) is attached to Port D Pin 5(SD Card Status(IRQ2))(pinouts.ru says chip select and card detect are the same line)
 
 Debug tools:
 ADS7846 channels can't be read in single reference mode in hwTestSuite
 
 MakePalmBitmap:
+the small icons are corrupt
+the non 16 bpp large icons are corrupt
 
 
 Fixed:
+need to test if Port J Pin 3(SD card chip select) is attached to Port D Pin 5(SD Card Status(IRQ2))(pinouts.ru says chip select and card detect are the same line)(IRQ2 doesnt change when SD card chip select is toggled regardless of wether the card is inserted)
+the "Fatal Error" dialog reset button doesnt work, may not be a bug, could just an be issue with certain errors needing a full reset(its error dependent, one bug proved the other bug wasn't actually a bug)
+don't know if flushing the PWM1 FIFO sets all the bytes to 0x00, or just sets the read pointer to the write pointer preserving the newest sample and making the size 0(readPtr = writePtr has significantly cleaner audio then 0ing it out though(they sound the same now, this just masked the actual issue))
 edge triggered INT* don't clear on write to ISR when masked in IMR(I needed to use (ints & ~IMR) not (ints & IMR) which only triggers disable interrupts while blocking active ones)
 PDKBEN also has a hack for power on(its been removed)
 On hardware PDIRQEG seems not to actually work at all(CPUID:0x57000000)(it does)

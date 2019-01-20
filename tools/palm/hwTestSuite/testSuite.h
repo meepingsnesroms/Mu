@@ -44,7 +44,7 @@ typedef struct{
    uint64_t value;
 }var;
 
-typedef var (*activity_t)();
+typedef var (*activity_t)(void);
 
 typedef struct{
    char       name[TEST_NAME_LENGTH];
@@ -91,22 +91,22 @@ var     makeVar(uint8_t length, uint8_t type, uint64_t value);
 #define writeArbitraryMemory32(address, value) (*((volatile uint32_t*)(address)) = (value))
 
 /*graphics*/
-void forceFrameRedraw();
+void forceFrameRedraw(void);
 
 /*Palm OS library patches*/
 char* floatToString(float data);
 
 /*execution state*/
 void callSubprogram(activity_t activity);
-void exitSubprogram();
+void exitSubprogram(void);
 void execSubprogram(activity_t activity);/*replace current subprogram with a new one*/
-var getSubprogramReturnValue();
-var getSubprogramArgs();
+var getSubprogramReturnValue(void);
+var getSubprogramArgs(void);
 void setSubprogramArgs(var args);
-var subprogramGetData();/*for subprograms to get data they stored*/
+var subprogramGetData(void);/*for subprograms to get data they stored*/
 void subprogramSetData(var data);/*for subprograms to save data when calling a new subprogram*/
 
 /*special subprograms*/
-var memoryAllocationError();
+var memoryAllocationError(void);
 
 #endif

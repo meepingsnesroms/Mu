@@ -3,9 +3,9 @@
 
 #include "testSuite.h"
 
-var valueViewer();
-var hexViewer();
-var functionPicker();
-void resetFunctionViewer();
+var valueViewer(void);
+var hexViewer(void);
+var functionPicker(void);
+void resetFunctionViewer(void);
 
 #endif

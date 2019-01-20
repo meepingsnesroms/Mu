@@ -5,6 +5,7 @@
 
 #include "audio/blip_buf.h"
 #include "flx68000.h"
+#include "armv5.h"
 #include "emulator.h"
 #include "hardwareRegisters.h"
 #include "memoryAccess.h"
@@ -19,14 +20,14 @@
 
 
 //Memory Map of Palm m515
-//0x00000000-0x00FFFFFF RAM, CSC0 as RAS0, CSC1 as RAS1, CSD0 as CAS0 and CSD1 as CAS1
-//0x10000000-0x103FFFFF ROM, CSA0, at address 0x00000000 during boot, palmos41-en-m515.rom, substitute "en" for your language code
-//0x10400000-0x10C00000 USB, CSA1
-//0x1FF80000-0x1FF800B3 SED1376(Display Controller) Registers, CSB0
-//0x1FFA0000-0x1FFB3FFF SED1376(Display Controller) Framebuffer, CSB0, this is not the same as the Palm framebuffer which is always 16 bit color,
+//0x00000000<->0x00FFFFFF RAM, CSC0 as RAS0, CSC1 as RAS1, CSD0 as CAS0 and CSD1 as CAS1
+//0x10000000<->0x103FFFFF ROM, CSA0, at address 0x00000000 during boot, palmos41-en-m515.rom, substitute "en" for your language code
+//0x10400000<->0x10400003 USB, CSA1
+//0x1FF80000<->0x1FF800B3 SED1376(Display Controller) Registers, CSB0
+//0x1FFA0000<->0x1FFB3FFF SED1376(Display Controller) Framebuffer, CSB0, this is not the same as the Palm framebuffer which is always 16 bit color,
 //this buffer must be processed depending on whats in the SED1376 registers, the result is the Palm framebuffer
-//0xFFFFF000-0xFFFFFDFF Hardware Registers
-//0xFFFFFE00-0xFFFFFFFF Bootloader, only reads from UART into RAM and jumps to it, never executed in consumer Palms
+//0xFFFFF000<->0xFFFFFDFF Hardware Registers
+//0xFFFFFE00<->0xFFFFFFFF Bootloader, only reads from UART into RAM and jumps to it, never executed in consumer Palms
 //VGhpcyBlbXVsYXRvciBpcyBkZWRpY2F0ZWQgdG8gdGhlIGJvdmluZSBtb28gY293cyB0aGF0IG1vby4=
 
 
@@ -38,12 +39,12 @@ uint8_t*  palmReg;
 input_t   palmInput;
 sd_card_t palmSdCard;
 misc_hw_t palmMisc;
+emu_reg_t palmEmuFeatures;
 uint16_t* palmFramebuffer;
 uint16_t  palmFramebufferWidth;
 uint16_t  palmFramebufferHeight;
 int16_t*  palmAudio;
 blip_t*   palmAudioResampler;
-uint32_t  palmSpecialFeatures;
 double    palmSysclksPerClk32;//how many SYSCLK cycles before toggling the 32.768 kHz crystal
 double    palmCycleCounter;//can be greater then 0 if too many cycles where run
 double    palmClockMultiplier;//used by the emulator to overclock the emulated Palm
@@ -51,7 +52,7 @@ uint32_t  palmFrameClk32s;//how many CLK32s have happened in the current frame
 double    palmClk32Sysclks;//how many SYSCLKs have happened in the current CLK32
 
 
-uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t specialFeatures){
+uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t enabledEmuFeatures){
    if(emulatorInitialized)
       return EMU_ERROR_RESOURCE_LOCKED;
 
@@ -59,7 +60,7 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t spec
       return EMU_ERROR_INVALID_PARAMETER;
 
    //allocate buffers, add 4 to memory regions to prevent SIGSEGV from accessing off the end
-   palmRam = malloc(((specialFeatures & FEATURE_RAM_HUGE) ? SUPERMASSIVE_RAM_SIZE : RAM_SIZE) + 4);
+   palmRam = malloc(((enabledEmuFeatures & FEATURE_RAM_HUGE) ? SUPERMASSIVE_RAM_SIZE : RAM_SIZE) + 4);
    palmRom = malloc(ROM_SIZE + 4);
    palmReg = malloc(REG_SIZE + 4);
    palmFramebuffer = malloc(480 * 480 * sizeof(uint16_t));
@@ -76,7 +77,7 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t spec
    }
 
    //set default values
-   memset(palmRam, 0x00, specialFeatures & FEATURE_RAM_HUGE ? SUPERMASSIVE_RAM_SIZE : RAM_SIZE);
+   memset(palmRam, 0x00, enabledEmuFeatures & FEATURE_RAM_HUGE ? SUPERMASSIVE_RAM_SIZE : RAM_SIZE);
    memcpy(palmRom, palmRomDump.data, u64Min(palmRomDump.size, ROM_SIZE));
    if(palmRomDump.size < ROM_SIZE)
       memset(palmRom + palmRomDump.size, 0x00, ROM_SIZE - palmRomDump.size);
@@ -93,23 +94,26 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t spec
    memset(palmAudio, 0x00, AUDIO_SAMPLES_PER_FRAME * 2/*channels*/ * sizeof(int16_t));
    memset(&palmInput, 0x00, sizeof(palmInput));
    memset(&palmMisc, 0x00, sizeof(palmMisc));
+   memset(&palmEmuFeatures, 0x00, sizeof(palmEmuFeatures));
    palmFramebufferWidth = 160;
    palmFramebufferHeight = 220;
    palmMisc.batteryLevel = 100;
    palmCycleCounter = 0.0;
-   palmClockMultiplier = (specialFeatures & FEATURE_FAST_CPU) ? 2.00 : 1.00;//overclock
-   palmSpecialFeatures = specialFeatures;
+   palmClockMultiplier = 1.00 - EMU_CPU_PERCENT_WAITING;
+   palmEmuFeatures.info = enabledEmuFeatures;
 
    //initialize components
    blip_set_rates(palmAudioResampler, AUDIO_CLOCK_RATE, AUDIO_SAMPLE_RATE);
    flx68000Init();
-   sandboxInit();
+   sandboxInit(); 
 
    //reset everything
    sed1376Reset();
    ads7846Reset();
    pdiUsbD12Reset();
    sdCardReset();
+   if(enabledEmuFeatures & FEATURE_HYBRID_CPU)
+      armv5Reset();
    flx68000Reset();
    setRtc(0, 0, 0, 0);//RTCTIME and DAYR are not cleared by reset, clear them manually in case the frontend doesnt set the RTC
 
@@ -136,13 +140,17 @@ void emulatorExit(void){
 
 void emulatorHardReset(void){
    //equivalent to taking the battery out and putting it back in
-   memset(palmRam, 0x00, palmSpecialFeatures & FEATURE_RAM_HUGE ? SUPERMASSIVE_RAM_SIZE : RAM_SIZE);
+   memset(palmRam, 0x00, palmEmuFeatures.info & FEATURE_RAM_HUGE ? SUPERMASSIVE_RAM_SIZE : RAM_SIZE);
    palmFramebufferWidth = 160;
    palmFramebufferHeight = 220;
+   palmEmuFeatures.value = 0x00000000;
+   palmClockMultiplier = 1.00 - EMU_CPU_PERCENT_WAITING;
    sed1376Reset();
    ads7846Reset();
    pdiUsbD12Reset();
    sdCardReset();
+   if(palmEmuFeatures.info & FEATURE_HYBRID_CPU)
+      armv5Reset();
    flx68000Reset();
    setRtc(0, 0, 0, 0);
 }
@@ -151,10 +159,14 @@ void emulatorSoftReset(void){
    //equivalent to pushing the reset button on the back of the device
    palmFramebufferWidth = 160;
    palmFramebufferHeight = 220;
+   palmEmuFeatures.value = 0x00000000;
+   palmClockMultiplier = 1.00 - EMU_CPU_PERCENT_WAITING;
    sed1376Reset();
    ads7846Reset();
    pdiUsbD12Reset();
    sdCardReset();
+   if(palmEmuFeatures.info & FEATURE_HYBRID_CPU)
+      armv5Reset();
    flx68000Reset();
 }
 
@@ -166,14 +178,16 @@ uint64_t emulatorGetStateSize(void){
    uint64_t size = 0;
 
    size += sizeof(uint32_t);//save state version
-   size += sizeof(uint32_t);//palmSpecialFeatures
+   size += sizeof(uint32_t);//palmEmuFeatures.info
    size += sizeof(uint64_t);//palmSdCard.flashChip.size, needs to be done first to verify the malloc worked
    size += sizeof(uint16_t) * 2;//palmFramebuffer(Width/Height)
    size += flx68000StateSize();
+   if(palmEmuFeatures.info & FEATURE_HYBRID_CPU)
+      size += armv5StateSize();
    size += sed1376StateSize();
    size += ads7846StateSize();
    size += pdiUsbD12StateSize();
-   if(palmSpecialFeatures & FEATURE_RAM_HUGE)
+   if(palmEmuFeatures.info & FEATURE_RAM_HUGE)
       size += SUPERMASSIVE_RAM_SIZE;//system RAM buffer
    else
       size += RAM_SIZE;//system RAM buffer
@@ -181,7 +195,7 @@ uint64_t emulatorGetStateSize(void){
    size += TOTAL_MEMORY_BANKS;//bank handlers
    size += sizeof(uint32_t) * 4 * CHIP_END;//chip select states
    size += sizeof(uint8_t) * 5 * CHIP_END;//chip select states
-   size += sizeof(uint64_t) * 4;//32.32 fixed point double, timerXCycleCounter and CPU cycle timers
+   size += sizeof(uint64_t) * 5;//32.32 fixed point double, timerXCycleCounter and CPU cycle timers
    size += sizeof(int8_t);//pllSleepWait
    size += sizeof(int8_t);//pllWakeWait
    size += sizeof(uint32_t);//clk32Counter
@@ -195,6 +209,7 @@ uint64_t emulatorGetStateSize(void){
    size += sizeof(uint8_t) * 6;//pwm1Fifo[6]
    size += sizeof(uint8_t) * 2;//pwm1(Read/Write)
    size += sizeof(uint8_t) * 7;//palmMisc
+   size += sizeof(uint32_t) * 4;//palmEmuFeatures.src / palmEmuFeatures.dst / palmEmuFeatures.size / palmEmuFeatures.value
    size += sizeof(uint64_t) * 2;//palmSdCard.command / palmSdCard.responseState
    size += sizeof(uint8_t) * 4;//palmSdCard.commandBitsRemaining / palmSdCard.response / palmSdCard.allowInvalidCrc / palmSdCard.chipSelect
    size += palmSdCard.flashChip.size;//palmSdCard.flashChip.data
@@ -214,7 +229,7 @@ bool emulatorSaveState(buffer_t buffer){
    offset += sizeof(uint32_t);
 
    //features, hotpluging emulated hardware is not supported
-   writeStateValue32(buffer.data + offset, palmSpecialFeatures);
+   writeStateValue32(buffer.data + offset, palmEmuFeatures.info);
    offset += sizeof(uint32_t);
 
    //SD card size
@@ -230,6 +245,10 @@ bool emulatorSaveState(buffer_t buffer){
    //chips
    flx68000SaveState(buffer.data + offset);
    offset += flx68000StateSize();
+   if(palmEmuFeatures.info & FEATURE_HYBRID_CPU){
+      armv5SaveState(buffer.data + offset);
+      offset += armv5StateSize();
+   }
    sed1376SaveState(buffer.data + offset);
    offset += sed1376StateSize();
    ads7846SaveState(buffer.data + offset);
@@ -238,7 +257,7 @@ bool emulatorSaveState(buffer_t buffer){
    offset += pdiUsbD12StateSize();
 
    //memory
-   if(palmSpecialFeatures & FEATURE_RAM_HUGE){
+   if(palmEmuFeatures.info & FEATURE_RAM_HUGE){
       memcpy(buffer.data + offset, palmRam, SUPERMASSIVE_RAM_SIZE);
       swap16BufferIfLittle(buffer.data + offset, SUPERMASSIVE_RAM_SIZE / sizeof(uint16_t));
       offset += SUPERMASSIVE_RAM_SIZE;
@@ -278,6 +297,8 @@ bool emulatorSaveState(buffer_t buffer){
    writeStateValueDouble(buffer.data + offset, palmSysclksPerClk32);
    offset += sizeof(uint64_t);
    writeStateValueDouble(buffer.data + offset, palmCycleCounter);
+   offset += sizeof(uint64_t);
+   writeStateValueDouble(buffer.data + offset, palmClockMultiplier);
    offset += sizeof(uint64_t);
    writeStateValue8(buffer.data + offset, pllSleepWait);
    offset += sizeof(int8_t);
@@ -346,6 +367,16 @@ bool emulatorSaveState(buffer_t buffer){
    writeStateValue8(buffer.data + offset, palmMisc.dataPort);
    offset += sizeof(uint8_t);
 
+   //emu features
+   writeStateValue32(buffer.data + offset, palmEmuFeatures.src);
+   offset += sizeof(uint32_t);
+   writeStateValue32(buffer.data + offset, palmEmuFeatures.dst);
+   offset += sizeof(uint32_t);
+   writeStateValue32(buffer.data + offset, palmEmuFeatures.size);
+   offset += sizeof(uint32_t);
+   writeStateValue32(buffer.data + offset, palmEmuFeatures.value);
+   offset += sizeof(uint32_t);
+
    //SD card
    writeStateValue64(buffer.data + offset, palmSdCard.command);
    offset += sizeof(uint64_t);
@@ -377,7 +408,7 @@ bool emulatorLoadState(buffer_t buffer){
    offset += sizeof(uint32_t);
 
    //features, hotpluging emulated hardware is not supported
-   if(readStateValue32(buffer.data + offset) != palmSpecialFeatures)
+   if(readStateValue32(buffer.data + offset) != palmEmuFeatures.info)
       return false;
    offset += sizeof(uint32_t);
 
@@ -397,6 +428,10 @@ bool emulatorLoadState(buffer_t buffer){
    //chips
    flx68000LoadState(buffer.data + offset);
    offset += flx68000StateSize();
+   if(palmEmuFeatures.info & FEATURE_HYBRID_CPU){
+      armv5LoadState(buffer.data + offset);
+      offset += armv5StateSize();
+   }
    sed1376LoadState(buffer.data + offset);
    offset += sed1376StateSize();
    ads7846LoadState(buffer.data + offset);
@@ -405,7 +440,7 @@ bool emulatorLoadState(buffer_t buffer){
    offset += pdiUsbD12StateSize();
 
    //memory
-   if(palmSpecialFeatures & FEATURE_RAM_HUGE){
+   if(palmEmuFeatures.info & FEATURE_RAM_HUGE){
       memcpy(palmRam, buffer.data + offset, SUPERMASSIVE_RAM_SIZE);
       swap16BufferIfLittle(palmRam, SUPERMASSIVE_RAM_SIZE / sizeof(uint16_t));
       offset += SUPERMASSIVE_RAM_SIZE;
@@ -445,6 +480,8 @@ bool emulatorLoadState(buffer_t buffer){
    palmSysclksPerClk32 = readStateValueDouble(buffer.data + offset);
    offset += sizeof(uint64_t);
    palmCycleCounter = readStateValueDouble(buffer.data + offset);
+   offset += sizeof(uint64_t);
+   palmClockMultiplier = readStateValueDouble(buffer.data + offset);
    offset += sizeof(uint64_t);
    pllSleepWait = readStateValue8(buffer.data + offset);
    offset += sizeof(int8_t);
@@ -513,6 +550,16 @@ bool emulatorLoadState(buffer_t buffer){
    palmMisc.dataPort = readStateValue8(buffer.data + offset);
    offset += sizeof(uint8_t);
 
+   //emu features
+   palmEmuFeatures.src = readStateValue32(buffer.data + offset);
+   offset += sizeof(uint32_t);
+   palmEmuFeatures.dst = readStateValue32(buffer.data + offset);
+   offset += sizeof(uint32_t);
+   palmEmuFeatures.size = readStateValue32(buffer.data + offset);
+   offset += sizeof(uint32_t);
+   palmEmuFeatures.value = readStateValue32(buffer.data + offset);
+   offset += sizeof(uint32_t);
+
    //SD card
    palmSdCard.command = readStateValue64(buffer.data + offset);
    offset += sizeof(uint64_t);
@@ -540,11 +587,11 @@ bool emulatorLoadState(buffer_t buffer){
 }
 
 uint64_t emulatorGetRamSize(void){
-   return palmSpecialFeatures & FEATURE_RAM_HUGE ? SUPERMASSIVE_RAM_SIZE : RAM_SIZE;
+   return palmEmuFeatures.info & FEATURE_RAM_HUGE ? SUPERMASSIVE_RAM_SIZE : RAM_SIZE;
 }
 
 bool emulatorSaveRam(buffer_t buffer){
-   uint64_t size = palmSpecialFeatures & FEATURE_RAM_HUGE ? SUPERMASSIVE_RAM_SIZE : RAM_SIZE;
+   uint64_t size = palmEmuFeatures.info & FEATURE_RAM_HUGE ? SUPERMASSIVE_RAM_SIZE : RAM_SIZE;
 
    if(buffer.size < size)
       return false;
@@ -556,7 +603,7 @@ bool emulatorSaveRam(buffer_t buffer){
 }
 
 bool emulatorLoadRam(buffer_t buffer){
-   uint64_t size = palmSpecialFeatures & FEATURE_RAM_HUGE ? SUPERMASSIVE_RAM_SIZE : RAM_SIZE;
+   uint64_t size = palmEmuFeatures.info & FEATURE_RAM_HUGE ? SUPERMASSIVE_RAM_SIZE : RAM_SIZE;
 
    if(buffer.size < size)
       return false;

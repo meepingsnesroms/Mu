@@ -3,11 +3,13 @@
 
 #include "emulator.h"
 #include "portability.h"
+#include "hardwareRegisters.h"
 
 
 bool ads7846PenIrqEnabled;
 
 static const uint16_t ads7846DockResistorValues[PORT_END] = {0xFFF/*none*/, 0x1EB/*USB cradle*/, 0x000/*serial cradle, unknown*/, 0x000/*USB peripheral, unknown*/, 0x000/*serial peripheral, unknown*/};
+
 static uint8_t  ads7846BitsToNextControl;
 static uint8_t  ads7846ControlByte;
 static uint16_t ads7846OutputValue;
@@ -29,7 +31,10 @@ void ads7846Reset(void){
    ads7846ControlByte = 0x00;
    ads7846PenIrqEnabled = true;
    ads7846OutputValue = 0x0000;
-   ads7846ChipSelect = false;
+   ads7846ChipSelect = true;
+#if !defined(EMU_NO_SAFETY)
+   refreshTouchState();
+#endif
 }
 
 uint64_t ads7846StateSize(void){
@@ -78,7 +83,11 @@ void ads7846SetChipSelect(bool value){
       ads7846ControlByte = 0x00;
       ads7846PenIrqEnabled = true;
       ads7846OutputValue = 0x0000;
+#if !defined(EMU_NO_SAFETY)
+      refreshTouchState();
+#endif
    }
+   ads7846ChipSelect = value;
 }
 
 bool ads7846ExchangeBit(bool bitIn){
@@ -106,17 +115,22 @@ bool ads7846ExchangeBit(bool bitIn){
    else if(ads7846BitsToNextControl == 6){
       //control byte and busy cycle finished, get output value
       bool bitMode = !!(ads7846ControlByte & 0x08);
-      //bool differentialMode = !(ads7846ControlByte & 0x04);
+      bool differentialMode = !(ads7846ControlByte & 0x04);
       uint8_t channel = (ads7846ControlByte & 0x70) >> 4;
       uint8_t powerSave = ads7846ControlByte & 0x03;
 
       //debugLog("Accessed ADS7846 Ch:%d, %d bits, %s Mode, Power Save:%d, PC:0x%08X.\n", channel, bitMode ? 8 : 12, differentialMode ? "Diff" : "Normal", ads7846ControlByte & 0x03, flx68000GetPc());
 
-      //check if ADC is on, PENIRQ is handled in refreshInputState() in hardwareRegisters.c
-      switch(powerSave){
-         case 0:
-         case 1:
-            //touchscreen data only
+      //reference disabled currently isnt emulated, I dont know what the proper behavior for that would be
+
+#if !defined(EMU_NO_SAFETY)
+      //trigger fake IRQs
+      ads7846OverridePenState(!(channel == 1 || channel == 3 || channel == 4 || channel == 5));
+#endif
+
+      if(powerSave != 2){
+         //ADC enabled, get analog value
+         if(differentialMode){
             switch(channel){
                case 0:
                   //temperature 0, wrong mode
@@ -170,18 +184,8 @@ bool ads7846ExchangeBit(bool bitIn){
                   ads7846OutputValue = 0xDFF;
                   break;
             }
-            break;
-
-         case 2:
-            //ADC is off, return invalid data
-            if((channel == 3 || channel == 5) && !palmInput.touchscreenTouched)
-               ads7846OutputValue = 0x000;
-            else
-               ads7846OutputValue = 0xFFF;
-            break;
-
-         case 3:
-            //all data
+         }
+         else{
             if(!palmInput.touchscreenTouched){
                switch(channel){
                   case 0:
@@ -248,7 +252,14 @@ bool ads7846ExchangeBit(bool bitIn){
                //crosses lines with REF+(unverified)
                ads7846OutputValue = 0xF80;
             }
-            break;
+         }
+      }
+      else{
+         //ADC disabled, return invalid data
+         if((channel == 3 || channel == 5) && !palmInput.touchscreenTouched)
+            ads7846OutputValue = 0x000;
+         else
+            ads7846OutputValue = 0xFFF;
       }
 
       //move to output position
@@ -261,6 +272,9 @@ bool ads7846ExchangeBit(bool bitIn){
       }
 
       ads7846PenIrqEnabled = !(powerSave & 0x01);
+#if !defined(EMU_NO_SAFETY)
+      refreshTouchState();
+#endif
    }
 
    return ads7846GetAdcBit();

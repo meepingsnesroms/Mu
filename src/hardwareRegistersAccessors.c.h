@@ -143,6 +143,7 @@ static void pwm1FifoWrite(uint8_t value){
 
 static void pwm1FifoFlush(void){
    pwm1ReadPosition = pwm1WritePosition;
+   pwm1Fifo[pwm1WritePosition] = 0x00;
 }
 
 //register setters
@@ -376,7 +377,7 @@ static void setSpiCont1(uint16_t value){
          uint16_t startBit = 1 << (bitCount - 1);
          uint8_t bits;
 
-         //debugLog("SPI1 transfer, PC:0x%08X\n", flx68000GetPc());
+         debugLog("SPI1 transfer, bitCount:%d, PC:0x%08X\n", bitCount, flx68000GetPc());
 
          //The most significant bit is output when the CPU loads the transmitted data, 13.2.3 SPI 1 Phase and Polarity Configurations MC68VZ328UM.pdf
          for(bits = 0; bits < bitCount; bits++){
@@ -623,10 +624,10 @@ static uint8_t getPortFValue(void){
    uint8_t portFData = registerArrayRead8(PFDATA);
    uint8_t portFDir = registerArrayRead8(PFDIR);
    uint8_t portFSel = registerArrayRead8(PFSEL);
-   bool penIrqPin = !(ads7846PenIrqEnabled && palmInput.touchscreenTouched);//penIrqPin pulled low on touch
+   bool penIrqPin = ads7846PenIrqEnabled ? !palmInput.touchscreenTouched : true;//penIrqPin pulled low on touch
 
    portFValue |= penIrqPin << 1;
-   portFValue |= 0x85;//bit 7 & 2-0 have pull ups, bits 6-3 have pull downs, bit 2 is occupied by PENIRQ
+   portFValue |= 0x85;//bit 7 & 2<->0 have pull ups, bits 6<->3 have pull downs, bit 2 is occupied by PENIRQ
    portFValue &= ~portFDir & (portFSel | 0x02);//IRQ5 is readable even when PFSEL bit 2 is false
    portFValue |= portFData & portFDir & portFSel;
 
@@ -667,7 +668,7 @@ static uint8_t getPortKValue(void){
 }
 
 static uint8_t getPortMValue(void){
-   //bit 5 has a pull up not pull down, bits 4-0 have a pull down, bit 7-6 are not active at all
+   //bit 5 has a pull up not pull down, bits 4<->0 have a pull down, bit 7<->6 are not active at all
    return ((registerArrayRead8(PMDATA) & registerArrayRead8(PMDIR)) | (~registerArrayRead8(PMDIR) & 0x20)) & registerArrayRead8(PMSEL);
 }
 
@@ -736,16 +737,8 @@ static void updateBacklightAmplifierStatus(void){
 }
 
 static void updateTouchState(void){
-   //check if interrupt enabled and is input
    if(!(registerArrayRead8(PFSEL) & registerArrayRead8(PFDIR) & 0x02)){
-      uint16_t icr = registerArrayRead16(ICR);
-      bool penIrqPin = !(ads7846PenIrqEnabled && palmInput.touchscreenTouched);//penIrqPin pulled low on touch
-
-      //switch polarity
-      if(icr & 0x0080)
-         penIrqPin = !penIrqPin;
-
-      if(!penIrqPin)
+      if((ads7846PenIrqEnabled ? !palmInput.touchscreenTouched : true) == !!(registerArrayRead16(ICR) & 0x0080))
          setIprIsrBit(INT_IRQ5);
       else
          clearIprIsrBit(INT_IRQ5);

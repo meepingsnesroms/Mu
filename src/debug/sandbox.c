@@ -61,6 +61,22 @@ static char* takeStackDump(uint32_t bytes){
    return textBytes;
 }
 
+void patchOsRom(uint32_t address, char* patch){
+   uint32_t offset;
+   uint32_t patchBytes = strlen(patch) / 2;//1 char per nibble
+   uint32_t swapBegin = address & 0xFFFFFFFE;
+   uint32_t swapSize = patchBytes / sizeof(uint16_t) + 1;
+   char conv[5] = "0xXX";
+
+   swap16BufferIfLittle(&palmRom[swapBegin], swapSize);
+   for(offset = 0; offset < patchBytes; offset++){
+      conv[2] = patch[offset * 2];
+      conv[3] = patch[offset * 2 + 1];
+      palmRom[address + offset] = strtol(conv, NULL, 0);
+   }
+   swap16BufferIfLittle(&palmRom[swapBegin], swapSize);
+}
+
 static bool ignoreTrap(uint16_t trap){
    switch(trap){
       case HwrDisableDataWrites:
@@ -89,117 +105,6 @@ static void logApiCalls(void){
          debugLog("Trap F API:%s, API number:0x%04X, PC:0x%08X\n", lookupTrap(trap), trap, programCounter);
       }
    }
-}
-
-static int64_t randomRange(int64_t start, int64_t end){
-   static bool seedRng = true;
-   int64_t result;
-
-   if(seedRng){
-      srand(time(NULL));
-      seedRng = false;
-   }
-
-   result = rand();
-   result <<= 32;
-   result |= rand();
-   result %= llabs(end - start) + 1;
-   result += start;
-
-   return result;
-}
-
-static bool isAlphanumeric(char chr){
-   if((chr >= 'a' && chr <= 'z') || (chr >= 'A' && chr <= 'Z') || (chr >= '0' && chr <= '9'))
-      return true;
-   return false;
-}
-
-static bool readable6CharsBack(uint32_t address){
-   uint8_t count;
-
-   for(count = 0; count < 6; count++)
-      if(!isAlphanumeric(m68k_read_memory_8(address - count)))
-         return false;
-   return true;
-}
-
-static uint32_t find68kString(const char* str, uint32_t rangeStart, uint32_t rangeEnd){
-   uint32_t strLength = strlen(str) + 1;//include null terminator
-   uint32_t scanAddress;
-
-   for(scanAddress = rangeStart; scanAddress <= rangeEnd - (strLength - 1); scanAddress++){
-      //since only the first char is range checked remove the rest from the range to prevent reading off the end
-
-      //check every byte against the start character
-      if(m68k_read_memory_8(scanAddress) == str[0]){
-         bool wrongString = false;
-         uint32_t strIndex;
-
-          //character match found, check for string
-         for(strIndex = 1; strIndex < strLength; strIndex++){
-            if(m68k_read_memory_8(scanAddress + strIndex) != str[strIndex]){
-               wrongString = true;
-               break;
-            }
-         }
-
-         if(wrongString == false)
-            return scanAddress;
-      }
-   }
-
-   return rangeEnd;
-}
-
-static uint32_t skip68kString(uint32_t address){
-   while(m68k_read_memory_8(address) != '\0')
-      address++;
-   address++;//skip null terminator too
-   return address;
-}
-
-//THIS FUNCTION DOES NOT WORK IF A WORD ALIGNED 0x0000 IS FOUND IN THE FUNCTION BEING SEARCHED FOR, THIS IS A BUG
-static uint32_t scanForPrivateFunctionAddress(const char* name){
-   //function name format [0x**(unknown), string(with null terminator), 0x00, 0x00(if last 0x00 was on an even address, protects opcode alignemnt)]
-   //this is not 100% accurate, it scans memory for a function address based on a string
-   //if a duplicate set of stings is found but not encasing a function a fatal error will occur on execution
-   uint32_t rangeEnd = chips[CHIP_A0_ROM].start + chips[CHIP_A0_ROM].lineSize - 1;
-   uint32_t address = find68kString(name, chips[CHIP_A0_ROM].start, rangeEnd);
-
-   while(address < rangeEnd){
-      uint32_t signatureBegining = address - 3;//last opcode of function being looked for if the string is correct
-
-      //skip string to test the null terminators
-      address = skip68kString(address);
-
-      //after a function string there are 2 null terminators(the one all strings have and 1 extra) or 3(2 extra) if the previous one was on an even address
-      if(m68k_read_memory_8(address) == '\0' && (address & 0x00000001 || m68k_read_memory_8(address + 1) == '\0')){
-         //valid string match found, get prior functions signature(a function string has a minimum of 6 printable chars with 2 null terminators)
-         uint32_t priorFunctionSignature = signatureBegining;//last opcode of the function thats being looked for
-         bool extraNull = false;
-
-         while(m68k_read_memory_16(priorFunctionSignature) != '\0\0')
-            priorFunctionSignature -= 2;
-
-         //remove extra null terminator if present
-         if(m68k_read_memory_8(priorFunctionSignature - 1) == '\0'){
-            priorFunctionSignature--;
-            extraNull = true;
-         }
-
-         //check that there are 6 valid alphanumeric characters before the nulls, this indicates that its a valid function signature
-         if(readable6CharsBack(priorFunctionSignature - 1)){
-            //valid, get first opcode after string and return its address
-            return priorFunctionSignature + (extraNull ? 3 : 2);
-         }
-      }
-
-      //string matched but structure was invalid, get next string
-      address = find68kString(name, address, rangeEnd);
-   }
-
-   return 0x00000000;
 }
 
 static uint32_t makePalmString(const char* str){
@@ -425,7 +330,7 @@ static uint32_t sandboxCallGuestFunction(bool fallthrough, uint32_t address, uin
    //end execution with CMD_EXECUTION_DONE
    m68k_write_memory_16(callWriteOut, 0x23FC);//move.l data imm to address at imm2 opcode
    callWriteOut += 2;
-   m68k_write_memory_32(callWriteOut, MAKE_EMU_CMD(CMD_EXECUTION_DONE));
+   m68k_write_memory_32(callWriteOut, CMD_EXECUTION_DONE);
    callWriteOut += 4;
    m68k_write_memory_32(callWriteOut, EMU_REG_ADDR(EMU_CMD));
    callWriteOut += 4;
@@ -479,56 +384,115 @@ void sandboxInit(void){
 uint32_t sandboxCommand(uint32_t command, void* data){
    uint32_t result = EMU_ERROR_NONE;
 
-   //tests cant run properly(hang forever) unless the debug return hook is enabled, it also completly destroys accuracy to execute hacked in asm buffers
-   if(!(palmSpecialFeatures & FEATURE_DEBUG))
+   //tests cant run properly(they hang forever) unless the debug return hook is enabled, it also completly destroys accuracy to execute hacked in asm buffers
+   if(!(palmEmuFeatures.info & FEATURE_DEBUG))
       return EMU_ERROR_NOT_IMPLEMENTED;
 
    debugLog("Sandbox: Command %d started\n", command);
 
    switch(command){
-      case SANDBOX_TEST_OS_VER:{
-            uint32_t verStrAddr = sandboxCallGuestFunction(false, 0x00000000, SysGetOSVersionString, "p()");
-            char* nativeStr = makeNativeString(verStrAddr);
-
-            debugLog("Sandbox: OS version is:\"%s\"\n", nativeStr);
-            free(nativeStr);
-         }
-         break;
-
-      case SANDBOX_SEND_OS_TOUCH:{
-            if(!m68k_read_memory_8(0x00000253)){
-               //0x00000253 seems to be a mutex for accessing the event queue
-               //the hack only seems to work when in an interrupt, a hack for a hack :(
-               m68k_set_irq(5);
-
-               if(palmInput.touchscreenTouched){
-                  //press
-                  m68k_write_memory_16(0xFFFFFFE0 - 4, palmInput.touchscreenX);
-                  m68k_write_memory_16(0xFFFFFFE0 - 2, palmInput.touchscreenY);
-                  sandboxCallGuestFunction(false, 0x00000000, PenScreenToRaw, "w(p)", 0xFFFFFFE0 - 4);
-                  sandboxCallGuestFunction(false, 0x00000000, EvtEnqueuePenPoint, "w(p)", 0xFFFFFFE0 - 4);
-               }
-               else{
-                  //release
-                  m68k_write_memory_16(0xFFFFFFE0 - 4, (uint16_t)-1);
-                  m68k_write_memory_16(0xFFFFFFE0 - 2, (uint16_t)-1);
-                  sandboxCallGuestFunction(false, 0x00000000, PenScreenToRaw, "w(p)", 0xFFFFFFE0 - 4);
-                  sandboxCallGuestFunction(false, 0x00000000, EvtEnqueuePenPoint, "w(p)", 0xFFFFFFE0 - 4);
-               }
-            }
-         }
-         break;
-
       case SANDBOX_PATCH_OS:{
             //this will not be in the v1.0 release
             //remove parts of the OS that cause lockups, yeah its bad
 
             //remove ErrDisplayFileLineMsg from HwrIRQ2Handler, device locks on USB polling without this
-            palmRom[0x83652] = 0x4E;
-            palmRom[0x83653] = 0x71;
-            palmRom[0x83654] = 0x4E;
-            palmRom[0x83655] = 0x71;
-            swap16BufferIfLittle(&palmRom[0x83652], 4 / sizeof(uint16_t));
+            patchOsRom(0x83652, "4E714E71");//nop; nop
+
+            //double dynamic heap size, verified working
+            //HwrCalcDynamicRAMSize_10005CC6
+            //HwrCalcDynamicRAMSize_10083B0A:
+            patchOsRom(0x5CC6, "203C000800004E75");//move.l 0x80000, d0; rts
+            patchOsRom(0x83B0A, "203C000800004E75");//move.l 0x80000, d0; rts
+
+            //set RAM to 32MB
+            //patchOsRom(0x2C5E, "203C020000004E75");//move.l 0x2000000, d0; rts
+            //patchOsRom(0x8442E, "203C020000004E75");//move.l 0x2000000, d0; rts
+
+            //set RAM to 128MB
+            //PrvGetRAMSize_10002C5E, small ROM
+            //PrvGetRAMSize_1008442E, big ROM
+            //patchOsRom(0x2C5E, "203C080000004E75");//move.l 0x8000000, d0; rts
+            //patchOsRom(0x8442E, "203C080000004E75");//move.l 0x8000000, d0; rts
+            //ROM:100219D0                 move.l  #unk_FFFFFF,d0
+            //patchOsRom(0x219D0, "203C01FFFFFF4E75");//move.l 0x1FFFFFF, d0; rts
+            //bus error at 0x1001DEDA when 128MB is present
+            //0x55 memory filler, 32 bit, at PC:0x1001FFDC, and of course, its MemSet, need a stack trace now
+            //PrvInitHeapPtr_10021908 sets up the 0x55 stuff in RAM
+            /*
+            ROM:100219C2                 move.l  d0,6(a4)        ; Move Data from Source to Destination
+            ROM:100219C6                 tst.b   arg_A(a6)       ; Test an Operand
+            ROM:100219CA                 beq.s   loc_100219EA    ; Branch if Equal
+            ROM:100219CC                 move.b  #$55,-(sp) ; 'U' ; Move Data from Source to Destination
+            ROM:100219D0                 move.l  #unk_FFFFFF,d0  ; Move Data from Source to Destination
+            ROM:100219D6                 and.l   (a3),d0         ; AND Logical
+            ROM:100219D8                 subq.l  #8,d0           ; Subtract Quick
+            ROM:100219DA                 move.l  d0,-(sp)        ; Move Data from Source to Destination
+            ROM:100219DC                 movea.l a3,a0           ; Move Address
+            ROM:100219DE                 pea     8(a0)           ; Push Effective Address
+            ROM:100219E2                 trap    #$F             ; Trap sysTrapMemSet
+            ROM:100219E2                 dc.w    $A027
+            ROM:100219E6                 lea     $A(sp),sp       ; Load Effective Address
+            */
+            //D0 is 0x3E1CC(254412) at PC:0x10021988
+
+            // Add the heap, as long as it's not the dynamic heap.  During
+            // bootup, the memory initialization sequence goes like:
+            //
+            //	if hard reset required:
+            //		MemCardFormat
+            //			lay out the card
+            //			MemStoreInit
+            //				for each heap
+            //					MemHeapInit
+            //	MemInit
+            //		for each card:
+            //			MemInitHeapTable
+            //		for each dynamic heap:
+            //			MemHeapInit
+            //		for each RAM heap:
+            //			Unlock all chunks
+            //			Compact
+            //
+            // Which means that if there's no hard reset, MemHeapInit
+            // has not been called on the dynamic heap at the time
+            // MemInitHeapTable is called.  And since the dynamic heap
+            // is currently in a corrupted state (because the boot stack
+            // and initial LCD buffer have been whapped over it), we
+            // can't perform the heap walk we'd normally do when adding
+            // a heap object.
+
+            //need to investigate what these vars are
+            /*
+            ROM:100148EE                 move.l  #$3BE,(dword_15C).w ; Move Data from Source to Destination
+            ROM:100148F6                 move.l  #$422,(dword_112).w ; Move Data from Source to Destination
+            ROM:100148FE                 move.l  #$890,(dword_11A).w ; Move Data from Source to Destination
+            ROM:10014906                 move.l  #$8CC,(TrapTablePointer).w ; Move Data from Source to Destination
+            ROM:1001490E                 move.w  #$45A,(word_13E).w ; Move Data from Source to Destination
+            ROM:10014914                 move.w  #$1000,(word_28E).w ; Move Data from Source to Destination
+            */
+
+            //may be able to use these to set the border colors like in OS 5
+            /*
+            RAM:00001758                 dc.l UIColorInit_10074672
+            RAM:0000175C                 dc.l UIColorGetTableEntryIndex_100746F6
+            RAM:00001760                 dc.l UIColorGetTableEntryRGB_1007472A
+            RAM:00001760                                         ; DATA XREF: ROM:101D66A1↓o
+            RAM:00001764                 dc.l UIColorSetTableEntry_10074762
+            RAM:00001768 off_1768:       dc.l UIColorPushTable_100747B0
+            */
+
+            //another road block surfaces
+            /*
+            When a Palm Powered handheld is presented with multiple dynamic heaps,
+            the first heap (heap 0) on card 0 is the active dynamic heap.
+            All other potential dynamic heaps are ignored. For example, it
+            is possible that a future Palm Powered handheld supporting multiple
+            cards might be presented with two cards, each having its own dynamic heap;
+            if so, only the dynamic heap residing on card 0 would be active—the system
+            would not treat any heaps on other cards as dynamic heaps, nor would heap
+            IDs be assigned to these heaps. Subsequent storage heaps would be assigned
+            IDs in sequential order, as always beginning with RAM heaps, followed by ROM heaps.
+            */
          }
          break;
 
@@ -538,21 +502,6 @@ uint32_t sandboxCommand(uint32_t command, void* data){
 
             if(!success)
                result = EMU_ERROR_OUT_OF_MEMORY;
-         }
-         break;
-
-      case SANDBOX_CALL_POWER_OFF:{
-            //call power off, get a register access log
-            sandboxCallGuestFunction(true, 0, SysDoze, "v(w)", false);
-            result = EMU_ERROR_UNKNOWN;//does not return
-         }
-         break;
-
-      case SANDBOX_CALL_POWER_ON:{
-            //call power on, get a register access log
-            //callFunction(false, 0x10087130, 0, "v()");
-            sandboxActive = true;
-            //result = EMU_ERROR_UNKNOWN;//does not return
          }
          break;
    }
@@ -566,10 +515,12 @@ void sandboxOnOpcodeRun(void){
 #if defined(EMU_SANDBOX_LOG_APIS)
    logApiCalls();
 #endif
-   switch(m68k_get_reg(NULL, M68K_REG_PPC)){
-      //case 0x10083652://USB issue location
-      case 0x100846C0://HwrDelay, before mysterious jump
-      case 0x100846CC://HwrDelay, after mysterious jump
+   switch(m68k_get_reg(NULL, M68K_REG_PC)){//switched this from PPC to PC
+      //case 0x10083652://USB issue location //address based on PPC
+      //case 0x100846C0://HwrDelay, before mysterious jump //address based on PPC
+      //case 0x100846CC://HwrDelay, after mysterious jump //address based on PPC
+      //case 0x100AD514://HwrSpiSdioInterrupts, SD card interrupt handler
+      case 0x10021988://just before "andi.l #unk_FFFFFF, d0"
          //to add a emulator breakpoint add a new line above here|^^^
          {
             uint32_t m68kRegisters[M68K_REG_CPU_TYPE];
@@ -614,7 +565,7 @@ void sandboxOnOpcodeRun(void){
             */
 
             //set host breakpoint here|vvv
-            if(1 == 1){
+            if(true){
                bool breakpoint = true;
             }
             //set host breakpoint here|^^^

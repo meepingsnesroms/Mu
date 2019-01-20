@@ -17,13 +17,13 @@
 #define CPU_M68K_SZ    0x40
 #define CPU_M68K_TYPES 0xF0
 
-void turnInterruptsOff();
-void turnInterruptsOn();
+void turnInterruptsOff(void);
+void turnInterruptsOn(void);
 void wasteXOpcodes(uint32_t opcodes);
-uint8_t getPhysicalCpuType();
-uint8_t getSupportedInstructionSets();
-const char* getCpuString();
-var enterUnsafeMode();
-var exitUnsafeMode();
+uint8_t getPhysicalCpuType(void);
+uint8_t getSupportedInstructionSets(void);
+const char* getCpuString(void);
+var enterUnsafeMode(void);
+var exitUnsafeMode(void);
 
 #endif
