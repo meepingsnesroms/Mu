@@ -8,21 +8,19 @@
 
 
 static Boolean appHandleEvent(EventPtr eventP){
-   Boolean handled = true;
-   
    switch(eventP->eType){
       case frmLoadEvent:{
          FormType* form = FrmInitForm(eventP->data.frmLoad.formID);
          
          FrmSetActiveForm(form);
-         break;
+         return true;
       }
          
       case frmOpenEvent:{
          FormType* form = FrmGetActiveForm();
          
          FrmDrawForm(form);
-         break;
+         return true;
       }
          
       case ctlExitEvent:
@@ -30,15 +28,11 @@ static Boolean appHandleEvent(EventPtr eventP){
             /*save and quit button released*/
             /*TODO*/
          }
-         break;
+         return true;
          
       default:
-         handled = false;
-         break;
+         return false;
    }
-   
-   /*wrong event handler, pass the event down*/
-   return handled;
 }
 
 void showGui(uint32_t* configFile){
@@ -56,8 +50,7 @@ void showGui(uint32_t* configFile){
    }
    
    /*set starting window*/
-   FrmPopupForm(GUI_FORM_MAIN_WINDOW);
-   /*FrmGotoForm(GUI_FORM_MAIN_WINDOW);*/
+   FrmGotoForm(GUI_FORM_MAIN_WINDOW);
    
    do{
       EvtGetEvent(&event, evtWaitForever);
@@ -68,7 +61,4 @@ void showGui(uint32_t* configFile){
                FrmDispatchEvent(&event);
    }
    while(event.eType != appStopEvent);
-   
-   /*free form memory*/
-   FrmDeleteForm(currentWindow);
 }
