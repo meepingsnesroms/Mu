@@ -27,6 +27,7 @@ PLLFSR has a hack that makes busy wait loops finish faster by toggling the CLK32
 should also not transfer data to SD card when MOSI, MISO or SPICLK1 are disabled
 port d data register INT* bits seem to have there data bits cleared when an edge triggered interrupt is cleared(according to MC68VZ328UM.pdf Page 10-15)
 sound plays too long when the category's menu is selected on the home screen and the pen is pressed and held in the middle of the screen(only happens there, other views of the same type don't have this issue)(effected by CPU speed, turning it up reduces the duration of the excess squeal)
+ARM CPU state isn't saved
 
 Memory:
 SD card can't be read or written to by Palm OS
@@ -42,6 +43,7 @@ verify chip select(no test has been done yet, but everything points to port g bi
 need to trigger a false PENIRQ interrupt on reading certain channels
 electrical noise on lines(conversions probably should have +-20 added to values)(probably no need for this, it works so theres no need to use less precise values)
 in the edge case that SPICLK2 is disabled while using ADS7846 and a 1 was the last bit shifted out 0s will still be shifted in
+need to to verify behavior of differential mode bit
 
 SD Card:
 IRQ2 may actually be attached to the SD Card data out pin, triggering an interrupt when a 0 is received to process the return data

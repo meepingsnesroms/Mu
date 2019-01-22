@@ -1,7 +1,6 @@
-Release at Christmas 17:00 GMT, 9:00 My time, 12:00 SquirrelJME devs time
-
-I post to r/emulation, Stephanie(SquirrelJME dev) posts to Twitter and Mastodon
-
+Easter release, 17:00 GMT, hopefully with some good ARM stuff
 
 Done:
+Release at Christmas 17:00 GMT, 9:00 My time, 12:00 SquirrelJME devs time
+I post to r/emulation, Stephanie(SquirrelJME dev) posts to Twitter and Mastodon
 Sister projects with SquirrelJME: https://github.com/XerTheSquirrel/SquirrelJME
