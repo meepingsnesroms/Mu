@@ -398,11 +398,22 @@ uint32_t sandboxCommand(uint32_t command, void* data){
             //remove ErrDisplayFileLineMsg from HwrIRQ2Handler, device locks on USB polling without this
             patchOsRom(0x83652, "4E714E71");//nop; nop
 
+            //make SysSetTrapAddress/SysGetTrapAddress support traps > ScrDefaultPaletteState 0xA459
+            //up to final OS 5.3 trap DmSyncDatabase 0xA476
+            //SysSetTrapAddress_1001AE36:
+            //SysGetTrapAddress_1001AE7C:
+            patchOsRom(0x1AE42, "0C410477");//cmpi.w 0x477, d1
+            patchOsRom(0x1AE8A, "0C42A477");//cmpi.w 0xA477, d2
+
             //double dynamic heap size, verified working
-            //HwrCalcDynamicRAMSize_10005CC6
+            //HwrCalcDynamicRAMSize_10005CC6:
             //HwrCalcDynamicRAMSize_10083B0A:
             patchOsRom(0x5CC6, "203C000800004E75");//move.l 0x80000, d0; rts
             patchOsRom(0x83B0A, "203C000800004E75");//move.l 0x80000, d0; rts
+
+            //patch PrvChunkNew to only allocate in 4 byte intervals
+            //PrvChunkNew_10020CBC:
+            //TODO
 
             //set RAM to 32MB
             //patchOsRom(0x2C5E, "203C020000004E75");//move.l 0x2000000, d0; rts

@@ -3,7 +3,7 @@
 
 
 uint32_t getGlobalVar(uint16_t id){
-   uint32_t value;
+   uint32_t value = 0x00000000;
    FtrGet('EMUG', id, &value);
    return value;
 }

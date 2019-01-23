@@ -5,6 +5,7 @@
 #include "traps.h"
 #include "armv5.h"
 #include "globals.h"
+#include "memalign.h"
 #include "palmGlobalDefines.h"
 #include "specs/emuFeatureRegisterSpec.h"
 
@@ -35,6 +36,22 @@ static void install128mbRam(uint8_t mbDynamicHeap){
     UInt32 *initCodeOffset2P, LocalID*   databaseDirIDP)
     SYS_TRAP(sysTrapMemStoreSetInfo);
     */
+}
+
+static void installPceNativeCallHandler(uint32_t armStackSize){
+   uint8_t* oldArmStack = (uint8_t*)getGlobalVar(ARM_STACK_START);
+   uint8_t* armStackStart;
+   
+   SysSetTrapAddress(sysTrapPceNativeCall, (void*)emuPceNativeCall);
+   
+   if(oldArmStack)
+      memalign_free(oldArmStack);
+   
+   /*must have 32 bit aligned size and start*/
+   armStackSize &= 0xFFFFFFFC;
+   armStackStart = memalign_alloc(sizeof(uint32_t), armStackSize);
+   armv5SetStack(armStackStart, armStackSize);
+   setGlobalVar(ARM_STACK_START, (uint32_t)armStackStart);
 }
 
 static void setProperDeviceId(uint16_t screenWidth, uint16_t screenHeight, Boolean hasArmCpu, Boolean hasDpad){
@@ -157,16 +174,8 @@ void initBoot(uint32_t* configFile){
       if(enabledFeatures & FEATURE_RAM_HUGE)
          install128mbRam(configFile[EXTRA_RAM_MB_DYNAMIC_HEAP]);
       
-      if(enabledFeatures & FEATURE_HYBRID_CPU){
-         SysSetTrapAddress(sysTrapPceNativeCall, (void*)emuPceNativeCall);
-         
-         if(configFile[ARM_STACK_SIZE] > 0){
-            uint8_t* armStackStart = MemPtrNew(configFile[ARM_STACK_SIZE]);/*currently isnt ever freed*/
-            
-            armv5SetStack(armStackStart, configFile[ARM_STACK_SIZE]);
-            setGlobalVar(ARM_STACK_START, (uint32_t)armStackStart);
-         }
-      }
+      if(enabledFeatures & FEATURE_HYBRID_CPU)
+         installPceNativeCallHandler(configFile[ARM_STACK_SIZE]);
       
       setProperDeviceId(configFile[LCD_WIDTH], configFile[LCD_HEIGHT], !!(enabledFeatures & FEATURE_HYBRID_CPU), !!(enabledFeatures & FEATURE_EXT_KEYS));
       
