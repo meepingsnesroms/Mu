@@ -248,6 +248,10 @@ void sed1376SetRegister(uint8_t address, uint8_t value){
          sed1376Registers[address] = value & 0x01;
          return;
 
+      case PWM_CONTROL:
+         sed1376Registers[address] = value & 0x9B;
+         return;
+
       case LINE_SIZE_1:
       case PIP_LINE_SZ_1:
       case PIP_X_START_1:
@@ -275,7 +279,6 @@ void sed1376SetRegister(uint8_t address, uint8_t value){
             sed1376Registers[LUT_R_READ] = sed1376RLut[value];
          }
          */
-         //debugLog("Writing R:0x%02X, G:0x%02X, B:0x%02X to LUT:0x%02X\n", sed1376RLut[value], sed1376GLut[value], sed1376BLut[value], value);
          sed1376OutputLut[value] = makeRgb16FromSed666(sed1376RLut[value], sed1376GLut[value], sed1376BLut[value]);
          return;
 
@@ -343,6 +346,9 @@ void sed1376SetRegister(uint8_t address, uint8_t value){
       case FPLINE_START_0:
       case FPFRAME_START_0:
       case DTFD_GCP_DATA:
+      case PWM_CONFIG:
+      case PWM_LENGTH:
+      case PWM_DUTY_CYCLE:
          //simple write, no actions needed
          sed1376Registers[address] = value;
          return;
