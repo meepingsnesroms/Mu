@@ -2,15 +2,14 @@ EMU_DEFINES :=
 EMU_SOURCES_C := $(EMU_PATH)/emulator.c \
 	$(EMU_PATH)/memoryAccess.c \
 	$(EMU_PATH)/hardwareRegisters.c \
+	$(EMU_PATH)/flx68000.c \
 	$(EMU_PATH)/sed1376.c \
 	$(EMU_PATH)/ads7846.c \
 	$(EMU_PATH)/pdiUsbD12.c \
 	$(EMU_PATH)/sdCard.c \
 	$(EMU_PATH)/silkscreen.c \
-	$(EMU_PATH)/flx68000.c \
-	$(EMU_PATH)/armv5.c \
-	$(EMU_PATH)/armv5/CPU.c \
-	$(EMU_PATH)/armv5/icache.c \
+	$(EMU_PATH)/expansionHardware.c \
+	$(EMU_PATH)/debug/sandbox.c \
 	$(EMU_PATH)/audio/blip_buf.c \
 	$(EMU_PATH)/m68k/m68kops.c \
 	$(EMU_PATH)/m68k/m68kopnz.c \
@@ -18,4 +17,6 @@ EMU_SOURCES_C := $(EMU_PATH)/emulator.c \
 	$(EMU_PATH)/m68k/m68kopac.c \
 	$(EMU_PATH)/m68k/m68kdasm.c \
 	$(EMU_PATH)/m68k/m68kcpu.c \
-	$(EMU_PATH)/debug/sandbox.c
+	$(EMU_PATH)/armv5.c \
+	$(EMU_PATH)/armv5/CPU.c \
+	$(EMU_PATH)/armv5/icache.c

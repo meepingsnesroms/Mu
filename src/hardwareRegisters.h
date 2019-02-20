@@ -51,7 +51,7 @@ enum{
 typedef struct{
    bool     enable;
    uint32_t start;
-   uint32_t lineSize;//the size of a single chip select line, multiply by 2 to get the range size
+   uint32_t lineSize;//the size of a single chip select line, multiply by 2 to get the range size for RAM
    uint32_t mask;//the address lines the chip responds to, so 0x10000 on an chip with 16 address lines will return the value at 0x0000
 
    //attributes
@@ -107,11 +107,9 @@ void setWriteProtectViolation(uint32_t address);
 uint8_t getHwRegister8(uint32_t address);
 uint16_t getHwRegister16(uint32_t address);
 uint32_t getHwRegister32(uint32_t address);
-uint32_t getEmuRegister(uint32_t address);
 void setHwRegister8(uint32_t address, uint8_t value);
 void setHwRegister16(uint32_t address, uint16_t value);
 void setHwRegister32(uint32_t address, uint32_t value);
-void setEmuRegister(uint32_t address, uint32_t value);
 
 //config
 void resetHwRegisters(void);

@@ -5,9 +5,9 @@
 
 #include "audio/blip_buf.h"
 #include "flx68000.h"
-#include "armv5.h"
 #include "emulator.h"
 #include "hardwareRegisters.h"
+#include "expansionHardware.h"
 #include "memoryAccess.h"
 #include "sed1376.h"
 #include "ads7846.h"
@@ -112,8 +112,7 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t enab
    ads7846Reset();
    pdiUsbD12Reset();
    sdCardReset();
-   if(enabledEmuFeatures & FEATURE_HYBRID_CPU)
-      armv5Reset();
+   expansionHardwareReset();
    flx68000Reset();
    setRtc(0, 0, 0, 0);//RTCTIME and DAYR are not cleared by reset, clear them manually in case the frontend doesnt set the RTC
 
@@ -149,8 +148,7 @@ void emulatorHardReset(void){
    ads7846Reset();
    pdiUsbD12Reset();
    sdCardReset();
-   if(palmEmuFeatures.info & FEATURE_HYBRID_CPU)
-      armv5Reset();
+   expansionHardwareReset();
    flx68000Reset();
    setRtc(0, 0, 0, 0);
 }
@@ -165,8 +163,7 @@ void emulatorSoftReset(void){
    ads7846Reset();
    pdiUsbD12Reset();
    sdCardReset();
-   if(palmEmuFeatures.info & FEATURE_HYBRID_CPU)
-      armv5Reset();
+   expansionHardwareReset();
    flx68000Reset();
 }
 
@@ -182,11 +179,10 @@ uint64_t emulatorGetStateSize(void){
    size += sizeof(uint64_t);//palmSdCard.flashChip.size, needs to be done first to verify the malloc worked
    size += sizeof(uint16_t) * 2;//palmFramebuffer(Width/Height)
    size += flx68000StateSize();
-   if(palmEmuFeatures.info & FEATURE_HYBRID_CPU)
-      size += armv5StateSize();
    size += sed1376StateSize();
    size += ads7846StateSize();
    size += pdiUsbD12StateSize();
+   size += expansionHardwareStateSize();
    if(palmEmuFeatures.info & FEATURE_RAM_HUGE)
       size += SUPERMASSIVE_RAM_SIZE;//system RAM buffer
    else
@@ -245,16 +241,14 @@ bool emulatorSaveState(buffer_t buffer){
    //chips
    flx68000SaveState(buffer.data + offset);
    offset += flx68000StateSize();
-   if(palmEmuFeatures.info & FEATURE_HYBRID_CPU){
-      armv5SaveState(buffer.data + offset);
-      offset += armv5StateSize();
-   }
    sed1376SaveState(buffer.data + offset);
    offset += sed1376StateSize();
    ads7846SaveState(buffer.data + offset);
    offset += ads7846StateSize();
    pdiUsbD12SaveState(buffer.data + offset);
    offset += pdiUsbD12StateSize();
+   expansionHardwareSaveState(buffer.data + offset);
+   offset += expansionHardwareStateSize();
 
    //memory
    if(palmEmuFeatures.info & FEATURE_RAM_HUGE){
@@ -428,16 +422,14 @@ bool emulatorLoadState(buffer_t buffer){
    //chips
    flx68000LoadState(buffer.data + offset);
    offset += flx68000StateSize();
-   if(palmEmuFeatures.info & FEATURE_HYBRID_CPU){
-      armv5LoadState(buffer.data + offset);
-      offset += armv5StateSize();
-   }
    sed1376LoadState(buffer.data + offset);
    offset += sed1376StateSize();
    ads7846LoadState(buffer.data + offset);
    offset += ads7846StateSize();
    pdiUsbD12LoadState(buffer.data + offset);
    offset += pdiUsbD12StateSize();
+   expansionHardwareLoadState(buffer.data + offset);
+   offset += expansionHardwareStateSize();
 
    //memory
    if(palmEmuFeatures.info & FEATURE_RAM_HUGE){
@@ -651,8 +643,6 @@ uint32_t emulatorInstallPrcPdb(buffer_t file){
 }
 
 void emulatorRunFrame(void){
-   uint32_t samples;
-
    //I/O
    refreshInputState();
 
@@ -665,20 +655,27 @@ void emulatorRunFrame(void){
    palmCycleCounter -= (double)CRYSTAL_FREQUENCY / EMU_FPS;
 
    //audio
-   blip_end_frame(palmAudioResampler, blip_clocks_needed(palmAudioResampler, AUDIO_SAMPLES_PER_FRAME));
-   blip_read_samples(palmAudioResampler, palmAudio, AUDIO_SAMPLES_PER_FRAME, true);
-   MULTITHREAD_LOOP(samples) for(samples = 0; samples < AUDIO_SAMPLES_PER_FRAME * 2; samples += 2)
-      palmAudio[samples + 1] = palmAudio[samples];
-
-   //video
-   sed1376Render();
-   if(palmFramebufferWidth == 160 && palmFramebufferHeight == 220){
-      //simple render
-      memcpy(palmFramebuffer, sed1376Framebuffer, 160 * 160 * sizeof(uint16_t));
-      memcpy(palmFramebuffer + 160 * 160, silkscreen160x60, 160 * 60 * sizeof(uint16_t));
+   if(palmEmuFeatures.info & FEATURE_SND_STRMS){
+      expansionHardwareRenderAudio();
    }
    else{
-      //advanced render
-      //DRIVER NEEDS TO BE WRITTEN STILL
+      //direct PWM1 output
+      uint32_t samples;
+
+      blip_end_frame(palmAudioResampler, blip_clocks_needed(palmAudioResampler, AUDIO_SAMPLES_PER_FRAME));
+      blip_read_samples(palmAudioResampler, palmAudio, AUDIO_SAMPLES_PER_FRAME, true);
+      MULTITHREAD_LOOP(samples) for(samples = 0; samples < AUDIO_SAMPLES_PER_FRAME * 2; samples += 2)
+         palmAudio[samples + 1] = palmAudio[samples];
+   }
+
+   //video
+   if(palmEmuFeatures.info & FEATURE_CUSTOM_FB){
+      expansionHardwareRenderDisplay();
+   }
+   else{
+      //direct SED1376 output
+      sed1376Render();
+      memcpy(palmFramebuffer, sed1376Framebuffer, 160 * 160 * sizeof(uint16_t));
+      memcpy(palmFramebuffer + 160 * 160, silkscreen160x60, 160 * 60 * sizeof(uint16_t));
    }
 }

@@ -105,7 +105,8 @@ SOURCES += \
     ../../src/m68k/m68kops.c \
     ../../src/armv5/CPU.c \
     ../../src/armv5/icache.c \
-    ../../src/armv5.c
+    ../../src/armv5.c \
+    ../../src/expansionHardware.c
 
 HEADERS += \
     debugviewer.h \
@@ -144,7 +145,8 @@ HEADERS += \
     ../../src/armv5/math64.h \
     ../../src/armv5/types.h \
     ../../src/armv5/icache.h \
-    ../../src/armv5.h
+    ../../src/armv5.h \
+    ../../src/expansionHardware.h
 
 FORMS += \
     mainwindow.ui \

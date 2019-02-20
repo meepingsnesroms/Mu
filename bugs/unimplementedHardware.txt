@@ -11,7 +11,7 @@ Setting the battery dead bit(PDDATA 0x80) if the emulated battery percent gets t
 DRAMC write enable
 Port M Infrared shutdown (PMDATA 0x20)
 some undocumented I/O might be on port e and port j
-SPI1, probably the SD card since SD cards use SPI for data transfer
+SPI1(the SD card interface)
 SPITEST SSTATUS is undocumented and therefore unemulated
 When SPICLK2, SPITXD or SPIRXD on port e is disabled ADS7846 functions should respond appropriately(not transmitting or receiving or blocking both for the clock)
 REFREQ clock frequency in RTCCTL should slow down the RTC when enabled

@@ -21,6 +21,7 @@ These registers will do nothing if their corresponding feature bit is not set on
 #define FEATURE_DEBUG      0x00000100/*enables the debug commands, used to call Palm OS functions like native C functions*/
 #define FEATURE_INVALID    0x00000200/*if this bit is set the returned data is invalid*/
 #define FEATURE_SHELL      0x00000400/*allows executing code on the host machine, is a huge securty hole and is compiled out in releases*/
+#define FEATURE_SND_STRMS  0x00000800/*enables OS 5 audio streams*/
 /*new features go here*/
 
 /*registers*/
@@ -46,7 +47,7 @@ These registers will do nothing if their corresponding feature bit is not set on
 #define CMD_SET_CPU_SPEED  0x0000FFF3/*EMU_VALUE = CPU speed percent, 100% = normal*/
 #define CMD_IDLE_X_CLK32   0x0000FFF4/*EMU_VALUE = CLK32s to waste, used to remove idle loops*/
 #define CMD_SET_CYCLE_COST 0x0000FFF5/*EMU_DST = HLE API number, EMU_VALUE = how many cycles it takes*/
-#define CMD_SET_RESOLUTION 0x0000FFF6/*EMU_VALUE >> 16 = width, EMU_VALUE & 0xFFFF = height*/
+#define CMD_LCD_SET_FB     0x0000FFF6/*EMU_SRC = framebuffer pointer(must be in RAM and word aligned), EMU_VALUE >> 16 = width, EMU_VALUE & 0xFFFF = height*/
 #define CMD_GET_KEYS       0x0000FFF7/*EMU_VALUE = OS 5 keys*/
 #define CMD_PRINT          0x0000FFF8/*EMU_SRC = pointer to string*/
 #define CMD_SHELL_EXECUTE  0x0000FFF9/*execute shell commands from inside the emulator, will be used for a cool web project*/

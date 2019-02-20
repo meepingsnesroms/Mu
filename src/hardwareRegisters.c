@@ -4,12 +4,10 @@
 
 #include "emulator.h"
 #include "specs/dragonballVzRegisterSpec.h"
-#include "specs/emuFeatureRegisterSpec.h"
 #include "hardwareRegisters.h"
 #include "memoryAccess.h"
 #include "portability.h"
 #include "flx68000.h"
-#include "armv5.h"
 #include "ads7846.h"
 #include "sdCard.h"
 #include "audio/blip_buf.h"
@@ -272,115 +270,6 @@ void printUnknownHwAccess(uint32_t address, uint32_t value, uint32_t size, bool 
       debugLog("CPU wrote %d bits of 0x%08X to register 0x%03X, PC:0x%08X.\n", size, value, address, flx68000GetPc());
    else
       debugLog("CPU read %d bits from register 0x%03X, PC:0x%08X.\n", size, address, flx68000GetPc());
-}
-
-uint32_t getEmuRegister(uint32_t address){
-   address &= 0xFFF;
-   switch(address){
-      case EMU_INFO:
-         return palmEmuFeatures.info;
-
-      case EMU_VALUE:
-         return palmEmuFeatures.value;
-
-      default:
-         debugLog("Invalid read from emu register 0x%08X.\n", address);
-         return 0x00000000;
-   }
-}
-
-void setEmuRegister(uint32_t address, uint32_t value){
-   address &= 0xFFF;
-   switch(address){
-      case EMU_SRC:
-         palmEmuFeatures.src = value;
-         return;
-
-      case EMU_DST:
-         palmEmuFeatures.dst = value;
-         return;
-
-      case EMU_SIZE:
-         palmEmuFeatures.size = value;
-         return;
-
-      case EMU_VALUE:
-         palmEmuFeatures.value = value;
-         return;
-
-      case EMU_CMD:
-         switch(value){
-            case CMD_SET_CPU_SPEED:
-               if(palmEmuFeatures.info & FEATURE_FAST_CPU)
-                  palmClockMultiplier = (double)palmEmuFeatures.value / 100.0 * (1.00 - EMU_CPU_PERCENT_WAITING);
-               return;
-
-            case CMD_ARM_SERVICE:
-               if(palmEmuFeatures.info & FEATURE_HYBRID_CPU)
-                  palmEmuFeatures.value = armv5ServiceRequest;
-               return;
-
-            case CMD_ARM_SET_REG:
-               if(palmEmuFeatures.info & FEATURE_HYBRID_CPU)
-                  armv5SetRegister(palmEmuFeatures.dst, palmEmuFeatures.value);
-               return;
-
-            case CMD_ARM_GET_REG:
-               if(palmEmuFeatures.info & FEATURE_HYBRID_CPU)
-                  palmEmuFeatures.value = armv5GetRegister(palmEmuFeatures.src);
-               return;
-
-            case CMD_ARM_RUN:
-               if(palmEmuFeatures.info & FEATURE_HYBRID_CPU)
-                  palmEmuFeatures.value = armv5Execute(palmEmuFeatures.value);
-               return;
-
-            case CMD_SET_RESOLUTION:
-               if(palmEmuFeatures.info & FEATURE_CUSTOM_FB){
-                  palmFramebufferWidth = palmEmuFeatures.value >> 16;
-                  palmFramebufferHeight = palmEmuFeatures.value & 0xFFFF;
-               }
-               return;
-
-            case CMD_PRINT:
-               if(palmEmuFeatures.info & FEATURE_DEBUG){
-                  char tempString[200];
-                  uint16_t offset;
-
-                  for(offset = 0; offset < 200; offset++){
-                     uint8_t newChar = flx68000ReadArbitraryMemory(palmEmuFeatures.src + offset, 8);//cant use char, if its signed < 128 will allow non ascii chars through
-
-                     newChar = newChar < 128 ? newChar : '\0';
-                     newChar = (newChar != '\t' && newChar != '\n') ? newChar : ' ';
-                     tempString[offset] = newChar;
-
-                     if(newChar == '\0')
-                        break;
-                  }
-
-                  debugLog("CMD_PRINT: %s\n", tempString);
-               }
-               return;
-
-            case CMD_GET_KEYS:
-               if(palmEmuFeatures.info & FEATURE_EXT_KEYS)
-                  palmEmuFeatures.value = (palmInput.buttonLeft ? EXT_BUTTON_LEFT : 0) | (palmInput.buttonRight ? EXT_BUTTON_RIGHT : 0) | (palmInput.buttonSelect ? EXT_BUTTON_SELECT : 0);
-               return;
-
-            case CMD_EXECUTION_DONE:
-               if(palmEmuFeatures.info & FEATURE_DEBUG)
-                  sandboxReturn();
-               return;
-
-            default:
-               debugLog("Invalid emu command 0x%04X.\n", value);
-               return;
-         }
-
-      default:
-         debugLog("Invalid write 0x%08X to emu register 0x%08X.\n", value, address);
-         return;
-   }
 }
 
 uint8_t getHwRegister8(uint32_t address){
