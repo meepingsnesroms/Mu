@@ -159,7 +159,7 @@ void expansionHardwareSetRegister(uint32_t address, uint32_t value){
                }
                return;
 
-            case CMD_PRINT:
+            case CMD_DEBUG_PRINT:
                if(palmEmuFeatures.info & FEATURE_DEBUG){
                   char tempString[200];
                   uint16_t offset;
@@ -184,7 +184,7 @@ void expansionHardwareSetRegister(uint32_t address, uint32_t value){
                   palmEmuFeatures.value = (palmInput.buttonLeft ? EXT_BUTTON_LEFT : 0) | (palmInput.buttonRight ? EXT_BUTTON_RIGHT : 0) | (palmInput.buttonSelect ? EXT_BUTTON_SELECT : 0);
                return;
 
-            case CMD_EXECUTION_DONE:
+            case CMD_DEBUG_EXEC_END:
                if(palmEmuFeatures.info & FEATURE_DEBUG)
                   sandboxReturn();
                return;
