@@ -53,11 +53,11 @@ Debug tools:
 ADS7846 channels can't be read in single reference mode in hwTestSuite
 
 MakePalmBitmap:
-the small icons are corrupt
-the non 16 bpp large icons are corrupt
 
 
 Fixed:
+(MakePalmBitmap)the small icons are corrupt
+(MakePalmBitmap)the non 16 bpp large icons are corrupt
 need to test if Port J Pin 3(SD card chip select) is attached to Port D Pin 5(SD Card Status(IRQ2))(pinouts.ru says chip select and card detect are the same line)(IRQ2 doesnt change when SD card chip select is toggled regardless of wether the card is inserted)
 the "Fatal Error" dialog reset button doesnt work, may not be a bug, could just an be issue with certain errors needing a full reset(its error dependent, one bug proved the other bug wasn't actually a bug)
 don't know if flushing the PWM1 FIFO sets all the bytes to 0x00, or just sets the read pointer to the write pointer preserving the newest sample and making the size 0(readPtr = writePtr has significantly cleaner audio then 0ing it out though(they sound the same now, this just masked the actual issue))

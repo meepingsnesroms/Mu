@@ -78,7 +78,7 @@ void expansionHardwareRenderDisplay(void){
    else{
       //advanced render
       if(palmFramebufferWidth <= 480 && palmFramebufferHeight <= 480){
-         uint8_t sed1376SizeMultiple = palmFramebufferWidth / 160;
+         //uint8_t sed1376SizeMultiple = palmFramebufferWidth / 160;
          uint16_t* lcdData = palmRam + (expansionHardwareLcdPointer & chips[CHIP_DX_RAM].mask);
 
          //copy over framebuffer

@@ -26,8 +26,8 @@ done
 m68k-palmos-gcc -o $APPNAME *.o $APPNAME-sections.ld
 
 # if possible generate icon trees
-if type "MakePalmIcon" &> /dev/null; then
-   MakePalmIcon ./appIcon.svg ./
+if type "MakePalmBitmap" &> /dev/null; then
+   MakePalmBitmap icon ./appIcon.svg ./
 fi
 
 pilrc $APPNAME.rcp

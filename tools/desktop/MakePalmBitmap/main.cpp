@@ -5,6 +5,7 @@
 #include <QColor>
 #include <QRectF>
 #include <QFile>
+#include <QFileInfo>
 #include <QString>
 
 #include <stdio.h>
@@ -106,10 +107,8 @@ static inline uint8_t getBest8BppIndex(uint8_t r, uint8_t g, uint8_t b){
 }
 
 static inline void writeBe16(uint8_t* data, uint16_t value){
-#if Q_BYTE_ORDER != Q_BIG_ENDIAN
-   value = value >> 8 | value << 8;
-#endif
-   ((uint16_t*)data)[0] = value;
+   data[0] = value >> 8;
+   data[1] = value & 0xFF;
 }
 
 static inline uint16_t getRowBytes(int16_t width, uint8_t bitsPerPixel){
@@ -127,15 +126,18 @@ static inline uint16_t getRowBytes(int16_t width, uint8_t bitsPerPixel){
 }
 
 static inline uint16_t getNextDepthOffset(int16_t width, int16_t height, uint8_t bitsPerPixel){
-   uint32_t nextDepthOffset = 0;
+   uint32_t nextDepthOffset = BITMAP_HEADER_SIZE;
 
-   nextDepthOffset += BITMAP_HEADER_SIZE;
    if(bitsPerPixel == 16)
       nextDepthOffset += BITMAP_DIRECT_INFO_TYPE_SIZE;
    //custom palette is not supported right now
    //if(bitsPerPixel == 8)
    //   nextDepthOffset += 0xFF;
    nextDepthOffset += getRowBytes(width, bitsPerPixel) * height;
+
+   //must be 32 bit aligned
+   if(nextDepthOffset & 3)
+      nextDepthOffset = (nextDepthOffset & ~3) + 4;
 
    return nextDepthOffset / 4;
 }
@@ -213,98 +215,147 @@ void renderTo16Bits(uint8_t* data, const QImage& image){
    }
 }
 
-uint32_t renderPalmIcon(const QString& svg, uint8_t* output, int16_t width, int16_t height, uint8_t bitsPerPixel, bool lastBitmap){
+uint32_t renderPalmBitmap(const QImage& bitmap, uint8_t* output, uint8_t bitsPerPixel, bool lastBitmap){
+   /*
+   QFileInfo imageSource(path);
    QImage canvas(width, height, QImage::Format_RGB32);
    QPainter painter(&canvas);
-   QSvgRenderer svgRenderer(svg);
    uint32_t offset = 0;
+
+   //clear buffer to white and render
+   canvas.fill(QColor(0xFF, 0xFF, 0xFF).rgb());
+   if(imageSource.isDir()){
+      //use image of correct size for Palm icon
+      //$DIR/icon$WIDTHx$HEIGHTx$BPP.png", doesnt actually have to be a png, just has to have that extension
+      QImage icon(path + "/icon" + QString::number(width) + "x" + QString::number(height) + ".png");
+
+      painter.drawImage(0, 0, icon);
+   }
+   else if(imageSource.isFile() && imageSource.suffix() == "svg"){
+      //render SVG to Palm icon
+      QSvgRenderer svgRenderer(path);
+
+      svgRenderer.render(&painter);
+   }
+   */
+
+   //write a Palm bitmap struct
+   uint32_t offset = 0;
+   uint8_t bitmapVersion = bitsPerPixel <= 4 ? 1 : 2;
+
+   writeBe16(output + offset, bitmap.width());//width
+   offset += sizeof(int16_t);
+   writeBe16(output + offset, bitmap.height());//height
+   offset += sizeof(int16_t);
+   writeBe16(output + offset, getRowBytes(bitmap.width(), bitsPerPixel));//rowBytes
+   offset += sizeof(uint16_t);
+   writeBe16(output + offset, (bitsPerPixel == 8 ? 0x2000 : 0x0000) | (bitsPerPixel == 16 ? 0x0400 : 0x0000));//bitmapFlags, only hasTransparency and directColor are implemented
+   offset += sizeof(uint16_t);
+   if(bitmapVersion >= 1){
+      output[offset] = bitsPerPixel;//pixelSize
+      offset += sizeof(uint8_t);
+      output[offset] = bitmapVersion;//version
+      offset += sizeof(uint8_t);
+      writeBe16(output + offset, lastBitmap ? 0 : getNextDepthOffset(bitmap.width(), bitmap.height(), bitsPerPixel));//nextDepthOffset
+      offset += sizeof(uint16_t);
+      if(bitmapVersion >= 2){
+         output[offset] = 0xFF;//transparentIndex, white is transparent, not doing this causes issues on Palm OS5+
+         offset += sizeof(uint8_t);
+         output[offset] = 0xFF;//compressionType, none
+         offset += sizeof(uint8_t);
+         writeBe16(output + offset, 0x0000);//reserved
+         offset += sizeof(uint16_t);
+         if(bitsPerPixel == 16){
+            //add BitmapDirectInfoType
+            output[offset] = 0x05;//redBits
+            offset += sizeof(uint8_t);
+            output[offset] = 0x06;//greenBits
+            offset += sizeof(uint8_t);
+            output[offset] = 0x05;//blueBits
+            offset += sizeof(uint8_t);
+            output[offset] = 0x00;//reserved
+            offset += sizeof(uint8_t);
+
+            //RGBColorType transparentColor
+            output[offset] = 0xFF;//index
+            offset += sizeof(uint8_t);
+            output[offset] = 0x1F;//r
+            offset += sizeof(uint8_t);
+            output[offset] = 0x3F;//g
+            offset += sizeof(uint8_t);
+            output[offset] = 0x1F;//b
+            offset += sizeof(uint8_t);
+         }
+         //0xFF look up table goes here when active, custom LUT is currently unsupported
+      }
+      else{
+         //bitmapV1
+         writeBe16(output + offset, 0x0000);//reserved
+         offset += sizeof(uint16_t);
+         writeBe16(output + offset, 0x0000);//reserved
+         offset += sizeof(uint16_t);
+      }
+   }
+   else{
+      //bitmapV0
+      writeBe16(output + offset, 0x0000);//reserved
+      offset += sizeof(uint16_t);
+      writeBe16(output + offset, 0x0000);//reserved
+      offset += sizeof(uint16_t);
+      writeBe16(output + offset, 0x0000);//reserved
+      offset += sizeof(uint16_t);
+      writeBe16(output + offset, 0x0000);//reserved
+      offset += sizeof(uint16_t);
+   }
+   switch(bitsPerPixel){
+      case 1:
+         renderTo1Bit(output + offset, bitmap);
+         break;
+
+      case 2:
+         renderTo2Bits(output + offset, bitmap);
+         break;
+
+      case 4:
+         renderTo4Bits(output + offset, bitmap);
+         break;
+
+      case 8:
+         renderTo8Bits(output + offset, bitmap);
+         break;
+
+      case 16:
+         renderTo16Bits(output + offset, bitmap);
+         break;
+   }
+   offset += getRowBytes(bitmap.width(), bitsPerPixel) * bitmap.height();
+
+   //must be 32 bit aligned to chain bitmaps
+   if(!lastBitmap && offset & 3)
+      offset = (offset & ~3) + 4;
+
+   return offset;
+}
+
+QImage renderSvgToQimage(const QString& path, int16_t width, int16_t height){
+   QSvgRenderer svgRenderer(path);
+   QImage canvas(width, height, QImage::Format_RGB32);
+   QPainter painter(&canvas);
 
    //clear buffer to white and render
    canvas.fill(QColor(0xFF, 0xFF, 0xFF).rgb());
    svgRenderer.render(&painter);
 
-   //write a Palm bitmap struct
-   uint8_t bitmapVersion = bitsPerPixel > 4 ? 2 : 1;
-
-   writeBe16(output + offset, width);//width
-   offset += sizeof(int16_t);
-   writeBe16(output + offset, height);//height
-   offset += sizeof(int16_t);
-   writeBe16(output + offset, getRowBytes(width, bitsPerPixel));//rowBytes
-   offset += sizeof(uint16_t);
-   writeBe16(output + offset, (bitsPerPixel > 4 ? 0x2000 : 0x0000) | (bitsPerPixel == 16 ? 0x0400 : 0x0000));//bitmapFlags, only hasTransparency and directColor are implemented
-   offset += sizeof(uint16_t);
-   output[offset] = bitsPerPixel;//pixelSize
-   offset += sizeof(uint8_t);
-   output[offset] = bitmapVersion;//version
-   offset += sizeof(uint8_t);
-   writeBe16(output + offset, lastBitmap ? 0 : getNextDepthOffset(width, height, bitsPerPixel));//nextDepthOffset
-   offset += sizeof(uint16_t);
-   if(bitmapVersion > 1){
-      output[offset] = 0xFF;//transparentIndex, white is transparent, not doing this causes issues on Palm OS5+
-      offset += sizeof(uint8_t);
-      output[offset] = 0xFF;//compressionType, none
-      offset += sizeof(uint8_t);
-   }
-   else{
-      output[offset] = 0x00;//reserved
-      offset += sizeof(uint8_t);
-      output[offset] = 0x00;//reserved
-      offset += sizeof(uint8_t);
-   }
-   output[offset] = 0x00;//reserved
-   offset += sizeof(uint8_t);
-   output[offset] = 0x00;//reserved
-   offset += sizeof(uint8_t);
-   if(bitsPerPixel == 16){
-      //add BitmapDirectInfoType
-      output[offset] = 0x05;//redBits
-      offset += sizeof(uint8_t);
-      output[offset] = 0x06;//greenBits
-      offset += sizeof(uint8_t);
-      output[offset] = 0x05;//blueBits
-      offset += sizeof(uint8_t);
-      output[offset] = 0x00;//reserved
-      offset += sizeof(uint8_t);
-
-      //RGBColorType transparentColor
-      output[offset] = 0xFF;//index
-      offset += sizeof(uint8_t);
-      output[offset] = 0x1F;//r
-      offset += sizeof(uint8_t);
-      output[offset] = 0x3F;//g
-      offset += sizeof(uint8_t);
-      output[offset] = 0x1F;//b
-      offset += sizeof(uint8_t);
-   }
-   //0xFF look up table goes here when active, custom LUT is currently unsupported
-   switch(bitsPerPixel){
-      case 1:
-         renderTo1Bit(output + offset, canvas);
-         break;
-
-      case 2:
-         renderTo2Bits(output + offset, canvas);
-         break;
-
-      case 4:
-         renderTo4Bits(output + offset, canvas);
-         break;
-
-      case 8:
-         renderTo8Bits(output + offset, canvas);
-         break;
-
-      case 16:
-         renderTo16Bits(output + offset, canvas);
-         break;
-   }
-   offset += getRowBytes(width, bitsPerPixel) * height;
-
-   return offset;
+   return canvas;
 }
 
-void convertToPalmIcons(const QString& svg, const QString& outputDirectory){
+QImage getIconImage(const QString& path, int16_t width, int16_t height, uint8_t bpp){
+   //$DIR/icon$WIDTHx$HEIGHTx$BPP.png", doesnt actually have to be a png, just has to have that extension
+   return QImage(path + "/icon" + QString::number(width) + "x" + QString::number(height) + "x" + QString::number(bpp) + ".png");
+}
+
+void convertToPalmIcons(const QString& path, const QString& outputDirectory){
+   QFileInfo imagePath(path);
    QFile taib03E8File(outputDirectory + "/tAIB03E8.bin");
    QFile taib03E9File(outputDirectory + "/tAIB03E9.bin");
    uint8_t* taib03E8 = new uint8_t[MAX_PALM_BITMAP_SIZE * 5];
@@ -312,17 +363,36 @@ void convertToPalmIcons(const QString& svg, const QString& outputDirectory){
    uint32_t taib03E8Offset = 0;
    uint32_t taib03E9Offset = 0;
 
-   taib03E8Offset += renderPalmIcon(svg, taib03E8 + taib03E8Offset, 22, 22, 1, false);//1bpp, greyscale
-   taib03E8Offset += renderPalmIcon(svg, taib03E8 + taib03E8Offset, 22, 22, 2, false);//2bpp, greyscale
-   taib03E8Offset += renderPalmIcon(svg, taib03E8 + taib03E8Offset, 22, 22, 4, false);//4bpp, greyscale
-   taib03E8Offset += renderPalmIcon(svg, taib03E8 + taib03E8Offset, 22, 22, 8, false);//8bpp, color
-   taib03E8Offset += renderPalmIcon(svg, taib03E8 + taib03E8Offset, 22, 22, 16, true);//16bpp, color
+   //render folder of icons or .svg file to all sizes of Palm OS icon with the proper names for prc-tools
+   if(imagePath.isDir()){
+      taib03E8Offset += renderPalmBitmap(getIconImage(path, 22, 22, 1), taib03E8 + taib03E8Offset, 1, false);//1bpp, greyscale
+      taib03E8Offset += renderPalmBitmap(getIconImage(path, 22, 22, 2), taib03E8 + taib03E8Offset, 2, false);//2bpp, greyscale
+      taib03E8Offset += renderPalmBitmap(getIconImage(path, 22, 22, 4), taib03E8 + taib03E8Offset, 4, false);//4bpp, greyscale
+      taib03E8Offset += renderPalmBitmap(getIconImage(path, 22, 22, 8), taib03E8 + taib03E8Offset, 8, false);//8bpp, color
+      taib03E8Offset += renderPalmBitmap(getIconImage(path, 22, 22, 16), taib03E8 + taib03E8Offset, 16, true);//16bpp, color
 
-   taib03E9Offset += renderPalmIcon(svg, taib03E9 + taib03E9Offset, 15, 9, 1, false);//1bpp, greyscale
-   taib03E9Offset += renderPalmIcon(svg, taib03E9 + taib03E9Offset, 15, 9, 2, false);//2bpp, greyscale
-   taib03E9Offset += renderPalmIcon(svg, taib03E9 + taib03E9Offset, 15, 9, 4, false);//4bpp, greyscale
-   taib03E9Offset += renderPalmIcon(svg, taib03E9 + taib03E9Offset, 15, 9, 8, false);//8bpp, color
-   taib03E9Offset += renderPalmIcon(svg, taib03E9 + taib03E9Offset, 15, 9, 16, true);//16bpp, color
+      taib03E9Offset += renderPalmBitmap(getIconImage(path, 15, 9, 1), taib03E9 + taib03E9Offset, 1, false);//1bpp, greyscale
+      taib03E9Offset += renderPalmBitmap(getIconImage(path, 15, 9, 2), taib03E9 + taib03E9Offset, 2, false);//2bpp, greyscale
+      taib03E9Offset += renderPalmBitmap(getIconImage(path, 15, 9, 4), taib03E9 + taib03E9Offset, 4, false);//4bpp, greyscale
+      taib03E9Offset += renderPalmBitmap(getIconImage(path, 15, 9, 8), taib03E9 + taib03E9Offset, 8, false);//8bpp, color
+      taib03E9Offset += renderPalmBitmap(getIconImage(path, 15, 9, 16), taib03E9 + taib03E9Offset, 16, true);//16bpp, color
+   }
+   else if(imagePath.isFile() && imagePath.suffix() == "svg"){
+      QImage svgOutputBig = renderSvgToQimage(path, 22, 22);
+      QImage svgOutputLittle = renderSvgToQimage(path, 15, 9);
+
+      taib03E8Offset += renderPalmBitmap(svgOutputBig, taib03E8 + taib03E8Offset, 1, false);//1bpp, greyscale
+      taib03E8Offset += renderPalmBitmap(svgOutputBig, taib03E8 + taib03E8Offset, 2, false);//2bpp, greyscale
+      taib03E8Offset += renderPalmBitmap(svgOutputBig, taib03E8 + taib03E8Offset, 4, false);//4bpp, greyscale
+      taib03E8Offset += renderPalmBitmap(svgOutputBig, taib03E8 + taib03E8Offset, 8, false);//8bpp, color
+      taib03E8Offset += renderPalmBitmap(svgOutputBig, taib03E8 + taib03E8Offset, 16, true);//16bpp, color
+
+      taib03E9Offset += renderPalmBitmap(svgOutputLittle, taib03E9 + taib03E9Offset, 1, false);//1bpp, greyscale
+      taib03E9Offset += renderPalmBitmap(svgOutputLittle, taib03E9 + taib03E9Offset, 2, false);//2bpp, greyscale
+      taib03E9Offset += renderPalmBitmap(svgOutputLittle, taib03E9 + taib03E9Offset, 4, false);//4bpp, greyscale
+      taib03E9Offset += renderPalmBitmap(svgOutputLittle, taib03E9 + taib03E9Offset, 8, false);//8bpp, color
+      taib03E9Offset += renderPalmBitmap(svgOutputLittle, taib03E9 + taib03E9Offset, 16, true);//16bpp, color
+   }
 
    if(taib03E8File.open(QFile::WriteOnly | QFile::Truncate)){
       taib03E8File.write((const char*)taib03E8, taib03E8Offset);
@@ -337,16 +407,46 @@ void convertToPalmIcons(const QString& svg, const QString& outputDirectory){
    delete[] taib03E9;
 }
 
+void convertToPalmBitmap(const QString& imagePath, const QString& outputPath){
+   QImage image(imagePath);
+   QFile outputFile(outputPath);
+   uint8_t* outputBuffer = new uint8_t[MAX_PALM_BITMAP_SIZE * 5];
+   uint32_t outputOffset = 0;
+
+   outputOffset += renderPalmBitmap(image, outputBuffer + outputOffset, 1, false);//1bpp, greyscale
+   outputOffset += renderPalmBitmap(image, outputBuffer + outputOffset, 2, false);//2bpp, greyscale
+   outputOffset += renderPalmBitmap(image, outputBuffer + outputOffset, 4, false);//4bpp, greyscale
+   outputOffset += renderPalmBitmap(image, outputBuffer + outputOffset, 8, false);//8bpp, color
+   outputOffset += renderPalmBitmap(image, outputBuffer + outputOffset, 16, true);//16bpp, color
+
+   if(outputFile.open(QFile::WriteOnly | QFile::Truncate)){
+      outputFile.write((const char*)outputBuffer, outputOffset);
+      outputFile.close();
+   }
+
+   delete[] outputBuffer;
+}
+
 int main(int argc, char* argv[]){
-   if(argc == 3){
-      //render .svg to all sizes of Palm OS icon with the proper names for prc-tools
-      convertToPalmIcons(QString(argv[1]), QString(argv[2]));
+   if(argc == 4){
+      QString command = argv[1];
+
+      if(command == "icon")
+         convertToPalmIcons(QString(argv[2]), QString(argv[3]));
+      else if(command == "bitmap")
+         convertToPalmBitmap(QString(argv[2]), QString(argv[3]));
+      else
+         printf("\"%s\" is not a valid command.\n", command.toStdString().c_str());
    }
    else{
       //invalid parameters
-      printf("MakePalmIcon v1.0\n");
+      printf("MakePalmBitmap v1.1\n");
       printf("A replacement for the pilrc bitmap converter, which seems to be broken on 64 bit systems.\n");
-      printf("Format:\"/path/to/image.svg\" \"/path/to/palm/application/directory\"\n");
+      printf("Args:icon \"/path/to/image.svg\" \"/path/to/palm/application/directory\"\n");
+      printf("OR\n");
+      printf("Args:icon \"/path/to/image/dir\" \"/path/to/palm/application/directory\"\n");
+      printf("OR\n");
+      printf("Args:bitmap \"/path/to/image.png\" \"/path/to/palm/application/directory/Tbmp****.bin\"\n");
       printf("Fleas have pet rabbits!\n");
    }
 
