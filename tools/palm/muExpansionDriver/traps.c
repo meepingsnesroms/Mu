@@ -87,3 +87,10 @@ UInt32 emuKeyCurrentState(void){
    /*need to call old KeyCurrentState then | wihth new keys*/
    return 0x00000000;
 }
+
+/*need to add these for 320x320 support
+UInt16    WinSetCoordinateSystem(UInt16 coordSys)
+HIGH_DENSITY_TRAP(HDSelectorWinSetCoordinateSystem);
+Err      WinGetSupportedDensity(UInt16* densityP)
+HIGH_DENSITY_TRAP(HDSelectorWinGetSupportedDensity);
+*/

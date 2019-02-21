@@ -356,8 +356,8 @@ QImage getIconImage(const QString& path, int16_t width, int16_t height, uint8_t 
 
 void convertToPalmIcons(const QString& path, const QString& outputDirectory){
    QFileInfo imagePath(path);
-   QFile taib03E8File(outputDirectory + "/tAIB03E8.bin");
-   QFile taib03E9File(outputDirectory + "/tAIB03E9.bin");
+   QFile taib03E8File(outputDirectory + "/tAIB03e8.bin");
+   QFile taib03E9File(outputDirectory + "/tAIB03e9.bin");
    uint8_t* taib03E8 = new uint8_t[MAX_PALM_BITMAP_SIZE * 5];
    uint8_t* taib03E9 = new uint8_t[MAX_PALM_BITMAP_SIZE * 5];
    uint32_t taib03E8Offset = 0;
