@@ -40,6 +40,9 @@ static const uint32_t sdCardOcr = 0x00000000;
 static void sdCardCmdStart(void){
    palmSdCard.command = UINT64_C(0x0000000000000000);
    palmSdCard.commandBitsRemaining = 48;
+   palmSdCard.responseState = 0;
+   palmSdCard.response = SD_CARD_RESPONSE_NOTHING;
+   palmSdCard.receivingCommand = true;
 }
 
 static bool sdCardCmdIsCrcValid(uint8_t command, uint32_t argument, uint8_t crc){
@@ -81,14 +84,19 @@ void sdCardReset(void){
    palmSdCard.commandBitsRemaining = 48;
    palmSdCard.responseState = 0;
    palmSdCard.response = SD_CARD_RESPONSE_NOTHING;
+   palmSdCard.responseWaitBitsRemaining = 0;
    palmSdCard.allowInvalidCrc = false;
    palmSdCard.chipSelect = false;
+   palmSdCard.receivingCommand = false;
 }
 
 void sdCardSetChipSelect(bool value){
    if(value != palmSdCard.chipSelect){
-      //may need to perform other actions on chip select toggle too
-      debugLog("SD card chip select set to:%s\n", value ? "true" : "false");
+      //debugLog("SD card chip select set to:%s\n", value ? "true" : "false");
+
+      //commands start when chip select goes from high to low
+      if(value == false)
+         sdCardCmdStart();
 
       palmSdCard.chipSelect = value;
    }
@@ -97,105 +105,105 @@ void sdCardSetChipSelect(bool value){
 bool sdCardExchangeBit(bool bit){
    bool sdCardOutputValue = true;//default output value is true, if an action is ongoing it will be set to the data provided by that action
 
-   //make sure SD is actually plugged in and selected
+   //make sure SD is actually plugged in and chip select is low
    if(palmSdCard.flashChip.data && !palmSdCard.chipSelect){
-      bool bitValid = true;
+      //idle wait for NCR
+      if(palmSdCard.responseWaitBitsRemaining == 0){
+         //process current exchange, needs to happen before command is proccessed because command response starts the next bit after the command is processed
+         switch(palmSdCard.response){
+            case SD_CARD_RESPONSE_NOTHING:
+               break;
 
-#if defined(EMU_DEBUG)
-      //since logs go to the debug window I can use the console to dump the raw SPI bitstream
-      //printf("%d", bit);
-#endif
+            case SD_CARD_RESPONSE_SHIFT_OUT:
+               //debugLog("SD shift out state:0x%016lX\n", palmSdCard.responseState);
+               sdCardOutputValue = !!(palmSdCard.responseState & UINT64_C(0x8000000000000000));
+               palmSdCard.responseState <<= 1;
+               if(palmSdCard.responseState == UINT64_C(0x8000000000000000))
+                  palmSdCard.response = SD_CARD_RESPONSE_NOTHING;
+               break;
 
-      //check validity of incoming bit, needed even when safety checks are disabled to determine command start
-      switch(palmSdCard.commandBitsRemaining - 1){
-         case 47:
-            if(bit)
-               bitValid = false;
-            break;
-
-
-         case 46:
-         case 0:
-            if(!bit)
-               bitValid = false;
-            break;
-      }
-
-      //add the bit or start new command if invalid
-      if(bitValid){
-         palmSdCard.command <<= 1;
-         palmSdCard.command |= bit;
-         palmSdCard.commandBitsRemaining--;
-
-#if defined(EMU_DEBUG)
-         //mark this bit as valid
-         //printf("V");
-#endif
+            default:
+               debugLog("SD exchange:%d\n", palmSdCard.response);
+               break;
+         }
       }
       else{
-         sdCardCmdStart();
+         palmSdCard.responseWaitBitsRemaining--;
       }
 
-      //process current exchange, needs to happen before command is proccessed because command response starts the next bit after the command is processed
-      switch(palmSdCard.response){
-         case SD_CARD_RESPONSE_NOTHING:
-            break;
+      //route received bit as command or data
+      if(palmSdCard.receivingCommand){
+         //receiving a command
+         bool bitValid = true;
 
-         case SD_CARD_RESPONSE_SHIFT_OUT:
-            //debugLog("SD shift out state:0x%016lX\n", palmSdCard.responseState);
-            sdCardOutputValue = !!(palmSdCard.responseState & UINT64_C(0x8000000000000000));
-            palmSdCard.responseState <<= 1;
-            if(palmSdCard.responseState == UINT64_C(0x8000000000000000))
-               palmSdCard.response = SD_CARD_RESPONSE_NOTHING;
-            break;
+         //check validity of incoming bit, needed even when safety checks are disabled to determine command start
+         switch(palmSdCard.commandBitsRemaining - 1){
+            case 47:
+               if(bit)
+                  bitValid = false;
+               break;
 
-         default:
-            debugLog("SD exchange:%d\n", palmSdCard.response);
-            break;
-      }
 
-      //process command if all bits are present
-      if(palmSdCard.commandBitsRemaining == 0){
-         uint8_t command = palmSdCard.command >> 40 & 0x3F;
-         uint32_t argument = palmSdCard.command >> 8 & 0xFFFFFFFF;
-         uint8_t crc = palmSdCard.command >> 1 & 0x7F;
+            case 46:
+            case 0:
+               if(!bit)
+                  bitValid = false;
+               break;
+         }
 
-#if defined(EMU_DEBUG)
-         //acknowledge the end of a command
-         printf("CMD");
-#endif
-         debugLog("SD command:cmd:0x%02X, arg:0x%08X, CRC:0x%02X\n", command, argument, crc);
-
-         if(palmSdCard.allowInvalidCrc || sdCardCmdIsCrcValid(command, argument, crc)){
-            //respond with command value
-            debugLog("SD valid CRC\n");
-
-            switch(command){
-               case GO_IDLE_STATE:
-                  palmSdCard.allowInvalidCrc = true;
-                  sdCardDoResponseR1(0x01);//"idle state" bit set should be set
-                  break;
-
-               default:
-                  debugLog("SD unknown command:cmd:0x%02X, arg:0x%08X, CRC:0x%02X\n", command, argument, crc);
-                  break;
-            }
+         //add the bit or start new command if invalid
+         if(bitValid){
+            palmSdCard.command <<= 1;
+            palmSdCard.command |= bit;
+            palmSdCard.commandBitsRemaining--;
          }
          else{
-            //send back R1 response with CRC error set
-            debugLog("SD invalid CRC\n");
-            sdCardDoResponseR1(0x08);//"command CRC error" bit set
+            sdCardCmdStart();
          }
 
-         //start next command
-         sdCardCmdStart();
+         //process command if all bits are present
+         if(palmSdCard.commandBitsRemaining == 0){
+            uint8_t command = palmSdCard.command >> 40 & 0x3F;
+            uint32_t argument = palmSdCard.command >> 8 & 0xFFFFFFFF;
+            uint8_t crc = palmSdCard.command >> 1 & 0x7F;
+
+            debugLog("SD command:cmd:0x%02X, arg:0x%08X, CRC:0x%02X\n", command, argument, crc);
+
+            if(palmSdCard.allowInvalidCrc || sdCardCmdIsCrcValid(command, argument, crc)){
+               //respond with command value
+               //debugLog("SD valid CRC\n");
+
+               switch(command){
+                  case GO_IDLE_STATE:
+                     palmSdCard.allowInvalidCrc = true;
+                     sdCardDoResponseR1(0x01);//"idle state" bit set should be set
+                     break;
+
+                  default:
+                     debugLog("SD unknown command:cmd:0x%02X, arg:0x%08X, CRC:0x%02X\n", command, argument, crc);
+                     break;
+               }
+            }
+            else{
+               //send back R1 response with CRC error set
+               debugLog("SD invalid CRC\n");
+               sdCardDoResponseR1(0x08);//"command CRC error" bit set
+            }
+
+            //needs to be at least 8 for MMC
+            palmSdCard.responseWaitBitsRemaining = 16;
+
+            //command finished, wait for next chip select toggle to start the next
+            //palmSdCard.receivingCommand = false;
+            //sdCardCmdStart();
+         }
+      }
+      else{
+         //receiving data
+         //TODO
+         debugLog("SD data bit:%d\n", bit);
       }
    }
-
-#if defined(EMU_DEBUG)
-   //print response
-   printf("%d", sdCardOutputValue);
-#endif
 
    return sdCardOutputValue;
 }
