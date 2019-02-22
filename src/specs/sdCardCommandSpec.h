@@ -24,4 +24,13 @@
 #define APP_SEND_OP_COND         41/*only for SDC, same as SEND_OP_COND*/
 #define SET_WR_BLOCK_ERASE_COUNT 23/*only for SDC, defines number of blocks to pre-erase with next multi-block write command*/
 
+/*R1 Response Bits*/
+#define IN_IDLE_STATE        0x01
+#define ERASE_RESET          0x02
+#define ILLEGAL_COMMAND      0x04
+#define COMMAND_CRC_ERROR    0x08
+#define ERASE_SEQUENCE_ERROR 0x10
+#define ADDRESS_ERROR        0x20
+#define PARAMETER_ERROR      0x40
+
 #endif

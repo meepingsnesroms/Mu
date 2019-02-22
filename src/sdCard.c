@@ -204,6 +204,7 @@ bool sdCardExchangeBit(bool bit){
 
                      default:
                         debugLog("SD unknown command: cmd:%d, arg:0x%08X, CRC:0x%02X\n", command, argument, crc);
+                        sdCardDoResponseR1(ILLEGAL_COMMAND | palmSdCard.inIdleState);
                         break;
                   }
                }
@@ -213,6 +214,7 @@ bool sdCardExchangeBit(bool bit){
 
                      default:
                         debugLog("SD unknown ACMD command: cmd:%d, arg:0x%08X, CRC:0x%02X\n", command, argument, crc);
+                        sdCardDoResponseR1(ILLEGAL_COMMAND | palmSdCard.inIdleState);
                         break;
                   }
 
@@ -223,7 +225,7 @@ bool sdCardExchangeBit(bool bit){
             else{
                //send back R1 response with CRC error set
                debugLog("SD invalid CRC\n");
-               sdCardDoResponseR1(0x08 | palmSdCard.inIdleState);//"command CRC error" bit set
+               sdCardDoResponseR1(COMMAND_CRC_ERROR | palmSdCard.inIdleState);
             }
 
             //needs to be at least 8 for MMC
