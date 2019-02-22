@@ -34,14 +34,18 @@ static const uint8_t sdCardCrc7Table[256] = {
 };
 static const uint64_t sdCardCsd[2] = {0x0000000000000000, 0x0000000000000000};
 static const uint64_t sdCardCid[2] = {0x0000000000000000, 0x0000000000000000};
-static const uint32_t sdCardOcr = 0x00000000;
 
 
-static void sdCardCmdStart(void){
+static uint32_t sdCardGetOcr(){
+   return !palmSdCard.inIdleState << 31/*power up status*/ | 0 << 30/*card capacity status*/ | 0x01FF8000/*supported voltages*/;
+}
+
+static void sdCardCmdStart(bool isAcmd){
    palmSdCard.command = UINT64_C(0x0000000000000000);
    palmSdCard.commandBitsRemaining = 48;
    palmSdCard.responseState = 0;
    palmSdCard.response = SD_CARD_RESPONSE_NOTHING;
+   palmSdCard.commandIsAcmd = isAcmd;
    palmSdCard.receivingCommand = true;
 }
 
@@ -75,7 +79,7 @@ static void sdCardDoResponseR1(uint8_t r1){
 static void sdCardDoResponseR3(uint8_t r1){
    palmSdCard.response = SD_CARD_RESPONSE_SHIFT_OUT;
    palmSdCard.responseState = (uint64_t)r1 << 56;
-   palmSdCard.responseState |= (uint64_t)sdCardOcr << 24;
+   palmSdCard.responseState |= (uint64_t)sdCardGetOcr() << 24;
    palmSdCard.responseState |= UINT64_C(1) << 23;//add shift termination bit
 }
 
@@ -85,9 +89,11 @@ void sdCardReset(void){
    palmSdCard.responseState = 0;
    palmSdCard.response = SD_CARD_RESPONSE_NOTHING;
    palmSdCard.responseWaitBitsRemaining = 0;
+   palmSdCard.commandIsAcmd = false;
    palmSdCard.allowInvalidCrc = false;
    palmSdCard.chipSelect = false;
    palmSdCard.receivingCommand = false;
+   palmSdCard.inIdleState = true;
 }
 
 void sdCardSetChipSelect(bool value){
@@ -96,7 +102,7 @@ void sdCardSetChipSelect(bool value){
 
       //commands start when chip select goes from high to low
       if(value == false)
-         sdCardCmdStart();
+         sdCardCmdStart(palmSdCard.commandIsAcmd);
 
       palmSdCard.chipSelect = value;
    }
@@ -158,7 +164,7 @@ bool sdCardExchangeBit(bool bit){
             palmSdCard.commandBitsRemaining--;
          }
          else{
-            sdCardCmdStart();
+            sdCardCmdStart(palmSdCard.commandIsAcmd);
          }
 
          //process command if all bits are present
@@ -167,27 +173,57 @@ bool sdCardExchangeBit(bool bit){
             uint32_t argument = palmSdCard.command >> 8 & 0xFFFFFFFF;
             uint8_t crc = palmSdCard.command >> 1 & 0x7F;
 
-            debugLog("SD command:cmd:%d, arg:0x%08X, CRC:0x%02X\n", command, argument, crc);
+            debugLog("SD command: isAcmd:%d, cmd:%d, arg:0x%08X, CRC:0x%02X\n", palmSdCard.commandIsAcmd, command, argument, crc);
 
             if(palmSdCard.allowInvalidCrc || sdCardCmdIsCrcValid(command, argument, crc)){
                //respond with command value
                //debugLog("SD valid CRC\n");
 
-               switch(command){
-                  case GO_IDLE_STATE:
-                     palmSdCard.allowInvalidCrc = true;
-                     sdCardDoResponseR1(0x01);//"idle state" bit set should be set
-                     break;
+               if(!palmSdCard.commandIsAcmd){
+                  //normal command
+                  switch(command){
+                     case GO_IDLE_STATE:
+                        palmSdCard.inIdleState = true;
+                        palmSdCard.allowInvalidCrc = true;
+                        sdCardDoResponseR1(palmSdCard.inIdleState);
+                        break;
 
-                  default:
-                     debugLog("SD unknown command:cmd:%d, arg:0x%08X, CRC:0x%02X\n", command, argument, crc);
-                     break;
+                     case SEND_OP_COND:
+                        palmSdCard.inIdleState = false;
+                        sdCardDoResponseR1(palmSdCard.inIdleState);
+                        break;
+
+                     case READ_OCR:
+                        sdCardDoResponseR3(palmSdCard.inIdleState);
+                        break;
+
+                     case APP_CMD:
+                        sdCardCmdStart(true);
+                        sdCardDoResponseR1(palmSdCard.inIdleState);
+                        break;
+
+                     default:
+                        debugLog("SD unknown command: cmd:%d, arg:0x%08X, CRC:0x%02X\n", command, argument, crc);
+                        break;
+                  }
+               }
+               else{
+                  //ACMD command
+                  switch(command){
+
+                     default:
+                        debugLog("SD unknown ACMD command: cmd:%d, arg:0x%08X, CRC:0x%02X\n", command, argument, crc);
+                        break;
+                  }
+
+                  //ACMD finished, go back to normal command format
+                  palmSdCard.commandIsAcmd = false;
                }
             }
             else{
                //send back R1 response with CRC error set
                debugLog("SD invalid CRC\n");
-               sdCardDoResponseR1(0x08);//"command CRC error" bit set
+               sdCardDoResponseR1(0x08 | palmSdCard.inIdleState);//"command CRC error" bit set
             }
 
             //needs to be at least 8 for MMC

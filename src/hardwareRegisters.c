@@ -103,10 +103,10 @@ int32_t interruptAcknowledge(int32_t intLevel){
    int32_t vector;
 
    //If an interrupt occurs before the IVR has been programmed, interrupt vector 15 is returned to the CPU as an uninitialized interrupt.
-   if(!vectorOffset)
-      vector = 15;//EXCEPTION_UNINITIALIZED_INTERRUPT
-   else
+   if(vectorOffset)
       vector = vectorOffset | intLevel;
+   else
+      vector = 15;//EXCEPTION_UNINITIALIZED_INTERRUPT
 
    //only active interrupts should wake the CPU if the PLL is off
    pllWakeCpuIfOff();
@@ -419,7 +419,7 @@ uint16_t getHwRegister16(uint32_t address){
             uint16_t fifoVal = spi1RxFifoRead();
             //check if SPI1 interrupts changed
             setSpiIntCs(registerArrayRead16(SPIINTCS));
-            debugLog("SPIRXD read, FIFO value:0x%04X, SPIINTCS:0x%04X\n", fifoVal, registerArrayRead16(SPIINTCS));
+            //debugLog("SPIRXD read, FIFO value:0x%04X, SPIINTCS:0x%04X\n", fifoVal, registerArrayRead16(SPIINTCS));
             return fifoVal;
          }
 
