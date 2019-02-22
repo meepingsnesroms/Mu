@@ -399,6 +399,9 @@ static void setSpiCont1(uint16_t value){
    //update SPIINTCS interrupt bits
    setSpiIntCs(registerArrayRead16(SPIINTCS));
 
+   //unset XCH, transfers are instant since timing is not emulated
+   value &= 0xFEFF;
+
    //debugLog("Transfer complete, SPIINTCS:0x%04X\n", registerArrayRead16(SPIINTCS));
 
    registerArrayWrite16(SPICONT1, value);

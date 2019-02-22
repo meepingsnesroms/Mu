@@ -167,7 +167,7 @@ bool sdCardExchangeBit(bool bit){
             uint32_t argument = palmSdCard.command >> 8 & 0xFFFFFFFF;
             uint8_t crc = palmSdCard.command >> 1 & 0x7F;
 
-            debugLog("SD command:cmd:0x%02X, arg:0x%08X, CRC:0x%02X\n", command, argument, crc);
+            debugLog("SD command:cmd:%d, arg:0x%08X, CRC:0x%02X\n", command, argument, crc);
 
             if(palmSdCard.allowInvalidCrc || sdCardCmdIsCrcValid(command, argument, crc)){
                //respond with command value
@@ -180,7 +180,7 @@ bool sdCardExchangeBit(bool bit){
                      break;
 
                   default:
-                     debugLog("SD unknown command:cmd:0x%02X, arg:0x%08X, CRC:0x%02X\n", command, argument, crc);
+                     debugLog("SD unknown command:cmd:%d, arg:0x%08X, CRC:0x%02X\n", command, argument, crc);
                      break;
                }
             }

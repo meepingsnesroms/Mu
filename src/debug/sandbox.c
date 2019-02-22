@@ -586,6 +586,16 @@ void sandboxOnOpcodeRun(void){
 }
 
 bool sandboxRunning(void){
+   uint32_t pc = m68k_get_reg(NULL, M68K_REG_PC);
+
+   //this is used to capture full logs from certain sections of the ROM
+   /*
+   if(pc >= 0x100A07DC && pc <= 0x100ADB3C){
+      //the SD slot driver
+      return true;
+   }
+   */
+
    return sandboxActive;
 }
 

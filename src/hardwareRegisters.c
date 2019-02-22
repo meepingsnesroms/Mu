@@ -265,7 +265,7 @@ static void checkPortDInterrupts(void){
    checkInterrupts();
 }
 
-void printUnknownHwAccess(uint32_t address, uint32_t value, uint32_t size, bool isWrite){
+static void printHwRegAccess(uint32_t address, uint32_t value, uint32_t size, bool isWrite){
    if(isWrite)
       debugLog("CPU wrote %d bits of 0x%08X to register 0x%03X, PC:0x%08X.\n", size, value, address, flx68000GetPc());
    else
@@ -283,7 +283,7 @@ uint8_t getHwRegister8(uint32_t address){
    address &= 0x00000FFF;
 
    if(sandboxRunning() && address < 0xE00)
-      printUnknownHwAccess(address, 0, 8, false);
+      printHwRegAccess(address, 0, 8, false);
 
    switch(address){
       case PADATA:
@@ -380,7 +380,8 @@ uint8_t getHwRegister8(uint32_t address){
          if(address >= 0xE00)
             return registerArrayRead8(address);
 
-         printUnknownHwAccess(address, 0, 8, false);
+         if(!sandboxRunning())//dont double unknown accesses when sandbox is active
+            printHwRegAccess(address, 0, 8, false);
          return 0x00;
    }
 }
@@ -396,7 +397,7 @@ uint16_t getHwRegister16(uint32_t address){
    address &= 0x00000FFF;
 
    if(sandboxRunning() && address < 0xE00)
-      printUnknownHwAccess(address, 0, 16, false);
+      printHwRegAccess(address, 0, 16, false);
 
    switch(address){
       case TSTAT1:
@@ -472,7 +473,8 @@ uint16_t getHwRegister16(uint32_t address){
          if(address >= 0xE00)
             return registerArrayRead16(address);
 
-         printUnknownHwAccess(address, 0, 16, false);
+         if(!sandboxRunning())//dont double unknown accesses when sandbox is active
+            printHwRegAccess(address, 0, 16, false);
          return 0x0000;
    }
 }
@@ -488,7 +490,7 @@ uint32_t getHwRegister32(uint32_t address){
    address &= 0x00000FFF;
 
    if(sandboxRunning() && address < 0xE00)
-      printUnknownHwAccess(address, 0, 32, false);
+      printHwRegAccess(address, 0, 32, false);
 
    switch(address){
       case ISR:
@@ -504,7 +506,8 @@ uint32_t getHwRegister32(uint32_t address){
          if(address >= 0xE00)
             return registerArrayRead32(address);
 
-         printUnknownHwAccess(address, 0, 32, false);
+         if(!sandboxRunning())//dont double unknown accesses when sandbox is active
+            printHwRegAccess(address, 0, 32, false);
          return 0x00000000;
    }
 }
@@ -520,7 +523,7 @@ void setHwRegister8(uint32_t address, uint8_t value){
    address &= 0x00000FFF;
 
    if(sandboxRunning() && address < 0xE00)
-      printUnknownHwAccess(address, value, 8, true);
+      printHwRegAccess(address, value, 8, true);
 
    switch(address){
       case SCR:
@@ -673,7 +676,8 @@ void setHwRegister8(uint32_t address, uint8_t value){
             return;
          }
 
-         printUnknownHwAccess(address, value, 8, true);
+         if(!sandboxRunning())//dont double unknown accesses when sandbox is active
+            printHwRegAccess(address, value, 8, true);
          return;
    }
 }
@@ -689,7 +693,7 @@ void setHwRegister16(uint32_t address, uint16_t value){
    address &= 0x00000FFF;
 
    if(sandboxRunning() && address < 0xE00)
-      printUnknownHwAccess(address, value, 16, true);
+      printHwRegAccess(address, value, 16, true);
 
    switch(address){
       case RTCIENR:
@@ -967,7 +971,8 @@ void setHwRegister16(uint32_t address, uint16_t value){
             return;
          }
 
-         printUnknownHwAccess(address, value, 16, true);
+         if(!sandboxRunning())//dont double unknown accesses when sandbox is active
+            printHwRegAccess(address, value, 16, true);
          return;
    }
 }
@@ -983,7 +988,7 @@ void setHwRegister32(uint32_t address, uint32_t value){
    address &= 0x00000FFF;
 
    if(sandboxRunning() && address < 0xE00)
-      printUnknownHwAccess(address, value, 32, true);
+      printHwRegAccess(address, value, 32, true);
 
    switch(address){
       case RTCTIME:
@@ -1018,7 +1023,8 @@ void setHwRegister32(uint32_t address, uint32_t value){
             return;
          }
 
-         printUnknownHwAccess(address, value, 32, true);
+         if(!sandboxRunning())//dont double unknown accesses when sandbox is active
+            printHwRegAccess(address, value, 32, true);
          return;
    }
 }

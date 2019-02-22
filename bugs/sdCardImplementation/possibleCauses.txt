@@ -1,0 +1,12 @@
+chip select may not be readable from CPU
+
+Need to investigate:
+HwrSpiCsSet_100AC772
+
+
+CPU read 8 bits from register 0x704, PC:0x100A5976.(printed 65536 times)
+It may not be reading back at all, because it sure keeps trying.
+This is SPICONT1, the only purpose this many reads could accomplish is checking if an exchange is in progress.
+
+Fixed:
+XCH bit was not being cleared
