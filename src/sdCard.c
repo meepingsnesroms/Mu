@@ -43,8 +43,12 @@ static uint32_t sdCardGetOcr(){
 static void sdCardCmdStart(bool isAcmd){
    palmSdCard.command = UINT64_C(0x0000000000000000);
    palmSdCard.commandBitsRemaining = 48;
-   palmSdCard.responseState = 0;
-   palmSdCard.response = SD_CARD_RESPONSE_NOTHING;
+
+   //clearing these breaks ACMDs
+   //palmSdCard.responseState = 0;
+   //palmSdCard.response = SD_CARD_RESPONSE_NOTHING;
+   //palmSdCard.responseWaitBitsRemaining = 0;
+
    palmSdCard.commandIsAcmd = isAcmd;
    palmSdCard.receivingCommand = true;
 }
@@ -99,6 +103,7 @@ void sdCardReset(void){
 void sdCardSetChipSelect(bool value){
    if(value != palmSdCard.chipSelect){
       //debugLog("SD card chip select set to:%s\n", value ? "true" : "false");
+      printf("C%s", value ? "T" : "F");
 
       //commands start when chip select goes from high to low
       if(value == false)
@@ -173,12 +178,12 @@ bool sdCardExchangeBit(bool bit){
             uint32_t argument = palmSdCard.command >> 8 & 0xFFFFFFFF;
             uint8_t crc = palmSdCard.command >> 1 & 0x7F;
 
+            //command finished, wait for next chip select toggle to start the next
+            palmSdCard.receivingCommand = false;
+
             debugLog("SD command: isAcmd:%d, cmd:%d, arg:0x%08X, CRC:0x%02X\n", palmSdCard.commandIsAcmd, command, argument, crc);
 
             if(palmSdCard.allowInvalidCrc || sdCardCmdIsCrcValid(command, argument, crc)){
-               //respond with command value
-               //debugLog("SD valid CRC\n");
-
                if(!palmSdCard.commandIsAcmd){
                   //normal command
                   switch(command){
@@ -198,7 +203,8 @@ bool sdCardExchangeBit(bool bit){
                         break;
 
                      case APP_CMD:
-                        sdCardCmdStart(true);
+                        printf("A");
+                        sdCardCmdStart(palmSdCard.commandIsAcmd);
                         sdCardDoResponseR1(palmSdCard.inIdleState);
                         break;
 
@@ -229,17 +235,14 @@ bool sdCardExchangeBit(bool bit){
             }
 
             //needs to be at least 8 for MMC
-            palmSdCard.responseWaitBitsRemaining = 16;
-
-            //command finished, wait for next chip select toggle to start the next
-            //palmSdCard.receivingCommand = false;
-            //sdCardCmdStart();
+            palmSdCard.responseWaitBitsRemaining = 8;
          }
       }
       else{
          //receiving data
          //TODO
-         debugLog("SD data bit:%d\n", bit);
+         //debugLog("SD data bit:%d\n", bit);
+         printf("%d", bit);
       }
    }
 
