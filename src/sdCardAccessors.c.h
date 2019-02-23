@@ -68,8 +68,18 @@ static void sdCardDoResponseDataPacket(uint8_t token, uint8_t* location, uint16_
    sdCardResponseFifoWriteByte(crc16 & 0xFF);
 }
 
+static void sdCardDoResponseErrorToken(uint8_t token){
+   sdCardResponseFifoWriteByte(token);
+}
+
 static void sdCardDoResponseDelay(uint16_t bytes){
    uint16_t index;
    for(index = 0; index < bytes; index++)
       sdCardResponseFifoWriteByte(0xFF);
+}
+
+static void sdCardDoResponseBusy(uint16_t bytes){
+   uint16_t index;
+   for(index = 0; index < bytes; index++)
+      sdCardResponseFifoWriteByte(0x00);
 }

@@ -34,6 +34,13 @@
 #define ADDRESS_ERROR        0x20
 #define PARAMETER_ERROR      0x40
 
+/*Error Token Bits*/
+#define ET_ERROR           0x01
+#define ET_CC_ERROR        0x02
+#define ET_CARD_ECC_FAILED 0x04
+#define ET_OUT_OF_RANGE    0x08
+#define ET_CARD_IS_LOCKED  0x10
+
 /*Data Transfer Tokens*/
 #define DATA_TOKEN_DEFAULT 0xFE
 #define DATA_TOKEN_CMD25   0xFC

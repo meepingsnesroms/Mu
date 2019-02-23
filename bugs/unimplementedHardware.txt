@@ -11,7 +11,6 @@ Setting the battery dead bit(PDDATA 0x80) if the emulated battery percent gets t
 DRAMC write enable
 Port M Infrared shutdown (PMDATA 0x20)
 some undocumented I/O might be on port e and port j
-SPI1(the SD card interface)
 SPITEST SSTATUS is undocumented and therefore unemulated
 When SPICLK2, SPITXD or SPIRXD on port e is disabled ADS7846 functions should respond appropriately(not transmitting or receiving or blocking both for the clock)
 REFREQ clock frequency in RTCCTL should slow down the RTC when enabled
@@ -30,7 +29,6 @@ sound plays too long when the category's menu is selected on the home screen and
 ARM CPU state isn't saved
 
 Memory:
-SD card can't be read or written to by Palm OS
 unknown if DRAM bit expanded address space is used for CSC when its not an extension of CSD
 there is conflicting information on whether the DRAM bit effects CSC, needs a test made
 the unemulated chip selects(CSB1, CSC0/1) privilege violation interrupts are not handled properly
@@ -40,12 +38,16 @@ swivelview register
 
 ADS7846:
 verify chip select(no test has been done yet, but everything points to port g bit 2)
-need to trigger a false PENIRQ interrupt on reading certain channels
 electrical noise on lines(conversions probably should have +-20 added to values)(probably no need for this, it works so theres no need to use less precise values)
 in the edge case that SPICLK2 is disabled while using ADS7846 and a 1 was the last bit shifted out 0s will still be shifted in
 need to to verify behavior of differential mode bit
 
 SD Card:
+need to dump valid SCR
+block length is fixed at 512 right now
+data blocks won't work properly when CRC checks are enabled
+the CRC of CSD and CID are invalid
+SEND_SCR may not be sending in the proper format(the return data format was not specified in the spec I read)
 IRQ2 may actually be attached to the SD Card data out pin, triggering an interrupt when a 0 is received to process the return data
 need to test if Port J Pin 3(SD card chip select) is attached to Port D Pin 5(SD Card Status(IRQ2))(pinouts.ru says chip select and card detect are the same line)
 
@@ -56,6 +58,9 @@ MakePalmBitmap:
 
 
 Fixed:
+SPI1(the SD card interface)(SPI1 master mode seems fully implemented now)
+SD card can't be read or written to by Palm OS(SPI transactions are going both ways now, some flash chip read commands are implemented too)
+(ADS7846)need to trigger a false PENIRQ interrupt on reading certain channels(this is being done now)
 (MakePalmBitmap)the small icons are corrupt
 (MakePalmBitmap)the non 16 bpp large icons are corrupt
 need to test if Port J Pin 3(SD card chip select) is attached to Port D Pin 5(SD Card Status(IRQ2))(pinouts.ru says chip select and card detect are the same line)(IRQ2 doesnt change when SD card chip select is toggled regardless of wether the card is inserted)
