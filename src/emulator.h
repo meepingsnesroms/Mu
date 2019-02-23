@@ -113,6 +113,7 @@ typedef struct{
    bool     chipSelect;
    bool     receivingCommand;//not in savestates yet!!
    bool     inIdleState;//not in savestates yet!!
+   uint32_t blockLength;//not in savestates yet!!
    buffer_t flashChip;
 }sd_card_t;
 

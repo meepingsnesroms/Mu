@@ -7,8 +7,9 @@
 #include "specs/emuFeatureRegisterSpec.h"
 #include "memoryAccess.h"
 #include "hardwareRegisters.h"
-#include "sed1376.h"
 #include "silkscreen.h"
+#include "sed1376.h"
+#include "flx68000.h"
 #include "armv5.h"
 #include "debug/sandbox.h"
 

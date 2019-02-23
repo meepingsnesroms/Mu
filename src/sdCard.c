@@ -24,9 +24,11 @@ static const uint8_t sdCardCrc7Table[256] = {
    0x17,0x1E,0x05,0x0C,0x33,0x3A,0x21,0x28,0x5F,0x56,0x4D,0x44,0x7B,0x72,0x69,0x60,
    0x0E,0x07,0x1C,0x15,0x2A,0x23,0x38,0x31,0x46,0x4F,0x54,0x5D,0x62,0x6B,0x70,0x79
 };
-static const uint8_t sdCardCsd[16] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-static const uint8_t sdCardCid[16] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
+//register data is from a "ULTRA SD HI-SPEED 1GB", thats actually the name of the card these IDs are from
+static const uint8_t sdCardCsd[16] = {0x00, 0x2F, 0x00, 0x32, 0x5F, 0x59, 0x83, 0xB8, 0x6D, 0xB7, 0xFF, 0x9F, 0x96, 0x40, 0x00, 0x00};//CRC7 is invalid here
+static const uint8_t sdCardCid[16] = {0x1D, 0x41, 0x44, 0x53, 0x44, 0x20, 0x20, 0x20, 0x10, 0xA0, 0x50, 0x33, 0xA4, 0x00, 0x81, 0x00};//CRC7 is invalid here
+static const uint8_t sdCardScr[8] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};//need to dump this one
 
 static uint32_t sdCardGetOcr(void){
    return palmSdCard.inIdleState << 31/*power up status*/ | 0 << 30/*card capacity status*/ | 0x01FF8000/*supported voltages*/;
@@ -72,6 +74,7 @@ void sdCardReset(void){
    palmSdCard.chipSelect = false;
    palmSdCard.receivingCommand = false;
    palmSdCard.inIdleState = true;
+   palmSdCard.blockLength = 512;
 }
 
 void sdCardSetChipSelect(bool value){
@@ -169,9 +172,31 @@ bool sdCardExchangeBit(bool bit){
                         }
                         break;
 
+                     case SET_BLOCKLEN:
+                        if(!palmSdCard.inIdleState)
+                           palmSdCard.blockLength = argument;
+                        sdCardDoResponseR1(palmSdCard.inIdleState);
+                        break;
+
                      case APP_CMD:
                         palmSdCard.commandIsAcmd = true;
                         sdCardDoResponseR1(palmSdCard.inIdleState);
+                        break;
+
+                     case READ_SINGLE_BLOCK:
+                        if(!palmSdCard.inIdleState){
+                           if(argument * palmSdCard.blockLength < palmSdCard.flashChip.size){
+                              sdCardDoResponseR1(palmSdCard.inIdleState);
+                              sdCardDoResponseDelay(1);
+                              sdCardDoResponseDataPacket(DATA_TOKEN_DEFAULT, palmSdCard.flashChip.data[argument * palmSdCard.blockLength], palmSdCard.blockLength);
+                           }
+                           else{
+                              sdCardDoResponseR1(ADDRESS_ERROR | palmSdCard.inIdleState);
+                           }
+                        }
+                        else{
+                           sdCardDoResponseR1(palmSdCard.inIdleState);
+                        }
                         break;
 
                      default:
@@ -187,6 +212,14 @@ bool sdCardExchangeBit(bool bit){
                         //after this is run the SD card is initialized
                         palmSdCard.inIdleState = false;
                         sdCardDoResponseR1(palmSdCard.inIdleState);
+                        break;
+
+                     case SEND_SCR:
+                        sdCardDoResponseR1(palmSdCard.inIdleState);
+                        if(!palmSdCard.inIdleState){
+                           sdCardDoResponseDelay(1);
+                           sdCardDoResponseDataPacket(DATA_TOKEN_DEFAULT, sdCardScr, 8);
+                        }
                         break;
 
                      default:

@@ -603,20 +603,28 @@ buffer_t emulatorGetSdCardBuffer(void){
 }
 
 uint32_t emulatorInsertSdCard(buffer_t image){
+   uint64_t flashChipSize;
+
    //SD card is currently inserted
    if(palmSdCard.flashChip.data)
       return EMU_ERROR_RESOURCE_LOCKED;
 
-   palmSdCard.flashChip.data = malloc(image.size);
+   //round to 1 block of the biggest SDSC block size to the end to prevent buffer overflows when accessing the last block
+   flashChipSize = (image.size & ~UINT64_C(0x3FFF)) + ((image.size & UINT64_C(0x3FFF)) ? UINT64_C(0x4000) : UINT64_C(0x0000));
+   palmSdCard.flashChip.data = malloc(flashChipSize);
    if(!palmSdCard.flashChip.data)
       return EMU_ERROR_OUT_OF_MEMORY;
 
+   //copy over buffer data
    if(image.data)
       memcpy(palmSdCard.flashChip.data, image.data, image.size);
    else
       memset(palmSdCard.flashChip.data, 0x00, image.size);
 
-   palmSdCard.flashChip.size = image.size;
+   //0 out the unused part of the chip
+   memset(palmSdCard.flashChip.data + image.size, 0x00, flashChipSize - image.size);
+
+   palmSdCard.flashChip.size = flashChipSize;
    sdCardReset();
 
    return EMU_ERROR_NONE;

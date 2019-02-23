@@ -18,11 +18,12 @@
 #define WRITE_SINGLE_BLOCK   24/*write a block*/
 #define WRITE_MULTIPLE_BLOCK 25/*write multiple blocks*/
 #define APP_CMD              55/*next command is ACMD<n> command*/
-#define READ_OCR             58/*read OCR(operation condtion register)*/
+#define READ_OCR             58/*read OCR(Operation Condtion Register)*/
 
 /*Application Commands*/
-#define APP_SEND_OP_COND         41/*only for SDC, same as SEND_OP_COND*/
 #define SET_WR_BLOCK_ERASE_COUNT 23/*only for SDC, defines number of blocks to pre-erase with next multi-block write command*/
+#define APP_SEND_OP_COND         41/*only for SDC, same as SEND_OP_COND*/
+#define SEND_SCR                 51/*reads the SCR(SD Configuration Register)*/
 
 /*R1 Response Bits*/
 #define IN_IDLE_STATE        0x01
