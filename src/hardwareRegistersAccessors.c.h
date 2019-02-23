@@ -43,7 +43,6 @@ static uint16_t spi1RxFifoRead(void){
    if(spi1RxFifoEntrys() > 0)
       spi1RxReadPosition = (spi1RxReadPosition + 1) % 9;
    spi1RxOverflowed = false;
-
    return spi1RxFifo[spi1RxReadPosition];
 }
 

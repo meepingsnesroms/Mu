@@ -175,8 +175,9 @@
  * operations.
  */
 #define M68K_USE_64_BIT  OPT_OFF
-//it seems MASK_OUT_ABOVE_32 is has to be called on every 32 bit operation when using this option,
-//possibly even making the speed worse than with just 32 bits
+/* It seems MASK_OUT_ABOVE_32 is has to be called on every 32 bit operation when using this option,
+ * possibly even making the speed worse than with just 32 bits.
+ */
 
 
 /* Set to your compiler's static inline keyword to enable it, or

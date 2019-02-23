@@ -111,7 +111,7 @@ static uint32_t makePalmString(const char* str){
    uint32_t strLength = strlen(str) + 1;
    uint32_t strData = sandboxCallGuestFunction(false, 0x00000000, MemPtrNew, "p(l)", strLength);
 
-   if(strData != 0){
+   if(strData){
       uint32_t count;
 
       for(count = 0; count < strLength; count++)
@@ -122,7 +122,7 @@ static uint32_t makePalmString(const char* str){
 }
 
 static char* makeNativeString(uint32_t address){
-   if(address != 0){
+   if(address){
       int16_t strLength = sandboxCallGuestFunction(false, 0x00000000, StrLen, "w(p)", address) + 1;
       char* nativeStr = malloc(strLength);
       int16_t count;

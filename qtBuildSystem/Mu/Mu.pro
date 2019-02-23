@@ -146,7 +146,8 @@ HEADERS += \
     ../../src/armv5/types.h \
     ../../src/armv5/icache.h \
     ../../src/armv5.h \
-    ../../src/expansionHardware.h
+    ../../src/expansionHardware.h \
+    ../../src/sdCardAccessors.c.h
 
 FORMS += \
     mainwindow.ui \

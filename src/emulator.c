@@ -376,10 +376,6 @@ bool emulatorSaveState(buffer_t buffer){
    offset += sizeof(uint64_t);
    writeStateValue8(buffer.data + offset, palmSdCard.commandBitsRemaining);
    offset += sizeof(uint8_t);
-   writeStateValue8(buffer.data + offset, palmSdCard.response);
-   offset += sizeof(uint8_t);
-   writeStateValue64(buffer.data + offset, palmSdCard.responseState);
-   offset += sizeof(uint64_t);
    writeStateValue8(buffer.data + offset, palmSdCard.allowInvalidCrc);
    offset += sizeof(uint8_t);
    writeStateValue8(buffer.data + offset, palmSdCard.chipSelect);
@@ -557,10 +553,6 @@ bool emulatorLoadState(buffer_t buffer){
    offset += sizeof(uint64_t);
    palmSdCard.commandBitsRemaining = readStateValue8(buffer.data + offset);
    offset += sizeof(uint8_t);
-   palmSdCard.response = readStateValue8(buffer.data + offset);
-   offset += sizeof(uint8_t);
-   palmSdCard.responseState = readStateValue64(buffer.data + offset);
-   offset += sizeof(uint64_t);
    palmSdCard.allowInvalidCrc = readStateValue8(buffer.data + offset);
    offset += sizeof(uint8_t);
    palmSdCard.chipSelect = readStateValue8(buffer.data + offset);

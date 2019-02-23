@@ -39,6 +39,22 @@ void frontendHandleDebugPrint();
 static void debugLog(char* str, ...){};
 #endif
 
+//config options
+#define EMU_FPS 60
+#define EMU_SYSCLK_PRECISION 2000000//the amount of cycles to run before adding SYSCLKs, higher = faster, higher values may skip timer events and lower audio accuracy
+#define EMU_CPU_PERCENT_WAITING 0.30//account for wait states when reading memory, tested with SysInfo.prc
+#define AUDIO_SAMPLE_RATE 48000
+#define AUDIO_CLOCK_RATE 235929600//smallest amount of time a second can be split into:(2.0 * (14.0 * (255 + 1.0) + 15 + 1.0)) * 32768 == 235929600, used to convert the variable timing of SYSCLK and CLK32 to a fixed location in the current frame 0<->AUDIO_END_OF_FRAME
+#define AUDIO_SPEAKER_RANGE 0x6000//prevent hitting the top or bottom of the speaker when switching direction rapidly
+#define SD_CARD_RESPONSE_FIFO_SIZE 10000
+#define SD_CARD_NCR_BYTES 1
+#define SAVE_STATE_VERSION 0
+
+//system constants
+#define CRYSTAL_FREQUENCY 32768
+#define AUDIO_SAMPLES_PER_FRAME (AUDIO_SAMPLE_RATE / EMU_FPS)
+#define AUDIO_END_OF_FRAME (AUDIO_CLOCK_RATE / EMU_FPS)
+
 //emu errors
 enum{
    EMU_ERROR_NONE = 0,
@@ -88,9 +104,10 @@ typedef struct{
 typedef struct{
    uint64_t command;
    uint8_t  commandBitsRemaining;
-   uint8_t  response;
-   uint64_t responseState;//this can contain many different types of data depending on the response type
-   uint8_t  responseWaitBitsRemaining;//not in savestates yet!!
+   uint8_t  responseFifo[SD_CARD_RESPONSE_FIFO_SIZE];//not in savestates yet!!
+   uint16_t responseReadPosition;//not in savestates yet!!
+   int8_t   responseReadPositionBit;//not in savestates yet!!
+   uint16_t responseWritePosition;//not in savestates yet!!
    bool     commandIsAcmd;//not in savestates yet!!
    bool     allowInvalidCrc;
    bool     chipSelect;
@@ -117,20 +134,6 @@ typedef struct{
    uint32_t value;
    //uint32_t cmd;//one time use, has no variable
 }emu_reg_t;
-
-//config options
-#define EMU_FPS 60
-#define EMU_SYSCLK_PRECISION 2000000//the amount of cycles to run before adding SYSCLKs, higher = faster, higher values may skip timer events and lower audio accuracy
-#define EMU_CPU_PERCENT_WAITING 0.30//account for wait states when reading memory, tested with SysInfo.prc
-#define AUDIO_SAMPLE_RATE 48000
-#define AUDIO_CLOCK_RATE 235929600//smallest amount of time a second can be split into:(2.0 * (14.0 * (255 + 1.0) + 15 + 1.0)) * 32768 == 235929600, used to convert the variable timing of SYSCLK and CLK32 to a fixed location in the current frame 0<->AUDIO_END_OF_FRAME
-#define AUDIO_SPEAKER_RANGE 0x6000//prevent hitting the top or bottom of the speaker when switching direction rapidly
-#define SAVE_STATE_VERSION 0
-
-//system constants
-#define CRYSTAL_FREQUENCY 32768
-#define AUDIO_SAMPLES_PER_FRAME (AUDIO_SAMPLE_RATE / EMU_FPS)
-#define AUDIO_END_OF_FRAME (AUDIO_CLOCK_RATE / EMU_FPS)
 
 //emulator data, some are GUI interface variables, some should be left alone
 extern uint8_t*  palmRam;//access allowed to read save RAM without allocating a giant buffer, but endianness must be taken into account

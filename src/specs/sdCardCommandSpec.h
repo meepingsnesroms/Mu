@@ -33,4 +33,9 @@
 #define ADDRESS_ERROR        0x20
 #define PARAMETER_ERROR      0x40
 
+/*Data Transfer Tokens*/
+#define DATA_TOKEN_DEFAULT 0xFE
+#define DATA_TOKEN_CMD25   0xFC
+#define STOP_TRAN          0xFD
+
 #endif
