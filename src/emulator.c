@@ -206,8 +206,8 @@ uint64_t emulatorGetStateSize(void){
    size += sizeof(uint8_t) * 2;//pwm1(Read/Write)
    size += sizeof(uint8_t) * 7;//palmMisc
    size += sizeof(uint32_t) * 4;//palmEmuFeatures.src / palmEmuFeatures.dst / palmEmuFeatures.size / palmEmuFeatures.value
-   size += sizeof(uint64_t) * 2;//palmSdCard.command / palmSdCard.responseState
-   size += sizeof(uint8_t) * 4;//palmSdCard.commandBitsRemaining / palmSdCard.response / palmSdCard.allowInvalidCrc / palmSdCard.chipSelect
+   size += sizeof(uint64_t);//palmSdCard.command
+   size += sizeof(uint8_t) * 3;//palmSdCard.commandBitsRemaining / palmSdCard.allowInvalidCrc / palmSdCard.chipSelect
    size += palmSdCard.flashChip.size;//palmSdCard.flashChip.data
 
    return size;

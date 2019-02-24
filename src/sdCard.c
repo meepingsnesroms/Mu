@@ -7,6 +7,7 @@
 
 
 #define SD_CARD_MAX_DATA_PACKET_SIZE (1 + 2048 + 2)
+#define SD_CARD_BLOCK_SIZE 512//all newer SDSC cards have this fixed at 512
 
 
 static const uint8_t sdCardCrc7Table[256] = {
@@ -65,17 +66,6 @@ static bool sdCardCmdIsCrcValid(uint8_t command, uint32_t argument, uint8_t crc)
    return true;
 }
 
-//only works with cards up to 32mb, this needs to be fixed!!
-static uint32_t sdCardGetActualBlockOffset(uint32_t weirdOffset){
-   uint32_t realOffset = 0;
-
-   //SD cards have some weird block layout, just doing the inverse of what I saw in a document of how to send data to an SD card
-   realOffset |= (weirdOffset >> 16 & 0xFFFF) << 7 & 0xFFC0;//high
-   realOffset |= (weirdOffset & 0xFFFF) >> 9 & 0x003F;//low
-
-   return realOffset;
-}
-
 #include "sdCardAccessors.c.h"
 
 void sdCardReset(void){
@@ -92,7 +82,6 @@ void sdCardReset(void){
    palmSdCard.chipSelect = false;
    palmSdCard.receivingCommand = false;
    palmSdCard.inIdleState = true;
-   palmSdCard.blockLength = 512;
 }
 
 void sdCardSetChipSelect(bool value){
@@ -120,10 +109,10 @@ bool sdCardExchangeBit(bool bit){
       if(!palmSdCard.inIdleState){
          switch(palmSdCard.runningCommand){
             case READ_MULTIPLE_BLOCK:
-               if(sdCardResponseFifoByteEntrys() < palmSdCard.blockLength){
-                  //sdCardDoResponseDelay(1);//packets may have no delay in between
-                  if(palmSdCard.runningCommandState * palmSdCard.blockLength < palmSdCard.flashChip.size){
-                     sdCardDoResponseDataPacket(DATA_TOKEN_DEFAULT, palmSdCard.flashChip.data + palmSdCard.runningCommandState * palmSdCard.blockLength, palmSdCard.blockLength);
+               if(sdCardResponseFifoByteEntrys() < SD_CARD_BLOCK_SIZE){
+                  sdCardDoResponseDelay(1);//packets may have no delay in between
+                  if(palmSdCard.runningCommandState * SD_CARD_BLOCK_SIZE < palmSdCard.flashChip.size){
+                     sdCardDoResponseDataPacket(DATA_TOKEN_DEFAULT, palmSdCard.flashChip.data + palmSdCard.runningCommandState * SD_CARD_BLOCK_SIZE, SD_CARD_BLOCK_SIZE);
                      palmSdCard.runningCommandState++;
                   }
                   else{
@@ -215,8 +204,7 @@ bool sdCardExchangeBit(bool bit){
 
                      case SET_BLOCKLEN:
                         if(!palmSdCard.inIdleState){
-                           //eventually may want to support other block lengths
-                           if(argument == 512)
+                           if(argument == SD_CARD_BLOCK_SIZE)
                               sdCardDoResponseR1(palmSdCard.inIdleState);
                            else
                               sdCardDoResponseR1(PARAMETER_ERROR | palmSdCard.inIdleState);
@@ -253,8 +241,8 @@ bool sdCardExchangeBit(bool bit){
                         sdCardDoResponseR1(palmSdCard.inIdleState);
                         if(!palmSdCard.inIdleState){
                            sdCardDoResponseDelay(1);
-                           if(argument * palmSdCard.blockLength < palmSdCard.flashChip.size)
-                              sdCardDoResponseDataPacket(DATA_TOKEN_DEFAULT, palmSdCard.flashChip.data + sdCardGetActualBlockOffset(argument) * palmSdCard.blockLength, palmSdCard.blockLength);
+                           if(argument < palmSdCard.flashChip.size)
+                              sdCardDoResponseDataPacket(DATA_TOKEN_DEFAULT, palmSdCard.flashChip.data + argument / SD_CARD_BLOCK_SIZE * SD_CARD_BLOCK_SIZE, SD_CARD_BLOCK_SIZE);
                            else
                               sdCardDoResponseErrorToken(ET_OUT_OF_RANGE);
                         }
@@ -264,10 +252,10 @@ bool sdCardExchangeBit(bool bit){
                         sdCardDoResponseR1(palmSdCard.inIdleState);
                         if(!palmSdCard.inIdleState){
                            sdCardDoResponseDelay(1);
-                           if(argument * palmSdCard.blockLength < palmSdCard.flashChip.size){
+                           if(argument < palmSdCard.flashChip.size){
                               palmSdCard.runningCommand = READ_MULTIPLE_BLOCK;
-                              palmSdCard.runningCommandState = sdCardGetActualBlockOffset(argument);
-                              sdCardDoResponseDataPacket(DATA_TOKEN_DEFAULT, palmSdCard.flashChip.data + palmSdCard.runningCommandState * palmSdCard.blockLength, palmSdCard.blockLength);
+                              palmSdCard.runningCommandState = argument / SD_CARD_BLOCK_SIZE;
+                              sdCardDoResponseDataPacket(DATA_TOKEN_DEFAULT, palmSdCard.flashChip.data + palmSdCard.runningCommandState * SD_CARD_BLOCK_SIZE, SD_CARD_BLOCK_SIZE);
                               palmSdCard.runningCommandState++;
                            }
                            else{

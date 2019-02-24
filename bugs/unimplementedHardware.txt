@@ -44,8 +44,6 @@ need to to verify behavior of differential mode bit
 
 SD Card:
 need to an input option for the write protect switch on the side of the SD card(will be fixed at input time since you can't flip it when in the slot)
-memory block ordering is broken
-block length is fixed at 512 right now
 data blocks won't work properly when CRC checks are enabled
 the CRC of CSD and CID are invalid
 IRQ2 may actually be attached to the SD Card data out pin, triggering an interrupt when a 0 is received to process the return data
@@ -58,6 +56,8 @@ MakePalmBitmap:
 
 
 Fixed:
+(SD Card)memory block ordering is broken
+(SD Card)block length is fixed at 512 right now(this is actually proper behavior for newer SDSC cards)
 (SD Card)need to dump valid SCR
 (SD Card)SEND_SCR may not be sending in the proper format(the return data format was not specified in the spec I read)(data packet format is working)
 SPI1(the SD card interface)(SPI1 master mode seems fully implemented now)
