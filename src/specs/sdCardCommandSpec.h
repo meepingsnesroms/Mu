@@ -47,4 +47,9 @@
 #define DATA_TOKEN_CMD25   0xFC
 #define STOP_TRAN          0xFD
 
+/*Data Response Bits*/
+#define DR_ACCEPTED    0x05
+#define DR_CRC_ERROR   0x0B
+#define DR_WRITE_ERROR 0x0D
+
 #endif

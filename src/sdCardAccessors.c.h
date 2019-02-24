@@ -32,10 +32,20 @@ static void sdCardResponseFifoFlush(void){
 }
 
 //basic responses
-static void sdCardDoResponseR1(uint8_t r1){
-   uint8_t ncrByte = 0;
-   for(ncrByte = 0; ncrByte < SD_CARD_NCR_BYTES; ncrByte++)
+static void sdCardDoResponseDelay(uint16_t bytes){
+   uint16_t index;
+   for(index = 0; index < bytes; index++)
       sdCardResponseFifoWriteByte(0xFF);
+}
+
+static void sdCardDoResponseBusy(uint16_t bytes){
+   uint16_t index;
+   for(index = 0; index < bytes; index++)
+      sdCardResponseFifoWriteByte(0x00);
+}
+
+static void sdCardDoResponseR1(uint8_t r1){
+   sdCardDoResponseDelay(SD_CARD_NCR_BYTES);
    sdCardResponseFifoWriteByte(r1);
 }
 
@@ -68,18 +78,11 @@ static void sdCardDoResponseDataPacket(uint8_t token, uint8_t* data, uint16_t si
    sdCardResponseFifoWriteByte(crc16 & 0xFF);
 }
 
+static void sdCardDoResponseDataResponse(uint8_t response){
+   sdCardResponseFifoWriteByte(response);
+   sdCardDoResponseBusy(3);
+}
+
 static void sdCardDoResponseErrorToken(uint8_t token){
    sdCardResponseFifoWriteByte(token);
-}
-
-static void sdCardDoResponseDelay(uint16_t bytes){
-   uint16_t index;
-   for(index = 0; index < bytes; index++)
-      sdCardResponseFifoWriteByte(0xFF);
-}
-
-static void sdCardDoResponseBusy(uint16_t bytes){
-   uint16_t index;
-   for(index = 0; index < bytes; index++)
-      sdCardResponseFifoWriteByte(0x00);
 }

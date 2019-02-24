@@ -46,10 +46,10 @@ static void debugLog(char* str, ...){};
 #define AUDIO_SAMPLE_RATE 48000
 #define AUDIO_CLOCK_RATE 235929600//smallest amount of time a second can be split into:(2.0 * (14.0 * (255 + 1.0) + 15 + 1.0)) * 32768 == 235929600, used to convert the variable timing of SYSCLK and CLK32 to a fixed location in the current frame 0<->AUDIO_END_OF_FRAME
 #define AUDIO_SPEAKER_RANGE 0x6000//prevent hitting the top or bottom of the speaker when switching direction rapidly
-#define SD_CARD_RESPONSE_FIFO_SIZE 10000
+#define SD_CARD_BLOCK_SIZE 512//all newer SDSC cards have this fixed at 512
+#define SD_CARD_BLOCK_DATA_PACKET_SIZE (1 + SD_CARD_BLOCK_SIZE + 2)
+#define SD_CARD_RESPONSE_FIFO_SIZE (SD_CARD_BLOCK_DATA_PACKET_SIZE * 3)
 #define SD_CARD_NCR_BYTES 1//how many 0xFF bytes come before the R1 response
-#define SD_CARD_READ_DELAY_BYTES 1//how many 0xFF bytes come before the data packet
-#define SD_CARD_WRITE_DELAY_BYTES 1
 #define SAVE_STATE_VERSION 0
 
 //system constants
@@ -107,7 +107,8 @@ typedef struct{
    uint64_t command;
    uint8_t  commandBitsRemaining;
    uint8_t  runningCommand;//not in savestates yet!!
-   uint64_t runningCommandState;//not in savestates yet!!
+   uint32_t runningCommandVars[3];//not in savestates yet!!
+   uint8_t  runningCommandPacket[SD_CARD_BLOCK_DATA_PACKET_SIZE];//not in savestates yet!!
    uint8_t  responseFifo[SD_CARD_RESPONSE_FIFO_SIZE];//not in savestates yet!!
    uint16_t responseReadPosition;//not in savestates yet!!
    int8_t   responseReadPositionBit;//not in savestates yet!!
