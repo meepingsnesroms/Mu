@@ -47,7 +47,7 @@ static void sdCardDoResponseR3R7(uint8_t r1, uint32_t value){
    sdCardResponseFifoWriteByte(value & 0xFF);
 }
 
-static void sdCardDoResponseDataPacket(uint8_t token, uint8_t* location, uint16_t size){
+static void sdCardDoResponseDataPacket(uint8_t token, uint8_t* data, uint16_t size){
    uint16_t crc16 = 0x0000;
    uint16_t offset;
 
@@ -55,11 +55,11 @@ static void sdCardDoResponseDataPacket(uint8_t token, uint8_t* location, uint16_
 
    if(palmSdCard.allowInvalidCrc){
       for(offset = 0; offset < size; offset++)
-         sdCardResponseFifoWriteByte(token);
+         sdCardResponseFifoWriteByte(data[offset]);
    }
    else{
       for(offset = 0; offset < size; offset++){
-         sdCardResponseFifoWriteByte(token);
+         sdCardResponseFifoWriteByte(data[offset]);
          //need to add byte to CRC16 here
       }
    }
