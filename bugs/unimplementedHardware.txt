@@ -43,11 +43,11 @@ in the edge case that SPICLK2 is disabled while using ADS7846 and a 1 was the la
 need to to verify behavior of differential mode bit
 
 SD Card:
-need to dump valid SCR
+need to an input option for the write protect switch on the side of the SD card(will be fixed at input time since you can't flip it when in the slot)
+memory block ordering is broken
 block length is fixed at 512 right now
 data blocks won't work properly when CRC checks are enabled
 the CRC of CSD and CID are invalid
-SEND_SCR may not be sending in the proper format(the return data format was not specified in the spec I read)
 IRQ2 may actually be attached to the SD Card data out pin, triggering an interrupt when a 0 is received to process the return data
 need to test if Port J Pin 3(SD card chip select) is attached to Port D Pin 5(SD Card Status(IRQ2))(pinouts.ru says chip select and card detect are the same line)
 
@@ -58,6 +58,8 @@ MakePalmBitmap:
 
 
 Fixed:
+(SD Card)need to dump valid SCR
+(SD Card)SEND_SCR may not be sending in the proper format(the return data format was not specified in the spec I read)(data packet format is working)
 SPI1(the SD card interface)(SPI1 master mode seems fully implemented now)
 SD card can't be read or written to by Palm OS(SPI transactions are going both ways now, some flash chip read commands are implemented too)
 (ADS7846)need to trigger a false PENIRQ interrupt on reading certain channels(this is being done now)

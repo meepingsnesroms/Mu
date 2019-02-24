@@ -17,6 +17,7 @@
 #define SET_BLOCK_COUNT      23/*only for MMC, defines number of blocks to transfer with next multi-block read/write command*/
 #define WRITE_SINGLE_BLOCK   24/*write a block*/
 #define WRITE_MULTIPLE_BLOCK 25/*write multiple blocks*/
+#define SEND_WRITE_PROT      30/*if the card has write protection features this command asks the card to send the status of the write protection bits*/
 #define APP_CMD              55/*next command is ACMD<n> command*/
 #define READ_OCR             58/*read OCR(Operation Condtion Register)*/
 

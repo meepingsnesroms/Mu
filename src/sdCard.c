@@ -254,7 +254,7 @@ bool sdCardExchangeBit(bool bit){
                         if(!palmSdCard.inIdleState){
                            sdCardDoResponseDelay(1);
                            if(argument * palmSdCard.blockLength < palmSdCard.flashChip.size)
-                              sdCardDoResponseDataPacket(DATA_TOKEN_DEFAULT, palmSdCard.flashChip.data + argument * palmSdCard.blockLength, palmSdCard.blockLength);
+                              sdCardDoResponseDataPacket(DATA_TOKEN_DEFAULT, palmSdCard.flashChip.data + sdCardGetActualBlockOffset(argument) * palmSdCard.blockLength, palmSdCard.blockLength);
                            else
                               sdCardDoResponseErrorToken(ET_OUT_OF_RANGE);
                         }
@@ -265,9 +265,10 @@ bool sdCardExchangeBit(bool bit){
                         if(!palmSdCard.inIdleState){
                            sdCardDoResponseDelay(1);
                            if(argument * palmSdCard.blockLength < palmSdCard.flashChip.size){
-                              sdCardDoResponseDataPacket(DATA_TOKEN_DEFAULT, palmSdCard.flashChip.data + argument * palmSdCard.blockLength, palmSdCard.blockLength);
                               palmSdCard.runningCommand = READ_MULTIPLE_BLOCK;
-                              palmSdCard.runningCommandState = argument + 1;
+                              palmSdCard.runningCommandState = sdCardGetActualBlockOffset(argument);
+                              sdCardDoResponseDataPacket(DATA_TOKEN_DEFAULT, palmSdCard.flashChip.data + palmSdCard.runningCommandState * palmSdCard.blockLength, palmSdCard.blockLength);
+                              palmSdCard.runningCommandState++;
                            }
                            else{
                               sdCardDoResponseErrorToken(ET_OUT_OF_RANGE);
