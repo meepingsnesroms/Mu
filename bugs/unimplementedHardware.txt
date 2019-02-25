@@ -44,7 +44,6 @@ in the edge case that SPICLK2 is disabled while using ADS7846 and a 1 was the la
 need to to verify behavior of differential mode bit
 
 SD Card:
-SD card can't be inserted in RetroArch port
 block specific write protect bits don't work
 data blocks won't work properly when CRC checks are enabled
 the CRC of CSD and CID are invalid
@@ -58,6 +57,7 @@ MakePalmBitmap:
 
 
 Fixed:
+SD card can't be inserted in RetroArch port
 USB chip seems to share an interrupt with the SD card(the SD card interrupt is unimplemented at boot and triggers a printf over USB instead, if USB is not properly emulated that will cause a lock up)(enough of the USB is now emulated to prevent this)
 (SD Card)need to an input option for the write protect switch on the side of the SD card(will be fixed at input time since you can't flip it when in the slot)
 (SD Card)memory block ordering is broken

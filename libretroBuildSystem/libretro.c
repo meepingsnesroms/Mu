@@ -156,7 +156,7 @@ void retro_get_system_info(struct retro_system_info *info){
 #ifndef GIT_VERSION
 #define GIT_VERSION ""
 #endif
-   info->library_version  = "v1/3*3" GIT_VERSION;
+   info->library_version  = "v1.0.0" GIT_VERSION;
    info->need_fullpath    = false;
    info->valid_extensions = "rom";
 }
@@ -309,8 +309,10 @@ bool retro_load_game(const struct retro_game_info *info){
    buffer_t bootloader;
    char bootloaderPath[PATH_MAX_LENGTH];
    char saveRamPath[PATH_MAX_LENGTH];
+   char sdImgPath[PATH_MAX_LENGTH];
    struct RFILE* bootloaderFile;
    struct RFILE* saveRamFile;
+   struct RFILE* sdImgFile;
    const char* systemDir;
    const char* saveDir;
    time_t rawTime;
@@ -330,7 +332,6 @@ bool retro_load_game(const struct retro_game_info *info){
    strlcpy(bootloaderPath, systemDir, PATH_MAX_LENGTH);
    strlcat(bootloaderPath, "/bootloader-en-m515.rom", PATH_MAX_LENGTH);
    bootloaderFile = filestream_open(bootloaderPath, RETRO_VFS_FILE_ACCESS_READ, RETRO_VFS_FILE_ACCESS_HINT_NONE);
-   
    if(bootloaderFile){
       bootloader.size = filestream_get_size(bootloaderFile);
       bootloader.data = malloc(bootloader.size);
@@ -360,13 +361,33 @@ bool retro_load_game(const struct retro_game_info *info){
    strlcpy(saveRamPath, saveDir, PATH_MAX_LENGTH);
    strlcat(saveRamPath, "/userdata-en-m515.ram", PATH_MAX_LENGTH);
    saveRamFile = filestream_open(saveRamPath, RETRO_VFS_FILE_ACCESS_READ, RETRO_VFS_FILE_ACCESS_HINT_NONE);
-   
    if(saveRamFile){
       if(filestream_get_size(saveRamFile) == emulatorGetRamSize()){
          filestream_read(saveRamFile, palmRam, emulatorGetRamSize());
          swap16BufferIfLittle(palmRam, emulatorGetRamSize() / sizeof(uint16_t));
       }
       filestream_close(saveRamFile);
+   }
+   
+   //SD card
+   strlcpy(sdImgPath, saveDir, PATH_MAX_LENGTH);
+   strlcat(sdImgPath, "/sd-en-m515.img", PATH_MAX_LENGTH);
+   sdImgFile = filestream_open(sdImgPath, RETRO_VFS_FILE_ACCESS_READ, RETRO_VFS_FILE_ACCESS_HINT_NONE);
+   if(sdImgFile){
+      buffer_t sdCard;
+      uint32_t sdImgSize = filestream_get_size(sdImgFile);
+      
+      //use the NULL, size method because it takes less RAM
+      sdCard.data = NULL;
+      sdCard.size = sdImgSize;
+      
+      error = emulatorInsertSdCard(sdCard, false);
+      if(error == EMU_ERROR_NONE){
+         sdCard = emulatorGetSdCardBuffer();
+         filestream_read(sdImgFile, sdCard.data, sdImgSize);
+      }
+      
+      filestream_close(sdImgFile);
    }
    
    //set RTC
@@ -384,7 +405,10 @@ bool retro_load_game(const struct retro_game_info *info){
 void retro_unload_game(void){
    const char* saveDir;
    char saveRamPath[PATH_MAX_LENGTH];
+   char sdImgPath[PATH_MAX_LENGTH];
    struct RFILE* saveRamFile;
+   struct RFILE* sdImgFile;
+   buffer_t sdCard = emulatorGetSdCardBuffer();
    
    environ_cb(RETRO_ENVIRONMENT_GET_SAVE_DIRECTORY, &saveDir);
    
@@ -392,11 +416,21 @@ void retro_unload_game(void){
    strlcpy(saveRamPath, saveDir, PATH_MAX_LENGTH);
    strlcat(saveRamPath, "/userdata-en-m515.ram", PATH_MAX_LENGTH);
    saveRamFile = filestream_open(saveRamPath, RETRO_VFS_FILE_ACCESS_WRITE, RETRO_VFS_FILE_ACCESS_HINT_NONE);
-   
    if(saveRamFile){
       swap16BufferIfLittle(palmRam, emulatorGetRamSize() / sizeof(uint16_t));//this will no longer be used, so its ok to destroy it when swapping
       filestream_write(saveRamFile, palmRam, emulatorGetRamSize());
       filestream_close(saveRamFile);
+   }
+   
+   //SD card
+   if(sdCard.data){
+      strlcpy(sdImgPath, saveDir, PATH_MAX_LENGTH);
+      strlcat(sdImgPath, "/sd-en-m515.img", PATH_MAX_LENGTH);
+      sdImgFile = filestream_open(sdImgPath, RETRO_VFS_FILE_ACCESS_WRITE, RETRO_VFS_FILE_ACCESS_HINT_NONE);
+      if(sdImgFile){
+         filestream_write(sdImgFile, sdCard.data, sdCard.size);
+         filestream_close(sdImgFile);
+      }
    }
    
    emulatorExit();
