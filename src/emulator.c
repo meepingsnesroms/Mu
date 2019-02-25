@@ -609,8 +609,12 @@ uint32_t emulatorInsertSdCard(buffer_t image){
    if(palmSdCard.flashChip.data)
       return EMU_ERROR_RESOURCE_LOCKED;
 
-   //round to 1 block of the biggest SDSC block size to the end to prevent buffer overflows when accessing the last block
-   flashChipSize = (image.size & ~UINT64_C(0x3FFF)) + ((image.size & UINT64_C(0x3FFF)) ? UINT64_C(0x4000) : UINT64_C(0x0000));
+   //max out at 2gb SD card, Palms cant handle higher than that anyway because of incompatibility with FAT32 and SDHC
+   if(image.size > 0x20000000)
+      return EMU_ERROR_OUT_OF_MEMORY;
+
+   //round up to 1 block of SDSC block size to prevent buffer overflows when accessing the last block
+   flashChipSize = image.size & ~(SD_CARD_BLOCK_SIZE - 1) + (image.size & (SD_CARD_BLOCK_SIZE - 1) ? SD_CARD_BLOCK_SIZE : 0);
    palmSdCard.flashChip.data = malloc(flashChipSize);
    if(!palmSdCard.flashChip.data)
       return EMU_ERROR_OUT_OF_MEMORY;

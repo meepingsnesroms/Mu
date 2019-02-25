@@ -27,6 +27,7 @@ should also not transfer data to SD card when MOSI, MISO or SPICLK1 are disabled
 port d data register INT* bits seem to have there data bits cleared when an edge triggered interrupt is cleared(according to MC68VZ328UM.pdf Page 10-15)
 sound plays too long when the category's menu is selected on the home screen and the pen is pressed and held in the middle of the screen(only happens there, other views of the same type don't have this issue)(effected by CPU speed, turning it up reduces the duration of the excess squeal)
 ARM CPU state isn't saved
+trying to beam anything will lock up the OS
 
 Memory:
 unknown if DRAM bit expanded address space is used for CSC when its not an extension of CSD
@@ -43,6 +44,7 @@ in the edge case that SPICLK2 is disabled while using ADS7846 and a 1 was the la
 need to to verify behavior of differential mode bit
 
 SD Card:
+write protect bits don't work
 need to an input option for the write protect switch on the side of the SD card(will be fixed at input time since you can't flip it when in the slot)
 data blocks won't work properly when CRC checks are enabled
 the CRC of CSD and CID are invalid

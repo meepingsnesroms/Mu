@@ -49,6 +49,11 @@ static void sdCardDoResponseR1(uint8_t r1){
    sdCardResponseFifoWriteByte(r1);
 }
 
+static void sdCardDoResponseR2(uint8_t r1, uint8_t status){
+   sdCardDoResponseR1(r1);
+   sdCardResponseFifoWriteByte(status);
+}
+
 static void sdCardDoResponseR3R7(uint8_t r1, uint32_t value){
    sdCardDoResponseR1(r1);
    sdCardResponseFifoWriteByte(value >> 24);
@@ -57,7 +62,7 @@ static void sdCardDoResponseR3R7(uint8_t r1, uint32_t value){
    sdCardResponseFifoWriteByte(value & 0xFF);
 }
 
-static void sdCardDoResponseDataPacket(uint8_t token, uint8_t* data, uint16_t size){
+static void sdCardDoResponseDataPacket(uint8_t token, const uint8_t* data, uint16_t size){
    uint16_t crc16 = 0x0000;
    uint16_t offset;
 
@@ -85,4 +90,21 @@ static void sdCardDoResponseDataResponse(uint8_t response){
 
 static void sdCardDoResponseErrorToken(uint8_t token){
    sdCardResponseFifoWriteByte(token);
+}
+
+//write methods
+static void sdCardWriteAnd(uint8_t* dst, const uint8_t* src, uint16_t size){
+   uint16_t offset;
+   for(offset = 0; offset < size; offset++)
+      dst[offset] &= src[offset];
+}
+
+static void sdCardWriteOr(uint8_t* dst, const uint8_t* src, uint16_t size){
+   uint16_t offset;
+   for(offset = 0; offset < size; offset++)
+      dst[offset] |= src[offset];
+}
+
+static void sdCardWriteCopy(uint8_t* dst, const uint8_t* src, uint16_t size){
+   memcpy(dst, src, size);
 }

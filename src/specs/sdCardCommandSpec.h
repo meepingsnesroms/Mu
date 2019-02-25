@@ -11,6 +11,7 @@
 #define SEND_CSD             9/*read CSD register*/
 #define SEND_CID             10/*read CID register*/
 #define STOP_TRANSMISSION    12/*stop to read data*/
+#define SEND_STATUS          13/*asks the card to send its status register*/
 #define SET_BLOCKLEN         16/*change R/W block size*/
 #define READ_SINGLE_BLOCK    17/*read a block*/
 #define READ_MULTIPLE_BLOCK  18/*read multiple blocks*/
@@ -28,13 +29,23 @@
 #define SEND_SCR                 51/*reads the SCR(SD Configuration Register)*/
 
 /*R1 Response Bits*/
-#define IN_IDLE_STATE        0x01
-#define ERASE_RESET          0x02
-#define ILLEGAL_COMMAND      0x04
-#define COMMAND_CRC_ERROR    0x08
-#define ERASE_SEQUENCE_ERROR 0x10
-#define ADDRESS_ERROR        0x20
-#define PARAMETER_ERROR      0x40
+#define R1_IN_IDLE_STATE        0x01
+#define R1_ERASE_RESET          0x02
+#define R1_ILLEGAL_COMMAND      0x04
+#define R1_COMMAND_CRC_ERROR    0x08
+#define R1_ERASE_SEQUENCE_ERROR 0x10
+#define R1_ADDRESS_ERROR        0x20
+#define R1_PARAMETER_ERROR      0x40
+
+/*R2 Response Bits*/
+#define R2_CARD_IS_LOCKED           0x01
+#define R2_WRITE_PROTECT_ERASE_SKIP 0x02
+#define R2_ERROR                    0x04
+#define R2_CC_ERROR                 0x08
+#define R2_CARD_ECC_FAILED          0x10
+#define R2_WRITE_PROTECT_VIOLATION  0x20
+#define R2_ERASE_PARAM              0x40
+#define R2_OUT_OF_RANGE             0x80/*also called R2_CSD_OVERWRITE*/
 
 /*Error Token Bits*/
 #define ET_ERROR           0x01

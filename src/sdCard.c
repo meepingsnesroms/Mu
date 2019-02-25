@@ -96,7 +96,7 @@ void sdCardReset(void){
 
 void sdCardSetChipSelect(bool value){
    if(value != palmSdCard.chipSelect){
-      //debugLog("SD card chip select set to:%s\n", value ? "true" : "false");
+      debugLog("SD card chip select set to:%s\n", value ? "true" : "false");
       //printf("C%s", value ? "T" : "F");
 
       //commands start when chip select goes from high to low
@@ -108,7 +108,7 @@ void sdCardSetChipSelect(bool value){
 }
 
 bool sdCardExchangeBit(bool bit){
-   bool outputValue = true;//default output value is true, if an action is ongoing it will be set to the data provided by that action
+   bool outputValue = true;//SPI1 pins are on port j which has pull up resistors so default output value is true
 
    //make sure SD is actually plugged in and chip select is low
    if(palmSdCard.flashChip.data && !palmSdCard.chipSelect){
@@ -168,7 +168,7 @@ bool sdCardExchangeBit(bool bit){
             bool commandWantsData = false;
             bool doInIdleState = false;
 
-            //debugLog("SD command: isAcmd:%d, cmd:%d, arg:0x%08X, CRC:0x%02X\n", palmSdCard.commandIsAcmd, command, argument, crc);
+            debugLog("SD command: isAcmd:%d, cmd:%d, arg:0x%08X, CRC:0x%02X\n", palmSdCard.commandIsAcmd, command, argument, crc);
 
             //in idle state, the card accepts only CMD0, CMD1, ACMD41, CMD58 and CMD59, any other commands will be rejected
             if(palmSdCard.inIdleState){
@@ -197,6 +197,10 @@ bool sdCardExchangeBit(bool bit){
                   }
                }
             }
+
+            //log blocked commands
+            if(palmSdCard.inIdleState && !doInIdleState)
+               debugLog("SD command blocked by idle state: isAcmd:%d, cmd:%d, arg:0x%08X, CRC:0x%02X\n", palmSdCard.commandIsAcmd, command, argument, crc);
 
             if(!palmSdCard.inIdleState || doInIdleState){
                //run command
@@ -233,8 +237,23 @@ bool sdCardExchangeBit(bool bit){
                            sdCardDoResponseDataPacket(DATA_TOKEN_DEFAULT, sdCardCid, sizeof(sdCardCid));
                            break;
 
+                        case SEND_STATUS:
+                           //HACK, need to add real write protection, this command is also how the host reads if the little switch on the side of the SD is set
+                           sdCardDoResponseR2(palmSdCard.inIdleState, 0x00);
+                           break;
+
+                        case SEND_WRITE_PROT:{
+                              const uint8_t writeProtBits[4] = {0x00, 0x00, 0x00, 0x00};
+
+                              //HACK, need to add real write protection
+                              sdCardDoResponseR1(palmSdCard.inIdleState);
+                              sdCardDoResponseDelay(1);
+                              sdCardDoResponseDataPacket(DATA_TOKEN_DEFAULT, writeProtBits, sizeof(writeProtBits));
+                           }
+                           break;
+
                         case SET_BLOCKLEN:
-                           sdCardDoResponseR1((argument != SD_CARD_BLOCK_SIZE ? PARAMETER_ERROR : 0x00) | palmSdCard.inIdleState);
+                           sdCardDoResponseR1((argument != SD_CARD_BLOCK_SIZE ? R1_PARAMETER_ERROR : 0x00) | palmSdCard.inIdleState);
                            break;
 
                         case APP_CMD:
@@ -296,7 +315,7 @@ bool sdCardExchangeBit(bool bit){
 
                         default:
                            debugLog("SD unknown command: cmd:%d, arg:0x%08X, CRC:0x%02X\n", command, argument, crc);
-                           sdCardDoResponseR1(ILLEGAL_COMMAND | palmSdCard.inIdleState);
+                           sdCardDoResponseR1(R1_ILLEGAL_COMMAND | palmSdCard.inIdleState);
                            break;
                      }
                   }
@@ -317,7 +336,7 @@ bool sdCardExchangeBit(bool bit){
 
                         default:
                            debugLog("SD unknown ACMD command: cmd:%d, arg:0x%08X, CRC:0x%02X\n", command, argument, crc);
-                           sdCardDoResponseR1(ILLEGAL_COMMAND | palmSdCard.inIdleState);
+                           sdCardDoResponseR1(R1_ILLEGAL_COMMAND | palmSdCard.inIdleState);
                            break;
                      }
 
@@ -328,7 +347,7 @@ bool sdCardExchangeBit(bool bit){
                else{
                   //send back R1 response with CRC error set
                   debugLog("SD invalid CRC\n");
-                  sdCardDoResponseR1(COMMAND_CRC_ERROR | palmSdCard.inIdleState);
+                  sdCardDoResponseR1(R1_COMMAND_CRC_ERROR | palmSdCard.inIdleState);
                }
             }
 
@@ -346,20 +365,19 @@ bool sdCardExchangeBit(bool bit){
             case WRITE_MULTIPLE_BLOCK:
                if(palmSdCard.runningCommandVars[2] >= SD_CARD_BLOCK_DATA_PACKET_SIZE * 8){
                   //packet finished, verify and write block to chip
-                  /*
-                  int z = sdCardResponseFifoByteEntrys();
-                  if(z > 0){
-                     debugLog("SD card: %d bytes in the way of data response!\n", z);
-                     //sdCardResponseFifoFlush();
-                  }
-                  */
                   if(palmSdCard.allowInvalidCrc || sdCardVerifyCrc16(palmSdCard.runningCommandPacket + 1, SD_CARD_BLOCK_SIZE, palmSdCard.runningCommandPacket[SD_CARD_BLOCK_DATA_PACKET_SIZE - 2] << 8 | palmSdCard.runningCommandPacket[SD_CARD_BLOCK_DATA_PACKET_SIZE - 1])){
-                     memcpy(palmSdCard.flashChip.data + palmSdCard.runningCommandVars[0] * SD_CARD_BLOCK_SIZE, palmSdCard.runningCommandPacket + 1, SD_CARD_BLOCK_SIZE);
+                     //sdCardWriteAnd(palmSdCard.flashChip.data + palmSdCard.runningCommandVars[0] * SD_CARD_BLOCK_SIZE, palmSdCard.runningCommandPacket + 1, SD_CARD_BLOCK_SIZE);
+                     //sdCardWriteOr(palmSdCard.flashChip.data + palmSdCard.runningCommandVars[0] * SD_CARD_BLOCK_SIZE, palmSdCard.runningCommandPacket + 1, SD_CARD_BLOCK_SIZE);
+                     sdCardWriteCopy(palmSdCard.flashChip.data + palmSdCard.runningCommandVars[0] * SD_CARD_BLOCK_SIZE, palmSdCard.runningCommandPacket + 1, SD_CARD_BLOCK_SIZE);
                      sdCardDoResponseDataResponse(DR_ACCEPTED);
                   }
                   else{
                      sdCardDoResponseDataResponse(DR_CRC_ERROR);
                   }
+
+                  //chip select is allowed to be turned off during the busy period of a write,
+                  //when reenabled data out will still be 0s if the write has not finished,
+                  //may need to clear busy bits if chip select is disabled otherwise the host will assume the device has timed out
 
                   if(palmSdCard.runningCommand == WRITE_SINGLE_BLOCK){
                      //end transfer
@@ -376,7 +394,8 @@ bool sdCardExchangeBit(bool bit){
                }
                else if(palmSdCard.runningCommandVars[2] > 0){
                   //add bit to data packet
-                  palmSdCard.runningCommandPacket[palmSdCard.runningCommandVars[2] / 8] |= bit << 7 - palmSdCard.runningCommandVars[2] % 8;
+                  //palmSdCard.runningCommandPacket[palmSdCard.runningCommandVars[2] / 8] |= bit << 7 - palmSdCard.runningCommandVars[2] % 8;
+                  palmSdCard.runningCommandPacket[palmSdCard.runningCommandVars[2] / 8] |= bit << (7 - palmSdCard.runningCommandVars[2] % 8);
                   palmSdCard.runningCommandVars[2]++;
                }
                else{
