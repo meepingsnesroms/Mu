@@ -57,6 +57,7 @@ MakePalmBitmap:
 
 
 Fixed:
+USB chip seems to share an interrupt with the SD card(the SD card interrupt is unimplemented at boot and triggers a printf over USB instead, if USB is not properly emulated that will cause a lock up)(enough of the USB is now emulated to prevent this)
 (SD Card)need to an input option for the write protect switch on the side of the SD card(will be fixed at input time since you can't flip it when in the slot)
 (SD Card)memory block ordering is broken
 (SD Card)block length is fixed at 512 right now(this is actually proper behavior for newer SDSC cards)
@@ -98,7 +99,6 @@ Edge triggered IRQ* interrupt pins may actually read the value of the interrupt 
 ADS7846 channels are not implemented properly in the emulator(works now)
 ADS7846 Channels 3 and 4(they need to be scaled differently)(works now)
 CPU32 table lookup opcodes(there is no CPU32)
-USB chip seems to share an interrupt with the SD card(the SD card interrupt is unimplemented at boot and triggers a printf over USB instead, if USB is not properly emulated that will cause a lock up)
 IRQ2 seems to not even be hooked up in IDA(IRQ2 is setup after boot by the SD driver, the kernels IRQ2 driver only sends a debug message over USB or serial)
 framebuffer accesses can cause a buffer overflow(this was always the case, its not a new bug)(just increased the buffer to an address line maskable size)
 chipselect mirroring is wrong(CS*0 and CS*1 are considered continuous when mapped with more address space than memory, mirroring is currently [CS*0, CS*1, repeat alternating till the end of address space] it should be [CS*0, repeat CS*0 until half way through CS* address space, CS*1, repeat CS*1 until end of CS* address space])
