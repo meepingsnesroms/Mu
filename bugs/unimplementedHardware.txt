@@ -11,7 +11,6 @@ Setting the battery dead bit(PDDATA 0x80) if the emulated battery percent gets t
 DRAMC write enable
 Port M Infrared shutdown (PMDATA 0x20)
 some undocumented I/O might be on port e and port j
-SPI1, probably the SD card since SD cards use SPI for data transfer
 SPITEST SSTATUS is undocumented and therefore unemulated
 When SPICLK2, SPITXD or SPIRXD on port e is disabled ADS7846 functions should respond appropriately(not transmitting or receiving or blocking both for the clock)
 REFREQ clock frequency in RTCCTL should slow down the RTC when enabled
@@ -27,9 +26,10 @@ PLLFSR has a hack that makes busy wait loops finish faster by toggling the CLK32
 should also not transfer data to SD card when MOSI, MISO or SPICLK1 are disabled
 port d data register INT* bits seem to have there data bits cleared when an edge triggered interrupt is cleared(according to MC68VZ328UM.pdf Page 10-15)
 sound plays too long when the category's menu is selected on the home screen and the pen is pressed and held in the middle of the screen(only happens there, other views of the same type don't have this issue)(effected by CPU speed, turning it up reduces the duration of the excess squeal)
+ARM CPU state isn't saved
+trying to beam anything will lock up the OS
 
 Memory:
-SD card can't be read or written to by Palm OS
 unknown if DRAM bit expanded address space is used for CSC when its not an extension of CSD
 there is conflicting information on whether the DRAM bit effects CSC, needs a test made
 the unemulated chip selects(CSB1, CSC0/1) privilege violation interrupts are not handled properly
@@ -39,11 +39,14 @@ swivelview register
 
 ADS7846:
 verify chip select(no test has been done yet, but everything points to port g bit 2)
-need to trigger a false PENIRQ interrupt on reading certain channels
 electrical noise on lines(conversions probably should have +-20 added to values)(probably no need for this, it works so theres no need to use less precise values)
 in the edge case that SPICLK2 is disabled while using ADS7846 and a 1 was the last bit shifted out 0s will still be shifted in
+need to to verify behavior of differential mode bit
 
 SD Card:
+block specific write protect bits don't work
+data blocks won't work properly when CRC checks are enabled
+the CRC of CSD and CID are invalid
 IRQ2 may actually be attached to the SD Card data out pin, triggering an interrupt when a 0 is received to process the return data
 need to test if Port J Pin 3(SD card chip select) is attached to Port D Pin 5(SD Card Status(IRQ2))(pinouts.ru says chip select and card detect are the same line)
 
@@ -51,11 +54,21 @@ Debug tools:
 ADS7846 channels can't be read in single reference mode in hwTestSuite
 
 MakePalmBitmap:
-the small icons are corrupt
-the non 16 bpp large icons are corrupt
 
 
 Fixed:
+SD card can't be inserted in RetroArch port
+USB chip seems to share an interrupt with the SD card(the SD card interrupt is unimplemented at boot and triggers a printf over USB instead, if USB is not properly emulated that will cause a lock up)(enough of the USB is now emulated to prevent this)
+(SD Card)need to an input option for the write protect switch on the side of the SD card(will be fixed at input time since you can't flip it when in the slot)
+(SD Card)memory block ordering is broken
+(SD Card)block length is fixed at 512 right now(this is actually proper behavior for newer SDSC cards)
+(SD Card)need to dump valid SCR
+(SD Card)SEND_SCR may not be sending in the proper format(the return data format was not specified in the spec I read)(data packet format is working)
+SPI1(the SD card interface)(SPI1 master mode seems fully implemented now)
+SD card can't be read or written to by Palm OS(SPI transactions are going both ways now, some flash chip read commands are implemented too)
+(ADS7846)need to trigger a false PENIRQ interrupt on reading certain channels(this is being done now)
+(MakePalmBitmap)the small icons are corrupt
+(MakePalmBitmap)the non 16 bpp large icons are corrupt
 need to test if Port J Pin 3(SD card chip select) is attached to Port D Pin 5(SD Card Status(IRQ2))(pinouts.ru says chip select and card detect are the same line)(IRQ2 doesnt change when SD card chip select is toggled regardless of wether the card is inserted)
 the "Fatal Error" dialog reset button doesnt work, may not be a bug, could just an be issue with certain errors needing a full reset(its error dependent, one bug proved the other bug wasn't actually a bug)
 don't know if flushing the PWM1 FIFO sets all the bytes to 0x00, or just sets the read pointer to the write pointer preserving the newest sample and making the size 0(readPtr = writePtr has significantly cleaner audio then 0ing it out though(they sound the same now, this just masked the actual issue))
@@ -87,7 +100,6 @@ Edge triggered IRQ* interrupt pins may actually read the value of the interrupt 
 ADS7846 channels are not implemented properly in the emulator(works now)
 ADS7846 Channels 3 and 4(they need to be scaled differently)(works now)
 CPU32 table lookup opcodes(there is no CPU32)
-USB chip seems to share an interrupt with the SD card(the SD card interrupt is unimplemented at boot and triggers a printf over USB instead, if USB is not properly emulated that will cause a lock up)
 IRQ2 seems to not even be hooked up in IDA(IRQ2 is setup after boot by the SD driver, the kernels IRQ2 driver only sends a debug message over USB or serial)
 framebuffer accesses can cause a buffer overflow(this was always the case, its not a new bug)(just increased the buffer to an address line maskable size)
 chipselect mirroring is wrong(CS*0 and CS*1 are considered continuous when mapped with more address space than memory, mirroring is currently [CS*0, CS*1, repeat alternating till the end of address space] it should be [CS*0, repeat CS*0 until half way through CS* address space, CS*1, repeat CS*1 until end of CS* address space])

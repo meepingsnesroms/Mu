@@ -111,7 +111,7 @@ static uint32_t makePalmString(const char* str){
    uint32_t strLength = strlen(str) + 1;
    uint32_t strData = sandboxCallGuestFunction(false, 0x00000000, MemPtrNew, "p(l)", strLength);
 
-   if(strData != 0){
+   if(strData){
       uint32_t count;
 
       for(count = 0; count < strLength; count++)
@@ -122,7 +122,7 @@ static uint32_t makePalmString(const char* str){
 }
 
 static char* makeNativeString(uint32_t address){
-   if(address != 0){
+   if(address){
       int16_t strLength = sandboxCallGuestFunction(false, 0x00000000, StrLen, "w(p)", address) + 1;
       char* nativeStr = malloc(strLength);
       int16_t count;
@@ -330,7 +330,7 @@ static uint32_t sandboxCallGuestFunction(bool fallthrough, uint32_t address, uin
    //end execution with CMD_EXECUTION_DONE
    m68k_write_memory_16(callWriteOut, 0x23FC);//move.l data imm to address at imm2 opcode
    callWriteOut += 2;
-   m68k_write_memory_32(callWriteOut, CMD_EXECUTION_DONE);
+   m68k_write_memory_32(callWriteOut, CMD_DEBUG_EXEC_END);
    callWriteOut += 4;
    m68k_write_memory_32(callWriteOut, EMU_REG_ADDR(EMU_CMD));
    callWriteOut += 4;
@@ -396,13 +396,25 @@ uint32_t sandboxCommand(uint32_t command, void* data){
             //remove parts of the OS that cause lockups, yeah its bad
 
             //remove ErrDisplayFileLineMsg from HwrIRQ2Handler, device locks on USB polling without this
-            patchOsRom(0x83652, "4E714E71");//nop; nop
+            //this is fixed, leaving it here for reference
+            //patchOsRom(0x83652, "4E714E71");//nop; nop
+
+            //make SysSetTrapAddress/SysGetTrapAddress support traps > ScrDefaultPaletteState 0xA459
+            //up to final OS 5.3 trap DmSyncDatabase 0xA476
+            //SysSetTrapAddress_1001AE36:
+            //SysGetTrapAddress_1001AE7C:
+            //patchOsRom(0x1AE42, "0C410477");//cmpi.w 0x477, d1
+            //patchOsRom(0x1AE8A, "0C42A477");//cmpi.w 0xA477, d2
 
             //double dynamic heap size, verified working
-            //HwrCalcDynamicRAMSize_10005CC6
+            //HwrCalcDynamicRAMSize_10005CC6:
             //HwrCalcDynamicRAMSize_10083B0A:
-            patchOsRom(0x5CC6, "203C000800004E75");//move.l 0x80000, d0; rts
-            patchOsRom(0x83B0A, "203C000800004E75");//move.l 0x80000, d0; rts
+            //patchOsRom(0x5CC6, "203C000800004E75");//move.l 0x80000, d0; rts
+            //patchOsRom(0x83B0A, "203C000800004E75");//move.l 0x80000, d0; rts
+
+            //patch PrvChunkNew to only allocate in 4 byte intervals
+            //PrvChunkNew_10020CBC:
+            //TODO
 
             //set RAM to 32MB
             //patchOsRom(0x2C5E, "203C020000004E75");//move.l 0x2000000, d0; rts
@@ -575,6 +587,16 @@ void sandboxOnOpcodeRun(void){
 }
 
 bool sandboxRunning(void){
+   uint32_t pc = m68k_get_reg(NULL, M68K_REG_PC);
+
+   //this is used to capture full logs from certain sections of the ROM
+   /*
+   if(pc >= 0x100A07DC && pc <= 0x100ADB3C){
+      //the SD slot driver
+      return true;
+   }
+   */
+
    return sandboxActive;
 }
 

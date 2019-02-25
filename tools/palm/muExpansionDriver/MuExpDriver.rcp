@@ -1,22 +1,30 @@
 #include "MuExpDriverRsc.h"
 
+// Forms and Alerts
 ALERT ID GUI_ALERT_USER_WARNING
 WARNING
 BEGIN
-TITLE "Warning!"
-MESSAGE "This program does not work on actual hardware, if you are running this on an actual device answer \"Real\" and delete this program immediately!"
-
-BUTTONS "Emulator" "Real"
+  TITLE "Warning!"
+  MESSAGE "This program does not work on actual hardware, if you are running this on an actual device answer "
+  BUTTONS "Emulator" "Real" 
 END
 
-FORM ID GUI_FORM_MAIN_WINDOW AT (2 2 156 156) USABLE MODAL
+FORM ID GUI_FORM_MAIN_WINDOW AT (2 2 156 156)
+MODAL
 BEGIN
-TITLE   "Emulator Options"
-
-LABEL   "All hardware options are set in the emulator config of the frontend, only OS options are set here." AUTOID AT (CENTER 16) 
-CHECKBOX "Patch Inconsistent APIs" ID GUI_CHECKBOX_PATCH_INCONSISTENT_APIS AT (20 16 AUTO AUTO)
-
+  TITLE "Emulator Options"
+  CHECKBOX "Patch Inconsistent APIs" ID GUI_CHECKBOX_PATCH_INCONSISTENT_APIS AT (20 16 AUTO AUTO) FONT 0
+  LABEL "CPU Speed:" AUTOID AT (PREVLEFT PREVBOTTOM+5) FONT 0
+  FIELD GUI_FIELD_CPU_SPEED AT (75 34 AUTO AUTO) FONT 0 UNDERLINED MAXCHARS 3 NUMERIC
+  FIELD GUI_FIELD_OS_VERSION AT (PREVLEFT 53 AUTO AUTO) FONT 0 UNDERLINED MAXCHARS 5 NUMERIC
+  LABEL "OS Version:" AUTOID AT (RIGHT@PREVRIGHT-26 PREVBOTTOM-13) FONT 0
+  BUTTON "Save and quit" GUI_BUTTON_SAVE_AND_QUIT AT (CENTER 141 AUTO AUTO) FONT 0
 END
+
+
+// Bitmaps and Icons
 
 APPLICATION ID 1 "MuDv"
+
 VERSION ID 1 "1.00"
+

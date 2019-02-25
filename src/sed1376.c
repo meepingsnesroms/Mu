@@ -239,9 +239,17 @@ void sed1376SetRegister(uint8_t address, uint8_t value){
          sed1376Registers[address] = value & 0xD3;
          return;
 
+      case MOD_RATE:
+         sed1376Registers[address] = value & 0x3F;
+         return;
+
       case DISP_ADDR_2:
       case PIP_ADDR_2:
          sed1376Registers[address] = value & 0x01;
+         return;
+
+      case PWM_CONTROL:
+         sed1376Registers[address] = value & 0x9B;
          return;
 
       case LINE_SIZE_1:
@@ -250,6 +258,12 @@ void sed1376SetRegister(uint8_t address, uint8_t value){
       case PIP_X_END_1:
       case PIP_Y_START_1:
       case PIP_Y_END_1:
+      case HORIZ_START_1:
+      case VERT_TOTAL_1:
+      case VERT_PERIOD_1:
+      case VERT_START_1:
+      case FPLINE_START_1:
+      case FPFRAME_START_1:
          sed1376Registers[address] = value & 0x03;
          return;
 
@@ -265,7 +279,6 @@ void sed1376SetRegister(uint8_t address, uint8_t value){
             sed1376Registers[LUT_R_READ] = sed1376RLut[value];
          }
          */
-         //debugLog("Writing R:0x%02X, G:0x%02X, B:0x%02X to LUT:0x%02X\n", sed1376RLut[value], sed1376GLut[value], sed1376BLut[value], value);
          sed1376OutputLut[value] = makeRgb16FromSed666(sed1376RLut[value], sed1376GLut[value], sed1376BLut[value]);
          return;
 
@@ -300,6 +313,19 @@ void sed1376SetRegister(uint8_t address, uint8_t value){
          sed1376Registers[address] = value & 0xFC;
          return;
 
+      case HORIZ_TOTAL:
+      case HORIZ_PERIOD:
+         sed1376Registers[address] = value & 0x7F;
+         return;
+
+      case FPFRAME_WIDTH:
+         sed1376Registers[address] = value & 0x87;
+         return;
+
+      case DTFD_GCP_INDEX:
+         sed1376Registers[address] = value & 0x1F;
+         return;
+
       case SCRATCH_0:
       case SCRATCH_1:
       case DISP_ADDR_0:
@@ -312,6 +338,17 @@ void sed1376SetRegister(uint8_t address, uint8_t value){
       case PIP_X_END_0:
       case PIP_Y_START_0:
       case PIP_Y_END_0:
+      case HORIZ_START_0:
+      case VERT_TOTAL_0:
+      case VERT_PERIOD_0:
+      case VERT_START_0:
+      case FPLINE_WIDTH:
+      case FPLINE_START_0:
+      case FPFRAME_START_0:
+      case DTFD_GCP_DATA:
+      case PWM_CONFIG:
+      case PWM_LENGTH:
+      case PWM_DUTY_CYCLE:
          //simple write, no actions needed
          sed1376Registers[address] = value;
          return;

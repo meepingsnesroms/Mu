@@ -23,6 +23,7 @@
 
 extern "C"{
 #include "../../src/flx68000.h"
+#include "../../src/debug/sandbox.h"
 }
 
 
@@ -182,7 +183,7 @@ uint32_t EmuWrapper::init(const QString& romPath, const QString& bootloaderPath,
                   newSdCard.data = (uint8_t*)sdCardData.data();
                   newSdCard.size = sdCardData.size();
 
-                  emulatorInsertSdCard(newSdCard);
+                  emulatorInsertSdCard(newSdCard, false);
                }
             }
          }
@@ -332,7 +333,7 @@ uint32_t EmuWrapper::installApplication(const QString& path){
       appFile.close();
       appData.data = (uint8_t*)appDataBuffer.data();
       appData.size = appDataBuffer.size();
-      error = emulatorInstallPrcPdb(appData);
+      error = sandboxCommand(SANDBOX_INSTALL_APP, &appData);
    }
 
    if(!wasPaused)

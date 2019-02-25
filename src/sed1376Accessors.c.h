@@ -13,7 +13,6 @@ static uint32_t handlePanelDataSwaps(uint32_t address){
 
 //color conversion
 static uint16_t makeRgb16FromSed666(uint8_t r, uint8_t g, uint8_t b){
-   //the Palm m515 display controller -> LCD color lines are swapped for red and blue, so blue is put at the top
    uint16_t color = r >> 2 << 10 & 0xF800;
    color |= g >> 2 << 5 & 0x07E0;
    color |= b >> 2 >> 1 & 0x001F;

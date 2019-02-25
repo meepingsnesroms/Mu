@@ -15,7 +15,7 @@ void debugLog(const char* format, ...){
    StrCopy(temp, prefix);
    StrVPrintF(temp + StrLen(prefix), format, va);
    writeArbitraryMemory32(EMU_REG_ADDR(EMU_SRC), (uint32_t)temp);
-   writeArbitraryMemory32(EMU_REG_ADDR(EMU_CMD), CMD_PRINT);
+   writeArbitraryMemory32(EMU_REG_ADDR(EMU_CMD), CMD_DEBUG_PRINT);
    va_end(va);
 }
 #endif

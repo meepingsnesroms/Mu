@@ -43,7 +43,6 @@ static uint16_t spi1RxFifoRead(void){
    if(spi1RxFifoEntrys() > 0)
       spi1RxReadPosition = (spi1RxReadPosition + 1) % 9;
    spi1RxOverflowed = false;
-
    return spi1RxFifo[spi1RxReadPosition];
 }
 
@@ -398,6 +397,9 @@ static void setSpiCont1(uint16_t value){
 
    //update SPIINTCS interrupt bits
    setSpiIntCs(registerArrayRead16(SPIINTCS));
+
+   //unset XCH, transfers are instant since timing is not emulated
+   value &= 0xFEFF;
 
    //debugLog("Transfer complete, SPIINTCS:0x%04X\n", registerArrayRead16(SPIINTCS));
 

@@ -3,6 +3,7 @@
 
 #include "emulator.h"
 #include "hardwareRegisters.h"
+#include "expansionHardware.h"
 #include "memoryAccess.h"
 #include "portability.h"
 #include "flx68000.h"
@@ -204,7 +205,7 @@ uint32_t m68k_read_memory_32(uint32_t address){
          return ramRead32(address);
 
       case CHIP_00_EMU:
-         return getEmuRegister(address);
+         return expansionHardwareGetRegister(address);
 
       case CHIP_REGISTERS:
          return getHwRegister32(address);
@@ -326,7 +327,7 @@ void m68k_write_memory_32(uint32_t address, uint32_t value){
          return;
 
       case CHIP_00_EMU:
-         setEmuRegister(address, value);
+         expansionHardwareSetRegister(address, value);
          return;
 
       case CHIP_REGISTERS:

@@ -4,12 +4,10 @@
 
 #include "emulator.h"
 #include "specs/dragonballVzRegisterSpec.h"
-#include "specs/emuFeatureRegisterSpec.h"
 #include "hardwareRegisters.h"
 #include "memoryAccess.h"
 #include "portability.h"
 #include "flx68000.h"
-#include "armv5.h"
 #include "ads7846.h"
 #include "sdCard.h"
 #include "audio/blip_buf.h"
@@ -105,10 +103,10 @@ int32_t interruptAcknowledge(int32_t intLevel){
    int32_t vector;
 
    //If an interrupt occurs before the IVR has been programmed, interrupt vector 15 is returned to the CPU as an uninitialized interrupt.
-   if(!vectorOffset)
-      vector = 15;//EXCEPTION_UNINITIALIZED_INTERRUPT
-   else
+   if(vectorOffset)
       vector = vectorOffset | intLevel;
+   else
+      vector = 15;//EXCEPTION_UNINITIALIZED_INTERRUPT
 
    //only active interrupts should wake the CPU if the PLL is off
    pllWakeCpuIfOff();
@@ -267,120 +265,11 @@ static void checkPortDInterrupts(void){
    checkInterrupts();
 }
 
-void printUnknownHwAccess(uint32_t address, uint32_t value, uint32_t size, bool isWrite){
+static void printHwRegAccess(uint32_t address, uint32_t value, uint32_t size, bool isWrite){
    if(isWrite)
       debugLog("CPU wrote %d bits of 0x%08X to register 0x%03X, PC:0x%08X.\n", size, value, address, flx68000GetPc());
    else
       debugLog("CPU read %d bits from register 0x%03X, PC:0x%08X.\n", size, address, flx68000GetPc());
-}
-
-uint32_t getEmuRegister(uint32_t address){
-   address &= 0xFFF;
-   switch(address){
-      case EMU_INFO:
-         return palmEmuFeatures.info;
-
-      case EMU_VALUE:
-         return palmEmuFeatures.value;
-
-      default:
-         debugLog("Invalid read from emu register 0x%08X.\n", address);
-         return 0x00000000;
-   }
-}
-
-void setEmuRegister(uint32_t address, uint32_t value){
-   address &= 0xFFF;
-   switch(address){
-      case EMU_SRC:
-         palmEmuFeatures.src = value;
-         return;
-
-      case EMU_DST:
-         palmEmuFeatures.dst = value;
-         return;
-
-      case EMU_SIZE:
-         palmEmuFeatures.size = value;
-         return;
-
-      case EMU_VALUE:
-         palmEmuFeatures.value = value;
-         return;
-
-      case EMU_CMD:
-         switch(value){
-            case CMD_SET_CPU_SPEED:
-               if(palmEmuFeatures.info & FEATURE_FAST_CPU)
-                  palmClockMultiplier = (double)palmEmuFeatures.value / 100.0 * (1.00 - EMU_CPU_PERCENT_WAITING);
-               return;
-
-            case CMD_ARM_SERVICE:
-               if(palmEmuFeatures.info & FEATURE_HYBRID_CPU)
-                  palmEmuFeatures.value = armv5ServiceRequest;
-               return;
-
-            case CMD_ARM_SET_REG:
-               if(palmEmuFeatures.info & FEATURE_HYBRID_CPU)
-                  armv5SetRegister(palmEmuFeatures.dst, palmEmuFeatures.value);
-               return;
-
-            case CMD_ARM_GET_REG:
-               if(palmEmuFeatures.info & FEATURE_HYBRID_CPU)
-                  palmEmuFeatures.value = armv5GetRegister(palmEmuFeatures.src);
-               return;
-
-            case CMD_ARM_RUN:
-               if(palmEmuFeatures.info & FEATURE_HYBRID_CPU)
-                  palmEmuFeatures.value = armv5Execute(palmEmuFeatures.value);
-               return;
-
-            case CMD_SET_RESOLUTION:
-               if(palmEmuFeatures.info & FEATURE_CUSTOM_FB){
-                  palmFramebufferWidth = palmEmuFeatures.value >> 16;
-                  palmFramebufferHeight = palmEmuFeatures.value & 0xFFFF;
-               }
-               return;
-
-            case CMD_PRINT:
-               if(palmEmuFeatures.info & FEATURE_DEBUG){
-                  char tempString[200];
-                  uint16_t offset;
-
-                  for(offset = 0; offset < 200; offset++){
-                     uint8_t newChar = flx68000ReadArbitraryMemory(palmEmuFeatures.src + offset, 8);//cant use char, if its signed < 128 will allow non ascii chars through
-
-                     newChar = newChar < 128 ? newChar : '\0';
-                     newChar = (newChar != '\t' && newChar != '\n') ? newChar : ' ';
-                     tempString[offset] = newChar;
-
-                     if(newChar == '\0')
-                        break;
-                  }
-
-                  debugLog("CMD_PRINT: %s\n", tempString);
-               }
-               return;
-
-            case CMD_GET_KEYS:
-               if(palmEmuFeatures.info & FEATURE_EXT_KEYS)
-                  palmEmuFeatures.value = (palmInput.buttonLeft ? EXT_BUTTON_LEFT : 0) | (palmInput.buttonRight ? EXT_BUTTON_RIGHT : 0) | (palmInput.buttonSelect ? EXT_BUTTON_SELECT : 0);
-               return;
-
-            case CMD_EXECUTION_DONE:
-               if(palmEmuFeatures.info & FEATURE_DEBUG)
-                  sandboxReturn();
-               return;
-
-            default:
-               debugLog("Invalid emu command 0x%04X.\n", value);
-               return;
-         }
-
-      default:
-         debugLog("Invalid write 0x%08X to emu register 0x%08X.\n", value, address);
-         return;
-   }
 }
 
 uint8_t getHwRegister8(uint32_t address){
@@ -394,7 +283,7 @@ uint8_t getHwRegister8(uint32_t address){
    address &= 0x00000FFF;
 
    if(sandboxRunning() && address < 0xE00)
-      printUnknownHwAccess(address, 0, 8, false);
+      printHwRegAccess(address, 0, 8, false);
 
    switch(address){
       case PADATA:
@@ -491,7 +380,8 @@ uint8_t getHwRegister8(uint32_t address){
          if(address >= 0xE00)
             return registerArrayRead8(address);
 
-         printUnknownHwAccess(address, 0, 8, false);
+         if(!sandboxRunning())//dont double unknown accesses when sandbox is active
+            printHwRegAccess(address, 0, 8, false);
          return 0x00;
    }
 }
@@ -507,7 +397,7 @@ uint16_t getHwRegister16(uint32_t address){
    address &= 0x00000FFF;
 
    if(sandboxRunning() && address < 0xE00)
-      printUnknownHwAccess(address, 0, 16, false);
+      printHwRegAccess(address, 0, 16, false);
 
    switch(address){
       case TSTAT1:
@@ -583,7 +473,8 @@ uint16_t getHwRegister16(uint32_t address){
          if(address >= 0xE00)
             return registerArrayRead16(address);
 
-         printUnknownHwAccess(address, 0, 16, false);
+         if(!sandboxRunning())//dont double unknown accesses when sandbox is active
+            printHwRegAccess(address, 0, 16, false);
          return 0x0000;
    }
 }
@@ -599,7 +490,7 @@ uint32_t getHwRegister32(uint32_t address){
    address &= 0x00000FFF;
 
    if(sandboxRunning() && address < 0xE00)
-      printUnknownHwAccess(address, 0, 32, false);
+      printHwRegAccess(address, 0, 32, false);
 
    switch(address){
       case ISR:
@@ -615,7 +506,8 @@ uint32_t getHwRegister32(uint32_t address){
          if(address >= 0xE00)
             return registerArrayRead32(address);
 
-         printUnknownHwAccess(address, 0, 32, false);
+         if(!sandboxRunning())//dont double unknown accesses when sandbox is active
+            printHwRegAccess(address, 0, 32, false);
          return 0x00000000;
    }
 }
@@ -631,7 +523,7 @@ void setHwRegister8(uint32_t address, uint8_t value){
    address &= 0x00000FFF;
 
    if(sandboxRunning() && address < 0xE00)
-      printUnknownHwAccess(address, value, 8, true);
+      printHwRegAccess(address, value, 8, true);
 
    switch(address){
       case SCR:
@@ -784,7 +676,8 @@ void setHwRegister8(uint32_t address, uint8_t value){
             return;
          }
 
-         printUnknownHwAccess(address, value, 8, true);
+         if(!sandboxRunning())//dont double unknown accesses when sandbox is active
+            printHwRegAccess(address, value, 8, true);
          return;
    }
 }
@@ -800,7 +693,7 @@ void setHwRegister16(uint32_t address, uint16_t value){
    address &= 0x00000FFF;
 
    if(sandboxRunning() && address < 0xE00)
-      printUnknownHwAccess(address, value, 16, true);
+      printHwRegAccess(address, value, 16, true);
 
    switch(address){
       case RTCIENR:
@@ -1078,7 +971,8 @@ void setHwRegister16(uint32_t address, uint16_t value){
             return;
          }
 
-         printUnknownHwAccess(address, value, 16, true);
+         if(!sandboxRunning())//dont double unknown accesses when sandbox is active
+            printHwRegAccess(address, value, 16, true);
          return;
    }
 }
@@ -1094,7 +988,7 @@ void setHwRegister32(uint32_t address, uint32_t value){
    address &= 0x00000FFF;
 
    if(sandboxRunning() && address < 0xE00)
-      printUnknownHwAccess(address, value, 32, true);
+      printHwRegAccess(address, value, 32, true);
 
    switch(address){
       case RTCTIME:
@@ -1129,7 +1023,8 @@ void setHwRegister32(uint32_t address, uint32_t value){
             return;
          }
 
-         printUnknownHwAccess(address, value, 32, true);
+         if(!sandboxRunning())//dont double unknown accesses when sandbox is active
+            printHwRegAccess(address, value, 32, true);
          return;
    }
 }

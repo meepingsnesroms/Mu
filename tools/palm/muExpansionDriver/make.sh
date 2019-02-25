@@ -11,7 +11,7 @@ if [ "$1" = "clean" ]; then
    exit
 fi
 
-declare -a FILES=("muExpDriver" "armv5" "soundDriver" "globals" "traps" "debug")
+declare -a FILES=("muExpDriver" "patcher" "armv5" "soundDriver" "globals" "gui" "traps" "debug" "memalign")
 CFLAGS="-palmos4 -O3"
 
 if [ "$1" = "debug" ]; then
@@ -24,8 +24,8 @@ done
 m68k-palmos-gcc -o $APPNAME *.o
 
 # if possible generate icon trees
-if type "MakePalmIcon" &> /dev/null; then
-   MakePalmIcon ./appIcon.svg ./
+if type "MakePalmBitmap" &> /dev/null; then
+   MakePalmBitmap icon ./appIcon.svg ./
 fi
 
 pilrc $APPNAME.rcp

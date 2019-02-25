@@ -39,6 +39,24 @@ void frontendHandleDebugPrint();
 static void debugLog(char* str, ...){};
 #endif
 
+//config options
+#define EMU_FPS 60
+#define EMU_SYSCLK_PRECISION 2000000//the amount of cycles to run before adding SYSCLKs, higher = faster, higher values may skip timer events and lower audio accuracy
+#define EMU_CPU_PERCENT_WAITING 0.30//account for wait states when reading memory, tested with SysInfo.prc
+#define AUDIO_SAMPLE_RATE 48000
+#define AUDIO_CLOCK_RATE 235929600//smallest amount of time a second can be split into:(2.0 * (14.0 * (255 + 1.0) + 15 + 1.0)) * 32768 == 235929600, used to convert the variable timing of SYSCLK and CLK32 to a fixed location in the current frame 0<->AUDIO_END_OF_FRAME
+#define AUDIO_SPEAKER_RANGE 0x6000//prevent hitting the top or bottom of the speaker when switching direction rapidly
+#define SD_CARD_BLOCK_SIZE 512//all newer SDSC cards have this fixed at 512
+#define SD_CARD_BLOCK_DATA_PACKET_SIZE (1 + SD_CARD_BLOCK_SIZE + 2)
+#define SD_CARD_RESPONSE_FIFO_SIZE (SD_CARD_BLOCK_DATA_PACKET_SIZE * 3)
+#define SD_CARD_NCR_BYTES 1//how many 0xFF bytes come before the R1 response
+#define SAVE_STATE_VERSION 0
+
+//system constants
+#define CRYSTAL_FREQUENCY 32768
+#define AUDIO_SAMPLES_PER_FRAME (AUDIO_SAMPLE_RATE / EMU_FPS)
+#define AUDIO_END_OF_FRAME (AUDIO_CLOCK_RATE / EMU_FPS)
+
 //emu errors
 enum{
    EMU_ERROR_NONE = 0,
@@ -88,10 +106,19 @@ typedef struct{
 typedef struct{
    uint64_t command;
    uint8_t  commandBitsRemaining;
-   uint8_t  response;
-   uint64_t responseState;//this can contain many different types of data depending on the response type
+   uint8_t  runningCommand;
+   uint32_t runningCommandVars[3];
+   uint8_t  runningCommandPacket[SD_CARD_BLOCK_DATA_PACKET_SIZE];
+   uint8_t  responseFifo[SD_CARD_RESPONSE_FIFO_SIZE];
+   uint16_t responseReadPosition;
+   int8_t   responseReadPositionBit;
+   uint16_t responseWritePosition;
+   bool     commandIsAcmd;
    bool     allowInvalidCrc;
    bool     chipSelect;
+   bool     receivingCommand;
+   bool     inIdleState;
+   bool     writeProtectSwitch;
    buffer_t flashChip;
 }sd_card_t;
 
@@ -113,20 +140,6 @@ typedef struct{
    uint32_t value;
    //uint32_t cmd;//one time use, has no variable
 }emu_reg_t;
-
-//config options
-#define EMU_FPS 60
-#define EMU_SYSCLK_PRECISION 2000000//the amount of cycles to run before adding SYSCLKs, higher = faster, higher values may skip timer events and lower audio accuracy
-#define EMU_CPU_PERCENT_WAITING 0.30//account for wait states when reading memory, tested with SysInfo.prc
-#define AUDIO_SAMPLE_RATE 48000
-#define AUDIO_CLOCK_RATE 235929600//smallest amount of time a second can be split into:(2.0 * (14.0 * (255 + 1.0) + 15 + 1.0)) * 32768 == 235929600, used to convert the variable timing of SYSCLK and CLK32 to a fixed location in the current frame 0<->AUDIO_END_OF_FRAME
-#define AUDIO_SPEAKER_RANGE 0x6000//prevent hitting the top or bottom of the speaker when switching direction rapidly
-#define SAVE_STATE_VERSION 0
-
-//system constants
-#define CRYSTAL_FREQUENCY 32768
-#define AUDIO_SAMPLES_PER_FRAME (AUDIO_SAMPLE_RATE / EMU_FPS)
-#define AUDIO_END_OF_FRAME (AUDIO_CLOCK_RATE / EMU_FPS)
 
 //emulator data, some are GUI interface variables, some should be left alone
 extern uint8_t*  palmRam;//access allowed to read save RAM without allocating a giant buffer, but endianness must be taken into account
@@ -160,9 +173,8 @@ uint64_t emulatorGetRamSize(void);
 bool emulatorSaveRam(buffer_t buffer);//true = success
 bool emulatorLoadRam(buffer_t buffer);//true = success
 buffer_t emulatorGetSdCardBuffer(void);//this is a direct pointer to the SD card data, do not free it
-uint32_t emulatorInsertSdCard(buffer_t image);//use (NULL, desired size) to create a new empty SD card
+uint32_t emulatorInsertSdCard(buffer_t image, bool writeProtectSwitch);//use (NULL, desired size) to create a new empty SD card
 void emulatorEjectSdCard(void);
-uint32_t emulatorInstallPrcPdb(buffer_t file);
 void emulatorRunFrame(void);
    
 #ifdef __cplusplus
