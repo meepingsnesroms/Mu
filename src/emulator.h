@@ -175,7 +175,6 @@ bool emulatorLoadRam(buffer_t buffer);//true = success
 buffer_t emulatorGetSdCardBuffer(void);//this is a direct pointer to the SD card data, do not free it
 uint32_t emulatorInsertSdCard(buffer_t image, bool writeProtectSwitch);//use (NULL, desired size) to create a new empty SD card
 void emulatorEjectSdCard(void);
-uint32_t emulatorInstallPrcPdb(buffer_t file);
 void emulatorRunFrame(void);
    
 #ifdef __cplusplus

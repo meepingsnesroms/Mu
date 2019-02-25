@@ -118,9 +118,6 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t enab
 
    emulatorInitialized = true;
 
-   //hack, patch ROM image
-   sandboxCommand(SANDBOX_PATCH_OS, NULL);
-
    return EMU_ERROR_NONE;
 }
 
@@ -691,11 +688,6 @@ void emulatorEjectSdCard(void){
    if(palmSdCard.flashChip.data)
       free(palmSdCard.flashChip.data);
    memset(&palmSdCard, 0x00, sizeof(palmSdCard));
-}
-
-uint32_t emulatorInstallPrcPdb(buffer_t file){
-   return sandboxCommand(SANDBOX_INSTALL_APP, &file);
-   //return EMU_ERROR_NONE;
 }
 
 void emulatorRunFrame(void){

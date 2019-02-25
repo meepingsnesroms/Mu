@@ -44,6 +44,7 @@ in the edge case that SPICLK2 is disabled while using ADS7846 and a 1 was the la
 need to to verify behavior of differential mode bit
 
 SD Card:
+SD card can't be inserted in RetroArch port
 block specific write protect bits don't work
 data blocks won't work properly when CRC checks are enabled
 the CRC of CSD and CID are invalid
