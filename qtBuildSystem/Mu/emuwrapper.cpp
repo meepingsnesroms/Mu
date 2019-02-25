@@ -182,7 +182,7 @@ uint32_t EmuWrapper::init(const QString& romPath, const QString& bootloaderPath,
                   newSdCard.data = (uint8_t*)sdCardData.data();
                   newSdCard.size = sdCardData.size();
 
-                  emulatorInsertSdCard(newSdCard);
+                  emulatorInsertSdCard(newSdCard, false);
                }
             }
          }

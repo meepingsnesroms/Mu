@@ -106,18 +106,19 @@ typedef struct{
 typedef struct{
    uint64_t command;
    uint8_t  commandBitsRemaining;
-   uint8_t  runningCommand;//not in savestates yet!!
-   uint32_t runningCommandVars[3];//not in savestates yet!!
-   uint8_t  runningCommandPacket[SD_CARD_BLOCK_DATA_PACKET_SIZE];//not in savestates yet!!
-   uint8_t  responseFifo[SD_CARD_RESPONSE_FIFO_SIZE];//not in savestates yet!!
-   uint16_t responseReadPosition;//not in savestates yet!!
-   int8_t   responseReadPositionBit;//not in savestates yet!!
-   uint16_t responseWritePosition;//not in savestates yet!!
-   bool     commandIsAcmd;//not in savestates yet!!
+   uint8_t  runningCommand;
+   uint32_t runningCommandVars[3];
+   uint8_t  runningCommandPacket[SD_CARD_BLOCK_DATA_PACKET_SIZE];
+   uint8_t  responseFifo[SD_CARD_RESPONSE_FIFO_SIZE];
+   uint16_t responseReadPosition;
+   int8_t   responseReadPositionBit;
+   uint16_t responseWritePosition;
+   bool     commandIsAcmd;
    bool     allowInvalidCrc;
    bool     chipSelect;
-   bool     receivingCommand;//not in savestates yet!!
-   bool     inIdleState;//not in savestates yet!!
+   bool     receivingCommand;
+   bool     inIdleState;
+   bool     writeProtectSwitch;
    buffer_t flashChip;
 }sd_card_t;
 
@@ -172,7 +173,7 @@ uint64_t emulatorGetRamSize(void);
 bool emulatorSaveRam(buffer_t buffer);//true = success
 bool emulatorLoadRam(buffer_t buffer);//true = success
 buffer_t emulatorGetSdCardBuffer(void);//this is a direct pointer to the SD card data, do not free it
-uint32_t emulatorInsertSdCard(buffer_t image);//use (NULL, desired size) to create a new empty SD card
+uint32_t emulatorInsertSdCard(buffer_t image, bool writeProtectSwitch);//use (NULL, desired size) to create a new empty SD card
 void emulatorEjectSdCard(void);
 uint32_t emulatorInstallPrcPdb(buffer_t file);
 void emulatorRunFrame(void);

@@ -92,15 +92,15 @@ void sdCardReset(void){
    palmSdCard.chipSelect = false;
    palmSdCard.receivingCommand = false;
    palmSdCard.inIdleState = true;
+   //palmSdCard.writeProtectSwitch is not written on reset because it is a physical property not an electronic one
 }
 
 void sdCardSetChipSelect(bool value){
    if(value != palmSdCard.chipSelect){
-      debugLog("SD card chip select set to:%s\n", value ? "true" : "false");
-      //printf("C%s", value ? "T" : "F");
+      //debugLog("SD card chip select set to:%s\n", value ? "true" : "false");
 
       //commands start when chip select goes from high to low
-      if(value == false/* && palmSdCard.runningCommand == 0x00*/)
+      if(value == false)
          sdCardCmdStart();
 
       palmSdCard.chipSelect = value;
@@ -238,8 +238,8 @@ bool sdCardExchangeBit(bool bit){
                            break;
 
                         case SEND_STATUS:
-                           //HACK, need to add real write protection, this command is also how the host reads if the little switch on the side of the SD is set
-                           sdCardDoResponseR2(palmSdCard.inIdleState, 0x00);
+                           //HACK, need to add real write protection, this command is also how the host reads the value of the little switch on the side
+                           sdCardDoResponseR2(palmSdCard.inIdleState, palmSdCard.writeProtectSwitch);
                            break;
 
                         case SEND_WRITE_PROT:{
@@ -366,15 +366,25 @@ bool sdCardExchangeBit(bool bit){
                if(palmSdCard.runningCommandVars[2] >= SD_CARD_BLOCK_DATA_PACKET_SIZE * 8){
                   //packet finished, verify and write block to chip
                   if(palmSdCard.allowInvalidCrc || sdCardVerifyCrc16(palmSdCard.runningCommandPacket + 1, SD_CARD_BLOCK_SIZE, palmSdCard.runningCommandPacket[SD_CARD_BLOCK_DATA_PACKET_SIZE - 2] << 8 | palmSdCard.runningCommandPacket[SD_CARD_BLOCK_DATA_PACKET_SIZE - 1])){
-                     memcpy(palmSdCard.flashChip.data + palmSdCard.runningCommandVars[0] * SD_CARD_BLOCK_SIZE, palmSdCard.runningCommandPacket + 1, SD_CARD_BLOCK_SIZE);
-                     sdCardDoResponseDataResponse(DR_ACCEPTED);
+                     //HACK, also need to check if block is write protected, not just the card as a whole
+                     if(!palmSdCard.writeProtectSwitch){
+                        memcpy(palmSdCard.flashChip.data + palmSdCard.runningCommandVars[0] * SD_CARD_BLOCK_SIZE, palmSdCard.runningCommandPacket + 1, SD_CARD_BLOCK_SIZE);
+                        sdCardDoResponseDataResponse(DR_ACCEPTED);
+                     }
+                     else{
+                        sdCardDoResponseDataResponse(DR_WRITE_ERROR);
+                     }
                   }
                   else{
                      sdCardDoResponseDataResponse(DR_CRC_ERROR);
                   }
 
                   //this fixes broken write mode???
-                  //the return data must be 1 bit misaligned, but I dont know how it gets this way
+                  //this may not be a hack, elm-chan says:
+                  //The card responds a Data Response immediataly following the data packet from the host.
+                  //The Data Response trails a busy flag and host controller must suspend the next command or data transmission until the card goes ready.
+                  //that could mean the response is returned starting on the final bit of the data packet instead of the bit after, violating byte boundrys
+                  //the return data is 1 bit misaligned, but I dont know how it gets this way
                   //Currently:
                   //SPI1 transfer, bitCount:8, PC:0x100A7D98(printed 1 times)
                   //SPIRXD read, FIFO value:0x0082, SPIINTCS:0x0001(printed 1 times)
@@ -384,7 +394,7 @@ bool sdCardExchangeBit(bool bit){
                   //SPIRXD read, FIFO value:0x0005, SPIINTCS:0x0001(printed 1 times)
                   //SPI1 transfer, bitCount:8, PC:0x100A5B32(printed 1 times)
                   //SPIRXD read, FIFO value:0x0000, SPIINTCS:0x0001(printed 1 times)
-                  sdCardResponseFifoReadBit();
+                  outputValue = sdCardResponseFifoReadBit();
 
                   if(palmSdCard.runningCommand == WRITE_SINGLE_BLOCK){
                      //end transfer
@@ -401,8 +411,7 @@ bool sdCardExchangeBit(bool bit){
                }
                else if(palmSdCard.runningCommandVars[2] > 0){
                   //add bit to data packet
-                  //palmSdCard.runningCommandPacket[palmSdCard.runningCommandVars[2] / 8] |= bit << 7 - palmSdCard.runningCommandVars[2] % 8;
-                  palmSdCard.runningCommandPacket[palmSdCard.runningCommandVars[2] / 8] |= bit << (7 - palmSdCard.runningCommandVars[2] % 8);
+                  palmSdCard.runningCommandPacket[palmSdCard.runningCommandVars[2] / 8] |= bit << 7 - palmSdCard.runningCommandVars[2] % 8;
                   palmSdCard.runningCommandVars[2]++;
                }
                else{
@@ -439,7 +448,6 @@ bool sdCardExchangeBit(bool bit){
 
             default:
                debugLog("SD orphan data bit:%d\n", bit);
-               //printf("%d", bit);
                break;
          }
       }
