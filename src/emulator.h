@@ -81,7 +81,7 @@ enum{
 //types
 typedef struct{
    uint8_t* data;
-   uint64_t size;
+   uint32_t size;
 }buffer_t;
 
 typedef struct{
@@ -166,10 +166,10 @@ void emulatorExit(void);
 void emulatorHardReset(void);
 void emulatorSoftReset(void);
 void emulatorSetRtc(uint16_t days, uint8_t hours, uint8_t minutes, uint8_t seconds);
-uint64_t emulatorGetStateSize(void);
+uint32_t emulatorGetStateSize(void);
 bool emulatorSaveState(buffer_t buffer);//true = success
 bool emulatorLoadState(buffer_t buffer);//true = success
-uint64_t emulatorGetRamSize(void);
+uint32_t emulatorGetRamSize(void);
 bool emulatorSaveRam(buffer_t buffer);//true = success
 bool emulatorLoadRam(buffer_t buffer);//true = success
 buffer_t emulatorGetSdCardBuffer(void);//this is a direct pointer to the SD card data, do not free it

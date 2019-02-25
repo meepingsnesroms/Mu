@@ -168,8 +168,8 @@ void emulatorSetRtc(uint16_t days, uint8_t hours, uint8_t minutes, uint8_t secon
    setRtc(days, hours, minutes, seconds);
 }
 
-uint64_t emulatorGetStateSize(void){
-   uint64_t size = 0;
+uint32_t emulatorGetStateSize(void){
+   uint32_t size = 0;
 
    size += sizeof(uint32_t);//save state version
    size += sizeof(uint32_t);//palmEmuFeatures.info
@@ -216,7 +216,7 @@ uint64_t emulatorGetStateSize(void){
 }
 
 bool emulatorSaveState(buffer_t buffer){
-   uint64_t offset = 0;
+   uint32_t offset = 0;
    uint8_t index;
 
    if(buffer.size < emulatorGetStateSize())
@@ -413,9 +413,9 @@ bool emulatorSaveState(buffer_t buffer){
 }
 
 bool emulatorLoadState(buffer_t buffer){
-   uint64_t offset = 0;
+   uint32_t offset = 0;
    uint8_t index;
-   uint64_t stateSdCardSize;
+   uint32_t stateSdCardSize;
    uint8_t* stateSdCardBuffer;
 
    //state validation, wont load states that are not from the same state version
@@ -620,12 +620,12 @@ bool emulatorLoadState(buffer_t buffer){
    return true;
 }
 
-uint64_t emulatorGetRamSize(void){
+uint32_t emulatorGetRamSize(void){
    return palmEmuFeatures.info & FEATURE_RAM_HUGE ? SUPERMASSIVE_RAM_SIZE : RAM_SIZE;
 }
 
 bool emulatorSaveRam(buffer_t buffer){
-   uint64_t size = palmEmuFeatures.info & FEATURE_RAM_HUGE ? SUPERMASSIVE_RAM_SIZE : RAM_SIZE;
+   uint32_t size = palmEmuFeatures.info & FEATURE_RAM_HUGE ? SUPERMASSIVE_RAM_SIZE : RAM_SIZE;
 
    if(buffer.size < size)
       return false;
@@ -637,7 +637,7 @@ bool emulatorSaveRam(buffer_t buffer){
 }
 
 bool emulatorLoadRam(buffer_t buffer){
-   uint64_t size = palmEmuFeatures.info & FEATURE_RAM_HUGE ? SUPERMASSIVE_RAM_SIZE : RAM_SIZE;
+   uint32_t size = palmEmuFeatures.info & FEATURE_RAM_HUGE ? SUPERMASSIVE_RAM_SIZE : RAM_SIZE;
 
    if(buffer.size < size)
       return false;
@@ -657,12 +657,16 @@ uint32_t emulatorInsertSdCard(buffer_t image, bool writeProtectSwitch){
    if(palmSdCard.flashChip.data)
       return EMU_ERROR_RESOURCE_LOCKED;
 
+   //no 0 sized chips
+   if(image.size == 0x00000000)
+      return EMU_ERROR_INVALID_PARAMETER;
+
    //max out at 2gb SD card, Palms cant handle higher than that anyway because of incompatibility with FAT32 and SDHC
    if(image.size > 0x20000000)
-      return EMU_ERROR_OUT_OF_MEMORY;
+      return EMU_ERROR_INVALID_PARAMETER;
 
-   //round up to 1 block of SDSC block size to prevent buffer overflows when accessing the last block
-   palmSdCard.flashChip.size = image.size & ~(SD_CARD_BLOCK_SIZE - 1) + (image.size & (SD_CARD_BLOCK_SIZE - 1) ? SD_CARD_BLOCK_SIZE : 0);
+   //round up to nearest mb, prevents issues with buffer size and too small SD cards
+   palmSdCard.flashChip.size = image.size & 0xFF100000 + (image.size & 0x000FFFFF ? 0x00100000 : 0x00000000);
    palmSdCard.flashChip.data = malloc(palmSdCard.flashChip.size);
    if(!palmSdCard.flashChip.data)
       return EMU_ERROR_OUT_OF_MEMORY;

@@ -6,7 +6,7 @@
 
 void flx68000Init(void);
 void flx68000Reset(void);
-uint64_t flx68000StateSize(void);
+uint32_t flx68000StateSize(void);
 void flx68000SaveState(uint8_t* data);
 void flx68000LoadState(uint8_t* data);
 void flx68000LoadStateFinished(void);

@@ -121,8 +121,8 @@ void armv5Reset(void){
    armv5ServiceRequest = false;
 }
 
-uint64_t armv5StateSize(void){
-   uint64_t size = 0;
+uint32_t armv5StateSize(void){
+   uint32_t size = 0;
 
    //need to add armv5Cpu here
    size += sizeof(uint8_t);
@@ -131,7 +131,7 @@ uint64_t armv5StateSize(void){
 }
 
 void armv5SaveState(uint8_t* data){
-   uint64_t offset = 0;
+   uint32_t offset = 0;
 
    //need to add armv5Cpu here
    writeStateValue8(data + offset, armv5ServiceRequest);
@@ -139,7 +139,7 @@ void armv5SaveState(uint8_t* data){
 }
 
 void armv5LoadState(uint8_t* data){
-   uint64_t offset = 0;
+   uint32_t offset = 0;
 
    //need to add armv5Cpu here
    armv5ServiceRequest = readStateValue8(data + offset);

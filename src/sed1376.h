@@ -8,7 +8,7 @@ extern uint16_t sed1376Framebuffer[];
 extern uint8_t sed1376Ram[];
 
 void sed1376Reset(void);
-uint64_t sed1376StateSize(void);
+uint32_t sed1376StateSize(void);
 void sed1376SaveState(uint8_t* data);
 void sed1376LoadState(uint8_t* data);
 

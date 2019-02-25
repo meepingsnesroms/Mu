@@ -37,8 +37,8 @@ void ads7846Reset(void){
 #endif
 }
 
-uint64_t ads7846StateSize(void){
-   uint64_t size = 0;
+uint32_t ads7846StateSize(void){
+   uint32_t size = 0;
 
    size += sizeof(uint8_t) * 4;
    size += sizeof(uint16_t);
@@ -47,7 +47,7 @@ uint64_t ads7846StateSize(void){
 }
 
 void ads7846SaveState(uint8_t* data){
-   uint64_t offset = 0;
+   uint32_t offset = 0;
 
    writeStateValue8(data + offset, ads7846PenIrqEnabled);
    offset += sizeof(uint8_t);
@@ -62,7 +62,7 @@ void ads7846SaveState(uint8_t* data){
 }
 
 void ads7846LoadState(uint8_t* data){
-   uint64_t offset = 0;
+   uint32_t offset = 0;
 
    ads7846PenIrqEnabled = readStateValue8(data + offset);
    offset += sizeof(uint8_t);

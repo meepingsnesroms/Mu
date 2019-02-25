@@ -127,8 +127,8 @@ void sed1376Reset(void){
    sed1376Registers[PWR_SAVE_CFG] = 0x80;
 }
 
-uint64_t sed1376StateSize(void){
-   uint64_t size = 0;
+uint32_t sed1376StateSize(void){
+   uint32_t size = 0;
 
    size += SED1376_REG_SIZE;
    size += SED1376_LUT_SIZE * 3;
@@ -138,7 +138,7 @@ uint64_t sed1376StateSize(void){
 }
 
 void sed1376SaveState(uint8_t* data){
-   uint64_t offset = 0;
+   uint32_t offset = 0;
 
    memcpy(data + offset, sed1376Registers, SED1376_REG_SIZE);
    offset += SED1376_REG_SIZE;
@@ -153,7 +153,7 @@ void sed1376SaveState(uint8_t* data){
 }
 
 void sed1376LoadState(uint8_t* data){
-   uint64_t offset = 0;
+   uint32_t offset = 0;
    uint16_t index;
 
    memcpy(sed1376Registers, data + offset, SED1376_REG_SIZE);

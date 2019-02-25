@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 void expansionHardwareReset(void);
-uint64_t expansionHardwareStateSize(void);
+uint32_t expansionHardwareStateSize(void);
 void expansionHardwareSaveState(uint8_t* data);
 void expansionHardwareLoadState(uint8_t* data);
 

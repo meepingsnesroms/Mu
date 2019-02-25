@@ -5,7 +5,7 @@
 #include <stdbool.h>
 
 void pdiUsbD12Reset(void);
-uint64_t pdiUsbD12StateSize(void);
+uint32_t pdiUsbD12StateSize(void);
 void pdiUsbD12SaveState(uint8_t* data);
 void pdiUsbD12LoadState(uint8_t* data);
 

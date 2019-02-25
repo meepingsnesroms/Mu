@@ -67,8 +67,8 @@ void pdiUsbD12Reset(void){
    }
 }
 
-uint64_t pdiUsbD12StateSize(void){
-   uint64_t size = 0;
+uint32_t pdiUsbD12StateSize(void){
+   uint32_t size = 0;
 
    size += sizeof(uint8_t);
    size += sizeof(uint64_t);
@@ -79,7 +79,7 @@ uint64_t pdiUsbD12StateSize(void){
 }
 
 void pdiUsbD12SaveState(uint8_t* data){
-   uint64_t offset = 0;
+   uint32_t offset = 0;
    uint8_t index;
 
    writeStateValue8(data + offset, pdiUsbD12Command);
@@ -97,7 +97,7 @@ void pdiUsbD12SaveState(uint8_t* data){
 }
 
 void pdiUsbD12LoadState(uint8_t* data){
-   uint64_t offset = 0;
+   uint32_t offset = 0;
    uint8_t index;
 
    pdiUsbD12Command = readStateValue8(data + offset);

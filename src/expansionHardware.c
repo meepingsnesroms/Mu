@@ -24,8 +24,8 @@ void expansionHardwareReset(void){
       armv5Reset();
 }
 
-uint64_t expansionHardwareStateSize(void){
-   uint64_t size = 0;
+uint32_t expansionHardwareStateSize(void){
+   uint32_t size = 0;
 
    size += sizeof(uint32_t);
    if(palmEmuFeatures.info & FEATURE_HYBRID_CPU)
@@ -35,7 +35,7 @@ uint64_t expansionHardwareStateSize(void){
 }
 
 void expansionHardwareSaveState(uint8_t* data){
-   uint64_t offset = 0;
+   uint32_t offset = 0;
 
    writeStateValue32(data + offset, expansionHardwareLcdPointer);
    offset += sizeof(uint32_t);
@@ -46,7 +46,7 @@ void expansionHardwareSaveState(uint8_t* data){
 }
 
 void expansionHardwareLoadState(uint8_t* data){
-   uint64_t offset = 0;
+   uint32_t offset = 0;
 
    expansionHardwareLcdPointer = readStateValue32(data + offset);
    offset += sizeof(uint32_t);
