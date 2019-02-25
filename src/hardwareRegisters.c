@@ -419,7 +419,7 @@ uint16_t getHwRegister16(uint32_t address){
             uint16_t fifoVal = spi1RxFifoRead();
             //check if SPI1 interrupts changed
             setSpiIntCs(registerArrayRead16(SPIINTCS));
-            //debugLog("SPIRXD read, FIFO value:0x%04X, SPIINTCS:0x%04X\n", fifoVal, registerArrayRead16(SPIINTCS));
+            debugLog("SPIRXD read, FIFO value:0x%04X, SPIINTCS:0x%04X\n", fifoVal, registerArrayRead16(SPIINTCS));
             return fifoVal;
          }
 

@@ -8,5 +8,7 @@ CPU read 8 bits from register 0x704, PC:0x100A5976.(printed 65536 times)
 It may not be reading back at all, because it sure keeps trying.
 This is SPICONT1, the only purpose this many reads could accomplish is checking if an exchange is in progress.
 
+it seems the write response is off by 1 bit, i don't know why
+
 Fixed:
 XCH bit was not being cleared

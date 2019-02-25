@@ -366,18 +366,25 @@ bool sdCardExchangeBit(bool bit){
                if(palmSdCard.runningCommandVars[2] >= SD_CARD_BLOCK_DATA_PACKET_SIZE * 8){
                   //packet finished, verify and write block to chip
                   if(palmSdCard.allowInvalidCrc || sdCardVerifyCrc16(palmSdCard.runningCommandPacket + 1, SD_CARD_BLOCK_SIZE, palmSdCard.runningCommandPacket[SD_CARD_BLOCK_DATA_PACKET_SIZE - 2] << 8 | palmSdCard.runningCommandPacket[SD_CARD_BLOCK_DATA_PACKET_SIZE - 1])){
-                     //sdCardWriteAnd(palmSdCard.flashChip.data + palmSdCard.runningCommandVars[0] * SD_CARD_BLOCK_SIZE, palmSdCard.runningCommandPacket + 1, SD_CARD_BLOCK_SIZE);
-                     //sdCardWriteOr(palmSdCard.flashChip.data + palmSdCard.runningCommandVars[0] * SD_CARD_BLOCK_SIZE, palmSdCard.runningCommandPacket + 1, SD_CARD_BLOCK_SIZE);
-                     sdCardWriteCopy(palmSdCard.flashChip.data + palmSdCard.runningCommandVars[0] * SD_CARD_BLOCK_SIZE, palmSdCard.runningCommandPacket + 1, SD_CARD_BLOCK_SIZE);
+                     memcpy(palmSdCard.flashChip.data + palmSdCard.runningCommandVars[0] * SD_CARD_BLOCK_SIZE, palmSdCard.runningCommandPacket + 1, SD_CARD_BLOCK_SIZE);
                      sdCardDoResponseDataResponse(DR_ACCEPTED);
                   }
                   else{
                      sdCardDoResponseDataResponse(DR_CRC_ERROR);
                   }
 
-                  //chip select is allowed to be turned off during the busy period of a write,
-                  //when reenabled data out will still be 0s if the write has not finished,
-                  //may need to clear busy bits if chip select is disabled otherwise the host will assume the device has timed out
+                  //this fixes broken write mode???
+                  //the return data must be 1 bit misaligned, but I dont know how it gets this way
+                  //Currently:
+                  //SPI1 transfer, bitCount:8, PC:0x100A7D98(printed 1 times)
+                  //SPIRXD read, FIFO value:0x0082, SPIINTCS:0x0001(printed 1 times)
+                  //SPI1 transfer, bitCount:8, PC:0x100A5B32(printed 1 times)
+                  //SPIRXD read, FIFO value:0x0080, SPIINTCS:0x0001(printed 1 times)
+                  //Should be:
+                  //SPIRXD read, FIFO value:0x0005, SPIINTCS:0x0001(printed 1 times)
+                  //SPI1 transfer, bitCount:8, PC:0x100A5B32(printed 1 times)
+                  //SPIRXD read, FIFO value:0x0000, SPIINTCS:0x0001(printed 1 times)
+                  sdCardResponseFifoReadBit();
 
                   if(palmSdCard.runningCommand == WRITE_SINGLE_BLOCK){
                      //end transfer

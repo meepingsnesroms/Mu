@@ -91,20 +91,3 @@ static void sdCardDoResponseDataResponse(uint8_t response){
 static void sdCardDoResponseErrorToken(uint8_t token){
    sdCardResponseFifoWriteByte(token);
 }
-
-//write methods
-static void sdCardWriteAnd(uint8_t* dst, const uint8_t* src, uint16_t size){
-   uint16_t offset;
-   for(offset = 0; offset < size; offset++)
-      dst[offset] &= src[offset];
-}
-
-static void sdCardWriteOr(uint8_t* dst, const uint8_t* src, uint16_t size){
-   uint16_t offset;
-   for(offset = 0; offset < size; offset++)
-      dst[offset] |= src[offset];
-}
-
-static void sdCardWriteCopy(uint8_t* dst, const uint8_t* src, uint16_t size){
-   memcpy(dst, src, size);
-}
