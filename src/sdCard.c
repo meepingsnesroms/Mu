@@ -6,35 +6,8 @@
 #include "specs/sdCardCommandSpec.h"
 
 
-static const uint8_t sdCardCrc7Table[256] = {
-   0x00,0x09,0x12,0x1B,0x24,0x2D,0x36,0x3F,0x48,0x41,0x5A,0x53,0x6C,0x65,0x7E,0x77,
-   0x19,0x10,0x0B,0x02,0x3D,0x34,0x2F,0x26,0x51,0x58,0x43,0x4A,0x75,0x7C,0x67,0x6E,
-   0x32,0x3B,0x20,0x29,0x16,0x1F,0x04,0x0D,0x7A,0x73,0x68,0x61,0x5E,0x57,0x4C,0x45,
-   0x2B,0x22,0x39,0x30,0x0F,0x06,0x1D,0x14,0x63,0x6A,0x71,0x78,0x47,0x4E,0x55,0x5C,
-   0x64,0x6D,0x76,0x7F,0x40,0x49,0x52,0x5B,0x2C,0x25,0x3E,0x37,0x08,0x01,0x1A,0x13,
-   0x7D,0x74,0x6F,0x66,0x59,0x50,0x4B,0x42,0x35,0x3C,0x27,0x2E,0x11,0x18,0x03,0x0A,
-   0x56,0x5F,0x44,0x4D,0x72,0x7B,0x60,0x69,0x1E,0x17,0x0C,0x05,0x3A,0x33,0x28,0x21,
-   0x4F,0x46,0x5D,0x54,0x6B,0x62,0x79,0x70,0x07,0x0E,0x15,0x1C,0x23,0x2A,0x31,0x38,
-   0x41,0x48,0x53,0x5A,0x65,0x6C,0x77,0x7E,0x09,0x00,0x1B,0x12,0x2D,0x24,0x3F,0x36,
-   0x58,0x51,0x4A,0x43,0x7C,0x75,0x6E,0x67,0x10,0x19,0x02,0x0B,0x34,0x3D,0x26,0x2F,
-   0x73,0x7A,0x61,0x68,0x57,0x5E,0x45,0x4C,0x3B,0x32,0x29,0x20,0x1F,0x16,0x0D,0x04,
-   0x6A,0x63,0x78,0x71,0x4E,0x47,0x5C,0x55,0x22,0x2B,0x30,0x39,0x06,0x0F,0x14,0x1D,
-   0x25,0x2C,0x37,0x3E,0x01,0x08,0x13,0x1A,0x6D,0x64,0x7F,0x76,0x49,0x40,0x5B,0x52,
-   0x3C,0x35,0x2E,0x27,0x18,0x11,0x0A,0x03,0x74,0x7D,0x66,0x6F,0x50,0x59,0x42,0x4B,
-   0x17,0x1E,0x05,0x0C,0x33,0x3A,0x21,0x28,0x5F,0x56,0x4D,0x44,0x7B,0x72,0x69,0x60,
-   0x0E,0x07,0x1C,0x15,0x2A,0x23,0x38,0x31,0x46,0x4F,0x54,0x5D,0x62,0x6B,0x70,0x79
-};
+#include "sdCardCrcTables.c.h"
 
-//register data is from a "ULTRA SD HI-SPEED 1GB", thats actually the name of the card these IDs are from
-static const uint8_t sdCardCsd[16] = {0x00, 0x2F, 0x00, 0x32, 0x5F, 0x59, 0x83, 0xB8, 0x6D, 0xB7, 0xFF, 0x9F, 0x96, 0x40, 0x00, 0x00};//CRC7 is invalid here
-static const uint8_t sdCardCid[16] = {0x1D, 0x41, 0x44, 0x53, 0x44, 0x20, 0x20, 0x20, 0x10, 0xA0, 0x50, 0x33, 0xA4, 0x00, 0x81, 0x00};//CRC7 is invalid here
-static const uint8_t sdCardScr[8] = {0x01, 0x25, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};//dont know it this needs a CRC7 or not?
-//static const uint8_t sdCardDsr[2] = {0x04, 0x04};
-//static const uint8_t sdCardRca[2] = {0x??, 0x??};//not available in SPI mode
-
-static uint32_t sdCardGetOcr(void){
-   return !palmSdCard.inIdleState << 31/*power up status*/ | 0 << 30/*card capacity status*/ | 0x01FF8000/*supported voltages*/;
-}
 
 static void sdCardCmdStart(void){
    palmSdCard.command = UINT64_C(0x0000000000000000);
@@ -42,18 +15,18 @@ static void sdCardCmdStart(void){
    palmSdCard.receivingCommand = true;
 }
 
-static bool sdCardCmdIsCrcValid(uint8_t command, uint32_t argument, uint8_t crc){
+static bool sdCardCmdIsCrc7Valid(uint8_t command, uint32_t argument, uint8_t crc){
 #if !defined(EMU_NO_SAFETY)
    uint8_t commandCrc = 0x00;
 
    //add the 01 command starting sequence, not actually part of the command but its counted in the checksum
    command |= 0x40;
 
-   commandCrc = sdCardCrc7Table[(commandCrc << 1) ^ command];
-   commandCrc = sdCardCrc7Table[(commandCrc << 1) ^ (argument >> 24 & 0xFF)];
-   commandCrc = sdCardCrc7Table[(commandCrc << 1) ^ (argument >> 16 & 0xFF)];
-   commandCrc = sdCardCrc7Table[(commandCrc << 1) ^ (argument >> 8 & 0xFF)];
-   commandCrc = sdCardCrc7Table[(commandCrc << 1) ^ (argument & 0xFF)];
+   commandCrc = sdCardCrc7Table[commandCrc << 1 ^ command];
+   commandCrc = sdCardCrc7Table[commandCrc << 1 ^ (argument >> 24 & 0xFF)];
+   commandCrc = sdCardCrc7Table[commandCrc << 1 ^ (argument >> 16 & 0xFF)];
+   commandCrc = sdCardCrc7Table[commandCrc << 1 ^ (argument >> 8 & 0xFF)];
+   commandCrc = sdCardCrc7Table[commandCrc << 1 ^ (argument & 0xFF)];
 
    if(commandCrc != crc)
       return false;
@@ -62,17 +35,26 @@ static bool sdCardCmdIsCrcValid(uint8_t command, uint32_t argument, uint8_t crc)
    return true;
 }
 
-static bool sdCardVerifyCrc16(uint8_t* data, uint16_t size, uint16_t crc){
-#if !defined(EMU_NO_SAFETY)
+static uint8_t sdCardCrc7(uint8_t* data, uint16_t size){
+   uint8_t dataCrc = 0x00;
+   uint16_t offset;
+
+   //csum = crc7_table[(csum << 1) ^ input];
+   for(offset = 0; offset < size; offset++)
+      dataCrc = sdCardCrc7Table[dataCrc << 1 ^ data[offset]];
+
+   return dataCrc;
+}
+
+static uint16_t sdCardCrc16(uint8_t* data, uint16_t size){
    uint16_t dataCrc = 0x0000;
+   uint16_t offset;
 
-   //HACK, need to actually check this
+   //csum = crc16_table[((csum >> 8) ^ *data) & 0xff] ^ (csum << 8);
+   for(offset = 0; offset < size; offset++)
+      dataCrc = sdCardCrc16Table[(dataCrc >> 8 ^ data[offset]) & 0xFF] ^ dataCrc << 8;
 
-   if(dataCrc != crc)
-      return false;
-#endif
-
-   return true;
+   return dataCrc;
 }
 
 #include "sdCardAccessors.c.h"
@@ -204,7 +186,7 @@ bool sdCardExchangeBit(bool bit){
 
             if(!palmSdCard.inIdleState || doInIdleState){
                //run command
-               if(palmSdCard.allowInvalidCrc || sdCardCmdIsCrcValid(command, argument, crc)){
+               if(palmSdCard.allowInvalidCrc || sdCardCmdIsCrc7Valid(command, argument, crc)){
                   if(!palmSdCard.commandIsAcmd){
                      //normal command
                      switch(command){
@@ -225,16 +207,26 @@ bool sdCardExchangeBit(bool bit){
                            sdCardDoResponseR3R7(palmSdCard.inIdleState, sdCardGetOcr());
                            break;
 
-                        case SEND_CSD:
-                           sdCardDoResponseR1(palmSdCard.inIdleState);
-                           sdCardDoResponseDelay(1);
-                           sdCardDoResponseDataPacket(DATA_TOKEN_DEFAULT, sdCardCsd, sizeof(sdCardCsd));
+                        case SEND_CSD:{
+                              uint8_t csd[16];
+
+                              sdCardGetCsd(csd);
+                              sdCardDoResponseR1(palmSdCard.inIdleState);
+                              sdCardDoResponseDelay(1);
+                              sdCardDoResponseDataPacket(DATA_TOKEN_DEFAULT, csd, 16);
+                           }
                            break;
 
-                        case SEND_CID:
-                           sdCardDoResponseR1(palmSdCard.inIdleState);
-                           sdCardDoResponseDelay(1);
-                           sdCardDoResponseDataPacket(DATA_TOKEN_DEFAULT, sdCardCid, sizeof(sdCardCid));
+                        case SEND_CID:{
+                              uint8_t cid[16];
+
+                              sdCardGetCsd(cid);
+                              if(!palmSdCard.allowInvalidCrc)
+                                 cid[15] = sdCardCrc7(cid, 15);
+                              sdCardDoResponseR1(palmSdCard.inIdleState);
+                              sdCardDoResponseDelay(1);
+                              sdCardDoResponseDataPacket(DATA_TOKEN_DEFAULT, cid, 16);
+                           }
                            break;
 
                         case SEND_STATUS:
@@ -328,10 +320,19 @@ bool sdCardExchangeBit(bool bit){
                            sdCardDoResponseR1(palmSdCard.inIdleState);
                            break;
 
-                        case SEND_SCR:
+                        case SEND_SCR:{
+                              uint8_t scr[8];
+
+                              sdCardGetScr(scr);
+                              sdCardDoResponseR1(palmSdCard.inIdleState);
+                              sdCardDoResponseDelay(1);
+                              sdCardDoResponseDataPacket(DATA_TOKEN_DEFAULT, scr, 8);
+                           }
+                           break;
+
+                        case SET_WR_BLOCK_ERASE_COUNT:
                            sdCardDoResponseR1(palmSdCard.inIdleState);
-                           sdCardDoResponseDelay(1);
-                           sdCardDoResponseDataPacket(DATA_TOKEN_DEFAULT, sdCardScr, sizeof(sdCardScr));
+                           //HACK, this command isnt actually supported yet, called when formmating the SD card
                            break;
 
                         default:
@@ -365,7 +366,7 @@ bool sdCardExchangeBit(bool bit){
             case WRITE_MULTIPLE_BLOCK:
                if(palmSdCard.runningCommandVars[2] >= SD_CARD_BLOCK_DATA_PACKET_SIZE * 8){
                   //packet finished, verify and write block to chip
-                  if(palmSdCard.allowInvalidCrc || sdCardVerifyCrc16(palmSdCard.runningCommandPacket + 1, SD_CARD_BLOCK_SIZE, palmSdCard.runningCommandPacket[SD_CARD_BLOCK_DATA_PACKET_SIZE - 2] << 8 | palmSdCard.runningCommandPacket[SD_CARD_BLOCK_DATA_PACKET_SIZE - 1])){
+                  if(palmSdCard.allowInvalidCrc || sdCardCrc16(palmSdCard.runningCommandPacket + 1, SD_CARD_BLOCK_SIZE) == (palmSdCard.runningCommandPacket[SD_CARD_BLOCK_DATA_PACKET_SIZE - 2] << 8 | palmSdCard.runningCommandPacket[SD_CARD_BLOCK_DATA_PACKET_SIZE - 1])){
                      //HACK, also need to check if block is write protected, not just the card as a whole
                      if(!palmSdCard.writeProtectSwitch){
                         memcpy(palmSdCard.flashChip.data + palmSdCard.runningCommandVars[0] * SD_CARD_BLOCK_SIZE, palmSdCard.runningCommandPacket + 1, SD_CARD_BLOCK_SIZE);
