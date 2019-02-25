@@ -20,6 +20,7 @@
 #define SEND_WRITE_PROT      30/*if the card has write protection features this command asks the card to send the status of the write protection bits*/
 #define APP_CMD              55/*next command is ACMD<n> command*/
 #define READ_OCR             58/*read OCR(Operation Condtion Register)*/
+#define CRC_ON_OFF           59/*turns the CRC option on or off, a 1 in the CRC option bit will turn the option on, a 0 will turn it off*/
 
 /*Application Commands*/
 #define SET_WR_BLOCK_ERASE_COUNT 23/*only for SDC, defines number of blocks to pre-erase with next multi-block write command*/

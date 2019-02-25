@@ -80,7 +80,7 @@ static void sdCardDoResponseDataPacket(uint8_t token, uint8_t* data, uint16_t si
 
 static void sdCardDoResponseDataResponse(uint8_t response){
    sdCardResponseFifoWriteByte(response);
-   sdCardDoResponseBusy(3);
+   sdCardDoResponseBusy(1);
 }
 
 static void sdCardDoResponseErrorToken(uint8_t token){
