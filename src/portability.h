@@ -5,9 +5,9 @@
 #include <stdbool.h>
 
 //endian
-static inline void swap16BufferIfLittle(uint8_t* buffer, uint64_t count){
+static inline void swap16BufferIfLittle(uint8_t* buffer, uint32_t count){
 #if !defined(EMU_BIG_ENDIAN)
-   uint64_t index;
+   uint32_t index;
    //count specifys the number of uint16_t's that need to be swapped, the uint8_t* is because of alignment restrictions that crash on some platforms
    count *= sizeof(uint16_t);
    for(index = 0; index < count; index += 2){

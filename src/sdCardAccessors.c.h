@@ -96,7 +96,7 @@ static void sdCardGetCsd(uint8_t* csd){
    memcpy(csd, sdCardCsd, 16);
 
    //set device size field(in multiples of 256k right now, the multiplier size also scales based on chip size), needed to get size
-   deviceSize = palmSdCard.flashChip.size / SD_CARD_BLOCK_SIZE / SD_CARD_BLOCK_SIZE;//to calculate the card capacity excluding security area ((device size + 1) * device size multiplier * max read data block length) bytes
+   deviceSize = palmSdCard.flashChip.size / SD_CARD_BLOCK_SIZE / 512;//to calculate the card capacity excluding security area ((device size + 1) * device size multiplier * max read data block length) bytes
    csd[6] = csd[6] & 0xFC | deviceSize >> 10 & 0x03;
    csd[7] = deviceSize >> 2 & 0xFF;
    csd[8] = csd[8] & 0x3F | deviceSize << 6 & 0xC0;

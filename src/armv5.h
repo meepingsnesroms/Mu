@@ -7,7 +7,7 @@
 extern bool armv5ServiceRequest;
 
 void armv5Reset(void);
-uint64_t armv5StateSize(void);
+uint32_t armv5StateSize(void);
 void armv5SaveState(uint8_t* data);
 void armv5LoadState(uint8_t* data);
 

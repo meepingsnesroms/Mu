@@ -220,7 +220,7 @@ bool sdCardExchangeBit(bool bit){
                         case SEND_CID:{
                               uint8_t cid[16];
 
-                              sdCardGetCsd(cid);
+                              sdCardGetCid(cid);
                               if(!palmSdCard.allowInvalidCrc)
                                  cid[15] = sdCardCrc7(cid, 15);
                               sdCardDoResponseR1(palmSdCard.inIdleState);
