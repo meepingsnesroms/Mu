@@ -1229,7 +1229,7 @@
 // Palm OS 4.0 Traps
 // ======================================================================
 
-#define HighDensityDispatch                        0xA3EC
+#define HighDensityDispatch                       0xA3EC
 #define SysReserved40Trap2                        0xA3ED
 #define SysReserved40Trap3                        0xA3EE
 #define SysReserved40Trap4                        0xA3EF
@@ -1238,45 +1238,45 @@
 #define CncMgrDispatch                            0xA3F0
 
 // new trap for notify from interrupt, implemented in SysEvtMgr.c
-#define SysNotifyBroadcastFromInterrupt            0xA3F1
+#define SysNotifyBroadcastFromInterrupt           0xA3F1
 
 // new trap for waking the UI without generating a null event
-#define EvtWakeupWithoutNilEvent                    0xA3F2
+#define EvtWakeupWithoutNilEvent                  0xA3F2
 
 // new trap for doing stable, fast, 7-bit string compare
-#define StrCompareAscii                            0xA3F3
+#define StrCompareAscii                           0xA3F3
 
 // New trap for accessors available thru PalmOS glue
-#define AccessorDispatch                            0xA3F4
+#define AccessorDispatch                          0xA3F4
 
-#define BltGetPixel                                0xA3F5
-#define BltPaintPixel                            0xA3F6
+#define BltGetPixel                               0xA3F5
+#define BltPaintPixel                             0xA3F6
 
 #define ScrScreenInit                            0xA3F7
 #define ScrUpdateScreenBitmap                    0xA3F8
-#define ScrPalette                                0xA3F9
-#define ScrGetColortable                            0xA3FA
+#define ScrPalette                               0xA3F9
+#define ScrGetColortable                         0xA3FA
 #define ScrGetGrayPat                            0xA3FB
 #define ScrScreenLock                            0xA3FC
-#define ScrScreenUnlock                            0xA3FD
+#define ScrScreenUnlock                          0xA3FD
 
 #define FntPrvGetFontList                        0xA3FE
 
 // Exchange manager functions
-#define ExgRegisterDatatype                        0xA3FF
-#define ExgNotifyReceive                            0xA400
+#define ExgRegisterDatatype                      0xA3FF
+#define ExgNotifyReceive                         0xA400
 #define ExgNotifyGoto                            0xA401
-#define ExgRequest                                0xA402
-#define ExgSetDefaultApplication                    0xA403
-#define ExgGetDefaultApplication                    0xA404
-#define ExgGetTargetApplication                    0xA405
-#define ExgGetRegisteredApplications                0xA406
+#define ExgRequest                               0xA402
+#define ExgSetDefaultApplication                 0xA403
+#define ExgGetDefaultApplication                 0xA404
+#define ExgGetTargetApplication                  0xA405
+#define ExgGetRegisteredApplications             0xA406
 #define ExgGetRegisteredTypes                    0xA407
-#define ExgNotifyPreview                            0xA408
-#define ExgControl                                0xA409
+#define ExgNotifyPreview                         0xA408
+#define ExgControl                               0xA409
 
 // 04/30/00    CS - New Locale Manager handles access to region-specific info like date formats
-#define LmDispatch                                0xA40A
+#define LmDispatch                               0xA40A
 
 // 05/10/00 kwk - New Memory Manager trap for retrieving ROM NVParam values (sys use only)
 #define MemGetRomNVParams                        0xA40B
@@ -1288,16 +1288,16 @@
 #define DmFindDatabaseWithTypeCreator            0xA40D
 
 // New Trap selectors added for time zone picker API
-#define SelectTimeZone                            0xA40E
-#define TimeZoneToAscii                            0xA40F
+#define SelectTimeZone                           0xA40E
+#define TimeZoneToAscii                          0xA40F
 
 // 08/18/00 kwk - trap for doing stable, fast, 7-bit string compare.
 // 08/21/00 kwk - moved here in place of SelectDaylightSavingAdjustment.
-#define StrNCompareAscii                            0xA410
+#define StrNCompareAscii                         0xA410
 
 // New Trap selectors added for time zone conversion API
-#define TimTimeZoneToUTC                            0xA411
-#define TimUTCToTimeZone                            0xA412
+#define TimTimeZoneToUTC                         0xA411
+#define TimUTCToTimeZone                         0xA412
 
 // New trap implemented in PhoneLookup.c
 #define PhoneNumberLookupCustom                    0xA413

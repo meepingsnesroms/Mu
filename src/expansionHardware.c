@@ -79,14 +79,14 @@ void expansionHardwareRenderDisplay(void){
    else{
       //advanced render
       if(palmFramebufferWidth <= 480 && palmFramebufferHeight <= 480){
-         //uint8_t sed1376SizeMultiple = palmFramebufferWidth / 160;
          uint16_t* lcdData = palmRam + (expansionHardwareLcdPointer & chips[CHIP_DX_RAM].mask);
 
          //copy over framebuffer
          memcpy(palmFramebuffer, lcdData, palmFramebufferWidth * palmFramebufferHeight * sizeof(uint16_t));
 
-         //render SED1376 buffer on top of it
-         //DRIVER NEEDS TO BE WRITTEN STILL
+         //add silkscreen if needed
+         if(palmFramebufferWidth == 320 && palmFramebufferHeight == 440)
+            memcpy(palmFramebuffer + 320 * 320, silkscreen320x120, 320 * 120 * sizeof(uint16_t));
       }
    }
 }
