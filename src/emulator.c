@@ -96,11 +96,8 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t enab
    memset(&palmMisc, 0x00, sizeof(palmMisc));
    memset(&palmSdCard, 0x00, sizeof(palmSdCard));
    memset(&palmEmuFeatures, 0x00, sizeof(palmEmuFeatures));
-   palmFramebufferWidth = 160;
-   palmFramebufferHeight = 220;
    palmMisc.batteryLevel = 100;
    palmCycleCounter = 0.0;
-   palmClockMultiplier = 1.00 - EMU_CPU_PERCENT_WAITING;
    palmEmuFeatures.info = enabledEmuFeatures;
 
    //initialize components
@@ -109,12 +106,7 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t enab
    sandboxInit(); 
 
    //reset everything
-   sed1376Reset();
-   ads7846Reset();
-   pdiUsbD12Reset();
-   sdCardReset();
-   expansionHardwareReset();
-   flx68000Reset();
+   emulatorSoftReset();
    setRtc(0, 0, 0, 0);//RTCTIME and DAYR are not cleared by reset, clear them manually in case the frontend doesnt set the RTC
 
    emulatorInitialized = true;
@@ -138,16 +130,7 @@ void emulatorExit(void){
 void emulatorHardReset(void){
    //equivalent to taking the battery out and putting it back in
    memset(palmRam, 0x00, palmEmuFeatures.info & FEATURE_RAM_HUGE ? SUPERMASSIVE_RAM_SIZE : RAM_SIZE);
-   palmFramebufferWidth = 160;
-   palmFramebufferHeight = 220;
-   palmEmuFeatures.value = 0x00000000;
-   palmClockMultiplier = 1.00 - EMU_CPU_PERCENT_WAITING;
-   sed1376Reset();
-   ads7846Reset();
-   pdiUsbD12Reset();
-   sdCardReset();
-   expansionHardwareReset();
-   flx68000Reset();
+   emulatorSoftReset();
    setRtc(0, 0, 0, 0);
 }
 
