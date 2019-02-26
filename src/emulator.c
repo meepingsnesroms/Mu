@@ -94,6 +94,7 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t enab
    memset(palmAudio, 0x00, AUDIO_SAMPLES_PER_FRAME * 2/*channels*/ * sizeof(int16_t));
    memset(&palmInput, 0x00, sizeof(palmInput));
    memset(&palmMisc, 0x00, sizeof(palmMisc));
+   memset(&palmSdCard, 0x00, sizeof(palmSdCard));
    memset(&palmEmuFeatures, 0x00, sizeof(palmEmuFeatures));
    palmFramebufferWidth = 160;
    palmFramebufferHeight = 220;
@@ -657,16 +658,12 @@ uint32_t emulatorInsertSdCard(buffer_t image, bool writeProtectSwitch){
    if(palmSdCard.flashChip.data)
       return EMU_ERROR_RESOURCE_LOCKED;
 
-   //no 0 sized chips
-   if(image.size == 0x00000000)
-      return EMU_ERROR_INVALID_PARAMETER;
-
-   //max out at 2gb SD card, Palms cant handle higher than that anyway because of incompatibility with FAT32 and SDHC
-   if(image.size > 0x20000000)
+   //no 0 sized chips, max out at 2gb SD card, Palms cant handle higher than that anyway because of incompatibility with FAT32 and SDHC
+   if(image.size == 0x00000000 || image.size > 0x20000000)
       return EMU_ERROR_INVALID_PARAMETER;
 
    //round up to nearest mb, prevents issues with buffer size and too small SD cards
-   palmSdCard.flashChip.size = image.size & 0xFF100000 + (image.size & 0x000FFFFF ? 0x00100000 : 0x00000000);
+   palmSdCard.flashChip.size = (image.size & 0xFFF00000) + (image.size & 0x000FFFFF ? 0x00100000 : 0x00000000);
    palmSdCard.flashChip.data = malloc(palmSdCard.flashChip.size);
    if(!palmSdCard.flashChip.data)
       return EMU_ERROR_OUT_OF_MEMORY;
