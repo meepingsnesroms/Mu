@@ -6,45 +6,23 @@
 #include "specs/emuFeatureRegisterSpec.h"
 
 
-static Boolean loadTungstenWDrivers(void){
-   /*check that all driver files are installed and launch drivers boot entrypoints*/
-   if(!getGlobalVar(TUNGSTEN_W_DRIVERS_INSTALLED)){
-      
-      /*TODO*/
-      
-      /*success*/
-      setGlobalVar(TUNGSTEN_W_DRIVERS_INSTALLED, true);
-      return true;
-   }
-   
-   /*already installed*/
-   return true;
-}
-
-static void unloadTungstenWDrivers(void){
-   /*put back old window trap list*/
-   if(getGlobalVar(TUNGSTEN_W_DRIVERS_INSTALLED)){
-      
-      /*TODO*/
-      
-      setGlobalVar(TUNGSTEN_W_DRIVERS_INSTALLED, false);
-   }
-}
-
 static Boolean setTungstenWDriverFramebuffer(uint16_t width, uint16_t height){
    if(getGlobalVar(TUNGSTEN_W_DRIVERS_INSTALLED)){
-      BitmapType* newBitmap;
+      BitmapTypeV3* newBitmap;
       WindowType* driverWindow;
       Err error;
       
       driverWindow = WinGetWindowPointer(WinGetDisplayWindow());
       
-      newBitmap = BmpCreate(width, height, 16, NULL, &error);
+      newBitmap = BmpCreateBitmapV3(BmpCreate(width, height, 16, NULL, &error), kDensityDouble, NULL/*bitsP*/, NULL/*colorTableP*/);
       if(error != errNone)
          return false;
       
-      /*clean up old framebuffer and set new one*/
-      MemPtrFree(driverWindow->bitmapP);
+      /*clean up old framebuffer if its not the original one and set new one*/
+      driverWindow->bitmapP.flags.forScreen = false;
+      BmpDelete(driverWindow->bitmapP);
+      
+      newBitmap->flags.forScreen = true;
       driverWindow->bitmapP = newBitmap;
       
       /*tell the emu where the framebuffer is*/
@@ -59,23 +37,70 @@ static Boolean setTungstenWDriverFramebuffer(uint16_t width, uint16_t height){
    return false;
 }
 
+Boolean installTungstenWLcdDrivers(void){
+   /*check that all driver files are installed and launch drivers boot entrypoints*/
+   if(!getGlobalVar(TUNGSTEN_W_DRIVERS_INSTALLED)){
+#if 0
+      Err error;
+      uint16_t unused1;
+      LocalID unused2;
+      DmOpenRef hiResBlitter;
+      MemHandle hiResBlitterBoot0000Handle;
+      void (*installHiResBlitter)(void);
+      
+      /*HighDensityFonts.prc, font pack, only need to check if present*/
+      /*PRC ID:data hidd*/
+      /*Resource ID:nfnt????*/
+      error = DmGetNextDatabaseByTypeCreator(true, DmSearchStatePtr stateInfoP, 'data', 'hidd', false, &unused1, &unused2);
+      if(error != errNone)
+         return false;/*file does not exist*/
+      
+      /*HighDensityDisplay.prc, HAL addon,, may be loaded by Hi Res Blitter.prc*/
+      /*PRC ID:extn hidd*/
+      /*Resource ID:????????*/
+      error = DmGetNextDatabaseByTypeCreator(true, DmSearchStatePtr stateInfoP, 'extn', 'hidd', false, &unused1, &unused2);
+      if(error != errNone)
+         return false;/*file does not exist*/
+      
+      /*Hi Res Blitter.prc, driver, need to jump to boot0000*/
+      /*PRC ID:bhal hire*/
+      /*Resource ID:boot0000*/
+      hiResBlitter = DmOpenDatabaseByTypeCreator('bhal', 'hire', dmModeReadOnly);
+      if(!hiResBlitter)
+         return false;
+      
+      hiResBlitterBoot0000Handle = DmGetResource('boot', 0x0000);
+      if(!hiResBlitterBoot0000Handle)
+         return false;
+      installHiResBlitter = (void(*)(void))MemHandleLock(hiResBlitterBoot0000Handle);
+      
+      /*backup original LCD window for SED1376*/
+      setGlobalVar(ORIGINAL_FRAMEBUFFER, (uint32_t)WinGetBitmap(WinGetDisplayWindow()));
+      
+      /*run Hi Res Blitter.prc boot0000*/
+      installHiResBlitter();
+      
+      /*close everything*/
+      MemHandleUnlock(hiResBlitterBoot0000Handle);
+      DmCloseDatabase(hiResBlitter);
+#endif
+      
+      /*success*/
+      setGlobalVar(TUNGSTEN_W_DRIVERS_INSTALLED, true);
+      return true;
+   }
+   
+   /*already installed*/
+   return true;
+}
+
 Boolean setDeviceResolution(uint16_t width, uint16_t height){
    uint32_t oldResolution = getGlobalVar(CURRENT_RESOLUTION);
    uint32_t newResolution = (uint32_t)width << 16 | height;
    
    if(newResolution != oldResolution){
-      if(width == 160 && height == 220){
-         unloadTungstenWDrivers();
-         /*need to free old window and set original framebuffer back*/
-         /*TODO, theres no going back for now*/
-         SysFatalAlert("Cant reverse driver setting!");
-         while(true);
-      }
-      else{
-         loadTungstenWDrivers();
-         /*all traps have been swaped out, data from the old ones may be invalid now*/
-         setTungstenWDriverFramebuffer(width, height);
-      }
+      if(!setTungstenWDriverFramebuffer(width, height))
+         return false;
       
       setGlobalVar(CURRENT_RESOLUTION, newResolution);
    }
@@ -84,8 +109,7 @@ Boolean setDeviceResolution(uint16_t width, uint16_t height){
 }
 
 void screenSignalApplicationStart(void){
-   /*backup original variables*/
-   setGlobalVar(ORIGINAL_FRAMEBUFFER, (uint32_t)WinGetBitmap(WinGetDisplayWindow()));
+   /*nothing for now*/
 }
 
 void screenSignalApplicationExit(void){
