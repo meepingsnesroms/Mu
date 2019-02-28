@@ -43,9 +43,7 @@ Boolean installTungstenWLcdDrivers(void){
    if(!getGlobalVar(TUNGSTEN_W_DRIVERS_INSTALLED)){
 #if 1
       Err error;
-      uint16_t unused1;
-      LocalID unused2;
-      DmSearchStateType unused3;
+      LocalID database;
       DmOpenRef highDensityDisplay;
       MemHandle highDensityDisplayInitHandle;
       void (*installHighDensityDisplay)(void);
@@ -57,20 +55,36 @@ Boolean installTungstenWLcdDrivers(void){
       /*HighDensityFonts.prc, font pack, only need to check if present*/
       /*PRC ID:data hidd*/
       /*Resource ID:nfnt????*/
-      error = DmGetNextDatabaseByTypeCreator(true, &unused3, 'data', 'hidd', false, &unused1, &unused2);
-      if(error != errNone)
-         return false;/*file does not exist*/
+      database = DmFindDatabase(0, "High Density Fonts");
+      if(!database){
+         /*file does not exist*/
+         debugLog("HighDensityFonts.prc not installed!\n");
+         return false;
+      }
       
       /*HighDensityDisplay.prc, HAL addon, need to jump to exte0000/0x00000010*/
       /*PRC ID:extn hidd*/
       /*Resource ID:????????*/
-      error = DmGetNextDatabaseByTypeCreator(true,  &unused3, 'extn', 'hidd', false, &unused1, &unused2);
-      if(error != errNone)
-         return false;/*file does not exist*/
+      database = DmFindDatabase(0, "High Density Display");
+      if(!database){
+         /*file does not exist*/
+         debugLog("HighDensityDisplay.prc not installed!\n");
+         return false;
+      }
+      
+      highDensityDisplay = DmOpenDatabase(0, database, dmModeReadOnly);
+      if(!highDensityDisplay){
+         /*cant open file*/
+         debugLog("Cant open HighDensityDisplay.prc!\n");
+         return false;
+      }
       
       highDensityDisplayInitHandle = DmGetResource('exte', 0x0000);
-      if(!highDensityDisplayInitHandle)
+      if(!highDensityDisplayInitHandle){
+         /*cant open file resource*/
+         debugLog("Cant open HighDensityDisplay.prc exte0000!\n");
          return false;
+      }
       installHighDensityDisplay = (void(*)(void))((uint32_t)MemHandleLock(highDensityDisplayInitHandle) + 0x00000010);
       
       /*backup original LCD window for SED1376*/
@@ -79,8 +93,8 @@ Boolean installTungstenWLcdDrivers(void){
       /*may need to patch HwrDisplayAttributes before running so driver will install*/
       
       /*run HighDensityDisplay.prc exte0000, 0x00000010*/
+      debugLog("Attempting Tungsten W driver install!\n");
       installHighDensityDisplay();
-      
       debugLog("Tungsten W drivers installed!\n");
       
       /*close everything*/
@@ -93,6 +107,8 @@ Boolean installTungstenWLcdDrivers(void){
       return true;
    }
    
+   debugLog("Tungsten W drivers already installed!\n");
+   
    /*already installed*/
    return true;
 }
@@ -100,6 +116,8 @@ Boolean installTungstenWLcdDrivers(void){
 Boolean setDeviceResolution(uint16_t width, uint16_t height){
    uint32_t oldResolution = getGlobalVar(CURRENT_RESOLUTION);
    uint32_t newResolution = (uint32_t)width << 16 | height;
+   
+   debugLog("Setting custom FB size w:%d, h:%d\n", width, height);
    
    if(newResolution != oldResolution){
       if(!setTungstenWDriverFramebuffer(width, height))
