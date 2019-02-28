@@ -46,9 +46,13 @@ Boolean installTungstenWLcdDrivers(void){
       uint16_t unused1;
       LocalID unused2;
       DmSearchStateType unused3;
-      DmOpenRef hiResBlitter;
-      MemHandle hiResBlitterBoot0000Handle;
-      void (*installHiResBlitter)(void);
+      DmOpenRef highDensityDisplay;
+      MemHandle highDensityDisplayInitHandle;
+      void (*installHighDensityDisplay)(void);
+      
+      /*Hi Res Blitter.prc, this is the Tungsten W GPU driver, this will crash the device so dont install it*/
+      /*PRC ID:bhal hire*/
+      /*Resource ID:boot0000*/
       
       /*HighDensityFonts.prc, font pack, only need to check if present*/
       /*PRC ID:data hidd*/
@@ -57,36 +61,31 @@ Boolean installTungstenWLcdDrivers(void){
       if(error != errNone)
          return false;/*file does not exist*/
       
-      /*HighDensityDisplay.prc, HAL addon, may need to jump to exte0000/0x00000010, may be loaded by Hi Res Blitter.prc*/
+      /*HighDensityDisplay.prc, HAL addon, need to jump to exte0000/0x00000010*/
       /*PRC ID:extn hidd*/
       /*Resource ID:????????*/
       error = DmGetNextDatabaseByTypeCreator(true,  &unused3, 'extn', 'hidd', false, &unused1, &unused2);
       if(error != errNone)
          return false;/*file does not exist*/
       
-      /*Hi Res Blitter.prc, driver, need to jump to boot0000*/
-      /*PRC ID:bhal hire*/
-      /*Resource ID:boot0000*/
-      hiResBlitter = DmOpenDatabaseByTypeCreator('bhal', 'hire', dmModeReadOnly);
-      if(!hiResBlitter)
+      highDensityDisplayInitHandle = DmGetResource('exte', 0x0000);
+      if(!highDensityDisplayInitHandle)
          return false;
-      
-      hiResBlitterBoot0000Handle = DmGetResource('boot', 0x0000);
-      if(!hiResBlitterBoot0000Handle)
-         return false;
-      installHiResBlitter = (void(*)(void))MemHandleLock(hiResBlitterBoot0000Handle);
+      installHighDensityDisplay = (void(*)(void))((uint32_t)MemHandleLock(highDensityDisplayInitHandle) + 0x00000010);
       
       /*backup original LCD window for SED1376*/
       setGlobalVar(ORIGINAL_FRAMEBUFFER, (uint32_t)WinGetBitmap(WinGetDisplayWindow()));
       
-      /*run Hi Res Blitter.prc boot0000*/
-      installHiResBlitter();
+      /*may need to patch HwrDisplayAttributes before running so driver will install*/
+      
+      /*run HighDensityDisplay.prc exte0000, 0x00000010*/
+      installHighDensityDisplay();
       
       debugLog("Tungsten W drivers installed!\n");
       
       /*close everything*/
-      MemHandleUnlock(hiResBlitterBoot0000Handle);
-      DmCloseDatabase(hiResBlitter);
+      MemHandleUnlock(highDensityDisplayInitHandle);
+      DmCloseDatabase(highDensityDisplay);
 #endif
       
       /*success*/
