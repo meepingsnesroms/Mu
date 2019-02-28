@@ -150,7 +150,7 @@ bool sdCardExchangeBit(bool bit){
             bool commandWantsData = false;
             bool doInIdleState = false;
 
-            debugLog("SD command: isAcmd:%d, cmd:%d, arg:0x%08X, CRC:0x%02X\n", palmSdCard.commandIsAcmd, command, argument, crc);
+            //debugLog("SD command: isAcmd:%d, cmd:%d, arg:0x%08X, CRC:0x%02X\n", palmSdCard.commandIsAcmd, command, argument, crc);
 
             //in idle state, the card accepts only CMD0, CMD1, ACMD41, CMD58 and CMD59, any other commands will be rejected
             if(palmSdCard.inIdleState){

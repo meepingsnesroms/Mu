@@ -12,8 +12,8 @@ static void setConfigDefaults(uint32_t* configFile){
    
    configFile[USER_WARNING_GIVEN] = false;
    configFile[ARM_STACK_SIZE] = 0x4000;
-   configFile[LCD_WIDTH] = 160;
-   configFile[LCD_HEIGHT] = 220;
+   configFile[LCD_WIDTH] = 320;/*160*/
+   configFile[LCD_HEIGHT] = 440;/*220*/
    configFile[BOOT_CPU_SPEED] = 100;
    configFile[EXTRA_RAM_MB_DYNAMIC_HEAP] = 10;
 }

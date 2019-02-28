@@ -4,6 +4,7 @@
 #include "config.h"
 #include "traps.h"
 #include "armv5.h"
+#include "hires.h"
 #include "globals.h"
 #include "memalign.h"
 #include "palmGlobalDefines.h"
@@ -52,6 +53,11 @@ static void installPceNativeCallHandler(uint32_t armStackSize){
    armStackStart = memalign_alloc(sizeof(uint32_t), armStackSize);
    armv5SetStack(armStackStart, armStackSize);
    setGlobalVar(ARM_STACK_START, (uint32_t)armStackStart);
+}
+
+static void installDebugHandlers(void){
+   /*patch all the debug handlers to go to the emu debug console*/
+   SysSetTrapAddress(sysTrapErrDisplayFileLineMsg, (void*)emuErrDisplayFileLineMsg);
 }
 
 static void setProperDeviceId(uint16_t screenWidth, uint16_t screenHeight, Boolean hasArmCpu, Boolean hasDpad){
@@ -168,14 +174,20 @@ void initBoot(uint32_t* configFile){
       debugLog("Storage free:check failed, Storage biggest block:check failed\n");
    
    if(configFile[USER_WARNING_GIVEN]){
-      Boolean wantCfw = false;
       uint32_t enabledFeatures = readArbitraryMemory32(EMU_REG_ADDR(EMU_INFO));
+      
+      if(enabledFeatures & FEATURE_DEBUG)
+         installDebugHandlers();
       
       if(enabledFeatures & FEATURE_RAM_HUGE)
          install128mbRam(configFile[EXTRA_RAM_MB_DYNAMIC_HEAP]);
       
       if(enabledFeatures & FEATURE_HYBRID_CPU)
          installPceNativeCallHandler(configFile[ARM_STACK_SIZE]);
+      
+      if(enabledFeatures & FEATURE_CUSTOM_FB)
+         if(installTungstenWLcdDrivers())
+            setDeviceResolution(configFile[LCD_WIDTH], configFile[LCD_HEIGHT]);
       
       setProperDeviceId(configFile[LCD_WIDTH], configFile[LCD_HEIGHT], !!(enabledFeatures & FEATURE_HYBRID_CPU), !!(enabledFeatures & FEATURE_EXT_KEYS));
       

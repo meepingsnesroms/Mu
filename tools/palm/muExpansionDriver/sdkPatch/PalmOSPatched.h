@@ -38,17 +38,26 @@
 #define ALLOW_ACCESS_TO_INTERNALS_OF_FONTS
 #define ALLOW_ACCESS_TO_INTERNALS_OF_WINDOWS
 
+// Include basic types
 #include <PalmTypes.h>
+
+// Include the trap table
+#include <CoreTraps.h>
+#include "CoreTrapsPatch.h"
+
+// New SDK pieces
+#include "Bitmap.h"
+#include "Window.h"
+#include "PceNativeCall.h"
+#include "ByteOrderUtils.h"
+#include "PalmChars.h"
+#include "PenInputMgr.h"
+
+// Include all the OS 4 haeders
 #include <SystemPublic.h>
 #include <UIPublic.h>
 
 // Include changed or missing pieces of the SDK that arnt in the one of the new files
 #include "MissingFunctions.h"
-
-#include "CoreTrapsPatch.h"
-#include "PceNativeCall.h"
-#include "ByteOrderUtils.h"
-#include "PalmChars.h"
-#include "PenInputMgr.h"
 
 #endif // __PALMOS_H__

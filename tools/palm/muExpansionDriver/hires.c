@@ -1,6 +1,7 @@
 #include "sdkPatch/PalmOSPatched.h"
 #include <stdint.h>
 
+#include "debug.h"
 #include "globals.h"
 #include "palmGlobalDefines.h"
 #include "specs/emuFeatureRegisterSpec.h"
@@ -19,7 +20,7 @@ static Boolean setTungstenWDriverFramebuffer(uint16_t width, uint16_t height){
          return false;
       
       /*clean up old framebuffer if its not the original one and set new one*/
-      driverWindow->bitmapP.flags.forScreen = false;
+      driverWindow->bitmapP->flags.forScreen = false;
       BmpDelete(driverWindow->bitmapP);
       
       newBitmap->flags.forScreen = true;
@@ -40,10 +41,11 @@ static Boolean setTungstenWDriverFramebuffer(uint16_t width, uint16_t height){
 Boolean installTungstenWLcdDrivers(void){
    /*check that all driver files are installed and launch drivers boot entrypoints*/
    if(!getGlobalVar(TUNGSTEN_W_DRIVERS_INSTALLED)){
-#if 0
+#if 1
       Err error;
       uint16_t unused1;
       LocalID unused2;
+      DmSearchStateType unused3;
       DmOpenRef hiResBlitter;
       MemHandle hiResBlitterBoot0000Handle;
       void (*installHiResBlitter)(void);
@@ -51,14 +53,14 @@ Boolean installTungstenWLcdDrivers(void){
       /*HighDensityFonts.prc, font pack, only need to check if present*/
       /*PRC ID:data hidd*/
       /*Resource ID:nfnt????*/
-      error = DmGetNextDatabaseByTypeCreator(true, DmSearchStatePtr stateInfoP, 'data', 'hidd', false, &unused1, &unused2);
+      error = DmGetNextDatabaseByTypeCreator(true, &unused3, 'data', 'hidd', false, &unused1, &unused2);
       if(error != errNone)
          return false;/*file does not exist*/
       
-      /*HighDensityDisplay.prc, HAL addon,, may be loaded by Hi Res Blitter.prc*/
+      /*HighDensityDisplay.prc, HAL addon, may need to jump to exte0000/0x00000010, may be loaded by Hi Res Blitter.prc*/
       /*PRC ID:extn hidd*/
       /*Resource ID:????????*/
-      error = DmGetNextDatabaseByTypeCreator(true, DmSearchStatePtr stateInfoP, 'extn', 'hidd', false, &unused1, &unused2);
+      error = DmGetNextDatabaseByTypeCreator(true,  &unused3, 'extn', 'hidd', false, &unused1, &unused2);
       if(error != errNone)
          return false;/*file does not exist*/
       
@@ -79,6 +81,8 @@ Boolean installTungstenWLcdDrivers(void){
       
       /*run Hi Res Blitter.prc boot0000*/
       installHiResBlitter();
+      
+      debugLog("Tungsten W drivers installed!\n");
       
       /*close everything*/
       MemHandleUnlock(hiResBlitterBoot0000Handle);
