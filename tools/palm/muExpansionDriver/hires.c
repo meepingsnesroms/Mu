@@ -55,7 +55,7 @@ Boolean installTungstenWLcdDrivers(void){
       /*HighDensityFonts.prc, font pack, only need to check if present*/
       /*PRC ID:data hidd*/
       /*Resource ID:nfnt????*/
-      database = DmFindDatabase(0, "High Density Fonts");
+      database = DmFindDatabase(0, "HighDensityFonts");
       if(!database){
          /*file does not exist*/
          debugLog("HighDensityFonts.prc not installed!\n");
@@ -65,7 +65,7 @@ Boolean installTungstenWLcdDrivers(void){
       /*HighDensityDisplay.prc, HAL addon, need to jump to exte0000/0x00000010*/
       /*PRC ID:extn hidd*/
       /*Resource ID:????????*/
-      database = DmFindDatabase(0, "High Density Display");
+      database = DmFindDatabase(0, "HighDensityDisplay");
       if(!database){
          /*file does not exist*/
          debugLog("HighDensityDisplay.prc not installed!\n");

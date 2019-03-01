@@ -91,3 +91,7 @@ UInt32 emuKeyCurrentState(void){
 void emuErrDisplayFileLineMsg(const Char* const filename, UInt16 lineNo, const Char* const msg){
    debugLog("Error at:%s, Line:%d, Msg:%s\n", filename, lineNo, msg);
 }
+
+UInt32 emuHwrDisplayAttributes(UInt16 unknown1, UInt16 unknown2, UInt16 unknown3){
+   
+}

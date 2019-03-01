@@ -39,6 +39,7 @@ enum{
    CHIP_A0_ROM = 0,
    CHIP_A1_USB,
    CHIP_B0_SED,
+   CHIP_B1_NIL,
    //CHIP_CX_RAM, //CSC* is owned by CSD during normal operation
    CHIP_DX_RAM,
    CHIP_00_EMU, //used for EMUCS on hardware, used by the emu registers here

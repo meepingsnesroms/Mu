@@ -1,6 +1,5 @@
 CPU:
 sysTrapPceNativeCall, ARM Emulator
-Trace T1 bit, should be unused by the OS and applications anyway
 Test what bits of IMR are writable
 SCR privilege violation doesnt trigger the same as on hardware(likely has to do with not emulating the unused chip selects)
 TCN2 is unimplemented and seems to be used by the same routines that turn the CPU off for sleep mode
@@ -32,7 +31,7 @@ trying to beam anything will lock up the OS
 Memory:
 unknown if DRAM bit expanded address space is used for CSC when its not an extension of CSD
 there is conflicting information on whether the DRAM bit effects CSC, needs a test made
-the unemulated chip selects(CSB1, CSC0/1) privilege violation interrupts are not handled properly
+may need to emulated CSC0/1 chip selects
 
 SED1376:
 swivelview register
@@ -45,8 +44,6 @@ need to to verify behavior of differential mode bit
 
 SD Card:
 block specific write protect bits don't work
-data blocks won't work properly when CRC checks are enabled
-the CRC of CSD and CID are invalid
 IRQ2 may actually be attached to the SD Card data out pin, triggering an interrupt when a 0 is received to process the return data
 need to test if Port J Pin 3(SD card chip select) is attached to Port D Pin 5(SD Card Status(IRQ2))(pinouts.ru says chip select and card detect are the same line)
 
@@ -57,6 +54,10 @@ MakePalmBitmap:
 
 
 Fixed:
+(CPU)Trace T1 bit, should be unused by the OS and applications anyway(this was fixed long ago, don't know why it was still listed?)
+(SD Card)data blocks won't work properly when CRC checks are enabled
+(SD Card)the CRC of CSD and CID are invalid
+unemulated chip select(CSB1) privilege violation interrupts are not handled properly
 SD card can't be inserted in RetroArch port
 USB chip seems to share an interrupt with the SD card(the SD card interrupt is unimplemented at boot and triggers a printf over USB instead, if USB is not properly emulated that will cause a lock up)(enough of the USB is now emulated to prevent this)
 (SD Card)need to an input option for the write protect switch on the side of the SD card(will be fixed at input time since you can't flip it when in the slot)
