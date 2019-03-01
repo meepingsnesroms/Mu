@@ -262,6 +262,10 @@ static uint32_t sandboxCallGuestFunction(bool fallthrough, uint32_t address, uin
 
          case 'b':
             //bytes are 16 bits long on the stack due to memory alignment restrictions
+            //bytes are written to the top byte of there word
+            m68k_write_memory_8(stackWriteAddr, va_arg(args, uint32_t));
+            stackWriteAddr += 2;
+            break;
          case 'w':
             m68k_write_memory_16(stackWriteAddr, va_arg(args, uint32_t));
             stackWriteAddr += 2;

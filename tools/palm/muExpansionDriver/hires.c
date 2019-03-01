@@ -3,6 +3,7 @@
 
 #include "debug.h"
 #include "globals.h"
+#include "traps.h"
 #include "palmGlobalDefines.h"
 #include "specs/emuFeatureRegisterSpec.h"
 
@@ -42,7 +43,6 @@ Boolean installTungstenWLcdDrivers(void){
    /*check that all driver files are installed and launch drivers boot entrypoints*/
    if(!getGlobalVar(TUNGSTEN_W_DRIVERS_INSTALLED)){
 #if 1
-      Err error;
       LocalID database;
       DmOpenRef highDensityDisplay;
       MemHandle highDensityDisplayInitHandle;
@@ -62,7 +62,7 @@ Boolean installTungstenWLcdDrivers(void){
          return false;
       }
       
-      /*HighDensityDisplay.prc, HAL addon, need to jump to exte0000/0x00000010*/
+      /*HighDensityDisplay.prc, HAL addon, need to jump to exte0000*/
       /*PRC ID:extn hidd*/
       /*Resource ID:????????*/
       database = DmFindDatabase(0, "HighDensityDisplay");
@@ -85,15 +85,17 @@ Boolean installTungstenWLcdDrivers(void){
          debugLog("Cant open HighDensityDisplay.prc exte0000!\n");
          return false;
       }
-      installHighDensityDisplay = (void(*)(void))((uint32_t)MemHandleLock(highDensityDisplayInitHandle) + 0x00000010);
+      installHighDensityDisplay = (void(*)(void))MemHandleLock(highDensityDisplayInitHandle);
       
       /*backup original LCD window for SED1376*/
       setGlobalVar(ORIGINAL_FRAMEBUFFER, (uint32_t)WinGetBitmap(WinGetDisplayWindow()));
       
-      /*may need to patch HwrDisplayAttributes before running so driver will install*/
-      
-      /*run HighDensityDisplay.prc exte0000, 0x00000010*/
       debugLog("Attempting Tungsten W driver install!\n");
+      
+      /*need to patch HwrDisplayAttributes before running so driver will install*/
+      SysSetTrapAddress(sysTrapHwrDisplayAttributes, emuHwrDisplayAttributes);
+      
+      /*run HighDensityDisplay.prc exte0000*/
       installHighDensityDisplay();
       debugLog("Tungsten W drivers installed!\n");
       

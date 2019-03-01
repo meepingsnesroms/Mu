@@ -92,6 +92,168 @@ void emuErrDisplayFileLineMsg(const Char* const filename, UInt16 lineNo, const C
    debugLog("Error at:%s, Line:%d, Msg:%s\n", filename, lineNo, msg);
 }
 
-UInt32 emuHwrDisplayAttributes(UInt16 unknown1, UInt16 unknown2, UInt16 unknown3){
+Err emuHwrDisplayAttributes(Boolean set, UInt8 attribute, void* returnPtr){
+   /*this function is exempt from formatting standards, it is meant as an exact C reconstrution of the Tungsten W HwrDisplayAttributes patched to work on an m515*/
+   static const char lcdControllerName[] = "MQ11xx  LCD Controller";
+   Err error = errNone;
    
+   switch(attribute){
+      case 0:
+         /*display controler ID, MediaQ GPU*/
+         (UInt32*)returnPtr = '12MQ';
+         break;
+         
+      case 1:
+         /*???*/
+         (UInt16*)returnPtr = 1;
+         break;
+         
+      case 2:
+         /*???*/
+         (UInt16*)returnPtr = 1;
+         break;
+         
+      case 3:
+         /*???*/
+         (UInt16*)returnPtr = 0x808B;
+         break;
+         
+      case 4:
+         /*read some random RAM value and fail if 0*/
+         if(readArbitraryMemory32(0x164))
+            (UInt16*)returnPtr = 0x10;
+         else
+            error = dispErrorClass | 0x04;
+         break;
+         
+      case 5:
+         /*???*/
+         (UInt16*)returnPtr = 8;
+         break;
+         
+      case 6:
+         /*???*/
+         (UInt16*)returnPtr = 0x10;
+         break;
+         
+      case 7:
+         /*display size something, PrvDisplaySize(Uint8 unknown, void* returnPtr)*/
+         /*TODO*/
+         break;
+         
+      case 8:
+         /*display size something, PrvDisplaySize(Uint8 unknown, void* returnPtr)*/
+         /*TODO*/
+         break;
+         
+      case 9:
+         /*display chip address space start address*/
+         (UInt32*)returnPtr = 0x1F000000;
+         break;
+         
+      case 10:
+         /*display chip address space size*/
+         (UInt32*)returnPtr = 0x3C000;
+         break;
+         
+      case 11:
+         /*???*/
+         (UInt16*)returnPtr = 1;
+         break;
+         
+      case 12:
+         /*full name of display controller*/
+         StrCopy((char*)returnPtr, lcdControllerName);
+         break;
+         
+      case 13:
+         /*display size base address*/
+         /*TODO*/
+         break;
+         
+      case 14:
+         /*display size depth*/
+         /*TODO*/
+         break;
+         
+      case 15:
+         /*read some random RAM value and write to returnPtr*/
+         if(readArbitraryMemory8(0x36C))
+            (UInt16*)returnPtr = 0x140;
+         else
+            (UInt16*)returnPtr = 0xA0;
+         break;
+         
+      case 16:
+         /*read some random RAM value and write to returnPtr*/
+         if(readArbitraryMemory8(0x36C))
+            (UInt16*)returnPtr = 0x140;
+         else
+            (UInt16*)returnPtr = 0xA0;
+         break;
+         
+      case 17:
+         /*display row bytes*/
+         /*TODO*/
+         break;
+         
+      case 18:
+         /*display backlight*/
+         /*TODO*/
+         break;
+         
+      case 19:
+         /*display contrast*/
+         /*TODO*/
+         break;
+         
+      /*case 20: has no handler*/
+         
+      case 21:
+         /*display debug indicator*/
+         /*TODO*/
+         break;
+         
+      case 22:
+         /*display controller chip framebuffer end address???*/
+         if(set)
+            error = dispErrorClass | 0x01;
+         else
+            (UInt32*)returnPtr = 0x1F03C000;
+         break;
+         
+      /*case 23: has no handler*/
+      /*case 24: has no handler*/
+      /*case 25: has no handler*/
+      /*case 26: has no handler*/
+         
+      case 27:
+         /*???*/
+         (UInt16*)returnPtr = 0x90;
+         break;
+         
+      case 28:
+         /*???*/
+         (UInt16*)returnPtr = 0x40;
+         break;
+         
+      case 29:
+         /*???*/
+         (UInt16*)returnPtr = 0x20;
+         break;
+         
+      case 30:
+         /*???*/
+         (UInt8*)returnPtr = 1;
+         break;
+         
+      default:
+         /*attribute > 30*/
+         /*dispErrorClass | 0x04 = Invalid Param???*/
+         debugLog("Invalid display attribute requested:%d\n", attribute);
+         error = dispErrorClass | 0x04;
+         break;
+   }
+   
+   return error;
 }
