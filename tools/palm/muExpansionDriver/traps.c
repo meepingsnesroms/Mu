@@ -4,6 +4,7 @@
 #include "debug.h"
 #include "armv5.h"
 #include "globals.h"
+#include "palmOsPriv.h"
 #include "palmGlobalDefines.h"
 
 
@@ -92,126 +93,136 @@ void emuErrDisplayFileLineMsg(const Char* const filename, UInt16 lineNo, const C
    debugLog("Error at:%s, Line:%d, Msg:%s\n", filename, lineNo, msg);
 }
 
-Err emuHwrDisplayAttributes(Boolean set, UInt8 attribute, void* returnPtr){
+Err emuHwrDisplayAttributes(Boolean set, UInt8 attribute, void* dataPtr){
    /*this function is exempt from formatting standards, it is meant as an exact C reconstrution of the Tungsten W HwrDisplayAttributes patched to work on an m515*/
    static const char lcdControllerName[] = "MQ11xx  LCD Controller";
    Err error = errNone;
    
+   /*dispErrorClass | 0x01 = Cant Set???, also returned for null pointers*/
+   /*dispErrorClass | 0x04 = Attribute Doesnt Exist??*/
+   
    switch(attribute){
       case 0:
          /*display controler ID, MediaQ GPU*/
-         (UInt32*)returnPtr = '12MQ';
+         (UInt32*)dataPtr = '12MQ';
          break;
          
       case 1:
          /*???*/
-         (UInt16*)returnPtr = 1;
+         (UInt16*)dataPtr = 1;
          break;
          
       case 2:
          /*???*/
-         (UInt16*)returnPtr = 1;
+         (UInt16*)dataPtr = 1;
          break;
          
       case 3:
          /*???*/
-         (UInt16*)returnPtr = 0x808B;
+         (UInt16*)dataPtr = 0x808B;
          break;
          
       case 4:
          /*read some random RAM value and fail if 0*/
-         if(readArbitraryMemory32(0x164))
-            (UInt16*)returnPtr = 0x10;
+         if(ScrStatePtr)
+            (UInt16*)dataPtr = 0x10;
          else
             error = dispErrorClass | 0x04;
          break;
          
       case 5:
          /*???*/
-         (UInt16*)returnPtr = 8;
+         (UInt16*)dataPtr = 8;
          break;
          
       case 6:
          /*???*/
-         (UInt16*)returnPtr = 0x10;
+         (UInt16*)dataPtr = 0x10;
          break;
          
       case 7:
-         /*display size something, PrvDisplaySize(Uint8 unknown, void* returnPtr)*/
-         /*TODO*/
+         /*display size something, width???, PrvDisplaySize(Boolean set, void* dataPtr)*/
+         /*UNTESTED*/
+         (UInt16*)dataPtr = 320;
          break;
          
       case 8:
-         /*display size something, PrvDisplaySize(Uint8 unknown, void* returnPtr)*/
-         /*TODO*/
+         /*display size something, height???, PrvDisplaySize(Boolean set, void* dataPtr)*/
+         /*UNTESTED*/
+         (UInt16*)dataPtr = 320;
          break;
          
       case 9:
-         /*display chip address space start address*/
-         (UInt32*)returnPtr = 0x1F000000;
+         /*display chip framebuffer start address*/
+         (UInt32*)dataPtr = 0x1F000000;
          break;
          
       case 10:
-         /*display chip address space size*/
-         (UInt32*)returnPtr = 0x3C000;
+         /*display chip framebuffer size*/
+         (UInt32*)dataPtr = 0x3C000;
          break;
          
       case 11:
          /*???*/
-         (UInt16*)returnPtr = 1;
+         (UInt16*)dataPtr = 1;
          break;
          
       case 12:
          /*full name of display controller*/
-         StrCopy((char*)returnPtr, lcdControllerName);
+         StrCopy((char*)dataPtr, lcdControllerName);
          break;
          
       case 13:
-         /*display size base address*/
-         /*TODO*/
+         /*display base address*/
+         /*UNTESTED*/
+         (UInt32*)dataPtr = 0x1F000000;
          break;
          
       case 14:
-         /*display size depth*/
-         /*TODO*/
+         /*display depth*/
+         /*UNTESTED*/
+         (UInt16*)dataPtr = 16;
          break;
          
       case 15:
-         /*read some random RAM value and write to returnPtr*/
+         /*read some random RAM value and write to dataPtr*/
          if(readArbitraryMemory8(0x36C))
-            (UInt16*)returnPtr = 0x140;
+            (UInt16*)dataPtr = 0x140;
          else
-            (UInt16*)returnPtr = 0xA0;
+            (UInt16*)dataPtr = 0xA0;
          break;
          
       case 16:
-         /*read some random RAM value and write to returnPtr*/
+         /*read some random RAM value and write to dataPtr*/
          if(readArbitraryMemory8(0x36C))
-            (UInt16*)returnPtr = 0x140;
+            (UInt16*)dataPtr = 0x140;
          else
-            (UInt16*)returnPtr = 0xA0;
+            (UInt16*)dataPtr = 0xA0;
          break;
          
       case 17:
          /*display row bytes*/
-         /*TODO*/
+         /*UNTESTED*/
+         (UInt16*)dataPtr = 320 * sizeof(uint16_t);
          break;
          
       case 18:
          /*display backlight*/
-         /*TODO*/
+         /*UNTESTED*/
+         (UInt8*)dataPtr = 0x01;
          break;
          
       case 19:
          /*display contrast*/
-         /*TODO*/
+         /*UNTESTED*/
+         (UInt8*)dataPtr = 0x01;
          break;
          
       /*case 20: has no handler*/
          
       case 21:
          /*display debug indicator*/
-         /*TODO*/
+         /*TODO, shouldnt be needed*/
          break;
          
       case 22:
@@ -219,7 +230,7 @@ Err emuHwrDisplayAttributes(Boolean set, UInt8 attribute, void* returnPtr){
          if(set)
             error = dispErrorClass | 0x01;
          else
-            (UInt32*)returnPtr = 0x1F03C000;
+            (UInt32*)dataPtr = 0x1F03C000;
          break;
          
       /*case 23: has no handler*/
@@ -229,27 +240,25 @@ Err emuHwrDisplayAttributes(Boolean set, UInt8 attribute, void* returnPtr){
          
       case 27:
          /*???*/
-         (UInt16*)returnPtr = 0x90;
+         (UInt16*)dataPtr = 0x90;
          break;
          
       case 28:
          /*???*/
-         (UInt16*)returnPtr = 0x40;
+         (UInt16*)dataPtr = 0x40;
          break;
          
       case 29:
          /*???*/
-         (UInt16*)returnPtr = 0x20;
+         (UInt16*)dataPtr = 0x20;
          break;
          
       case 30:
          /*???*/
-         (UInt8*)returnPtr = 1;
+         (UInt8*)dataPtr = 1;
          break;
          
       default:
-         /*attribute > 30*/
-         /*dispErrorClass | 0x04 = Invalid Param???*/
          debugLog("Invalid display attribute requested:%d\n", attribute);
          error = dispErrorClass | 0x04;
          break;

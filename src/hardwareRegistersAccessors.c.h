@@ -207,6 +207,8 @@ static void setCsd(uint16_t value){
    else
       chips[CHIP_DX_RAM].unprotectedSize = chips[CHIP_DX_RAM].lineSize / (1 << 7 - (value >> 11 & 0x0003));
 
+   //debugLog("RAM unprotected size:0x%08X, bits:0x%02X\n", chips[CHIP_DX_RAM].unprotectedSize, ((value >> 11 & 0x0003) | (csControl1 & 0x4000 && csControl1 & 0x0010) * 0x0004));
+
    registerArrayWrite16(CSD, value);
 }
 

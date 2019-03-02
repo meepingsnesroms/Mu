@@ -109,6 +109,9 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t enab
    emulatorSoftReset();
    setRtc(0, 0, 0, 0);//RTCTIME and DAYR are not cleared by reset, clear them manually in case the frontend doesnt set the RTC
 
+   //debug patches
+   sandboxCommand(SANDBOX_PATCH_OS, NULL);
+
    emulatorInitialized = true;
 
    return EMU_ERROR_NONE;

@@ -21,7 +21,8 @@ static void setConfigDefaults(uint32_t* configFile){
 UInt32 PilotMain(UInt16 cmd, MemPtr cmdBPB, UInt16 launchFlags){
    DmOpenRef configDb;
    MemHandle configHandle;
-   uint32_t* configFile;
+   uint32_t* dmConfigFile;
+   uint32_t configFile[CONFIG_FILE_ENTRIES];
    Err error;
    
    configDb = DmOpenDatabaseByTypeCreator('EMUC', 'GuiC', dmModeReadWrite);
@@ -29,35 +30,38 @@ UInt32 PilotMain(UInt16 cmd, MemPtr cmdBPB, UInt16 launchFlags){
    /*create db and set defaults if config doesnt exist*/
    if(!configDb){
       error = DmCreateDatabase(0/*cardNo*/, "Emu Config", 'GuiC', 'EMUC', true);
-      
-      debugLog("Tried to create db, err:%d\n", error);
+      if(error != errNone)
+         debugLog("Tried to create db, err:%d\n", error);
       
       configDb = DmOpenDatabaseByTypeCreator('EMUC', 'GuiC', dmModeReadWrite);
-      
       if(!configDb)
          debugLog("Cant find created db!\n");
       
       configHandle = DmNewResource(configDb, 'CONF', 0, CONFIG_FILE_ENTRIES * sizeof(uint32_t));
-      
       if(!configHandle)
          debugLog("Cant open db resource!\n");
       
-      configFile = MemHandleLock(configHandle);
+      dmConfigFile = MemHandleLock(configHandle);
       setConfigDefaults(configFile);
    }
    else{
       configHandle = DmGetResource('CONF', 0);
-      
       if(!configHandle)
          debugLog("Cant open db resource!\n");
       
-      configFile = MemHandleLock(configHandle);
+      dmConfigFile = MemHandleLock(configHandle);
+      MemMove(configFile, dmConfigFile, CONFIG_FILE_ENTRIES * sizeof(uint32_t));
    }
    
    if(cmd == sysAppLaunchCmdNormalLaunch)
       showGui(configFile);
    else if(cmd == sysAppLaunchCmdSystemReset)
       initBoot(configFile);
+   
+   /*must use DmWrite to write to databases or a write protect violation may trigger*/
+   error = DmWrite(dmConfigFile, 0, configFile, CONFIG_FILE_ENTRIES * sizeof(uint32_t));
+   if(error != errNone)
+      debugLog("Coludnt write config file, err:%d\n", error);
    
    MemHandleUnlock(configHandle);
    DmReleaseResource(configHandle);

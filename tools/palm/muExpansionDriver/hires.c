@@ -4,31 +4,61 @@
 #include "debug.h"
 #include "globals.h"
 #include "traps.h"
+#include "palmOsPriv.h"
 #include "palmGlobalDefines.h"
 #include "specs/emuFeatureRegisterSpec.h"
 
 
+typedef struct{
+   BitmapTypeV3 bitmap;
+   uint16_t*    data;
+}BitmapTypeV3Indirect;
+
+
 static Boolean setTungstenWDriverFramebuffer(uint16_t width, uint16_t height){
    if(getGlobalVar(TUNGSTEN_W_DRIVERS_INSTALLED)){
-      BitmapTypeV3* newBitmap;
+      BitmapTypeV3Indirect* newBitmap;
+      uint16_t* newBitmapData;
       WindowType* driverWindow;
       Err error;
       
       driverWindow = WinGetWindowPointer(WinGetDisplayWindow());
       
-      newBitmap = BmpCreateBitmapV3(BmpCreate(width, height, 16, NULL, &error), kDensityDouble, NULL/*bitsP*/, NULL/*colorTableP*/);
-      if(error != errNone)
+      newBitmap = MemChunkNew(0, sizeof(BitmapTypeV3Indirect), memNewChunkFlagNonMovable | memNewChunkFlagAllowLarge);
+      if(!newBitmap){
+         debugLog("Couldnt create new framebuffer bitmap struct!\n");
          return false;
+      }
+      
+      MemSet(newBitmap, sizeof(BitmapTypeV3Indirect), 0x00);
+      newBitmap->bitmap.width = width;
+      newBitmap->bitmap.height = height;
+      newBitmap->bitmap.rowBytes = width * sizeof(uint16_t);
+      newBitmap->bitmap.flags.indirect = true;
+      newBitmap->bitmap.flags.forScreen = true;
+      newBitmap->bitmap.flags.directColor = true;
+      newBitmap->bitmap.size = sizeof(BitmapTypeV3);
+      newBitmap->bitmap.pixelFormat = pixelFormat565;
+      newBitmap->bitmap.compressionType = BitmapCompressionTypeNone;
+      newBitmap->bitmap.density = kDensityDouble;
+
+      newBitmap->data = MemChunkNew(0, width * height * sizeof(uint16_t), memNewChunkFlagNonMovable | memNewChunkFlagAllowLarge);
+      if(!newBitmap->data){
+         debugLog("Couldnt create new framebuffer:%d\n");
+         return false;
+      }
+      
+      /*white out framebuffer*/
+      MemSet(newBitmap->data, width * height * sizeof(uint16_t), 0xFF);
       
       /*clean up old framebuffer if its not the original one and set new one*/
       driverWindow->bitmapP->flags.forScreen = false;
       BmpDelete(driverWindow->bitmapP);
       
-      newBitmap->flags.forScreen = true;
-      driverWindow->bitmapP = newBitmap;
+      driverWindow->bitmapP = &newBitmap->bitmap;
       
       /*tell the emu where the framebuffer is*/
-      writeArbitraryMemory32(EMU_REG_ADDR(EMU_SRC), (uint32_t)BmpGetBits(newBitmap));
+      writeArbitraryMemory32(EMU_REG_ADDR(EMU_SRC), (uint32_t)newBitmap->data);
       writeArbitraryMemory32(EMU_REG_ADDR(EMU_VALUE), (uint32_t)width << 16 | height);
       writeArbitraryMemory32(EMU_REG_ADDR(EMU_CMD), CMD_LCD_SET_FB);
       

@@ -117,7 +117,7 @@ int32_t interruptAcknowledge(int32_t intLevel){
 
 void setBusErrorTimeOut(uint32_t address, bool isWrite){
    uint8_t scr = registerArrayRead8(SCR);
-   debugLog("Bus error timeout, PC:0x%08X\n", flx68000GetPc());
+   debugLog("Bus error timeout at:0x%08X, PC:0x%08X\n", address, flx68000GetPc());
    registerArrayWrite8(SCR, scr | 0x80);
    if(scr & 0x10)
       flx68000BusError(address, isWrite);
@@ -125,7 +125,7 @@ void setBusErrorTimeOut(uint32_t address, bool isWrite){
 
 void setPrivilegeViolation(uint32_t address, bool isWrite){
    uint8_t scr = registerArrayRead8(SCR);
-   debugLog("Privilege violation, PC:0x%08X\n", flx68000GetPc());
+   debugLog("Privilege violation at:0x%08X, PC:0x%08X\n", address, flx68000GetPc());
    registerArrayWrite8(SCR, scr | 0x20);
    if(scr & 0x10)
       flx68000BusError(address, isWrite);
@@ -133,7 +133,7 @@ void setPrivilegeViolation(uint32_t address, bool isWrite){
 
 void setWriteProtectViolation(uint32_t address){
    uint8_t scr = registerArrayRead8(SCR);
-   debugLog("Write protect violation, PC:0x%08X\n", flx68000GetPc());
+   debugLog("Write protect violation at:0x%08X, PC:0x%08X\n", address, flx68000GetPc());
    registerArrayWrite8(SCR, scr | 0x40);
    if(scr & 0x10)
       flx68000BusError(address, true);

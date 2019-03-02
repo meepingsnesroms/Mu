@@ -6,6 +6,6 @@
 UInt32 emuPceNativeCall(NativeFuncType *nativeFuncP, void *userDataP);
 UInt32 emuKeyCurrentState(void);
 void emuErrDisplayFileLineMsg(const Char* const filename, UInt16 lineNo, const Char* const msg);
-Err emuHwrDisplayAttributes(Boolean set, UInt8 attribute, void* returnPtr);
+Err emuHwrDisplayAttributes(Boolean set, UInt8 attribute, void* dataPtr);
 
 #endif

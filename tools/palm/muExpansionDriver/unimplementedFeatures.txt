@@ -6,5 +6,6 @@ ARM support
 OS 5 audio API
 Custom FB mode
 GUI
+Setting window color like OS 5
 
 Fixed:
