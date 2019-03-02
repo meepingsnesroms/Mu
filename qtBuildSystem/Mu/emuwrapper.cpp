@@ -262,6 +262,22 @@ void EmuWrapper::resume(){
    }
 }
 
+void EmuWrapper::reset(bool hard){
+   bool wasPaused = isPaused();
+
+   if(!wasPaused)
+      pause();
+
+   //save here
+   if(hard)
+      emulatorHardReset();
+   else
+      emulatorSoftReset();
+
+   if(!wasPaused)
+      resume();
+}
+
 uint32_t EmuWrapper::saveState(const QString& path){
    bool wasPaused = isPaused();
    uint32_t error = EMU_ERROR_INVALID_PARAMETER;

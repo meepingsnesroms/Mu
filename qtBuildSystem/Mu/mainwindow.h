@@ -66,6 +66,7 @@ private slots:
    void on_debugger_clicked();
    void on_screenshot_clicked();
    void on_stateManager_clicked();
+   void on_reset_clicked();
 
 private:
    StateManager*   stateManager;

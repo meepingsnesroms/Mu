@@ -266,3 +266,15 @@ Err emuHwrDisplayAttributes(Boolean set, UInt8 attribute, void* dataPtr){
    
    return error;
 }
+
+void emuScrDrawChars(WinPtr pWindow, Int16 xLoc, Int16 yLoc, Int16 xExtent, Int16 yExtent, Int16 clipTop, Int16 clipLeft, Int16 clipBottom, Int16 clipRight, Char* chars, UInt16 len, FontPtr fontPtr){
+   /*do nothing*/
+}
+
+/*
+ may need to remove these from trap table:
+ ScrGetGrayPat
+ ScrGetColortable
+ ScrDrawChars
+ ScrCopyRectangle
+ */

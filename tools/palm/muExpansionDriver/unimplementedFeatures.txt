@@ -7,5 +7,6 @@ OS 5 audio API
 Custom FB mode
 GUI
 Setting window color like OS 5
+Tungsten W drivers are corrupting the trap table pointer(and a ton of other low mem globals)
 
 Fixed:

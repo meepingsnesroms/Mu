@@ -157,6 +157,7 @@ void expansionHardwareSetRegister(uint32_t address, uint32_t value){
                   expansionHardwareLcdPointer = palmEmuFeatures.src;
                   palmFramebufferWidth = palmEmuFeatures.value >> 16;
                   palmFramebufferHeight = palmEmuFeatures.value & 0xFFFF;
+                  debugLog("Set LCD size to:%dx%d, buffer:0x%08X\n", palmFramebufferWidth, palmFramebufferHeight, expansionHardwareLcdPointer);
                }
                return;
 

@@ -18,42 +18,64 @@ typedef struct{
 static Boolean setTungstenWDriverFramebuffer(uint16_t width, uint16_t height){
    if(getGlobalVar(TUNGSTEN_W_DRIVERS_INSTALLED)){
       BitmapTypeV3Indirect* newBitmap;
-      uint16_t* newBitmapData;
+      int16_t newBitmapWidth;
+      int16_t newBitmapHeight;
       WindowType* driverWindow;
       Err error;
       
+      /*remove special cases for the presence of a silkscreen, they would waste extra memory*/
+      if(width == 160 && height == 220){
+         newBitmapWidth = 160;
+         newBitmapHeight = 160;
+      }
+      else if(width == 320 && height == 440){
+         newBitmapWidth = 320;
+         newBitmapHeight = 320;
+      }
+      else{
+         newBitmapWidth = width;
+         newBitmapHeight = height;
+      }
+      
       driverWindow = WinGetWindowPointer(WinGetDisplayWindow());
       
-      newBitmap = MemChunkNew(0, sizeof(BitmapTypeV3Indirect), memNewChunkFlagNonMovable | memNewChunkFlagAllowLarge);
+      newBitmap = MemChunkNew(0, sizeof(BitmapTypeV3Indirect), memNewChunkFlagPreLock | memNewChunkFlagNonMovable | memNewChunkFlagAllowLarge);
       if(!newBitmap){
          debugLog("Couldnt create new framebuffer bitmap struct!\n");
          return false;
       }
       
-      MemSet(newBitmap, sizeof(BitmapTypeV3Indirect), 0x00);
-      newBitmap->bitmap.width = width;
-      newBitmap->bitmap.height = height;
-      newBitmap->bitmap.rowBytes = width * sizeof(uint16_t);
+      error = MemSet(newBitmap, sizeof(BitmapTypeV3Indirect), 0x00);
+      if(error != errNone)
+         debugLog("Couldnt clear bitmap struct:%d\n", error);
+      
+      /*build bitmap manually to prevent having to duplicate a V2 bitmap*/
+      newBitmap->bitmap.width = newBitmapWidth;
+      newBitmap->bitmap.height = newBitmapHeight;
+      newBitmap->bitmap.rowBytes = newBitmapWidth * sizeof(uint16_t);
       newBitmap->bitmap.flags.indirect = true;
-      newBitmap->bitmap.flags.forScreen = true;
+      newBitmap->bitmap.flags.forScreen = false;/*this is a lie, it is for the screen, but no screen rendering routines should be used*/
       newBitmap->bitmap.flags.directColor = true;
       newBitmap->bitmap.size = sizeof(BitmapTypeV3);
       newBitmap->bitmap.pixelFormat = pixelFormat565;
       newBitmap->bitmap.compressionType = BitmapCompressionTypeNone;
       newBitmap->bitmap.density = kDensityDouble;
 
-      newBitmap->data = MemChunkNew(0, width * height * sizeof(uint16_t), memNewChunkFlagNonMovable | memNewChunkFlagAllowLarge);
+      newBitmap->data = MemChunkNew(0, newBitmapWidth * newBitmapHeight * sizeof(uint16_t), memNewChunkFlagPreLock | memNewChunkFlagNonMovable | memNewChunkFlagAllowLarge);
       if(!newBitmap->data){
-         debugLog("Couldnt create new framebuffer:%d\n");
+         debugLog("Couldnt create new framebuffer!\n");
          return false;
       }
       
       /*white out framebuffer*/
-      MemSet(newBitmap->data, width * height * sizeof(uint16_t), 0xFF);
+      /*this dident work?*/
+      error = MemSet(newBitmap->data, newBitmapWidth * newBitmapHeight * sizeof(uint16_t), 0xFF);
+      if(error != errNone)
+         debugLog("Couldnt clear framebuffer:%d\n", error);
       
       /*clean up old framebuffer if its not the original one and set new one*/
-      driverWindow->bitmapP->flags.forScreen = false;
-      BmpDelete(driverWindow->bitmapP);
+      /*driverWindow->bitmapP->flags.forScreen = false;*/
+      /*BmpDelete(driverWindow->bitmapP);*/
       
       driverWindow->bitmapP = &newBitmap->bitmap;
       
@@ -122,8 +144,11 @@ Boolean installTungstenWLcdDrivers(void){
       
       debugLog("Attempting Tungsten W driver install!\n");
       
-      /*need to patch HwrDisplayAttributes before running so driver will install*/
+      /*patch HwrDisplayAttributes before running so driver will install*/
       SysSetTrapAddress(sysTrapHwrDisplayAttributes, emuHwrDisplayAttributes);
+      
+      /*remove things that cause crashes*/
+      SysSetTrapAddress(sysTrapScrDrawChars, emuScrDrawChars);
       
       /*run HighDensityDisplay.prc exte0000*/
       installHighDensityDisplay();

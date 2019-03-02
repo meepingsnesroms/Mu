@@ -119,6 +119,7 @@ MainWindow::MainWindow(QWidget* parent) :
    ui->debugger->installEventFilter(this);
    ui->screenshot->installEventFilter(this);
    ui->stateManager->installEventFilter(this);
+   ui->reset->installEventFilter(this);
 
 #if !defined(EMU_DEBUG) || defined(Q_OS_ANDROID) || defined(Q_OS_IOS)
    ui->debugger->hide();
@@ -382,4 +383,8 @@ void MainWindow::on_stateManager_clicked(){
       if(!wasPaused)
          emu.resume();
    }
+}
+
+void MainWindow::on_reset_clicked(){
+   emu.reset(false);
 }

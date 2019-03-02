@@ -159,7 +159,7 @@ static bool installResourceToDevice(buffer_t resourceBuffer){
    */
 
    //uint32_t palmSideResourceData = callFunction(false, 0x00000000, MemPtrNew, "p(l)", (uint32_t)resourceBuffer.size);
-   uint32_t palmSideResourceData = sandboxCallGuestFunction(false, 0x00000000, MemChunkNew, "p(wlw)", 1/*heapID, storage RAM*/, (uint32_t)resourceBuffer.size, 0x1200/*attr, seems to work without memOwnerID*/);
+   uint32_t palmSideResourceData = sandboxCallGuestFunction(false, 0x00000000, MemChunkNew, "p(wlw)", 1/*heapID, storage RAM*/, resourceBuffer.size, 0x1200/*attr, seems to work without memOwnerID*/);
    bool storageRamReadOnly = chips[CHIP_DX_RAM].readOnlyForProtectedMemory;
    uint16_t error;
    uint32_t count;
