@@ -14,10 +14,6 @@
 #include <string>
 #include <stdint.h>
 
-#if defined(Q_OS_ANDROID)
-#include <android/log.h>
-#endif
-
 #include "emuwrapper.h"
 #include "../../src/emulator.h"
 
@@ -36,9 +32,6 @@ char*                        frontendDebugString;
 
 
 void frontendHandleDebugPrint(){
-#if defined(Q_OS_ANDROID)
-   __android_log_print(ANDROID_LOG_DEBUG, "MuDebug", "%s", frontendDebugString);
-#else
    QString newDebugString = frontendDebugString;
 
    //this debug handler doesnt need the \n
@@ -55,7 +48,6 @@ void frontendHandleDebugPrint(){
       debugStrings.push_back(newDebugString);
       duplicateCallCount.push_back(1);
    }
-#endif
 }
 
 
@@ -263,19 +255,20 @@ void EmuWrapper::resume(){
 }
 
 void EmuWrapper::reset(bool hard){
-   bool wasPaused = isPaused();
+   if(emuInited){
+      bool wasPaused = isPaused();
 
-   if(!wasPaused)
-      pause();
+      if(!wasPaused)
+         pause();
 
-   //save here
-   if(hard)
-      emulatorHardReset();
-   else
-      emulatorSoftReset();
+      if(hard)
+         emulatorHardReset();
+      else
+         emulatorSoftReset();
 
-   if(!wasPaused)
-      resume();
+      if(!wasPaused)
+         resume();
+   }
 }
 
 uint32_t EmuWrapper::saveState(const QString& path){

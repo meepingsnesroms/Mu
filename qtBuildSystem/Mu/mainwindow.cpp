@@ -23,33 +23,6 @@
 #include "statemanager.h"
 
 
-/*
-#if defined(Q_OS_ANDROID)
-#include <android/log.h>
-#endif
-
-void printLastRun(){
-   static int64_t lastTime = 0;
-   struct timespec tms;
-
-   clock_gettime(CLOCK_REALTIME, &tms);
-
-   int64_t micros = tms.tv_sec * 1000000;
-   micros += tms.tv_nsec / 1000;
-   if(tms.tv_nsec % 1000 >= 500)
-       micros++;
-
-#if defined(Q_OS_ANDROID)
-   __android_log_print(ANDROID_LOG_DEBUG, "Mu", "Microseconds:%lld\n", micros - lastTime);
-#else
-   printf("Microseconds:%lld\n", micros - lastTime);
-#endif
-
-   lastTime = micros;
-}
-*/
-
-
 MainWindow::MainWindow(QWidget* parent) :
    QMainWindow(parent),
    ui(new Ui::MainWindow){
@@ -213,8 +186,6 @@ void MainWindow::updateDisplay(){
       ui->display->repaint();
       ui->powerButtonLed->repaint();
    }
-
-   //printLastRun();
 }
 
 //Palm buttons
@@ -319,6 +290,7 @@ void MainWindow::on_ctrlBtn_clicked(){
          ui->install->setEnabled(true);
          ui->stateManager->setEnabled(true);
          ui->debugger->setEnabled(true);
+         ui->reset->setEnabled(true);
 
          ui->ctrlBtn->setIcon(QIcon(":/buttons/images/pause.svg"));
       }
