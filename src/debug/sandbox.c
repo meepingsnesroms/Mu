@@ -592,6 +592,15 @@ void sandboxOnOpcodeRun(void){
    }
 }
 
+void sandboxOnMemoryAccess(uint32_t address, uint8_t size, bool write, uint32_t value){
+   if(sandboxActive){
+      if(write && address >= 0x00000122 && address <= 0x00000125){
+         //writing the trap table pointer, this should only happen once
+         debugLog("Writing trap table pointer: size:%d, value:0x%08X, address:0x%08X\n", size, value, address);
+      }
+   }
+}
+
 bool sandboxRunning(void){
    uint32_t pc = m68k_get_reg(NULL, M68K_REG_PC);
 
@@ -620,6 +629,7 @@ void sandboxReturn(void){
 void sandboxInit(void){}
 uint32_t sandboxCommand(uint32_t command, void* data){return 0;}
 void sandboxOnOpcodeRun(void){}
+void sandboxOnMemoryAccess(uint32_t address, uint8_t size, bool write, uint32_t value){}
 bool sandboxRunning(void){return false;}
 void sandboxReturn(void){}
 #endif

@@ -117,6 +117,10 @@ uint8_t m68k_read_memory_8(uint32_t address){
       return 0x00;
 #endif
 
+#if defined(EMU_DEBUG) && defined(EMU_SANDBOX)
+   sandboxOnMemoryAccess(address, 8, false, 0);
+#endif
+
    switch(addressType){
       case CHIP_A0_ROM:
          return romRead8(address);
@@ -153,6 +157,10 @@ uint16_t m68k_read_memory_16(uint32_t address){
 #if !defined(EMU_NO_SAFETY)
    if(!probeRead(addressType, address))
       return 0x0000;
+#endif
+
+#if defined(EMU_DEBUG) && defined(EMU_SANDBOX)
+   sandboxOnMemoryAccess(address, 16, false, 0);
 #endif
 
    switch(addressType){
@@ -193,6 +201,10 @@ uint32_t m68k_read_memory_32(uint32_t address){
       return 0x00000000;
 #endif
 
+#if defined(EMU_DEBUG) && defined(EMU_SANDBOX)
+   sandboxOnMemoryAccess(address, 32, false, 0);
+#endif
+
    switch(addressType){
       case CHIP_A0_ROM:
          return romRead32(address);
@@ -229,6 +241,10 @@ void m68k_write_memory_8(uint32_t address, uint8_t value){
 #if !defined(EMU_NO_SAFETY)
    if(!probeWrite(addressType, address))
       return;
+#endif
+
+#if defined(EMU_DEBUG) && defined(EMU_SANDBOX)
+   sandboxOnMemoryAccess(address, 8, true, value);
 #endif
 
    switch(addressType){
@@ -273,6 +289,10 @@ void m68k_write_memory_16(uint32_t address, uint16_t value){
       return;
 #endif
 
+#if defined(EMU_DEBUG) && defined(EMU_SANDBOX)
+   sandboxOnMemoryAccess(address, 16, true, value);
+#endif
+
    switch(addressType){
       case CHIP_A0_ROM:
          return;
@@ -313,6 +333,10 @@ void m68k_write_memory_32(uint32_t address, uint32_t value){
 #if !defined(EMU_NO_SAFETY)
    if(!probeWrite(addressType, address))
       return;
+#endif
+
+#if defined(EMU_DEBUG) && defined(EMU_SANDBOX)
+   sandboxOnMemoryAccess(address, 32, true, value);
 #endif
 
    switch(addressType){
