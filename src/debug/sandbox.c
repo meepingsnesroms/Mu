@@ -107,6 +107,133 @@ static void logApiCalls(void){
    }
 }
 
+static bool isAlphanumeric(char chr){
+   if((chr >= 'a' && chr <= 'z') || (chr >= 'A' && chr <= 'Z') || (chr >= '0' && chr <= '9'))
+      return true;
+   return false;
+}
+
+static bool readable6CharsBack(uint32_t address){
+   uint8_t count;
+
+   for(count = 0; count < 6; count++)
+      if(!isAlphanumeric(m68k_read_memory_8(address - count)))
+         return false;
+   return true;
+}
+
+static uint32_t find68kString(const char* str, uint32_t rangeStart, uint32_t rangeEnd){
+   uint32_t strLength = strlen(str) + 1;//include null terminator
+   uint32_t scanAddress;
+
+   for(scanAddress = rangeStart; scanAddress <= rangeEnd - (strLength - 1); scanAddress++){
+      //since only the first char is range checked remove the rest from the range to prevent reading off the end
+
+      //check every byte against the start character
+      if(m68k_read_memory_8(scanAddress) == str[0]){
+         bool wrongString = false;
+         uint32_t strIndex;
+
+          //character match found, check for string
+         for(strIndex = 1; strIndex < strLength; strIndex++){
+            if(m68k_read_memory_8(scanAddress + strIndex) != str[strIndex]){
+               wrongString = true;
+               break;
+            }
+         }
+
+         if(wrongString == false)
+            return scanAddress;
+      }
+   }
+
+   return rangeEnd;
+}
+
+static uint32_t skip68kString(uint32_t address){
+   while(m68k_read_memory_8(address) != '\0')
+      address++;
+   address++;//skip null terminator too
+   return address;
+}
+
+//THIS FUNCTION DOES NOT WORK IF A WORD ALIGNED 0x0000 IS FOUND IN THE FUNCTION BEING SEARCHED FOR, THIS IS A BUG
+static uint32_t scanForPrivateFunctionAddress(const char* name){
+   //function name format [0x**(unknown), string(with null terminator), 0x00, 0x00(if last 0x00 was on an even address, protects opcode alignemnt)]
+   //this is not 100% accurate, it scans memory for a function address based on a string
+   //if a duplicate set of stings is found but not encasing a function a fatal error will occur on execution
+   uint32_t rangeEnd = chips[CHIP_A0_ROM].start + chips[CHIP_A0_ROM].lineSize - 1;
+   uint32_t address = find68kString(name, chips[CHIP_A0_ROM].start, rangeEnd);
+
+   while(address < rangeEnd){
+      uint32_t signatureBegining = address - 3;//last opcode of function being looked for if the string is correct
+
+      //skip string to test the null terminators
+      address = skip68kString(address);
+
+      //after a function string there are 2 null terminators(the one all strings have and 1 extra) or 3(2 extra) if the previous one was on an even address
+      if(m68k_read_memory_8(address) == '\0' && (address & 0x00000001 || m68k_read_memory_8(address + 1) == '\0')){
+         //valid string match found, get prior functions signature(a function string has a minimum of 6 printable chars with 2 null terminators)
+         uint32_t priorFunctionSignature = signatureBegining;//last opcode of the function thats being looked for
+         bool extraNull = false;
+
+         while(m68k_read_memory_16(priorFunctionSignature) != '\0\0')
+            priorFunctionSignature -= 2;
+
+         //remove extra null terminator if present
+         if(m68k_read_memory_8(priorFunctionSignature - 1) == '\0'){
+            priorFunctionSignature--;
+            extraNull = true;
+         }
+
+         //check that there are 6 valid alphanumeric characters before the nulls, this indicates that its a valid function signature
+         if(readable6CharsBack(priorFunctionSignature - 1)){
+            //valid, get first opcode after string and return its address
+            return priorFunctionSignature + (extraNull ? 3 : 2);
+         }
+      }
+
+      //string matched but structure was invalid, get next string
+      address = find68kString(name, address, rangeEnd);
+   }
+
+   return 0x00000000;
+}
+
+//call anywhere in a function to get its name, used to determine the location of a crash, must free the pointer after reading the string
+static char* getFunctionName(uint32_t address){
+   char* data;
+   uint32_t offset;
+
+   address &= 0xFFFFFFFE;
+
+   for(offset = 0; offset < 0x10000; offset += 2){
+      if(m68k_read_memory_16(address + offset) == 0x4E75/*RTS*/){
+         offset += 3;
+         break;
+      }
+   }
+
+   if(offset < 0x10000){
+      uint16_t size = 0;
+      uint16_t offset2;
+
+      for(offset2 = 0; offset2 < 0x100; offset2++)
+         if(isAlphanumeric(m68k_read_memory_8(address + offset + offset2)))
+            size++;
+
+      data = malloc(size + 1);
+      for(offset2 = 0; offset2 < size; offset2++)
+         data[offset2] = m68k_read_memory_8(address + offset + offset2);
+      data[offset2] = '\0';
+   }
+   else{
+      data = NULL;
+   }
+
+   return data;
+}
+
 static uint32_t makePalmString(const char* str){
    uint32_t strLength = strlen(str) + 1;
    uint32_t strData = sandboxCallGuestFunction(false, 0x00000000, MemPtrNew, "p(l)", strLength);
@@ -594,9 +721,29 @@ void sandboxOnOpcodeRun(void){
 
 void sandboxOnMemoryAccess(uint32_t address, uint8_t size, bool write, uint32_t value){
    if(sandboxActive){
-      if(write && address >= 0x00000122 && address <= 0x00000125){
-         //writing the trap table pointer, this should only happen once
-         debugLog("Writing trap table pointer: size:%d, value:0x%08X, address:0x%08X\n", size, value, address);
+      static bool isRecursive = false;
+
+      //this function can read or write Palm memory, which calls this function, so dont run this function when calling from this function to prevent an infinte loop
+      if(!isRecursive){
+         isRecursive = true;
+         //actual code goes below:vvv
+
+         if(write && address >= 0x00000122 && address <= 0x00000125){
+            //writing the trap table pointer, this should only happen once
+            char* function = getFunctionName(m68k_get_reg(NULL, M68K_REG_PPC));
+            bool functionValid = !!function;
+
+            if(!functionValid)
+               function = "NAME NOT FOUND";
+
+            debugLog("Writing trap table pointer: size:%d, value:0x%08X, address:0x%08X, function:%s\n", size, value, address, function);
+
+            if(functionValid)
+               free(function);
+         }
+
+         //actual code goes above:^^^
+         isRecursive = false;
       }
    }
 }
