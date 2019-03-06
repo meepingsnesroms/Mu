@@ -8,5 +8,6 @@ Custom FB mode
 GUI
 Setting window color like OS 5
 Tungsten W drivers are corrupting the trap table pointer(and a ton of other low mem globals)
+For some reason the new versions of MuExpDriver dont work with Chuzzle anymore
 
 Fixed:

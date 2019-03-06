@@ -252,13 +252,8 @@ void initBoot(uint32_t* configFile){
          installPceNativeCallHandler(configFile[ARM_STACK_SIZE]);
       
       if(enabledFeatures & FEATURE_CUSTOM_FB)
-         installTungstenWLcdDrivers();
-      
-      /*
-      if(enabledFeatures & FEATURE_CUSTOM_FB)
          if(installTungstenWLcdDrivers())
             setDeviceResolution(configFile[LCD_WIDTH], configFile[LCD_HEIGHT]);
-      */
       
       setProperDeviceId(configFile[LCD_WIDTH], configFile[LCD_HEIGHT], !!(enabledFeatures & FEATURE_HYBRID_CPU), !!(enabledFeatures & FEATURE_EXT_KEYS));
       
