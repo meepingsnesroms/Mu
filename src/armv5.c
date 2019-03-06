@@ -117,7 +117,7 @@ static void armv5SetFaultAddr(struct ArmCpu* cpu, UInt32 adr, UInt8 faultStatus)
 }
 
 void armv5Reset(void){
-   cpuInit(&armv5Cpu, 0x00000000/*pc, set by 68k while emulating*/, armv5MemoryAccess, armv5EmulErr, armv5Hypercall, armv5SetFaultAddr);
+   cpuInit(&armv5Cpu, 0x00000000/*PC, set by 68k while emulating*/, armv5MemoryAccess, armv5EmulErr, armv5Hypercall, armv5SetFaultAddr);
    armv5ServiceRequest = false;
 }
 

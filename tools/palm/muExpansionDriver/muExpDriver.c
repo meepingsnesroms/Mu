@@ -25,15 +25,15 @@ UInt32 PilotMain(UInt16 cmd, MemPtr cmdBPB, UInt16 launchFlags){
    uint32_t configFile[CONFIG_FILE_ENTRIES];
    Err error;
    
-   configDb = DmOpenDatabaseByTypeCreator('EMUC', 'GuiC', dmModeReadWrite);
+   configDb = DmOpenDatabaseByTypeCreator('EMUC', APP_CREATOR, dmModeReadWrite);
    
    /*create db and set defaults if config doesnt exist*/
    if(!configDb){
-      error = DmCreateDatabase(0/*cardNo*/, "Emu Config", 'GuiC', 'EMUC', true);
+      error = DmCreateDatabase(0/*cardNo*/, "Emu Config", APP_CREATOR, 'EMUC', true);
       if(error != errNone)
          debugLog("Tried to create db, err:%d\n", error);
       
-      configDb = DmOpenDatabaseByTypeCreator('EMUC', 'GuiC', dmModeReadWrite);
+      configDb = DmOpenDatabaseByTypeCreator('EMUC', APP_CREATOR, dmModeReadWrite);
       if(!configDb)
          debugLog("Cant find created db!\n");
       

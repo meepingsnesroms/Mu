@@ -542,8 +542,8 @@ uint32_t sandboxCommand(uint32_t command, void* data){
             //HwrCalcDynamicRAMSize_10083B0A:
             //patchOsRom(0x5CC6, "203C000800004E75");//move.l 0x80000, d0; rts
             //patchOsRom(0x83B0A, "203C000800004E75");//move.l 0x80000, d0; rts
-            patchOsRom(0x5CC6, "203C001000004E75");//move.l 0x100000, d0; rts
-            patchOsRom(0x83B0A, "203C001000004E75");//move.l 0x100000, d0; rts
+            //patchOsRom(0x5CC6, "203C001000004E75");//move.l 0x100000, d0; rts
+            //patchOsRom(0x83B0A, "203C001000004E75");//move.l 0x100000, d0; rts
 
             //patch PrvChunkNew to only allocate in 4 byte intervals
             //PrvChunkNew_10020CBC:

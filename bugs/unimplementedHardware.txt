@@ -1,5 +1,6 @@
 CPU:
 sysTrapPceNativeCall, ARM Emulator
+VFP(floating point) coprocessor for ARM
 Test what bits of IMR are writable
 SCR privilege violation doesnt trigger the same as on hardware(likely has to do with not emulating the unused chip selects)
 TCN2 is unimplemented and seems to be used by the same routines that turn the CPU off for sleep mode

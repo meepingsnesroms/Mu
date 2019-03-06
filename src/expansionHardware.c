@@ -98,7 +98,7 @@ void expansionHardwareRenderDisplay(void){
 }
 
 uint32_t expansionHardwareGetRegister(uint32_t address){
-   address &= 0xFFF;
+   address &= 0x00000FFF;
    switch(address){
       case EMU_INFO:
          return palmEmuFeatures.info;
@@ -113,7 +113,7 @@ uint32_t expansionHardwareGetRegister(uint32_t address){
 }
 
 void expansionHardwareSetRegister(uint32_t address, uint32_t value){
-   address &= 0xFFF;
+   address &= 0x00000FFF;
    switch(address){
       case EMU_SRC:
          palmEmuFeatures.src = value;

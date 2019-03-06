@@ -1,3 +1,4 @@
+#include "sdkPatch/PalmOSPatched.h"
 #include <stdint.h>
 
 #include "debug.h"
@@ -10,6 +11,69 @@
 #include "palmGlobalDefines.h"
 #include "specs/emuFeatureRegisterSpec.h"
 
+
+static void installResourceGlobals(void){
+   if(!getGlobalVar(RESOURCE_GLOBALS_INITIALIZED)){
+      LocalID thisApp;
+      DmOpenRef thisAppRef;
+      MemHandle funcBlob;
+      MemPtr funcBlobPtr;
+      
+      /*set globals, since this is running at boot time the apps own database isnt loaded it needs to be opened*/
+      thisApp = DmFindDatabase(0, APP_NAME);
+      if(!thisApp)
+         debugLog(APP_NAME " not installed!\n");
+      
+      thisAppRef = DmOpenDatabase(0, thisApp, dmModeReadOnly | dmModeLeaveOpen);
+      if(!thisAppRef)
+         debugLog("Cant open " APP_NAME "!\n");
+      
+      /*ARM_EXIT_FUNC*/
+      funcBlob = DmGetResource(FUNCTION_BLOB_TYPE, ARM_EXIT_FUNC_ID);
+      if(!funcBlob)
+         debugLog("Cant open ARM_EXIT_FUNC!\n");
+      
+      funcBlobPtr = MemHandleLock(funcBlob);
+      if(!funcBlobPtr)
+         debugLog("Cant lock ARM_EXIT_FUNC!\n");
+      
+      if((uint32_t)funcBlobPtr & 0x00000003)
+         debugLog("ARM_EXIT_FUNC is unaligned!\n");
+      
+      setGlobalVar(ARM_EXIT_FUNC, (uint32_t)funcBlobPtr);
+
+      /*ARM_CALL_68K_FUNC*/
+      funcBlob = DmGetResource(FUNCTION_BLOB_TYPE, ARM_CALL_68K_FUNC_ID);
+      if(!funcBlob)
+         debugLog("Cant open ARM_CALL_68K_FUNC!\n");
+      
+      funcBlobPtr = MemHandleLock(funcBlob);
+      if(!funcBlobPtr)
+         debugLog("Cant lock ARM_CALL_68K_FUNC!\n");
+      
+      if((uint32_t)funcBlobPtr & 0x00000003)
+         debugLog("ARM_CALL_68K_FUNC is unaligned!\n");
+      
+      setGlobalVar(ARM_CALL_68K_FUNC, (uint32_t)funcBlobPtr);
+      
+      /*M68K_CALL_WITH_BLOB_FUNC*/
+      funcBlob = DmGetResource(FUNCTION_BLOB_TYPE, M68K_CALL_WITH_BLOB_FUNC_ID);
+      if(!funcBlob)
+         debugLog("Cant open M68K_CALL_WITH_BLOB_FUNC!\n");
+      
+      funcBlobPtr = MemHandleLock(funcBlob);
+      if(!funcBlobPtr)
+         debugLog("Cant lock M68K_CALL_WITH_BLOB_FUNC!\n");
+      
+      if((uint32_t)funcBlobPtr & 0x00000001)
+         debugLog("M68K_CALL_WITH_BLOB_FUNC is unaligned!\n");
+      
+      setGlobalVar(M68K_CALL_WITH_BLOB_FUNC, (uint32_t)funcBlobPtr);
+      
+      /*dont run this function again*/
+      setGlobalVar(RESOURCE_GLOBALS_INITIALIZED, true);
+   }
+}
 
 static void install128mbRam(uint8_t mbDynamicHeap){
    /*these functions are called by HwrInit, which can be called directly by apps*/
@@ -172,6 +236,8 @@ void initBoot(uint32_t* configFile){
       debugLog("Storage free:%ld bytes, Storage biggest block:%ld bytes\n", heapFree, heapBiggestBlock);
    else
       debugLog("Storage free:check failed, Storage biggest block:check failed\n");
+   
+   installResourceGlobals();
    
    if(configFile[USER_WARNING_GIVEN]){
       uint32_t enabledFeatures = readArbitraryMemory32(EMU_REG_ADDR(EMU_INFO));
