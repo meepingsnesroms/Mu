@@ -15,7 +15,7 @@ static void getConfigDefaults(uint32_t* configFile){
    configFile[LCD_WIDTH] = 160;
    configFile[LCD_HEIGHT] = 220;
    configFile[EXTRA_RAM_MB_DYNAMIC_HEAP] = 10;
-   configFile[BOOT_CPU_SPEED] = 800;
+   configFile[BOOT_CPU_SPEED] = 100;
 }
 
 void readConfigFile(uint32_t* configFile){
