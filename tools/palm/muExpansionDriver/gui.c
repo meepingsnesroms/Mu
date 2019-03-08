@@ -27,8 +27,17 @@ static Boolean appHandleEvent(EventPtr eventP){
          
          /*init form controls*/
          switch(eventP->data.frmLoad.formID){
-            case GUI_FORM_MAIN_WINDOW:
-               CtlSetValue(getObjectPtr(GUI_CHECKBOX_DRIVER_ENABLED), guiConfigFile[DRIVER_ENABLED]);
+            case GUI_FORM_MAIN_WINDOW:{
+                  MemHandle cpuSpeedTextHandle = MemHandleNew(4);
+                  MemPtr cpuSpeedText;
+               
+                  cpuSpeedText = MemHandleLock(cpuSpeedTextHandle);
+                  StrPrintF(cpuSpeedText, "%ld", guiConfigFile[BOOT_CPU_SPEED]);
+                  MemHandleUnlock(cpuSpeedTextHandle);
+                  
+                  CtlSetValue(getObjectPtr(GUI_CHECKBOX_DRIVER_ENABLED), guiConfigFile[DRIVER_ENABLED]);
+                  FldSetTextHandle(getObjectPtr(GUI_FIELD_CPU_SPEED), cpuSpeedTextHandle);
+               }
                break;
                
             default:
@@ -63,16 +72,16 @@ static Boolean appHandleEvent(EventPtr eventP){
       case fldChangedEvent:
          switch(eventP->data.fldChanged.fieldID){
             case GUI_FIELD_CPU_SPEED:{
-               uint16_t cpuSpeed;
-               Char* fieldText = FldGetTextPtr(getObjectPtr(GUI_FIELD_CPU_SPEED));
-               
-               if(fieldText && fieldText[0] != '\0')
-                  cpuSpeed = clamp(10, atoi(fieldText), 999);/*make sure the CPU is at least on and not infinitely fast*/
-               else
-                  cpuSpeed = 100;
+                  uint16_t cpuSpeed;
+                  Char* fieldText = FldGetTextPtr(getObjectPtr(GUI_FIELD_CPU_SPEED));
+                  
+                  if(fieldText && fieldText[0] != '\0')
+                     cpuSpeed = clamp(10, atoi(fieldText), 999);/*make sure the CPU is at least on and not infinitely fast*/
+                  else
+                     cpuSpeed = 100;
 
-               guiConfigFile[BOOT_CPU_SPEED] = cpuSpeed;
-               return true;
+                  guiConfigFile[BOOT_CPU_SPEED] = cpuSpeed;
+                  return true;
             }
                
             default:
