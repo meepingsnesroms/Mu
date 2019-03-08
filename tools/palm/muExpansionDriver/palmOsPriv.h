@@ -9,7 +9,7 @@
 
 /*CPU*/
 #define ResetStackPointer FIXED_ADDRESS_VAR(0x00000000, uint16_t*)
-#define ResetVector FIXED_ADDRESS_VAR(0x00000004, void (*)(void))
+#define ResetVector FIXED_ADDRESS_VAR(0x00000004, void*)
 
 /*OS*/
 #define ScrStatePtr FIXED_ADDRESS_VAR(0x00000164, void*)

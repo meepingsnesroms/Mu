@@ -40,7 +40,7 @@ static Boolean appHandleEvent(EventPtr eventP){
          FrmDrawForm(FrmGetActiveForm());
          return true;
          
-      case ctlExitEvent:
+      case ctlSelectEvent:
          switch(eventP->data.ctlExit.controlID){
             case GUI_CHECKBOX_DRIVER_ENABLED:
                guiConfigFile[DRIVER_ENABLED] = CtlGetValue(getObjectPtr(GUI_CHECKBOX_DRIVER_ENABLED));
@@ -52,8 +52,9 @@ static Boolean appHandleEvent(EventPtr eventP){
                
             case GUI_BUTTON_SAVE_AND_REBOOT:
                writeConfigFile(guiConfigFile);
-               SysReset();/*this is not the same as a full reset!*/
-               stopExecution();
+               debugLog("Attempting reboot!\n");
+               SysReset();
+               return true;
                
             default:
                return false;
@@ -62,10 +63,14 @@ static Boolean appHandleEvent(EventPtr eventP){
       case fldChangedEvent:
          switch(eventP->data.fldChanged.fieldID){
             case GUI_FIELD_CPU_SPEED:{
-               uint16_t cpuSpeed = atoi(FldGetTextPtr(getObjectPtr(GUI_FIELD_CPU_SPEED)));
+               uint16_t cpuSpeed;
+               Char* fieldText = FldGetTextPtr(getObjectPtr(GUI_FIELD_CPU_SPEED));
                
-               /*make sure the CPU is at least on and not infinitely fast*/
-               cpuSpeed = clamp(10, cpuSpeed, 999);
+               if(fieldText && fieldText[0] != '\0')
+                  cpuSpeed = clamp(10, atoi(fieldText), 999);/*make sure the CPU is at least on and not infinitely fast*/
+               else
+                  cpuSpeed = 100;
+
                guiConfigFile[BOOT_CPU_SPEED] = cpuSpeed;
                return true;
             }
@@ -81,8 +86,6 @@ static Boolean appHandleEvent(EventPtr eventP){
 
 void showGui(uint32_t* configFile){
    EventType event;
-   Err unused;
-   FormType* currentWindow = NULL;
    
    debugLog("Attempting to load GUI.\n");
    
@@ -106,7 +109,6 @@ void showGui(uint32_t* configFile){
       
       if(!appHandleEvent(&event))
          if(!SysHandleEvent(&event))
-            if(!MenuHandleEvent(0, &event, &unused))
                FrmDispatchEvent(&event);
    }
    while(event.eType != appStopEvent);
