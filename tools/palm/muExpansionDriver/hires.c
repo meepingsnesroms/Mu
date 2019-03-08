@@ -77,7 +77,7 @@ static Boolean setTungstenWDriverFramebuffer(uint16_t width, uint16_t height){
       /*driverWindow->bitmapP->flags.forScreen = false;*/
       /*BmpDelete(driverWindow->bitmapP);*/
       
-      driverWindow->bitmapP = &newBitmap->bitmap;
+      driverWindow->bitmapP = (BitmapType*)&newBitmap->bitmap;
       
       /*tell the emu where the framebuffer is*/
       writeArbitraryMemory32(EMU_REG_ADDR(EMU_SRC), (uint32_t)newBitmap->data);

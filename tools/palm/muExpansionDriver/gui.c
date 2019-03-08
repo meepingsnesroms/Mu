@@ -45,8 +45,10 @@ void showGui(uint32_t* configFile){
    /*popup warning dialog*/
    if(!configFile[USER_WARNING_GIVEN]){
       /*continue if user pressed "No", not a real device*/
-      if(!FrmAlert(GUI_ALERT_USER_WARNING))
+      if(!FrmAlert(GUI_ALERT_USER_WARNING)){
          configFile[USER_WARNING_GIVEN] = true;
+         configFile[DRIVER_ENABLED] = true;
+      }
    }
    
    /*set starting window*/

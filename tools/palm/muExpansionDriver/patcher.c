@@ -217,31 +217,34 @@ static void setProperDeviceId(uint16_t screenWidth, uint16_t screenHeight, Boole
 }
 
 void initBoot(uint32_t* configFile){
-   Err error;
-   uint32_t heapFree;
-   uint32_t heapBiggestBlock;
-   
-   debugLog("OS booting!\n");
-   
-   debugLog("RAM size:%ld bytes\n", MemHeapSize(0));
-   error = MemHeapFreeBytes(0, &heapFree, &heapBiggestBlock);
-   if(!error)
-      debugLog("RAM free:%ld, RAM biggest block:%ld bytes\n", heapFree, heapBiggestBlock);
-   else
-      debugLog("RAM free:check failed, RAM biggest block:check failed\n");
-   
-   debugLog("Storage size:%ld bytes\n", MemHeapSize(1));
-   error = MemHeapFreeBytes(1, &heapFree, &heapBiggestBlock);
-   if(!error)
-      debugLog("Storage free:%ld bytes, Storage biggest block:%ld bytes\n", heapFree, heapBiggestBlock);
-   else
-      debugLog("Storage free:check failed, Storage biggest block:check failed\n");
-   
-   installResourceGlobals();
-   
-   if(configFile[USER_WARNING_GIVEN]){
+   if(configFile[DRIVER_ENABLED] && !configFile[SAFE_MODE]){
+      Err error;
+      uint32_t heapFree;
+      uint32_t heapBiggestBlock;
       uint32_t enabledFeatures = readArbitraryMemory32(EMU_REG_ADDR(EMU_INFO));
       
+      /*skip the next boot and flush vars to the config file, that way if it crashes it will still boot again*/
+      configFile[SAFE_MODE] = true;
+      writeConfigFile(configFile);
+      
+      debugLog("OS booting!\n");
+      
+      debugLog("RAM size:%ld bytes\n", MemHeapSize(0));
+      error = MemHeapFreeBytes(0, &heapFree, &heapBiggestBlock);
+      if(!error)
+         debugLog("RAM free:%ld, RAM biggest block:%ld bytes\n", heapFree, heapBiggestBlock);
+      else
+         debugLog("RAM free:check failed, RAM biggest block:check failed\n");
+      
+      debugLog("Storage size:%ld bytes\n", MemHeapSize(1));
+      error = MemHeapFreeBytes(1, &heapFree, &heapBiggestBlock);
+      if(!error)
+         debugLog("Storage free:%ld bytes, Storage biggest block:%ld bytes\n", heapFree, heapBiggestBlock);
+      else
+         debugLog("Storage free:check failed, Storage biggest block:check failed\n");
+      
+      /*installResourceGlobals();*/
+         
       if(enabledFeatures & FEATURE_DEBUG)
          installDebugHandlers();
       
@@ -259,6 +262,10 @@ void initBoot(uint32_t* configFile){
       
       writeArbitraryMemory32(EMU_REG_ADDR(EMU_VALUE), configFile[BOOT_CPU_SPEED]);
       writeArbitraryMemory32(EMU_REG_ADDR(EMU_CMD), CMD_SET_CPU_SPEED);
+      
+      /*boot succeeded, clear flag*/
+      configFile[SAFE_MODE] = false;
+      writeConfigFile(configFile);
    }
 }
 

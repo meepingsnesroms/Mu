@@ -1,6 +1,8 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+#include <stdint.h>
+
 /*compile time vars*/
 #define APP_NAME    "MuExpDriver"
 #define APP_CREATOR 'GuiC'
@@ -13,6 +15,8 @@
 /*config vars*/
 enum{
    USER_WARNING_GIVEN = 0,
+   DRIVER_ENABLED,
+   SAFE_MODE,
    ARM_STACK_SIZE,
    LCD_WIDTH,
    LCD_HEIGHT,
@@ -21,5 +25,8 @@ enum{
    /*add new entries above*/
    CONFIG_FILE_ENTRIES
 };
+
+void readConfigFile(uint32_t* configFile);
+void writeConfigFile(uint32_t* configFile);
 
 #endif
