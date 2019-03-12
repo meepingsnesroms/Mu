@@ -3,6 +3,7 @@
 
 #include "debug.h"
 #include "armv5.h"
+#include "traps.h"
 #include "globals.h"
 #include "palmOsPriv.h"
 #include "palmGlobalDefines.h"
@@ -92,12 +93,11 @@ void emuErrDisplayFileLineMsg(const Char* const filename, UInt16 lineNo, const C
    debugLog("Error at:%s, Line:%d, Msg:%s\n", filename, lineNo, msg);
 }
 
-void emuSysUnimplemented(void){
-   uint16_t apiNum;
+void emuSysUnimplemented(__dispatcher_stack_frame){
+   uint32_t callLocation = getCallLocation();
+   uint16_t apiNum = getApiNum();
    
-   /*need to find a way to catch the last called API*/
-   
-   debugLog("Unimplemented API called:0x%04X\n", apiNum);
+   debugLog("Unimplemented API:0x%04X, called from:0x%08lX\n", apiNum, callLocation);
 }
 
 Err emuHwrDisplayAttributes(Boolean set, UInt8 attribute, void* dataPtr){

@@ -141,7 +141,11 @@
 #define M68K_INSTRUCTION_CALLBACK() sandboxOnOpcodeRun()
 
 /* If ON, the CPU will emulate the 4-byte prefetch queue of a real 68000 */
+#if !defined(EMU_NO_SAFETY)
+#define M68K_EMULATE_PREFETCH       OPT_ON
+#else
 #define M68K_EMULATE_PREFETCH       OPT_OFF
+#endif
 
 
 /* If ON, the CPU will generate address error exceptions if it tries to

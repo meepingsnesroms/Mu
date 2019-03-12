@@ -120,7 +120,18 @@ static void installPceNativeCallHandler(uint32_t armStackSize){
 }
 
 static void installDebugHandlers(void){
+   void* sysUnimplementedAddress = SysGetTrapAddress(sysTrapSysUnimplemented);
+   uint16_t index;
+   
    /*patch all the debug handlers to go to the emu debug console*/
+   for(index = sysTrapBase; index < sysTrapLastTrapNumber; index++){
+      void* trapAddress = SysGetTrapAddress(index);
+      
+      /*eventually should remove the NULL check too, the trap list should have no NULL values*/
+      
+      if(trapAddress == sysUnimplementedAddress || trapAddress == NULL)
+         SysSetTrapAddress(index, (void*)emuSysUnimplemented);
+   }
    SysSetTrapAddress(sysTrapErrDisplayFileLineMsg, (void*)emuErrDisplayFileLineMsg);
 }
 
