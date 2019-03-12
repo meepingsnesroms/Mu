@@ -92,6 +92,14 @@ void emuErrDisplayFileLineMsg(const Char* const filename, UInt16 lineNo, const C
    debugLog("Error at:%s, Line:%d, Msg:%s\n", filename, lineNo, msg);
 }
 
+void emuSysUnimplemented(void){
+   uint16_t apiNum;
+   
+   /*need to find a way to catch the last called API*/
+   
+   debugLog("Unimplemented API called:0x%04X\n", apiNum);
+}
+
 Err emuHwrDisplayAttributes(Boolean set, UInt8 attribute, void* dataPtr){
    /*this function is exempt from formatting standards, it is meant as an exact C reconstrution of the Tungsten W HwrDisplayAttributes patched to work on an m515*/
    static const char lcdControllerName[] = "MQ11xx  LCD Controller";

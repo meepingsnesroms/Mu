@@ -243,7 +243,7 @@ void initBoot(uint32_t* configFile){
       else
          debugLog("Storage free:check failed, Storage biggest block:check failed\n");
       
-      /*installResourceGlobals();*/
+      installResourceGlobals();
          
       if(enabledFeatures & FEATURE_DEBUG)
          installDebugHandlers();
