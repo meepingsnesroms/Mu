@@ -37,6 +37,10 @@ static Boolean appHandleEvent(EventPtr eventP){
                   
                   CtlSetValue(getObjectPtr(GUI_CHECKBOX_DRIVER_ENABLED), guiConfigFile[DRIVER_ENABLED]);
                   FldSetTextHandle(getObjectPtr(GUI_FIELD_CPU_SPEED), cpuSpeedTextHandle);
+                  if(guiConfigFile[SAFE_MODE])
+                     FrmShowObject(FrmGetActiveForm(), GUI_LABEL_SAFE_MODE);
+                  else
+                     FrmHideObject(FrmGetActiveForm(), GUI_LABEL_SAFE_MODE);
                }
                break;
                
@@ -60,6 +64,8 @@ static Boolean appHandleEvent(EventPtr eventP){
                return true;
                
             case GUI_BUTTON_SAVE_AND_REBOOT:
+               /*clear safe mode flag if its set and test the new config*/
+               guiConfigFile[SAFE_MODE] = false;
                writeConfigFile(guiConfigFile);
                debugLog("Attempting reboot!\n");
                SysReset();

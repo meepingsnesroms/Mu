@@ -279,6 +279,14 @@ void emuScrDrawChars(WinPtr pWindow, Int16 xLoc, Int16 yLoc, Int16 xExtent, Int1
 }
 
 /*
+may need to set this to change the border color like on OS 5
+Boolean UIPickColor(IndexedColorType *indexP, RGBColorType *rgbP,
+                    UIPickColorStartType start, const Char *titleP,
+                    const Char *tipP)
+SYS_TRAP(sysTrapUIPickColor);
+*/
+
+/*
  may need to remove these from trap table:
  ScrGetGrayPat
  ScrGetColortable

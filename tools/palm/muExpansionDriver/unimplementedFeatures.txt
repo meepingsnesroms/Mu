@@ -9,5 +9,6 @@ GUI
 Setting window color like OS 5
 Tungsten W drivers are corrupting the trap table pointer(and a ton of other low mem globals)
 For some reason the new versions of MuExpDriver dont work with Chuzzle anymore
+Need to allocate a new trap table and set the global to that, not just write off the end of the existing one
 
 Fixed:
