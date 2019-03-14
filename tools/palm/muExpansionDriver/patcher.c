@@ -12,22 +12,27 @@
 #include "specs/emuFeatureRegisterSpec.h"
 
 
+static void lockCodeXXXX(void){
+   /*prevents the driver from being moved around in RAM while running*/
+   uint16_t index = 0;
+   
+   while(true){
+      MemHandle codeResourceHandle = DmGetResource('code', index);
+      
+      if(codeResourceHandle)
+         MemHandleLock(codeResourceHandle);
+      else
+         break;
+      
+      index++;
+   }
+}
+
 static void installResourceGlobals(void){
    if(!getGlobalVar(RESOURCE_GLOBALS_INITIALIZED)){
-      LocalID thisApp;
-      DmOpenRef thisAppRef;
       MemHandle funcBlob;
       MemPtr funcBlobPtr;
-      
-      /*set globals, since this is running at boot time the apps own database isnt loaded it needs to be opened*/
-      thisApp = DmFindDatabase(0, APP_NAME);
-      if(!thisApp)
-         debugLog(APP_NAME " not installed!\n");
-      
-      thisAppRef = DmOpenDatabase(0, thisApp, dmModeReadOnly | dmModeLeaveOpen);
-      if(!thisAppRef)
-         debugLog("Cant open " APP_NAME "!\n");
-      
+
       /*ARM_EXIT_FUNC*/
       funcBlob = DmGetResource(FUNCTION_BLOB_TYPE, ARM_EXIT_FUNC_ID);
       if(!funcBlob)
@@ -229,6 +234,8 @@ static void setProperDeviceId(uint16_t screenWidth, uint16_t screenHeight, Boole
 
 void initBoot(uint32_t* configFile){
    if(configFile[DRIVER_ENABLED] && !configFile[SAFE_MODE]){
+      LocalID thisApp;
+      DmOpenRef thisAppRef;
       Err error;
       uint32_t heapFree;
       uint32_t heapBiggestBlock;
@@ -253,7 +260,17 @@ void initBoot(uint32_t* configFile){
          debugLog("Storage free:%ld bytes, Storage biggest block:%ld bytes\n", heapFree, heapBiggestBlock);
       else
          debugLog("Storage free:check failed, Storage biggest block:check failed\n");
+
+      /*since this is running at boot time the apps own database isnt loaded and it needs to be opened*/
+      thisApp = DmFindDatabase(0, APP_NAME);
+      if(!thisApp)
+         debugLog(APP_NAME " not installed!\n");
       
+      thisAppRef = DmOpenDatabase(0, thisApp, dmModeReadOnly | dmModeLeaveOpen);
+      if(!thisAppRef)
+         debugLog("Cant open " APP_NAME "!\n");
+      
+      lockCodeXXXX();
       installResourceGlobals();
          
       if(enabledFeatures & FEATURE_DEBUG)

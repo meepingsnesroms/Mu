@@ -5,7 +5,7 @@
 
 /*compile time vars*/
 #define APP_NAME    "MuExpDriver"
-#define APP_CREATOR 'GuiC'
+#define APP_ID      'MuDv'
 
 #define FUNCTION_BLOB_TYPE          'func'
 #define ARM_EXIT_FUNC_ID            0x0000
@@ -22,6 +22,7 @@ enum{
    LCD_HEIGHT,
    EXTRA_RAM_MB_DYNAMIC_HEAP,
    BOOT_CPU_SPEED,
+   PATCH_INCONSISTENT_APIS,
    /*add new entries above*/
    CONFIG_FILE_ENTRIES
 };

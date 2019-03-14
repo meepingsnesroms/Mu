@@ -25,5 +25,6 @@ var getPenPosition(void);
 var playConstantTone(void);
 var unaligned32bitAccess(void);
 var isIrq2AttachedToSdCardChipSelect(void);
+var callSysUnimplemented(void);
 
 #endif

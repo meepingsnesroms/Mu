@@ -36,6 +36,7 @@ static Boolean appHandleEvent(EventPtr eventP){
                   MemHandleUnlock(cpuSpeedTextHandle);
                   
                   CtlSetValue(getObjectPtr(GUI_CHECKBOX_DRIVER_ENABLED), guiConfigFile[DRIVER_ENABLED]);
+                  CtlSetValue(getObjectPtr(GUI_CHECKBOX_PATCH_INCONSISTENT_APIS), guiConfigFile[PATCH_INCONSISTENT_APIS]);
                   FldSetTextHandle(getObjectPtr(GUI_FIELD_CPU_SPEED), cpuSpeedTextHandle);
                   if(guiConfigFile[SAFE_MODE])
                      FrmShowObject(FrmGetActiveForm(), GUI_LABEL_SAFE_MODE);
@@ -60,7 +61,7 @@ static Boolean appHandleEvent(EventPtr eventP){
                return true;
                
             case GUI_CHECKBOX_PATCH_INCONSISTENT_APIS:
-               /*havent found any APIs that differ between OS 4 and 5 other than not existing at all*/
+               guiConfigFile[PATCH_INCONSISTENT_APIS] = CtlGetValue(getObjectPtr(GUI_CHECKBOX_PATCH_INCONSISTENT_APIS));
                return true;
                
             case GUI_BUTTON_SAVE_AND_REBOOT:

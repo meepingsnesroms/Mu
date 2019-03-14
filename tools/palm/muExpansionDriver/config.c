@@ -16,12 +16,13 @@ static void getConfigDefaults(uint32_t* configFile){
    configFile[LCD_HEIGHT] = 220;
    configFile[EXTRA_RAM_MB_DYNAMIC_HEAP] = 10;
    configFile[BOOT_CPU_SPEED] = 100;
+   configFile[PATCH_INCONSISTENT_APIS] = false;
 }
 
 void readConfigFile(uint32_t* configFile){
    DmOpenRef configDb;
    
-   configDb = DmOpenDatabaseByTypeCreator('EMUC', APP_CREATOR, dmModeReadWrite);
+   configDb = DmOpenDatabaseByTypeCreator('EMUC', APP_ID, dmModeReadWrite);
    
    if(!configDb){
       /*config doesnt exist, get defaults*/
@@ -54,15 +55,15 @@ void writeConfigFile(uint32_t* configFile){
    uint32_t* dmConfigFile;
    Err error;
    
-   configDb = DmOpenDatabaseByTypeCreator('EMUC', APP_CREATOR, dmModeReadWrite);
+   configDb = DmOpenDatabaseByTypeCreator('EMUC', APP_ID, dmModeReadWrite);
    
    /*create db and set defaults if config doesnt exist*/
    if(!configDb){
-      error = DmCreateDatabase(0/*cardNo*/, "Emu Config", APP_CREATOR, 'EMUC', true);
+      error = DmCreateDatabase(0/*cardNo*/, "Emu Config", APP_ID, 'EMUC', true);
       if(error != errNone)
          debugLog("Tried to create DB, err:%d\n", error);
       
-      configDb = DmOpenDatabaseByTypeCreator('EMUC', APP_CREATOR, dmModeReadWrite);
+      configDb = DmOpenDatabaseByTypeCreator('EMUC', APP_ID, dmModeReadWrite);
       if(!configDb)
          debugLog("Cant find created DB!\n");
       
