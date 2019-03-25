@@ -60,10 +60,9 @@ ios{
 CONFIG(debug, debug|release){
     # debug build, be accurate, fail hard, and add logging
     DEFINES += EMU_DEBUG EMU_CUSTOM_DEBUG_LOG_HANDLER EMU_SANDBOX
-    # DEFINES += EMU_SANDBOX_OPCODE_LEVEL_DEBUG # for breakpoints
+    DEFINES += EMU_SANDBOX_OPCODE_LEVEL_DEBUG # for breakpoints
+    DEFINES += EMU_SANDBOX_LOG_APIS # for printing sysTrap* calls, EMU_SANDBOX_OPCODE_LEVEL_DEBUG must be on too
     macx|linux-g++{
-        # DEFINES += EMU_SANDBOX_OPCODE_LEVEL_DEBUG
-        # DEFINES += EMU_SANDBOX_LOG_APIS
         # also check for any buffer overflows and memory leaks
         # -fsanitize=undefined,leak
         QMAKE_CFLAGS += -fstack-protector-strong -fsanitize=address -Werror=array-bounds

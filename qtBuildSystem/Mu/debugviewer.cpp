@@ -142,15 +142,6 @@ void DebugViewer::on_debugDump_clicked(){
    }
 }
 
-void DebugViewer::on_debugPrintAudioBuffer_clicked(){
-   EmuWrapper& emu = ((MainWindow*)parentWidget())->emu;
-   const int16_t* samples = emu.getAudioSamples();
-
-   ui->debugValueList->clear();
-   for(uint32_t index = 0; index < AUDIO_SAMPLES_PER_FRAME * 2; index++)
-      ui->debugValueList->addItem(stringFromNumber(index, false, 5) + ":" + stringFromNumber(samples[index], false, 5));
-}
-
 void DebugViewer::on_debugShowRegisters_clicked(){
    std::vector<uint32_t> registers = ((MainWindow*)parentWidget())->emu.getCpuRegisters();
 
@@ -164,7 +155,7 @@ void DebugViewer::on_debugShowRegisters_clicked(){
    ui->debugValueList->addItem("SR:" + stringFromNumber(registers[17], true, 4));
 }
 
-void DebugViewer::on_debugPrintDebugLogs_clicked(){
+void DebugViewer::on_debugShowDebugLogs_clicked(){
    EmuWrapper& emu = ((MainWindow*)parentWidget())->emu;
    std::vector<QString>& debugStrings = emu.getDebugStrings();
    std::vector<uint64_t>& duplicateCallCount = emu.getDuplicateCallCount();
