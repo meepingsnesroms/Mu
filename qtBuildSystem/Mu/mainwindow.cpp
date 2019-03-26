@@ -20,6 +20,7 @@
 #include <stdint.h>
 
 #include "debugviewer.h"
+#include "settingsmanager.h"
 #include "statemanager.h"
 
 
@@ -28,6 +29,7 @@ MainWindow::MainWindow(QWidget* parent) :
    ui(new Ui::MainWindow){
    QAudioFormat format;
    QString resourceDirPath;
+   bool hideOnscreenKeys;
 
    //audio output
    format.setSampleRate(AUDIO_SAMPLE_RATE);
@@ -43,6 +45,7 @@ MainWindow::MainWindow(QWidget* parent) :
 
    //submodules
    settings = new QSettings(QDir::homePath() + "/MuCfg.txt", QSettings::IniFormat);//settings is public, create it first
+   settingsManager = new SettingsManager(this);
    stateManager = new StateManager(this);
    emuDebugger = new DebugViewer(this);
    refreshDisplay = new QTimer(this);
@@ -70,6 +73,17 @@ MainWindow::MainWindow(QWidget* parent) :
    //GUI
    ui->setupUi(this);
 
+   //check if onscreen keys should be hidden
+   if(settings->value("hideOnscreenKeys", "").toString() == ""){
+#if defined(Q_OS_ANDROID) && defined(Q_OS_IOS)
+      settings->setValue("hideOnscreenKeys", false);
+#else
+      //not a mobile device disable the on screen buttons
+      settings->setValue("hideOnscreenKeys", true);
+#endif
+   }
+   hideOnscreenKeys = settings->value("hideOnscreenKeys", "").toBool();
+
    //this makes the display window and button icons resize properly
    ui->centralWidget->installEventFilter(this);
    ui->centralWidget->setObjectName("centralWidget");
@@ -94,7 +108,24 @@ MainWindow::MainWindow(QWidget* parent) :
    ui->stateManager->installEventFilter(this);
    ui->reset->installEventFilter(this);
 
+   //hide onscreen keys if needed
+   if(hideOnscreenKeys){
+      ui->calendar->setHidden(true);
+      ui->addressBook->setHidden(true);
+      ui->todo->setHidden(true);
+      ui->notes->setHidden(true);
+
+      ui->up->setHidden(true);
+      ui->down->setHidden(true);
+      ui->left->setHidden(true);
+      ui->right->setHidden(true);
+      ui->center->setHidden(true);
+
+      ui->power->setHidden(true);
+   }
+
 #if !defined(EMU_DEBUG) || defined(Q_OS_ANDROID) || defined(Q_OS_IOS)
+   //doesnt support debug tools
    ui->debugger->hide();
 #endif
    connect(refreshDisplay, SIGNAL(timeout()), this, SLOT(updateDisplay()));
@@ -111,6 +142,14 @@ MainWindow::~MainWindow(){
    delete ui;
 }
 
+void MainWindow::keyPressEvent(QKeyEvent* event){
+
+}
+
+void MainWindow::keyReleaseEvent(QKeyEvent* event){
+
+}
+
 bool MainWindow::eventFilter(QObject* object, QEvent* event){
    if(event->type() == QEvent::Resize){
       if(QString(object->metaObject()->className()) == "QPushButton"){
@@ -121,9 +160,10 @@ bool MainWindow::eventFilter(QObject* object, QEvent* event){
 
       if(object->objectName() == "centralWidget"){
          float smallestRatio;
+         bool hideOnscreenKeys = settings->value("hideOnscreenKeys", "").toBool();
 
-         //update displayContainer first, make the display occupy the top 2/3 of the screen
-         ui->displayContainer->setFixedHeight(ui->centralWidget->height() * 0.66);
+         //update displayContainer first, make the display occupy the top 3/5 of the screen if there are Palm keys or 4/5 if theres not
+         ui->displayContainer->setFixedHeight(ui->centralWidget->height() * (hideOnscreenKeys ? 0.80 : 0.60));
 
          smallestRatio = qMin(ui->displayContainer->size().width() * 0.98 / 3.0 , ui->displayContainer->size().height() * 0.98 / 4.0);
          //the 0.98 above allows the display to shrink, without it the displayContainer couldent shrink because of the fixed size of the display
@@ -165,6 +205,29 @@ void MainWindow::selectHomePath(){
 
    createHomeDirectoryTree(homeDirPath);
    settings->setValue("resourceDirectory", homeDirPath);
+}
+
+void MainWindow::redraw(){
+   bool hideOnscreenKeys = settings->value("hideOnscreenKeys", "").toBool();
+
+   //update current keys
+   if(hideOnscreenKeys){
+      ui->calendar->setHidden(true);
+      ui->addressBook->setHidden(true);
+      ui->todo->setHidden(true);
+      ui->notes->setHidden(true);
+
+      ui->up->setHidden(true);
+      ui->down->setHidden(true);
+      ui->left->setHidden(true);
+      ui->right->setHidden(true);
+      ui->center->setHidden(true);
+
+      ui->power->setHidden(true);
+   }
+
+   //update current size
+   ui->centralWidget->resize(ui->centralWidget->size());
 }
 
 //display
@@ -360,4 +423,18 @@ void MainWindow::on_stateManager_clicked(){
 
 void MainWindow::on_reset_clicked(){
    emu.reset(false);
+}
+
+void MainWindow::on_settings_clicked(){
+   bool wasInited = emu.isInited();
+   bool wasPaused = emu.isPaused();
+
+   if(wasInited && !wasPaused)
+      emu.pause();
+
+   settingsManager->exec();
+   redraw();
+
+   if(wasInited && !wasPaused)
+      emu.resume();
 }

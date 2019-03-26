@@ -105,7 +105,8 @@ SOURCES += \
     ../../src/armv5/CPU.c \
     ../../src/armv5/icache.c \
     ../../src/armv5.c \
-    ../../src/expansionHardware.c
+    ../../src/expansionHardware.c \
+    settingsmanager.cpp
 
 HEADERS += \
     debugviewer.h \
@@ -147,12 +148,14 @@ HEADERS += \
     ../../src/armv5.h \
     ../../src/expansionHardware.h \
     ../../src/sdCardAccessors.c.h \
-    ../../src/sdCardCrcTables.c.h
+    ../../src/sdCardCrcTables.c.h \
+    settingsmanager.h
 
 FORMS += \
     mainwindow.ui \
     debugviewer.ui \
-    statemanager.ui
+    statemanager.ui \
+    settingsmanager.ui
 
 CONFIG += mobility
 MOBILITY = 

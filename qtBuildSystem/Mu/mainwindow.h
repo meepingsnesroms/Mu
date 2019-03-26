@@ -11,6 +11,7 @@
 #include <QIODevice>
 
 #include "emuwrapper.h"
+#include "settingsmanager.h"
 #include "statemanager.h"
 #include "debugviewer.h"
 
@@ -28,6 +29,10 @@ public:
    explicit MainWindow(QWidget* parent = nullptr);
    ~MainWindow();
 
+protected:
+    void keyPressEvent(QKeyEvent* event);
+    void keyReleaseEvent(QKeyEvent* event);
+
 private:
    void createHomeDirectoryTree(const QString& path);
 
@@ -36,6 +41,7 @@ private slots:
    void popupErrorDialog(const QString& error);
    void popupInformationDialog(const QString& info);
    void selectHomePath();
+   void redraw();
 
    //display
    void updateDisplay();
@@ -67,12 +73,14 @@ private slots:
    void on_screenshot_clicked();
    void on_stateManager_clicked();
    void on_reset_clicked();
+   void on_settings_clicked();
 
 private:
-   StateManager*   stateManager;
-   DebugViewer*    emuDebugger;
-   QTimer*         refreshDisplay;
-   QAudioOutput*   audioDevice;
-   QIODevice*      audioOut;
-   Ui::MainWindow* ui;
+   SettingsManager* settingsManager;
+   StateManager*    stateManager;
+   DebugViewer*     emuDebugger;
+   QTimer*          refreshDisplay;
+   QAudioOutput*    audioDevice;
+   QIODevice*       audioOut;
+   Ui::MainWindow*  ui;
 };

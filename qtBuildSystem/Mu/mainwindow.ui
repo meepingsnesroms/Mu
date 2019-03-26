@@ -94,58 +94,7 @@
        <property name="bottomMargin">
         <number>0</number>
        </property>
-       <item row="6" column="0">
-        <widget class="QPushButton" name="calendar">
-         <property name="enabled">
-          <bool>false</bool>
-         </property>
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="icon">
-          <iconset resource="mainwindow.qrc">
-           <normaloff>:/buttons/images/calendar.svg</normaloff>:/buttons/images/calendar.svg</iconset>
-         </property>
-        </widget>
-       </item>
-       <item row="6" column="4">
-        <widget class="QPushButton" name="down">
-         <property name="enabled">
-          <bool>false</bool>
-         </property>
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="icon">
-          <iconset resource="mainwindow.qrc">
-           <normaloff>:/buttons/images/down.svg</normaloff>:/buttons/images/down.svg</iconset>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="4">
-        <widget class="QPushButton" name="up">
-         <property name="enabled">
-          <bool>false</bool>
-         </property>
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="icon">
-          <iconset resource="mainwindow.qrc">
-           <normaloff>:/buttons/images/up.svg</normaloff>:/buttons/images/up.svg</iconset>
-         </property>
-        </widget>
-       </item>
-       <item row="6" column="1">
+       <item row="7" column="1">
         <widget class="QPushButton" name="addressBook">
          <property name="enabled">
           <bool>false</bool>
@@ -162,7 +111,24 @@
          </property>
         </widget>
        </item>
-       <item row="3" column="5">
+       <item row="0" column="5">
+        <widget class="QPushButton" name="screenshot">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="icon">
+          <iconset resource="mainwindow.qrc">
+           <normaloff>:/buttons/images/screenshot.svg</normaloff>:/buttons/images/screenshot.svg</iconset>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="5">
         <widget class="QPushButton" name="right">
          <property name="enabled">
           <bool>false</bool>
@@ -179,24 +145,24 @@
          </property>
         </widget>
        </item>
-       <item row="3" column="4">
-        <widget class="QPushButton" name="center">
-         <property name="enabled">
-          <bool>false</bool>
-         </property>
+       <item row="0" column="0">
+        <widget class="QPushButton" name="ctrlBtn">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
            <horstretch>0</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
+         <property name="styleSheet">
+          <string notr="true"/>
+         </property>
          <property name="icon">
           <iconset resource="mainwindow.qrc">
-           <normaloff>:/buttons/images/center.svg</normaloff>:/buttons/images/center.svg</iconset>
+           <normaloff>:/buttons/images/play.svg</normaloff>:/buttons/images/play.svg</iconset>
          </property>
         </widget>
        </item>
-       <item row="6" column="5">
+       <item row="7" column="5">
         <widget class="QPushButton" name="todo">
          <property name="enabled">
           <bool>false</bool>
@@ -225,24 +191,20 @@
          </property>
         </widget>
        </item>
-       <item row="1" column="0">
-        <widget class="QPushButton" name="power">
-         <property name="enabled">
-          <bool>false</bool>
+       <item row="0" column="7">
+        <widget class="QLabel" name="powerButtonLed">
+         <property name="frameShape">
+          <enum>QFrame::Box</enum>
          </property>
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
+         <property name="text">
+          <string>LED</string>
          </property>
-         <property name="icon">
-          <iconset resource="mainwindow.qrc">
-           <normaloff>:/buttons/images/power.svg</normaloff>:/buttons/images/power.svg</iconset>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
          </property>
         </widget>
        </item>
-       <item row="6" column="7">
+       <item row="7" column="7">
         <widget class="QPushButton" name="notes">
          <property name="enabled">
           <bool>false</bool>
@@ -259,7 +221,7 @@
          </property>
         </widget>
        </item>
-       <item row="3" column="1">
+       <item row="4" column="1">
         <widget class="QPushButton" name="left">
          <property name="enabled">
           <bool>false</bool>
@@ -276,88 +238,7 @@
          </property>
         </widget>
        </item>
-       <item row="1" column="7">
-        <widget class="QPushButton" name="ctrlBtn">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="styleSheet">
-          <string notr="true"/>
-         </property>
-         <property name="icon">
-          <iconset resource="mainwindow.qrc">
-           <normaloff>:/buttons/images/play.svg</normaloff>:/buttons/images/play.svg</iconset>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="0">
-        <widget class="QPushButton" name="screenshot">
-         <property name="enabled">
-          <bool>false</bool>
-         </property>
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="icon">
-          <iconset resource="mainwindow.qrc">
-           <normaloff>:/buttons/images/screenshot.svg</normaloff>:/buttons/images/screenshot.svg</iconset>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="7">
-        <widget class="QPushButton" name="debugger">
-         <property name="enabled">
-          <bool>false</bool>
-         </property>
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="icon">
-          <iconset resource="mainwindow.qrc">
-           <normaloff>:/buttons/images/debugger.svg</normaloff>:/buttons/images/debugger.svg</iconset>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="5">
-        <widget class="QPushButton" name="install">
-         <property name="enabled">
-          <bool>false</bool>
-         </property>
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="icon">
-          <iconset resource="mainwindow.qrc">
-           <normaloff>:/buttons/images/install.svg</normaloff>:/buttons/images/install.svg</iconset>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="1">
-        <widget class="QLabel" name="powerButtonLed">
-         <property name="frameShape">
-          <enum>QFrame::Box</enum>
-         </property>
-         <property name="text">
-          <string>LED</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="5">
+       <item row="0" column="4">
         <widget class="QPushButton" name="stateManager">
          <property name="enabled">
           <bool>false</bool>
@@ -377,7 +258,92 @@
          </property>
         </widget>
        </item>
-       <item row="1" column="1">
+       <item row="2" column="4">
+        <widget class="QPushButton" name="up">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="icon">
+          <iconset resource="mainwindow.qrc">
+           <normaloff>:/buttons/images/up.svg</normaloff>:/buttons/images/up.svg</iconset>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="4">
+        <widget class="QPushButton" name="center">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="icon">
+          <iconset resource="mainwindow.qrc">
+           <normaloff>:/buttons/images/center.svg</normaloff>:/buttons/images/center.svg</iconset>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="4">
+        <widget class="QPushButton" name="down">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="icon">
+          <iconset resource="mainwindow.qrc">
+           <normaloff>:/buttons/images/down.svg</normaloff>:/buttons/images/down.svg</iconset>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="0">
+        <widget class="QPushButton" name="calendar">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="icon">
+          <iconset resource="mainwindow.qrc">
+           <normaloff>:/buttons/images/calendar.svg</normaloff>:/buttons/images/calendar.svg</iconset>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="0">
+        <widget class="QPushButton" name="power">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="icon">
+          <iconset resource="mainwindow.qrc">
+           <normaloff>:/buttons/images/power.svg</normaloff>:/buttons/images/power.svg</iconset>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1">
         <widget class="QPushButton" name="reset">
          <property name="enabled">
           <bool>false</bool>
@@ -394,6 +360,53 @@
          <property name="icon">
           <iconset resource="mainwindow.qrc">
            <normaloff>:/buttons/images/reset.svg</normaloff>:/buttons/images/reset.svg</iconset>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QPushButton" name="settings">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="text">
+          <string>Settings</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QPushButton" name="install">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="icon">
+          <iconset resource="mainwindow.qrc">
+           <normaloff>:/buttons/images/install.svg</normaloff>:/buttons/images/install.svg</iconset>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="4">
+        <widget class="QPushButton" name="debugger">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="icon">
+          <iconset resource="mainwindow.qrc">
+           <normaloff>:/buttons/images/debugger.svg</normaloff>:/buttons/images/debugger.svg</iconset>
          </property>
         </widget>
        </item>
