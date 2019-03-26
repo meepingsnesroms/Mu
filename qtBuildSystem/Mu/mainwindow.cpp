@@ -13,6 +13,7 @@
 #include <QEvent>
 #include <QKeyEvent>
 #include <QGraphicsScene>
+#include <QCoreApplication>
 #include <QPixmap>
 #include <QAudioOutput>
 #include <QAudioFormat>
@@ -70,6 +71,10 @@ MainWindow::MainWindow(QWidget* parent) :
    //create directory tree, in case someone deleted it since the emu was last run or it was never created
    createHomeDirectoryTree(resourceDirPath);
 
+   //keyboard
+   for(uint8_t index = 0; index < EmuWrapper::BUTTON_TOTAL_COUNT; index++)
+      keyForButton[index] = settings->value("palmButton" + QString::number(index) + "Key", '\0').toInt();
+
    //GUI
    ui->setupUi(this);
 
@@ -88,16 +93,16 @@ MainWindow::MainWindow(QWidget* parent) :
    ui->centralWidget->installEventFilter(this);
    ui->centralWidget->setObjectName("centralWidget");
 
-   ui->calendar->installEventFilter(this);
-   ui->addressBook->installEventFilter(this);
-   ui->todo->installEventFilter(this);
-   ui->notes->installEventFilter(this);
-
    ui->up->installEventFilter(this);
    ui->down->installEventFilter(this);
    ui->left->installEventFilter(this);
    ui->right->installEventFilter(this);
    ui->center->installEventFilter(this);
+
+   ui->calendar->installEventFilter(this);
+   ui->addressBook->installEventFilter(this);
+   ui->todo->installEventFilter(this);
+   ui->notes->installEventFilter(this);
 
    ui->power->installEventFilter(this);
 
@@ -109,20 +114,18 @@ MainWindow::MainWindow(QWidget* parent) :
    ui->reset->installEventFilter(this);
 
    //hide onscreen keys if needed
-   if(hideOnscreenKeys){
-      ui->calendar->setHidden(true);
-      ui->addressBook->setHidden(true);
-      ui->todo->setHidden(true);
-      ui->notes->setHidden(true);
+   ui->up->setHidden(hideOnscreenKeys);
+   ui->down->setHidden(hideOnscreenKeys);
+   ui->left->setHidden(hideOnscreenKeys);
+   ui->right->setHidden(hideOnscreenKeys);
+   ui->center->setHidden(hideOnscreenKeys);
 
-      ui->up->setHidden(true);
-      ui->down->setHidden(true);
-      ui->left->setHidden(true);
-      ui->right->setHidden(true);
-      ui->center->setHidden(true);
+   ui->calendar->setHidden(hideOnscreenKeys);
+   ui->addressBook->setHidden(hideOnscreenKeys);
+   ui->todo->setHidden(hideOnscreenKeys);
+   ui->notes->setHidden(hideOnscreenKeys);
 
-      ui->power->setHidden(true);
-   }
+   ui->power->setHidden(hideOnscreenKeys);
 
 #if !defined(EMU_DEBUG) || defined(Q_OS_ANDROID) || defined(Q_OS_IOS)
    //doesnt support debug tools
@@ -143,11 +146,19 @@ MainWindow::~MainWindow(){
 }
 
 void MainWindow::keyPressEvent(QKeyEvent* event){
+   int key = event->key();
 
+   for(uint8_t index = 0; index < EmuWrapper::BUTTON_TOTAL_COUNT; index++)
+      if(keyForButton[index] == key)
+         emu.setKeyValue(index, true);
 }
 
 void MainWindow::keyReleaseEvent(QKeyEvent* event){
+   int key = event->key();
 
+   for(uint8_t index = 0; index < EmuWrapper::BUTTON_TOTAL_COUNT; index++)
+      if(keyForButton[index] == key)
+         emu.setKeyValue(index, false);
 }
 
 bool MainWindow::eventFilter(QObject* object, QEvent* event){
@@ -200,34 +211,26 @@ void MainWindow::popupInformationDialog(const QString& info){
    QMessageBox::information(this, "Mu", info, QMessageBox::Ok);
 }
 
-void MainWindow::selectHomePath(){
-   QString homeDirPath = QFileDialog::getOpenFileName(this, "New Home Directory(\"~/Mu\" is default)", QDir::root().path(), nullptr);
-
-   createHomeDirectoryTree(homeDirPath);
-   settings->setValue("resourceDirectory", homeDirPath);
-}
-
 void MainWindow::redraw(){
    bool hideOnscreenKeys = settings->value("hideOnscreenKeys", "").toBool();
+   QResizeEvent* resizeEvent = new QResizeEvent(ui->centralWidget->size(), ui->centralWidget->size());
 
    //update current keys
-   if(hideOnscreenKeys){
-      ui->calendar->setHidden(true);
-      ui->addressBook->setHidden(true);
-      ui->todo->setHidden(true);
-      ui->notes->setHidden(true);
+   ui->up->setHidden(hideOnscreenKeys);
+   ui->down->setHidden(hideOnscreenKeys);
+   ui->left->setHidden(hideOnscreenKeys);
+   ui->right->setHidden(hideOnscreenKeys);
+   ui->center->setHidden(hideOnscreenKeys);
 
-      ui->up->setHidden(true);
-      ui->down->setHidden(true);
-      ui->left->setHidden(true);
-      ui->right->setHidden(true);
-      ui->center->setHidden(true);
+   ui->calendar->setHidden(hideOnscreenKeys);
+   ui->addressBook->setHidden(hideOnscreenKeys);
+   ui->todo->setHidden(hideOnscreenKeys);
+   ui->notes->setHidden(hideOnscreenKeys);
 
-      ui->power->setHidden(true);
-   }
+   ui->power->setHidden(hideOnscreenKeys);
 
    //update current size
-   ui->centralWidget->resize(ui->centralWidget->size());
+   QCoreApplication::postEvent(ui->centralWidget, resizeEvent);
 }
 
 //display
@@ -253,75 +256,75 @@ void MainWindow::updateDisplay(){
 
 //Palm buttons
 void MainWindow::on_power_pressed(){
-   emu.emuInput.buttonPower = true;
+   emu.setKeyValue(EmuWrapper::BUTTON_POWER, true);
 }
 
 void MainWindow::on_power_released(){
-   emu.emuInput.buttonPower = false;
+   emu.setKeyValue(EmuWrapper::BUTTON_POWER, false);
 }
 
 void MainWindow::on_calendar_pressed(){
-   emu.emuInput.buttonCalendar = true;
+   emu.setKeyValue(EmuWrapper::BUTTON_CALENDAR, true);
 }
 
 void MainWindow::on_calendar_released(){
-   emu.emuInput.buttonCalendar = false;
+   emu.setKeyValue(EmuWrapper::BUTTON_CALENDAR, false);
 }
 
 void MainWindow::on_addressBook_pressed(){
-   emu.emuInput.buttonAddress = true;
+   emu.setKeyValue(EmuWrapper::BUTTON_ADDRESS, true);
 }
 
 void MainWindow::on_addressBook_released(){
-   emu.emuInput.buttonAddress = false;
+   emu.setKeyValue(EmuWrapper::BUTTON_ADDRESS, false);
 }
 
 void MainWindow::on_todo_pressed(){
-   emu.emuInput.buttonTodo = true;
+   emu.setKeyValue(EmuWrapper::BUTTON_TODO, true);
 }
 
 void MainWindow::on_todo_released(){
-   emu.emuInput.buttonTodo = false;
+   emu.setKeyValue(EmuWrapper::BUTTON_TODO, false);
 }
 
 void MainWindow::on_notes_pressed(){
-   emu.emuInput.buttonNotes = true;
+   emu.setKeyValue(EmuWrapper::BUTTON_NOTES, true);
 }
 
 void MainWindow::on_notes_released(){
-   emu.emuInput.buttonNotes = false;
+   emu.setKeyValue(EmuWrapper::BUTTON_NOTES, false);
 }
 
 void MainWindow::on_up_pressed(){
-    emu.emuInput.buttonUp = true;
+   emu.setKeyValue(EmuWrapper::BUTTON_UP, true);
 }
 
 void MainWindow::on_up_released(){
-    emu.emuInput.buttonUp = false;
+   emu.setKeyValue(EmuWrapper::BUTTON_UP, false);
 }
 
 void MainWindow::on_down_pressed(){
-    emu.emuInput.buttonDown = true;
+   emu.setKeyValue(EmuWrapper::BUTTON_DOWN, true);
 }
 
 void MainWindow::on_down_released(){
-    emu.emuInput.buttonDown = false;
+   emu.setKeyValue(EmuWrapper::BUTTON_DOWN, false);
 }
 
 void MainWindow::on_left_pressed(){
-    emu.emuInput.buttonLeft = true;
+   emu.setKeyValue(EmuWrapper::BUTTON_LEFT, true);
 }
 
 void MainWindow::on_left_released(){
-    emu.emuInput.buttonLeft = false;
+   emu.setKeyValue(EmuWrapper::BUTTON_LEFT, false);
 }
 
 void MainWindow::on_right_pressed(){
-    emu.emuInput.buttonRight = true;
+   emu.setKeyValue(EmuWrapper::BUTTON_RIGHT, true);
 }
 
 void MainWindow::on_right_released(){
-    emu.emuInput.buttonRight = false;
+   emu.setKeyValue(EmuWrapper::BUTTON_RIGHT, false);
 }
 
 //emu control
@@ -334,13 +337,13 @@ void MainWindow::on_ctrlBtn_clicked(){
       uint32_t error = emu.init(sysDir + "/palmos41-en-m515.rom", QFile(sysDir + "/bootloader-en-m515.rom").exists() ? sysDir + "/bootloader-en-m515.rom" : "", sysDir + "/userdata-en-m515.ram", sysDir + "/sd-en-m515.img", enabledFeatures);
 
       if(error == EMU_ERROR_NONE){
+         ui->up->setEnabled(true);
+         ui->down->setEnabled(true);
+
          ui->calendar->setEnabled(true);
          ui->addressBook->setEnabled(true);
          ui->todo->setEnabled(true);
          ui->notes->setEnabled(true);
-
-         ui->up->setEnabled(true);
-         ui->down->setEnabled(true);
 
          ui->power->setEnabled(true);
 
@@ -376,7 +379,7 @@ void MainWindow::on_ctrlBtn_clicked(){
 
 void MainWindow::on_install_clicked(){
    if(emu.isInited()){
-      QString app = QFileDialog::getOpenFileName(this, "Open *.prc/pdb/pqa", QDir::root().path(), nullptr);
+      QString app = QFileDialog::getOpenFileName(this, "Select Application", QDir::root().path(), "Palm OS App (*.prc *.pdb *.pqa)");
 
       if(app != ""){
          uint32_t error = emu.installApplication(app);
@@ -433,7 +436,13 @@ void MainWindow::on_settings_clicked(){
       emu.pause();
 
    settingsManager->exec();
+
+   //redraw the main window
    redraw();
+
+   //update keyboard settings too
+   for(uint8_t index = 0; index < EmuWrapper::BUTTON_TOTAL_COUNT; index++)
+      keyForButton[index] = settings->value("palmButton" + QString::number(index) + "Key", '\0').toInt();
 
    if(wasInited && !wasPaused)
       emu.resume();

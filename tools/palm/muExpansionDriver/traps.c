@@ -93,9 +93,10 @@ void emuErrDisplayFileLineMsg(const Char* const filename, UInt16 lineNo, const C
    debugLog("Error at:%s, Line:%d, Msg:%s\n", filename, lineNo, msg);
 }
 
-void emuSysUnimplemented(__dispatcher_stack_frame){
+void emuSysUnimplemented(void){
+   __return_stack_frame;
    uint32_t callLocation = getCallLocation();
-   uint16_t apiNum = getApiNum();
+   uint16_t apiNum = getCalledApiNum();
    
    debugLog("Unimplemented API:0x%04X, called from:0x%08lX\n", apiNum, callLocation);
 }

@@ -89,7 +89,7 @@ typedef struct{
    bool  buttonDown;
    bool  buttonLeft;//only used in hybrid mode
    bool  buttonRight;//only used in hybrid mode
-   bool  buttonSelect;//only used in hybrid mode
+   bool  buttonCenter;//only used in hybrid mode
    
    bool  buttonCalendar;//hw button 1
    bool  buttonAddress;//hw button 2

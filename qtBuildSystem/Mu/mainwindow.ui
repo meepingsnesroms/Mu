@@ -249,9 +249,6 @@
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
-         <property name="text">
-          <string/>
-         </property>
          <property name="icon">
           <iconset resource="mainwindow.qrc">
            <normaloff>:/buttons/images/stateManager.svg</normaloff>:/buttons/images/stateManager.svg</iconset>
@@ -354,9 +351,6 @@
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
-         <property name="text">
-          <string/>
-         </property>
          <property name="icon">
           <iconset resource="mainwindow.qrc">
            <normaloff>:/buttons/images/reset.svg</normaloff>:/buttons/images/reset.svg</iconset>
@@ -371,8 +365,9 @@
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
-         <property name="text">
-          <string>Settings</string>
+         <property name="icon">
+          <iconset resource="mainwindow.qrc">
+           <normaloff>:/buttons/images/settingsManager.svg</normaloff>:/buttons/images/settingsManager.svg</iconset>
          </property>
         </widget>
        </item>

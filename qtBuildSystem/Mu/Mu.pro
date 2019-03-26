@@ -184,6 +184,7 @@ DISTFILES += \
     images/power.svg \
     images/right.svg \
     images/screenshot.svg \
+    images/settingsManager.svg \
     images/stateManager.svg \
     images/stop.svg \
     images/todo.svg \

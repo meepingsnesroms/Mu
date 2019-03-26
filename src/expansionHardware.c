@@ -198,7 +198,7 @@ void expansionHardwareSetRegister(uint32_t address, uint32_t value){
 
             case CMD_GET_KEYS:
                if(palmEmuFeatures.info & FEATURE_EXT_KEYS)
-                  palmEmuFeatures.value = (palmInput.buttonLeft ? EXT_BUTTON_LEFT : 0) | (palmInput.buttonRight ? EXT_BUTTON_RIGHT : 0) | (palmInput.buttonSelect ? EXT_BUTTON_SELECT : 0);
+                  palmEmuFeatures.value = (palmInput.buttonLeft ? EXT_BUTTON_LEFT : 0) | (palmInput.buttonRight ? EXT_BUTTON_RIGHT : 0) | (palmInput.buttonCenter ? EXT_BUTTON_CENTER : 0);
                return;
 
             case CMD_DEBUG_EXEC_END:

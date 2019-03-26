@@ -6,63 +6,239 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
-    <height>300</height>
+    <width>650</width>
+    <height>437</height>
    </rect>
   </property>
-  <property name="windowTitle">
-   <string>Dialog</string>
+  <property name="minimumSize">
+   <size>
+    <width>650</width>
+    <height>0</height>
+   </size>
   </property>
-  <widget class="QDialogButtonBox" name="buttonBox">
-   <property name="geometry">
-    <rect>
-     <x>30</x>
-     <y>240</y>
-     <width>341</width>
-     <height>32</height>
-    </rect>
-   </property>
-   <property name="orientation">
-    <enum>Qt::Horizontal</enum>
-   </property>
-   <property name="standardButtons">
-    <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
-   </property>
-  </widget>
+  <property name="windowTitle">
+   <string>Settings</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="QScrollArea" name="scrollArea">
+     <property name="widgetResizable">
+      <bool>true</bool>
+     </property>
+     <widget class="QWidget" name="scrollAreaWidgetContents">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>0</y>
+        <width>624</width>
+        <height>411</height>
+       </rect>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayout_3">
+       <item>
+        <widget class="QLineEdit" name="homeDirectory"/>
+       </item>
+       <item>
+        <widget class="QPushButton" name="pickHomeDirectory">
+         <property name="text">
+          <string>Pick Home Directory</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="showOnscreenKeys">
+         <property name="text">
+          <string>Show onscreen keys</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="label">
+         <property name="text">
+          <string>Set keyboard keys:</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QWidget" name="gridWidget" native="true">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <layout class="QGridLayout" name="gridLayout">
+          <item row="2" column="1">
+           <widget class="QPushButton" name="selectAddressBookKey">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="text">
+             <string>MAXSIZE</string>
+            </property>
+            <property name="icon">
+             <iconset resource="mainwindow.qrc">
+              <normaloff>:/buttons/images/addressBook.svg</normaloff>:/buttons/images/addressBook.svg</iconset>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="2">
+           <widget class="QPushButton" name="selectUpKey">
+            <property name="text">
+             <string>MAXSIZE</string>
+            </property>
+            <property name="icon">
+             <iconset resource="mainwindow.qrc">
+              <normaloff>:/buttons/images/up.svg</normaloff>:/buttons/images/up.svg</iconset>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="2">
+           <widget class="QPushButton" name="selectDownKey">
+            <property name="text">
+             <string>MAXSIZE</string>
+            </property>
+            <property name="icon">
+             <iconset resource="mainwindow.qrc">
+              <normaloff>:/buttons/images/down.svg</normaloff>:/buttons/images/down.svg</iconset>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0">
+           <widget class="QPushButton" name="selectCalendarKey">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="text">
+             <string>MAXSIZE</string>
+            </property>
+            <property name="icon">
+             <iconset resource="mainwindow.qrc">
+              <normaloff>:/buttons/images/calendar.svg</normaloff>:/buttons/images/calendar.svg</iconset>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="3">
+           <widget class="QPushButton" name="selectTodoKey">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="text">
+             <string>MAXSIZE</string>
+            </property>
+            <property name="icon">
+             <iconset resource="mainwindow.qrc">
+              <normaloff>:/buttons/images/todo.svg</normaloff>:/buttons/images/todo.svg</iconset>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="4">
+           <widget class="QPushButton" name="selectNotesKey">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="text">
+             <string>MAXSIZE</string>
+            </property>
+            <property name="icon">
+             <iconset resource="mainwindow.qrc">
+              <normaloff>:/buttons/images/notes.svg</normaloff>:/buttons/images/notes.svg</iconset>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QPushButton" name="selectPowerKey">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="text">
+             <string>MAXSIZE</string>
+            </property>
+            <property name="icon">
+             <iconset resource="mainwindow.qrc">
+              <normaloff>:/buttons/images/power.svg</normaloff>:/buttons/images/power.svg</iconset>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QPushButton" name="selectLeftKey">
+            <property name="text">
+             <string>MAXSIZE</string>
+            </property>
+            <property name="icon">
+             <iconset resource="mainwindow.qrc">
+              <normaloff>:/buttons/images/left.svg</normaloff>:/buttons/images/left.svg</iconset>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="3">
+           <widget class="QPushButton" name="selectRightKey">
+            <property name="text">
+             <string>MAXSIZE</string>
+            </property>
+            <property name="icon">
+             <iconset resource="mainwindow.qrc">
+              <normaloff>:/buttons/images/right.svg</normaloff>:/buttons/images/right.svg</iconset>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="2">
+           <widget class="QPushButton" name="selectCenterKey">
+            <property name="text">
+             <string>MAXSIZE</string>
+            </property>
+            <property name="icon">
+             <iconset resource="mainwindow.qrc">
+              <normaloff>:/buttons/images/center.svg</normaloff>:/buttons/images/center.svg</iconset>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="keySelectorState">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="verticalSpacer">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+   </item>
+  </layout>
  </widget>
- <resources/>
- <connections>
-  <connection>
-   <sender>buttonBox</sender>
-   <signal>accepted()</signal>
-   <receiver>SettingsManager</receiver>
-   <slot>accept()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>248</x>
-     <y>254</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>157</x>
-     <y>274</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>buttonBox</sender>
-   <signal>rejected()</signal>
-   <receiver>SettingsManager</receiver>
-   <slot>reject()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>316</x>
-     <y>260</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>286</x>
-     <y>274</y>
-    </hint>
-   </hints>
-  </connection>
- </connections>
+ <resources>
+  <include location="mainwindow.qrc"/>
+ </resources>
+ <connections/>
 </ui>

@@ -9,6 +9,7 @@
 #include <QSettings>
 #include <QAudioOutput>
 #include <QIODevice>
+#include <QKeyEvent>
 
 #include "emuwrapper.h"
 #include "settingsmanager.h"
@@ -40,7 +41,6 @@ private slots:
    bool eventFilter(QObject* object, QEvent* event);
    void popupErrorDialog(const QString& error);
    void popupInformationDialog(const QString& info);
-   void selectHomePath();
    void redraw();
 
    //display
@@ -83,4 +83,5 @@ private:
    QAudioOutput*    audioDevice;
    QIODevice*       audioOut;
    Ui::MainWindow*  ui;
+   int              keyForButton[EmuWrapper::BUTTON_TOTAL_COUNT];
 };

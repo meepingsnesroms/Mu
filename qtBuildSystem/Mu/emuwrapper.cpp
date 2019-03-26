@@ -326,6 +326,59 @@ uint32_t EmuWrapper::loadState(const QString& path){
    return error;
 }
 
+void EmuWrapper::setPenValue(float x, float y, bool touched){
+   emuInput.touchscreenX = x;
+   emuInput.touchscreenY = y;
+   emuInput.touchscreenTouched = touched;
+}
+
+void EmuWrapper::setKeyValue(uint8_t key, bool pressed){
+   switch(key){
+      case BUTTON_UP:
+         emuInput.buttonUp = pressed;
+         break;
+
+      case BUTTON_DOWN:
+         emuInput.buttonDown = pressed;
+         break;
+
+      case BUTTON_LEFT:
+         emuInput.buttonLeft = pressed;
+         break;
+
+      case BUTTON_RIGHT:
+         emuInput.buttonRight = pressed;
+         break;
+
+      case BUTTON_CENTER:
+         emuInput.buttonCenter = pressed;
+         break;
+
+      case BUTTON_CALENDAR:
+         emuInput.buttonCalendar = pressed;
+         break;
+
+      case BUTTON_ADDRESS:
+         emuInput.buttonAddress = pressed;
+         break;
+
+      case BUTTON_TODO:
+         emuInput.buttonTodo = pressed;
+         break;
+
+      case BUTTON_NOTES:
+         emuInput.buttonNotes = pressed;
+         break;
+
+      case BUTTON_POWER:
+         emuInput.buttonPower = pressed;
+         break;
+
+      default:
+         break;
+   }
+}
+
 uint32_t EmuWrapper::installApplication(const QString& path){
    bool wasPaused = isPaused();
    uint32_t error = EMU_ERROR_INVALID_PARAMETER;

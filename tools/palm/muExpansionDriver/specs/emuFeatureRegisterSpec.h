@@ -61,6 +61,6 @@ These registers will do nothing if their corresponding feature bit is not set on
 /*buttons*/
 #define EXT_BUTTON_LEFT   0x01000000
 #define EXT_BUTTON_RIGHT  0x02000000
-#define EXT_BUTTON_SELECT 0x04000000
+#define EXT_BUTTON_CENTER 0x04000000
 
 #endif
