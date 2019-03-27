@@ -117,6 +117,10 @@ uint8_t m68k_read_memory_8(uint32_t address){
       return 0x00;
 #endif
 
+#if defined(EMU_DEBUG) && defined(EMU_SANDBOX)
+   sandboxOnMemoryAccess(address, 8, false, 0);
+#endif
+
    switch(addressType){
       case CHIP_A0_ROM:
          return romRead8(address);
@@ -136,6 +140,7 @@ uint8_t m68k_read_memory_8(uint32_t address){
       case CHIP_REGISTERS:
          return getHwRegister8(address);
 
+      case CHIP_B1_NIL:
       case CHIP_NONE:
          setBusErrorTimeOut(address, false);
          return 0x00;
@@ -152,6 +157,10 @@ uint16_t m68k_read_memory_16(uint32_t address){
 #if !defined(EMU_NO_SAFETY)
    if(!probeRead(addressType, address))
       return 0x0000;
+#endif
+
+#if defined(EMU_DEBUG) && defined(EMU_SANDBOX)
+   sandboxOnMemoryAccess(address, 16, false, 0);
 #endif
 
    switch(addressType){
@@ -173,6 +182,7 @@ uint16_t m68k_read_memory_16(uint32_t address){
       case CHIP_REGISTERS:
          return getHwRegister16(address);
 
+      case CHIP_B1_NIL:
       case CHIP_NONE:
          setBusErrorTimeOut(address, false);
          return 0x0000;
@@ -189,6 +199,10 @@ uint32_t m68k_read_memory_32(uint32_t address){
 #if !defined(EMU_NO_SAFETY)
    if(!probeRead(addressType, address))
       return 0x00000000;
+#endif
+
+#if defined(EMU_DEBUG) && defined(EMU_SANDBOX)
+   sandboxOnMemoryAccess(address, 32, false, 0);
 #endif
 
    switch(addressType){
@@ -210,6 +224,7 @@ uint32_t m68k_read_memory_32(uint32_t address){
       case CHIP_REGISTERS:
          return getHwRegister32(address);
 
+      case CHIP_B1_NIL:
       case CHIP_NONE:
          setBusErrorTimeOut(address, false);
          return 0x00000000;
@@ -226,6 +241,10 @@ void m68k_write_memory_8(uint32_t address, uint8_t value){
 #if !defined(EMU_NO_SAFETY)
    if(!probeWrite(addressType, address))
       return;
+#endif
+
+#if defined(EMU_DEBUG) && defined(EMU_SANDBOX)
+   sandboxOnMemoryAccess(address, 8, true, value);
 #endif
 
    switch(addressType){
@@ -251,6 +270,7 @@ void m68k_write_memory_8(uint32_t address, uint8_t value){
          setHwRegister8(address, value);
          return;
 
+      case CHIP_B1_NIL:
       case CHIP_NONE:
          setBusErrorTimeOut(address, true);
          return;
@@ -267,6 +287,10 @@ void m68k_write_memory_16(uint32_t address, uint16_t value){
 #if !defined(EMU_NO_SAFETY)
    if(!probeWrite(addressType, address))
       return;
+#endif
+
+#if defined(EMU_DEBUG) && defined(EMU_SANDBOX)
+   sandboxOnMemoryAccess(address, 16, true, value);
 #endif
 
    switch(addressType){
@@ -292,6 +316,7 @@ void m68k_write_memory_16(uint32_t address, uint16_t value){
          setHwRegister16(address, value);
          return;
 
+      case CHIP_B1_NIL:
       case CHIP_NONE:
          setBusErrorTimeOut(address, true);
          return;
@@ -308,6 +333,10 @@ void m68k_write_memory_32(uint32_t address, uint32_t value){
 #if !defined(EMU_NO_SAFETY)
    if(!probeWrite(addressType, address))
       return;
+#endif
+
+#if defined(EMU_DEBUG) && defined(EMU_SANDBOX)
+   sandboxOnMemoryAccess(address, 32, true, value);
 #endif
 
    switch(addressType){
@@ -334,6 +363,7 @@ void m68k_write_memory_32(uint32_t address, uint32_t value){
          setHwRegister32(address, value);
          return;
 
+      case CHIP_B1_NIL:
       case CHIP_NONE:
          setBusErrorTimeOut(address, true);
          return;
@@ -363,12 +393,14 @@ static uint8_t getProperBankType(uint32_t bank){
       return CHIP_00_EMU;
    else if(chips[CHIP_A0_ROM].inBootMode || (chips[CHIP_A0_ROM].enable && BANK_IN_RANGE(bank, chips[CHIP_A0_ROM].start, chips[CHIP_A0_ROM].lineSize)))
       return CHIP_A0_ROM;
-   else if(chips[CHIP_A1_USB].enable && BANK_IN_RANGE(bank, chips[CHIP_A1_USB].start, chips[CHIP_A1_USB].lineSize))
-      return CHIP_A1_USB;
-   else if(chips[CHIP_B0_SED].enable && BANK_IN_RANGE(bank, chips[CHIP_B0_SED].start, chips[CHIP_B0_SED].lineSize) && sed1376ClockConnected())
-      return CHIP_B0_SED;
    else if(chips[CHIP_DX_RAM].enable && BANK_IN_RANGE(bank, chips[CHIP_DX_RAM].start, chips[CHIP_DX_RAM].lineSize * 2))
       return CHIP_DX_RAM;
+   else if(chips[CHIP_B0_SED].enable && BANK_IN_RANGE(bank, chips[CHIP_B0_SED].start, chips[CHIP_B0_SED].lineSize) && sed1376ClockConnected())
+      return CHIP_B0_SED;
+   else if(chips[CHIP_A1_USB].enable && BANK_IN_RANGE(bank, chips[CHIP_A1_USB].start, chips[CHIP_A1_USB].lineSize))
+      return CHIP_A1_USB;
+   else if(chips[CHIP_B1_NIL].enable && BANK_IN_RANGE(bank, chips[CHIP_B1_NIL].start, chips[CHIP_B1_NIL].lineSize))
+      return CHIP_B1_NIL;
 
    return CHIP_NONE;
 }

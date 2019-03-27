@@ -13,7 +13,7 @@ These registers will do nothing if their corresponding feature bit is not set on
 #define FEATURE_RAM_HUGE   0x00000001/*128mb RAM*/
 #define FEATURE_FAST_CPU   0x00000002/*allows the emulator to set its CPU speed*/
 #define FEATURE_HYBRID_CPU 0x00000004/*allows running ARM opcodes in an OS 4 enviroment*/
-#define FEATURE_CUSTOM_FB  0x00000008/*creates a dynamicly sized framebuffer for hires mode, the 160x160 framebuffer is a transparent overlay over the extended framebuffer*/
+#define FEATURE_CUSTOM_FB  0x00000008/*allows rendering from a dynamically sized framebuffer in RAM*/
 #define FEATURE_SYNCED_RTC 0x00000010/*RTC always equals host system time*/
 #define FEATURE_HLE_APIS   0x00000020/*memcpy, memcmp, wait on timer will be replaced with the hosts function*/
 #define FEATURE_EMU_HONEST 0x00000040/*tell the OS that its running in an emu, does nothing else*/
@@ -47,7 +47,7 @@ These registers will do nothing if their corresponding feature bit is not set on
 #define CMD_SET_CPU_SPEED  0x0000FFF3/*EMU_VALUE = CPU speed percent, 100% = normal*/
 #define CMD_IDLE_X_CLK32   0x0000FFF4/*EMU_VALUE = CLK32s to waste, used to remove idle loops*/
 #define CMD_SET_CYCLE_COST 0x0000FFF5/*EMU_DST = HLE API number, EMU_VALUE = how many cycles it takes*/
-#define CMD_LCD_SET_FB     0x0000FFF6/*EMU_SRC = framebuffer pointer(must be in RAM and word aligned), EMU_VALUE >> 16 = width, EMU_VALUE & 0xFFFF = height*/
+#define CMD_LCD_SET_FB     0x0000FFF6/*EMU_SRC = framebuffer pointer(must be in RAM and word aligned, unused if size is 160x220), EMU_VALUE >> 16 = width, EMU_VALUE & 0xFFFF = height*/
 #define CMD_GET_KEYS       0x0000FFF7/*EMU_VALUE = OS 5 keys*/
 #define CMD_DEBUG_PRINT    0x0000FFF8/*EMU_SRC = pointer to string*/
 /*CMD_UNUSED               0x0000FFF9*/
@@ -61,6 +61,6 @@ These registers will do nothing if their corresponding feature bit is not set on
 /*buttons*/
 #define EXT_BUTTON_LEFT   0x01000000
 #define EXT_BUTTON_RIGHT  0x02000000
-#define EXT_BUTTON_SELECT 0x04000000
+#define EXT_BUTTON_CENTER 0x04000000
 
 #endif

@@ -96,11 +96,8 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t enab
    memset(&palmMisc, 0x00, sizeof(palmMisc));
    memset(&palmSdCard, 0x00, sizeof(palmSdCard));
    memset(&palmEmuFeatures, 0x00, sizeof(palmEmuFeatures));
-   palmFramebufferWidth = 160;
-   palmFramebufferHeight = 220;
    palmMisc.batteryLevel = 100;
    palmCycleCounter = 0.0;
-   palmClockMultiplier = 1.00 - EMU_CPU_PERCENT_WAITING;
    palmEmuFeatures.info = enabledEmuFeatures;
 
    //initialize components
@@ -109,13 +106,11 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t enab
    sandboxInit(); 
 
    //reset everything
-   sed1376Reset();
-   ads7846Reset();
-   pdiUsbD12Reset();
-   sdCardReset();
-   expansionHardwareReset();
-   flx68000Reset();
+   emulatorSoftReset();
    setRtc(0, 0, 0, 0);//RTCTIME and DAYR are not cleared by reset, clear them manually in case the frontend doesnt set the RTC
+
+   //debug patches
+   sandboxCommand(SANDBOX_PATCH_OS, NULL);
 
    emulatorInitialized = true;
 
@@ -138,16 +133,8 @@ void emulatorExit(void){
 void emulatorHardReset(void){
    //equivalent to taking the battery out and putting it back in
    memset(palmRam, 0x00, palmEmuFeatures.info & FEATURE_RAM_HUGE ? SUPERMASSIVE_RAM_SIZE : RAM_SIZE);
-   palmFramebufferWidth = 160;
-   palmFramebufferHeight = 220;
-   palmEmuFeatures.value = 0x00000000;
-   palmClockMultiplier = 1.00 - EMU_CPU_PERCENT_WAITING;
-   sed1376Reset();
-   ads7846Reset();
-   pdiUsbD12Reset();
+   emulatorSoftReset();
    sdCardReset();
-   expansionHardwareReset();
-   flx68000Reset();
    setRtc(0, 0, 0, 0);
 }
 
@@ -160,9 +147,9 @@ void emulatorSoftReset(void){
    sed1376Reset();
    ads7846Reset();
    pdiUsbD12Reset();
-   sdCardReset();
    expansionHardwareReset();
    flx68000Reset();
+   //sdCardReset() should not be called here, the SD card does not have a reset line and should only be reset by a power cycle
 }
 
 void emulatorSetRtc(uint16_t days, uint8_t hours, uint8_t minutes, uint8_t seconds){
@@ -665,8 +652,10 @@ uint32_t emulatorInsertSdCard(buffer_t image, bool writeProtectSwitch){
    //round up to nearest mb, prevents issues with buffer size and too small SD cards
    palmSdCard.flashChip.size = (image.size & 0xFFF00000) + (image.size & 0x000FFFFF ? 0x00100000 : 0x00000000);
    palmSdCard.flashChip.data = malloc(palmSdCard.flashChip.size);
-   if(!palmSdCard.flashChip.data)
+   if(!palmSdCard.flashChip.data){
+      palmSdCard.flashChip.size = 0x00000000;
       return EMU_ERROR_OUT_OF_MEMORY;
+   }
 
    //copy over buffer data
    if(image.data)
@@ -685,10 +674,12 @@ uint32_t emulatorInsertSdCard(buffer_t image, bool writeProtectSwitch){
 }
 
 void emulatorEjectSdCard(void){
-   //clear SD flash chip and controller
-   if(palmSdCard.flashChip.data)
+   //clear SD flash chip, this disables the SD card control chip too
+   if(palmSdCard.flashChip.data){
       free(palmSdCard.flashChip.data);
-   memset(&palmSdCard, 0x00, sizeof(palmSdCard));
+      palmSdCard.flashChip.data = NULL;
+      palmSdCard.flashChip.size = 0x00000000;
+   }
 }
 
 void emulatorRunFrame(void){

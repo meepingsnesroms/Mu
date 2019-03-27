@@ -291,6 +291,10 @@ void resetFunctionViewer(void){
    hwTests[totalHwTests].testFunction = unaligned32bitAccess;
    totalHwTests++;
    
+   StrNCopy(hwTests[totalHwTests].name, "Call SysUnimplemented", TEST_NAME_LENGTH);
+   hwTests[totalHwTests].testFunction = callSysUnimplemented;
+   totalHwTests++;
+   
    if(cpuType & CPU_M68K || cpuType == CPU_NONE){
       /*68k only functions*/
       if((cpuType & CPU_M68K_TYPES) != CPU_M68K_328){

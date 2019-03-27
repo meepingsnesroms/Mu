@@ -60,10 +60,9 @@ ios{
 CONFIG(debug, debug|release){
     # debug build, be accurate, fail hard, and add logging
     DEFINES += EMU_DEBUG EMU_CUSTOM_DEBUG_LOG_HANDLER EMU_SANDBOX
-    # DEFINES += EMU_SANDBOX_OPCODE_LEVEL_DEBUG # for breakpoints
+    DEFINES += EMU_SANDBOX_OPCODE_LEVEL_DEBUG # for breakpoints
+    DEFINES += EMU_SANDBOX_LOG_APIS # for printing sysTrap* calls, EMU_SANDBOX_OPCODE_LEVEL_DEBUG must be on too
     macx|linux-g++{
-        # DEFINES += EMU_SANDBOX_OPCODE_LEVEL_DEBUG
-        # DEFINES += EMU_SANDBOX_LOG_APIS
         # also check for any buffer overflows and memory leaks
         # -fsanitize=undefined,leak
         QMAKE_CFLAGS += -fstack-protector-strong -fsanitize=address -Werror=array-bounds
@@ -106,7 +105,8 @@ SOURCES += \
     ../../src/armv5/CPU.c \
     ../../src/armv5/icache.c \
     ../../src/armv5.c \
-    ../../src/expansionHardware.c
+    ../../src/expansionHardware.c \
+    settingsmanager.cpp
 
 HEADERS += \
     debugviewer.h \
@@ -148,12 +148,14 @@ HEADERS += \
     ../../src/armv5.h \
     ../../src/expansionHardware.h \
     ../../src/sdCardAccessors.c.h \
-    ../../src/sdCardCrcTables.c.h
+    ../../src/sdCardCrcTables.c.h \
+    settingsmanager.h
 
 FORMS += \
     mainwindow.ui \
     debugviewer.ui \
-    statemanager.ui
+    statemanager.ui \
+    settingsmanager.ui
 
 CONFIG += mobility
 MOBILITY = 
@@ -182,6 +184,7 @@ DISTFILES += \
     images/power.svg \
     images/right.svg \
     images/screenshot.svg \
+    images/settingsManager.svg \
     images/stateManager.svg \
     images/stop.svg \
     images/todo.svg \

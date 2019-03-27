@@ -9,8 +9,10 @@
 #include <QSettings>
 #include <QAudioOutput>
 #include <QIODevice>
+#include <QKeyEvent>
 
 #include "emuwrapper.h"
+#include "settingsmanager.h"
 #include "statemanager.h"
 #include "debugviewer.h"
 
@@ -28,14 +30,21 @@ public:
    explicit MainWindow(QWidget* parent = nullptr);
    ~MainWindow();
 
-private:
+protected:
+    void keyPressEvent(QKeyEvent* event);
+    void keyReleaseEvent(QKeyEvent* event);
+
+public:
    void createHomeDirectoryTree(const QString& path);
+
+private:
+   uint32_t getEmuFeatureList();
+   void popupErrorDialog(const QString& error);
+   void popupInformationDialog(const QString& info);
+   void redraw();
 
 private slots:
    bool eventFilter(QObject* object, QEvent* event);
-   void popupErrorDialog(const QString& error);
-   void popupInformationDialog(const QString& info);
-   void selectHomePath();
 
    //display
    void updateDisplay();
@@ -66,12 +75,16 @@ private slots:
    void on_debugger_clicked();
    void on_screenshot_clicked();
    void on_stateManager_clicked();
+   void on_reset_clicked();
+   void on_settings_clicked();
 
 private:
-   StateManager*   stateManager;
-   DebugViewer*    emuDebugger;
-   QTimer*         refreshDisplay;
-   QAudioOutput*   audioDevice;
-   QIODevice*      audioOut;
-   Ui::MainWindow* ui;
+   SettingsManager* settingsManager;
+   StateManager*    stateManager;
+   DebugViewer*     emuDebugger;
+   QTimer*          refreshDisplay;
+   QAudioOutput*    audioDevice;
+   QIODevice*       audioOut;
+   Ui::MainWindow*  ui;
+   int              keyForButton[EmuWrapper::BUTTON_TOTAL_COUNT];
 };

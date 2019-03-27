@@ -2242,7 +2242,9 @@ static Err cpuPrvCycleArm(ArmCpu* cpu){
 	privileged = (cpu->CPSR & ARM_SR_M) != ARM_SR_MODE_USR;
 	//fetch instruction
 	{
-		ok = icacheFetch(&cpu->ic, pc = cpu->regs[15], 4, privileged, &fsr, &instr);
+      pc = cpu->regs[15];
+      //ok = icacheFetch(&cpu->ic, pc = cpu->regs[15], 4, privileged, &fsr, &instr);
+      ok = cpu->memF(cpu, &instr, pc, 4, false, privileged, &fsr);
 		if(!ok){
 			cpuPrvHandleMemErr(cpu, cpu->regs[15], 4, false, true, fsr);
 			return errNone;						//exit here so that debugger can see us execute first instr of execption handler
@@ -2264,7 +2266,8 @@ static Err cpuPrvCycleThumb(ArmCpu* cpu){
 	privileged = (cpu->CPSR & ARM_SR_M) != ARM_SR_MODE_USR;
 	
 	pc = cpu->regs[15];
-	ok = icacheFetch(&cpu->ic, pc, 2, privileged, &fsr, &instrT);
+   //ok = icacheFetch(&cpu->ic, pc, 2, privileged, &fsr, &instrT);
+   ok = cpu->memF(cpu, &instrT, pc, 2, false, privileged, &fsr);
 	if(!ok){
 		cpuPrvHandleMemErr(cpu, pc, 2, false, true, fsr);
 		return errNone;						//exit here so that debugger can see us execute first instr of execption handler

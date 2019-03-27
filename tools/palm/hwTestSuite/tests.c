@@ -1002,3 +1002,9 @@ var isIrq2AttachedToSdCardChipSelect(void){
    
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
+
+var callSysUnimplemented(void){
+   /*used to test the SysUnimplemented handler in MuExpDriver*/
+   SysUnimplemented();
+   return makeVar(LENGTH_0, TYPE_NULL, 0);
+}

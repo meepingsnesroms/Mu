@@ -24,11 +24,24 @@ private:
    std::atomic<bool> emuNewFrameReady;
    QString           emuRamFilePath;
    QString           emuSdCardFilePath;
+   input_t           emuInput;
 
    void emuThreadRun();
 
 public:
-   input_t emuInput;
+   enum{
+      BUTTON_UP = 0,
+      BUTTON_DOWN,
+      BUTTON_LEFT,
+      BUTTON_RIGHT,
+      BUTTON_CENTER,
+      BUTTON_CALENDAR,
+      BUTTON_ADDRESS,
+      BUTTON_TODO,
+      BUTTON_NOTES,
+      BUTTON_POWER,
+      BUTTON_TOTAL_COUNT
+   };
 
    EmuWrapper();
    ~EmuWrapper();
@@ -37,11 +50,14 @@ public:
    void exit();
    void pause();
    void resume();
+   void reset(bool hard);
    uint32_t saveState(const QString& path);
    uint32_t loadState(const QString& path);
    bool isInited() const{return emuInited;}
    bool isRunning() const{return emuRunning;}
    bool isPaused() const{return emuPaused;}
+   void setPenValue(float x, float y, bool touched);
+   void setKeyValue(uint8_t key, bool pressed);
 
    uint32_t installApplication(const QString& path);
 

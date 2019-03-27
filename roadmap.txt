@@ -34,3 +34,11 @@ Core:
 Emu Hwr Driver:
 *ARM CPU is exported to OS 4 with custom PceNativeCall
 *can set fake version number to prevent tripping compatibility checks
+
+------------------------------------------
+v1.0.0 to v1.1.0(Feb 25 2019 - Easter 2019)
+
+Qt GUI:
+*can now set the feature bits
+*can now set the resource directory
+*keyboard support

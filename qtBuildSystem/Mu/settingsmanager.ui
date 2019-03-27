@@ -1,0 +1,324 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>SettingsManager</class>
+ <widget class="QDialog" name="SettingsManager">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>650</width>
+    <height>437</height>
+   </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>650</width>
+    <height>0</height>
+   </size>
+  </property>
+  <property name="windowTitle">
+   <string>Settings</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="QScrollArea" name="scrollArea">
+     <property name="widgetResizable">
+      <bool>true</bool>
+     </property>
+     <widget class="QWidget" name="scrollAreaWidgetContents">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>0</y>
+        <width>624</width>
+        <height>411</height>
+       </rect>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayout_3">
+       <item>
+        <widget class="QLineEdit" name="homeDirectory">
+         <property name="readOnly">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="pickHomeDirectory">
+         <property name="text">
+          <string>Pick Home Directory</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="showOnscreenKeys">
+         <property name="text">
+          <string>Show Onscreen Keys</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="label">
+         <property name="text">
+          <string>Set Keyboard Keys:</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QWidget" name="gridWidget" native="true">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <layout class="QGridLayout" name="gridLayout">
+          <item row="2" column="1">
+           <widget class="QPushButton" name="selectAddressBookKey">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="text">
+             <string>MAXSIZE</string>
+            </property>
+            <property name="icon">
+             <iconset resource="mainwindow.qrc">
+              <normaloff>:/buttons/images/addressBook.svg</normaloff>:/buttons/images/addressBook.svg</iconset>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="2">
+           <widget class="QPushButton" name="selectUpKey">
+            <property name="text">
+             <string>MAXSIZE</string>
+            </property>
+            <property name="icon">
+             <iconset resource="mainwindow.qrc">
+              <normaloff>:/buttons/images/up.svg</normaloff>:/buttons/images/up.svg</iconset>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="2">
+           <widget class="QPushButton" name="selectDownKey">
+            <property name="text">
+             <string>MAXSIZE</string>
+            </property>
+            <property name="icon">
+             <iconset resource="mainwindow.qrc">
+              <normaloff>:/buttons/images/down.svg</normaloff>:/buttons/images/down.svg</iconset>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0">
+           <widget class="QPushButton" name="selectCalendarKey">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="text">
+             <string>MAXSIZE</string>
+            </property>
+            <property name="icon">
+             <iconset resource="mainwindow.qrc">
+              <normaloff>:/buttons/images/calendar.svg</normaloff>:/buttons/images/calendar.svg</iconset>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="3">
+           <widget class="QPushButton" name="selectTodoKey">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="text">
+             <string>MAXSIZE</string>
+            </property>
+            <property name="icon">
+             <iconset resource="mainwindow.qrc">
+              <normaloff>:/buttons/images/todo.svg</normaloff>:/buttons/images/todo.svg</iconset>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="4">
+           <widget class="QPushButton" name="selectNotesKey">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="text">
+             <string>MAXSIZE</string>
+            </property>
+            <property name="icon">
+             <iconset resource="mainwindow.qrc">
+              <normaloff>:/buttons/images/notes.svg</normaloff>:/buttons/images/notes.svg</iconset>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QPushButton" name="selectPowerKey">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="text">
+             <string>MAXSIZE</string>
+            </property>
+            <property name="icon">
+             <iconset resource="mainwindow.qrc">
+              <normaloff>:/buttons/images/power.svg</normaloff>:/buttons/images/power.svg</iconset>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QPushButton" name="selectLeftKey">
+            <property name="text">
+             <string>MAXSIZE</string>
+            </property>
+            <property name="icon">
+             <iconset resource="mainwindow.qrc">
+              <normaloff>:/buttons/images/left.svg</normaloff>:/buttons/images/left.svg</iconset>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="3">
+           <widget class="QPushButton" name="selectRightKey">
+            <property name="text">
+             <string>MAXSIZE</string>
+            </property>
+            <property name="icon">
+             <iconset resource="mainwindow.qrc">
+              <normaloff>:/buttons/images/right.svg</normaloff>:/buttons/images/right.svg</iconset>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="2">
+           <widget class="QPushButton" name="selectCenterKey">
+            <property name="text">
+             <string>MAXSIZE</string>
+            </property>
+            <property name="icon">
+             <iconset resource="mainwindow.qrc">
+              <normaloff>:/buttons/images/center.svg</normaloff>:/buttons/images/center.svg</iconset>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="keySelectorState">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="label_2">
+         <property name="text">
+          <string>Set Emulator Features(Restart Required):</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QWidget" name="gridWidget_2" native="true">
+         <layout class="QGridLayout" name="gridLayout_2">
+          <item row="2" column="0">
+           <widget class="QCheckBox" name="featureEmuHonest">
+            <property name="text">
+             <string>Tell Programs Their Emulated</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="2">
+           <widget class="QCheckBox" name="featureHleApis">
+            <property name="text">
+             <string>HLE APIs(Speed Hack)</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QCheckBox" name="featureCustomFb">
+            <property name="text">
+             <string>Resizeable Display(HiRes Mode)</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="2">
+           <widget class="QCheckBox" name="featureHybridCpu">
+            <property name="text">
+             <string>ARM Instruction Set(OS 5)</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QCheckBox" name="feature128mbRam">
+            <property name="text">
+             <string>128MB RAM</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QCheckBox" name="featureFastCpu">
+            <property name="text">
+             <string>Overclocking</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QCheckBox" name="featureSyncedRtc">
+            <property name="text">
+             <string>Sync Real Time Clock</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1">
+           <widget class="QCheckBox" name="featureExtraKeys">
+            <property name="text">
+             <string>Extra Dpad Keys(OS 5)</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="2">
+           <widget class="QCheckBox" name="featureSoundStreams">
+            <property name="text">
+             <string>PWM Audio Streams(OS 5)</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <spacer name="verticalSpacer">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources>
+  <include location="mainwindow.qrc"/>
+ </resources>
+ <connections/>
+</ui>

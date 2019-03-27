@@ -140,7 +140,10 @@
 #endif
 #define M68K_INSTRUCTION_CALLBACK() sandboxOnOpcodeRun()
 
-/* If ON, the CPU will emulate the 4-byte prefetch queue of a real 68000 */
+
+/* If ON, the CPU will emulate the 4-byte prefetch queue of a real 68000.
+ * This needs to stay off to keep save state compatibility between debug and release mode.
+ */
 #define M68K_EMULATE_PREFETCH       OPT_OFF
 
 

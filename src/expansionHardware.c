@@ -17,6 +17,14 @@
 static uint32_t expansionHardwareLcdPointer;
 
 
+static bool expansionHardwareBufferInRam(uint32_t address, uint32_t size){
+   if(address >= chips[CHIP_DX_RAM].start && address < chips[CHIP_DX_RAM].start + chips[CHIP_DX_RAM].lineSize)
+      if(address + size >= chips[CHIP_DX_RAM].start && address + size < chips[CHIP_DX_RAM].start + chips[CHIP_DX_RAM].lineSize)
+         return true;
+
+   return false;
+}
+
 void expansionHardwareReset(void){
    expansionHardwareLcdPointer = 0x00000000;
 
@@ -78,21 +86,19 @@ void expansionHardwareRenderDisplay(void){
    }
    else{
       //advanced render
-      if(palmFramebufferWidth <= 480 && palmFramebufferHeight <= 480){
-         //uint8_t sed1376SizeMultiple = palmFramebufferWidth / 160;
-         uint16_t* lcdData = palmRam + (expansionHardwareLcdPointer & chips[CHIP_DX_RAM].mask);
+      uint16_t* lcdData = palmRam + expansionHardwareLcdPointer;
 
-         //copy over framebuffer
-         memcpy(palmFramebuffer, lcdData, palmFramebufferWidth * palmFramebufferHeight * sizeof(uint16_t));
+      //copy over framebuffer
+      memcpy(palmFramebuffer, lcdData, palmFramebufferWidth * palmFramebufferHeight * sizeof(uint16_t));
 
-         //render SED1376 buffer on top of it
-         //DRIVER NEEDS TO BE WRITTEN STILL
-      }
+      //add silkscreen if needed
+      if(palmFramebufferWidth == 320 && palmFramebufferHeight == 440)
+         memcpy(palmFramebuffer + 320 * 320, silkscreen320x120, 320 * 120 * sizeof(uint16_t));
    }
 }
 
 uint32_t expansionHardwareGetRegister(uint32_t address){
-   address &= 0xFFF;
+   address &= 0x00000FFF;
    switch(address){
       case EMU_INFO:
          return palmEmuFeatures.info;
@@ -107,7 +113,7 @@ uint32_t expansionHardwareGetRegister(uint32_t address){
 }
 
 void expansionHardwareSetRegister(uint32_t address, uint32_t value){
-   address &= 0xFFF;
+   address &= 0x00000FFF;
    switch(address){
       case EMU_SRC:
          palmEmuFeatures.src = value;
@@ -154,9 +160,19 @@ void expansionHardwareSetRegister(uint32_t address, uint32_t value){
 
             case CMD_LCD_SET_FB:
                if(palmEmuFeatures.info & FEATURE_CUSTOM_FB){
-                  expansionHardwareLcdPointer = palmEmuFeatures.src;
-                  palmFramebufferWidth = palmEmuFeatures.value >> 16;
-                  palmFramebufferHeight = palmEmuFeatures.value & 0xFFFF;
+                  uint16_t width = palmEmuFeatures.value >> 16;
+                  uint16_t height = palmEmuFeatures.value & 0xFFFF;
+                  uint32_t size = width * height * sizeof(uint16_t);
+
+                  if(expansionHardwareBufferInRam(palmEmuFeatures.src, size) && width > 0 && height > 0 && width <= 480 && height <= 480){
+                     expansionHardwareLcdPointer = palmEmuFeatures.src;
+                     palmFramebufferWidth = width;
+                     palmFramebufferHeight = height;
+                     debugLog("Set LCD to:%dx%d, buffer:0x%08X\n", palmFramebufferWidth, palmFramebufferHeight, expansionHardwareLcdPointer);
+                  }
+                  else{
+                     debugLog("Invalid LCD set command: dimensions:%dx%d, address:0x%08X, size:0x%08X\n", width, height, palmEmuFeatures.src, size);
+                  }
                }
                return;
 
@@ -182,7 +198,7 @@ void expansionHardwareSetRegister(uint32_t address, uint32_t value){
 
             case CMD_GET_KEYS:
                if(palmEmuFeatures.info & FEATURE_EXT_KEYS)
-                  palmEmuFeatures.value = (palmInput.buttonLeft ? EXT_BUTTON_LEFT : 0) | (palmInput.buttonRight ? EXT_BUTTON_RIGHT : 0) | (palmInput.buttonSelect ? EXT_BUTTON_SELECT : 0);
+                  palmEmuFeatures.value = (palmInput.buttonLeft ? EXT_BUTTON_LEFT : 0) | (palmInput.buttonRight ? EXT_BUTTON_RIGHT : 0) | (palmInput.buttonCenter ? EXT_BUTTON_CENTER : 0);
                return;
 
             case CMD_DEBUG_EXEC_END:

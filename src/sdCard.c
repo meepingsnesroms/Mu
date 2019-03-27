@@ -60,30 +60,32 @@ static uint16_t sdCardCrc16(uint8_t* data, uint16_t size){
 #include "sdCardAccessors.c.h"
 
 void sdCardReset(void){
-   palmSdCard.command = UINT64_C(0x0000000000000000);
-   palmSdCard.commandBitsRemaining = 48;
-   palmSdCard.runningCommand = 0x00;
-   memset(palmSdCard.runningCommandVars, 0x00, sizeof(palmSdCard.runningCommandVars));
-   memset(palmSdCard.runningCommandPacket, 0x00, SD_CARD_BLOCK_DATA_PACKET_SIZE);
-   memset(palmSdCard.responseFifo, 0x00, SD_CARD_RESPONSE_FIFO_SIZE);
-   palmSdCard.responseReadPosition = 0;
-   palmSdCard.responseWritePosition = 0;
-   palmSdCard.responseReadPositionBit = 7;
-   palmSdCard.commandIsAcmd = false;
-   palmSdCard.allowInvalidCrc = false;
-   palmSdCard.chipSelect = false;
-   palmSdCard.receivingCommand = false;
-   palmSdCard.inIdleState = true;
-   //palmSdCard.writeProtectSwitch is not written on reset because it is a physical property not an electronic one
+   if(palmSdCard.flashChip.data){
+      palmSdCard.command = UINT64_C(0x0000000000000000);
+      palmSdCard.commandBitsRemaining = 48;
+      palmSdCard.runningCommand = 0x00;
+      memset(palmSdCard.runningCommandVars, 0x00, sizeof(palmSdCard.runningCommandVars));
+      memset(palmSdCard.runningCommandPacket, 0x00, SD_CARD_BLOCK_DATA_PACKET_SIZE);
+      memset(palmSdCard.responseFifo, 0x00, SD_CARD_RESPONSE_FIFO_SIZE);
+      palmSdCard.responseReadPosition = 0;
+      palmSdCard.responseWritePosition = 0;
+      palmSdCard.responseReadPositionBit = 7;
+      palmSdCard.commandIsAcmd = false;
+      palmSdCard.allowInvalidCrc = false;
+      palmSdCard.receivingCommand = false;
+      palmSdCard.inIdleState = true;
+      //palmSdCard.chipSelect is a property of the wire to the SD card not the SD card itself
+      //palmSdCard.writeProtectSwitch is not written on reset because it is a physical property not an electronic one
+   }
 }
 
 void sdCardSetChipSelect(bool value){
    if(value != palmSdCard.chipSelect){
-      //debugLog("SD card chip select set to:%s\n", value ? "true" : "false");
-
-      //commands start when chip select goes from high to low
-      if(value == false)
-         sdCardCmdStart();
+      if(palmSdCard.flashChip.data){
+         //commands start when chip select goes from high to low
+         if(value == false)
+            sdCardCmdStart();
+      }
 
       palmSdCard.chipSelect = value;
    }
@@ -150,7 +152,7 @@ bool sdCardExchangeBit(bool bit){
             bool commandWantsData = false;
             bool doInIdleState = false;
 
-            debugLog("SD command: isAcmd:%d, cmd:%d, arg:0x%08X, CRC:0x%02X\n", palmSdCard.commandIsAcmd, command, argument, crc);
+            //debugLog("SD command: isAcmd:%d, cmd:%d, arg:0x%08X, CRC:0x%02X\n", palmSdCard.commandIsAcmd, command, argument, crc);
 
             //in idle state, the card accepts only CMD0, CMD1, ACMD41, CMD58 and CMD59, any other commands will be rejected
             if(palmSdCard.inIdleState){

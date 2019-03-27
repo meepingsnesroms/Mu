@@ -1,14 +1,84 @@
+#include "sdkPatch/PalmOSPatched.h"
 #include <stdint.h>
 
 #include "debug.h"
 #include "config.h"
 #include "traps.h"
 #include "armv5.h"
+#include "hires.h"
 #include "globals.h"
 #include "memalign.h"
 #include "palmGlobalDefines.h"
 #include "specs/emuFeatureRegisterSpec.h"
 
+
+static void lockCodeXXXX(void){
+   /*prevents the driver from being moved around in RAM while running*/
+   uint16_t index = 0;
+   
+   while(true){
+      MemHandle codeResourceHandle = DmGetResource('code', index);
+      
+      if(codeResourceHandle)
+         MemHandleLock(codeResourceHandle);
+      else
+         break;
+      
+      index++;
+   }
+}
+
+static void installResourceGlobals(void){
+   if(!getGlobalVar(RESOURCE_GLOBALS_INITIALIZED)){
+      MemHandle funcBlob;
+      MemPtr funcBlobPtr;
+
+      /*ARM_EXIT_FUNC*/
+      funcBlob = DmGetResource(FUNCTION_BLOB_TYPE, ARM_EXIT_FUNC_ID);
+      if(!funcBlob)
+         debugLog("Cant open ARM_EXIT_FUNC!\n");
+      
+      funcBlobPtr = MemHandleLock(funcBlob);
+      if(!funcBlobPtr)
+         debugLog("Cant lock ARM_EXIT_FUNC!\n");
+      
+      if((uint32_t)funcBlobPtr & 0x00000003)
+         debugLog("ARM_EXIT_FUNC is unaligned!\n");
+      
+      setGlobalVar(ARM_EXIT_FUNC, (uint32_t)funcBlobPtr);
+
+      /*ARM_CALL_68K_FUNC*/
+      funcBlob = DmGetResource(FUNCTION_BLOB_TYPE, ARM_CALL_68K_FUNC_ID);
+      if(!funcBlob)
+         debugLog("Cant open ARM_CALL_68K_FUNC!\n");
+      
+      funcBlobPtr = MemHandleLock(funcBlob);
+      if(!funcBlobPtr)
+         debugLog("Cant lock ARM_CALL_68K_FUNC!\n");
+      
+      if((uint32_t)funcBlobPtr & 0x00000003)
+         debugLog("ARM_CALL_68K_FUNC is unaligned!\n");
+      
+      setGlobalVar(ARM_CALL_68K_FUNC, (uint32_t)funcBlobPtr);
+      
+      /*M68K_CALL_WITH_BLOB_FUNC*/
+      funcBlob = DmGetResource(FUNCTION_BLOB_TYPE, M68K_CALL_WITH_BLOB_FUNC_ID);
+      if(!funcBlob)
+         debugLog("Cant open M68K_CALL_WITH_BLOB_FUNC!\n");
+      
+      funcBlobPtr = MemHandleLock(funcBlob);
+      if(!funcBlobPtr)
+         debugLog("Cant lock M68K_CALL_WITH_BLOB_FUNC!\n");
+      
+      if((uint32_t)funcBlobPtr & 0x00000001)
+         debugLog("M68K_CALL_WITH_BLOB_FUNC is unaligned!\n");
+      
+      setGlobalVar(M68K_CALL_WITH_BLOB_FUNC, (uint32_t)funcBlobPtr);
+      
+      /*dont run this function again*/
+      setGlobalVar(RESOURCE_GLOBALS_INITIALIZED, true);
+   }
+}
 
 static void install128mbRam(uint8_t mbDynamicHeap){
    /*these functions are called by HwrInit, which can be called directly by apps*/
@@ -52,6 +122,22 @@ static void installPceNativeCallHandler(uint32_t armStackSize){
    armStackStart = memalign_alloc(sizeof(uint32_t), armStackSize);
    armv5SetStack(armStackStart, armStackSize);
    setGlobalVar(ARM_STACK_START, (uint32_t)armStackStart);
+}
+
+static void installDebugHandlers(void){
+   void* sysUnimplementedAddress = SysGetTrapAddress(sysTrapSysUnimplemented);
+   uint16_t index;
+   
+   /*patch all the debug handlers to go to the emu debug console*/
+   for(index = sysTrapBase; index < sysTrapLastTrapNumber; index++){
+      void* trapAddress = SysGetTrapAddress(index);
+      
+      /*eventually should remove the NULL check too, the trap list should have no NULL values*/
+      
+      if(trapAddress == sysUnimplementedAddress || trapAddress == NULL)
+         SysSetTrapAddress(index, (void*)emuSysUnimplemented);
+   }
+   SysSetTrapAddress(sysTrapErrDisplayFileLineMsg, (void*)emuErrDisplayFileLineMsg);
 }
 
 static void setProperDeviceId(uint16_t screenWidth, uint16_t screenHeight, Boolean hasArmCpu, Boolean hasDpad){
@@ -147,29 +233,48 @@ static void setProperDeviceId(uint16_t screenWidth, uint16_t screenHeight, Boole
 }
 
 void initBoot(uint32_t* configFile){
-   Err error;
-   uint32_t heapFree;
-   uint32_t heapBiggestBlock;
-   
-   debugLog("OS booting!\n");
-   
-   debugLog("RAM size:%ld bytes\n", MemHeapSize(0));
-   error = MemHeapFreeBytes(0, &heapFree, &heapBiggestBlock);
-   if(!error)
-      debugLog("RAM free:%ld, RAM biggest block:%ld bytes\n", heapFree, heapBiggestBlock);
-   else
-      debugLog("RAM free:check failed, RAM biggest block:check failed\n");
-   
-   debugLog("Storage size:%ld bytes\n", MemHeapSize(1));
-   error = MemHeapFreeBytes(1, &heapFree, &heapBiggestBlock);
-   if(!error)
-      debugLog("Storage free:%ld bytes, Storage biggest block:%ld bytes\n", heapFree, heapBiggestBlock);
-   else
-      debugLog("Storage free:check failed, Storage biggest block:check failed\n");
-   
-   if(configFile[USER_WARNING_GIVEN]){
-      Boolean wantCfw = false;
+   if(configFile[DRIVER_ENABLED] && !configFile[SAFE_MODE]){
+      LocalID thisApp;
+      DmOpenRef thisAppRef;
+      Err error;
+      uint32_t heapFree;
+      uint32_t heapBiggestBlock;
       uint32_t enabledFeatures = readArbitraryMemory32(EMU_REG_ADDR(EMU_INFO));
+      
+      /*skip the next boot and flush vars to the config file, that way if it crashes it will still boot again*/
+      configFile[SAFE_MODE] = true;
+      writeConfigFile(configFile);
+      
+      debugLog("OS booting!\n");
+      
+      debugLog("RAM size:%ld bytes\n", MemHeapSize(0));
+      error = MemHeapFreeBytes(0, &heapFree, &heapBiggestBlock);
+      if(!error)
+         debugLog("RAM free:%ld, RAM biggest block:%ld bytes\n", heapFree, heapBiggestBlock);
+      else
+         debugLog("RAM free:check failed, RAM biggest block:check failed\n");
+      
+      debugLog("Storage size:%ld bytes\n", MemHeapSize(1));
+      error = MemHeapFreeBytes(1, &heapFree, &heapBiggestBlock);
+      if(!error)
+         debugLog("Storage free:%ld bytes, Storage biggest block:%ld bytes\n", heapFree, heapBiggestBlock);
+      else
+         debugLog("Storage free:check failed, Storage biggest block:check failed\n");
+
+      /*since this is running at boot time the apps own database isnt loaded and it needs to be opened*/
+      thisApp = DmFindDatabase(0, APP_NAME);
+      if(!thisApp)
+         debugLog(APP_NAME " not installed!\n");
+      
+      thisAppRef = DmOpenDatabase(0, thisApp, dmModeReadOnly | dmModeLeaveOpen);
+      if(!thisAppRef)
+         debugLog("Cant open " APP_NAME "!\n");
+      
+      lockCodeXXXX();
+      installResourceGlobals();
+         
+      if(enabledFeatures & FEATURE_DEBUG)
+         installDebugHandlers();
       
       if(enabledFeatures & FEATURE_RAM_HUGE)
          install128mbRam(configFile[EXTRA_RAM_MB_DYNAMIC_HEAP]);
@@ -177,10 +282,18 @@ void initBoot(uint32_t* configFile){
       if(enabledFeatures & FEATURE_HYBRID_CPU)
          installPceNativeCallHandler(configFile[ARM_STACK_SIZE]);
       
+      if(enabledFeatures & FEATURE_CUSTOM_FB)
+         if(installTungstenWLcdDrivers())
+            setDeviceResolution(configFile[LCD_WIDTH], configFile[LCD_HEIGHT]);
+      
       setProperDeviceId(configFile[LCD_WIDTH], configFile[LCD_HEIGHT], !!(enabledFeatures & FEATURE_HYBRID_CPU), !!(enabledFeatures & FEATURE_EXT_KEYS));
       
       writeArbitraryMemory32(EMU_REG_ADDR(EMU_VALUE), configFile[BOOT_CPU_SPEED]);
       writeArbitraryMemory32(EMU_REG_ADDR(EMU_CMD), CMD_SET_CPU_SPEED);
+      
+      /*boot succeeded, clear flag*/
+      configFile[SAFE_MODE] = false;
+      writeConfigFile(configFile);
    }
 }
 

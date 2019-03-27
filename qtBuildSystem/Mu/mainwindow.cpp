@@ -13,6 +13,7 @@
 #include <QEvent>
 #include <QKeyEvent>
 #include <QGraphicsScene>
+#include <QCoreApplication>
 #include <QPixmap>
 #include <QAudioOutput>
 #include <QAudioFormat>
@@ -20,34 +21,8 @@
 #include <stdint.h>
 
 #include "debugviewer.h"
+#include "settingsmanager.h"
 #include "statemanager.h"
-
-
-/*
-#if defined(Q_OS_ANDROID)
-#include <android/log.h>
-#endif
-
-void printLastRun(){
-   static int64_t lastTime = 0;
-   struct timespec tms;
-
-   clock_gettime(CLOCK_REALTIME, &tms);
-
-   int64_t micros = tms.tv_sec * 1000000;
-   micros += tms.tv_nsec / 1000;
-   if(tms.tv_nsec % 1000 >= 500)
-       micros++;
-
-#if defined(Q_OS_ANDROID)
-   __android_log_print(ANDROID_LOG_DEBUG, "Mu", "Microseconds:%lld\n", micros - lastTime);
-#else
-   printf("Microseconds:%lld\n", micros - lastTime);
-#endif
-
-   lastTime = micros;
-}
-*/
 
 
 MainWindow::MainWindow(QWidget* parent) :
@@ -55,6 +30,7 @@ MainWindow::MainWindow(QWidget* parent) :
    ui(new Ui::MainWindow){
    QAudioFormat format;
    QString resourceDirPath;
+   bool hideOnscreenKeys;
 
    //audio output
    format.setSampleRate(AUDIO_SAMPLE_RATE);
@@ -70,6 +46,7 @@ MainWindow::MainWindow(QWidget* parent) :
 
    //submodules
    settings = new QSettings(QDir::homePath() + "/MuCfg.txt", QSettings::IniFormat);//settings is public, create it first
+   settingsManager = new SettingsManager(this);
    stateManager = new StateManager(this);
    emuDebugger = new DebugViewer(this);
    refreshDisplay = new QTimer(this);
@@ -94,23 +71,38 @@ MainWindow::MainWindow(QWidget* parent) :
    //create directory tree, in case someone deleted it since the emu was last run or it was never created
    createHomeDirectoryTree(resourceDirPath);
 
+   //keyboard
+   for(uint8_t index = 0; index < EmuWrapper::BUTTON_TOTAL_COUNT; index++)
+      keyForButton[index] = settings->value("palmButton" + QString::number(index) + "Key", '\0').toInt();
+
    //GUI
    ui->setupUi(this);
+
+   //check if onscreen keys should be hidden
+   if(settings->value("hideOnscreenKeys", "").toString() == ""){
+#if defined(Q_OS_ANDROID) && defined(Q_OS_IOS)
+      settings->setValue("hideOnscreenKeys", false);
+#else
+      //not a mobile device disable the on screen buttons
+      settings->setValue("hideOnscreenKeys", true);
+#endif
+   }
+   hideOnscreenKeys = settings->value("hideOnscreenKeys", "").toBool();
 
    //this makes the display window and button icons resize properly
    ui->centralWidget->installEventFilter(this);
    ui->centralWidget->setObjectName("centralWidget");
-
-   ui->calendar->installEventFilter(this);
-   ui->addressBook->installEventFilter(this);
-   ui->todo->installEventFilter(this);
-   ui->notes->installEventFilter(this);
 
    ui->up->installEventFilter(this);
    ui->down->installEventFilter(this);
    ui->left->installEventFilter(this);
    ui->right->installEventFilter(this);
    ui->center->installEventFilter(this);
+
+   ui->calendar->installEventFilter(this);
+   ui->addressBook->installEventFilter(this);
+   ui->todo->installEventFilter(this);
+   ui->notes->installEventFilter(this);
 
    ui->power->installEventFilter(this);
 
@@ -119,8 +111,24 @@ MainWindow::MainWindow(QWidget* parent) :
    ui->debugger->installEventFilter(this);
    ui->screenshot->installEventFilter(this);
    ui->stateManager->installEventFilter(this);
+   ui->reset->installEventFilter(this);
+
+   //hide onscreen keys if needed
+   ui->up->setHidden(hideOnscreenKeys);
+   ui->down->setHidden(hideOnscreenKeys);
+   ui->left->setHidden(hideOnscreenKeys);
+   ui->right->setHidden(hideOnscreenKeys);
+   ui->center->setHidden(hideOnscreenKeys);
+
+   ui->calendar->setHidden(hideOnscreenKeys);
+   ui->addressBook->setHidden(hideOnscreenKeys);
+   ui->todo->setHidden(hideOnscreenKeys);
+   ui->notes->setHidden(hideOnscreenKeys);
+
+   ui->power->setHidden(hideOnscreenKeys);
 
 #if !defined(EMU_DEBUG) || defined(Q_OS_ANDROID) || defined(Q_OS_IOS)
+   //doesnt support debug tools
    ui->debugger->hide();
 #endif
    connect(refreshDisplay, SIGNAL(timeout()), this, SLOT(updateDisplay()));
@@ -137,6 +145,87 @@ MainWindow::~MainWindow(){
    delete ui;
 }
 
+void MainWindow::keyPressEvent(QKeyEvent* event){
+   int key = event->key();
+
+   for(uint8_t index = 0; index < EmuWrapper::BUTTON_TOTAL_COUNT; index++)
+      if(keyForButton[index] == key)
+         emu.setKeyValue(index, true);
+}
+
+void MainWindow::keyReleaseEvent(QKeyEvent* event){
+   int key = event->key();
+
+   for(uint8_t index = 0; index < EmuWrapper::BUTTON_TOTAL_COUNT; index++)
+      if(keyForButton[index] == key)
+         emu.setKeyValue(index, false);
+}
+
+void MainWindow::createHomeDirectoryTree(const QString& path){
+   QDir homeDir(path);
+
+   //creates directorys if not present, does nothing if they exist already
+   homeDir.mkpath(".");
+   homeDir.mkpath("./saveStates");
+   homeDir.mkpath("./screenshots");
+   homeDir.mkpath("./debugDumps");
+}
+
+uint32_t MainWindow::getEmuFeatureList(){
+   uint32_t features = FEATURE_ACCURATE;
+
+   features |= settings->value("feature128mbRam", false).toBool() ? FEATURE_RAM_HUGE : 0;
+   features |= settings->value("featureFastCpu", false).toBool() ? FEATURE_FAST_CPU : 0;
+   features |= settings->value("featureHybridCpu", false).toBool() ? FEATURE_HYBRID_CPU : 0;
+   features |= settings->value("featureCustomFb", false).toBool() ? FEATURE_CUSTOM_FB : 0;
+   features |= settings->value("featureSyncedRtc", false).toBool() ? FEATURE_SYNCED_RTC : 0;
+   features |= settings->value("featureHleApis", false).toBool() ? FEATURE_HLE_APIS : 0;
+   features |= settings->value("featureEmuHonest", false).toBool() ? FEATURE_EMU_HONEST : 0;
+   features |= settings->value("featureExtraKeys", false).toBool() ? FEATURE_EXT_KEYS : 0;
+   features |= settings->value("featureSoundStreams", false).toBool() ? FEATURE_SND_STRMS : 0;
+
+#if defined(EMU_DEBUG)
+   features |= FEATURE_DEBUG;
+#endif
+
+   //lazy debug overrides
+   //features = FEATURE_EXT_KEYS | FEATURE_EMU_HONEST | FEATURE_FAST_CPU | FEATURE_HYBRID_CPU | FEATURE_CUSTOM_FB | FEATURE_DEBUG | FEATURE_SND_STRMS;
+   //features = FEATURE_FAST_CPU | FEATURE_HYBRID_CPU | FEATURE_CUSTOM_FB | FEATURE_DEBUG;
+   //features = FEATURE_FAST_CPU | FEATURE_HYBRID_CPU | FEATURE_DEBUG;
+
+   return features;
+}
+
+void MainWindow::popupErrorDialog(const QString& error){
+   QMessageBox::critical(this, "Mu", error, QMessageBox::Ok);
+}
+
+void MainWindow::popupInformationDialog(const QString& info){
+   QMessageBox::information(this, "Mu", info, QMessageBox::Ok);
+}
+
+void MainWindow::redraw(){
+   bool hideOnscreenKeys = settings->value("hideOnscreenKeys", "").toBool();
+   QResizeEvent* resizeEvent = new QResizeEvent(ui->centralWidget->size(), ui->centralWidget->size());
+
+   //update current keys
+   ui->up->setHidden(hideOnscreenKeys);
+   ui->down->setHidden(hideOnscreenKeys);
+   ui->left->setHidden(hideOnscreenKeys);
+   ui->right->setHidden(hideOnscreenKeys);
+   ui->center->setHidden(hideOnscreenKeys);
+
+   ui->calendar->setHidden(hideOnscreenKeys);
+   ui->addressBook->setHidden(hideOnscreenKeys);
+   ui->todo->setHidden(hideOnscreenKeys);
+   ui->notes->setHidden(hideOnscreenKeys);
+
+   ui->power->setHidden(hideOnscreenKeys);
+
+   //update current size
+   QCoreApplication::postEvent(ui->centralWidget, resizeEvent);
+}
+
 bool MainWindow::eventFilter(QObject* object, QEvent* event){
    if(event->type() == QEvent::Resize){
       if(QString(object->metaObject()->className()) == "QPushButton"){
@@ -147,9 +236,10 @@ bool MainWindow::eventFilter(QObject* object, QEvent* event){
 
       if(object->objectName() == "centralWidget"){
          float smallestRatio;
+         bool hideOnscreenKeys = settings->value("hideOnscreenKeys", "").toBool();
 
-         //update displayContainer first, make the display occupy the top 2/3 of the screen
-         ui->displayContainer->setFixedHeight(ui->centralWidget->height() * 0.66);
+         //update displayContainer first, make the display occupy the top 3/5 of the screen if there are Palm keys or 4/5 if theres not
+         ui->displayContainer->setFixedHeight(ui->centralWidget->height() * (hideOnscreenKeys ? 0.80 : 0.60));
 
          smallestRatio = qMin(ui->displayContainer->size().width() * 0.98 / 3.0 , ui->displayContainer->size().height() * 0.98 / 4.0);
          //the 0.98 above allows the display to shrink, without it the displayContainer couldent shrink because of the fixed size of the display
@@ -166,31 +256,6 @@ bool MainWindow::eventFilter(QObject* object, QEvent* event){
    }
 
    return QMainWindow::eventFilter(object, event);
-}
-
-void MainWindow::createHomeDirectoryTree(const QString& path){
-   QDir homeDir(path);
-
-   //creates directorys if not present, does nothing if they exist already
-   homeDir.mkpath(".");
-   homeDir.mkpath("./saveStates");
-   homeDir.mkpath("./screenshots");
-   homeDir.mkpath("./debugDumps");
-}
-
-void MainWindow::popupErrorDialog(const QString& error){
-   QMessageBox::critical(this, "Mu", error, QMessageBox::Ok);
-}
-
-void MainWindow::popupInformationDialog(const QString& info){
-   QMessageBox::information(this, "Mu", info, QMessageBox::Ok);
-}
-
-void MainWindow::selectHomePath(){
-   QString homeDirPath = QFileDialog::getOpenFileName(this, "New Home Directory(\"~/Mu\" is default)", QDir::root().path(), nullptr);
-
-   createHomeDirectoryTree(homeDirPath);
-   settings->setValue("resourceDirectory", homeDirPath);
 }
 
 //display
@@ -212,98 +277,96 @@ void MainWindow::updateDisplay(){
       ui->display->repaint();
       ui->powerButtonLed->repaint();
    }
-
-   //printLastRun();
 }
 
 //Palm buttons
 void MainWindow::on_power_pressed(){
-   emu.emuInput.buttonPower = true;
+   emu.setKeyValue(EmuWrapper::BUTTON_POWER, true);
 }
 
 void MainWindow::on_power_released(){
-   emu.emuInput.buttonPower = false;
+   emu.setKeyValue(EmuWrapper::BUTTON_POWER, false);
 }
 
 void MainWindow::on_calendar_pressed(){
-   emu.emuInput.buttonCalendar = true;
+   emu.setKeyValue(EmuWrapper::BUTTON_CALENDAR, true);
 }
 
 void MainWindow::on_calendar_released(){
-   emu.emuInput.buttonCalendar = false;
+   emu.setKeyValue(EmuWrapper::BUTTON_CALENDAR, false);
 }
 
 void MainWindow::on_addressBook_pressed(){
-   emu.emuInput.buttonAddress = true;
+   emu.setKeyValue(EmuWrapper::BUTTON_ADDRESS, true);
 }
 
 void MainWindow::on_addressBook_released(){
-   emu.emuInput.buttonAddress = false;
+   emu.setKeyValue(EmuWrapper::BUTTON_ADDRESS, false);
 }
 
 void MainWindow::on_todo_pressed(){
-   emu.emuInput.buttonTodo = true;
+   emu.setKeyValue(EmuWrapper::BUTTON_TODO, true);
 }
 
 void MainWindow::on_todo_released(){
-   emu.emuInput.buttonTodo = false;
+   emu.setKeyValue(EmuWrapper::BUTTON_TODO, false);
 }
 
 void MainWindow::on_notes_pressed(){
-   emu.emuInput.buttonNotes = true;
+   emu.setKeyValue(EmuWrapper::BUTTON_NOTES, true);
 }
 
 void MainWindow::on_notes_released(){
-   emu.emuInput.buttonNotes = false;
+   emu.setKeyValue(EmuWrapper::BUTTON_NOTES, false);
 }
 
 void MainWindow::on_up_pressed(){
-    emu.emuInput.buttonUp = true;
+   emu.setKeyValue(EmuWrapper::BUTTON_UP, true);
 }
 
 void MainWindow::on_up_released(){
-    emu.emuInput.buttonUp = false;
+   emu.setKeyValue(EmuWrapper::BUTTON_UP, false);
 }
 
 void MainWindow::on_down_pressed(){
-    emu.emuInput.buttonDown = true;
+   emu.setKeyValue(EmuWrapper::BUTTON_DOWN, true);
 }
 
 void MainWindow::on_down_released(){
-    emu.emuInput.buttonDown = false;
+   emu.setKeyValue(EmuWrapper::BUTTON_DOWN, false);
 }
 
 void MainWindow::on_left_pressed(){
-    emu.emuInput.buttonLeft = true;
+   emu.setKeyValue(EmuWrapper::BUTTON_LEFT, true);
 }
 
 void MainWindow::on_left_released(){
-    emu.emuInput.buttonLeft = false;
+   emu.setKeyValue(EmuWrapper::BUTTON_LEFT, false);
 }
 
 void MainWindow::on_right_pressed(){
-    emu.emuInput.buttonRight = true;
+   emu.setKeyValue(EmuWrapper::BUTTON_RIGHT, true);
 }
 
 void MainWindow::on_right_released(){
-    emu.emuInput.buttonRight = false;
+   emu.setKeyValue(EmuWrapper::BUTTON_RIGHT, false);
 }
 
 //emu control
 void MainWindow::on_ctrlBtn_clicked(){
    if(!emu.isInited()){
-      uint32_t enabledFeatures = FEATURE_EXT_KEYS | FEATURE_EMU_HONEST | FEATURE_FAST_CPU | FEATURE_HYBRID_CPU | FEATURE_CUSTOM_FB | FEATURE_DEBUG | FEATURE_SND_STRMS;
+      uint32_t enabledFeatures = getEmuFeatureList();
       QString sysDir = settings->value("resourceDirectory", "").toString();
       uint32_t error = emu.init(sysDir + "/palmos41-en-m515.rom", QFile(sysDir + "/bootloader-en-m515.rom").exists() ? sysDir + "/bootloader-en-m515.rom" : "", sysDir + "/userdata-en-m515.ram", sysDir + "/sd-en-m515.img", enabledFeatures);
 
       if(error == EMU_ERROR_NONE){
+         ui->up->setEnabled(true);
+         ui->down->setEnabled(true);
+
          ui->calendar->setEnabled(true);
          ui->addressBook->setEnabled(true);
          ui->todo->setEnabled(true);
          ui->notes->setEnabled(true);
-
-         ui->up->setEnabled(true);
-         ui->down->setEnabled(true);
 
          ui->power->setEnabled(true);
 
@@ -317,6 +380,7 @@ void MainWindow::on_ctrlBtn_clicked(){
          ui->install->setEnabled(true);
          ui->stateManager->setEnabled(true);
          ui->debugger->setEnabled(true);
+         ui->reset->setEnabled(true);
 
          ui->ctrlBtn->setIcon(QIcon(":/buttons/images/pause.svg"));
       }
@@ -338,7 +402,7 @@ void MainWindow::on_ctrlBtn_clicked(){
 
 void MainWindow::on_install_clicked(){
    if(emu.isInited()){
-      QString app = QFileDialog::getOpenFileName(this, "Open *.prc/pdb/pqa", QDir::root().path(), nullptr);
+      QString app = QFileDialog::getOpenFileName(this, "Select Application", QDir::root().path(), "Palm OS App (*.prc *.pdb *.pqa)");
 
       if(app != ""){
          uint32_t error = emu.installApplication(app);
@@ -381,4 +445,28 @@ void MainWindow::on_stateManager_clicked(){
       if(!wasPaused)
          emu.resume();
    }
+}
+
+void MainWindow::on_reset_clicked(){
+   emu.reset(false);
+}
+
+void MainWindow::on_settings_clicked(){
+   bool wasInited = emu.isInited();
+   bool wasPaused = emu.isPaused();
+
+   if(wasInited && !wasPaused)
+      emu.pause();
+
+   settingsManager->exec();
+
+   //redraw the main window
+   redraw();
+
+   //update keyboard settings too
+   for(uint8_t index = 0; index < EmuWrapper::BUTTON_TOTAL_COUNT; index++)
+      keyForButton[index] = settings->value("palmButton" + QString::number(index) + "Key", '\0').toInt();
+
+   if(wasInited && !wasPaused)
+      emu.resume();
 }

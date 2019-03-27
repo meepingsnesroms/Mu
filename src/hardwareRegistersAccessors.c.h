@@ -178,6 +178,14 @@ static void setCsb(uint16_t value){
    else
       chips[CHIP_B0_SED].unprotectedSize = chips[CHIP_B0_SED].lineSize / (1 << 7 - (value >> 11 & 0x0003));
 
+   chips[CHIP_B1_NIL].enable = chips[CHIP_B0_SED].enable;
+   chips[CHIP_B1_NIL].readOnly = chips[CHIP_B0_SED].readOnly;
+   chips[CHIP_B1_NIL].start = chips[CHIP_B0_SED].start + chips[CHIP_B0_SED].lineSize;
+   chips[CHIP_B1_NIL].lineSize = chips[CHIP_B0_SED].lineSize;
+   chips[CHIP_B1_NIL].supervisorOnlyProtectedMemory = chips[CHIP_B0_SED].supervisorOnlyProtectedMemory;
+   chips[CHIP_B1_NIL].readOnlyForProtectedMemory = chips[CHIP_B0_SED].readOnlyForProtectedMemory;
+   chips[CHIP_B1_NIL].unprotectedSize = chips[CHIP_B0_SED].unprotectedSize;
+
    registerArrayWrite16(CSB, value & 0xF9FF);
 }
 
@@ -198,6 +206,8 @@ static void setCsd(uint16_t value){
       chips[CHIP_DX_RAM].unprotectedSize = chips[CHIP_DX_RAM].lineSize / (1 << 7 - ((value >> 11 & 0x0003) | 0x0004));
    else
       chips[CHIP_DX_RAM].unprotectedSize = chips[CHIP_DX_RAM].lineSize / (1 << 7 - (value >> 11 & 0x0003));
+
+   //debugLog("RAM unprotected size:0x%08X, bits:0x%02X\n", chips[CHIP_DX_RAM].unprotectedSize, ((value >> 11 & 0x0003) | (csControl1 & 0x4000 && csControl1 & 0x0010) * 0x0004));
 
    registerArrayWrite16(CSD, value);
 }
@@ -224,6 +234,8 @@ static void setCsgbb(uint16_t value){
       chips[CHIP_B0_SED].start = (csugba >> 8 & 0x0007) << 29 | value >> 1 << 14;
    else
       chips[CHIP_B0_SED].start = value >> 1 << 14;
+
+   chips[CHIP_B1_NIL].start = chips[CHIP_B0_SED].start + chips[CHIP_B0_SED].lineSize;
 
    registerArrayWrite16(CSGBB, value & 0xFFFE);
 }

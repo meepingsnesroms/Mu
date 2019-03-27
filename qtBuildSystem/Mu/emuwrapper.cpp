@@ -14,10 +14,6 @@
 #include <string>
 #include <stdint.h>
 
-#if defined(Q_OS_ANDROID)
-#include <android/log.h>
-#endif
-
 #include "emuwrapper.h"
 #include "../../src/emulator.h"
 
@@ -36,9 +32,6 @@ char*                        frontendDebugString;
 
 
 void frontendHandleDebugPrint(){
-#if defined(Q_OS_ANDROID)
-   __android_log_print(ANDROID_LOG_DEBUG, "MuDebug", "%s", frontendDebugString);
-#else
    QString newDebugString = frontendDebugString;
 
    //this debug handler doesnt need the \n
@@ -55,7 +48,6 @@ void frontendHandleDebugPrint(){
       debugStrings.push_back(newDebugString);
       duplicateCallCount.push_back(1);
    }
-#endif
 }
 
 
@@ -262,6 +254,23 @@ void EmuWrapper::resume(){
    }
 }
 
+void EmuWrapper::reset(bool hard){
+   if(emuInited){
+      bool wasPaused = isPaused();
+
+      if(!wasPaused)
+         pause();
+
+      if(hard)
+         emulatorHardReset();
+      else
+         emulatorSoftReset();
+
+      if(!wasPaused)
+         resume();
+   }
+}
+
 uint32_t EmuWrapper::saveState(const QString& path){
    bool wasPaused = isPaused();
    uint32_t error = EMU_ERROR_INVALID_PARAMETER;
@@ -315,6 +324,59 @@ uint32_t EmuWrapper::loadState(const QString& path){
       resume();
 
    return error;
+}
+
+void EmuWrapper::setPenValue(float x, float y, bool touched){
+   emuInput.touchscreenX = x;
+   emuInput.touchscreenY = y;
+   emuInput.touchscreenTouched = touched;
+}
+
+void EmuWrapper::setKeyValue(uint8_t key, bool pressed){
+   switch(key){
+      case BUTTON_UP:
+         emuInput.buttonUp = pressed;
+         break;
+
+      case BUTTON_DOWN:
+         emuInput.buttonDown = pressed;
+         break;
+
+      case BUTTON_LEFT:
+         emuInput.buttonLeft = pressed;
+         break;
+
+      case BUTTON_RIGHT:
+         emuInput.buttonRight = pressed;
+         break;
+
+      case BUTTON_CENTER:
+         emuInput.buttonCenter = pressed;
+         break;
+
+      case BUTTON_CALENDAR:
+         emuInput.buttonCalendar = pressed;
+         break;
+
+      case BUTTON_ADDRESS:
+         emuInput.buttonAddress = pressed;
+         break;
+
+      case BUTTON_TODO:
+         emuInput.buttonTodo = pressed;
+         break;
+
+      case BUTTON_NOTES:
+         emuInput.buttonNotes = pressed;
+         break;
+
+      case BUTTON_POWER:
+         emuInput.buttonPower = pressed;
+         break;
+
+      default:
+         break;
+   }
 }
 
 uint32_t EmuWrapper::installApplication(const QString& path){

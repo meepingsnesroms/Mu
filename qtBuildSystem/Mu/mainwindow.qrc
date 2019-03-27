@@ -17,5 +17,7 @@
         <file>images/stop.svg</file>
         <file>images/todo.svg</file>
         <file>images/up.svg</file>
+        <file>images/reset.svg</file>
+        <file>images/settingsManager.svg</file>
     </qresource>
 </RCC>
