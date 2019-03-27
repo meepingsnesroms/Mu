@@ -67,7 +67,7 @@ Make sure you have done all the steps here https://docs.libretro.com/ under "For
 Install Qt 5.11.1 and Qt Creator(optional) if not installed  
 Open the .pro file in Qt Creator and click "Run" or build from command line
 
-##### To build without Qt Creator
+##### To build without Qt Creator(untested)
 
     cd ./qtBuildSystem/Mu
     qmake
@@ -76,7 +76,13 @@ Open the .pro file in Qt Creator and click "Run" or build from command line
 #### TestSuite for Palm OS
 Install prc-tools from the below link(self compiled or prepackaged VM)  
 
-    cd ./hwTestSuite
+    cd ./tools/palm/hwTestSuite
+    ./make.sh
+
+#### MuExpDriver for Palm OS
+Install prc-tools from the below link(self compiled or prepackaged VM)  
+
+    cd ./tools/palm/muExpansionDriver
     ./make.sh
 
 ## Running
@@ -107,6 +113,7 @@ I understand not everyone speaks English so I list both ROMs, I do all my testin
 <a rel="license" href="http://creativecommons.org/licenses/by-nc/3.0/us/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc/3.0/us/88x31.png" /></a><br />This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc/3.0/us/">Creative Commons Attribution-NonCommercial 3.0 United States License</a>.
 
 ## Links
+[Website](https://meepingsnesroms.github.io/)  
 [Discord](https://discord.gg/hWSz8VN)
 
 ## Also see Mu's sister project
