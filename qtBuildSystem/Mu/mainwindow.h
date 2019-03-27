@@ -34,14 +34,17 @@ protected:
     void keyPressEvent(QKeyEvent* event);
     void keyReleaseEvent(QKeyEvent* event);
 
-private:
+public:
    void createHomeDirectoryTree(const QString& path);
 
-private slots:
-   bool eventFilter(QObject* object, QEvent* event);
+private:
+   uint32_t getEmuFeatureList();
    void popupErrorDialog(const QString& error);
    void popupInformationDialog(const QString& info);
    void redraw();
+
+private slots:
+   bool eventFilter(QObject* object, QEvent* event);
 
    //display
    void updateDisplay();

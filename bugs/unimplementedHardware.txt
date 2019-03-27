@@ -2,8 +2,6 @@ CPU:
 sysTrapPceNativeCall, ARM Emulator
 VFP(floating point) coprocessor for ARM
 Test what bits of IMR are writable
-SCR privilege violation doesnt trigger the same as on hardware(likely has to do with not emulating the unused chip selects)
-TCN2 is unimplemented and seems to be used by the same routines that turn the CPU off for sleep mode
 
 CPU I/O:
 Peripheral Control Register, audio ppm mixing selection
@@ -20,7 +18,6 @@ RxOverflow on SPI1, don't know if back or front of FIFO is overwritten on overfl
 ICR POL(1,2,3,6) may flip the pin value as well as the interrupt, POL5 does not flip the INT5 pin though, this was confirmed with a hardware test(it doesnt seem to but there is instability on the pin when the SD card is plugged in, this may have to do with card detect also being a data line on the SD pinout)
 PWM2 is not implemented
 while it is stated that the PLL is turned off "30 clocks" after the DISPLL bit is set, it doesnt state where the clocks come from, CLK32 or SYSCLK
-SPI1 SPISPC register
 UART1 USTCNT1
 PLLFSR has a hack that makes busy wait loops finish faster by toggling the CLK32 bit on read, for power button issue
 should also not transfer data to SD card when MOSI, MISO or SPICLK1 are disabled
@@ -55,6 +52,9 @@ MakePalmBitmap:
 
 
 Fixed:
+(CPU I/O)SPI1 SPISPC register(this is just a clock divider used to slow transfers to allow the voltages to settle, since the emu has no voltages all transfers are just instant)
+(CPU)TCN2 is unimplemented and seems to be used by the same routines that turn the CPU off for sleep mode(it is implemented now and it wasn't the cause of the sleep mode issue)
+(CPU)SCR privilege violation doesnt trigger the same as on hardware(likely has to do with not emulating the unused chip selects)(I added those chip selects)
 (CPU)Trace T1 bit, should be unused by the OS and applications anyway(this was fixed long ago, don't know why it was still listed?)
 (SD Card)data blocks won't work properly when CRC checks are enabled
 (SD Card)the CRC of CSD and CID are invalid

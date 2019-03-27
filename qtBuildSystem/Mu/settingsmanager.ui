@@ -36,7 +36,11 @@
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_3">
        <item>
-        <widget class="QLineEdit" name="homeDirectory"/>
+        <widget class="QLineEdit" name="homeDirectory">
+         <property name="readOnly">
+          <bool>true</bool>
+         </property>
+        </widget>
        </item>
        <item>
         <widget class="QPushButton" name="pickHomeDirectory">
@@ -48,14 +52,14 @@
        <item>
         <widget class="QCheckBox" name="showOnscreenKeys">
          <property name="text">
-          <string>Show onscreen keys</string>
+          <string>Show Onscreen Keys</string>
          </property>
         </widget>
        </item>
        <item>
         <widget class="QLabel" name="label">
          <property name="text">
-          <string>Set keyboard keys:</string>
+          <string>Set Keyboard Keys:</string>
          </property>
         </widget>
        </item>
@@ -216,6 +220,82 @@
          <property name="text">
           <string/>
          </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="label_2">
+         <property name="text">
+          <string>Set Emulator Features(Restart Required):</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QWidget" name="gridWidget_2" native="true">
+         <layout class="QGridLayout" name="gridLayout_2">
+          <item row="2" column="0">
+           <widget class="QCheckBox" name="featureEmuHonest">
+            <property name="text">
+             <string>Tell Programs Their Emulated</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="2">
+           <widget class="QCheckBox" name="featureHleApis">
+            <property name="text">
+             <string>HLE APIs(Speed Hack)</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QCheckBox" name="featureCustomFb">
+            <property name="text">
+             <string>Resizeable Display(HiRes Mode)</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="2">
+           <widget class="QCheckBox" name="featureHybridCpu">
+            <property name="text">
+             <string>ARM Instruction Set(OS 5)</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QCheckBox" name="feature128mbRam">
+            <property name="text">
+             <string>128MB RAM</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QCheckBox" name="featureFastCpu">
+            <property name="text">
+             <string>Overclocking</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QCheckBox" name="featureSyncedRtc">
+            <property name="text">
+             <string>Sync Real Time Clock</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1">
+           <widget class="QCheckBox" name="featureExtraKeys">
+            <property name="text">
+             <string>Extra Dpad Keys(OS 5)</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="2">
+           <widget class="QCheckBox" name="featureSoundStreams">
+            <property name="text">
+             <string>PWM Audio Streams(OS 5)</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
         </widget>
        </item>
        <item>

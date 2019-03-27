@@ -14,11 +14,25 @@
 SettingsManager::SettingsManager(QWidget* parent) :
    QDialog(parent),
    ui(new Ui::SettingsManager){
+   settings = ((MainWindow*)parent)->settings;
+
+   //init GUI
    ui->setupUi(this);
-   QSettings* settings = ((MainWindow*)parent)->settings;
 
    //set all GUI items to current config values
+   ui->homeDirectory->setText(settings->value("resourceDirectory", "").toString());
    ui->showOnscreenKeys->setChecked(!settings->value("hideOnscreenKeys", "").toBool());
+
+   ui->feature128mbRam->setChecked(settings->value("feature128mbRam", false).toBool());
+   ui->featureFastCpu->setChecked(settings->value("featureFastCpu", false).toBool());
+   ui->featureHybridCpu->setChecked(settings->value("featureHybridCpu", false).toBool());
+   ui->featureCustomFb->setChecked(settings->value("featureCustomFb", false).toBool());
+   ui->featureSyncedRtc->setChecked(settings->value("featureSyncedRtc", false).toBool());
+   ui->featureHleApis->setChecked(settings->value("featureHleApis", false).toBool());
+   ui->featureEmuHonest->setChecked(settings->value("featureEmuHonest", false).toBool());
+   ui->featureExtraKeys->setChecked(settings->value("featureExtraKeys", false).toBool());
+   ui->featureSoundStreams->setChecked(settings->value("featureSoundStreams", false).toBool());
+
    setKeySelectorState(-1);
    updateButtonKeys();
 }
@@ -32,8 +46,6 @@ void SettingsManager::keyPressEvent(QKeyEvent* event){
 }
 
 void SettingsManager::keyReleaseEvent(QKeyEvent* event){
-   QSettings* settings = ((MainWindow*)parent())->settings;
-
    if(waitingOnKeyForButton != -1){
       settings->setValue("palmButton" + QString::number(waitingOnKeyForButton) + "Key", event->key());
 
@@ -51,8 +63,6 @@ void SettingsManager::setKeySelectorState(int8_t key){
 }
 
 void SettingsManager::updateButtonKeys(){
-   QSettings* settings = ((MainWindow*)parent())->settings;
-
    ui->selectUpKey->setText(QKeySequence(settings->value("palmButton" + QString::number(EmuWrapper::BUTTON_UP) + "Key", "").toInt()).toString());
    ui->selectDownKey->setText(QKeySequence(settings->value("palmButton" + QString::number(EmuWrapper::BUTTON_DOWN) + "Key", "").toInt()).toString());
    ui->selectLeftKey->setText(QKeySequence(settings->value("palmButton" + QString::number(EmuWrapper::BUTTON_LEFT) + "Key", "").toInt()).toString());
@@ -66,9 +76,18 @@ void SettingsManager::updateButtonKeys(){
 }
 
 void SettingsManager::on_showOnscreenKeys_toggled(bool checked){
-   QSettings* settings = ((MainWindow*)parent())->settings;
-
    settings->setValue("hideOnscreenKeys", !checked);
+}
+
+void SettingsManager::on_pickHomeDirectory_clicked(){
+   MainWindow* mainWindow = (MainWindow*)parentWidget();
+   QString newHomeDir = QFileDialog::getExistingDirectory(this, "Select Home Directory", QDir::root().path(), QFileDialog::ShowDirsOnly);
+
+   if(newHomeDir != ""){
+      mainWindow->createHomeDirectoryTree(newHomeDir);
+      settings->setValue("resourceDirectory", newHomeDir);
+      ui->homeDirectory->setText(newHomeDir);
+   }
 }
 
 void SettingsManager::on_selectUpKey_clicked(){
@@ -111,6 +130,38 @@ void SettingsManager::on_selectPowerKey_clicked(){
    setKeySelectorState(EmuWrapper::BUTTON_POWER);
 }
 
-void SettingsManager::on_pickHomeDirectory_clicked(){
-   //TODO
+void SettingsManager::on_feature128mbRam_toggled(bool checked){
+   settings->setValue("feature128mbRam", checked);
+}
+
+void SettingsManager::on_featureFastCpu_toggled(bool checked){
+   settings->setValue("featureFastCpu", checked);
+}
+
+void SettingsManager::on_featureHybridCpu_toggled(bool checked){
+   settings->setValue("featureHybridCpu", checked);
+}
+
+void SettingsManager::on_featureCustomFb_toggled(bool checked){
+   settings->setValue("featureCustomFb", checked);
+}
+
+void SettingsManager::on_featureSyncedRtc_toggled(bool checked){
+   settings->setValue("featureSyncedRtc", checked);
+}
+
+void SettingsManager::on_featureHleApis_toggled(bool checked){
+   settings->setValue("featureHleApis", checked);
+}
+
+void SettingsManager::on_featureEmuHonest_toggled(bool checked){
+   settings->setValue("featureEmuHonest", checked);
+}
+
+void SettingsManager::on_featureExtraKeys_toggled(bool checked){
+   settings->setValue("featureExtraKeys", checked);
+}
+
+void SettingsManager::on_featureSoundStreams_toggled(bool checked){
+   settings->setValue("featureSoundStreams", checked);
 }

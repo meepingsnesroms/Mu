@@ -161,38 +161,6 @@ void MainWindow::keyReleaseEvent(QKeyEvent* event){
          emu.setKeyValue(index, false);
 }
 
-bool MainWindow::eventFilter(QObject* object, QEvent* event){
-   if(event->type() == QEvent::Resize){
-      if(QString(object->metaObject()->className()) == "QPushButton"){
-         QPushButton* button = (QPushButton*)object;
-
-         button->setIconSize(QSize(button->size().width() / 1.7, button->size().height() / 1.7));
-      }
-
-      if(object->objectName() == "centralWidget"){
-         float smallestRatio;
-         bool hideOnscreenKeys = settings->value("hideOnscreenKeys", "").toBool();
-
-         //update displayContainer first, make the display occupy the top 3/5 of the screen if there are Palm keys or 4/5 if theres not
-         ui->displayContainer->setFixedHeight(ui->centralWidget->height() * (hideOnscreenKeys ? 0.80 : 0.60));
-
-         smallestRatio = qMin(ui->displayContainer->size().width() * 0.98 / 3.0 , ui->displayContainer->size().height() * 0.98 / 4.0);
-         //the 0.98 above allows the display to shrink, without it the displayContainer couldent shrink because of the fixed size of the display
-
-         //set new size
-         ui->display->setFixedSize(smallestRatio * 3.0, smallestRatio * 4.0);
-
-         //scale framebuffer to new size and refresh
-         if(emu.isInited()){
-            ui->display->setPixmap(emu.getFramebuffer().scaled(QSize(ui->display->size().width(), ui->display->size().height()), Qt::KeepAspectRatio, Qt::SmoothTransformation));
-            ui->display->update();
-         }
-      }
-   }
-
-   return QMainWindow::eventFilter(object, event);
-}
-
 void MainWindow::createHomeDirectoryTree(const QString& path){
    QDir homeDir(path);
 
@@ -201,6 +169,31 @@ void MainWindow::createHomeDirectoryTree(const QString& path){
    homeDir.mkpath("./saveStates");
    homeDir.mkpath("./screenshots");
    homeDir.mkpath("./debugDumps");
+}
+
+uint32_t MainWindow::getEmuFeatureList(){
+   uint32_t features = FEATURE_ACCURATE;
+
+   features |= settings->value("feature128mbRam", false).toBool() ? FEATURE_RAM_HUGE : 0;
+   features |= settings->value("featureFastCpu", false).toBool() ? FEATURE_FAST_CPU : 0;
+   features |= settings->value("featureHybridCpu", false).toBool() ? FEATURE_HYBRID_CPU : 0;
+   features |= settings->value("featureCustomFb", false).toBool() ? FEATURE_CUSTOM_FB : 0;
+   features |= settings->value("featureSyncedRtc", false).toBool() ? FEATURE_SYNCED_RTC : 0;
+   features |= settings->value("featureHleApis", false).toBool() ? FEATURE_HLE_APIS : 0;
+   features |= settings->value("featureEmuHonest", false).toBool() ? FEATURE_EMU_HONEST : 0;
+   features |= settings->value("featureExtraKeys", false).toBool() ? FEATURE_EXT_KEYS : 0;
+   features |= settings->value("featureSoundStreams", false).toBool() ? FEATURE_SND_STRMS : 0;
+
+#if defined(EMU_DEBUG)
+   features |= FEATURE_DEBUG;
+#endif
+
+   //lazy debug overrides
+   //features = FEATURE_EXT_KEYS | FEATURE_EMU_HONEST | FEATURE_FAST_CPU | FEATURE_HYBRID_CPU | FEATURE_CUSTOM_FB | FEATURE_DEBUG | FEATURE_SND_STRMS;
+   //features = FEATURE_FAST_CPU | FEATURE_HYBRID_CPU | FEATURE_CUSTOM_FB | FEATURE_DEBUG;
+   //features = FEATURE_FAST_CPU | FEATURE_HYBRID_CPU | FEATURE_DEBUG;
+
+   return features;
 }
 
 void MainWindow::popupErrorDialog(const QString& error){
@@ -231,6 +224,38 @@ void MainWindow::redraw(){
 
    //update current size
    QCoreApplication::postEvent(ui->centralWidget, resizeEvent);
+}
+
+bool MainWindow::eventFilter(QObject* object, QEvent* event){
+   if(event->type() == QEvent::Resize){
+      if(QString(object->metaObject()->className()) == "QPushButton"){
+         QPushButton* button = (QPushButton*)object;
+
+         button->setIconSize(QSize(button->size().width() / 1.7, button->size().height() / 1.7));
+      }
+
+      if(object->objectName() == "centralWidget"){
+         float smallestRatio;
+         bool hideOnscreenKeys = settings->value("hideOnscreenKeys", "").toBool();
+
+         //update displayContainer first, make the display occupy the top 3/5 of the screen if there are Palm keys or 4/5 if theres not
+         ui->displayContainer->setFixedHeight(ui->centralWidget->height() * (hideOnscreenKeys ? 0.80 : 0.60));
+
+         smallestRatio = qMin(ui->displayContainer->size().width() * 0.98 / 3.0 , ui->displayContainer->size().height() * 0.98 / 4.0);
+         //the 0.98 above allows the display to shrink, without it the displayContainer couldent shrink because of the fixed size of the display
+
+         //set new size
+         ui->display->setFixedSize(smallestRatio * 3.0, smallestRatio * 4.0);
+
+         //scale framebuffer to new size and refresh
+         if(emu.isInited()){
+            ui->display->setPixmap(emu.getFramebuffer().scaled(QSize(ui->display->size().width(), ui->display->size().height()), Qt::KeepAspectRatio, Qt::SmoothTransformation));
+            ui->display->update();
+         }
+      }
+   }
+
+   return QMainWindow::eventFilter(object, event);
 }
 
 //display
@@ -330,9 +355,7 @@ void MainWindow::on_right_released(){
 //emu control
 void MainWindow::on_ctrlBtn_clicked(){
    if(!emu.isInited()){
-      //uint32_t enabledFeatures = FEATURE_EXT_KEYS | FEATURE_EMU_HONEST | FEATURE_FAST_CPU | FEATURE_HYBRID_CPU | FEATURE_CUSTOM_FB | FEATURE_DEBUG | FEATURE_SND_STRMS;
-      //uint32_t enabledFeatures = FEATURE_FAST_CPU | FEATURE_HYBRID_CPU | FEATURE_CUSTOM_FB | FEATURE_DEBUG;
-      uint32_t enabledFeatures = FEATURE_FAST_CPU | FEATURE_HYBRID_CPU | FEATURE_DEBUG;
+      uint32_t enabledFeatures = getEmuFeatureList();
       QString sysDir = settings->value("resourceDirectory", "").toString();
       uint32_t error = emu.init(sysDir + "/palmos41-en-m515.rom", QFile(sysDir + "/bootloader-en-m515.rom").exists() ? sysDir + "/bootloader-en-m515.rom" : "", sysDir + "/userdata-en-m515.ram", sysDir + "/sd-en-m515.img", enabledFeatures);
 

@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QEvent>
 #include <QListWidgetItem>
+#include <QSettings>
 
 namespace Ui{
 class StateManager;
@@ -31,4 +32,5 @@ private slots:
 
 private:
    Ui::StateManager* ui;
+   QSettings*        settings;
 };

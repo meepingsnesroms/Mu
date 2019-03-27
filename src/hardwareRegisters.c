@@ -463,6 +463,7 @@ uint16_t getHwRegister16(uint32_t address){
       case TCTL2:
       case SPICONT1:
       case SPIINTCS:
+      case SPISPC:
       case SPICONT2:
       case SPIDATA2:
          //simple read, no actions needed
@@ -954,8 +955,6 @@ void setHwRegister16(uint32_t address, uint16_t value){
          return;
 
       case SPISPC:
-         //SPI1 timing, unemulated for now
-
       case TCMP1:
       case TCMP2:
       case TPRER1:
