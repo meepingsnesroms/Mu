@@ -7,7 +7,7 @@
 #include "armv5.h"
 #include "hires.h"
 #include "globals.h"
-#include "memalign.h"
+#include "palmOsPriv.h"
 #include "palmGlobalDefines.h"
 #include "specs/emuFeatureRegisterSpec.h"
 
@@ -115,11 +115,11 @@ static void installPceNativeCallHandler(uint32_t armStackSize){
    SysSetTrapAddress(sysTrapPceNativeCall, (void*)emuPceNativeCall);
    
    if(oldArmStack)
-      memalign_free(oldArmStack);
+      MemChunkFree(oldArmStack);
    
    /*must have 32 bit aligned size and start*/
    armStackSize &= 0xFFFFFFFC;
-   armStackStart = memalign_alloc(sizeof(uint32_t), armStackSize);
+   armStackStart = MemChunkNew(0, armStackSize, memNewChunkFlagPreLock | memNewChunkFlagNonMovable | memNewChunkFlagAllowLarge);
    armv5SetStack(armStackStart, armStackSize);
    setGlobalVar(ARM_STACK_START, (uint32_t)armStackStart);
 }

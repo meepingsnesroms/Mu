@@ -6,6 +6,7 @@
 #include "memoryAccess.h"
 #include "portability.h"
 #include "armv5/CPU.h"
+#include "m68k/m68k.h"
 
 
 #define ARMV5_CYCLES_PER_OPCODE 2
@@ -17,90 +18,48 @@ static ArmCpu armv5Cpu;
 
 
 static Boolean armv5MemoryAccess(ArmCpu* cpu, void* buf, UInt32 vaddr, UInt8 size, Boolean write, Boolean privileged, UInt8* fsr){
-   //ARM only has access to RAM, the OS 4 ROM has no data important to it and it would be wrong to access 68k registers from ARM
-   vaddr &= chips[CHIP_DX_RAM].mask;
+   //just gonna have ARM and m68k share the same bus for now, ARM may want fonts/bitmaps from ROM
 
-#if !defined(EMU_NO_SAFETY)
-   if(size & (size - 1) || vaddr & (size - 1))//size is not a power of two or address isnt aligned to size
-      return false;
-#endif
+   //no safety check is needed, they are done in the m68k memory accessors called from here
 
-#if defined(EMU_BIG_ENDIAN)
    if(write){
       switch(size){
          case 1:
-            *(uint8_t*)(palmRam + vaddr) = *(uint8_t*)buf;
+            m68k_write_memory_8(vaddr, *(uint8_t*)buf);
             return true;
 
          case 2:
-            *(uint16_t*)(palmRam + vaddr) = SWAP_16(*(uint16_t*)buf);
+            m68k_write_memory_16(vaddr, SWAP_16(*(uint16_t*)buf));
             return true;
 
          case 4:
-            *(uint32_t*)(palmRam + vaddr) = SWAP_32(*(uint32_t*)buf);
+            m68k_write_memory_32(vaddr, SWAP_32(*(uint32_t*)buf));
             return true;
 
          default:
+            debugLog("Invalid ARMv5 write: address:0x%08X, size:%d\n", vaddr, size * 8);
             return false;
       }
    }
    else{
       switch(size){
          case 1:
-            *(uint8_t*)buf = *(uint8_t*)(palmRam + vaddr);
+            *(uint8_t*)buf = m68k_read_memory_8(vaddr);
             return true;
 
          case 2:
-            *(uint16_t*)buf = SWAP_16(*(uint16_t*)(palmRam + vaddr));
+            *(uint16_t*)buf = SWAP_16(m68k_read_memory_16(vaddr));
             return true;
 
          case 4:
-            *(uint32_t*)buf = SWAP_32(*(uint32_t*)(palmRam + vaddr));
+            *(uint32_t*)buf = SWAP_32(m68k_read_memory_32(vaddr));
             return true;
 
          default:
+            debugLog("Invalid ARMv5 read: address:0x%08X, size:%d\n", vaddr, size * 8);
             return false;
       }
    }
-#else
-   if(write){
-      switch(size){
-         case 1:
-            *(uint8_t*)(palmRam + (vaddr ^ 1)) = *(uint8_t*)buf;
-            return true;
-
-         case 2:
-            *(uint16_t*)(palmRam + vaddr) = SWAP_16(*(uint16_t*)buf);
-            return true;
-
-         case 4:
-            *(uint16_t*)(palmRam + vaddr) = SWAP_16(*(uint32_t*)buf & 0xFFFF);
-            *(uint16_t*)(palmRam + vaddr + 2) = SWAP_16(*(uint32_t*)buf >> 16);
-            return true;
-
-         default:
-            return false;
-      }
-   }
-   else{
-      switch(size){
-         case 1:
-            *(uint8_t*)buf = *(uint8_t*)(palmRam + (vaddr ^ 1));
-            return true;
-
-         case 2:
-            *(uint16_t*)buf = SWAP_16(*(uint16_t*)(palmRam + vaddr));
-            return true;
-
-         case 4:
-            *(uint32_t*)buf = SWAP_16(*(uint16_t*)(palmRam + vaddr + 2)) << 16 | SWAP_16(*(uint16_t*)(palmRam + vaddr));
-            return true;
-
-         default:
-            return false;
-      }
-   }
-#endif
 }
 
 static Boolean armv5Hypercall(ArmCpu* cpu){
