@@ -41,6 +41,7 @@ private slots:
    void on_selectTodoKey_clicked();
    void on_selectNotesKey_clicked();
    void on_selectPowerKey_clicked();
+   void on_clearKeyBind_clicked();
 
    void on_feature128mbRam_toggled(bool checked);
    void on_featureFastCpu_toggled(bool checked);

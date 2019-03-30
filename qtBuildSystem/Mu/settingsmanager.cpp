@@ -63,16 +63,16 @@ void SettingsManager::setKeySelectorState(int8_t key){
 }
 
 void SettingsManager::updateButtonKeys(){
-   ui->selectUpKey->setText(QKeySequence(settings->value("palmButton" + QString::number(EmuWrapper::BUTTON_UP) + "Key", "").toInt()).toString());
-   ui->selectDownKey->setText(QKeySequence(settings->value("palmButton" + QString::number(EmuWrapper::BUTTON_DOWN) + "Key", "").toInt()).toString());
-   ui->selectLeftKey->setText(QKeySequence(settings->value("palmButton" + QString::number(EmuWrapper::BUTTON_LEFT) + "Key", "").toInt()).toString());
-   ui->selectRightKey->setText(QKeySequence(settings->value("palmButton" + QString::number(EmuWrapper::BUTTON_RIGHT) + "Key", "").toInt()).toString());
-   ui->selectCenterKey->setText(QKeySequence(settings->value("palmButton" + QString::number(EmuWrapper::BUTTON_CENTER) + "Key", "").toInt()).toString());
-   ui->selectCalendarKey->setText(QKeySequence(settings->value("palmButton" + QString::number(EmuWrapper::BUTTON_CALENDAR) + "Key", "").toInt()).toString());
-   ui->selectAddressBookKey->setText(QKeySequence(settings->value("palmButton" + QString::number(EmuWrapper::BUTTON_ADDRESS) + "Key", "").toInt()).toString());
-   ui->selectTodoKey->setText(QKeySequence(settings->value("palmButton" + QString::number(EmuWrapper::BUTTON_TODO) + "Key", "").toInt()).toString());
-   ui->selectNotesKey->setText(QKeySequence(settings->value("palmButton" + QString::number(EmuWrapper::BUTTON_NOTES) + "Key", "").toInt()).toString());
-   ui->selectPowerKey->setText(QKeySequence(settings->value("palmButton" + QString::number(EmuWrapper::BUTTON_POWER) + "Key", "").toInt()).toString());
+   ui->selectUpKey->setText(QKeySequence(settings->value("palmButton" + QString::number(EmuWrapper::BUTTON_UP) + "Key", '\0').toInt()).toString());
+   ui->selectDownKey->setText(QKeySequence(settings->value("palmButton" + QString::number(EmuWrapper::BUTTON_DOWN) + "Key", '\0').toInt()).toString());
+   ui->selectLeftKey->setText(QKeySequence(settings->value("palmButton" + QString::number(EmuWrapper::BUTTON_LEFT) + "Key", '\0').toInt()).toString());
+   ui->selectRightKey->setText(QKeySequence(settings->value("palmButton" + QString::number(EmuWrapper::BUTTON_RIGHT) + "Key", '\0').toInt()).toString());
+   ui->selectCenterKey->setText(QKeySequence(settings->value("palmButton" + QString::number(EmuWrapper::BUTTON_CENTER) + "Key", '\0').toInt()).toString());
+   ui->selectCalendarKey->setText(QKeySequence(settings->value("palmButton" + QString::number(EmuWrapper::BUTTON_CALENDAR) + "Key", '\0').toInt()).toString());
+   ui->selectAddressBookKey->setText(QKeySequence(settings->value("palmButton" + QString::number(EmuWrapper::BUTTON_ADDRESS) + "Key", '\0').toInt()).toString());
+   ui->selectTodoKey->setText(QKeySequence(settings->value("palmButton" + QString::number(EmuWrapper::BUTTON_TODO) + "Key", '\0').toInt()).toString());
+   ui->selectNotesKey->setText(QKeySequence(settings->value("palmButton" + QString::number(EmuWrapper::BUTTON_NOTES) + "Key", '\0').toInt()).toString());
+   ui->selectPowerKey->setText(QKeySequence(settings->value("palmButton" + QString::number(EmuWrapper::BUTTON_POWER) + "Key", '\0').toInt()).toString());
 }
 
 void SettingsManager::on_showOnscreenKeys_toggled(bool checked){
@@ -128,6 +128,15 @@ void SettingsManager::on_selectNotesKey_clicked(){
 
 void SettingsManager::on_selectPowerKey_clicked(){
    setKeySelectorState(EmuWrapper::BUTTON_POWER);
+}
+
+void SettingsManager::on_clearKeyBind_clicked(){
+   if(waitingOnKeyForButton != -1){
+      settings->setValue("palmButton" + QString::number(waitingOnKeyForButton) + "Key", '\0');
+
+      setKeySelectorState(-1);
+      updateButtonKeys();
+   }
 }
 
 void SettingsManager::on_feature128mbRam_toggled(bool checked){
