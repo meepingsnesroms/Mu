@@ -28,58 +28,6 @@ static void lockCodeXXXX(void){
    }
 }
 
-static void installResourceGlobals(void){
-   if(!getGlobalVar(RESOURCE_GLOBALS_INITIALIZED)){
-      MemHandle funcBlob;
-      MemPtr funcBlobPtr;
-
-      /*ARM_EXIT_FUNC*/
-      funcBlob = DmGetResource(FUNCTION_BLOB_TYPE, ARM_EXIT_FUNC_ID);
-      if(!funcBlob)
-         debugLog("Cant open ARM_EXIT_FUNC!\n");
-      
-      funcBlobPtr = MemHandleLock(funcBlob);
-      if(!funcBlobPtr)
-         debugLog("Cant lock ARM_EXIT_FUNC!\n");
-      
-      if((uint32_t)funcBlobPtr & 0x00000003)
-         debugLog("ARM_EXIT_FUNC is unaligned!\n");
-      
-      setGlobalVar(ARM_EXIT_FUNC, (uint32_t)funcBlobPtr);
-
-      /*ARM_CALL_68K_FUNC*/
-      funcBlob = DmGetResource(FUNCTION_BLOB_TYPE, ARM_CALL_68K_FUNC_ID);
-      if(!funcBlob)
-         debugLog("Cant open ARM_CALL_68K_FUNC!\n");
-      
-      funcBlobPtr = MemHandleLock(funcBlob);
-      if(!funcBlobPtr)
-         debugLog("Cant lock ARM_CALL_68K_FUNC!\n");
-      
-      if((uint32_t)funcBlobPtr & 0x00000003)
-         debugLog("ARM_CALL_68K_FUNC is unaligned!\n");
-      
-      setGlobalVar(ARM_CALL_68K_FUNC, (uint32_t)funcBlobPtr);
-      
-      /*M68K_CALL_WITH_BLOB_FUNC*/
-      funcBlob = DmGetResource(FUNCTION_BLOB_TYPE, M68K_CALL_WITH_BLOB_FUNC_ID);
-      if(!funcBlob)
-         debugLog("Cant open M68K_CALL_WITH_BLOB_FUNC!\n");
-      
-      funcBlobPtr = MemHandleLock(funcBlob);
-      if(!funcBlobPtr)
-         debugLog("Cant lock M68K_CALL_WITH_BLOB_FUNC!\n");
-      
-      if((uint32_t)funcBlobPtr & 0x00000001)
-         debugLog("M68K_CALL_WITH_BLOB_FUNC is unaligned!\n");
-      
-      setGlobalVar(M68K_CALL_WITH_BLOB_FUNC, (uint32_t)funcBlobPtr);
-      
-      /*dont run this function again*/
-      setGlobalVar(RESOURCE_GLOBALS_INITIALIZED, true);
-   }
-}
-
 static void install128mbRam(uint8_t mbDynamicHeap){
    /*these functions are called by HwrInit, which can be called directly by apps*/
    /*PrvGetRAMSize_10002C5E, small ROM*/
@@ -270,8 +218,8 @@ void initBoot(uint32_t* configFile){
       if(!thisAppRef)
          debugLog("Cant open " APP_NAME "!\n");
       
+      /*prevents the code being moved out from underneath its function pointers(in the API trap table), causing crashes*/
       lockCodeXXXX();
-      installResourceGlobals();
          
       if(enabledFeatures & FEATURE_DEBUG)
          installDebugHandlers();

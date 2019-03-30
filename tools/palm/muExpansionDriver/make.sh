@@ -23,11 +23,6 @@ for I in "${FILES[@]}"; do
 done
 m68k-palmos-gcc -o $APP_NAME *.o
 
-# copy ASM blobs
-cp ./blobs/armExit.func ./func0000.bin # ARM code
-cp ./blobs/armCall68k.func ./func0001.bin # ARM code
-cp ./blobs/m68kCallWithBlob.func ./func0002.bin # 68k code
-
 # if possible generate icon trees
 if type "MakePalmBitmap" &> /dev/null; then
    MakePalmBitmap icon ./appIcon.svg ./

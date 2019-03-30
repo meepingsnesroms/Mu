@@ -137,7 +137,7 @@ typedef struct ArmCpu{
 	ArmCpuHypercall	hypercallF;
 	ArmSetFaultAdrF	setFaultAdrF;
 	
-	icache		ic;
+   //icache		ic; //not using icache for now
 
 	void*		userData;		//shared by all callbacks
 }ArmCpu;

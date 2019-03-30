@@ -2608,7 +2608,7 @@ Err cpuInit(ArmCpu* cpu, UInt32 pc, ArmCpuMemF memF, ArmCpuEmulErr emulErrF, Arm
 	cpu->hypercallF = hypercallF;
 	cpu->setFaultAdrF = setFaultAdrF;
 
-	icacheInit(&cpu->ic, cpu, memF);
+   //icacheInit(&cpu->ic, cpu, memF);
 
 	return errNone;
 }
@@ -2695,12 +2695,12 @@ void cpuIrq(ArmCpu* cpu, Boolean fiq, Boolean raise){	//unraise when acknowledge
 
 void cpuIcacheInval(ArmCpu* cpu){
 
-	icacheInval(&cpu->ic);
+   //icacheInval(&cpu->ic);
 }
 
 void cpuIcacheInvalAddr(ArmCpu* cpu, UInt32 addr){
 
-	icacheInvalAddr(&cpu->ic, addr);
+   //icacheInvalAddr(&cpu->ic, addr);
 }
 
 

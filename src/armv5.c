@@ -83,24 +83,150 @@ void armv5Reset(void){
 uint32_t armv5StateSize(void){
    uint32_t size = 0;
 
-   //need to add armv5Cpu here
-   size += sizeof(uint8_t);
+   //armv5Cpu
+   size += sizeof(uint32_t) * 16;//armv5Cpu.regs
+   size += sizeof(uint32_t) * 2;//armv5Cpu.CPSR/SPSR
+   size += sizeof(uint32_t) * 3 * 6;//armv5Cpu.bank_usr/bank_svc/bank_abt/bank_und/bank_irq/bank_fiq
+   size += sizeof(uint32_t) * 5;//armv5Cpu.extra_regs
+   size += sizeof(uint16_t) * 3;//armv5Cpu.waitingIrqs/waitingFiqs/CPAR
+   size += sizeof(uint32_t);//armv5Cpu.vectorBase
+
+   //variables
+   size += sizeof(uint8_t);//armv5ServiceRequest
 
    return size;
 }
 
 void armv5SaveState(uint8_t* data){
    uint32_t offset = 0;
+   uint8_t index;
 
-   //need to add armv5Cpu here
+   //armv5Cpu
+   for(index = 0; index < 16; index++){
+      writeStateValue32(data + offset, armv5Cpu.regs[index]);
+      offset += sizeof(uint32_t);
+   }
+   writeStateValue32(data + offset, armv5Cpu.CPSR);
+   offset += sizeof(uint32_t);
+   writeStateValue32(data + offset, armv5Cpu.SPSR);
+   offset += sizeof(uint32_t);
+   writeStateValue32(data + offset, armv5Cpu.bank_usr.R13);
+   offset += sizeof(uint32_t);
+   writeStateValue32(data + offset, armv5Cpu.bank_usr.R14);
+   offset += sizeof(uint32_t);
+   writeStateValue32(data + offset, armv5Cpu.bank_usr.SPSR);
+   offset += sizeof(uint32_t);
+   writeStateValue32(data + offset, armv5Cpu.bank_svc.R13);
+   offset += sizeof(uint32_t);
+   writeStateValue32(data + offset, armv5Cpu.bank_svc.R14);
+   offset += sizeof(uint32_t);
+   writeStateValue32(data + offset, armv5Cpu.bank_svc.SPSR);
+   offset += sizeof(uint32_t);
+   writeStateValue32(data + offset, armv5Cpu.bank_abt.R13);
+   offset += sizeof(uint32_t);
+   writeStateValue32(data + offset, armv5Cpu.bank_abt.R14);
+   offset += sizeof(uint32_t);
+   writeStateValue32(data + offset, armv5Cpu.bank_abt.SPSR);
+   offset += sizeof(uint32_t);
+   writeStateValue32(data + offset, armv5Cpu.bank_und.R13);
+   offset += sizeof(uint32_t);
+   writeStateValue32(data + offset, armv5Cpu.bank_und.R14);
+   offset += sizeof(uint32_t);
+   writeStateValue32(data + offset, armv5Cpu.bank_und.SPSR);
+   offset += sizeof(uint32_t);
+   writeStateValue32(data + offset, armv5Cpu.bank_irq.R13);
+   offset += sizeof(uint32_t);
+   writeStateValue32(data + offset, armv5Cpu.bank_irq.R14);
+   offset += sizeof(uint32_t);
+   writeStateValue32(data + offset, armv5Cpu.bank_irq.SPSR);
+   offset += sizeof(uint32_t);
+   writeStateValue32(data + offset, armv5Cpu.bank_fiq.R13);
+   offset += sizeof(uint32_t);
+   writeStateValue32(data + offset, armv5Cpu.bank_fiq.R14);
+   offset += sizeof(uint32_t);
+   writeStateValue32(data + offset, armv5Cpu.bank_fiq.SPSR);
+   offset += sizeof(uint32_t);
+   for(index = 0; index < 5; index++){
+      writeStateValue32(data + offset, armv5Cpu.extra_regs[index]);
+      offset += sizeof(uint32_t);
+   }
+   writeStateValue16(data + offset, armv5Cpu.waitingIrqs);
+   offset += sizeof(uint16_t);
+   writeStateValue16(data + offset, armv5Cpu.waitingFiqs);
+   offset += sizeof(uint16_t);
+   writeStateValue16(data + offset, armv5Cpu.CPAR);
+   offset += sizeof(uint16_t);
+   writeStateValue32(data + offset, armv5Cpu.vectorBase);
+   offset += sizeof(uint32_t);
+
+   //variables
    writeStateValue8(data + offset, armv5ServiceRequest);
    offset += sizeof(uint8_t);
 }
 
 void armv5LoadState(uint8_t* data){
    uint32_t offset = 0;
+   uint8_t index;
 
-   //need to add armv5Cpu here
+   //armv5Cpu
+   for(index = 0; index < 16; index++){
+      armv5Cpu.regs[index] = readStateValue32(data + offset);
+      offset += sizeof(uint32_t);
+   }
+   armv5Cpu.CPSR = readStateValue32(data + offset);
+   offset += sizeof(uint32_t);
+   armv5Cpu.SPSR = readStateValue32(data + offset);
+   offset += sizeof(uint32_t);
+   armv5Cpu.bank_usr.R13 = readStateValue32(data + offset);
+   offset += sizeof(uint32_t);
+   armv5Cpu.bank_usr.R14 = readStateValue32(data + offset);
+   offset += sizeof(uint32_t);
+   armv5Cpu.bank_usr.SPSR = readStateValue32(data + offset);
+   offset += sizeof(uint32_t);
+   armv5Cpu.bank_svc.R13 = readStateValue32(data + offset);
+   offset += sizeof(uint32_t);
+   armv5Cpu.bank_svc.R14 = readStateValue32(data + offset);
+   offset += sizeof(uint32_t);
+   armv5Cpu.bank_svc.SPSR = readStateValue32(data + offset);
+   offset += sizeof(uint32_t);
+   armv5Cpu.bank_abt.R13 = readStateValue32(data + offset);
+   offset += sizeof(uint32_t);
+   armv5Cpu.bank_abt.R14 = readStateValue32(data + offset);
+   offset += sizeof(uint32_t);
+   armv5Cpu.bank_abt.SPSR = readStateValue32(data + offset);
+   offset += sizeof(uint32_t);
+   armv5Cpu.bank_und.R13 = readStateValue32(data + offset);
+   offset += sizeof(uint32_t);
+   armv5Cpu.bank_und.R14 = readStateValue32(data + offset);
+   offset += sizeof(uint32_t);
+   armv5Cpu.bank_und.SPSR = readStateValue32(data + offset);
+   offset += sizeof(uint32_t);
+   armv5Cpu.bank_irq.R13 = readStateValue32(data + offset);
+   offset += sizeof(uint32_t);
+   armv5Cpu.bank_irq.R14 = readStateValue32(data + offset);
+   offset += sizeof(uint32_t);
+   armv5Cpu.bank_irq.SPSR = readStateValue32(data + offset);
+   offset += sizeof(uint32_t);
+   armv5Cpu.bank_fiq.R13 = readStateValue32(data + offset);
+   offset += sizeof(uint32_t);
+   armv5Cpu.bank_fiq.R14 = readStateValue32(data + offset);
+   offset += sizeof(uint32_t);
+   armv5Cpu.bank_fiq.SPSR = readStateValue32(data + offset);
+   offset += sizeof(uint32_t);
+   for(index = 0; index < 5; index++){
+      armv5Cpu.extra_regs[index] = readStateValue32(data + offset);
+      offset += sizeof(uint32_t);
+   }
+   armv5Cpu.waitingIrqs = readStateValue16(data + offset);
+   offset += sizeof(uint16_t);
+   armv5Cpu.waitingFiqs = readStateValue16(data + offset);
+   offset += sizeof(uint16_t);
+   armv5Cpu.CPAR = readStateValue16(data + offset);
+   offset += sizeof(uint16_t);
+   armv5Cpu.vectorBase = readStateValue32(data + offset);
+   offset += sizeof(uint32_t);
+
+   //variables
    armv5ServiceRequest = readStateValue8(data + offset);
    offset += sizeof(uint8_t);
 }
