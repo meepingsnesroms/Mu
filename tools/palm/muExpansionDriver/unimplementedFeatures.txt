@@ -11,6 +11,7 @@ For some reason the new versions of MuExpDriver dont work with Chuzzle anymore
 Need to allocate a new trap table and set the global to that, not just write off the end of the existing one
 Need to lock the code resources on boot, databases can be shuffled in RAM to free up space and that will corrupt old trap addresses
 Need to patch SysGetOSVersionString
+Crash on first load when pressing "Emulator", probably caused by accessing the config file wrong
 
 Fixed:
 GUI

@@ -28,6 +28,34 @@ static void lockCodeXXXX(void){
    }
 }
 
+static void resizeTrapTable(void){
+   uint16_t oldSr;
+   uint32_t* oldTrapTable;
+   uint32_t* newTrapTable;
+   
+   /*order and time sensitive code!!!*/
+   oldSr = SysDisableInts();
+   
+   /*get new trap table memory*/
+   newTrapTable = MemChunkNew(0, (sysTrapLastTrapNumber - sysTrapBase) * sizeof(uint32_t), memNewChunkFlagPreLock | memNewChunkFlagNonMovable | memNewChunkFlagAllowLarge);
+   
+   /*copy over old OS 4 size trap table and 0 out the OS 5 part*/
+   MemMove(newTrapTable, TrapTablePtr, (sysTrapPceNativeCall - sysTrapBase) * sizeof(uint32_t));
+   MemSet(newTrapTable + sysTrapPceNativeCall - sysTrapBase, (sysTrapLastTrapNumber - sysTrapPceNativeCall) * sizeof(uint32_t), 0x00);
+   
+   /*save old table pointer to free*/
+   oldTrapTable = TrapTablePtr
+   
+   /*swap the tables*/
+   TrapTablePtr = newTrapTable;
+   
+   /*free the old table*/
+   MemChunkFree(oldTrapTable);
+   
+   /*return to normal execution*/
+   SysRestoreStatus(oldSr);
+}
+
 static void install128mbRam(uint8_t mbDynamicHeap){
    /*these functions are called by HwrInit, which can be called directly by apps*/
    /*PrvGetRAMSize_10002C5E, small ROM*/

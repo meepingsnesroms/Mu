@@ -6,9 +6,9 @@
 
 #include "palmGlobalDefines.h"
 
-typedef struct{
+typedef struct PACKED{
+   uint32_t linkSp;
    uint32_t pc;
-   uint32_t sp;
 }__return_stack_frame_type;
 #define __return_stack_frame register __return_stack_frame_type* __stack_frame asm("a6")
 

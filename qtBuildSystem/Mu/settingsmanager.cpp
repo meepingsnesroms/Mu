@@ -21,7 +21,7 @@ SettingsManager::SettingsManager(QWidget* parent) :
 
    //set all GUI items to current config values
    ui->homeDirectory->setText(settings->value("resourceDirectory", "").toString());
-   ui->showOnscreenKeys->setChecked(!settings->value("hideOnscreenKeys", "").toBool());
+   ui->showOnscreenKeys->setChecked(!settings->value("hideOnscreenKeys", false).toBool());
 
    ui->feature128mbRam->setChecked(settings->value("feature128mbRam", false).toBool());
    ui->featureFastCpu->setChecked(settings->value("featureFastCpu", false).toBool());

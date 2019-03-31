@@ -87,7 +87,7 @@ MainWindow::MainWindow(QWidget* parent) :
       settings->setValue("hideOnscreenKeys", true);
 #endif
    }
-   hideOnscreenKeys = settings->value("hideOnscreenKeys", "").toBool();
+   hideOnscreenKeys = settings->value("hideOnscreenKeys", false).toBool();
 
    //this makes the display window and button icons resize properly
    ui->centralWidget->installEventFilter(this);
@@ -205,7 +205,7 @@ void MainWindow::popupInformationDialog(const QString& info){
 }
 
 void MainWindow::redraw(){
-   bool hideOnscreenKeys = settings->value("hideOnscreenKeys", "").toBool();
+   bool hideOnscreenKeys = settings->value("hideOnscreenKeys", false).toBool();
    QResizeEvent* resizeEvent = new QResizeEvent(ui->centralWidget->size(), ui->centralWidget->size());
 
    //update current keys
@@ -236,7 +236,7 @@ bool MainWindow::eventFilter(QObject* object, QEvent* event){
 
       if(object->objectName() == "centralWidget"){
          float smallestRatio;
-         bool hideOnscreenKeys = settings->value("hideOnscreenKeys", "").toBool();
+         bool hideOnscreenKeys = settings->value("hideOnscreenKeys", false).toBool();
 
          //update displayContainer first, make the display occupy the top 3/5 of the screen if there are Palm keys or 4/5 if theres not
          ui->displayContainer->setFixedHeight(ui->centralWidget->height() * (hideOnscreenKeys ? 0.80 : 0.60));

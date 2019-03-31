@@ -6,6 +6,7 @@
 #define CODE_SECTION(codeSection) __attribute__((section(codeSection)))
 #define NO_RETURN __attribute__((noreturn))
 #define ALIGN(size) __attribute__((aligned(size)))
+#define PACKED __attribute__((packed))
 #define FIXED_ADDRESS_VAR(a, t) (*((volatile t*)a))
 
 #define readArbitraryMemory8(address) (*((volatile uint8_t*)(address)))
