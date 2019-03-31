@@ -44,7 +44,7 @@ static void resizeTrapTable(void){
    MemSet(newTrapTable + sysTrapPceNativeCall - sysTrapBase, (sysTrapLastTrapNumber - sysTrapPceNativeCall) * sizeof(uint32_t), 0x00);
    
    /*save old table pointer to free*/
-   oldTrapTable = TrapTablePtr
+   oldTrapTable = TrapTablePtr;
    
    /*swap the tables*/
    TrapTablePtr = newTrapTable;
