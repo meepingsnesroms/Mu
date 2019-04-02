@@ -25,7 +25,7 @@
 
 
 typedef struct{
-   void* hostPointer;
+   void*    hostPointer;
    uint32_t emuPointer;
    uint64_t bytes;//may be used for strings or structs in the future
 }return_pointer_t;
@@ -41,6 +41,7 @@ typedef struct{
 typedef struct{
    uint32_t address;
    uint32_t size;
+   uint8_t  type;
 }mem_region_t;
 
 
@@ -590,7 +591,8 @@ uint32_t sandboxStateSize(void){
    size += sizeof(uint8_t) * 2;//sandboxActive / sandboxControlHandoff
    size += sizeof(uint32_t) * 4;//sandboxOldFunctionCpuState.(sp/pc/a0/d0)
    size += sizeof(uint16_t);//sandboxOldFunctionCpuState.sr
-   size += sizeof(uint32_t) * 2;//sandboxWatchRegions.(address/size)
+   size += sizeof(uint32_t) * 2 * SANDBOX_MAX_WATCH_REGIONS;//sandboxWatchRegions.(address/size)
+   size += sizeof(uint8_t) * SANDBOX_MAX_WATCH_REGIONS;//sandboxWatchRegions.type
    size += sizeof(uint16_t);//sandboxWatchRegionsActive
 
    return size;
@@ -616,7 +618,7 @@ uint32_t sandboxCommand(uint32_t command, void* data){
    debugLog("Sandbox: Command %d started\n", command);
 
    switch(command){
-      case SANDBOX_PATCH_OS:{
+      case SANDBOX_CMD_PATCH_OS:{
             //this will not be in the v1.0 release
             //remove parts of the OS that cause lockups, yeah its bad
 
@@ -735,13 +737,22 @@ uint32_t sandboxCommand(uint32_t command, void* data){
          }
          break;
 
-      case SANDBOX_DEBUG_INSTALL_APP:{
+      case SANDBOX_CMD_DEBUG_INSTALL_APP:{
             buffer_t* app = (buffer_t*)data;
             bool success = installDebuggableResourceToDevice(*app);
 
             if(!success)
                result = EMU_ERROR_OUT_OF_MEMORY;
          }
+         break;
+
+
+      case SANDBOX_CMD_REGISTER_WATCH_ENABLE:{
+            sandboxSetWatchRegion(0xFFFFF000, 0x1000, SANDBOX_WATCH_DATA);
+         }
+         break;
+
+      default:
          break;
    }
 
@@ -814,38 +825,78 @@ void sandboxOnOpcodeRun(void){
 }
 
 void sandboxOnMemoryAccess(uint32_t address, uint8_t size, bool write, uint32_t value){
-   if(sandboxActive){
-      static bool isRecursive = false;
+   static bool isRecursive = false;
 
-      //this function can read or write Palm memory, which calls this function, so dont run this function when calling from this function to prevent an infinte loop
-      if(!isRecursive){
-         isRecursive = true;
-         //actual code goes below:vvv
+   //this function can read or write Palm memory, which calls this function, so dont run this function when calling from this function to prevent an infinte loop
+   if(!isRecursive){
+      isRecursive = true;
+      {//actual code goes below:vvv
+         bool sandboxedMemory = false;
+         uint16_t memRegion;
 
-         if(address >= 0x00000000 && address < 0x00010000){
-            //capture any reads or writes to the low mem globals
+         for(memRegion = 0; memRegion < sandboxWatchRegionsActive; memRegion++){
+            if(sandboxWatchRegions[memRegion].type == SANDBOX_WATCH_DATA && address >= sandboxWatchRegions[memRegion].address && address < sandboxWatchRegions[memRegion].address + sandboxWatchRegions[memRegion].size){
+               sandboxedMemory = true;
+               break;
+            }
+         }
+
+         if(sandboxRunning() || sandboxedMemory){
             uint32_t pc = m68k_get_reg(NULL, M68K_REG_PPC);
             char* function = getFunctionName(pc);
-            const char* variableName = getLowMemGlobalName(address);//dont free this pointer, it just returns a string constant from a list of string constants
             bool functionValid = !!function;
 
             if(!functionValid)
                function = "NAME NOT FOUND";
 
-            if(strcmp(variableName, "UNKNOWN")){
+            if(address < 0x00010000){
+               //low mem globals
+               const char* variableName = getLowMemGlobalName(address);//dont free this pointer, it just returns a string constant from a list of string constants
+
                if(write)
                   debugLog("Writing low mem global: name:%s/address:0x%08X, size:%d, value:0x%08X, function:%s/PC:0x%08X\n", variableName, address, size, value, function, pc);
                else
                   debugLog("Reading low mem global: name:%s/address:0x%08X, size:%d, function:%s/PC:0x%08X\n", variableName, address, size, function, pc);
             }
+            else if(address >= 0xFFFFF000){
+               //hardware registers
+               if(address >= 0xFFFFE00){
+                  //bootloader area
+                  if(write){
+                     if(address >= 0xFFFFFFC0)
+                        debugLog("Writing bootloader area(valid): address:0x%08X, size:%d, function:%s/PC:0x%08X\n", address, size, function, pc);
+                     else
+                        debugLog("Writing bootloader area(invalid): address:0x%08X, size:%d, function:%s/PC:0x%08X\n", address, size, function, pc);
+                  }
+                  else{
+                     debugLog("Reading bootloader area: address:0x%08X, size:%d, function:%s/PC:0x%08X\n", address, size, function, pc);
+                  }
+               }
+               else{
+                  //normal regs
+                  const char* registerName = "UNKNOWN";
+
+                  //TODO: get register name list
+
+                  if(write)
+                     debugLog("Writing hardware register: name:%s/address:0x%08X, size:%d, value:0x%08X, function:%s/PC:0x%08X\n", registerName, address, size, value, function, pc);
+                  else
+                     debugLog("Reading hardware register: name:%s/address:0x%08X, size:%d, function:%s/PC:0x%08X\n", registerName, address, size, function, pc);
+               }
+            }
+            else{
+               //everywhere else
+               if(write)
+                  debugLog("Writing: address:0x%08X, size:%d, value:0x%08X, function:%s/PC:0x%08X\n", address, size, value, function, pc);
+               else
+                  debugLog("Reading: address:0x%08X, size:%d, function:%s/PC:0x%08X\n", address, size, function, pc);
+            }
 
             if(functionValid)
                free(function);
          }
-
-         //actual code goes above:^^^
-         isRecursive = false;
-      }
+      }//actual code goes above:^^^
+      isRecursive = false;
    }
 }
 
@@ -855,7 +906,7 @@ bool sandboxRunning(void){
 
    //this is used to capture full logs when running from specific locations
    for(memRegion = 0; memRegion < sandboxWatchRegionsActive; memRegion++){
-      if(pc >= sandboxWatchRegions[memRegion].address && pc < sandboxWatchRegions[memRegion].address + sandboxWatchRegions[memRegion].size)
+      if(sandboxWatchRegions[memRegion].type == SANDBOX_WATCH_CODE && pc >= sandboxWatchRegions[memRegion].address && pc < sandboxWatchRegions[memRegion].address + sandboxWatchRegions[memRegion].size)
          return true;
    }
 
@@ -872,8 +923,12 @@ void sandboxReturn(void){
    }
 }
 
-uint16_t sandboxSetWatchRegion(uint32_t address, uint32_t size){
+uint16_t sandboxSetWatchRegion(uint32_t address, uint32_t size, uint8_t type){
    uint16_t index;
+
+   //invalid type
+   if(type == SANDBOX_WATCH_NONE || type >= SANDBOX_WATCH_TOTAL_TYPES)
+      return 0xFFFF;
 
    //cant watch 0 sized memory area
    if(size < 1)
@@ -881,10 +936,11 @@ uint16_t sandboxSetWatchRegion(uint32_t address, uint32_t size){
 
    //try to use old watch region if possible
    for(index = 0; index < sandboxWatchRegionsActive; index++){
-      if(sandboxWatchRegions[index].size == 0){
+      if(sandboxWatchRegions[index].type == SANDBOX_WATCH_NONE){
          //found reusable region
-         sandboxWatchRegions[sandboxWatchRegionsActive].address = address;
-         sandboxWatchRegions[sandboxWatchRegionsActive].size = size;
+         sandboxWatchRegions[index].address = address;
+         sandboxWatchRegions[index].size = size;
+         sandboxWatchRegions[index].type = type;
 
          //return watch region reference, this doesnt change until the region is deleted
          return index;
@@ -894,6 +950,7 @@ uint16_t sandboxSetWatchRegion(uint32_t address, uint32_t size){
    //get new region
    sandboxWatchRegions[sandboxWatchRegionsActive].address = address;
    sandboxWatchRegions[sandboxWatchRegionsActive].size = size;
+   sandboxWatchRegions[sandboxWatchRegionsActive].type = type;
    sandboxWatchRegionsActive++;
 
    //return watch region reference, this doesnt change until the region is deleted
@@ -905,7 +962,7 @@ void sandboxClearWatchRegion(uint16_t index){
       if(index == sandboxWatchRegionsActive - 1)
          sandboxWatchRegionsActive--;//remove from end
       else
-         sandboxWatchRegions[index].size = 0;//mark as empty
+         sandboxWatchRegions[index].type = SANDBOX_WATCH_NONE;//mark as empty
    }
 }
 
@@ -920,6 +977,6 @@ void sandboxOnOpcodeRun(void){}
 void sandboxOnMemoryAccess(uint32_t address, uint8_t size, bool write, uint32_t value){}
 bool sandboxRunning(void){return false;}
 void sandboxReturn(void){}
-uint16_t sandboxSetWatchRegion(uint32_t address, uint32_t size){}
+uint16_t sandboxSetWatchRegion(uint32_t address, uint32_t size, uint8_t type){}
 void sandboxClearWatchRegion(uint16_t index){}
 #endif

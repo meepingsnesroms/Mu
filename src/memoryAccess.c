@@ -9,6 +9,7 @@
 #include "flx68000.h"
 #include "sed1376.h"
 #include "pdiUsbD12.h"
+#include "sandbox.h"
 
 
 uint8_t bankType[TOTAL_MEMORY_BANKS];

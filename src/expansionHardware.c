@@ -196,6 +196,27 @@ void expansionHardwareSetRegister(uint32_t address, uint32_t value){
                }
                return;
 
+            case CMD_DEBUG_WATCH:
+               if(palmEmuFeatures.info & FEATURE_DEBUG){
+                  switch(palmEmuFeatures.value){
+                     case 0:
+                        //clear watch reference
+                        sandboxClearWatchRegion(palmEmuFeatures.src);
+                        break;
+
+                     case 1:
+                        //make code watch reference
+                        palmEmuFeatures.value = sandboxSetWatchRegion(palmEmuFeatures.src, palmEmuFeatures.size, SANDBOX_WATCH_CODE);
+                        break;
+
+                     case 2:
+                        //make data watch reference
+                        palmEmuFeatures.value = sandboxSetWatchRegion(palmEmuFeatures.src, palmEmuFeatures.size, SANDBOX_WATCH_DATA);
+                        break;
+                  }
+               }
+               return;
+
             case CMD_GET_KEYS:
                if(palmEmuFeatures.info & FEATURE_EXT_KEYS)
                   palmEmuFeatures.value = (palmInput.buttonLeft ? EXT_BUTTON_LEFT : 0) | (palmInput.buttonRight ? EXT_BUTTON_RIGHT : 0) | (palmInput.buttonCenter ? EXT_BUTTON_CENTER : 0);
