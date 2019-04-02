@@ -562,7 +562,15 @@ static uint32_t sandboxCallGuestFunction(bool fallthrough, uint32_t address, uin
 
 
 void sandboxInit(void){
-   sandboxReset();
+   //nothing to init yet
+}
+
+void sandboxReset(void){
+   sandboxActive = false;
+   sandboxControlHandoff = false;
+
+   memset(sandboxWatchRegions, 0x00, sizeof(sandboxWatchRegions));
+   sandboxWatchRegionsActive = 0;
 
    //patch OS here if needed
    //debug patches
@@ -575,14 +583,9 @@ void sandboxInit(void){
       return true;
    }
    */
-}
 
-void sandboxReset(void){
-   sandboxActive = false;
-   sandboxControlHandoff = false;
-
-   memset(sandboxWatchRegions, 0x00, sizeof(sandboxWatchRegions));
-   sandboxWatchRegionsActive = 0;
+   //log all register accesses
+   //sandboxCommand(SANDBOX_CMD_REGISTER_WATCH_ENABLE, NULL);
 }
 
 uint32_t sandboxStateSize(void){
@@ -748,7 +751,7 @@ uint32_t sandboxCommand(uint32_t command, void* data){
 
 
       case SANDBOX_CMD_REGISTER_WATCH_ENABLE:{
-            sandboxSetWatchRegion(0xFFFFF000, 0x1000, SANDBOX_WATCH_DATA);
+            sandboxSetWatchRegion(0xFFFFF000, 0xFFF, SANDBOX_WATCH_DATA);//0x1000 will cause an overflow to 0x00000000 making it never trigger
          }
          break;
 
@@ -841,7 +844,7 @@ void sandboxOnMemoryAccess(uint32_t address, uint8_t size, bool write, uint32_t 
             }
          }
 
-         if(sandboxRunning() || sandboxedMemory){
+         if(sandboxedMemory || sandboxRunning()){
             uint32_t pc = m68k_get_reg(NULL, M68K_REG_PPC);
             char* function = getFunctionName(pc);
             bool functionValid = !!function;
@@ -860,7 +863,7 @@ void sandboxOnMemoryAccess(uint32_t address, uint8_t size, bool write, uint32_t 
             }
             else if(address >= 0xFFFFF000){
                //hardware registers
-               if(address >= 0xFFFFE00){
+               if(address >= 0xFFFFFE00){
                   //bootloader area
                   if(write){
                      if(address >= 0xFFFFFFC0)

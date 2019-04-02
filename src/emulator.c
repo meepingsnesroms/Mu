@@ -119,9 +119,6 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t enab
 
    emulatorInitialized = true;
 
-   //log all register accesses
-   sandboxCommand(SANDBOX_CMD_REGISTER_WATCH_ENABLE, NULL);
-
    return EMU_ERROR_NONE;
 }
 
