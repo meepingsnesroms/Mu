@@ -53,6 +53,14 @@ double    palmClk32Sysclks;//how many SYSCLKs have happened in the current CLK32
 
 
 uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t enabledEmuFeatures){
+   //only accept valid non debug features from the user
+   enabledEmuFeatures &= FEATURE_RAM_HUGE | FEATURE_FAST_CPU | FEATURE_HYBRID_CPU | FEATURE_CUSTOM_FB | FEATURE_SYNCED_RTC | FEATURE_HLE_APIS | FEATURE_EMU_HONEST | FEATURE_EXT_KEYS | FEATURE_SND_STRMS;
+
+#if defined(EMU_DEBUG)
+   //enable debug features if compiled in debug mode
+   enabledEmuFeatures |= FEATURE_DEBUG;
+#endif
+
    if(emulatorInitialized)
       return EMU_ERROR_RESOURCE_LOCKED;
 
@@ -189,10 +197,10 @@ uint32_t emulatorGetStateSize(void){
    size += sizeof(uint8_t) * 6;//pwm1Fifo[6]
    size += sizeof(uint8_t) * 2;//pwm1(Read/Write)
    size += sizeof(uint8_t) * 7;//palmMisc
-   size += sizeof(uint32_t) * 4;//palmEmuFeatures.src / palmEmuFeatures.dst / palmEmuFeatures.size / palmEmuFeatures.value
+   size += sizeof(uint32_t) * 4;//palmEmuFeatures.(src/dst/size/value)
    size += sizeof(uint64_t);//palmSdCard.command
-   size += sizeof(uint8_t) * 8;//palmSdCard.commandBitsRemaining / palmSdCard.runningCommand / palmSdCard.commandIsAcmd /palmSdCard.allowInvalidCrc / palmSdCard.chipSelect / palmSdCard.receivingCommand / palmSdCard.inIdleState / palmSdCard.writeProtectSwitch
-   size += sizeof(uint16_t) * 2;//palmSdCard.responseReadPosition / palmSdCard.responseWritePosition
+   size += sizeof(uint8_t) * 8;//palmSdCard.(commandBitsRemaining/runningCommand/commandIsAcmd/allowInvalidCrc/chipSelect/receivingCommand/inIdleState/writeProtectSwitch)
+   size += sizeof(uint16_t) * 2;//palmSdCard.response(Read/Write)Position
    size += sizeof(int8_t);//palmSdCard.responseReadPositionBit
    size += sizeof(uint32_t) * 3;//palmSdCard.runningCommandVars
    size += SD_CARD_BLOCK_DATA_PACKET_SIZE;//palmSdCard.runningCommandPacket

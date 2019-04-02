@@ -85,10 +85,10 @@ uint32_t armv5StateSize(void){
 
    //armv5Cpu
    size += sizeof(uint32_t) * 16;//armv5Cpu.regs
-   size += sizeof(uint32_t) * 2;//armv5Cpu.CPSR/SPSR
-   size += sizeof(uint32_t) * 3 * 6;//armv5Cpu.bank_usr/bank_svc/bank_abt/bank_und/bank_irq/bank_fiq
+   size += sizeof(uint32_t) * 2;//armv5Cpu.CPSR / armv5Cpu.SPSR
+   size += sizeof(uint32_t) * 3 * 6;//armv5Cpu.bank_(usr/svc/abt/und/irq/fiq)
    size += sizeof(uint32_t) * 5;//armv5Cpu.extra_regs
-   size += sizeof(uint16_t) * 3;//armv5Cpu.waitingIrqs/waitingFiqs/CPAR
+   size += sizeof(uint16_t) * 3;//armv5Cpu.waiting(Irqs/Fiqs) / armv5Cpu.CPAR
    size += sizeof(uint32_t);//armv5Cpu.vectorBase
 
    //variables

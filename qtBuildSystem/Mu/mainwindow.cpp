@@ -184,10 +184,6 @@ uint32_t MainWindow::getEmuFeatureList(){
    features |= settings->value("featureExtraKeys", false).toBool() ? FEATURE_EXT_KEYS : 0;
    features |= settings->value("featureSoundStreams", false).toBool() ? FEATURE_SND_STRMS : 0;
 
-#if defined(EMU_DEBUG)
-   features |= FEATURE_DEBUG;
-#endif
-
    //lazy debug overrides
    //features = FEATURE_EXT_KEYS | FEATURE_EMU_HONEST | FEATURE_FAST_CPU | FEATURE_HYBRID_CPU | FEATURE_CUSTOM_FB | FEATURE_DEBUG | FEATURE_SND_STRMS;
    //features = FEATURE_FAST_CPU | FEATURE_HYBRID_CPU | FEATURE_CUSTOM_FB | FEATURE_DEBUG;

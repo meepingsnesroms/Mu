@@ -395,7 +395,7 @@ uint32_t EmuWrapper::installApplication(const QString& path){
       appFile.close();
       appData.data = (uint8_t*)appDataBuffer.data();
       appData.size = appDataBuffer.size();
-      error = sandboxCommand(SANDBOX_INSTALL_APP, &appData);
+      error = sandboxCommand(SANDBOX_DEBUG_INSTALL_APP, &appData);
    }
 
    if(!wasPaused)

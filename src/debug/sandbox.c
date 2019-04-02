@@ -50,6 +50,7 @@ static local_cpu_state_t sandboxOldFunctionCpuState;
 static mem_region_t      sandboxWatchRegions[SANDBOX_MAX_WATCH_REGIONS];//code locations in m68k address space to be sandboxed
 static uint16_t          sandboxWatchRegionsActive;//number of used sandboxWatchRegions entrys
 
+
 static uint32_t sandboxCallGuestFunction(bool fallthrough, uint32_t address, uint16_t trap, const char* prototype, ...);
 
 #include "sandboxTrapNumToName.c.h"
@@ -150,12 +151,11 @@ static void logApiCalls(void){
    uint32_t programCounter = m68k_get_reg(NULL, M68K_REG_PPC);
    uint16_t instruction = m68k_get_reg(NULL, M68K_REG_IR);
 
-   if(instruction == 0x4E4F){
-      //Trap F/API call
+   if(instruction == 0x4E4F/*Trap F/API call opcode*/){
       uint16_t trap = m68k_read_memory_16(programCounter + 2);
-      if(!ignoreTrap(trap)){
+
+      if(!ignoreTrap(trap))
          debugLog("Trap F API:%s, API number:0x%04X, PC:0x%08X\n", lookupTrap(trap), trap, programCounter);
-      }
    }
 }
 
@@ -167,7 +167,6 @@ static bool isAlphanumeric(char chr){
 
 static bool readable6CharsBack(uint32_t address){
    uint8_t count;
-
    for(count = 0; count < 6; count++)
       if(!isAlphanumeric(m68k_read_memory_8(address - count)))
          return false;
@@ -588,6 +587,12 @@ void sandboxReset(void){
 uint32_t sandboxStateSize(void){
    uint32_t size = 0;
 
+   size += sizeof(uint8_t) * 2;//sandboxActive / sandboxControlHandoff
+   size += sizeof(uint32_t) * 4;//sandboxOldFunctionCpuState.(sp/pc/a0/d0)
+   size += sizeof(uint16_t);//sandboxOldFunctionCpuState.sr
+   size += sizeof(uint32_t) * 2;//sandboxWatchRegions.(address/size)
+   size += sizeof(uint16_t);//sandboxWatchRegionsActive
+
    return size;
 }
 
@@ -846,9 +851,10 @@ void sandboxOnMemoryAccess(uint32_t address, uint8_t size, bool write, uint32_t 
 
 bool sandboxRunning(void){
    uint32_t pc = m68k_get_reg(NULL, M68K_REG_PC);
+   uint16_t memRegion;
 
    //this is used to capture full logs when running from specific locations
-   for(uint16_t memRegion = 0; memRegion < sandboxWatchRegionsActive; memRegion++){
+   for(memRegion = 0; memRegion < sandboxWatchRegionsActive; memRegion++){
       if(pc >= sandboxWatchRegions[memRegion].address && pc < sandboxWatchRegions[memRegion].address + sandboxWatchRegions[memRegion].size)
          return true;
    }
@@ -869,7 +875,7 @@ void sandboxReturn(void){
 uint16_t sandboxSetWatchRegion(uint32_t address, uint32_t size){
    uint16_t index;
 
-   //cant get 0 sized memory area
+   //cant watch 0 sized memory area
    if(size < 1)
       return 0xFFFF;
 
