@@ -117,7 +117,7 @@ uint8_t m68k_read_memory_8(uint32_t address){
       return 0x00;
 #endif
 
-#if defined(EMU_DEBUG) && defined(EMU_SANDBOX)
+#if defined(EMU_DEBUG) && defined(EMU_SANDBOX) && defined(EMU_SANDBOX_LOG_MEMORY_ACCESSES)
    sandboxOnMemoryAccess(address, 8, false, 0);
 #endif
 
@@ -159,7 +159,7 @@ uint16_t m68k_read_memory_16(uint32_t address){
       return 0x0000;
 #endif
 
-#if defined(EMU_DEBUG) && defined(EMU_SANDBOX)
+#if defined(EMU_DEBUG) && defined(EMU_SANDBOX) && defined(EMU_SANDBOX_LOG_MEMORY_ACCESSES)
    sandboxOnMemoryAccess(address, 16, false, 0);
 #endif
 
@@ -201,7 +201,7 @@ uint32_t m68k_read_memory_32(uint32_t address){
       return 0x00000000;
 #endif
 
-#if defined(EMU_DEBUG) && defined(EMU_SANDBOX)
+#if defined(EMU_DEBUG) && defined(EMU_SANDBOX) && defined(EMU_SANDBOX_LOG_MEMORY_ACCESSES)
    sandboxOnMemoryAccess(address, 32, false, 0);
 #endif
 
@@ -243,7 +243,7 @@ void m68k_write_memory_8(uint32_t address, uint8_t value){
       return;
 #endif
 
-#if defined(EMU_DEBUG) && defined(EMU_SANDBOX)
+#if defined(EMU_DEBUG) && defined(EMU_SANDBOX) && defined(EMU_SANDBOX_LOG_MEMORY_ACCESSES)
    sandboxOnMemoryAccess(address, 8, true, value);
 #endif
 
@@ -289,7 +289,7 @@ void m68k_write_memory_16(uint32_t address, uint16_t value){
       return;
 #endif
 
-#if defined(EMU_DEBUG) && defined(EMU_SANDBOX)
+#if defined(EMU_DEBUG) && defined(EMU_SANDBOX) && defined(EMU_SANDBOX_LOG_MEMORY_ACCESSES)
    sandboxOnMemoryAccess(address, 16, true, value);
 #endif
 
@@ -335,7 +335,7 @@ void m68k_write_memory_32(uint32_t address, uint32_t value){
       return;
 #endif
 
-#if defined(EMU_DEBUG) && defined(EMU_SANDBOX)
+#if defined(EMU_DEBUG) && defined(EMU_SANDBOX) && defined(EMU_SANDBOX_LOG_MEMORY_ACCESSES)
    sandboxOnMemoryAccess(address, 32, true, value);
 #endif
 

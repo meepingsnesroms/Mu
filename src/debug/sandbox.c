@@ -21,6 +21,9 @@
 #include "trapNames.h"
 
 
+#define SANDBOX_MAX_WATCH_REGIONS 1000
+
+
 typedef struct{
    void* hostPointer;
    uint32_t emuPointer;
@@ -35,11 +38,17 @@ typedef struct{
    uint32_t d0;
 }local_cpu_state_t;
 
+typedef struct{
+   uint32_t address;
+   uint32_t size;
+}mem_region_t;
+
 
 static bool              sandboxActive;//used to "log out" of the emulator once a test has finished
 static bool              sandboxControlHandoff;//used for functions that depend on timing, hands full control to the 68k
 static local_cpu_state_t sandboxOldFunctionCpuState;
-
+static mem_region_t      sandboxWatchRegions[SANDBOX_MAX_WATCH_REGIONS];//code locations in m68k address space to be sandboxed
+static uint16_t          sandboxWatchRegionsActive;//number of used sandboxWatchRegions entrys
 
 static uint32_t sandboxCallGuestFunction(bool fallthrough, uint32_t address, uint16_t trap, const char* prototype, ...);
 
@@ -61,7 +70,7 @@ static char* takeStackDump(uint32_t bytes){
    return textBytes;
 }
 
-void patchOsRom(uint32_t address, char* patch){
+static void patchOsRom(uint32_t address, char* patch){
    uint32_t offset;
    uint32_t patchBytes = strlen(patch) / 2;//1 char per nibble
    uint32_t swapBegin = address & 0xFFFFFFFE;
@@ -75,6 +84,49 @@ void patchOsRom(uint32_t address, char* patch){
       palmRom[address + offset] = strtol(conv, NULL, 0);
    }
    swap16BufferIfLittle(&palmRom[swapBegin], swapSize);
+}
+
+static const char* getLowMemGlobalName(uint32_t address){
+   switch(address){
+      case 0x00000100:
+         return "MemTotalCards";
+
+      case 0x00000102:
+         return "MemCard0Start";
+
+      case 0x0000010A:
+         return "MemDebugFlags";
+
+      case 0x00000122:
+         return "TrapTablePtr";
+
+      case 0x00000164:
+         return "ScrStatePtr";
+
+      case 0x0000016C:
+         return "PenStatePtr";
+
+      case 0x00000170:
+         return "EvtStatePtr";
+
+      case 0x00000174:
+         return "SndStatePtr";
+
+      case 0x00000178:
+         return "TimStatePtr";
+
+      case 0x0000017C:
+         return "AlmStatePtr";
+
+      case 0x00000180:
+         return "FtrStatePtr";
+
+      case 0x00000184:
+         return "GrfStatePtr";
+
+      default:
+         return "UNKNOWN";
+   }
 }
 
 static bool ignoreTrap(uint16_t trap){
@@ -265,7 +317,7 @@ static void freePalmString(uint32_t address){
    sandboxCallGuestFunction(false, 0x00000000, MemChunkFree, "w(p)", address);
 }
 
-static bool installResourceToDevice(buffer_t resourceBuffer){
+static bool installDebuggableResourceToDevice(buffer_t resourceBuffer){
    /*
    #define memNewChunkFlagNonMovable    0x0200
    #define memNewChunkFlagAllowLarge    0x1000  // this is not in the sdk *g*
@@ -285,7 +337,6 @@ static bool installResourceToDevice(buffer_t resourceBuffer){
    }
    */
 
-   //uint32_t palmSideResourceData = callFunction(false, 0x00000000, MemPtrNew, "p(l)", (uint32_t)resourceBuffer.size);
    uint32_t palmSideResourceData = sandboxCallGuestFunction(false, 0x00000000, MemChunkNew, "p(wlw)", 1/*heapID, storage RAM*/, resourceBuffer.size, 0x1200/*attr, seems to work without memOwnerID*/);
    bool storageRamReadOnly = chips[CHIP_DX_RAM].readOnlyForProtectedMemory;
    uint16_t error;
@@ -302,12 +353,15 @@ static bool installResourceToDevice(buffer_t resourceBuffer){
    error = sandboxCallGuestFunction(false, 0x00000000, DmCreateDatabaseFromImage, "w(p)", palmSideResourceData);//Err DmCreateDatabaseFromImage(MemPtr bufferP);//this looks best
    sandboxCallGuestFunction(false, 0x00000000, MemChunkFree, "w(p)", palmSideResourceData);
 
+   //TODO: need to get final install location and add it to the watch list
+
    //didnt install
    if(error != 0)
       return false;
 
    return true;
 }
+
 
 static uint32_t sandboxGetStackFrameSize(const char* prototype){
    const char* params = prototype + 2;
@@ -508,8 +562,43 @@ static uint32_t sandboxCallGuestFunction(bool fallthrough, uint32_t address, uin
 
 
 void sandboxInit(void){
+   sandboxReset();
+
+   //patch OS here if needed
+   //debug patches
+   //sandboxCommand(SANDBOX_PATCH_OS, NULL);
+
+   //add memory region monitors
+   /*
+   if(pc >= 0x100A07DC && pc <= 0x100ADB3C){
+      //the SD slot driver
+      return true;
+   }
+   */
+}
+
+void sandboxReset(void){
    sandboxActive = false;
    sandboxControlHandoff = false;
+
+   memset(sandboxWatchRegions, 0x00, sizeof(sandboxWatchRegions));
+   sandboxWatchRegionsActive = 0;
+}
+
+uint32_t sandboxStateSize(void){
+   uint32_t size = 0;
+
+   return size;
+}
+
+void sandboxSaveState(uint8_t* data){
+   uint32_t offset = 0;
+
+}
+
+void sandboxLoadState(uint8_t* data){
+   uint32_t offset = 0;
+
 }
 
 uint32_t sandboxCommand(uint32_t command, void* data){
@@ -641,9 +730,9 @@ uint32_t sandboxCommand(uint32_t command, void* data){
          }
          break;
 
-      case SANDBOX_INSTALL_APP:{
+      case SANDBOX_DEBUG_INSTALL_APP:{
             buffer_t* app = (buffer_t*)data;
-            bool success = installResourceToDevice(*app);
+            bool success = installDebuggableResourceToDevice(*app);
 
             if(!success)
                result = EMU_ERROR_OUT_OF_MEMORY;
@@ -728,15 +817,22 @@ void sandboxOnMemoryAccess(uint32_t address, uint8_t size, bool write, uint32_t 
          isRecursive = true;
          //actual code goes below:vvv
 
-         if(write && address >= 0x00000122 && address <= 0x00000125){
-            //writing the trap table pointer, this should only happen once
-            char* function = getFunctionName(m68k_get_reg(NULL, M68K_REG_PPC));
+         if(address >= 0x00000000 && address < 0x00010000){
+            //capture any reads or writes to the low mem globals
+            uint32_t pc = m68k_get_reg(NULL, M68K_REG_PPC);
+            char* function = getFunctionName(pc);
+            const char* variableName = getLowMemGlobalName(address);//dont free this pointer, it just returns a string constant from a list of string constants
             bool functionValid = !!function;
 
             if(!functionValid)
                function = "NAME NOT FOUND";
 
-            debugLog("Writing trap table pointer: size:%d, value:0x%08X, address:0x%08X, function:%s\n", size, value, address, function);
+            if(strcmp(variableName, "UNKNOWN")){
+               if(write)
+                  debugLog("Writing low mem global: name:%s/address:0x%08X, size:%d, value:0x%08X, function:%s/PC:0x%08X\n", variableName, address, size, value, function, pc);
+               else
+                  debugLog("Reading low mem global: name:%s/address:0x%08X, size:%d, function:%s/PC:0x%08X\n", variableName, address, size, function, pc);
+            }
 
             if(functionValid)
                free(function);
@@ -751,13 +847,11 @@ void sandboxOnMemoryAccess(uint32_t address, uint8_t size, bool write, uint32_t 
 bool sandboxRunning(void){
    uint32_t pc = m68k_get_reg(NULL, M68K_REG_PC);
 
-   //this is used to capture full logs from certain sections of the ROM
-   /*
-   if(pc >= 0x100A07DC && pc <= 0x100ADB3C){
-      //the SD slot driver
-      return true;
+   //this is used to capture full logs when running from specific locations
+   for(uint16_t memRegion = 0; memRegion < sandboxWatchRegionsActive; memRegion++){
+      if(pc >= sandboxWatchRegions[memRegion].address && pc < sandboxWatchRegions[memRegion].address + sandboxWatchRegions[memRegion].size)
+         return true;
    }
-   */
 
    return sandboxActive;
 }
@@ -772,11 +866,54 @@ void sandboxReturn(void){
    }
 }
 
+uint16_t sandboxSetWatchRegion(uint32_t address, uint32_t size){
+   uint16_t index;
+
+   //cant get 0 sized memory area
+   if(size < 1)
+      return 0xFFFF;
+
+   //try to use old watch region if possible
+   for(index = 0; index < sandboxWatchRegionsActive; index++){
+      if(sandboxWatchRegions[index].size == 0){
+         //found reusable region
+         sandboxWatchRegions[sandboxWatchRegionsActive].address = address;
+         sandboxWatchRegions[sandboxWatchRegionsActive].size = size;
+
+         //return watch region reference, this doesnt change until the region is deleted
+         return index;
+      }
+   }
+
+   //get new region
+   sandboxWatchRegions[sandboxWatchRegionsActive].address = address;
+   sandboxWatchRegions[sandboxWatchRegionsActive].size = size;
+   sandboxWatchRegionsActive++;
+
+   //return watch region reference, this doesnt change until the region is deleted
+   return sandboxWatchRegionsActive - 1;
+}
+
+void sandboxClearWatchRegion(uint16_t index){
+   if(index < sandboxWatchRegionsActive){
+      if(index == sandboxWatchRegionsActive - 1)
+         sandboxWatchRegionsActive--;//remove from end
+      else
+         sandboxWatchRegions[index].size = 0;//mark as empty
+   }
+}
+
 #else
 void sandboxInit(void){}
+void sandboxReset(void){}
+uint32_t sandboxStateSize(void){return 0;}
+void sandboxSaveState(uint8_t* data){}
+void sandboxLoadState(uint8_t* data){}
 uint32_t sandboxCommand(uint32_t command, void* data){return 0;}
 void sandboxOnOpcodeRun(void){}
 void sandboxOnMemoryAccess(uint32_t address, uint8_t size, bool write, uint32_t value){}
 bool sandboxRunning(void){return false;}
 void sandboxReturn(void){}
+uint16_t sandboxSetWatchRegion(uint32_t address, uint32_t size){}
+void sandboxClearWatchRegion(uint16_t index){}
 #endif

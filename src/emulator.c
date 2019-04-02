@@ -109,9 +109,6 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t enab
    emulatorSoftReset();
    setRtc(0, 0, 0, 0);//RTCTIME and DAYR are not cleared by reset, clear them manually in case the frontend doesnt set the RTC
 
-   //debug patches
-   sandboxCommand(SANDBOX_PATCH_OS, NULL);
-
    emulatorInitialized = true;
 
    return EMU_ERROR_NONE;
@@ -149,6 +146,7 @@ void emulatorSoftReset(void){
    pdiUsbD12Reset();
    expansionHardwareReset();
    flx68000Reset();
+   sandboxReset();
    //sdCardReset() should not be called here, the SD card does not have a reset line and should only be reset by a power cycle
 }
 
@@ -168,6 +166,7 @@ uint32_t emulatorGetStateSize(void){
    size += ads7846StateSize();
    size += pdiUsbD12StateSize();
    size += expansionHardwareStateSize();
+   size += sandboxStateSize();
    if(palmEmuFeatures.info & FEATURE_RAM_HUGE)
       size += SUPERMASSIVE_RAM_SIZE;//system RAM buffer
    else
@@ -239,6 +238,10 @@ bool emulatorSaveState(buffer_t buffer){
    offset += pdiUsbD12StateSize();
    expansionHardwareSaveState(buffer.data + offset);
    offset += expansionHardwareStateSize();
+
+   //sandbox, does nothing when disabled
+   sandboxSaveState(buffer.data + offset);
+   offset += sandboxStateSize();
 
    //memory
    if(palmEmuFeatures.info & FEATURE_RAM_HUGE){
@@ -440,6 +443,10 @@ bool emulatorLoadState(buffer_t buffer){
    offset += pdiUsbD12StateSize();
    expansionHardwareLoadState(buffer.data + offset);
    offset += expansionHardwareStateSize();
+
+   //sandbox, does nothing when disabled
+   sandboxLoadState(buffer.data + offset);
+   offset += sandboxStateSize();
 
    //memory
    if(palmEmuFeatures.info & FEATURE_RAM_HUGE){
