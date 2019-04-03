@@ -7,6 +7,7 @@
 #include "portability.h"
 #include "armv5/CPU.h"
 #include "m68k/m68k.h"
+#include "debug/sandbox.h"
 
 
 #define ARMV5_CYCLES_PER_OPCODE 2
@@ -242,11 +243,19 @@ void armv5SetRegister(uint8_t reg, uint32_t value){
 int32_t armv5Execute(int32_t cycles){
    armv5ServiceRequest = false;
 
+#if defined(EMU_DEBUG) && defined(EMU_SANDBOX)
+   sandboxSetCpuArch(SANDBOX_CPU_ARCH_ARMV5);
+#endif
+
    //execution aborts on hypercall to request things from the 68k
    while(cycles > 0 && !armv5ServiceRequest){
       cpuCycleNoIrqs(&armv5Cpu);
       cycles -= ARMV5_CYCLES_PER_OPCODE;
    }
+
+#if defined(EMU_DEBUG) && defined(EMU_SANDBOX)
+   sandboxSetCpuArch(SANDBOX_CPU_ARCH_M68K);
+#endif
 
    return cycles;
 }

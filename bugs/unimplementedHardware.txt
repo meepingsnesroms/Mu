@@ -2,6 +2,9 @@ CPU:
 sysTrapPceNativeCall, ARM Emulator
 VFP(floating point) coprocessor for ARM
 Test what bits of IMR are writable
+sandbox isnt notified about switches to Thumb mode
+function name finders for ARMv5 and Thumb are unimplemented
+hardware registers don't have there names printed in sandbox
 
 CPU I/O:
 Peripheral Control Register, audio ppm mixing selection

@@ -17,6 +17,12 @@ enum{
    SANDBOX_WATCH_TOTAL_TYPES
 };
 
+enum{
+   SANDBOX_CPU_ARCH_M68K = 0,
+   SANDBOX_CPU_ARCH_ARMV5,
+   SANDBOX_CPU_ARCH_THUMB
+};
+
 void sandboxInit(void);
 void sandboxReset(void);
 uint32_t sandboxStateSize(void);
@@ -29,5 +35,6 @@ bool sandboxRunning(void);
 void sandboxReturn(void);//should only be called called by 68k code
 uint16_t sandboxSetWatchRegion(uint32_t address, uint32_t size, uint8_t type);
 void sandboxClearWatchRegion(uint16_t index);
+void sandboxSetCpuArch(uint8_t arch);
 
 #endif

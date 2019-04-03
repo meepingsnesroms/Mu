@@ -17,6 +17,7 @@
 #include "../hardwareRegisters.h"
 #include "../portability.h"
 #include "../specs/emuFeatureRegisterSpec.h"
+#include "../armv5.h"
 #include "sandbox.h"
 #include "trapNames.h"
 
@@ -47,6 +48,7 @@ typedef struct{
 
 static bool              sandboxActive;//used to "log out" of the emulator once a test has finished
 static bool              sandboxControlHandoff;//used for functions that depend on timing, hands full control to the 68k
+static uint8_t           sandboxCurrentCpuArch;
 static local_cpu_state_t sandboxOldFunctionCpuState;
 static mem_region_t      sandboxWatchRegions[SANDBOX_MAX_WATCH_REGIONS];//code locations in m68k address space to be sandboxed
 static uint16_t          sandboxWatchRegionsActive;//number of used sandboxWatchRegions entrys
@@ -55,6 +57,16 @@ static uint16_t          sandboxWatchRegionsActive;//number of used sandboxWatch
 static uint32_t sandboxCallGuestFunction(bool fallthrough, uint32_t address, uint16_t trap, const char* prototype, ...);
 
 #include "sandboxTrapNumToName.c.h"
+
+static uint32_t getCurrentCpuPc(void){
+   //returns the current program counter for the current CPU and architecture
+   return sandboxCurrentCpuArch == SANDBOX_CPU_ARCH_M68K ? m68k_get_reg(NULL, M68K_REG_PC) : armv5GetRegister(15) & 0xFFFFFFFE;
+}
+
+static uint32_t getCurrentCpuPreviousPc(void){
+   //returns the program counter of the current running opcode for the current CPU and architecture
+   return sandboxCurrentCpuArch == SANDBOX_CPU_ARCH_M68K ? m68k_get_reg(NULL, M68K_REG_PPC) : armv5GetRegister(15) & 0xFFFFFFFE;
+}
 
 static char* takeStackDump(uint32_t bytes){
    char* textBytes = malloc(bytes * 2);
@@ -253,7 +265,7 @@ static uint32_t scanForPrivateFunctionAddress(const char* name){
 }
 
 //call anywhere in a function to get its name, used to determine the location of a crash, must free the pointer after reading the string
-static char* getFunctionName(uint32_t address){
+static char* getFunctionName68k(uint32_t address){
    char* data;
    uint32_t offset;
 
@@ -284,6 +296,14 @@ static char* getFunctionName(uint32_t address){
    }
 
    return data;
+}
+
+static char* getFunctionNameArmv5(uint32_t address){
+   return NULL;
+}
+
+static char* getFunctionNameThumb(uint32_t address){
+   return NULL;
 }
 
 static uint32_t makePalmString(const char* str){
@@ -317,7 +337,7 @@ static void freePalmString(uint32_t address){
    sandboxCallGuestFunction(false, 0x00000000, MemChunkFree, "w(p)", address);
 }
 
-static bool installDebuggableResourceToDevice(buffer_t resourceBuffer){
+static bool installResourceToDevice(buffer_t resourceBuffer){
    /*
    #define memNewChunkFlagNonMovable    0x0200
    #define memNewChunkFlagAllowLarge    0x1000  // this is not in the sdk *g*
@@ -352,8 +372,6 @@ static bool installDebuggableResourceToDevice(buffer_t resourceBuffer){
    chips[CHIP_DX_RAM].readOnlyForProtectedMemory = storageRamReadOnly;//restore old protection state
    error = sandboxCallGuestFunction(false, 0x00000000, DmCreateDatabaseFromImage, "w(p)", palmSideResourceData);//Err DmCreateDatabaseFromImage(MemPtr bufferP);//this looks best
    sandboxCallGuestFunction(false, 0x00000000, MemChunkFree, "w(p)", palmSideResourceData);
-
-   //TODO: need to get final install location and add it to the watch list
 
    //didnt install
    if(error != 0)
@@ -591,7 +609,7 @@ void sandboxReset(void){
 uint32_t sandboxStateSize(void){
    uint32_t size = 0;
 
-   size += sizeof(uint8_t) * 2;//sandboxActive / sandboxControlHandoff
+   size += sizeof(uint8_t) * 3;//sandboxActive / sandboxControlHandoff / sandboxCurrentCpuArch
    size += sizeof(uint32_t) * 4;//sandboxOldFunctionCpuState.(sp/pc/a0/d0)
    size += sizeof(uint16_t);//sandboxOldFunctionCpuState.sr
    size += sizeof(uint32_t) * 2 * SANDBOX_MAX_WATCH_REGIONS;//sandboxWatchRegions.(address/size)
@@ -603,12 +621,66 @@ uint32_t sandboxStateSize(void){
 
 void sandboxSaveState(uint8_t* data){
    uint32_t offset = 0;
+   uint16_t index;
 
+   writeStateValue8(data + offset, sandboxActive);
+   offset += sizeof(uint8_t);
+   writeStateValue8(data + offset, sandboxControlHandoff);
+   offset += sizeof(uint8_t);
+   writeStateValue8(data + offset, sandboxCurrentCpuArch);//currently cant be ARMv5 during a frame boundry but that may change
+   offset += sizeof(uint8_t);
+   writeStateValue32(data + offset, sandboxOldFunctionCpuState.sp);
+   offset += sizeof(uint32_t);
+   writeStateValue32(data + offset, sandboxOldFunctionCpuState.pc);
+   offset += sizeof(uint32_t);
+   writeStateValue16(data + offset, sandboxOldFunctionCpuState.sr);
+   offset += sizeof(uint16_t);
+   writeStateValue32(data + offset, sandboxOldFunctionCpuState.a0);
+   offset += sizeof(uint32_t);
+   writeStateValue32(data + offset, sandboxOldFunctionCpuState.d0);
+   offset += sizeof(uint32_t);
+   for(index = 0; index < SANDBOX_MAX_WATCH_REGIONS; index++){
+      writeStateValue32(data + offset, sandboxWatchRegions[index].address);
+      offset += sizeof(uint32_t);
+      writeStateValue32(data + offset, sandboxWatchRegions[index].size);
+      offset += sizeof(uint32_t);
+      writeStateValue8(data + offset, sandboxWatchRegions[index].type);
+      offset += sizeof(uint8_t);
+   }
+   writeStateValue16(data + offset, sandboxWatchRegionsActive);
+   offset += sizeof(uint16_t);
 }
 
 void sandboxLoadState(uint8_t* data){
    uint32_t offset = 0;
+   uint16_t index;
 
+   sandboxActive = readStateValue8(data + offset);
+   offset += sizeof(uint8_t);
+   sandboxControlHandoff = readStateValue8(data + offset);
+   offset += sizeof(uint8_t);
+   sandboxCurrentCpuArch = readStateValue8(data + offset);//currently cant be ARMv5 during a frame boundry but that may change
+   offset += sizeof(uint8_t);
+   sandboxOldFunctionCpuState.sp = readStateValue32(data + offset);
+   offset += sizeof(uint32_t);
+   sandboxOldFunctionCpuState.pc = readStateValue32(data + offset);
+   offset += sizeof(uint32_t);
+   sandboxOldFunctionCpuState.sr = readStateValue16(data + offset);
+   offset += sizeof(uint16_t);
+   sandboxOldFunctionCpuState.a0 = readStateValue32(data + offset);
+   offset += sizeof(uint32_t);
+   sandboxOldFunctionCpuState.d0 = readStateValue32(data + offset);
+   offset += sizeof(uint32_t);
+   for(index = 0; index < SANDBOX_MAX_WATCH_REGIONS; index++){
+      sandboxWatchRegions[index].address = readStateValue32(data + offset);
+      offset += sizeof(uint32_t);
+      sandboxWatchRegions[index].size = readStateValue32(data + offset);
+      offset += sizeof(uint32_t);
+      sandboxWatchRegions[index].type = readStateValue8(data + offset);
+      offset += sizeof(uint8_t);
+   }
+   sandboxWatchRegionsActive = readStateValue16(data + offset);
+   offset += sizeof(uint16_t);
 }
 
 uint32_t sandboxCommand(uint32_t command, void* data){
@@ -742,7 +814,7 @@ uint32_t sandboxCommand(uint32_t command, void* data){
 
       case SANDBOX_CMD_DEBUG_INSTALL_APP:{
             buffer_t* app = (buffer_t*)data;
-            bool success = installDebuggableResourceToDevice(*app);
+            bool success = installResourceToDevice(*app);
 
             if(!success)
                result = EMU_ERROR_OUT_OF_MEMORY;
@@ -845,8 +917,8 @@ void sandboxOnMemoryAccess(uint32_t address, uint8_t size, bool write, uint32_t 
          }
 
          if(sandboxedMemory || sandboxRunning()){
-            uint32_t pc = m68k_get_reg(NULL, M68K_REG_PPC);
-            char* function = getFunctionName(pc);
+            uint32_t pc = getCurrentCpuPreviousPc();
+            char* function = sandboxCurrentCpuArch == SANDBOX_CPU_ARCH_M68K ? getFunctionName68k(pc) : sandboxCurrentCpuArch == SANDBOX_CPU_ARCH_ARMV5 ? getFunctionNameArmv5(pc) : getFunctionNameThumb(pc);
             bool functionValid = !!function;
 
             if(!functionValid)
@@ -904,7 +976,7 @@ void sandboxOnMemoryAccess(uint32_t address, uint8_t size, bool write, uint32_t 
 }
 
 bool sandboxRunning(void){
-   uint32_t pc = m68k_get_reg(NULL, M68K_REG_PC);
+   uint32_t pc = getCurrentCpuPc();
    uint16_t memRegion;
 
    //this is used to capture full logs when running from specific locations
@@ -937,7 +1009,7 @@ uint16_t sandboxSetWatchRegion(uint32_t address, uint32_t size, uint8_t type){
    if(size < 1)
       return 0xFFFF;
 
-   //try to use old watch region if possible
+   //try to use old watch region if available
    for(index = 0; index < sandboxWatchRegionsActive; index++){
       if(sandboxWatchRegions[index].type == SANDBOX_WATCH_NONE){
          //found reusable region
@@ -950,14 +1022,20 @@ uint16_t sandboxSetWatchRegion(uint32_t address, uint32_t size, uint8_t type){
       }
    }
 
-   //get new region
-   sandboxWatchRegions[sandboxWatchRegionsActive].address = address;
-   sandboxWatchRegions[sandboxWatchRegionsActive].size = size;
-   sandboxWatchRegions[sandboxWatchRegionsActive].type = type;
-   sandboxWatchRegionsActive++;
+   //check if new region is available
+   if(sandboxWatchRegionsActive < SANDBOX_MAX_WATCH_REGIONS){
+      //use new region
+      sandboxWatchRegions[sandboxWatchRegionsActive].address = address;
+      sandboxWatchRegions[sandboxWatchRegionsActive].size = size;
+      sandboxWatchRegions[sandboxWatchRegionsActive].type = type;
+      sandboxWatchRegionsActive++;
 
-   //return watch region reference, this doesnt change until the region is deleted
-   return sandboxWatchRegionsActive - 1;
+      //return watch region reference, this doesnt change until the region is deleted
+      return sandboxWatchRegionsActive - 1;
+   }
+
+   //no regions left, error
+   return 0xFFFF;
 }
 
 void sandboxClearWatchRegion(uint16_t index){
@@ -967,6 +1045,10 @@ void sandboxClearWatchRegion(uint16_t index){
       else
          sandboxWatchRegions[index].type = SANDBOX_WATCH_NONE;//mark as empty
    }
+}
+
+void sandboxSetCpuArch(uint8_t arch){
+   sandboxCurrentCpuArch = arch;
 }
 
 #else
@@ -982,4 +1064,5 @@ bool sandboxRunning(void){return false;}
 void sandboxReturn(void){}
 uint16_t sandboxSetWatchRegion(uint32_t address, uint32_t size, uint8_t type){}
 void sandboxClearWatchRegion(uint16_t index){}
+void sandboxSetCpuArch(uint8_t arch){}
 #endif
