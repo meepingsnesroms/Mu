@@ -35,3 +35,7 @@ void clearWatchRegion(uint16_t index){
    writeArbitraryMemory32(EMU_REG_ADDR(EMU_SRC), index);
    writeArbitraryMemory32(EMU_REG_ADDR(EMU_CMD), CMD_DEBUG_WATCH);
 }
+
+void watchAppCode(const char* appName){
+   /*marks app code resources as debug watch areas*/
+}

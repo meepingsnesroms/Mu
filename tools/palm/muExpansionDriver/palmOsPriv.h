@@ -13,7 +13,7 @@
 #define ResetVector FIXED_ADDRESS_VAR(0x00000004, void*)
 
 /*OS*/
-#define TrapTablePtr FIXED_ADDRESS_VAR(0x00000122, uint32_t*)
+#define TrapTablePtr FIXED_ADDRESS_VAR(0x00000122, void**)
 #define ScrStatePtr FIXED_ADDRESS_VAR(0x00000164, void*)
 
 #endif

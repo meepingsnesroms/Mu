@@ -18,5 +18,6 @@ void debugLog(const char* format, ...);
 
 uint16_t setWatchRegion(uint32_t address, uint32_t size, uint8_t type);
 void clearWatchRegion(uint16_t index);
+void watchAppCode(const char* appName);
 
 #endif

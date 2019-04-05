@@ -7,7 +7,7 @@
 #define NO_RETURN __attribute__((noreturn))
 #define ALIGN(size) __attribute__((aligned(size)))
 #define PACKED __attribute__((packed))
-#define FIXED_ADDRESS_VAR(a, t) (*((volatile t*)a))
+#define FIXED_ADDRESS_VAR(a, t) (*((t volatile *)a))
 
 #define readArbitraryMemory8(address) (*((volatile uint8_t*)(address)))
 #define readArbitraryMemory16(address) (*((volatile uint16_t*)(address)))

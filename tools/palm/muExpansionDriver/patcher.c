@@ -30,14 +30,15 @@ static void lockCodeXXXX(void){
 
 static void resizeTrapTable(void){
    uint16_t oldSr;
-   uint32_t* oldTrapTable;
-   uint32_t* newTrapTable;
+   void** oldTrapTable;
+   void** newTrapTable;
    
    /*order and time sensitive code!!!*/
    oldSr = SysDisableInts();
    
    /*get new trap table memory*/
    newTrapTable = MemChunkNew(0, (sysTrapLastTrapNumber - sysTrapBase) * sizeof(uint32_t), memNewChunkFlagPreLock | memNewChunkFlagNonMovable | memNewChunkFlagAllowLarge);
+   debugLog("New trap table created at:0x%08lX\n", newTrapTable);
    
    /*copy over old OS 4 size trap table and 0 out the OS 5 part*/
    MemMove(newTrapTable, TrapTablePtr, (sysTrapPceNativeCall - sysTrapBase) * sizeof(uint32_t));
@@ -49,8 +50,7 @@ static void resizeTrapTable(void){
    /*swap the tables*/
    TrapTablePtr = newTrapTable;
    
-   /*free the old table*/
-   MemChunkFree(oldTrapTable);
+   /*cant free the old table as it is in low mem globals out of the jurisdiction of the memory manager*/
    
    /*return to normal execution*/
    SysRestoreStatus(oldSr);
@@ -88,7 +88,7 @@ static void installPceNativeCallHandler(uint32_t armStackSize){
    uint8_t* oldArmStack = (uint8_t*)getGlobalVar(ARM_STACK_START);
    uint8_t* armStackStart;
    
-   SysSetTrapAddress(sysTrapPceNativeCall, (void*)emuPceNativeCall);
+   TrapTablePtr[sysTrapPceNativeCall - sysTrapBase] = (void*)emuPceNativeCall;
    
    if(oldArmStack)
       MemChunkFree(oldArmStack);
@@ -111,9 +111,9 @@ static void installDebugHandlers(void){
       /*eventually should remove the NULL check too, the trap list should have no NULL values*/
       
       if(trapAddress == sysUnimplementedAddress || trapAddress == NULL)
-         SysSetTrapAddress(index, (void*)emuSysUnimplemented);
+         TrapTablePtr[index - sysTrapBase] = (void*)emuSysUnimplemented;
    }
-   SysSetTrapAddress(sysTrapErrDisplayFileLineMsg, (void*)emuErrDisplayFileLineMsg);
+   TrapTablePtr[sysTrapErrDisplayFileLineMsg - sysTrapBase] = (void*)emuErrDisplayFileLineMsg;
 }
 
 static void setProperDeviceId(uint16_t screenWidth, uint16_t screenHeight, Boolean hasArmCpu, Boolean hasDpad){
@@ -248,6 +248,10 @@ void initBoot(uint32_t* configFile){
       
       /*prevents the code being moved out from underneath its function pointers(in the API trap table), causing crashes*/
       lockCodeXXXX();
+      
+      /*make an OS 5 size trap table, needed if debugging or any OS 5 features are enabled*/
+      if(enabledFeatures & (FEATURE_HYBRID_CPU | FEATURE_SND_STRMS | FEATURE_DEBUG))
+         resizeTrapTable();
          
       if(enabledFeatures & FEATURE_DEBUG)
          installDebugHandlers();
@@ -271,8 +275,4 @@ void initBoot(uint32_t* configFile){
       configFile[SAFE_MODE] = false;
       writeConfigFile(configFile);
    }
-}
-
-void reinit(uint32_t* configFile){
-   /*TODO*/
 }

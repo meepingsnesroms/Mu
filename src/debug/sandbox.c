@@ -838,7 +838,8 @@ uint32_t sandboxCommand(uint32_t command, void* data){
 
 void sandboxOnOpcodeRun(void){
 #if defined(EMU_SANDBOX_LOG_APIS)
-   logApiCalls();
+   if(sandboxRunning())
+      logApiCalls();
 #endif
    switch(m68k_get_reg(NULL, M68K_REG_PC)){//switched this from PPC to PC
       //case 0x10083652://USB issue location //address based on PPC
