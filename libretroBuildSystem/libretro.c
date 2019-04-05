@@ -22,13 +22,13 @@
 #define SCREEN_HIRES (!(palmFramebufferWidth == 160 && palmFramebufferHeight == 220))
 
 
-static retro_log_printf_t         log_cb;
-static retro_video_refresh_t      video_cb;
-static retro_audio_sample_batch_t audio_cb;
-static retro_set_led_state_t      led_cb;
-static retro_environment_t        environ_cb;
-static retro_input_poll_t         input_poll_cb;
-static retro_input_state_t        input_state_cb;
+static retro_log_printf_t         log_cb = NULL;
+static retro_video_refresh_t      video_cb = NULL;
+static retro_audio_sample_batch_t audio_cb = NULL;
+static retro_set_led_state_t      led_cb = NULL;
+static retro_environment_t        environ_cb = NULL;
+static retro_input_poll_t         input_poll_cb = NULL;
+static retro_input_state_t        input_state_cb = NULL;
 
 static uint32_t emuFeatures;
 static bool     useJoystickAsMouse;
@@ -208,17 +208,17 @@ void retro_set_environment(retro_environment_t cb){
 
    environ_cb = cb;
 
-   if (environ_cb(RETRO_ENVIRONMENT_GET_LOG_INTERFACE, &logging))
+   if(environ_cb(RETRO_ENVIRONMENT_GET_LOG_INTERFACE, &logging) && logging.log)
       log_cb = logging.log;
-   else
+   
+   if(!log_cb)
       log_cb = fallback_log;
    
    led_getter.set_led_state = NULL;
-   environ_cb(RETRO_ENVIRONMENT_GET_LED_INTERFACE, &led_getter);
-   led_cb = led_getter.set_led_state;
-   //printf("led_cb is at:%p\n", (void*)led_cb);
+   if(environ_cb(RETRO_ENVIRONMENT_GET_LED_INTERFACE, &led_getter) && led_getter.set_led_state)
+      led_cb = led_getter.set_led_state;
    
-   if(environ_cb(RETRO_ENVIRONMENT_GET_VFS_INTERFACE, &vfs_getter))
+   if(environ_cb(RETRO_ENVIRONMENT_GET_VFS_INTERFACE, &vfs_getter) && vfs_getter.iface)
       filestream_vfs_init(&vfs_getter);
 
    environ_cb(RETRO_ENVIRONMENT_SET_VARIABLES, vars);

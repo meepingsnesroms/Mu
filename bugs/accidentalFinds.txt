@@ -1,0 +1,6 @@
+Bugs in other peoples code I found while writing Mu, haven't followed up on them yet:
+(RetroArch)RETRO_ENVIRONMENT_GET_MIDI_INTERFACE states its passed a pointer to a pointer but its just a pointer to a struct
+(RetroArch)"led_driver" setting is not exposed to GUI
+(RetroArch)retro_set_environment will sometimes be called multiple times and provide invalid values fetching environment variables on the subsequent calls, this will cause function pointers to be corrupted if they are not checked for validity first
+
+Fixed:

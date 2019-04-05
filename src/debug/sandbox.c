@@ -1063,7 +1063,7 @@ void sandboxOnOpcodeRun(void){}
 void sandboxOnMemoryAccess(uint32_t address, uint8_t size, bool write, uint32_t value){}
 bool sandboxRunning(void){return false;}
 void sandboxReturn(void){}
-uint16_t sandboxSetWatchRegion(uint32_t address, uint32_t size, uint8_t type){}
+uint16_t sandboxSetWatchRegion(uint32_t address, uint32_t size, uint8_t type){return 0;}
 void sandboxClearWatchRegion(uint16_t index){}
 void sandboxSetCpuArch(uint8_t arch){}
 #endif

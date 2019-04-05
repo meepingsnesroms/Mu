@@ -28,7 +28,6 @@ port d data register INT* bits seem to have there data bits cleared when an edge
 sound plays too long when the category's menu is selected on the home screen and the pen is pressed and held in the middle of the screen(only happens there, other views of the same type don't have this issue)(effected by CPU speed, turning it up reduces the duration of the excess squeal)
 ARM CPU state isn't saved
 trying to beam anything will lock up the OS
-set the alarm LED using retro_set_led_state_t on RetroArch
 
 Memory:
 unknown if DRAM bit expanded address space is used for CSC when its not an extension of CSD
@@ -56,6 +55,7 @@ MakePalmBitmap:
 
 
 Fixed:
+(RetroArch port)set the alarm LED using retro_set_led_state_t on RetroArch
 (CPU I/O)SPI1 SPISPC register(this is just a clock divider used to slow transfers to allow the voltages to settle, since the emu has no voltages all transfers are just instant)
 (CPU)TCN2 is unimplemented and seems to be used by the same routines that turn the CPU off for sleep mode(it is implemented now and it wasn't the cause of the sleep mode issue)
 (CPU)SCR privilege violation doesnt trigger the same as on hardware(likely has to do with not emulating the unused chip selects)(I added those chip selects)
