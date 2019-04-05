@@ -69,7 +69,7 @@ static Boolean armv5Hypercall(ArmCpu* cpu){
 }
 
 static void armv5EmulErr(ArmCpu* cpu, const char* errStr){
-   debugLog("%s", errStr);
+   debugLog("%s\n", errStr);
 }
 
 static void armv5SetFaultAddr(struct ArmCpu* cpu, UInt32 adr, UInt8 faultStatus){

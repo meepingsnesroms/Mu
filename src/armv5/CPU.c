@@ -100,7 +100,7 @@ static _INLINE_ void cpuPrvSetPC(ArmCpu* cpu, UInt32 pc){
 	cpu->regs[15] = pc &~ 1UL;
 	cpu->CPSR &=~ ARM_SR_T;
 	if(pc & 1) cpu->CPSR |= ARM_SR_T;
-	else if(pc & 2) cpu->emulErrF(cpu, "Attempt to branch to non-word-aligned ARM address");
+   //else if(pc & 2) cpu->emulErrF(cpu, "Attempt to branch to non-word-aligned ARM address");
 }
 
 static _INLINE_ UInt32 cpuPrvGetReg(ArmCpu* cpu, UInt8 reg, Boolean wasT, Boolean specialPC){

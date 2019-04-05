@@ -59,9 +59,19 @@ UInt32 emuPceNativeCall(NativeFuncType* nativeFuncP, void* userDataP){
             uint32_t stackBlobSizeAndWantA0 = armv5GetRegister(3);
             uint32_t (*m68kCallWithBlobFuncPtr)(uint32_t functionAddress, uint32_t stackBlob, uint32_t stackBlobSize, uint16_t returnA0) = (uint32_t (*)(uint32_t, uint32_t, uint32_t, uint16_t))m68kCallWithBlobFunc;
             
+            if(true){
+               /*debug checks*/
+               uint32_t index;
+               uint32_t end = stackBlobSizeAndWantA0 & ~kPceNativeWantA0;
+               
+               debugLog("ARM calling 68k function:0x%08lX, stackBlob:0x%08lX, stackBlobSize:0x%08lX, wantA0:%d\n", function, stackBlob, stackBlobSizeAndWantA0 & ~kPceNativeWantA0, !!(stackBlobSizeAndWantA0 & kPceNativeWantA0));
+               for(index = 0; index < end; index++)
+                  debugLog("Stack byte:0x%02X\n", ((uint8_t*)stackBlob)[index]);
+            }
+            
             /*API call, convert to address first*/
-            if(function < 0x1000)
-               function = (uint32_t)SysGetTrapAddress(0xA000 | function);
+            if(function <= kPceNativeTrapNoMask)
+               function = (uint32_t)TrapTablePtr[function];/*SysGetTrapAddress cant be used because this needs to handle OS 5 API calls too*/
             
             /*return whatever the 68k function did*/
             armv5SetRegister(0, m68kCallWithBlobFuncPtr(function, stackBlob, stackBlobSizeAndWantA0 & ~kPceNativeWantA0, !!(stackBlobSizeAndWantA0 & kPceNativeWantA0)));
@@ -81,6 +91,8 @@ UInt32 emuPceNativeCall(NativeFuncType* nativeFuncP, void* userDataP){
    armv5SetRegister(2, oldArmRegisters[2]);
    armv5SetRegister(14, oldArmRegisters[3]);
    armv5SetRegister(15, oldArmRegisters[4]);
+   
+   debugLog("Finished ARM function:0x%08lX\n", (uint32_t)nativeFuncP);
    
    return returnValue;
 }
