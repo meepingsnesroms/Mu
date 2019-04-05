@@ -28,6 +28,7 @@ port d data register INT* bits seem to have there data bits cleared when an edge
 sound plays too long when the category's menu is selected on the home screen and the pen is pressed and held in the middle of the screen(only happens there, other views of the same type don't have this issue)(effected by CPU speed, turning it up reduces the duration of the excess squeal)
 ARM CPU state isn't saved
 trying to beam anything will lock up the OS
+set the alarm LED using retro_set_led_state_t on RetroArch
 
 Memory:
 unknown if DRAM bit expanded address space is used for CSC when its not an extension of CSD

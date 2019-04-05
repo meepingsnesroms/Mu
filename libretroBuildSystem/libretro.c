@@ -22,12 +22,13 @@
 #define SCREEN_HIRES (!(palmFramebufferWidth == 160 && palmFramebufferHeight == 220))
 
 
-static retro_log_printf_t          log_cb;
-static retro_video_refresh_t       video_cb;
-static retro_audio_sample_batch_t  audio_cb;
-static retro_environment_t         environ_cb;
-static retro_input_poll_t          input_poll_cb;
-static retro_input_state_t         input_state_cb;
+static retro_log_printf_t         log_cb;
+static retro_video_refresh_t      video_cb;
+static retro_audio_sample_batch_t audio_cb;
+static retro_set_led_state_t      led_cb;
+static retro_environment_t        environ_cb;
+static retro_input_poll_t         input_poll_cb;
+static retro_input_state_t        input_state_cb;
 
 static uint32_t emuFeatures;
 static bool     useJoystickAsMouse;
@@ -175,6 +176,7 @@ void retro_get_system_av_info(struct retro_system_av_info *info){
 void retro_set_environment(retro_environment_t cb){
    struct retro_log_callback logging;
    struct retro_vfs_interface_info vfs_getter = { 1, NULL };
+   struct retro_led_interface led_getter;
    struct retro_variable vars[] = {
       { "palm_emu_feature_ram_huge", "128mb RAM; disabled|enabled" },
       { "palm_emu_feature_fast_cpu", "Custom CPU Speeds; disabled|enabled" },
@@ -190,17 +192,17 @@ void retro_set_environment(retro_environment_t cb){
    struct retro_input_descriptor input_desc[] = {
       { 0, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_LEFT, RETRO_DEVICE_ID_ANALOG_X, "Touchscreen Mouse X" },
       { 0, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_LEFT, RETRO_DEVICE_ID_ANALOG_Y, "Touchscreen Mouse Y" },
-      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R2,     "Touchscreen Mouse Click" },
-      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT,   "Dpad Left" },
-      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP,     "Dpad Up" },
-      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN,   "Dpad Down" },
-      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_RIGHT,  "Dpad Right" },
-      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R,      "Dpad Middle" },
-      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_START,  "Power" },
-      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_A,      "Calender" },
-      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_B,      "Address Book" },
-      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_Y,      "Todo" },
-      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_X,      "Notes" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R2,                             "Touchscreen Mouse Click" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT,                           "Dpad Left" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP,                             "Dpad Up" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN,                           "Dpad Down" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_RIGHT,                          "Dpad Right" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R,                              "Dpad Middle" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_START,                          "Power" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_A,                              "Calender" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_B,                              "Address Book" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_Y,                              "Todo" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_X,                              "Notes" },
       { 0 }
    };
 
@@ -211,9 +213,14 @@ void retro_set_environment(retro_environment_t cb){
    else
       log_cb = fallback_log;
    
+   led_getter.set_led_state = NULL;
+   environ_cb(RETRO_ENVIRONMENT_GET_LED_INTERFACE, &led_getter);
+   led_cb = led_getter.set_led_state;
+   //printf("led_cb is at:%p\n", (void*)led_cb);
+   
    if(environ_cb(RETRO_ENVIRONMENT_GET_VFS_INTERFACE, &vfs_getter))
       filestream_vfs_init(&vfs_getter);
-   
+
    environ_cb(RETRO_ENVIRONMENT_SET_VARIABLES, vars);
    environ_cb(RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS, input_desc);
 }
@@ -302,6 +309,8 @@ void retro_run(void){
    
    video_cb(palmFramebuffer, palmFramebufferWidth, palmFramebufferHeight, palmFramebufferWidth * sizeof(uint16_t));
    audio_cb(palmAudio, AUDIO_SAMPLES_PER_FRAME);
+   if(led_cb)
+      led_cb(0, palmMisc.powerButtonLed);
 }
 
 bool retro_load_game(const struct retro_game_info *info){
