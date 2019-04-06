@@ -59,8 +59,9 @@ UInt32 emuPceNativeCall(NativeFuncType* nativeFuncP, void* userDataP){
             uint32_t stackBlobSizeAndWantA0 = armv5GetRegister(3);
             uint32_t (*m68kCallWithBlobFuncPtr)(uint32_t functionAddress, uint32_t stackBlob, uint32_t stackBlobSize, uint16_t returnA0) = (uint32_t (*)(uint32_t, uint32_t, uint32_t, uint16_t))m68kCallWithBlobFunc;
             
+            /*debug checks, I think these where preventing the callback to 68k code MemPtrNew???*/
+            /*
             if(true){
-               /*debug checks*/
                uint32_t index;
                uint32_t end = stackBlobSizeAndWantA0 & ~kPceNativeWantA0;
                
@@ -68,6 +69,8 @@ UInt32 emuPceNativeCall(NativeFuncType* nativeFuncP, void* userDataP){
                for(index = 0; index < end; index++)
                   debugLog("Stack byte:0x%02X\n", ((uint8_t*)stackBlob)[index]);
             }
+            */
+            debugLog("Called 68k function:0x%08lX\n", function);
             
             /*API call, convert to address first*/
             if(function <= kPceNativeTrapNoMask)
