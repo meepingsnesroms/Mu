@@ -241,6 +241,10 @@ void armv5SetRegister(uint8_t reg, uint32_t value){
 }
 
 int32_t armv5Execute(int32_t cycles){
+#if defined(EMU_DEBUG)
+   uint32_t ranOpcodes = 0;
+#endif
+
    armv5ServiceRequest = false;
 
 #if defined(EMU_DEBUG) && defined(EMU_SANDBOX)
@@ -251,7 +255,15 @@ int32_t armv5Execute(int32_t cycles){
    while(cycles > 0 && !armv5ServiceRequest){
       cpuCycleNoIrqs(&armv5Cpu);
       cycles -= ARMV5_CYCLES_PER_OPCODE;
+
+#if defined(EMU_DEBUG)
+      ranOpcodes++;
+#endif
    }
+
+#if defined(EMU_DEBUG)
+   debugLog("%d ARM opcodes have been ran\n", ranOpcodes);
+#endif
 
 #if defined(EMU_DEBUG) && defined(EMU_SANDBOX)
    sandboxSetCpuArch(SANDBOX_CPU_ARCH_M68K);

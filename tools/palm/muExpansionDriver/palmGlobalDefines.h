@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#define CODE_SECTION(codeSection) __attribute__((section(codeSection)))
+#define SECTION(codeSection) __attribute__((section(codeSection)))
 #define NO_RETURN __attribute__((noreturn))
 #define ALIGN(size) __attribute__((aligned(size)))
 #define PACKED __attribute__((packed))
