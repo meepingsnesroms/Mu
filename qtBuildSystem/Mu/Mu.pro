@@ -24,9 +24,16 @@ DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000 # disables all the APIs depreca
 
 windows{
     RC_ICONS = windows/Mu.ico
-    QMAKE_CFLAGS += -openmp
-    QMAKE_CXXFLAGS += -openmp
-    DEFINES += "_Pragma=__pragma"
+    *msvc*{
+        QMAKE_CFLAGS += -openmp
+        QMAKE_CXXFLAGS += -openmp
+        DEFINES += "_Pragma=__pragma"
+    }
+    *-g++{
+        QMAKE_CFLAGS += -fopenmp
+        QMAKE_CXXFLAGS += -fopenmp
+        QMAKE_LFLAGS += -fopenmp
+    }
     DEFINES += EMU_MULTITHREADED
 }
 
