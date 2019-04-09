@@ -16,6 +16,13 @@ void armv5SetStack(uint8_t* location, uint32_t size){
    armv5SetRegister(13, firstStackEntry);
 }
 
+uint32_t* armv5ValidatePointer(uint32_t* address){
+   /*patches 16 bit alignment to 32 bit alignment using a special memory range*/
+   if((uint32_t)address & 0x00000002)
+      return (uint32_t*)((uint32_t)address ^ 0x80000002);
+   return address;
+}
+
 void armv5StackPush(uint32_t value){
    uint32_t stackPtr = armv5GetRegister(13);
    

@@ -58,11 +58,11 @@ UInt32 emuPceNativeCall(NativeFuncType* nativeFuncP, void* userDataP){
    oldArmRegisters[4] = armv5GetRegister(15);
    
    armv5SetRegister(0, 0xBADC0DE);/*emulStateP is unused*/
-   armv5SetRegister(1, (uint32_t)userDataP);
-   armv5SetRegister(2, (uint32_t)armCall68kFunc);
+   armv5SetRegister(1, (uint32_t)armv5ValidatePointer(userDataP));
+   armv5SetRegister(2, (uint32_t)armv5ValidatePointer(armCall68kFunc));
    
-   armv5SetRegister(14, (uint32_t)armExitFunc);/*set link register to return location*/
-   armv5SetRegister(15, (uint32_t)nativeFuncP);/*set program counter to function*/
+   armv5SetRegister(14, (uint32_t)armv5ValidatePointer(armExitFunc));/*set link register to return location*/
+   armv5SetRegister(15, (uint32_t)armv5ValidatePointer((uint32_t*)nativeFuncP));/*set program counter to function*/
    
    while(true){
       armv5Execute(100);/*run 100 opcodes, returns instantly with cycles remaining when service is needed*/
@@ -70,7 +70,7 @@ UInt32 emuPceNativeCall(NativeFuncType* nativeFuncP, void* userDataP){
          /*ARM tried to call a 68k function or has finished executing*/
          if(armv5GetRegister(0)){
             /*call function*/
-            /*uint32_t emulStateP = armv5GetRegister(0);*/
+            uint32_t emulStateP = armv5GetRegister(0);
             uint32_t function = armv5GetRegister(1);
             uint32_t stackBlob = armv5GetRegister(2);
             uint32_t stackBlobSizeAndWantA0 = armv5GetRegister(3);
@@ -88,10 +88,10 @@ UInt32 emuPceNativeCall(NativeFuncType* nativeFuncP, void* userDataP){
             }
             */
             /*debugLog("Called 68k function:0x%08lX\n", function);*/
-            /*
             debugLog("ARM calling 68k: emulStateP:0x%08lX, function:0x%08lX, stackBlob:0x%08lX, stackBlobSize:0x%08lX, wantA0:%d\n", emulStateP, function, stackBlob, stackBlobSizeAndWantA0 & ~kPceNativeWantA0, !!(stackBlobSizeAndWantA0 & kPceNativeWantA0));
-            */
+            /*
              debugLog("ARM calling 68k function:0x%08lX, stackBlob:0x%08lX, stackBlobSize:0x%08lX, wantA0:%d\n", function, stackBlob, stackBlobSizeAndWantA0 & ~kPceNativeWantA0, !!(stackBlobSizeAndWantA0 & kPceNativeWantA0));
+            */
             
             /*API call, convert to address first*/
             if(function <= kPceNativeTrapNoMask)

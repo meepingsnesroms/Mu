@@ -29,6 +29,8 @@ static Boolean armv5MemoryAccess(ArmCpu* cpu, void* buf, UInt32 vaddr, UInt8 siz
    //but it allows 16 bit aligned data to be executed from the m68k stack and works as a
    //temporary measure until I get MemChunkNew patched correctly
 
+   //while executing wont support non 32 bit alignment regular accesses can for now
+   /*
 #if !defined(EMU_NO_SAFETY)
    //size is not a power of two or address isnt aligned to size
    if(size & (size - 1) || vaddr & (size - 1)){
@@ -36,6 +38,7 @@ static Boolean armv5MemoryAccess(ArmCpu* cpu, void* buf, UInt32 vaddr, UInt8 siz
       return false;
    }
 #endif
+   */
 
    if(vaddr & 0x80000000)
       vaddr ^= 0x80000002;
