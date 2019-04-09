@@ -100,7 +100,7 @@ static _INLINE_ void cpuPrvSetPC(ArmCpu* cpu, UInt32 pc){
 	cpu->regs[15] = pc &~ 1UL;
 	cpu->CPSR &=~ ARM_SR_T;
 	if(pc & 1) cpu->CPSR |= ARM_SR_T;
-   //else if(pc & 2) cpu->emulErrF(cpu, "Attempt to branch to non-word-aligned ARM address");
+   //else if(pc & 2) cpu->emulErrF(cpu, "Attempt to branch to non-word-aligned ARM address");//with 32 bit alignment restrictions
 }
 
 static _INLINE_ UInt32 cpuPrvGetReg(ArmCpu* cpu, UInt8 reg, Boolean wasT, Boolean specialPC){
@@ -109,7 +109,8 @@ static _INLINE_ UInt32 cpuPrvGetReg(ArmCpu* cpu, UInt8 reg, Boolean wasT, Boolea
 
 	ret = cpu->regs[reg];
 	if(reg == 15) ret += (wasT) ? 2 : 4;
-	if(wasT && specialPC) ret &=~ 3UL;
+   //if(wasT && specialPC) ret &=~ 3UL;//with 32 bit alignment restrictions
+   if(wasT && specialPC) ret &=~ 1UL;//without 32 bit alignment restrictions
 
 	return ret;
 }
@@ -2353,8 +2354,15 @@ static Err cpuPrvCycleThumb(ArmCpu* cpu){
 					case 3:			// BX
 						
 						if(instrT == 0x4778){	//special handing for thumb's "BX PC" as aparently docs are wrong on it
-							
-							cpuPrvSetPC(cpu, (cpu->regs[15] + 2) &~ 3UL);
+                     //with 32 bit alignment restrictions
+                     //cpuPrvSetPC(cpu, (cpu->regs[15] + 2) &~ 3UL);
+
+                     //without 32 bit alignment restrictions
+                     {
+                        UInt32 oldA1 = cpu->regs[15] & 2UL;
+                        cpuPrvSetPC(cpu, ((cpu->regs[15] + 2) &~ 3UL) | oldA1);
+                     }
+
 							goto instr_done;
 						}
 						
@@ -2558,7 +2566,16 @@ static Err cpuPrvCycleThumb(ArmCpu* cpu){
 				
 				case 1:		//BLX(1)_suffix
 					instr = cpu->regs[15];
-					cpu->regs[15] = (cpu->regs[14] + 2 + (((UInt32)v16) << 1)) &~ 3UL;
+
+               //with 32 bit alignment restrictions
+               //cpu->regs[15] = (cpu->regs[14] + 2 + (((UInt32)v16) << 1)) &~ 3UL;
+
+               //without 32 bit alignment restrictions
+               {
+                  UInt32 oldA1 = cpu->regs[15] & 2UL;
+                  cpu->regs[15] = ((cpu->regs[14] + 2 + (((UInt32)v16) << 1)) &~ 3UL) | oldA1;
+               }
+
 					cpu->regs[14] = instr | 1UL;
 					cpu->CPSR &=~ ARM_SR_T;
 					goto instr_done;
