@@ -626,6 +626,9 @@ void sandboxReset(void){
    //log all register accesses
    //sandboxCommand(SANDBOX_CMD_REGISTER_WATCH_ENABLE, NULL);
 
+   //patch OS
+   sandboxCommand(SANDBOX_CMD_PATCH_OS, NULL);
+
    //monitor for strange jumps
    sandboxSetWatchRegion(0x00000000, 0xFFFFFFFE, SANDBOX_WATCH_CODE);
 }
@@ -850,6 +853,16 @@ uint32_t sandboxCommand(uint32_t command, void* data){
             ROM:10020D1A                 addq.l  #8,d0           ; Add 8 bytes(currently dont know what there for)
             ROM:10020D1C
             */
+
+            //align memory chunks to 4 instead of 2, 24 / 0x18 bytes
+            //patchOsRom(0x20D04, "202E000AC0BC0000000367000006528060F25080544F4E71");
+            patchOsRom(0x20D04, "202E000AC0BCFFFFFFFC50805080544F4E714E714E714E71");//adds an extra 4 bytes regardless
+            //patchOsRom(0x20D04, "202E000AC0BCFFFFFFFCB0AE000A6700000458805080544F");//adds an extra 4 bytes if & 0x00000003 is true
+            //this seems to be successfuly aligning things, its not :(
+
+            //align by 2, patch test
+            //patchOsRom(0x20D04, "202E000AC0BC0000000167000006528060F25080544F4E71");
+            //patchOsRom(0x20D04, "202E000AC0BCFFFFFFFE50805080544F4E714E714E714E71");
          }
          break;
 
