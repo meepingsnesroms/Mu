@@ -22,6 +22,7 @@
 #include "trapNames.h"
 
 
+#define SANDBOX_MAX_UNLOGGED_JUMP_SIZE 0xFFFFFFFF
 #define SANDBOX_MAX_WATCH_REGIONS 1000
 
 
@@ -158,6 +159,26 @@ static bool ignoreTrap(uint16_t trap){
 
 static void printTrapInfo(uint16_t trap){
    debugLog("name:%s, API:0x%04X, location:0x%08X\n", lookupTrap(trap), trap, m68k_read_memory_32(0x000008CC + (trap & 0x0FFF) * 4));
+}
+
+bool validExecutionAddress(uint32_t address){
+   if(chips[CHIP_A0_ROM].inBootMode || address >= chips[CHIP_A0_ROM].start && address < chips[CHIP_A0_ROM].start + chips[CHIP_A0_ROM].lineSize)
+      return true;
+   if(address >= chips[CHIP_DX_RAM].start && address < chips[CHIP_DX_RAM].start + chips[CHIP_DX_RAM].lineSize)
+      return true;
+   return false;
+}
+
+void log68kJumps(void){
+   uint32_t opcodeStartPc = m68k_get_reg(NULL, M68K_REG_PPC);
+   uint32_t opcodeEndPc = m68k_get_reg(NULL, M68K_REG_PC);
+   uint32_t difference = llabs((int64_t)opcodeStartPc - (int64_t)opcodeEndPc);
+
+   //if invalid always log, otherwise only log if big jump
+   if(!validExecutionAddress(opcodeEndPc))
+      debugLog("m68k jumped 0x%08X bytes to invalid address, from 0x%08X to 0x%08X\n", difference, opcodeStartPc, opcodeEndPc);
+   else if(difference > SANDBOX_MAX_UNLOGGED_JUMP_SIZE)
+      debugLog("m68k jumped 0x%08X bytes, from 0x%08X to 0x%08X\n", difference, opcodeStartPc, opcodeEndPc);
 }
 
 static void logApiCalls(void){
@@ -604,6 +625,9 @@ void sandboxReset(void){
 
    //log all register accesses
    //sandboxCommand(SANDBOX_CMD_REGISTER_WATCH_ENABLE, NULL);
+
+   //monitor for strange jumps
+   sandboxSetWatchRegion(0x00000000, 0xFFFFFFFE, SANDBOX_WATCH_CODE);
 }
 
 uint32_t sandboxStateSize(void){
@@ -837,10 +861,15 @@ uint32_t sandboxCommand(uint32_t command, void* data){
 }
 
 void sandboxOnOpcodeRun(void){
+   if(sandboxRunning()){
+#if defined(EMU_SANDBOX_LOG_JUMPS)
+      log68kJumps();
+#endif
+
 #if defined(EMU_SANDBOX_LOG_APIS)
-   if(sandboxRunning())
       logApiCalls();
 #endif
+   }
    switch(m68k_get_reg(NULL, M68K_REG_PC)){//switched this from PPC to PC
       //case 0x10083652://USB issue location //address based on PPC
       //case 0x100846C0://HwrDelay, before mysterious jump //address based on PPC
@@ -925,14 +954,14 @@ void sandboxOnMemoryAccess(uint32_t address, uint8_t size, bool write, uint32_t 
             if(!functionValid)
                function = "NAME NOT FOUND";
 
-            if(address < 0x00010000){
+            if(address >= chips[CHIP_DX_RAM].start && address < chips[CHIP_DX_RAM].start + 0x10000){
                //low mem globals
-               const char* variableName = getLowMemGlobalName(address);//dont free this pointer, it just returns a string constant from a list of string constants
+               address &= 0xFFFF;
 
                if(write)
-                  debugLog("Writing low mem global: name:%s/address:0x%08X, size:%d, value:0x%08X, function:%s/PC:0x%08X\n", variableName, address, size, value, function, pc);
+                  debugLog("Writing low mem global: name:%s/global:0x%08X, size:%d, value:0x%08X, function:%s/PC:0x%08X\n", getLowMemGlobalName(address), address, size, value, function, pc);
                else
-                  debugLog("Reading low mem global: name:%s/address:0x%08X, size:%d, function:%s/PC:0x%08X\n", variableName, address, size, function, pc);
+                  debugLog("Reading low mem global: name:%s/global:0x%08X, size:%d, function:%s/PC:0x%08X\n", getLowMemGlobalName(address), address, size, function, pc);
             }
             else if(address >= 0xFFFFF000){
                //hardware registers
@@ -958,6 +987,23 @@ void sandboxOnMemoryAccess(uint32_t address, uint8_t size, bool write, uint32_t 
                      debugLog("Writing hardware register: name:%s/address:0x%08X, size:%d, value:0x%08X, function:%s/PC:0x%08X\n", registerName, address, size, value, function, pc);
                   else
                      debugLog("Reading hardware register: name:%s/address:0x%08X, size:%d, function:%s/PC:0x%08X\n", registerName, address, size, function, pc);
+               }
+            }
+            else if(address >= chips[CHIP_B0_SED].start && address < chips[CHIP_B0_SED].start + chips[CHIP_B0_SED].lineSize){
+               //SED1376
+               if(address & SED1376_MR_BIT){
+                  //SED1376 data
+                  if(write)
+                     debugLog("Writing SED1376 buffer: address:0x%08X, size:%d, value:0x%08X, function:%s/PC:0x%08X\n", address, size, value, function, pc);
+                  else
+                     debugLog("Reading SED1376 buffer: address:0x%08X, size:%d, function:%s/PC:0x%08X\n", address, size, function, pc);
+               }
+               else{
+                  //SED1376 register, these are 8 bit only
+                  if(write)
+                     debugLog("Writing SED1376 register: address:0x%08X, value:0x%02X, function:%s/PC:0x%08X\n", address, value & 0xFF, function, pc);
+                  else
+                     debugLog("Reading SED1376 register: address:0x%08X, function:%s/PC:0x%08X\n", address, function, pc);
                }
             }
             else{

@@ -6,7 +6,6 @@
 #include "hardwareRegisters.h"
 #include "flx68000.h"//for flx68000GetPc()
 #include "specs/sed1376RegisterSpec.h"
-#include "debug/sandbox.h"
 
 
 //the SED1376 has only 16 address lines(17 if you count the line that switches between registers and framebuffer) and 16 data lines, the most you can read at once is 16 bits, registers are 8 bits
@@ -178,10 +177,6 @@ bool sed1376PowerSaveEnabled(void){
 
 uint8_t sed1376GetRegister(uint8_t address){
    //returning 0x00 on power save mode is done in the sed1376ReadXX functions
-
-   if(sandboxRunning())
-      debugLog("SED1376 register read from 0x%02X, PC 0x%08X.\n", address, flx68000GetPc());
-
    switch(address){
       case LUT_READ_LOC:
       case LUT_WRITE_LOC:
@@ -217,10 +212,6 @@ uint8_t sed1376GetRegister(uint8_t address){
 }
 
 void sed1376SetRegister(uint8_t address, uint8_t value){
-
-   if(sandboxRunning())
-      debugLog("SED1376 register write 0x%02X to 0x%02X, PC 0x%08X.\n", value, address, flx68000GetPc());
-
    switch(address){
       case PWR_SAVE_CFG:
          //bit 7 must always be set, timing hack

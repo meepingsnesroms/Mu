@@ -54,7 +54,7 @@ double    palmClk32Sysclks;//how many SYSCLKs have happened in the current CLK32
 
 uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t enabledEmuFeatures){
    //only accept valid non debug features from the user
-   enabledEmuFeatures &= FEATURE_RAM_HUGE | FEATURE_FAST_CPU | FEATURE_HYBRID_CPU | FEATURE_CUSTOM_FB | FEATURE_SYNCED_RTC | FEATURE_HLE_APIS | FEATURE_EMU_HONEST | FEATURE_EXT_KEYS | FEATURE_SND_STRMS;
+   enabledEmuFeatures &= FEATURE_RAM_HUGE | FEATURE_FAST_CPU | FEATURE_HYBRID_CPU | FEATURE_CUSTOM_FB | FEATURE_SYNCED_RTC | FEATURE_HLE_APIS | FEATURE_EMU_HONEST | FEATURE_EXT_KEYS | FEATURE_DURABLE | FEATURE_SND_STRMS;
 
 #if defined(EMU_DEBUG)
    //enable debug features if compiled in debug mode

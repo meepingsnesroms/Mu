@@ -21,7 +21,9 @@ extern "C" {
 //define EMU_BIG_ENDIAN on big endian systems
 //to enable degguging define EMU_DEBUG, all options below do nothing unless EMU_DEBUG is defined
 //to enable sandbox debugging define EMU_SANDBOX
+//to enable memory access logging define EMU_SANDBOX_LOG_MEMORY_ACCESSES
 //to enable opcode level debugging define EMU_SANDBOX_OPCODE_LEVEL_DEBUG
+//to enable flow control logging define EMU_SANDBOX_LOG_JUMPS, EMU_SANDBOX_OPCODE_LEVEL_DEBUG must also be defined for this to work
 //to log all API calls define EMU_SANDBOX_LOG_APIS, EMU_SANDBOX_OPCODE_LEVEL_DEBUG must also be defined for this to work
 
 //debug

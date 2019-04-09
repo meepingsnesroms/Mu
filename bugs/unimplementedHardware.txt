@@ -55,6 +55,7 @@ MakePalmBitmap:
 
 
 Fixed:
+(Feature)need to add FEATURE_DURABLE which will ignore CPU errors, increasing stability at the cost of bugginess
 (RetroArch port)set the alarm LED using retro_set_led_state_t on RetroArch
 (CPU I/O)SPI1 SPISPC register(this is just a clock divider used to slow transfers to allow the voltages to settle, since the emu has no voltages all transfers are just instant)
 (CPU)TCN2 is unimplemented and seems to be used by the same routines that turn the CPU off for sleep mode(it is implemented now and it wasn't the cause of the sleep mode issue)
