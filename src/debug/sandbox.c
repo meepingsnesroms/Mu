@@ -833,6 +833,23 @@ uint32_t sandboxCommand(uint32_t command, void* data){
             IDs be assigned to these heaps. Subsequent storage heaps would be assigned
             IDs in sequential order, as always beginning with RAM heaps, followed by ROM heaps.
             */
+
+            //this looks like the code that ensures heap alignment sizes are correct, if I force everything to a multiple of 4 that may fix ARM behavior
+            /*
+            ROM:10020D04                 moveq   #1,d0           ; Move Quick
+            ROM:10020D06                 and.l   size(a6),d0     ; Check if size is a multiple of 2
+            ROM:10020D0A                 addq.w  #2,sp           ; Add Quick
+            ROM:10020D0C                 beq.s   loc_10020D16    ; Skip adding extra byte if already aligned
+            ROM:10020D0E                 moveq   #9,d0           ; Size is not 16 bit aligned, align and add 8 bytes
+            ROM:10020D10                 add.l   size(a6),d0     ; Add requested size
+            ROM:10020D14                 bra.s   loc_10020D1C    ; Branch Always
+            ROM:10020D16 ; ---------------------------------------------------------------------------
+            ROM:10020D16
+            ROM:10020D16 loc_10020D16:                           ; CODE XREF: PrvChunkNew_10020CBC+50↑j
+            ROM:10020D16                 move.l  size(a6),d0     ; Set requested size
+            ROM:10020D1A                 addq.l  #8,d0           ; Add 8 bytes(currently dont know what there for)
+            ROM:10020D1C
+            */
          }
          break;
 
