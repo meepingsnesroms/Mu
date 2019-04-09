@@ -5,6 +5,7 @@
     ORG    $1000
 START:                  ; first instruction of program
 
+    move.l $A(a6), d0
 validateSize:
     and.l #3, d0
     beq sizeClean
@@ -13,6 +14,7 @@ validateSize:
 sizeClean:
 
     END    START        ; last line of source
+
 
 *~Font name~Courier New~
 *~Font size~10~
