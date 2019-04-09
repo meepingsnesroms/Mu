@@ -93,8 +93,6 @@ static void installPceNativeCallHandler(uint32_t armStackSize){
    if(oldArmStack)
       MemChunkFree(oldArmStack);
    
-   /*normally must have 32 bit aligned size and start, but I diasbled 32 bit alignment in the ARM core*/
-   armStackSize &= 0xFFFFFFFC;
    armStackStart = MemChunkNew(0, armStackSize, memNewChunkFlagPreLock | memNewChunkFlagNonMovable | memNewChunkFlagAllowLarge);
    armv5SetStack(armStackStart, armStackSize);
    setGlobalVar(ARM_STACK_START, (uint32_t)armStackStart);

@@ -3,7 +3,7 @@
 
 
 #if defined(EMU_DEBUG) && defined(EMU_SANDBOX)
-//this wrappers 68k code and allows calling it for tests, this should be useful for determining if hardware accesses are correct
+//this wrappers m68k code and allows calling it for tests, this should be useful for determining if hardware accesses are correct
 //Note: when running a test the emulator runs at native speed and no clocks are emulated
 #include <stdlib.h>
 #include <string.h>
@@ -48,7 +48,7 @@ typedef struct{
 
 
 static bool              sandboxActive;//used to "log out" of the emulator once a test has finished
-static bool              sandboxControlHandoff;//used for functions that depend on timing, hands full control to the 68k
+static bool              sandboxControlHandoff;//used for functions that depend on timing, hands full control to the m68k
 static uint8_t           sandboxCurrentCpuArch;
 static local_cpu_state_t sandboxOldFunctionCpuState;
 static mem_region_t      sandboxWatchRegions[SANDBOX_MAX_WATCH_REGIONS];//code locations in m68k address space to be sandboxed

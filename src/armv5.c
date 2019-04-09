@@ -21,7 +21,24 @@ static ArmCpu armv5Cpu;
 static Boolean armv5MemoryAccess(ArmCpu* cpu, void* buf, UInt32 vaddr, UInt8 size, Boolean write, Boolean privileged, UInt8* fsr){
    //just gonna have ARM and m68k share the same bus for now, ARM may want fonts/bitmaps from ROM
 
-   //no safety check is needed, they are done in the m68k memory accessors called from here
+   //Fake ARM 32 bit alignment convention
+   //0x00000000<->0x7FFFFFFF Normal memory access
+   //0x80000000<->0xFFFFFFFF Mirrored range, realAddress = address - 0x80000000 + 0x00000002
+
+   //this will still fail if ARM allocates a 16 bit aligned buffer and passes it to the m68k,
+   //but it allows 16 bit aligned data to be executed from the m68k stack and works as a
+   //temporary measure until I get MemChunkNew patched correctly
+
+#if !defined(EMU_NO_SAFETY)
+   //size is not a power of two or address isnt aligned to size
+   if(size & (size - 1) || vaddr & (size - 1)){
+      debugLog("ARM attempted unaligned access: address:0x%08X, size:%d\n", vaddr, size);
+      return false;
+   }
+#endif
+
+   if(vaddr & 0x80000000)
+      vaddr ^= 0x80000002;
 
    if(write){
       switch(size){
@@ -77,7 +94,7 @@ static void armv5SetFaultAddr(struct ArmCpu* cpu, UInt32 adr, UInt8 faultStatus)
 }
 
 void armv5Reset(void){
-   cpuInit(&armv5Cpu, 0x00000000/*PC, set by 68k while emulating*/, armv5MemoryAccess, armv5EmulErr, armv5Hypercall, armv5SetFaultAddr);
+   cpuInit(&armv5Cpu, 0x00000000/*PC, set by m68k while emulating*/, armv5MemoryAccess, armv5EmulErr, armv5Hypercall, armv5SetFaultAddr);
    armv5ServiceRequest = false;
 }
 
@@ -251,7 +268,7 @@ int32_t armv5Execute(int32_t cycles){
    sandboxSetCpuArch(SANDBOX_CPU_ARCH_ARMV5);
 #endif
 
-   //execution aborts on hypercall to request things from the 68k
+   //execution aborts on hypercall to request things from the m68k
    while(cycles > 0 && !armv5ServiceRequest){
       cpuCycleNoIrqs(&armv5Cpu);
       cycles -= ARMV5_CYCLES_PER_OPCODE;

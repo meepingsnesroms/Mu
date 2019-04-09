@@ -32,7 +32,7 @@ uint32_t sandboxCommand(uint32_t command, void* data);
 void sandboxOnOpcodeRun(void);
 void sandboxOnMemoryAccess(uint32_t address, uint8_t size, bool write, uint32_t value);
 bool sandboxRunning(void);
-void sandboxReturn(void);//should only be called called by 68k code
+void sandboxReturn(void);//should only be called called by m68k code
 uint16_t sandboxSetWatchRegion(uint32_t address, uint32_t size, uint8_t type);
 void sandboxClearWatchRegion(uint16_t index);
 void sandboxSetCpuArch(uint8_t arch);

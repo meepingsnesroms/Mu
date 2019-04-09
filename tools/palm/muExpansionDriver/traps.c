@@ -39,6 +39,14 @@ UInt32 emuPceNativeCall(NativeFuncType* nativeFuncP, void* userDataP){
    /*R0 = 0 is execution finished, R0 = 1 is run function*/
    /*when R0 = 1, R1 = function to execute, R2 = stack blob, R3 = stack blob size and want A0*/
    
+   /*Fake ARM 32 bit alignment convention*/
+   /*0x00000000<->0x7FFFFFFF Normal memory access*/
+   /*0x80000000<->0xFFFFFFFF Mirrored range, realAddress = address - 0x80000000 + 0x00000002*/
+   
+   /*this will still fail if ARM allocates a 16 bit aligned buffer and passes it to the m68k,*/
+   /*but it allows 16 bit aligned data to be executed from the m68k stack and works as a*/
+   /*temporary measure until I get MemChunkNew patched correctly*/
+   
    debugLog("Called ARM function:0x%08lX\n", (uint32_t)nativeFuncP);
    
    /*save old ARM state, needed if this function is called recursively*/

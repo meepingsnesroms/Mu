@@ -7,7 +7,13 @@
 
 
 void armv5SetStack(uint8_t* location, uint32_t size){
-   armv5SetRegister(13, (uint32_t)location + size - sizeof(uint32_t));
+   uint32_t firstStackEntry = (uint32_t)location + size - 1;
+   
+   /*must be 32 bit aligned, m68k only enforces 16 bit aligned even for 32 bit access so MemPtrNew may return a word aligned address*/
+   while((firstStackEntry & 0x3) != 0)
+      firstStackEntry--;
+   
+   armv5SetRegister(13, firstStackEntry);
 }
 
 void armv5StackPush(uint32_t value){
