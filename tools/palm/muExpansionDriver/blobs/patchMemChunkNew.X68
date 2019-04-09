@@ -6,12 +6,13 @@
 START:                  ; first instruction of program
 
     move.l $A(a6), d0
-validateSize:
-    and.l #3, d0
-    beq sizeClean
-    add.l #1, d0
-    bra validateSize
-sizeClean:
+    and.l #$FFFFFFFC, d0
+    cmp.l $A(a6), d0
+    beq done
+    addq.l #4, d0
+done:
+    addq.l #8, d0
+    addq.w #2, sp
 
     END    START        ; last line of source
 
