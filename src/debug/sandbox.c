@@ -987,7 +987,7 @@ uint32_t sandboxCommand(uint32_t command, void* data){
             IDs in sequential order, as always beginning with RAM heaps, followed by ROM heaps.
             */
 
-            //this looks like the code that ensures heap alignment sizes are correct, if I force everything to a multiple of 4 that may fix ARM behavior
+            //PrvChunkNew alignment code
             /*
             ROM:10020D04                 moveq   #1,d0           ; Move Quick
             ROM:10020D06                 and.l   size(a6),d0     ; Check if size is a multiple of 2
@@ -1002,6 +1002,23 @@ uint32_t sandboxCommand(uint32_t command, void* data){
             ROM:10020D16                 move.l  size(a6),d0     ; Set requested size
             ROM:10020D1A                 addq.l  #8,d0           ; Add 8 bytes(currently dont know what there for)
             ROM:10020D1C
+            */
+
+            //PrvPtrResize alignment code
+            /*
+            ROM:1002123C                 moveq   #1,d0           ; Move Quick
+            ROM:1002123E                 and.l   arg_4(a6),d0    ; AND Logical
+            ROM:10021242                 addq.w  #8,sp           ; Add Quick
+            ROM:10021244                 beq.s   loc_1002124E    ; Branch if Equal
+            ROM:10021246                 moveq   #9,d0           ; Move Quick
+            ROM:10021248                 add.l   arg_4(a6),d0    ; Add
+            ROM:1002124C                 bra.s   loc_10021254    ; Branch Always
+            ROM:1002124E ; ---------------------------------------------------------------------------
+            ROM:1002124E
+            ROM:1002124E loc_1002124E:                           ; CODE XREF: PrvPtrResize_100211F6+4E↑j
+            ROM:1002124E                 move.l  arg_4(a6),d0    ; Move Data from Source to Destination
+            ROM:10021252                 addq.l  #8,d0           ; Add Quick
+            ROM:10021254
             */
 
             //patch PrvChunkNew to 32 bit alignment, this alone does not fix 32 bit alignment issues

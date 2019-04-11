@@ -1,5 +1,5 @@
 *-----------------------------------------------------------
-* Title      :patchMemChunkNew
+* Title      :patchPrvChunkNew
 * Written by :meepingsnesroms
 *-----------------------------------------------------------
     ORG    $1000
