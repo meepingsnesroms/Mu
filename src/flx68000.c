@@ -42,7 +42,7 @@ void flx68000PcLongJump(uint32_t newPc){
    memBase = dataBufferHost - dataBufferGuest - windowSize * ((newPc - dataBufferGuest) / windowSize);
 }
 
-//everything must be 16 bit aligned(accept 8 bit accesses) due to m68k unaligned access rules,
+//everything must be 16 bit aligned(accept 8 bit accesses) due to 68k unaligned access rules,
 //32 bit reads are 2 16 bit reads because on some platforms 32 bit reads that arnt on 32 bit boundrys will crash the program
 #if defined(EMU_BIG_ENDIAN)
 uint16_t m68k_read_immediate_16(uint32_t address){
@@ -279,7 +279,7 @@ bool flx68000IsSupervisor(void){
 void flx68000BusError(uint32_t address, bool isWrite){
 #if !defined(EMU_NO_SAFETY)
    if(!(palmEmuFeatures.info & FEATURE_DURABLE)){
-      //never call outsize of a m68k opcode, behavior is undefined due to longjmp
+      //never call outsize of a 68k opcode, behavior is undefined due to longjmp
       m68ki_trigger_bus_error(address, isWrite ? MODE_WRITE : MODE_READ, FLAG_S | m68ki_get_address_space());
    }
 #endif

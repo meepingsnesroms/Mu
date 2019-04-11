@@ -733,4 +733,8 @@ void emulatorRunFrame(void){
       memcpy(palmFramebuffer, sed1376Framebuffer, 160 * 160 * sizeof(uint16_t));
       memcpy(palmFramebuffer + 160 * 160, silkscreen160x60, 160 * 60 * sizeof(uint16_t));
    }
+
+#if defined(EMU_SANDBOX)
+   sandboxOnFrameRun();
+#endif
 }

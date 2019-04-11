@@ -53,7 +53,7 @@ These registers will do nothing if their corresponding feature bit is not set on
 #define CMD_DEBUG_WATCH    0x0000FFF9/*EMU_VALUE = 0/clear watch reference or 1/make code watch reference or 2/make data watch reference, EMU_SRC = address of area(or watch area reference number), EMU_SIZE = size of area(unused if clear operation), EMU_VALUE is set to the watch areas reference number after a set operation*/
 #define CMD_SOUND          0x0000FFFA/*needed for OS 5 advanced sound*/
 #define CMD_DEBUG_EXEC_END 0x0000FFFB/*terminates execution, used when a function is called from outside the emulator*/
-#define CMD_ARM_SERVICE    0x0000FFFC/*EMU_VALUE is set to 1 if ARM wants service from m68k routines*/
+#define CMD_ARM_SERVICE    0x0000FFFC/*EMU_VALUE is set to 1 if ARM wants service from 68k routines*/
 #define CMD_ARM_SET_REG    0x0000FFFD/*EMU_DST = register number, EMU_VALUE = new value*/
 #define CMD_ARM_GET_REG    0x0000FFFE/*EMU_SRC = register number, EMU_VALUE is set to register value*/
 #define CMD_ARM_RUN        0x0000FFFF/*EMU_VALUE = cycles, EMU_VALUE is set to cycles not used on return, 0 if all are used*/

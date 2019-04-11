@@ -12,20 +12,35 @@
 /*cant use normal global variables in this file!!!*/
 /*functions in this file are called directly by the Palm OS trap dispatch, this means they can be called when the app isnt loaded and the globals are just a random data buffer*/
 
+#if 0
+static const SECTION(".text") ALIGN(2) uint32_t armExitFunc[] = {0x0000A0E3, 0xBBBBBBF7};/*ARM asm blob*/
+static const SECTION(".text") ALIGN(2) uint32_t armCall68kFunc[] = {0x0100A0E3, 0xBBBBBBF7, 0x0EF0A0E1};/*ARM asm blob*/
+static const SECTION(".text") ALIGN(2) uint8_t m68kCallWithBlobFunc[] = {
+   0x4E, 0x56, 0x00, 0x00, 0x48, 0xE7, 0x60, 0x70, 0x26, 0x6E, 0x00, 0x08,
+   0x22, 0x6E, 0x00, 0x0C, 0x22, 0x2E, 0x00, 0x10, 0x34, 0x2E, 0x00, 0x14,
+   0x24, 0x4F, 0x95, 0xC1, 0xBF, 0xCA, 0x67, 0x00, 0x00, 0x0A, 0x34, 0x91,
+   0x54, 0x89, 0x54, 0x8A, 0x60, 0xF2, 0x9F, 0xC1, 0x4E, 0x93, 0xDF, 0xC1,
+   0x4A, 0x42, 0x67, 0x00, 0x00, 0x04, 0x20, 0x08, 0x4C, 0xDF, 0x0E, 0x06,
+   0x4E, 0x5E, 0x4E, 0x75
+   
+};/*68k asm blob*/
+#endif
 
 UInt32 emuPceNativeCall(NativeFuncType* nativeFuncP, void* userDataP){
    /*these arnt set as "static" because the globals dont work here*/
+#if 1
    const ALIGN(2) uint32_t armExitFunc[] = {0x0000A0E3, 0xBBBBBBF7};/*ARM asm blob*/
    const ALIGN(2) uint32_t armCall68kFunc[] = {0x0100A0E3, 0xBBBBBBF7, 0x0EF0A0E1};/*ARM asm blob*/
    const ALIGN(2) uint8_t m68kCallWithBlobFunc[] = {
-      0x4e, 0x56, 0x00, 0x00, 0x48, 0xe7, 0x60, 0x70, 0x26, 0x6e, 0x00, 0x08,
-      0x22, 0x6e, 0x00, 0x0c, 0x22, 0x2e, 0x00, 0x10, 0x34, 0x2e, 0x00, 0x14,
-      0x24, 0x4f, 0x95, 0xc1, 0xbf, 0xca, 0x67, 0x00, 0x00, 0x0a, 0x34, 0x91,
-      0x54, 0x89, 0x54, 0x8a, 0x60, 0xf2, 0x9f, 0xc1, 0x4e, 0x93, 0xdf, 0xc1,
-      0x4a, 0x42, 0x67, 0x00, 0x00, 0x04, 0x20, 0x08, 0x4c, 0xdf, 0x0e, 0x06,
-      0x4e, 0x5e, 0x4e, 0x75
+      0x4E, 0x56, 0x00, 0x00, 0x48, 0xE7, 0x60, 0x70, 0x26, 0x6E, 0x00, 0x08,
+      0x22, 0x6E, 0x00, 0x0C, 0x22, 0x2E, 0x00, 0x10, 0x34, 0x2E, 0x00, 0x14,
+      0x24, 0x4F, 0x95, 0xC1, 0xBF, 0xCA, 0x67, 0x00, 0x00, 0x0A, 0x34, 0x91,
+      0x54, 0x89, 0x54, 0x8A, 0x60, 0xF2, 0x9F, 0xC1, 0x4E, 0x93, 0xDF, 0xC1,
+      0x4A, 0x42, 0x67, 0x00, 0x00, 0x04, 0x20, 0x08, 0x4C, 0xDF, 0x0E, 0x06,
+      0x4E, 0x5E, 0x4E, 0x75
       
-   };/*m68k asm blob*/
+   };/*68k asm blob*/
+#endif
    uint32_t oldArmRegisters[5];
    uint32_t returnValue;
    
@@ -40,11 +55,11 @@ UInt32 emuPceNativeCall(NativeFuncType* nativeFuncP, void* userDataP){
    /*when R0 = 1, R1 = function to execute, R2 = stack blob, R3 = stack blob size and want A0*/
    
    /*Fake ARM 32 bit alignment convention*/
-   /*0x00000000<->0x7FFFFFFF Normal memory access*/
-   /*0x80000000<->0xFFFFFFFF Mirrored range, realAddress = address - 0x80000000 + 0x00000002*/
+   /*0x0XXXXXXX<->0x1XXXXXXX Normal memory access*/
+   /*0x20000000<->0x3XXXXXXX Mirrored range, realAddress = address - 0x20000000 + 0x00000002*/
    
-   /*this will still fail if ARM allocates a 16 bit aligned buffer and passes it to the m68k,*/
-   /*but it allows 16 bit aligned data to be executed from the m68k stack and works as a*/
+   /*this will still fail if ARM allocates a 16 bit aligned buffer and passes it to the 68k,*/
+   /*but it allows 16 bit aligned data to be executed from the 68k stack and works as a*/
    /*temporary measure until I get MemChunkNew patched correctly*/
    
    debugLog("Called ARM function:0x%08lX\n", (uint32_t)nativeFuncP);
@@ -70,28 +85,12 @@ UInt32 emuPceNativeCall(NativeFuncType* nativeFuncP, void* userDataP){
          /*ARM tried to call a 68k function or has finished executing*/
          if(armv5GetRegister(0)){
             /*call function*/
-            uint32_t emulStateP = armv5GetRegister(0);
             uint32_t function = armv5GetRegister(1);
             uint32_t stackBlob = armv5GetRegister(2);
             uint32_t stackBlobSizeAndWantA0 = armv5GetRegister(3);
             uint32_t (*m68kCallWithBlobFuncPtr)(uint32_t functionAddress, uint32_t stackBlob, uint32_t stackBlobSize, uint16_t returnA0) = (uint32_t (*)(uint32_t, uint32_t, uint32_t, uint16_t))m68kCallWithBlobFunc;
             
-            /*debug checks, I think these where preventing the callback to 68k code MemPtrNew???*/
-            /*
-            if(true){
-               uint32_t index;
-               uint32_t end = stackBlobSizeAndWantA0 & ~kPceNativeWantA0;
-               
-               debugLog("ARM calling 68k function:0x%08lX, stackBlob:0x%08lX, stackBlobSize:0x%08lX, wantA0:%d\n", function, stackBlob, stackBlobSizeAndWantA0 & ~kPceNativeWantA0, !!(stackBlobSizeAndWantA0 & kPceNativeWantA0));
-               for(index = 0; index < end; index++)
-                  debugLog("Stack byte:0x%02X\n", ((uint8_t*)stackBlob)[index]);
-            }
-            */
-            /*debugLog("Called 68k function:0x%08lX\n", function);*/
-            debugLog("ARM calling 68k: emulStateP:0x%08lX, function:0x%08lX, stackBlob:0x%08lX, stackBlobSize:0x%08lX, wantA0:%d\n", emulStateP, function, stackBlob, stackBlobSizeAndWantA0 & ~kPceNativeWantA0, !!(stackBlobSizeAndWantA0 & kPceNativeWantA0));
-            /*
-             debugLog("ARM calling 68k function:0x%08lX, stackBlob:0x%08lX, stackBlobSize:0x%08lX, wantA0:%d\n", function, stackBlob, stackBlobSizeAndWantA0 & ~kPceNativeWantA0, !!(stackBlobSizeAndWantA0 & kPceNativeWantA0));
-            */
+            debugLog("ARM calling 68k: function:0x%08lX, stackBlob:0x%08lX, stackBlobSize:0x%08lX, wantA0:%d\n", function, stackBlob, stackBlobSizeAndWantA0 & ~kPceNativeWantA0, !!(stackBlobSizeAndWantA0 & kPceNativeWantA0));
             
             /*API call, convert to address first*/
             if(function <= kPceNativeTrapNoMask)

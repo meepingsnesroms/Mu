@@ -6,6 +6,7 @@
 
 void armv5SetStack(uint8_t* location, uint32_t size);
 uint32_t* armv5ValidatePointer(uint32_t* address);
+uint32_t* armv5InvalidatePointer(uint32_t* address);
 void armv5StackPush(uint32_t value);
 uint32_t armv5StackPop(void);
 void armv5SetRegister(uint8_t reg, uint32_t value);

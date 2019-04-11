@@ -3,7 +3,7 @@
 
 
 #if defined(EMU_DEBUG) && defined(EMU_SANDBOX)
-//this wrappers m68k code and allows calling it for tests, this should be useful for determining if hardware accesses are correct
+//this wrappers 68k code and allows calling it for tests, this should be useful for determining if hardware accesses are correct
 //Note: when running a test the emulator runs at native speed and no clocks are emulated
 #include <stdlib.h>
 #include <string.h>
@@ -24,6 +24,8 @@
 
 #define SANDBOX_MAX_UNLOGGED_JUMP_SIZE 0xFFFFFFFF
 #define SANDBOX_MAX_WATCH_REGIONS 1000
+
+#define SANDBOX_SECONDS_TO_FRAMES(x) ((x) * EMU_FPS)
 
 
 typedef struct{
@@ -51,7 +53,8 @@ static bool              sandboxActive;//used to "log out" of the emulator once 
 static bool              sandboxControlHandoff;//used for functions that depend on timing, hands full control to the m68k
 static uint8_t           sandboxCurrentCpuArch;
 static local_cpu_state_t sandboxOldFunctionCpuState;
-static mem_region_t      sandboxWatchRegions[SANDBOX_MAX_WATCH_REGIONS];//code locations in m68k address space to be sandboxed
+static uint64_t          sandboxFramesRan;
+static mem_region_t      sandboxWatchRegions[SANDBOX_MAX_WATCH_REGIONS];//code locations in 68k address space to be sandboxed
 static uint16_t          sandboxWatchRegionsActive;//number of used sandboxWatchRegions entrys
 
 
@@ -67,6 +70,17 @@ static uint32_t getCurrentCpuPc(void){
 static uint32_t getCurrentCpuPreviousPc(void){
    //returns the program counter of the current running opcode for the current CPU and architecture
    return sandboxCurrentCpuArch == SANDBOX_CPU_ARCH_M68K ? m68k_get_reg(NULL, M68K_REG_PPC) : armv5GetRegister(15) & 0xFFFFFFFE;
+}
+
+uint32_t getRandomRange(uint32_t start, uint32_t end){
+   static bool seeded = false;
+
+   if(!seeded){
+      srand(time(NULL));
+      seeded = true;
+   }
+
+   return (uint32_t)rand() % (end + 1 - start) + start;
 }
 
 static char* takeStackDump(uint32_t bytes){
@@ -165,6 +179,8 @@ bool validExecutionAddress(uint32_t address){
    if(chips[CHIP_A0_ROM].inBootMode || address >= chips[CHIP_A0_ROM].start && address < chips[CHIP_A0_ROM].start + chips[CHIP_A0_ROM].lineSize)
       return true;
    if(address >= chips[CHIP_DX_RAM].start && address < chips[CHIP_DX_RAM].start + chips[CHIP_DX_RAM].lineSize)
+      return true;
+   if(sandboxActive && address >= 0xFFFFFE00)//used to run custom code when in sandbox mode
       return true;
    return false;
 }
@@ -401,6 +417,72 @@ static bool installResourceToDevice(buffer_t resourceBuffer){
    return true;
 }
 
+static void checkMemoryAlignment(uint16_t heap){
+   uint32_t memPtrs[100];
+   uint8_t index;
+   uint16_t error;
+
+   memset(memPtrs, 0x00, sizeof(memPtrs));
+
+   //get randomly sized memory regions
+   for(index = 0; index < 100; index++){
+      memPtrs[index] = sandboxCallGuestFunction(false, 0x00000000, MemChunkNew, "p(wlw)", heap, getRandomRange(1, 100), 0x0200/*memNewChunkFlagNonMovable*/);
+      if(!memPtrs[index]){
+         debugLog("Memory test: Failed to allocate memory\n");
+         goto failed;
+      }
+   }
+
+   //check alignment
+   for(index = 0; index < 100; index++){
+      if(memPtrs[index] & 0x00000003){
+         debugLog("Memory test: Memory allocations are not 32 bit aligned:0x%08X\n", memPtrs[index]);
+         goto failed;
+      }
+   }
+
+   //resize memory
+   for(index = 0; index < 100; index++){
+      error = sandboxCallGuestFunction(false, 0x00000000, MemPtrResize, "w(pl)", memPtrs[index], getRandomRange(1, 100));
+      if(error != 0x0000/*errNone*/){
+         debugLog("Memory test: Failed to resize memory:0x%04X\n", error);
+         goto failed;
+      }
+   }
+
+   //check alignment again
+   for(index = 0; index < 100; index++){
+      if(memPtrs[index] & 0x00000003){
+         debugLog("Memory test: Memory misaligned by resize:0x%08X\n", memPtrs[index]);
+         goto failed;
+      }
+   }
+
+   //shuffle memory
+   error = sandboxCallGuestFunction(false, 0x00000000, MemHeapScramble, "w(w)", heap);
+   if(error != 0x0000/*errNone*/){
+      debugLog("Memory test: Unable to scramble heap:0x%04X\n", error);
+      goto failed;
+   }
+
+   //check alignment again
+   for(index = 0; index < 100; index++){
+      if(memPtrs[index] & 0x00000003){
+         debugLog("Memory test: Memory misaligned by defragment:0x%08X\n", memPtrs[index]);
+         goto failed;
+      }
+   }
+
+   debugLog("Memory test: Memory aligned correctly\n");
+
+   failed:
+
+   //free pointers
+   for(index = 0; index < 100; index++)
+      if(memPtrs[index])
+         sandboxCallGuestFunction(false, 0x00000000, MemChunkFree, "w(p)", memPtrs[index]);
+}
+
 
 static uint32_t sandboxGetStackFrameSize(const char* prototype){
    const char* params = prototype + 2;
@@ -607,27 +689,16 @@ void sandboxInit(void){
 void sandboxReset(void){
    sandboxActive = false;
    sandboxControlHandoff = false;
+   sandboxFramesRan = 0;
 
    memset(sandboxWatchRegions, 0x00, sizeof(sandboxWatchRegions));
    sandboxWatchRegionsActive = 0;
 
    //patch OS here if needed
-   //debug patches
-   //sandboxCommand(SANDBOX_PATCH_OS, NULL);
-
-   //add memory region monitors
-   /*
-   if(pc >= 0x100A07DC && pc <= 0x100ADB3C){
-      //the SD slot driver
-      return true;
-   }
-   */
+   sandboxCommand(SANDBOX_CMD_PATCH_OS, NULL);
 
    //log all register accesses
    //sandboxCommand(SANDBOX_CMD_REGISTER_WATCH_ENABLE, NULL);
-
-   //patch OS
-   sandboxCommand(SANDBOX_CMD_PATCH_OS, NULL);
 
    //monitor for strange jumps
    sandboxSetWatchRegion(0x00000000, 0xFFFFFFFE, SANDBOX_WATCH_CODE);
@@ -639,6 +710,7 @@ uint32_t sandboxStateSize(void){
    size += sizeof(uint8_t) * 3;//sandboxActive / sandboxControlHandoff / sandboxCurrentCpuArch
    size += sizeof(uint32_t) * 4;//sandboxOldFunctionCpuState.(sp/pc/a0/d0)
    size += sizeof(uint16_t);//sandboxOldFunctionCpuState.sr
+   size += sizeof(uint64_t);//sandboxFramesRan
    size += sizeof(uint32_t) * 2 * SANDBOX_MAX_WATCH_REGIONS;//sandboxWatchRegions.(address/size)
    size += sizeof(uint8_t) * SANDBOX_MAX_WATCH_REGIONS;//sandboxWatchRegions.type
    size += sizeof(uint16_t);//sandboxWatchRegionsActive
@@ -666,6 +738,8 @@ void sandboxSaveState(uint8_t* data){
    offset += sizeof(uint32_t);
    writeStateValue32(data + offset, sandboxOldFunctionCpuState.d0);
    offset += sizeof(uint32_t);
+   writeStateValue64(data + offset, sandboxFramesRan);
+   offset += sizeof(uint64_t);
    for(index = 0; index < SANDBOX_MAX_WATCH_REGIONS; index++){
       writeStateValue32(data + offset, sandboxWatchRegions[index].address);
       offset += sizeof(uint32_t);
@@ -698,6 +772,8 @@ void sandboxLoadState(uint8_t* data){
    offset += sizeof(uint32_t);
    sandboxOldFunctionCpuState.d0 = readStateValue32(data + offset);
    offset += sizeof(uint32_t);
+   sandboxFramesRan = readStateValue64(data + offset);
+   offset += sizeof(uint64_t);
    for(index = 0; index < SANDBOX_MAX_WATCH_REGIONS; index++){
       sandboxWatchRegions[index].address = readStateValue32(data + offset);
       offset += sizeof(uint32_t);
@@ -721,20 +797,6 @@ uint32_t sandboxCommand(uint32_t command, void* data){
 
    switch(command){
       case SANDBOX_CMD_PATCH_OS:{
-            //this will not be in the v1.0 release
-            //remove parts of the OS that cause lockups, yeah its bad
-
-            //remove ErrDisplayFileLineMsg from HwrIRQ2Handler, device locks on USB polling without this
-            //this is fixed, leaving it here for reference
-            //patchOsRom(0x83652, "4E714E71");//nop; nop
-
-            //make SysSetTrapAddress/SysGetTrapAddress support traps > ScrDefaultPaletteState 0xA459
-            //up to final OS 5.3 trap DmSyncDatabase 0xA476
-            //SysSetTrapAddress_1001AE36:
-            //SysGetTrapAddress_1001AE7C:
-            //patchOsRom(0x1AE42, "0C410477");//cmpi.w 0x477, d1
-            //patchOsRom(0x1AE8A, "0C42A477");//cmpi.w 0xA477, d2
-
             //double dynamic heap size, verified working
             //HwrCalcDynamicRAMSize_10005CC6:
             //HwrCalcDynamicRAMSize_10083B0A:
@@ -881,6 +943,12 @@ uint32_t sandboxCommand(uint32_t command, void* data){
          }
          break;
 
+      case SANDBOX_CMD_TEST_MEMORY_ALIGNMENT:{
+            checkMemoryAlignment(0);//RAM heap
+            checkMemoryAlignment(1);//storage heap
+         }
+         break;
+
       default:
          break;
    }
@@ -888,6 +956,15 @@ uint32_t sandboxCommand(uint32_t command, void* data){
    debugLog("Sandbox: Command %d finished\n", command);
 
    return result;
+}
+
+void sandboxOnFrameRun(void){
+   //run at the end of every frame
+   sandboxFramesRan++;
+
+   if(sandboxFramesRan == SANDBOX_SECONDS_TO_FRAMES(10)){
+      sandboxCommand(SANDBOX_CMD_TEST_MEMORY_ALIGNMENT, NULL);
+   }
 }
 
 void sandboxOnOpcodeRun(void){
@@ -1135,6 +1212,7 @@ uint32_t sandboxStateSize(void){return 0;}
 void sandboxSaveState(uint8_t* data){}
 void sandboxLoadState(uint8_t* data){}
 uint32_t sandboxCommand(uint32_t command, void* data){return 0;}
+void sandboxOnFrameRun(void){}
 void sandboxOnOpcodeRun(void){}
 void sandboxOnMemoryAccess(uint32_t address, uint8_t size, bool write, uint32_t value){}
 bool sandboxRunning(void){return false;}
