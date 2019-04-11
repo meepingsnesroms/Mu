@@ -1021,6 +1021,16 @@ uint32_t sandboxCommand(uint32_t command, void* data){
             ROM:10021254
             */
 
+            //PrvMoveChunk alignment code???(not sure yet)
+            /*
+            ROM:10021C82                 sub.l   d0,d7           ; Subtract
+            ROM:10021C84                 move.l  d7,d5           ; Move Data from Source to Destination
+            ROM:10021C86                 moveq   #1,d0           ; Set bitmask
+            ROM:10021C88                 and.l   d7,d0           ; Check if bit 0 of d7 is set
+            ROM:10021C8A                 beq.s   loc_10021C8E    ; If bit 0 of d7 is set add 1 to d5
+            ROM:10021C8C                 addq.l  #1,d5           ; 16 bit align ???
+            */
+
             //patch PrvChunkNew to 32 bit alignment, this alone does not fix 32 bit alignment issues
             patchOsRom(0x20D04, "202E000AC0BCFFFFFFFCB0AE000A6700000458805080544F");//adds an extra 4 bytes if & 0x00000003 is true
             //when moving memory around some 16 bit aligned pointers still show up
