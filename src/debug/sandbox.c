@@ -1026,7 +1026,7 @@ uint32_t sandboxCommand(uint32_t command, void* data){
             //when moving memory around some 16 bit aligned pointers still show up
 
             //patch PrvPtrResize to 32 bit alignment, this alone does not fix 32 bit alignment issues
-            //patchOsRom(0x2123C, "NEED REAL PATCH");//adds an extra 4 bytes if & 0x00000003 is true
+            patchOsRom(0x2123C, "202E000CC0BCFFFFFFFCB0AE000C6700000458805080504F");//adds an extra 4 bytes if & 0x00000003 is true
 
             //other functions that may need to be patched are:
             //PrvCompactHeap_10021A12
