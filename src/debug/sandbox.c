@@ -417,7 +417,7 @@ static bool installResourceToDevice(buffer_t resourceBuffer){
    return true;
 }
 
-static void checkMemoryAlignment(uint16_t heap){
+static void checkMemoryAlignmentPointer(uint16_t heap){
    uint32_t memPtrs[100];
    uint8_t index;
    uint16_t error;
@@ -441,22 +441,7 @@ static void checkMemoryAlignment(uint16_t heap){
       }
    }
 
-   //resize memory
-   for(index = 0; index < 100; index++){
-      error = sandboxCallGuestFunction(false, 0x00000000, MemPtrResize, "w(pl)", memPtrs[index], getRandomRange(1, 100));
-      if(error != 0x0000/*errNone*/){
-         debugLog("Memory test: Failed to resize memory:0x%04X\n", error);
-         goto failed;
-      }
-   }
-
-   //check alignment again
-   for(index = 0; index < 100; index++){
-      if(memPtrs[index] & 0x00000003){
-         debugLog("Memory test: Memory misaligned by resize:0x%08X\n", memPtrs[index]);
-         goto failed;
-      }
-   }
+   //non moveable memory wont resize
 
    //shuffle memory
    error = sandboxCallGuestFunction(false, 0x00000000, MemHeapScramble, "w(w)", heap);
@@ -481,6 +466,119 @@ static void checkMemoryAlignment(uint16_t heap){
    for(index = 0; index < 100; index++)
       if(memPtrs[index])
          sandboxCallGuestFunction(false, 0x00000000, MemChunkFree, "w(p)", memPtrs[index]);
+}
+
+static void checkMemoryAlignmentHandle(uint16_t heap){
+   uint32_t memHandles[100];
+   uint32_t memPtrs[100];
+   uint8_t index;
+   uint16_t error;
+
+   //a handle is just a pointer with bit 31 set, when the pointer is moved a look up table entry is set to the new address and used for future operations
+
+   memset(memHandles, 0x00, sizeof(memHandles));
+   memset(memPtrs, 0x00, sizeof(memPtrs));
+
+   //get randomly sized memory regions
+   for(index = 0; index < 100; index++){
+      memHandles[index] = sandboxCallGuestFunction(false, 0x00000000, MemChunkNew, "p(wlw)", heap, getRandomRange(1, 100), 0x0000);
+      if(!memHandles[index]){
+         debugLog("Memory test: Failed to allocate memory\n");
+         goto failed;
+      }
+      memHandles[index] |= 0x80000000;//tell the OS this is a handle, this is all MemHandleNew does is allocate memory normally and set that bit
+   }
+
+   //update pointer list
+   for(index = 0; index < 100; index++){
+      memPtrs[index] = sandboxCallGuestFunction(false, 0x00000000, MemHandleLock, "p(l)", memHandles[index]);
+      if(!memPtrs[index]){
+         debugLog("Memory test: Failed to lock handle\n");
+         goto failed;
+      }
+      error = sandboxCallGuestFunction(false, 0x00000000, MemHandleUnlock, "w(l)", memHandles[index]);
+      if(error != 0x0000/*errNone*/){
+         debugLog("Memory test: Failed to unlock handle\n");
+         goto failed;
+      }
+   }
+
+   //check alignment
+   for(index = 0; index < 100; index++){
+      if(memPtrs[index] & 0x00000003){
+         debugLog("Memory test: Memory allocations are not 32 bit aligned:0x%08X\n", memPtrs[index]);
+         goto failed;
+      }
+   }
+
+   //resize memory
+    for(index = 0; index < 100; index++){
+       error = sandboxCallGuestFunction(false, 0x00000000, MemHandleResize, "w(ll)", memHandles[index], getRandomRange(1, 100));
+       if(error != 0x0000/*errNone*/){
+          debugLog("Memory test: Failed to resize memory:0x%04X\n", error);
+          goto failed;
+       }
+    }
+
+    //update pointer list
+    for(index = 0; index < 100; index++){
+       memPtrs[index] = sandboxCallGuestFunction(false, 0x00000000, MemHandleLock, "p(l)", memHandles[index]);
+       if(!memPtrs[index]){
+          debugLog("Memory test: Failed to lock handle\n");
+          goto failed;
+       }
+       error = sandboxCallGuestFunction(false, 0x00000000, MemHandleUnlock, "w(l)", memHandles[index]);
+       if(error != 0x0000/*errNone*/){
+          debugLog("Memory test: Failed to unlock handle\n");
+          goto failed;
+       }
+    }
+
+    //check alignment again
+    for(index = 0; index < 100; index++){
+       if(memPtrs[index] & 0x00000003){
+          debugLog("Memory test: Memory misaligned by resize:0x%08X\n", memPtrs[index]);
+          goto failed;
+       }
+    }
+
+   //shuffle memory
+   error = sandboxCallGuestFunction(false, 0x00000000, MemHeapScramble, "w(w)", heap);
+   if(error != 0x0000/*errNone*/){
+      debugLog("Memory test: Unable to scramble heap:0x%04X\n", error);
+      goto failed;
+   }
+
+   //update pointer list
+   for(index = 0; index < 100; index++){
+      memPtrs[index] = sandboxCallGuestFunction(false, 0x00000000, MemHandleLock, "p(l)", memHandles[index]);
+      if(!memPtrs[index]){
+         debugLog("Memory test: Failed to lock handle\n");
+         goto failed;
+      }
+      error = sandboxCallGuestFunction(false, 0x00000000, MemHandleUnlock, "w(l)", memHandles[index]);
+      if(error != 0x0000/*errNone*/){
+         debugLog("Memory test: Failed to unlock handle\n");
+         goto failed;
+      }
+   }
+
+   //check alignment again
+   for(index = 0; index < 100; index++){
+      if(memPtrs[index] & 0x00000003){
+         debugLog("Memory test: Memory misaligned by defragment:0x%08X\n", memPtrs[index]);
+         goto failed;
+      }
+   }
+
+   debugLog("Memory test: Memory aligned correctly\n");
+
+   failed:
+
+   //free handles
+   for(index = 0; index < 100; index++)
+      if(memHandles[index])
+         sandboxCallGuestFunction(false, 0x00000000, MemHandleFree, "w(l)", memHandles[index]);
 }
 
 
@@ -876,16 +974,6 @@ uint32_t sandboxCommand(uint32_t command, void* data){
             ROM:10014914                 move.w  #$1000,(word_28E).w ; Move Data from Source to Destination
             */
 
-            //may be able to use these to set the border colors like in OS 5
-            /*
-            RAM:00001758                 dc.l UIColorInit_10074672
-            RAM:0000175C                 dc.l UIColorGetTableEntryIndex_100746F6
-            RAM:00001760                 dc.l UIColorGetTableEntryRGB_1007472A
-            RAM:00001760                                         ; DATA XREF: ROM:101D66A1↓o
-            RAM:00001764                 dc.l UIColorSetTableEntry_10074762
-            RAM:00001768 off_1768:       dc.l UIColorPushTable_100747B0
-            */
-
             //another road block surfaces
             /*
             When a Palm Powered handheld is presented with multiple dynamic heaps,
@@ -916,15 +1004,9 @@ uint32_t sandboxCommand(uint32_t command, void* data){
             ROM:10020D1C
             */
 
-            //align memory chunks to 4 instead of 2, 24 / 0x18 bytes
-            //patchOsRom(0x20D04, "202E000AC0BC0000000367000006528060F25080544F4E71");
-            patchOsRom(0x20D04, "202E000AC0BCFFFFFFFC50805080544F4E714E714E714E71");//adds an extra 4 bytes regardless
-            //patchOsRom(0x20D04, "202E000AC0BCFFFFFFFCB0AE000A6700000458805080544F");//adds an extra 4 bytes if & 0x00000003 is true
-            //this seems to be successfuly aligning things, its not :(
-
-            //align by 2, patch test
-            //patchOsRom(0x20D04, "202E000AC0BC0000000167000006528060F25080544F4E71");
-            //patchOsRom(0x20D04, "202E000AC0BCFFFFFFFE50805080544F4E714E714E714E71");
+            //patch PrvChunkNew to 32 bit alignment, this alone does not fix 32 bit alignment issues
+            patchOsRom(0x20D04, "202E000AC0BCFFFFFFFCB0AE000A6700000458805080544F");//adds an extra 4 bytes if & 0x00000003 is true
+            //when moving memory around some 16 bit aligned pointers still show up
          }
          break;
 
@@ -944,8 +1026,10 @@ uint32_t sandboxCommand(uint32_t command, void* data){
          break;
 
       case SANDBOX_CMD_TEST_MEMORY_ALIGNMENT:{
-            checkMemoryAlignment(0);//RAM heap
-            checkMemoryAlignment(1);//storage heap
+            checkMemoryAlignmentPointer(0);//RAM heap
+            checkMemoryAlignmentPointer(1);//storage heap
+            checkMemoryAlignmentHandle(0);//RAM heap
+            checkMemoryAlignmentHandle(1);//storage heap
          }
          break;
 
