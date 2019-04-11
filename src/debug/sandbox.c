@@ -444,7 +444,7 @@ static void checkMemoryAlignmentPointer(uint16_t heap){
    //non moveable memory wont resize
 
    //shuffle memory
-   error = sandboxCallGuestFunction(false, 0x00000000, MemHeapScramble, "w(w)", heap);
+   error = sandboxCallGuestFunction(false, 0x00000000, MemHeapCompact, "w(w)", heap);
    if(error != 0x0000/*errNone*/){
       debugLog("Memory test: Unable to scramble heap:0x%04X\n", error);
       goto failed;
@@ -543,7 +543,7 @@ static void checkMemoryAlignmentHandle(uint16_t heap){
     }
 
    //shuffle memory
-   error = sandboxCallGuestFunction(false, 0x00000000, MemHeapScramble, "w(w)", heap);
+   error = sandboxCallGuestFunction(false, 0x00000000, MemHeapCompact, "w(w)", heap);
    if(error != 0x0000/*errNone*/){
       debugLog("Memory test: Unable to scramble heap:0x%04X\n", error);
       goto failed;
@@ -1027,6 +1027,8 @@ uint32_t sandboxCommand(uint32_t command, void* data){
 
             //patch PrvPtrResize to 32 bit alignment, this alone does not fix 32 bit alignment issues
             patchOsRom(0x2123C, "202E000CC0BCFFFFFFFCB0AE000C6700000458805080504F");//adds an extra 4 bytes if & 0x00000003 is true
+
+            //may need to patch 0x7FFFFFFE's to 0x7FFFFFFC's
 
             //other functions that may need to be patched are:
             //PrvCompactHeap_10021A12
