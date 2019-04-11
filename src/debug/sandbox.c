@@ -1027,6 +1027,10 @@ uint32_t sandboxCommand(uint32_t command, void* data){
 
             //patch PrvPtrResize to 32 bit alignment, this alone does not fix 32 bit alignment issues
             //patchOsRom(0x2123C, "NEED REAL PATCH");//adds an extra 4 bytes if & 0x00000003 is true
+
+            //other functions that may need to be patched are:
+            //PrvCompactHeap_10021A12
+            //PrvMoveChunk_10021C3E
          }
          break;
 
