@@ -5,6 +5,7 @@
     ORG    $1000
 START:                  ; first instruction of program
 
+    ; Patch to address 0x20D04 of palmos41-en-m515.rom
     move.l $A(a6), d0
     and.l #$FFFFFFFC, d0
     cmp.l $A(a6), d0
