@@ -424,7 +424,7 @@ static void printChunkHeader(uint32_t pointer){
    uint8_t extraBytes = headerLong1 >> 24 & 0x0F;
    uint32_t userRequestedSize = totalSize - 8 - extraBytes;
 
-   debugLog("Chunk header: address:0x%08X, totalSize:0x%08X, userSize:0x%08X, extraBytes:0x%02X\n", address, totalSize, userRequestedSize, extraBytes);
+   debugLog("Chunk header: address:0x%08X, totalSize:%d(0x%08X), userSize:%d(0x%08X), extraBytes:%d(0x%02X)\n", address, totalSize, totalSize, userRequestedSize, userRequestedSize, extraBytes, extraBytes);
 }
 
 static void checkMemoryAlignmentPointer(uint16_t heap){
@@ -1058,6 +1058,9 @@ uint32_t sandboxCommand(uint32_t command, void* data){
             ROM:10021006                 andi.b  #$F0,(a2)       ; AND Immediate
             ROM:1002100A                 or.b    d0,(a2)         ; Inclusive-OR Logical
             */
+
+            //current suspect functions are PrvCreateFreeChunk and PrvUseFreeChunk
+            //also merging chunks may cause some kind of issue
 
             //PrvPtrResize is likely moving the chunk in front forwards if its small enough and leaving the data in place to save the opcodes needed to copy the data elsewhere
             //if this is true then a resize of existing size + 2 will push the next chunk forward by 2 misaligning it

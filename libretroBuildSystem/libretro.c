@@ -120,6 +120,16 @@ static void check_variables(bool booting){
       if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
          if (!strcmp(var.value, "enabled"))
             emuFeatures |= FEATURE_EXT_KEYS;
+      
+      var.key = "palm_emu_feature_durable";
+      if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+         if (!strcmp(var.value, "enabled"))
+            emuFeatures |= FEATURE_DURABLE;
+      
+      var.key = "palm_emu_feature_snd_strms";
+      if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+         if (!strcmp(var.value, "enabled"))
+            emuFeatures |= FEATURE_SND_STRMS;
    }
 
    var.key = "palm_emu_use_joystick_as_mouse";
@@ -186,6 +196,8 @@ void retro_set_environment(retro_environment_t cb){
       { "palm_emu_feature_hle_apis", "HLE API Implementations; disabled|enabled" },
       { "palm_emu_feature_emu_honest", "Is Emulator(for test programs); disabled|enabled" },
       { "palm_emu_feature_ext_keys", "Left, Right, Center Keys; disabled|enabled" },
+      { "palm_emu_feature_durable", "Ignore Invalid Behavior; disabled|enabled" },
+      { "palm_emu_feature_snd_strms", "Palm OS 5 PWM Streams; disabled|enabled" },
       { "palm_emu_use_joystick_as_mouse", "Use Left Joystick As Mouse; disabled|enabled" },
       { 0 }
    };
