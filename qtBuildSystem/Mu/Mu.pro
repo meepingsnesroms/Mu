@@ -65,7 +65,7 @@ CONFIG(debug, debug|release){
     # DEFINES += EMU_SANDBOX_LOG_MEMORY_ACCESSES # checks all reads and writes to memory and logs certain events
     DEFINES += EMU_SANDBOX_OPCODE_LEVEL_DEBUG # for breakpoints
     DEFINES += EMU_SANDBOX_LOG_JUMPS # log large jumps
-    # DEFINES += EMU_SANDBOX_LOG_APIS # for printing sysTrap* calls, EMU_SANDBOX_OPCODE_LEVEL_DEBUG must be on too
+    DEFINES += EMU_SANDBOX_LOG_APIS # for printing sysTrap* calls, EMU_SANDBOX_OPCODE_LEVEL_DEBUG must be on too
     macx|linux-g++{
         # also check for any buffer overflows and memory leaks
         # -fsanitize=undefined,leak

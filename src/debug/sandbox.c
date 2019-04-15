@@ -199,7 +199,7 @@ void log68kJumps(void){
 
 static void logApiCalls(void){
    uint32_t programCounter = m68k_get_reg(NULL, M68K_REG_PPC);
-   uint16_t instruction = m68k_get_reg(NULL, M68K_REG_IR);
+   uint16_t instruction = m68k_read_memory_16(programCounter);
 
    if(instruction == 0x4E4F/*Trap F/API call opcode*/){
       uint16_t trap = m68k_read_memory_16(programCounter + 2);
@@ -814,7 +814,7 @@ void sandboxReset(void){
    //sandboxCommand(SANDBOX_CMD_REGISTER_WATCH_ENABLE, NULL);
 
    //monitor for strange jumps
-   sandboxSetWatchRegion(0x00000000, 0xFFFFFFFE, SANDBOX_WATCH_CODE);
+   //sandboxSetWatchRegion(0x00000000, 0xFFFFFFFE, SANDBOX_WATCH_CODE);
 }
 
 uint32_t sandboxStateSize(void){
@@ -1046,7 +1046,7 @@ uint32_t sandboxCommand(uint32_t command, void* data){
             ROM:10021C8C                 addq.l  #1,d5           ; 16 bit align ???
             */
 
-            //size extra bits are not being set when chuncks are allocated
+            //size extra bits are not being set when chunks are allocated
 
             //PrvChunkNew derives size extra from total size - requested size, so its already safe, PrvPtrResize does the same
             /*
@@ -1058,6 +1058,10 @@ uint32_t sandboxCommand(uint32_t command, void* data){
             ROM:10021006                 andi.b  #$F0,(a2)       ; AND Immediate
             ROM:1002100A                 or.b    d0,(a2)         ; Inclusive-OR Logical
             */
+
+            //PrvPtrResize is likely moving the chunk in front forwards if its small enough and leaving the data in place to save the opcodes needed to copy the data elsewhere
+            //if this is true then a resize of existing size + 2 will push the next chunk forward by 2 misaligning it
+            //could also be moving the header backwards by 2 if its willing to shift all the data manualy or corrupt the data
 
             //patch PrvChunkNew to 32 bit alignment, this alone does not fix 32 bit alignment issues
             patchOsRom(0x20D04, "202E000AC0BCFFFFFFFCB0AE000A6700000458805080544F");//adds an extra 4 bytes if & 0x00000003 is true
