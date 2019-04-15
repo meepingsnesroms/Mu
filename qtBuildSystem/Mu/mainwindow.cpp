@@ -107,11 +107,12 @@ MainWindow::MainWindow(QWidget* parent) :
    ui->power->installEventFilter(this);
 
    ui->ctrlBtn->installEventFilter(this);
+   ui->reset->installEventFilter(this);
+   ui->stateManager->installEventFilter(this);
+   ui->screenshot->installEventFilter(this);
+   ui->settings->installEventFilter(this);
    ui->install->installEventFilter(this);
    ui->debugger->installEventFilter(this);
-   ui->screenshot->installEventFilter(this);
-   ui->stateManager->installEventFilter(this);
-   ui->reset->installEventFilter(this);
 
    //hide onscreen keys if needed
    ui->up->setHidden(hideOnscreenKeys);
@@ -182,6 +183,7 @@ uint32_t MainWindow::getEmuFeatureList(){
    features |= settings->value("featureHleApis", false).toBool() ? FEATURE_HLE_APIS : 0;
    features |= settings->value("featureEmuHonest", false).toBool() ? FEATURE_EMU_HONEST : 0;
    features |= settings->value("featureExtraKeys", false).toBool() ? FEATURE_EXT_KEYS : 0;
+   features |= settings->value("featureDurable", false).toBool() ? FEATURE_DURABLE : 0;
    features |= settings->value("featureSoundStreams", false).toBool() ? FEATURE_SND_STRMS : 0;
 
    //lazy debug overrides

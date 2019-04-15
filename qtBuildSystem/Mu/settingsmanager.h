@@ -52,6 +52,7 @@ private slots:
    void on_featureEmuHonest_toggled(bool checked);
    void on_featureExtraKeys_toggled(bool checked);
    void on_featureSoundStreams_toggled(bool checked);
+   void on_featureDurable_toggled(bool checked);
 
 private:
    Ui::SettingsManager* ui;

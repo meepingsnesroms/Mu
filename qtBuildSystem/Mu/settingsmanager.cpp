@@ -31,6 +31,7 @@ SettingsManager::SettingsManager(QWidget* parent) :
    ui->featureHleApis->setChecked(settings->value("featureHleApis", false).toBool());
    ui->featureEmuHonest->setChecked(settings->value("featureEmuHonest", false).toBool());
    ui->featureExtraKeys->setChecked(settings->value("featureExtraKeys", false).toBool());
+   ui->featureDurable->setChecked(settings->value("featureDurable", false).toBool());
    ui->featureSoundStreams->setChecked(settings->value("featureSoundStreams", false).toBool());
 
    setKeySelectorState(-1);
@@ -173,4 +174,8 @@ void SettingsManager::on_featureExtraKeys_toggled(bool checked){
 
 void SettingsManager::on_featureSoundStreams_toggled(bool checked){
    settings->setValue("featureSoundStreams", checked);
+}
+
+void SettingsManager::on_featureDurable_toggled(bool checked){
+   settings->setValue("featureDurable", checked);
 }

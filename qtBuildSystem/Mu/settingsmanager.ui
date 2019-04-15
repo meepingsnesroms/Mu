@@ -30,8 +30,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>629</width>
-        <height>433</height>
+        <width>630</width>
+        <height>417</height>
        </rect>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -239,24 +239,10 @@
        <item>
         <widget class="QWidget" name="gridWidget_2" native="true">
          <layout class="QGridLayout" name="gridLayout_2">
-          <item row="2" column="0">
-           <widget class="QCheckBox" name="featureEmuHonest">
+          <item row="1" column="1">
+           <widget class="QCheckBox" name="featureSyncedRtc">
             <property name="text">
-             <string>Tell Programs Their Emulated</string>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="2">
-           <widget class="QCheckBox" name="featureHleApis">
-            <property name="text">
-             <string>HLE APIs(Speed Hack)</string>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="0">
-           <widget class="QCheckBox" name="featureCustomFb">
-            <property name="text">
-             <string>Resizeable Display(HiRes Mode)</string>
+             <string>Sync Real Time Clock</string>
             </property>
            </widget>
           </item>
@@ -264,6 +250,13 @@
            <widget class="QCheckBox" name="featureHybridCpu">
             <property name="text">
              <string>ARM Instruction Set(OS 5)</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0">
+           <widget class="QCheckBox" name="featureEmuHonest">
+            <property name="text">
+             <string>Tell Programs Their Emulated</string>
             </property>
            </widget>
           </item>
@@ -281,10 +274,17 @@
             </property>
            </widget>
           </item>
-          <item row="1" column="1">
-           <widget class="QCheckBox" name="featureSyncedRtc">
+          <item row="2" column="2">
+           <widget class="QCheckBox" name="featureSoundStreams">
             <property name="text">
-             <string>Sync Real Time Clock</string>
+             <string>PWM Audio Streams(OS 5)</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="2">
+           <widget class="QCheckBox" name="featureHleApis">
+            <property name="text">
+             <string>HLE APIs(Speed Hack)</string>
             </property>
            </widget>
           </item>
@@ -295,10 +295,17 @@
             </property>
            </widget>
           </item>
-          <item row="2" column="2">
-           <widget class="QCheckBox" name="featureSoundStreams">
+          <item row="1" column="0">
+           <widget class="QCheckBox" name="featureCustomFb">
             <property name="text">
-             <string>PWM Audio Streams(OS 5)</string>
+             <string>Resizeable Display(HiRes Mode)</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="0">
+           <widget class="QCheckBox" name="featureDurable">
+            <property name="text">
+             <string>Ignore Invalid Behavior</string>
             </property>
            </widget>
           </item>
