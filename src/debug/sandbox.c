@@ -417,6 +417,16 @@ static bool installResourceToDevice(buffer_t resourceBuffer){
    return true;
 }
 
+static void printChunkHeader(uint32_t pointer){
+   uint32_t address = pointer - 8;
+   uint32_t headerLong1 = m68k_read_memory_32(address);
+   uint32_t totalSize = headerLong1 & 0x00FFFFFF;
+   uint8_t extraBytes = headerLong1 >> 24 & 0x0F;
+   uint32_t userRequestedSize = totalSize - 8 - extraBytes;
+
+   debugLog("Chunk header: address:0x%08X, totalSize:0x%08X, userSize:0x%08X, extraBytes:0x%02X\n", address, totalSize, userRequestedSize, extraBytes);
+}
+
 static void checkMemoryAlignmentPointer(uint16_t heap){
    uint32_t memPtrs[100];
    uint8_t index;
@@ -437,6 +447,7 @@ static void checkMemoryAlignmentPointer(uint16_t heap){
    for(index = 0; index < 100; index++){
       if(memPtrs[index] & 0x00000003){
          debugLog("Memory test: Memory allocations are not 32 bit aligned:0x%08X\n", memPtrs[index]);
+         printChunkHeader(memPtrs[index]);
          goto failed;
       }
    }
@@ -454,6 +465,7 @@ static void checkMemoryAlignmentPointer(uint16_t heap){
    for(index = 0; index < 100; index++){
       if(memPtrs[index] & 0x00000003){
          debugLog("Memory test: Memory misaligned by defragment:0x%08X\n", memPtrs[index]);
+         printChunkHeader(memPtrs[index]);
          goto failed;
       }
    }
@@ -507,6 +519,7 @@ static void checkMemoryAlignmentHandle(uint16_t heap){
    for(index = 0; index < 100; index++){
       if(memPtrs[index] & 0x00000003){
          debugLog("Memory test: Memory allocations are not 32 bit aligned:0x%08X\n", memPtrs[index]);
+         printChunkHeader(memPtrs[index]);
          goto failed;
       }
    }
@@ -538,6 +551,7 @@ static void checkMemoryAlignmentHandle(uint16_t heap){
     for(index = 0; index < 100; index++){
        if(memPtrs[index] & 0x00000003){
           debugLog("Memory test: Memory misaligned by resize:0x%08X\n", memPtrs[index]);
+          printChunkHeader(memPtrs[index]);
           goto failed;
        }
     }
@@ -567,6 +581,7 @@ static void checkMemoryAlignmentHandle(uint16_t heap){
    for(index = 0; index < 100; index++){
       if(memPtrs[index] & 0x00000003){
          debugLog("Memory test: Memory misaligned by defragment:0x%08X\n", memPtrs[index]);
+         printChunkHeader(memPtrs[index]);
          goto failed;
       }
    }
@@ -1029,6 +1044,19 @@ uint32_t sandboxCommand(uint32_t command, void* data){
             ROM:10021C88                 and.l   d7,d0           ; Check if bit 0 of d7 is set
             ROM:10021C8A                 beq.s   loc_10021C8E    ; If bit 0 of d7 is set add 1 to d5
             ROM:10021C8C                 addq.l  #1,d5           ; 16 bit align ???
+            */
+
+            //size extra bits are not being set when chuncks are allocated
+
+            //PrvChunkNew derives size extra from total size - requested size, so its already safe, PrvPtrResize does the same
+            /*
+            ROM:10020FFA setSizeExtra:                           ; CODE XREF: PrvChunkNew_10020CBC+312↑j
+            ROM:10020FFA                 move.l  d3,d0           ; Move Data from Source to Destination
+            ROM:10020FFC                 sub.l   size(a6),d0     ; Subtract
+            ROM:10021000                 subq.l  #8,d0           ; Subtract Quick
+            ROM:10021002                 andi.b  #$F,d0          ; AND Immediate
+            ROM:10021006                 andi.b  #$F0,(a2)       ; AND Immediate
+            ROM:1002100A                 or.b    d0,(a2)         ; Inclusive-OR Logical
             */
 
             //patch PrvChunkNew to 32 bit alignment, this alone does not fix 32 bit alignment issues
