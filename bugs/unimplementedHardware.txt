@@ -53,6 +53,9 @@ ADS7846 channels can't be read in single reference mode in hwTestSuite
 
 MakePalmBitmap:
 
+Other:
+Support for Silkyboard 2 silkscreen:https://archive.org/details/tucows_228076_SILKYBOARD_II
+
 
 Fixed:
 (Feature)need to add FEATURE_DURABLE which will ignore CPU errors, increasing stability at the cost of bugginess
