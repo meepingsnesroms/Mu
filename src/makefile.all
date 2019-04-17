@@ -16,7 +16,4 @@ EMU_SOURCES_C := $(EMU_PATH)/emulator.c \
 	$(EMU_PATH)/m68k/m68kopdm.c \
 	$(EMU_PATH)/m68k/m68kopac.c \
 	$(EMU_PATH)/m68k/m68kdasm.c \
-	$(EMU_PATH)/m68k/m68kcpu.c \
-	$(EMU_PATH)/armv5.c \
-	$(EMU_PATH)/armv5/CPU.c \
-	$(EMU_PATH)/armv5/icache.c
+	$(EMU_PATH)/m68k/m68kcpu.c

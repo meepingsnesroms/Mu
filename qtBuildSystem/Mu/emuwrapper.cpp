@@ -342,18 +342,6 @@ void EmuWrapper::setKeyValue(uint8_t key, bool pressed){
          emuInput.buttonDown = pressed;
          break;
 
-      case BUTTON_LEFT:
-         emuInput.buttonLeft = pressed;
-         break;
-
-      case BUTTON_RIGHT:
-         emuInput.buttonRight = pressed;
-         break;
-
-      case BUTTON_CENTER:
-         emuInput.buttonCenter = pressed;
-         break;
-
       case BUTTON_CALENDAR:
          emuInput.buttonCalendar = pressed;
          break;

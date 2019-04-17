@@ -32,9 +32,6 @@ public:
    enum{
       BUTTON_UP = 0,
       BUTTON_DOWN,
-      BUTTON_LEFT,
-      BUTTON_RIGHT,
-      BUTTON_CENTER,
       BUTTON_CALENDAR,
       BUTTON_ADDRESS,
       BUTTON_TODO,

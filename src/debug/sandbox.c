@@ -17,7 +17,6 @@
 #include "../hardwareRegisters.h"
 #include "../portability.h"
 #include "../specs/emuFeatureRegisterSpec.h"
-#include "../armv5.h"
 #include "sandbox.h"
 #include "trapNames.h"
 
@@ -61,16 +60,6 @@ static uint16_t          sandboxWatchRegionsActive;//number of used sandboxWatch
 static uint32_t sandboxCallGuestFunction(bool fallthrough, uint32_t address, uint16_t trap, const char* prototype, ...);
 
 #include "sandboxTrapNumToName.c.h"
-
-static uint32_t getCurrentCpuPc(void){
-   //returns the current program counter for the current CPU and architecture
-   return sandboxCurrentCpuArch == SANDBOX_CPU_ARCH_M68K ? m68k_get_reg(NULL, M68K_REG_PC) : armv5GetRegister(15) & 0xFFFFFFFE;
-}
-
-static uint32_t getCurrentCpuPreviousPc(void){
-   //returns the program counter of the current running opcode for the current CPU and architecture
-   return sandboxCurrentCpuArch == SANDBOX_CPU_ARCH_M68K ? m68k_get_reg(NULL, M68K_REG_PPC) : armv5GetRegister(15) & 0xFFFFFFFE;
-}
 
 uint32_t getRandomRange(uint32_t start, uint32_t end){
    static bool seeded = false;
@@ -333,14 +322,6 @@ static char* getFunctionName68k(uint32_t address){
    }
 
    return data;
-}
-
-static char* getFunctionNameArmv5(uint32_t address){
-   return NULL;
-}
-
-static char* getFunctionNameThumb(uint32_t address){
-   return NULL;
 }
 
 static uint32_t makePalmString(const char* str){
@@ -1209,8 +1190,8 @@ void sandboxOnMemoryAccess(uint32_t address, uint8_t size, bool write, uint32_t 
          }
 
          if(sandboxedMemory || sandboxRunning()){
-            uint32_t pc = getCurrentCpuPreviousPc();
-            char* function = sandboxCurrentCpuArch == SANDBOX_CPU_ARCH_M68K ? getFunctionName68k(pc) : sandboxCurrentCpuArch == SANDBOX_CPU_ARCH_ARMV5 ? getFunctionNameArmv5(pc) : getFunctionNameThumb(pc);
+            uint32_t pc =  m68k_get_reg(NULL, M68K_REG_PPC);
+            char* function = getFunctionName68k(pc);
             bool functionValid = !!function;
 
             if(!functionValid)
@@ -1285,7 +1266,7 @@ void sandboxOnMemoryAccess(uint32_t address, uint8_t size, bool write, uint32_t 
 }
 
 bool sandboxRunning(void){
-   uint32_t pc = getCurrentCpuPc();
+   uint32_t pc =  m68k_get_reg(NULL, M68K_REG_PC);
    uint16_t memRegion;
 
    //this is used to capture full logs when running from specific locations

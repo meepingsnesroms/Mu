@@ -106,9 +106,6 @@ SOURCES += \
     ../../src/m68k/m68kopdm.c \
     ../../src/m68k/m68kopnz.c \
     ../../src/m68k/m68kops.c \
-    ../../src/armv5/CPU.c \
-    ../../src/armv5/icache.c \
-    ../../src/armv5.c \
     ../../src/expansionHardware.c \
     settingsmanager.cpp
 
@@ -145,11 +142,6 @@ HEADERS += \
     ../../src/specs/pdiUsbD12CommandSpec.h \
     ../../src/specs/emuFeatureRegisterSpec.h \
     ../../src/specs/sdCardCommandSpec.h \
-    ../../src/armv5/CPU.h \
-    ../../src/armv5/math64.h \
-    ../../src/armv5/types.h \
-    ../../src/armv5/icache.h \
-    ../../src/armv5.h \
     ../../src/expansionHardware.h \
     ../../src/sdCardAccessors.c.h \
     ../../src/sdCardCrcTables.c.h \

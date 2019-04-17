@@ -64,10 +64,6 @@ private slots:
    void on_up_released();
    void on_down_pressed();
    void on_down_released();
-   void on_left_pressed();
-   void on_left_released();
-   void on_right_pressed();
-   void on_right_released();
 
    //frontend buttons
    void on_ctrlBtn_clicked();

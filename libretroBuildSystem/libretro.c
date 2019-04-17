@@ -81,25 +81,10 @@ static void check_variables(bool booting){
    if(booting){
       emuFeatures = FEATURE_ACCURATE;
       
-      var.key = "palm_emu_feature_ram_huge";
-      if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
-         if (!strcmp(var.value, "enabled"))
-            emuFeatures |= FEATURE_RAM_HUGE;
-      
       var.key = "palm_emu_feature_fast_cpu";
       if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
          if (!strcmp(var.value, "enabled"))
             emuFeatures |= FEATURE_FAST_CPU;
-      
-      var.key = "palm_emu_feature_hybrid_cpu";
-      if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
-         if (!strcmp(var.value, "enabled"))
-            emuFeatures |= FEATURE_HYBRID_CPU;
-      
-      var.key = "palm_emu_feature_custom_fb";
-      if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
-         if (!strcmp(var.value, "enabled"))
-            emuFeatures |= FEATURE_CUSTOM_FB;
       
       var.key = "palm_emu_feature_synced_rtc";
       if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
@@ -111,25 +96,10 @@ static void check_variables(bool booting){
          if (!strcmp(var.value, "enabled"))
             emuFeatures |= FEATURE_HLE_APIS;
       
-      var.key = "palm_emu_feature_emu_honest";
-      if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
-         if (!strcmp(var.value, "enabled"))
-            emuFeatures |= FEATURE_EMU_HONEST;
-      
-      var.key = "palm_emu_feature_ext_keys";
-      if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
-         if (!strcmp(var.value, "enabled"))
-            emuFeatures |= FEATURE_EXT_KEYS;
-      
       var.key = "palm_emu_feature_durable";
       if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
          if (!strcmp(var.value, "enabled"))
             emuFeatures |= FEATURE_DURABLE;
-      
-      var.key = "palm_emu_feature_snd_strms";
-      if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
-         if (!strcmp(var.value, "enabled"))
-            emuFeatures |= FEATURE_SND_STRMS;
    }
 
    var.key = "palm_emu_use_joystick_as_mouse";
@@ -178,8 +148,8 @@ void retro_get_system_av_info(struct retro_system_av_info *info){
 
    info->geometry.base_width   = 160;
    info->geometry.base_height  = 220;
-   info->geometry.max_width    = 480;
-   info->geometry.max_height   = 480;
+   info->geometry.max_width    = 160;
+   info->geometry.max_height   = 220;
    info->geometry.aspect_ratio = 160.0 / 220.0;
 }
 
@@ -188,16 +158,10 @@ void retro_set_environment(retro_environment_t cb){
    struct retro_vfs_interface_info vfs_getter = { 1, NULL };
    struct retro_led_interface led_getter;
    struct retro_variable vars[] = {
-      { "palm_emu_feature_ram_huge", "128mb RAM; disabled|enabled" },
       { "palm_emu_feature_fast_cpu", "Custom CPU Speeds; disabled|enabled" },
-      { "palm_emu_feature_hybrid_cpu", "ARM Instruction Set; disabled|enabled" },
-      { "palm_emu_feature_custom_fb", "Custom Resolution; disabled|enabled" },
       { "palm_emu_feature_synced_rtc", "Force Match System Clock; disabled|enabled" },
       { "palm_emu_feature_hle_apis", "HLE API Implementations; disabled|enabled" },
-      { "palm_emu_feature_emu_honest", "Is Emulator(for test programs); disabled|enabled" },
-      { "palm_emu_feature_ext_keys", "Left, Right, Center Keys; disabled|enabled" },
       { "palm_emu_feature_durable", "Ignore Invalid Behavior; disabled|enabled" },
-      { "palm_emu_feature_snd_strms", "Palm OS 5 PWM Streams; disabled|enabled" },
       { "palm_emu_use_joystick_as_mouse", "Use Left Joystick As Mouse; disabled|enabled" },
       { 0 }
    };
@@ -205,11 +169,8 @@ void retro_set_environment(retro_environment_t cb){
       { 0, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_LEFT, RETRO_DEVICE_ID_ANALOG_X, "Touchscreen Mouse X" },
       { 0, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_LEFT, RETRO_DEVICE_ID_ANALOG_Y, "Touchscreen Mouse Y" },
       { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R2,                             "Touchscreen Mouse Click" },
-      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT,                           "Dpad Left" },
       { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP,                             "Dpad Up" },
       { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN,                           "Dpad Down" },
-      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_RIGHT,                          "Dpad Right" },
-      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R,                              "Dpad Middle" },
       { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_START,                          "Power" },
       { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_A,                              "Calender" },
       { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_B,                              "Address Book" },
@@ -298,10 +259,7 @@ void retro_run(void){
 
    //dpad
    palmInput.buttonUp = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP);
-   palmInput.buttonRight = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_RIGHT);
    palmInput.buttonDown = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN);
-   palmInput.buttonLeft = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT);
-   palmInput.buttonCenter = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R);
    
    //app buttons
    palmInput.buttonCalendar = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_A);
