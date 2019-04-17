@@ -17,37 +17,11 @@ It is the best Palm brand OS 4 device that has no special hardware builtin(cellp
 
 The Palm keyboard attachment will likely be emulated later on so the PC keyboard can be used on text fields.
 
-## OS improvements
+## What about OS 5
 
-If there is something the OS does not support(like an OS 5 API) I may add it manually, this will be in the form of a custom firmware as a ROM image or a .bps patch, not a patch to the emulator with only 1 exception "PceNativeCall" which would require an ARM interpreter, it would also be an option to not apply this patch leaving you with an accurately emulated stock Palm m515.
-
-These patches will not be worked on until the emulator is actually running.
-
-## But you shouldnt waste your time on OS 4, OS 5 can do more.
-
-I have made a video of OS 5 doing that "more", it is extremely incompatible with OS 4 games which most games are, very few games used the ARM CPU and those that did are available on other platforms, some used the 320x320 display mode.
-
-On Clie PEG-SL10:  
-ArgonV:      Normal  
-Galax:        Normal  
-Zap!20XX:  Normal  
-Invaders:    Normal  
-Platypus:    No ARM CPU, Cant Run
-
-On Palm T|X:  
-ArgonV:      Runs At Warpspeed  
-Galax:         Audio Cuts Out  
-Zap!20XX:  Audio Cuts Out  
-Invaders:    Reboots System  
-Platypus:    Normal, Used To Prove Speaker Isnt Defective  
-Bonus:        Has Adware(Addit)
-
-[Palm T|X vs OS 4 Games](https://youtu.be/ithVLI_M6i0)
-
-The lack of ARM CPU will be fixed in my emulator see "OS improvements".
+I am planning on adding Tungsten C support eventually.
 
 ## Credits
-uARM (ARMv5 Core)  
 Musashi v3.4 (last version that builds outside of MAME)(68k Core)  
 blip_buf 1.1.0 (Audio Resampler)  
 http://www.iconarchive.com/show/crystal-clear-icons-by-everaldo/App-palm-icon.html (Desktop Icon)  
