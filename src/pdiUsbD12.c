@@ -70,10 +70,10 @@ void pdiUsbD12Reset(void){
 uint32_t pdiUsbD12StateSize(void){
    uint32_t size = 0;
 
-   size += sizeof(uint8_t);
-   size += sizeof(uint64_t);
-   size += PDIUSBD12_TRANSFER_BUFFER_SIZE * PDIUSBD12_FIFO_TOTAL_FIFOS;
-   size += sizeof(uint16_t) * PDIUSBD12_FIFO_TOTAL_FIFOS * 2;
+   size += sizeof(uint8_t);//pdiUsbD12Command
+   size += sizeof(uint64_t);//pdiUsbD12CommandState
+   size += PDIUSBD12_TRANSFER_BUFFER_SIZE * PDIUSBD12_FIFO_TOTAL_FIFOS;//pdiUsbD12FifoBuffer
+   size += sizeof(uint16_t) * PDIUSBD12_FIFO_TOTAL_FIFOS * 2;//pdiUsbD12(Read/Write)Position
 
    return size;
 }

@@ -19,8 +19,8 @@
 /tools/palm/muExpansionDriver/*.grc
 /tools/palm/muExpansionDriver/*.prc
 /tools/palm/muExpansionDriver/muExpDriver
-/tools/palm/muExpansionDriver/blobs/m68kCallWithBlob.S68
-/tools/palm/muExpansionDriver/blobs/m68kCallWithBlob.L68
+/tools/palm/muExpansionDriver/blobs/*.S68
+/tools/palm/muExpansionDriver/blobs/*.L68
 /tools/desktop/build-BufferGraphViewer-*
 /tools/desktop/build-MakePalmBitmap-*
 /tools/desktop/export16BitImageProperly/convert

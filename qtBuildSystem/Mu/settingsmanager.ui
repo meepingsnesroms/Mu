@@ -30,8 +30,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>624</width>
-        <height>411</height>
+        <width>630</width>
+        <height>417</height>
        </rect>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -59,7 +59,7 @@
        <item>
         <widget class="QLabel" name="label">
          <property name="text">
-          <string>Set Keyboard Keys:</string>
+          <string>Set Palm m515 Keyboard Map:</string>
          </property>
         </widget>
        </item>
@@ -72,8 +72,8 @@
           </sizepolicy>
          </property>
          <layout class="QGridLayout" name="gridLayout">
-          <item row="2" column="1">
-           <widget class="QPushButton" name="selectAddressBookKey">
+          <item row="1" column="4">
+           <widget class="QPushButton" name="selectNotesKey">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
               <horstretch>0</horstretch>
@@ -85,7 +85,7 @@
             </property>
             <property name="icon">
              <iconset resource="mainwindow.qrc">
-              <normaloff>:/buttons/images/addressBook.svg</normaloff>:/buttons/images/addressBook.svg</iconset>
+              <normaloff>:/buttons/images/notes.svg</normaloff>:/buttons/images/notes.svg</iconset>
             </property>
            </widget>
           </item>
@@ -100,7 +100,7 @@
             </property>
            </widget>
           </item>
-          <item row="2" column="2">
+          <item row="1" column="2">
            <widget class="QPushButton" name="selectDownKey">
             <property name="text">
              <string>MAXSIZE</string>
@@ -111,24 +111,7 @@
             </property>
            </widget>
           </item>
-          <item row="2" column="0">
-           <widget class="QPushButton" name="selectCalendarKey">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="text">
-             <string>MAXSIZE</string>
-            </property>
-            <property name="icon">
-             <iconset resource="mainwindow.qrc">
-              <normaloff>:/buttons/images/calendar.svg</normaloff>:/buttons/images/calendar.svg</iconset>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="3">
+          <item row="1" column="3">
            <widget class="QPushButton" name="selectTodoKey">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
@@ -142,23 +125,6 @@
             <property name="icon">
              <iconset resource="mainwindow.qrc">
               <normaloff>:/buttons/images/todo.svg</normaloff>:/buttons/images/todo.svg</iconset>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="4">
-           <widget class="QPushButton" name="selectNotesKey">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="text">
-             <string>MAXSIZE</string>
-            </property>
-            <property name="icon">
-             <iconset resource="mainwindow.qrc">
-              <normaloff>:/buttons/images/notes.svg</normaloff>:/buttons/images/notes.svg</iconset>
             </property>
            </widget>
           </item>
@@ -180,35 +146,36 @@
            </widget>
           </item>
           <item row="1" column="1">
-           <widget class="QPushButton" name="selectLeftKey">
+           <widget class="QPushButton" name="selectAddressBookKey">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
             <property name="text">
              <string>MAXSIZE</string>
             </property>
             <property name="icon">
              <iconset resource="mainwindow.qrc">
-              <normaloff>:/buttons/images/left.svg</normaloff>:/buttons/images/left.svg</iconset>
+              <normaloff>:/buttons/images/addressBook.svg</normaloff>:/buttons/images/addressBook.svg</iconset>
             </property>
            </widget>
           </item>
-          <item row="1" column="3">
-           <widget class="QPushButton" name="selectRightKey">
+          <item row="1" column="0">
+           <widget class="QPushButton" name="selectCalendarKey">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
             <property name="text">
              <string>MAXSIZE</string>
             </property>
             <property name="icon">
              <iconset resource="mainwindow.qrc">
-              <normaloff>:/buttons/images/right.svg</normaloff>:/buttons/images/right.svg</iconset>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="2">
-           <widget class="QPushButton" name="selectCenterKey">
-            <property name="text">
-             <string>MAXSIZE</string>
-            </property>
-            <property name="icon">
-             <iconset resource="mainwindow.qrc">
-              <normaloff>:/buttons/images/center.svg</normaloff>:/buttons/images/center.svg</iconset>
+              <normaloff>:/buttons/images/calendar.svg</normaloff>:/buttons/images/calendar.svg</iconset>
             </property>
            </widget>
           </item>
@@ -223,6 +190,13 @@
         </widget>
        </item>
        <item>
+        <widget class="QPushButton" name="clearKeyBind">
+         <property name="text">
+          <string>Clear Key Bind</string>
+         </property>
+        </widget>
+       </item>
+       <item>
         <widget class="QLabel" name="label_2">
          <property name="text">
           <string>Set Emulator Features(Restart Required):</string>
@@ -232,41 +206,6 @@
        <item>
         <widget class="QWidget" name="gridWidget_2" native="true">
          <layout class="QGridLayout" name="gridLayout_2">
-          <item row="2" column="0">
-           <widget class="QCheckBox" name="featureEmuHonest">
-            <property name="text">
-             <string>Tell Programs Their Emulated</string>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="2">
-           <widget class="QCheckBox" name="featureHleApis">
-            <property name="text">
-             <string>HLE APIs(Speed Hack)</string>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="0">
-           <widget class="QCheckBox" name="featureCustomFb">
-            <property name="text">
-             <string>Resizeable Display(HiRes Mode)</string>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="2">
-           <widget class="QCheckBox" name="featureHybridCpu">
-            <property name="text">
-             <string>ARM Instruction Set(OS 5)</string>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="0">
-           <widget class="QCheckBox" name="feature128mbRam">
-            <property name="text">
-             <string>128MB RAM</string>
-            </property>
-           </widget>
-          </item>
           <item row="0" column="1">
            <widget class="QCheckBox" name="featureFastCpu">
             <property name="text">
@@ -274,24 +213,24 @@
             </property>
            </widget>
           </item>
-          <item row="1" column="1">
+          <item row="0" column="0">
+           <widget class="QCheckBox" name="featureHleApis">
+            <property name="text">
+             <string>HLE APIs(Speed Hack)</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="1">
+           <widget class="QCheckBox" name="featureDurable">
+            <property name="text">
+             <string>Ignore Invalid Behavior</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="0">
            <widget class="QCheckBox" name="featureSyncedRtc">
             <property name="text">
              <string>Sync Real Time Clock</string>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="1">
-           <widget class="QCheckBox" name="featureExtraKeys">
-            <property name="text">
-             <string>Extra Dpad Keys(OS 5)</string>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="2">
-           <widget class="QCheckBox" name="featureSoundStreams">
-            <property name="text">
-             <string>PWM Audio Streams(OS 5)</string>
             </property>
            </widget>
           </item>

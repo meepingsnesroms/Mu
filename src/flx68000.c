@@ -3,8 +3,8 @@
 
 #include "emulator.h"
 #include "portability.h"
-#include "hardwareRegisters.h"
-#include "memoryAccess.h"
+#include "dbvzRegisters.h"
+#include "m515Bus.h"
 #include "m68k/m68kcpu.h"
 
 
@@ -18,31 +18,31 @@ void flx68000PcLongJump(uint32_t newPc){
    uint32_t dataBufferGuest;
    uint32_t windowSize;
 
-   switch(bankType[START_BANK(newPc)]){
-      case CHIP_A0_ROM:
+   switch(dbvzBankType[DBVZ_START_BANK(newPc)]){
+      case DBVZ_CHIP_A0_ROM:
          dataBufferHost = (uintptr_t)palmRom;
-         dataBufferGuest = chips[CHIP_A0_ROM].start;
-         windowSize = chips[CHIP_A0_ROM].mask + 1;
+         dataBufferGuest = chips[DBVZ_CHIP_A0_ROM].start;
+         windowSize = chips[DBVZ_CHIP_A0_ROM].mask + 1;
          break;
 
-      case CHIP_DX_RAM:
+      case DBVZ_CHIP_DX_RAM:
          dataBufferHost = (uintptr_t)palmRam;
-         dataBufferGuest = chips[CHIP_DX_RAM].start;
-         windowSize = chips[CHIP_DX_RAM].mask + 1;
+         dataBufferGuest = chips[DBVZ_CHIP_DX_RAM].start;
+         windowSize = chips[DBVZ_CHIP_DX_RAM].mask + 1;
          break;
 
-      case CHIP_REGISTERS:
+      case DBVZ_CHIP_REGISTERS:
          //needed for when EMU_NO_SAFETY is set and a function is run in the sandbox
          dataBufferHost = (uintptr_t)palmReg;
-         dataBufferGuest = BANK_ADDRESS(START_BANK(newPc));
-         windowSize = REG_SIZE;
+         dataBufferGuest = DBVZ_BANK_ADDRESS(DBVZ_START_BANK(newPc));
+         windowSize = DBVZ_REG_SIZE;
          break;
    }
 
    memBase = dataBufferHost - dataBufferGuest - windowSize * ((newPc - dataBufferGuest) / windowSize);
 }
 
-//everything must be 16 bit aligned(accept 8 bit accesses) due to m68k unaligned access rules,
+//everything must be 16 bit aligned(accept 8 bit accesses) due to 68k unaligned access rules,
 //32 bit reads are 2 16 bit reads because on some platforms 32 bit reads that arnt on 32 bit boundrys will crash the program
 #if defined(EMU_BIG_ENDIAN)
 uint16_t m68k_read_immediate_16(uint32_t address){
@@ -93,8 +93,8 @@ void flx68000Init(void){
 }
 
 void flx68000Reset(void){
-   resetHwRegisters();
-   resetAddressSpace();//address space must be reset after hardware registers because it is dependent on them
+   dbvzResetRegisters();
+   dbvzResetAddressSpace();//address space must be reset after hardware registers because it is dependent on them
    m68k_pulse_reset();
 }
 
@@ -252,7 +252,7 @@ void flx68000LoadStateFinished(void){
 void flx68000Execute(void){
    double cyclesRemaining = palmSysclksPerClk32;
 
-   beginClk32();
+   dbvzBeginClk32();
 
    while(cyclesRemaining >= 1.0){
       double sysclks = dMin(cyclesRemaining, EMU_SYSCLK_PRECISION);
@@ -260,12 +260,12 @@ void flx68000Execute(void){
 
       if(cpuCycles > 0)
          m68k_execute(cpuCycles);
-      addSysclks(sysclks);
+      dbvzAddSysclks(sysclks);
 
       cyclesRemaining -= sysclks;
    }
 
-   endClk32();
+   dbvzEndClk32();
 }
 
 void flx68000SetIrq(uint8_t irqLevel){
@@ -278,8 +278,10 @@ bool flx68000IsSupervisor(void){
 
 void flx68000BusError(uint32_t address, bool isWrite){
 #if !defined(EMU_NO_SAFETY)
-   //never call outsize of a 68k opcode, behavior is undefined due to longjmp
-   m68ki_trigger_bus_error(address, isWrite ? MODE_WRITE : MODE_READ, FLAG_S | m68ki_get_address_space());
+   if(!(palmEmuFeatures.info & FEATURE_DURABLE)){
+      //never call outsize of a 68k opcode, behavior is undefined due to longjmp
+      m68ki_trigger_bus_error(address, isWrite ? MODE_WRITE : MODE_READ, FLAG_S | m68ki_get_address_space());
+   }
 #endif
 }
 
@@ -295,7 +297,7 @@ uint64_t flx68000ReadArbitraryMemory(uint32_t address, uint8_t size){
    uint64_t data = UINT64_MAX;//invalid access
 
    //reading from a hardware register FIFO will corrupt it!
-   if(bankType[START_BANK(address)] != CHIP_NONE){
+   if(dbvzBankType[DBVZ_START_BANK(address)] != DBVZ_CHIP_NONE){
       uint16_t m68kSr = m68k_get_reg(NULL, M68K_REG_SR);
       m68k_set_reg(M68K_REG_SR, 0x2000);//prevent privilege violations
       switch(size){

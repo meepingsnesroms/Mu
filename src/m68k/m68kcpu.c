@@ -677,9 +677,6 @@ int32_t m68k_execute(int32_t num_cycles)
          m68ki_exception_if_trace(); /* auto-disable (see m68kcpu.h) */
       } while(GET_CYCLES() > 0);
 
-      /* set previous PC to current PC for the next entry into the loop */
-      REG_PPC = REG_PC;
-
       /* ASG: update cycles */
       USE_CYCLES(CPU_INT_CYCLES);
       CPU_INT_CYCLES = 0;

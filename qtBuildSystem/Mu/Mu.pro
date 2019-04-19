@@ -22,6 +22,8 @@ DEFINES += QT_DEPRECATED_WARNINGS
 # You can also select to disable deprecated APIs only up to a certain version of Qt.
 DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000 # disables all the APIs deprecated before Qt 6.0.0
 
+CONFIG += support_palm_os5
+
 windows{
     RC_ICONS = windows/Mu.ico
     *msvc*{
@@ -58,16 +60,13 @@ android{
     DEFINES += EMU_MULTITHREADED
 }
 
-ios{
-    # QMAKE_INFO_PLIST = ios/Info.plist
-    DEFINES += EMU_MULTITHREADED
-}
-
 
 CONFIG(debug, debug|release){
     # debug build, be accurate, fail hard, and add logging
     DEFINES += EMU_DEBUG EMU_CUSTOM_DEBUG_LOG_HANDLER EMU_SANDBOX
+    # DEFINES += EMU_SANDBOX_LOG_MEMORY_ACCESSES # checks all reads and writes to memory and logs certain events
     DEFINES += EMU_SANDBOX_OPCODE_LEVEL_DEBUG # for breakpoints
+    DEFINES += EMU_SANDBOX_LOG_JUMPS # log large jumps
     DEFINES += EMU_SANDBOX_LOG_APIS # for printing sysTrap* calls, EMU_SANDBOX_OPCODE_LEVEL_DEBUG must be on too
     macx|linux-g++{
         # also check for any buffer overflows and memory leaks
@@ -79,6 +78,11 @@ CONFIG(debug, debug|release){
 }else{
     # release build, go fast
     DEFINES += EMU_NO_SAFETY
+}
+
+support_palm_os5{
+    DEFINES += EMU_SUPPORT_PALM_OS5 # the Qt build will not be supporting anything too slow to run OS 5
+    # SOURCES +=
 }
 
 CONFIG += c++11
@@ -97,8 +101,6 @@ SOURCES += \
     ../../src/ads7846.c \
     ../../src/emulator.c \
     ../../src/flx68000.c \
-    ../../src/hardwareRegisters.c \
-    ../../src/memoryAccess.c \
     ../../src/pdiUsbD12.c \
     ../../src/sdCard.c \
     ../../src/sed1376.c \
@@ -109,11 +111,10 @@ SOURCES += \
     ../../src/m68k/m68kopdm.c \
     ../../src/m68k/m68kopnz.c \
     ../../src/m68k/m68kops.c \
-    ../../src/armv5/CPU.c \
-    ../../src/armv5/icache.c \
-    ../../src/armv5.c \
     ../../src/expansionHardware.c \
-    settingsmanager.cpp
+    settingsmanager.cpp \
+    ../../src/m515Bus.c \
+    ../../src/dbvzRegisters.c
 
 HEADERS += \
     debugviewer.h \
@@ -134,10 +135,6 @@ HEADERS += \
     ../../src/ads7846.h \
     ../../src/emulator.h \
     ../../src/flx68000.h \
-    ../../src/hardwareRegisters.h \
-    ../../src/hardwareRegistersAccessors.c.h \
-    ../../src/hardwareRegistersTiming.c.h \
-    ../../src/memoryAccess.h \
     ../../src/pdiUsbD12.h \
     ../../src/portability.h \
     ../../src/sdCard.h \
@@ -148,15 +145,14 @@ HEADERS += \
     ../../src/specs/pdiUsbD12CommandSpec.h \
     ../../src/specs/emuFeatureRegisterSpec.h \
     ../../src/specs/sdCardCommandSpec.h \
-    ../../src/armv5/CPU.h \
-    ../../src/armv5/math64.h \
-    ../../src/armv5/types.h \
-    ../../src/armv5/icache.h \
-    ../../src/armv5.h \
     ../../src/expansionHardware.h \
     ../../src/sdCardAccessors.c.h \
     ../../src/sdCardCrcTables.c.h \
-    settingsmanager.h
+    settingsmanager.h \
+    ../../src/m515Bus.h \
+    ../../src/dbvzRegisterAccessors.c.h \
+    ../../src/dbvzTiming.c.h \
+    ../../src/dbvzRegisters.h
 
 FORMS += \
     mainwindow.ui \

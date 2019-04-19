@@ -3,7 +3,7 @@
 
 #include "emulator.h"
 #include "portability.h"
-#include "hardwareRegisters.h"
+#include "dbvzRegisters.h"
 
 
 bool ads7846PenIrqEnabled;
@@ -33,7 +33,7 @@ void ads7846Reset(void){
    ads7846OutputValue = 0x0000;
    ads7846ChipSelect = true;
 #if !defined(EMU_NO_SAFETY)
-   refreshTouchState();
+   m515RefreshTouchState();
 #endif
 }
 
@@ -84,7 +84,7 @@ void ads7846SetChipSelect(bool value){
       ads7846PenIrqEnabled = true;
       ads7846OutputValue = 0x0000;
 #if !defined(EMU_NO_SAFETY)
-      refreshTouchState();
+      m515RefreshTouchState();
 #endif
    }
    ads7846ChipSelect = value;
@@ -273,7 +273,7 @@ bool ads7846ExchangeBit(bool bitIn){
 
       ads7846PenIrqEnabled = !(powerSave & 0x01);
 #if !defined(EMU_NO_SAFETY)
-      refreshTouchState();
+      m515RefreshTouchState();
 #endif
    }
 

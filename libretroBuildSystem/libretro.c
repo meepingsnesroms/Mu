@@ -22,12 +22,13 @@
 #define SCREEN_HIRES (!(palmFramebufferWidth == 160 && palmFramebufferHeight == 220))
 
 
-static retro_log_printf_t          log_cb;
-static retro_video_refresh_t       video_cb;
-static retro_audio_sample_batch_t  audio_cb;
-static retro_environment_t         environ_cb;
-static retro_input_poll_t          input_poll_cb;
-static retro_input_state_t         input_state_cb;
+static retro_log_printf_t         log_cb = NULL;
+static retro_video_refresh_t      video_cb = NULL;
+static retro_audio_sample_batch_t audio_cb = NULL;
+static retro_set_led_state_t      led_cb = NULL;
+static retro_environment_t        environ_cb = NULL;
+static retro_input_poll_t         input_poll_cb = NULL;
+static retro_input_state_t        input_state_cb = NULL;
 
 static uint32_t emuFeatures;
 static bool     useJoystickAsMouse;
@@ -80,25 +81,10 @@ static void check_variables(bool booting){
    if(booting){
       emuFeatures = FEATURE_ACCURATE;
       
-      var.key = "palm_emu_feature_ram_huge";
-      if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
-         if (!strcmp(var.value, "enabled"))
-            emuFeatures |= FEATURE_RAM_HUGE;
-      
       var.key = "palm_emu_feature_fast_cpu";
       if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
          if (!strcmp(var.value, "enabled"))
             emuFeatures |= FEATURE_FAST_CPU;
-      
-      var.key = "palm_emu_feature_hybrid_cpu";
-      if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
-         if (!strcmp(var.value, "enabled"))
-            emuFeatures |= FEATURE_HYBRID_CPU;
-      
-      var.key = "palm_emu_feature_custom_fb";
-      if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
-         if (!strcmp(var.value, "enabled"))
-            emuFeatures |= FEATURE_CUSTOM_FB;
       
       var.key = "palm_emu_feature_synced_rtc";
       if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
@@ -110,15 +96,10 @@ static void check_variables(bool booting){
          if (!strcmp(var.value, "enabled"))
             emuFeatures |= FEATURE_HLE_APIS;
       
-      var.key = "palm_emu_feature_emu_honest";
+      var.key = "palm_emu_feature_durable";
       if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
          if (!strcmp(var.value, "enabled"))
-            emuFeatures |= FEATURE_EMU_HONEST;
-      
-      var.key = "palm_emu_feature_ext_keys";
-      if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
-         if (!strcmp(var.value, "enabled"))
-            emuFeatures |= FEATURE_EXT_KEYS;
+            emuFeatures |= FEATURE_DURABLE;
    }
 
    var.key = "palm_emu_use_joystick_as_mouse";
@@ -167,53 +148,52 @@ void retro_get_system_av_info(struct retro_system_av_info *info){
 
    info->geometry.base_width   = 160;
    info->geometry.base_height  = 220;
-   info->geometry.max_width    = 480;
-   info->geometry.max_height   = 480;
+   info->geometry.max_width    = 160;
+   info->geometry.max_height   = 220;
    info->geometry.aspect_ratio = 160.0 / 220.0;
 }
 
 void retro_set_environment(retro_environment_t cb){
    struct retro_log_callback logging;
    struct retro_vfs_interface_info vfs_getter = { 1, NULL };
+   struct retro_led_interface led_getter;
    struct retro_variable vars[] = {
-      { "palm_emu_feature_ram_huge", "128mb RAM; disabled|enabled" },
       { "palm_emu_feature_fast_cpu", "Custom CPU Speeds; disabled|enabled" },
-      { "palm_emu_feature_hybrid_cpu", "ARM Instruction Set; disabled|enabled" },
-      { "palm_emu_feature_custom_fb", "Custom Resolution; disabled|enabled" },
       { "palm_emu_feature_synced_rtc", "Force Match System Clock; disabled|enabled" },
       { "palm_emu_feature_hle_apis", "HLE API Implementations; disabled|enabled" },
-      { "palm_emu_feature_emu_honest", "Is Emulator(for test programs); disabled|enabled" },
-      { "palm_emu_feature_ext_keys", "Left, Right, Center Keys; disabled|enabled" },
+      { "palm_emu_feature_durable", "Ignore Invalid Behavior; disabled|enabled" },
       { "palm_emu_use_joystick_as_mouse", "Use Left Joystick As Mouse; disabled|enabled" },
       { 0 }
    };
    struct retro_input_descriptor input_desc[] = {
       { 0, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_LEFT, RETRO_DEVICE_ID_ANALOG_X, "Touchscreen Mouse X" },
       { 0, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_LEFT, RETRO_DEVICE_ID_ANALOG_Y, "Touchscreen Mouse Y" },
-      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R2,     "Touchscreen Mouse Click" },
-      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT,   "Dpad Left" },
-      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP,     "Dpad Up" },
-      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN,   "Dpad Down" },
-      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_RIGHT,  "Dpad Right" },
-      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R,      "Dpad Middle" },
-      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_START,  "Power" },
-      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_A,      "Calender" },
-      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_B,      "Address Book" },
-      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_Y,      "Todo" },
-      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_X,      "Notes" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R2,                             "Touchscreen Mouse Click" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP,                             "Dpad Up" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN,                           "Dpad Down" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_START,                          "Power" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_A,                              "Calender" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_B,                              "Address Book" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_Y,                              "Todo" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_X,                              "Notes" },
       { 0 }
    };
 
    environ_cb = cb;
 
-   if (environ_cb(RETRO_ENVIRONMENT_GET_LOG_INTERFACE, &logging))
+   if(environ_cb(RETRO_ENVIRONMENT_GET_LOG_INTERFACE, &logging) && logging.log)
       log_cb = logging.log;
-   else
+   
+   if(!log_cb)
       log_cb = fallback_log;
    
-   if(environ_cb(RETRO_ENVIRONMENT_GET_VFS_INTERFACE, &vfs_getter))
-      filestream_vfs_init(&vfs_getter);
+   led_getter.set_led_state = NULL;
+   if(environ_cb(RETRO_ENVIRONMENT_GET_LED_INTERFACE, &led_getter) && led_getter.set_led_state)
+      led_cb = led_getter.set_led_state;
    
+   if(environ_cb(RETRO_ENVIRONMENT_GET_VFS_INTERFACE, &vfs_getter) && vfs_getter.iface)
+      filestream_vfs_init(&vfs_getter);
+
    environ_cb(RETRO_ENVIRONMENT_SET_VARIABLES, vars);
    environ_cb(RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS, input_desc);
 }
@@ -279,10 +259,7 @@ void retro_run(void){
 
    //dpad
    palmInput.buttonUp = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP);
-   palmInput.buttonRight = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_RIGHT);
    palmInput.buttonDown = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN);
-   palmInput.buttonLeft = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT);
-   palmInput.buttonCenter = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R);
    
    //app buttons
    palmInput.buttonCalendar = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_A);
@@ -302,6 +279,8 @@ void retro_run(void){
    
    video_cb(palmFramebuffer, palmFramebufferWidth, palmFramebufferHeight, palmFramebufferWidth * sizeof(uint16_t));
    audio_cb(palmAudio, AUDIO_SAMPLES_PER_FRAME);
+   if(led_cb)
+      led_cb(0, palmMisc.powerButtonLed);
 }
 
 bool retro_load_game(const struct retro_game_info *info){

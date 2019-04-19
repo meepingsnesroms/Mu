@@ -5,35 +5,13 @@ The end???
 v3.2.0 to v4.0.0(*** ** 2020 - *** ** 2020)
 
 Core:
-Add Dragonball OG/EZ/VZ CPU builtin LCD controller support, some Palm OS 1<->3 games write directly to these registers to display their video and they won't work(with the exception of LSSA since the OS monitors that one)
+add Dragonball OG/EZ/VZ CPU builtin LCD controller support too muExpDriver, some Palm OS 1<->3 games write directly to these registers to display their video and they won't work(with the exception of LSSA since the OS monitors that one)
 
 ------------------------------------------
-v2.5.0 to v3.2.0(*** ** 2019 - *** ** 2020)
+v1.1.0 to v3.2.0(*** ** 2020 - *** ** 2020)
 
 Core:
-*allow direct 320x320 bitmap rendered over the 160x160 framebuffer expanded 2x in both directions, black pixels will be transparent showing what's on the 160x160 framebuffer
-
-Emu Hwr Driver:
-*set fake display framebuffer for 320x320 mode
-
-------------------------------------------
-v2.0.0 to v2.5.0(*** ** 2019 - *** ** 2019)
-
-Core:
-*add single 16 bit PCM sound stream, mixed with PWM1
-
-Emu Hwr Driver:
-*OS 5.1.* sound stream API support(possibly can use PRC file dumped from an OS 5.1.1 device as long as I still add the extra sound stream for it to write to)
-
-------------------------------------------
-v1.0.0 to v2.0.0(*** ** 2019 - *** ** 2019)
-
-Core:
-*ARM opcode support, most apps that use ARM code work, as long as no OS 5.1.* APIs are used
-
-Emu Hwr Driver:
-*ARM CPU is exported to OS 4 with custom PceNativeCall
-*can set fake version number to prevent tripping compatibility checks
+add Palm Tungsten C support
 
 ------------------------------------------
 v1.0.0 to v1.1.0(Feb 25 2019 - Easter 2019)
@@ -41,4 +19,4 @@ v1.0.0 to v1.1.0(Feb 25 2019 - Easter 2019)
 Qt GUI:
 *can now set the feature bits
 *can now set the resource directory
-*keyboard support
+*keyboard mapping support

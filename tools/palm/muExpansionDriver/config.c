@@ -11,10 +11,6 @@ static void getConfigDefaults(uint32_t* configFile){
    configFile[USER_WARNING_GIVEN] = false;
    configFile[DRIVER_ENABLED] = false;
    configFile[SAFE_MODE] = false;
-   configFile[ARM_STACK_SIZE] = 0x1000;
-   configFile[LCD_WIDTH] = 160;
-   configFile[LCD_HEIGHT] = 220;
-   configFile[EXTRA_RAM_MB_DYNAMIC_HEAP] = 10;
    configFile[BOOT_CPU_SPEED] = 100;
    configFile[PATCH_INCONSISTENT_APIS] = false;
 }

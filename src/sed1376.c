@@ -3,10 +3,9 @@
 
 #include "emulator.h"
 #include "portability.h"
-#include "hardwareRegisters.h"
+#include "dbvzRegisters.h"
 #include "flx68000.h"//for flx68000GetPc()
 #include "specs/sed1376RegisterSpec.h"
-#include "debug/sandbox.h"
 
 
 //the SED1376 has only 16 address lines(17 if you count the line that switches between registers and framebuffer) and 16 data lines, the most you can read at once is 16 bits, registers are 8 bits
@@ -178,10 +177,6 @@ bool sed1376PowerSaveEnabled(void){
 
 uint8_t sed1376GetRegister(uint8_t address){
    //returning 0x00 on power save mode is done in the sed1376ReadXX functions
-
-   if(sandboxRunning())
-      debugLog("SED1376 register read from 0x%02X, PC 0x%08X.\n", address, flx68000GetPc());
-
    switch(address){
       case LUT_READ_LOC:
       case LUT_WRITE_LOC:
@@ -217,10 +212,6 @@ uint8_t sed1376GetRegister(uint8_t address){
 }
 
 void sed1376SetRegister(uint8_t address, uint8_t value){
-
-   if(sandboxRunning())
-      debugLog("SED1376 register write 0x%02X to 0x%02X, PC 0x%08X.\n", value, address, flx68000GetPc());
-
    switch(address){
       case PWR_SAVE_CFG:
          //bit 7 must always be set, timing hack
@@ -361,7 +352,7 @@ void sed1376SetRegister(uint8_t address, uint8_t value){
 
 void sed1376Render(void){
    //render if LCD on, PLL on, power save off and force blank off, SED1376 clock is provided by the CPU, if its off so is the SED
-   if(palmMisc.lcdOn && pllIsOn() && !sed1376PowerSaveEnabled() && !(sed1376Registers[DISP_MODE] & 0x80)){
+   if(palmMisc.lcdOn && dbvzIsPllOn() && !sed1376PowerSaveEnabled() && !(sed1376Registers[DISP_MODE] & 0x80)){
       bool color = !!(sed1376Registers[PANEL_TYPE] & 0x40);
       bool pictureInPictureEnabled = !!(sed1376Registers[SPECIAL_EFFECT] & 0x10);
       uint8_t bitDepth = 1 << (sed1376Registers[DISP_MODE] & 0x07);
@@ -445,6 +436,6 @@ void sed1376Render(void){
    else{
       //black screen
       memset(sed1376Framebuffer, 0x00, 160 * 160 * sizeof(uint16_t));
-      debugLog("Cant draw screen, LCD on:%s, PLL on:%s, power save on:%s, forced blank on:%s\n", palmMisc.lcdOn ? "true" : "false", pllIsOn() ? "true" : "false", sed1376PowerSaveEnabled() ? "true" : "false", !!(sed1376Registers[DISP_MODE] & 0x80) ? "true" : "false");
+      debugLog("Cant draw screen, LCD on:%s, PLL on:%s, power save on:%s, forced blank on:%s\n", palmMisc.lcdOn ? "true" : "false", dbvzIsPllOn() ? "true" : "false", sed1376PowerSaveEnabled() ? "true" : "false", !!(sed1376Registers[DISP_MODE] & 0x80) ? "true" : "false");
    }
 }

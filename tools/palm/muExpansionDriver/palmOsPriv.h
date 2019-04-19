@@ -1,6 +1,7 @@
 #ifndef PALM_OS_PRIV_H
 #define PALM_OS_PRIV_H
 
+#include <stdint.h>
 #include "palmGlobalDefines.h"
 
 /*these are all the Palm OS varibles the SDK dosent expose that I have found while decompiling Palm OS*/
@@ -12,6 +13,7 @@
 #define ResetVector FIXED_ADDRESS_VAR(0x00000004, void*)
 
 /*OS*/
+#define TrapTablePtr FIXED_ADDRESS_VAR(0x00000122, void**)
 #define ScrStatePtr FIXED_ADDRESS_VAR(0x00000164, void*)
 
 #endif

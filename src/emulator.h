@@ -12,16 +12,19 @@ extern "C" {
 #include <stdio.h>
 
 #include "audio/blip_buf.h"
-#include "memoryAccess.h"//for size macros
+#include "m515Bus.h"//for size macros
 #include "specs/emuFeatureRegisterSpec.h"//for feature names
 
 //DEFINE INFO!!!
+//define EMU_SUPPORT_PALM_OS5 to compile in Tungsten C support(not reccomended for low power devices)
 //define EMU_MULTITHREADED to speed up long loops
 //define EMU_NO_SAFETY to remove all safety checks
 //define EMU_BIG_ENDIAN on big endian systems
 //to enable degguging define EMU_DEBUG, all options below do nothing unless EMU_DEBUG is defined
 //to enable sandbox debugging define EMU_SANDBOX
+//to enable memory access logging define EMU_SANDBOX_LOG_MEMORY_ACCESSES
 //to enable opcode level debugging define EMU_SANDBOX_OPCODE_LEVEL_DEBUG
+//to enable flow control logging define EMU_SANDBOX_LOG_JUMPS, EMU_SANDBOX_OPCODE_LEVEL_DEBUG must also be defined for this to work
 //to log all API calls define EMU_SANDBOX_LOG_APIS, EMU_SANDBOX_OPCODE_LEVEL_DEBUG must also be defined for this to work
 
 //debug
@@ -87,9 +90,6 @@ typedef struct{
 typedef struct{
    bool  buttonUp;
    bool  buttonDown;
-   bool  buttonLeft;//only used in hybrid mode
-   bool  buttonRight;//only used in hybrid mode
-   bool  buttonCenter;//only used in hybrid mode
    
    bool  buttonCalendar;//hw button 1
    bool  buttonAddress;//hw button 2

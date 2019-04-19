@@ -21,17 +21,12 @@ SettingsManager::SettingsManager(QWidget* parent) :
 
    //set all GUI items to current config values
    ui->homeDirectory->setText(settings->value("resourceDirectory", "").toString());
-   ui->showOnscreenKeys->setChecked(!settings->value("hideOnscreenKeys", "").toBool());
+   ui->showOnscreenKeys->setChecked(!settings->value("hideOnscreenKeys", false).toBool());
 
-   ui->feature128mbRam->setChecked(settings->value("feature128mbRam", false).toBool());
    ui->featureFastCpu->setChecked(settings->value("featureFastCpu", false).toBool());
-   ui->featureHybridCpu->setChecked(settings->value("featureHybridCpu", false).toBool());
-   ui->featureCustomFb->setChecked(settings->value("featureCustomFb", false).toBool());
    ui->featureSyncedRtc->setChecked(settings->value("featureSyncedRtc", false).toBool());
    ui->featureHleApis->setChecked(settings->value("featureHleApis", false).toBool());
-   ui->featureEmuHonest->setChecked(settings->value("featureEmuHonest", false).toBool());
-   ui->featureExtraKeys->setChecked(settings->value("featureExtraKeys", false).toBool());
-   ui->featureSoundStreams->setChecked(settings->value("featureSoundStreams", false).toBool());
+   ui->featureDurable->setChecked(settings->value("featureDurable", false).toBool());
 
    setKeySelectorState(-1);
    updateButtonKeys();
@@ -63,16 +58,13 @@ void SettingsManager::setKeySelectorState(int8_t key){
 }
 
 void SettingsManager::updateButtonKeys(){
-   ui->selectUpKey->setText(QKeySequence(settings->value("palmButton" + QString::number(EmuWrapper::BUTTON_UP) + "Key", "").toInt()).toString());
-   ui->selectDownKey->setText(QKeySequence(settings->value("palmButton" + QString::number(EmuWrapper::BUTTON_DOWN) + "Key", "").toInt()).toString());
-   ui->selectLeftKey->setText(QKeySequence(settings->value("palmButton" + QString::number(EmuWrapper::BUTTON_LEFT) + "Key", "").toInt()).toString());
-   ui->selectRightKey->setText(QKeySequence(settings->value("palmButton" + QString::number(EmuWrapper::BUTTON_RIGHT) + "Key", "").toInt()).toString());
-   ui->selectCenterKey->setText(QKeySequence(settings->value("palmButton" + QString::number(EmuWrapper::BUTTON_CENTER) + "Key", "").toInt()).toString());
-   ui->selectCalendarKey->setText(QKeySequence(settings->value("palmButton" + QString::number(EmuWrapper::BUTTON_CALENDAR) + "Key", "").toInt()).toString());
-   ui->selectAddressBookKey->setText(QKeySequence(settings->value("palmButton" + QString::number(EmuWrapper::BUTTON_ADDRESS) + "Key", "").toInt()).toString());
-   ui->selectTodoKey->setText(QKeySequence(settings->value("palmButton" + QString::number(EmuWrapper::BUTTON_TODO) + "Key", "").toInt()).toString());
-   ui->selectNotesKey->setText(QKeySequence(settings->value("palmButton" + QString::number(EmuWrapper::BUTTON_NOTES) + "Key", "").toInt()).toString());
-   ui->selectPowerKey->setText(QKeySequence(settings->value("palmButton" + QString::number(EmuWrapper::BUTTON_POWER) + "Key", "").toInt()).toString());
+   ui->selectUpKey->setText(QKeySequence(settings->value("palmButton" + QString::number(EmuWrapper::BUTTON_UP) + "Key", '\0').toInt()).toString());
+   ui->selectDownKey->setText(QKeySequence(settings->value("palmButton" + QString::number(EmuWrapper::BUTTON_DOWN) + "Key", '\0').toInt()).toString());
+   ui->selectCalendarKey->setText(QKeySequence(settings->value("palmButton" + QString::number(EmuWrapper::BUTTON_CALENDAR) + "Key", '\0').toInt()).toString());
+   ui->selectAddressBookKey->setText(QKeySequence(settings->value("palmButton" + QString::number(EmuWrapper::BUTTON_ADDRESS) + "Key", '\0').toInt()).toString());
+   ui->selectTodoKey->setText(QKeySequence(settings->value("palmButton" + QString::number(EmuWrapper::BUTTON_TODO) + "Key", '\0').toInt()).toString());
+   ui->selectNotesKey->setText(QKeySequence(settings->value("palmButton" + QString::number(EmuWrapper::BUTTON_NOTES) + "Key", '\0').toInt()).toString());
+   ui->selectPowerKey->setText(QKeySequence(settings->value("palmButton" + QString::number(EmuWrapper::BUTTON_POWER) + "Key", '\0').toInt()).toString());
 }
 
 void SettingsManager::on_showOnscreenKeys_toggled(bool checked){
@@ -98,18 +90,6 @@ void SettingsManager::on_selectDownKey_clicked(){
    setKeySelectorState(EmuWrapper::BUTTON_DOWN);
 }
 
-void SettingsManager::on_selectLeftKey_clicked(){
-   setKeySelectorState(EmuWrapper::BUTTON_LEFT);
-}
-
-void SettingsManager::on_selectRightKey_clicked(){
-   setKeySelectorState(EmuWrapper::BUTTON_RIGHT);
-}
-
-void SettingsManager::on_selectCenterKey_clicked(){
-   setKeySelectorState(EmuWrapper::BUTTON_CENTER);
-}
-
 void SettingsManager::on_selectCalendarKey_clicked(){
    setKeySelectorState(EmuWrapper::BUTTON_CALENDAR);
 }
@@ -130,20 +110,17 @@ void SettingsManager::on_selectPowerKey_clicked(){
    setKeySelectorState(EmuWrapper::BUTTON_POWER);
 }
 
-void SettingsManager::on_feature128mbRam_toggled(bool checked){
-   settings->setValue("feature128mbRam", checked);
+void SettingsManager::on_clearKeyBind_clicked(){
+   if(waitingOnKeyForButton != -1){
+      settings->setValue("palmButton" + QString::number(waitingOnKeyForButton) + "Key", '\0');
+
+      setKeySelectorState(-1);
+      updateButtonKeys();
+   }
 }
 
 void SettingsManager::on_featureFastCpu_toggled(bool checked){
    settings->setValue("featureFastCpu", checked);
-}
-
-void SettingsManager::on_featureHybridCpu_toggled(bool checked){
-   settings->setValue("featureHybridCpu", checked);
-}
-
-void SettingsManager::on_featureCustomFb_toggled(bool checked){
-   settings->setValue("featureCustomFb", checked);
 }
 
 void SettingsManager::on_featureSyncedRtc_toggled(bool checked){
@@ -154,14 +131,6 @@ void SettingsManager::on_featureHleApis_toggled(bool checked){
    settings->setValue("featureHleApis", checked);
 }
 
-void SettingsManager::on_featureEmuHonest_toggled(bool checked){
-   settings->setValue("featureEmuHonest", checked);
-}
-
-void SettingsManager::on_featureExtraKeys_toggled(bool checked){
-   settings->setValue("featureExtraKeys", checked);
-}
-
-void SettingsManager::on_featureSoundStreams_toggled(bool checked){
-   settings->setValue("featureSoundStreams", checked);
+void SettingsManager::on_featureDurable_toggled(bool checked){
+   settings->setValue("featureDurable", checked);
 }

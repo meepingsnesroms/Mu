@@ -11,7 +11,7 @@ if [ "$1" = "clean" ]; then
    exit
 fi
 
-declare -a FILES=("muExpDriver" "patcher" "hires" "armv5" "soundDriver" "globals" "gui" "traps" "config" "debug" "memalign")
+declare -a FILES=("muExpDriver" "patcher" "globals" "gui" "traps" "config" "debug")
 CFLAGS="-palmos4 -O3"
 
 if [ "$1" = "debug" ]; then
@@ -22,11 +22,6 @@ for I in "${FILES[@]}"; do
    m68k-palmos-gcc $CFLAGS -c $I.c -o $I.o
 done
 m68k-palmos-gcc -o $APP_NAME *.o
-
-# copy ASM blobs
-cp ./blobs/armExit.func ./func0000.bin # ARM code
-cp ./blobs/armCall68k.func ./func0001.bin # ARM code
-cp ./blobs/m68kCallWithBlob.func ./func0002.bin # 68k code
 
 # if possible generate icon trees
 if type "MakePalmBitmap" &> /dev/null; then

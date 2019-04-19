@@ -16,25 +16,25 @@ static void timer1(uint8_t reason, double sysclks){
             return;
 
          case 0x0001://SYSCLK / timer prescaler
-            if(reason != TIMER_REASON_SYSCLK)
+            if(reason != DBVZ_TIMER_REASON_SYSCLK)
                return;
             timerCycleCounter[0] += sysclks / timer1Prescaler;
             break;
 
          case 0x0002://SYSCLK / 16 / timer prescaler
-            if(reason != TIMER_REASON_SYSCLK)
+            if(reason != DBVZ_TIMER_REASON_SYSCLK)
                return;
             timerCycleCounter[0] += sysclks / 16.0 / timer1Prescaler;
             break;
 
          case 0x0003://TIN/TOUT pin / timer prescaler, the other timer can be attached to TIN/TOUT
-            if(reason != TIMER_REASON_TIN)
+            if(reason != DBVZ_TIMER_REASON_TIN)
                return;
             timerCycleCounter[0] += 1.0 / timer1Prescaler;
             break;
 
          default://CLK32 / timer prescaler
-            if(reason != TIMER_REASON_CLK32)
+            if(reason != DBVZ_TIMER_REASON_CLK32)
                return;
             timerCycleCounter[0] += 1.0 / timer1Prescaler;
             break;
@@ -47,7 +47,7 @@ static void timer1(uint8_t reason, double sysclks){
 
          //interrupt enabled
          if(timer1Control & 0x0010)
-            setIprIsrBit(INT_TMR1);
+            setIprIsrBit(DBVZ_INT_TMR1);
          //checkInterrupts() is run when the clock that called this function is finished
 
          //set timer triggered bit
@@ -56,7 +56,7 @@ static void timer1(uint8_t reason, double sysclks){
 
          //increment other timer if enabled
          if(pcrTinToutConfig == 0x03)
-            timer2(TIMER_REASON_TIN, 0);
+            timer2(DBVZ_TIMER_REASON_TIN, 0);
 
          //not free running, reset to 0, to prevent loss of ticks after compare event just subtract timerXCompare
          if(!(timer1Control & 0x0100))
@@ -83,25 +83,25 @@ static void timer2(uint8_t reason, double sysclks){
             return;
 
          case 0x0001://SYSCLK / timer prescaler
-            if(reason != TIMER_REASON_SYSCLK)
+            if(reason != DBVZ_TIMER_REASON_SYSCLK)
                return;
             timerCycleCounter[1] += sysclks / timer2Prescaler;
             break;
 
          case 0x0002://SYSCLK / 16 / timer prescaler
-            if(reason != TIMER_REASON_SYSCLK)
+            if(reason != DBVZ_TIMER_REASON_SYSCLK)
                return;
             timerCycleCounter[1] += sysclks / 16.0 / timer2Prescaler;
             break;
 
          case 0x0003://TIN/TOUT pin / timer prescaler, the other timer can be attached to TIN/TOUT
-            if(reason != TIMER_REASON_TIN)
+            if(reason != DBVZ_TIMER_REASON_TIN)
                return;
             timerCycleCounter[1] += 1.0 / timer2Prescaler;
             break;
 
          default://CLK32 / timer prescaler
-            if(reason != TIMER_REASON_CLK32)
+            if(reason != DBVZ_TIMER_REASON_CLK32)
                return;
             timerCycleCounter[1] += 1.0 / timer2Prescaler;
             break;
@@ -114,7 +114,7 @@ static void timer2(uint8_t reason, double sysclks){
 
          //interrupt enabled
          if(timer2Control & 0x0010)
-            setIprIsrBit(INT_TMR2);
+            setIprIsrBit(DBVZ_INT_TMR2);
          //checkInterrupts() is run when the clock that called this function is finished
 
          //set timer triggered bit
@@ -123,7 +123,7 @@ static void timer2(uint8_t reason, double sysclks){
 
          //increment other timer if enabled
          if(pcrTinToutConfig == 0x02)
-            timer1(TIMER_REASON_TIN, 0);
+            timer1(DBVZ_TIMER_REASON_TIN, 0);
 
          //not free running, reset to 0, to prevent loss of ticks after compare event just subtract timerXCompare
          if(!(timer2Control & 0x0100))
@@ -205,7 +205,7 @@ static void rtiInterruptClk32(void){
    triggeredRtiInterrupts &= registerArrayRead16(RTCIENR);
    if(triggeredRtiInterrupts){
       registerArrayWrite16(RTCISR, registerArrayRead16(RTCISR) | triggeredRtiInterrupts);
-      setIprIsrBit(INT_RTI);
+      setIprIsrBit(DBVZ_INT_RTI);
    }
 }
 
@@ -222,7 +222,7 @@ static void watchdogSecondTickClk32(void){
          if(watchdogState & 0x0002){
             //interrupt
             watchdogState |= 0x0080;
-            setIprIsrBit(INT_WDT);
+            setIprIsrBit(DBVZ_INT_WDT);
          }
          else{
             //reset
@@ -291,7 +291,7 @@ static void rtcAddSecondClk32(void){
       rtcInterruptEvents &= registerArrayRead16(RTCIENR);
       if(rtcInterruptEvents){
          registerArrayWrite16(RTCISR, registerArrayRead16(RTCISR) | rtcInterruptEvents);
-         setIprIsrBit(INT_RTC);
+         setIprIsrBit(DBVZ_INT_RTC);
       }
 
       registerArrayWrite32(RTCTIME, newRtcTime);
@@ -301,11 +301,11 @@ static void rtcAddSecondClk32(void){
    watchdogSecondTickClk32();
 }
 
-void beginClk32(void){
+void dbvzBeginClk32(void){
    palmClk32Sysclks = 0.0;
 }
 
-void endClk32(void){
+void dbvzEndClk32(void){
    //currently using toggle on read hack
    //registerArrayWrite16(PLLFSR, registerArrayRead16(PLLFSR) ^ 0x8000);
 
@@ -322,8 +322,8 @@ void endClk32(void){
    if(registerArrayRead16(RTCCTL) & 0x0080 || registerArrayRead16(WATCHDOG) & 0x01)
       rtiInterruptClk32();
 
-   timer1(TIMER_REASON_CLK32, 0);
-   timer2(TIMER_REASON_CLK32, 0);
+   timer1(DBVZ_TIMER_REASON_CLK32, 0);
+   timer2(DBVZ_TIMER_REASON_CLK32, 0);
    samplePwm1(true/*forClk32*/, 0.0);
 
    //PLLCR sleep wait
@@ -350,9 +350,9 @@ void endClk32(void){
    checkInterrupts();
 }
 
-void addSysclks(double count){
-   timer1(TIMER_REASON_SYSCLK, count);
-   timer2(TIMER_REASON_SYSCLK, count);
+void dbvzAddSysclks(double count){
+   timer1(DBVZ_TIMER_REASON_SYSCLK, count);
+   timer2(DBVZ_TIMER_REASON_SYSCLK, count);
    samplePwm1(false/*forClk32*/, count);
 
    checkInterrupts();
@@ -370,5 +370,5 @@ static int32_t audioGetFramePercentIncrementFromSysclks(double count){
 static int32_t audioGetFramePercentage(void){
    //returns how much of the frame has executed
    //0% = 0, 100% = AUDIO_END_OF_FRAME
-   return audioGetFramePercentIncrementFromClk32s(palmFrameClk32s) + (pllIsOn() ? audioGetFramePercentIncrementFromSysclks(palmClk32Sysclks) : 0);
+   return audioGetFramePercentIncrementFromClk32s(palmFrameClk32s) + (dbvzIsPllOn() ? audioGetFramePercentIncrementFromSysclks(palmClk32Sysclks) : 0);
 }

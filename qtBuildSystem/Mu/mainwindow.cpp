@@ -87,7 +87,7 @@ MainWindow::MainWindow(QWidget* parent) :
       settings->setValue("hideOnscreenKeys", true);
 #endif
    }
-   hideOnscreenKeys = settings->value("hideOnscreenKeys", "").toBool();
+   hideOnscreenKeys = settings->value("hideOnscreenKeys", false).toBool();
 
    //this makes the display window and button icons resize properly
    ui->centralWidget->installEventFilter(this);
@@ -95,9 +95,6 @@ MainWindow::MainWindow(QWidget* parent) :
 
    ui->up->installEventFilter(this);
    ui->down->installEventFilter(this);
-   ui->left->installEventFilter(this);
-   ui->right->installEventFilter(this);
-   ui->center->installEventFilter(this);
 
    ui->calendar->installEventFilter(this);
    ui->addressBook->installEventFilter(this);
@@ -107,18 +104,16 @@ MainWindow::MainWindow(QWidget* parent) :
    ui->power->installEventFilter(this);
 
    ui->ctrlBtn->installEventFilter(this);
+   ui->reset->installEventFilter(this);
+   ui->stateManager->installEventFilter(this);
+   ui->screenshot->installEventFilter(this);
+   ui->settings->installEventFilter(this);
    ui->install->installEventFilter(this);
    ui->debugger->installEventFilter(this);
-   ui->screenshot->installEventFilter(this);
-   ui->stateManager->installEventFilter(this);
-   ui->reset->installEventFilter(this);
 
    //hide onscreen keys if needed
    ui->up->setHidden(hideOnscreenKeys);
    ui->down->setHidden(hideOnscreenKeys);
-   ui->left->setHidden(hideOnscreenKeys);
-   ui->right->setHidden(hideOnscreenKeys);
-   ui->center->setHidden(hideOnscreenKeys);
 
    ui->calendar->setHidden(hideOnscreenKeys);
    ui->addressBook->setHidden(hideOnscreenKeys);
@@ -174,24 +169,10 @@ void MainWindow::createHomeDirectoryTree(const QString& path){
 uint32_t MainWindow::getEmuFeatureList(){
    uint32_t features = FEATURE_ACCURATE;
 
-   features |= settings->value("feature128mbRam", false).toBool() ? FEATURE_RAM_HUGE : 0;
    features |= settings->value("featureFastCpu", false).toBool() ? FEATURE_FAST_CPU : 0;
-   features |= settings->value("featureHybridCpu", false).toBool() ? FEATURE_HYBRID_CPU : 0;
-   features |= settings->value("featureCustomFb", false).toBool() ? FEATURE_CUSTOM_FB : 0;
    features |= settings->value("featureSyncedRtc", false).toBool() ? FEATURE_SYNCED_RTC : 0;
    features |= settings->value("featureHleApis", false).toBool() ? FEATURE_HLE_APIS : 0;
-   features |= settings->value("featureEmuHonest", false).toBool() ? FEATURE_EMU_HONEST : 0;
-   features |= settings->value("featureExtraKeys", false).toBool() ? FEATURE_EXT_KEYS : 0;
-   features |= settings->value("featureSoundStreams", false).toBool() ? FEATURE_SND_STRMS : 0;
-
-#if defined(EMU_DEBUG)
-   features |= FEATURE_DEBUG;
-#endif
-
-   //lazy debug overrides
-   //features = FEATURE_EXT_KEYS | FEATURE_EMU_HONEST | FEATURE_FAST_CPU | FEATURE_HYBRID_CPU | FEATURE_CUSTOM_FB | FEATURE_DEBUG | FEATURE_SND_STRMS;
-   //features = FEATURE_FAST_CPU | FEATURE_HYBRID_CPU | FEATURE_CUSTOM_FB | FEATURE_DEBUG;
-   //features = FEATURE_FAST_CPU | FEATURE_HYBRID_CPU | FEATURE_DEBUG;
+   features |= settings->value("featureDurable", false).toBool() ? FEATURE_DURABLE : 0;
 
    return features;
 }
@@ -205,15 +186,12 @@ void MainWindow::popupInformationDialog(const QString& info){
 }
 
 void MainWindow::redraw(){
-   bool hideOnscreenKeys = settings->value("hideOnscreenKeys", "").toBool();
+   bool hideOnscreenKeys = settings->value("hideOnscreenKeys", false).toBool();
    QResizeEvent* resizeEvent = new QResizeEvent(ui->centralWidget->size(), ui->centralWidget->size());
 
    //update current keys
    ui->up->setHidden(hideOnscreenKeys);
    ui->down->setHidden(hideOnscreenKeys);
-   ui->left->setHidden(hideOnscreenKeys);
-   ui->right->setHidden(hideOnscreenKeys);
-   ui->center->setHidden(hideOnscreenKeys);
 
    ui->calendar->setHidden(hideOnscreenKeys);
    ui->addressBook->setHidden(hideOnscreenKeys);
@@ -236,7 +214,7 @@ bool MainWindow::eventFilter(QObject* object, QEvent* event){
 
       if(object->objectName() == "centralWidget"){
          float smallestRatio;
-         bool hideOnscreenKeys = settings->value("hideOnscreenKeys", "").toBool();
+         bool hideOnscreenKeys = settings->value("hideOnscreenKeys", false).toBool();
 
          //update displayContainer first, make the display occupy the top 3/5 of the screen if there are Palm keys or 4/5 if theres not
          ui->displayContainer->setFixedHeight(ui->centralWidget->height() * (hideOnscreenKeys ? 0.80 : 0.60));
@@ -336,22 +314,6 @@ void MainWindow::on_down_released(){
    emu.setKeyValue(EmuWrapper::BUTTON_DOWN, false);
 }
 
-void MainWindow::on_left_pressed(){
-   emu.setKeyValue(EmuWrapper::BUTTON_LEFT, true);
-}
-
-void MainWindow::on_left_released(){
-   emu.setKeyValue(EmuWrapper::BUTTON_LEFT, false);
-}
-
-void MainWindow::on_right_pressed(){
-   emu.setKeyValue(EmuWrapper::BUTTON_RIGHT, true);
-}
-
-void MainWindow::on_right_released(){
-   emu.setKeyValue(EmuWrapper::BUTTON_RIGHT, false);
-}
-
 //emu control
 void MainWindow::on_ctrlBtn_clicked(){
    if(!emu.isInited()){
@@ -369,12 +331,6 @@ void MainWindow::on_ctrlBtn_clicked(){
          ui->notes->setEnabled(true);
 
          ui->power->setEnabled(true);
-
-         if(enabledFeatures & FEATURE_EXT_KEYS){
-            ui->left->setEnabled(true);
-            ui->right->setEnabled(true);
-            ui->center->setEnabled(true);
-         }
 
          ui->screenshot->setEnabled(true);
          ui->install->setEnabled(true);
