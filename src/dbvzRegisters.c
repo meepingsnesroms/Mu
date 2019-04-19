@@ -14,7 +14,10 @@
 #include "debug/sandbox.h"
 
 
-dbvz_chip_t chips[DBVZ_CHIP_END];
+dbvz_chip_t dbvzChipSelects[DBVZ_CHIP_END];
+double      dbvzSysclksPerClk32;//how many SYSCLK cycles before toggling the 32.768 kHz crystal
+uint32_t    dbvzFrameClk32s;//how many CLK32s have happened in the current frame
+double      dbvzClk32Sysclks;//how many SYSCLKs have happened in the current CLK32
 int8_t      pllSleepWait;
 int8_t      pllWakeWait;
 uint32_t    clk32Counter;
@@ -47,7 +50,7 @@ static int32_t audioGetFramePercentage(void);
 #include "dbvzTiming.c.h"
 
 bool dbvzIsPllOn(void){
-   return !(palmSysclksPerClk32 < 1.0);
+   return !(dbvzSysclksPerClk32 < 1.0);
 }
 
 bool m515BacklightAmplifierState(void){
@@ -744,7 +747,7 @@ void dbvzSetRegister16(uint32_t address, uint16_t value){
       case PLLCR:
          //CLKEN is required for SED1376 operation
          registerArrayWrite16(PLLCR, value & 0x3FBB);
-         palmSysclksPerClk32 = sysclksPerClk32();
+         dbvzSysclksPerClk32 = sysclksPerClk32();
          m515SetSed1376Attached(sed1376ClockConnected());
 
          if(value & 0x0008)
@@ -785,12 +788,12 @@ void dbvzSetRegister16(uint32_t address, uint16_t value){
 
       case CSA:{
             uint16_t oldCsa = registerArrayRead16(CSA);
-            bool oldBootMode = chips[DBVZ_CHIP_A0_ROM].inBootMode;
+            bool oldBootMode = dbvzChipSelects[DBVZ_CHIP_A0_ROM].inBootMode;
 
             setCsa(value);
 
             //only reset address space if size changed, enabled/disabled or exiting boot mode
-            if((value & 0x000F) != (oldCsa & 0x000F) || chips[DBVZ_CHIP_A0_ROM].inBootMode != oldBootMode)
+            if((value & 0x000F) != (oldCsa & 0x000F) || dbvzChipSelects[DBVZ_CHIP_A0_ROM].inBootMode != oldBootMode)
                dbvzResetAddressSpace();
          }
          return;
@@ -1009,7 +1012,7 @@ void dbvzResetRegisters(void){
    uint16_t oldDayr = registerArrayRead16(DAYR);//preserve DAYR
 
    memset(palmReg, 0x00, DBVZ_REG_SIZE - DBVZ_BOOTLOADER_SIZE);
-   palmSysclksPerClk32 = 0.0;
+   dbvzSysclksPerClk32 = 0.0;
    clk32Counter = 0;
    pctlrCpuClockDivider = 1.0;
    pllSleepWait = -1;
@@ -1031,21 +1034,21 @@ void dbvzResetRegisters(void){
    pwm1ReadPosition = 0;
    pwm1WritePosition = 0;
 
-   memset(chips, 0x00, sizeof(chips));
+   memset(dbvzChipSelects, 0x00, sizeof(dbvzChipSelects));
    //all chip selects are disabled at boot and CSA0 is mapped to 0x00000000 and covers the entire address range until CSA is set enabled
-   chips[DBVZ_CHIP_A0_ROM].inBootMode = true;
+   dbvzChipSelects[DBVZ_CHIP_A0_ROM].inBootMode = true;
 
    //default sizes
-   chips[DBVZ_CHIP_A0_ROM].lineSize = 0x20000;
-   chips[DBVZ_CHIP_A1_USB].lineSize = 0x20000;
-   chips[DBVZ_CHIP_B0_SED].lineSize = 0x20000;
-   chips[DBVZ_CHIP_DX_RAM].lineSize = 0x8000;
+   dbvzChipSelects[DBVZ_CHIP_A0_ROM].lineSize = 0x20000;
+   dbvzChipSelects[DBVZ_CHIP_A1_USB].lineSize = 0x20000;
+   dbvzChipSelects[DBVZ_CHIP_B0_SED].lineSize = 0x20000;
+   dbvzChipSelects[DBVZ_CHIP_DX_RAM].lineSize = 0x8000;
 
    //masks for reading and writing
-   chips[DBVZ_CHIP_A0_ROM].mask = 0x003FFFFF;//4mb
-   chips[DBVZ_CHIP_A1_USB].mask = 0x00000002;//A1 is used as USB chip A0
-   chips[DBVZ_CHIP_B0_SED].mask = 0x0001FFFF;
-   chips[DBVZ_CHIP_DX_RAM].mask = 0x00000000;//16mb, no RAM enabled until the DRAM module is initialized
+   dbvzChipSelects[DBVZ_CHIP_A0_ROM].mask = 0x003FFFFF;//4mb
+   dbvzChipSelects[DBVZ_CHIP_A1_USB].mask = 0x00000002;//A1 is used as USB chip A0
+   dbvzChipSelects[DBVZ_CHIP_B0_SED].mask = 0x0001FFFF;
+   dbvzChipSelects[DBVZ_CHIP_DX_RAM].mask = 0x00000000;//16mb, no RAM enabled until the DRAM module is initialized
 
    //system control
    registerArrayWrite8(SCR, 0x1C);
@@ -1153,7 +1156,7 @@ void dbvzResetRegisters(void){
    updateSdCardChipSelectStatus();
    updateBacklightAmplifierStatus();
 
-   palmSysclksPerClk32 = sysclksPerClk32();
+   dbvzSysclksPerClk32 = sysclksPerClk32();
 }
 
 void dbvzSetRtc(uint16_t days, uint8_t hours, uint8_t minutes, uint8_t seconds){

@@ -154,11 +154,8 @@ extern uint16_t  palmFramebufferWidth;//read allowed
 extern uint16_t  palmFramebufferHeight;//read allowed
 extern int16_t*  palmAudio;//read allowed, 2 channel signed 16 bit audio
 extern blip_t*   palmAudioResampler;//dont touch
-extern double    palmSysclksPerClk32;//dont touch
 extern double    palmCycleCounter;//dont touch
 extern double    palmClockMultiplier;//dont touch
-extern uint32_t  palmFrameClk32s;//dont touch
-extern double    palmClk32Sysclks;//dont touch
 
 //functions
 uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t enabledEmuFeatures);//calling any emulator functions before emulatorInit results in undefined behavior

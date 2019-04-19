@@ -64,7 +64,10 @@ typedef struct{
 }dbvz_chip_t;
 
 //variables
-extern dbvz_chip_t chips[];
+extern dbvz_chip_t dbvzChipSelects[];
+extern double      dbvzSysclksPerClk32;
+extern uint32_t    dbvzFrameClk32s;
+extern double      dbvzClk32Sysclks;
 extern int8_t      pllSleepWait;
 extern int8_t      pllWakeWait;
 extern uint32_t    clk32Counter;

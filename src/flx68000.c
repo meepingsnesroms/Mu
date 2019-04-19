@@ -21,14 +21,14 @@ void flx68000PcLongJump(uint32_t newPc){
    switch(dbvzBankType[DBVZ_START_BANK(newPc)]){
       case DBVZ_CHIP_A0_ROM:
          dataBufferHost = (uintptr_t)palmRom;
-         dataBufferGuest = chips[DBVZ_CHIP_A0_ROM].start;
-         windowSize = chips[DBVZ_CHIP_A0_ROM].mask + 1;
+         dataBufferGuest = dbvzChipSelects[DBVZ_CHIP_A0_ROM].start;
+         windowSize = dbvzChipSelects[DBVZ_CHIP_A0_ROM].mask + 1;
          break;
 
       case DBVZ_CHIP_DX_RAM:
          dataBufferHost = (uintptr_t)palmRam;
-         dataBufferGuest = chips[DBVZ_CHIP_DX_RAM].start;
-         windowSize = chips[DBVZ_CHIP_DX_RAM].mask + 1;
+         dataBufferGuest = dbvzChipSelects[DBVZ_CHIP_DX_RAM].start;
+         windowSize = dbvzChipSelects[DBVZ_CHIP_DX_RAM].mask + 1;
          break;
 
       case DBVZ_CHIP_REGISTERS:
@@ -250,7 +250,7 @@ void flx68000LoadStateFinished(void){
 }
 
 void flx68000Execute(void){
-   double cyclesRemaining = palmSysclksPerClk32;
+   double cyclesRemaining = dbvzSysclksPerClk32;
 
    dbvzBeginClk32();
 

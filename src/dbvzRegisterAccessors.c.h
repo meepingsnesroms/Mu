@@ -147,18 +147,18 @@ static void pwm1FifoFlush(void){
 
 //register setters
 static void setCsa(uint16_t value){
-   chips[DBVZ_CHIP_A0_ROM].enable = value & 0x0001;
-   chips[DBVZ_CHIP_A0_ROM].readOnly = !!(value & 0x8000);
-   chips[DBVZ_CHIP_A0_ROM].lineSize = 0x20000/*128kb*/ << (value >> 1 & 0x0007);
+   dbvzChipSelects[DBVZ_CHIP_A0_ROM].enable = value & 0x0001;
+   dbvzChipSelects[DBVZ_CHIP_A0_ROM].readOnly = !!(value & 0x8000);
+   dbvzChipSelects[DBVZ_CHIP_A0_ROM].lineSize = 0x20000/*128kb*/ << (value >> 1 & 0x0007);
 
    //CSA is now just a normal chip select
-   if(chips[DBVZ_CHIP_A0_ROM].enable && chips[DBVZ_CHIP_A0_ROM].inBootMode)
-      chips[DBVZ_CHIP_A0_ROM].inBootMode = false;
+   if(dbvzChipSelects[DBVZ_CHIP_A0_ROM].enable && dbvzChipSelects[DBVZ_CHIP_A0_ROM].inBootMode)
+      dbvzChipSelects[DBVZ_CHIP_A0_ROM].inBootMode = false;
 
-   chips[DBVZ_CHIP_A1_USB].enable = chips[DBVZ_CHIP_A0_ROM].enable;
-   chips[DBVZ_CHIP_A1_USB].readOnly = chips[DBVZ_CHIP_A0_ROM].readOnly;
-   chips[DBVZ_CHIP_A1_USB].start = chips[DBVZ_CHIP_A0_ROM].start + chips[DBVZ_CHIP_A0_ROM].lineSize;
-   chips[DBVZ_CHIP_A1_USB].lineSize = chips[DBVZ_CHIP_A0_ROM].lineSize;
+   dbvzChipSelects[DBVZ_CHIP_A1_USB].enable = dbvzChipSelects[DBVZ_CHIP_A0_ROM].enable;
+   dbvzChipSelects[DBVZ_CHIP_A1_USB].readOnly = dbvzChipSelects[DBVZ_CHIP_A0_ROM].readOnly;
+   dbvzChipSelects[DBVZ_CHIP_A1_USB].start = dbvzChipSelects[DBVZ_CHIP_A0_ROM].start + dbvzChipSelects[DBVZ_CHIP_A0_ROM].lineSize;
+   dbvzChipSelects[DBVZ_CHIP_A1_USB].lineSize = dbvzChipSelects[DBVZ_CHIP_A0_ROM].lineSize;
 
    registerArrayWrite16(CSA, value & 0x81FF);
 }
@@ -166,25 +166,25 @@ static void setCsa(uint16_t value){
 static void setCsb(uint16_t value){
    uint16_t csControl1 = registerArrayRead16(CSCTRL1);
 
-   chips[DBVZ_CHIP_B0_SED].enable = value & 0x0001;
-   chips[DBVZ_CHIP_B0_SED].readOnly = !!(value & 0x8000);
-   chips[DBVZ_CHIP_B0_SED].lineSize = 0x20000/*128kb*/ << (value >> 1 & 0x0007);
+   dbvzChipSelects[DBVZ_CHIP_B0_SED].enable = value & 0x0001;
+   dbvzChipSelects[DBVZ_CHIP_B0_SED].readOnly = !!(value & 0x8000);
+   dbvzChipSelects[DBVZ_CHIP_B0_SED].lineSize = 0x20000/*128kb*/ << (value >> 1 & 0x0007);
 
    //attributes
-   chips[DBVZ_CHIP_B0_SED].supervisorOnlyProtectedMemory = !!(value & 0x4000);
-   chips[DBVZ_CHIP_B0_SED].readOnlyForProtectedMemory = !!(value & 0x2000);
+   dbvzChipSelects[DBVZ_CHIP_B0_SED].supervisorOnlyProtectedMemory = !!(value & 0x4000);
+   dbvzChipSelects[DBVZ_CHIP_B0_SED].readOnlyForProtectedMemory = !!(value & 0x2000);
    if(csControl1 & 0x4000 && csControl1 & 0x0001)
-      chips[DBVZ_CHIP_B0_SED].unprotectedSize = chips[DBVZ_CHIP_B0_SED].lineSize / (1 << 7 - ((value >> 11 & 0x0003) | 0x0004));
+      dbvzChipSelects[DBVZ_CHIP_B0_SED].unprotectedSize = dbvzChipSelects[DBVZ_CHIP_B0_SED].lineSize / (1 << 7 - ((value >> 11 & 0x0003) | 0x0004));
    else
-      chips[DBVZ_CHIP_B0_SED].unprotectedSize = chips[DBVZ_CHIP_B0_SED].lineSize / (1 << 7 - (value >> 11 & 0x0003));
+      dbvzChipSelects[DBVZ_CHIP_B0_SED].unprotectedSize = dbvzChipSelects[DBVZ_CHIP_B0_SED].lineSize / (1 << 7 - (value >> 11 & 0x0003));
 
-   chips[DBVZ_CHIP_B1_NIL].enable = chips[DBVZ_CHIP_B0_SED].enable;
-   chips[DBVZ_CHIP_B1_NIL].readOnly = chips[DBVZ_CHIP_B0_SED].readOnly;
-   chips[DBVZ_CHIP_B1_NIL].start = chips[DBVZ_CHIP_B0_SED].start + chips[DBVZ_CHIP_B0_SED].lineSize;
-   chips[DBVZ_CHIP_B1_NIL].lineSize = chips[DBVZ_CHIP_B0_SED].lineSize;
-   chips[DBVZ_CHIP_B1_NIL].supervisorOnlyProtectedMemory = chips[DBVZ_CHIP_B0_SED].supervisorOnlyProtectedMemory;
-   chips[DBVZ_CHIP_B1_NIL].readOnlyForProtectedMemory = chips[DBVZ_CHIP_B0_SED].readOnlyForProtectedMemory;
-   chips[DBVZ_CHIP_B1_NIL].unprotectedSize = chips[DBVZ_CHIP_B0_SED].unprotectedSize;
+   dbvzChipSelects[DBVZ_CHIP_B1_NIL].enable = dbvzChipSelects[DBVZ_CHIP_B0_SED].enable;
+   dbvzChipSelects[DBVZ_CHIP_B1_NIL].readOnly = dbvzChipSelects[DBVZ_CHIP_B0_SED].readOnly;
+   dbvzChipSelects[DBVZ_CHIP_B1_NIL].start = dbvzChipSelects[DBVZ_CHIP_B0_SED].start + dbvzChipSelects[DBVZ_CHIP_B0_SED].lineSize;
+   dbvzChipSelects[DBVZ_CHIP_B1_NIL].lineSize = dbvzChipSelects[DBVZ_CHIP_B0_SED].lineSize;
+   dbvzChipSelects[DBVZ_CHIP_B1_NIL].supervisorOnlyProtectedMemory = dbvzChipSelects[DBVZ_CHIP_B0_SED].supervisorOnlyProtectedMemory;
+   dbvzChipSelects[DBVZ_CHIP_B1_NIL].readOnlyForProtectedMemory = dbvzChipSelects[DBVZ_CHIP_B0_SED].readOnlyForProtectedMemory;
+   dbvzChipSelects[DBVZ_CHIP_B1_NIL].unprotectedSize = dbvzChipSelects[DBVZ_CHIP_B0_SED].unprotectedSize;
 
    registerArrayWrite16(CSB, value & 0xF9FF);
 }
@@ -192,22 +192,22 @@ static void setCsb(uint16_t value){
 static void setCsd(uint16_t value){
    uint16_t csControl1 = registerArrayRead16(CSCTRL1);
 
-   chips[DBVZ_CHIP_DX_RAM].enable = value & 0x0001;
-   chips[DBVZ_CHIP_DX_RAM].readOnly = !!(value & 0x8000);
+   dbvzChipSelects[DBVZ_CHIP_DX_RAM].enable = value & 0x0001;
+   dbvzChipSelects[DBVZ_CHIP_DX_RAM].readOnly = !!(value & 0x8000);
    if(csControl1 & 0x0040 && value & 0x0200)
-      chips[DBVZ_CHIP_DX_RAM].lineSize = 0x800000/*8mb*/ << (value >> 1 & 0x0001);
+      dbvzChipSelects[DBVZ_CHIP_DX_RAM].lineSize = 0x800000/*8mb*/ << (value >> 1 & 0x0001);
    else
-      chips[DBVZ_CHIP_DX_RAM].lineSize = 0x8000/*32kb*/ << (value >> 1 & 0x0007);
+      dbvzChipSelects[DBVZ_CHIP_DX_RAM].lineSize = 0x8000/*32kb*/ << (value >> 1 & 0x0007);
 
    //attributes
-   chips[DBVZ_CHIP_DX_RAM].supervisorOnlyProtectedMemory = !!(value & 0x4000);
-   chips[DBVZ_CHIP_DX_RAM].readOnlyForProtectedMemory = !!(value & 0x2000);
+   dbvzChipSelects[DBVZ_CHIP_DX_RAM].supervisorOnlyProtectedMemory = !!(value & 0x4000);
+   dbvzChipSelects[DBVZ_CHIP_DX_RAM].readOnlyForProtectedMemory = !!(value & 0x2000);
    if(csControl1 & 0x4000 && csControl1 & 0x0010)
-      chips[DBVZ_CHIP_DX_RAM].unprotectedSize = chips[DBVZ_CHIP_DX_RAM].lineSize / (1 << 7 - ((value >> 11 & 0x0003) | 0x0004));
+      dbvzChipSelects[DBVZ_CHIP_DX_RAM].unprotectedSize = dbvzChipSelects[DBVZ_CHIP_DX_RAM].lineSize / (1 << 7 - ((value >> 11 & 0x0003) | 0x0004));
    else
-      chips[DBVZ_CHIP_DX_RAM].unprotectedSize = chips[DBVZ_CHIP_DX_RAM].lineSize / (1 << 7 - (value >> 11 & 0x0003));
+      dbvzChipSelects[DBVZ_CHIP_DX_RAM].unprotectedSize = dbvzChipSelects[DBVZ_CHIP_DX_RAM].lineSize / (1 << 7 - (value >> 11 & 0x0003));
 
-   //debugLog("RAM unprotected size:0x%08X, bits:0x%02X\n", chips[DBVZ_CHIP_DX_RAM].unprotectedSize, ((value >> 11 & 0x0003) | (csControl1 & 0x4000 && csControl1 & 0x0010) * 0x0004));
+   //debugLog("RAM unprotected size:0x%08X, bits:0x%02X\n", dbvzChipSelects[DBVZ_CHIP_DX_RAM].unprotectedSize, ((value >> 11 & 0x0003) | (csControl1 & 0x4000 && csControl1 & 0x0010) * 0x0004));
 
    registerArrayWrite16(CSD, value);
 }
@@ -217,11 +217,11 @@ static void setCsgba(uint16_t value){
 
    //add extra address bits if enabled
    if(csugba & 0x8000)
-      chips[DBVZ_CHIP_A0_ROM].start = (csugba >> 12 & 0x0007) << 29 | value >> 1 << 14;
+      dbvzChipSelects[DBVZ_CHIP_A0_ROM].start = (csugba >> 12 & 0x0007) << 29 | value >> 1 << 14;
    else
-      chips[DBVZ_CHIP_A0_ROM].start = value >> 1 << 14;
+      dbvzChipSelects[DBVZ_CHIP_A0_ROM].start = value >> 1 << 14;
 
-   chips[DBVZ_CHIP_A1_USB].start = chips[DBVZ_CHIP_A0_ROM].start + chips[DBVZ_CHIP_A0_ROM].lineSize;
+   dbvzChipSelects[DBVZ_CHIP_A1_USB].start = dbvzChipSelects[DBVZ_CHIP_A0_ROM].start + dbvzChipSelects[DBVZ_CHIP_A0_ROM].lineSize;
 
    registerArrayWrite16(CSGBA, value & 0xFFFE);
 }
@@ -231,11 +231,11 @@ static void setCsgbb(uint16_t value){
 
    //add extra address bits if enabled
    if(csugba & 0x8000)
-      chips[DBVZ_CHIP_B0_SED].start = (csugba >> 8 & 0x0007) << 29 | value >> 1 << 14;
+      dbvzChipSelects[DBVZ_CHIP_B0_SED].start = (csugba >> 8 & 0x0007) << 29 | value >> 1 << 14;
    else
-      chips[DBVZ_CHIP_B0_SED].start = value >> 1 << 14;
+      dbvzChipSelects[DBVZ_CHIP_B0_SED].start = value >> 1 << 14;
 
-   chips[DBVZ_CHIP_B1_NIL].start = chips[DBVZ_CHIP_B0_SED].start + chips[DBVZ_CHIP_B0_SED].lineSize;
+   dbvzChipSelects[DBVZ_CHIP_B1_NIL].start = dbvzChipSelects[DBVZ_CHIP_B0_SED].start + dbvzChipSelects[DBVZ_CHIP_B0_SED].lineSize;
 
    registerArrayWrite16(CSGBB, value & 0xFFFE);
 }
@@ -245,9 +245,9 @@ static void setCsgbd(uint16_t value){
 
    //add extra address bits if enabled
    if(csugba & 0x8000)
-      chips[DBVZ_CHIP_DX_RAM].start = (csugba & 0x0007) << 29 | value >> 1 << 14;
+      dbvzChipSelects[DBVZ_CHIP_DX_RAM].start = (csugba & 0x0007) << 29 | value >> 1 << 14;
    else
-      chips[DBVZ_CHIP_DX_RAM].start = value >> 1 << 14;
+      dbvzChipSelects[DBVZ_CHIP_DX_RAM].start = value >> 1 << 14;
 
    registerArrayWrite16(CSGBD, value & 0xFFFE);
 }
@@ -258,19 +258,19 @@ static void updateCsdAddressLines(void){
 
    if(registerArrayRead16(CSD) & 0x0200 && sdctrl & 0x8000 && dramc & 0x8000 && !(dramc & 0x0400)){
       //this register can remap address lines, that behavior is way too CPU intensive and complicated so only the "memory testing" and "correct" behavior is being emulated
-      chips[DBVZ_CHIP_DX_RAM].mask = 0x003FFFFF;
+      dbvzChipSelects[DBVZ_CHIP_DX_RAM].mask = 0x003FFFFF;
 
       //address line 23 is enabled
       if((sdctrl & 0x000C) == 0x0008)
-         chips[DBVZ_CHIP_DX_RAM].mask |= 0x00800000;
+         dbvzChipSelects[DBVZ_CHIP_DX_RAM].mask |= 0x00800000;
 
       //address line 22 is enabled
       if((sdctrl & 0x0030) == 0x0010)
-         chips[DBVZ_CHIP_DX_RAM].mask |= 0x00400000;
+         dbvzChipSelects[DBVZ_CHIP_DX_RAM].mask |= 0x00400000;
    }
    else{
       //RAM is not enabled properly
-      chips[DBVZ_CHIP_DX_RAM].mask = 0x00000000;
+      dbvzChipSelects[DBVZ_CHIP_DX_RAM].mask = 0x00000000;
    }
 }
 
@@ -280,7 +280,7 @@ static void setPllfsr(uint16_t value){
    //change frequency if frequency protect bit isnt set
    if(!(oldPllfsr & 0x4000)){
       registerArrayWrite16(PLLFSR, (value & 0x4CFF) | (oldPllfsr & 0x8000));//preserve CLK32 bit
-      palmSysclksPerClk32 = sysclksPerClk32();
+      dbvzSysclksPerClk32 = sysclksPerClk32();
    }
 }
 
@@ -294,7 +294,7 @@ static void setScr(uint8_t value){
    //clear violations on writing 1 to them
    newScr &= ~(value & 0xE0);
 
-   chips[DBVZ_CHIP_REGISTERS].supervisorOnlyProtectedMemory = value & 0x08;
+   dbvzChipSelects[DBVZ_CHIP_REGISTERS].supervisorOnlyProtectedMemory = value & 0x08;
 
    registerArrayWrite8(SCR, newScr);//must be written before calling setRegisterFFFFAccessMode
    if((newScr & 0x04) != (oldScr & 0x04)){

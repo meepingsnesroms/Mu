@@ -302,7 +302,7 @@ static void rtcAddSecondClk32(void){
 }
 
 void dbvzBeginClk32(void){
-   palmClk32Sysclks = 0.0;
+   dbvzClk32Sysclks = 0.0;
 }
 
 void dbvzEndClk32(void){
@@ -330,7 +330,7 @@ void dbvzEndClk32(void){
    if(pllSleepWait != -1){
       if(pllSleepWait == 0){
          //disable PLL and CPU
-         palmSysclksPerClk32 = 0.0;
+         dbvzSysclksPerClk32 = 0.0;
          debugLog("PLL disabled, CPU is off!\n");
       }
       pllSleepWait--;
@@ -341,7 +341,7 @@ void dbvzEndClk32(void){
       if(pllWakeWait == 0){
          //reenable PLL and CPU
          registerArrayWrite16(PLLCR, registerArrayRead16(PLLCR) & 0xFFF7);
-         palmSysclksPerClk32 = sysclksPerClk32();
+         dbvzSysclksPerClk32 = sysclksPerClk32();
          debugLog("PLL reenabled, CPU is on!\n");
       }
       pllWakeWait--;
@@ -356,7 +356,7 @@ void dbvzAddSysclks(double count){
    samplePwm1(false/*forClk32*/, count);
 
    checkInterrupts();
-   palmClk32Sysclks += count;
+   dbvzClk32Sysclks += count;
 }
 
 static int32_t audioGetFramePercentIncrementFromClk32s(int32_t count){
@@ -364,11 +364,11 @@ static int32_t audioGetFramePercentIncrementFromClk32s(int32_t count){
 }
 
 static int32_t audioGetFramePercentIncrementFromSysclks(double count){
-   return count / (palmSysclksPerClk32 * ((double)CRYSTAL_FREQUENCY / EMU_FPS)) * AUDIO_END_OF_FRAME;
+   return count / (dbvzSysclksPerClk32 * ((double)CRYSTAL_FREQUENCY / EMU_FPS)) * AUDIO_END_OF_FRAME;
 }
 
 static int32_t audioGetFramePercentage(void){
    //returns how much of the frame has executed
    //0% = 0, 100% = AUDIO_END_OF_FRAME
-   return audioGetFramePercentIncrementFromClk32s(palmFrameClk32s) + (dbvzIsPllOn() ? audioGetFramePercentIncrementFromSysclks(palmClk32Sysclks) : 0);
+   return audioGetFramePercentIncrementFromClk32s(dbvzFrameClk32s) + (dbvzIsPllOn() ? audioGetFramePercentIncrementFromSysclks(dbvzClk32Sysclks) : 0);
 }

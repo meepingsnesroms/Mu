@@ -48,11 +48,8 @@ uint16_t  palmFramebufferWidth;
 uint16_t  palmFramebufferHeight;
 int16_t*  palmAudio;
 blip_t*   palmAudioResampler;
-double    palmSysclksPerClk32;//how many SYSCLK cycles before toggling the 32.768 kHz crystal
 double    palmCycleCounter;//can be greater then 0 if too many cycles where run
 double    palmClockMultiplier;//used by the emulator to overclock the emulated Palm
-uint32_t  palmFrameClk32s;//how many CLK32s have happened in the current frame
-double    palmClk32Sysclks;//how many SYSCLKs have happened in the current CLK32
 
 
 uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t enabledEmuFeatures){
@@ -275,28 +272,28 @@ bool emulatorSaveState(buffer_t buffer){
    memcpy(buffer.data + offset, dbvzBankType, DBVZ_TOTAL_MEMORY_BANKS);
    offset += DBVZ_TOTAL_MEMORY_BANKS;
    for(index = DBVZ_CHIP_BEGIN; index < DBVZ_CHIP_END; index++){
-      writeStateValue8(buffer.data + offset, chips[index].enable);
+      writeStateValue8(buffer.data + offset, dbvzChipSelects[index].enable);
       offset += sizeof(uint8_t);
-      writeStateValue32(buffer.data + offset, chips[index].start);
+      writeStateValue32(buffer.data + offset, dbvzChipSelects[index].start);
       offset += sizeof(uint32_t);
-      writeStateValue32(buffer.data + offset, chips[index].lineSize);
+      writeStateValue32(buffer.data + offset, dbvzChipSelects[index].lineSize);
       offset += sizeof(uint32_t);
-      writeStateValue32(buffer.data + offset, chips[index].mask);
+      writeStateValue32(buffer.data + offset, dbvzChipSelects[index].mask);
       offset += sizeof(uint32_t);
-      writeStateValue8(buffer.data + offset, chips[index].inBootMode);
+      writeStateValue8(buffer.data + offset, dbvzChipSelects[index].inBootMode);
       offset += sizeof(uint8_t);
-      writeStateValue8(buffer.data + offset, chips[index].readOnly);
+      writeStateValue8(buffer.data + offset, dbvzChipSelects[index].readOnly);
       offset += sizeof(uint8_t);
-      writeStateValue8(buffer.data + offset, chips[index].readOnlyForProtectedMemory);
+      writeStateValue8(buffer.data + offset, dbvzChipSelects[index].readOnlyForProtectedMemory);
       offset += sizeof(uint8_t);
-      writeStateValue8(buffer.data + offset, chips[index].supervisorOnlyProtectedMemory);
+      writeStateValue8(buffer.data + offset, dbvzChipSelects[index].supervisorOnlyProtectedMemory);
       offset += sizeof(uint8_t);
-      writeStateValue32(buffer.data + offset, chips[index].unprotectedSize);
+      writeStateValue32(buffer.data + offset, dbvzChipSelects[index].unprotectedSize);
       offset += sizeof(uint32_t);
    }
 
    //timing
-   writeStateValueDouble(buffer.data + offset, palmSysclksPerClk32);
+   writeStateValueDouble(buffer.data + offset, dbvzSysclksPerClk32);
    offset += sizeof(uint64_t);
    writeStateValueDouble(buffer.data + offset, palmCycleCounter);
    offset += sizeof(uint64_t);
@@ -473,28 +470,28 @@ bool emulatorLoadState(buffer_t buffer){
    memcpy(dbvzBankType, buffer.data + offset, DBVZ_TOTAL_MEMORY_BANKS);
    offset += DBVZ_TOTAL_MEMORY_BANKS;
    for(index = DBVZ_CHIP_BEGIN; index < DBVZ_CHIP_END; index++){
-      chips[index].enable = readStateValue8(buffer.data + offset);
+      dbvzChipSelects[index].enable = readStateValue8(buffer.data + offset);
       offset += sizeof(uint8_t);
-      chips[index].start = readStateValue32(buffer.data + offset);
+      dbvzChipSelects[index].start = readStateValue32(buffer.data + offset);
       offset += sizeof(uint32_t);
-      chips[index].lineSize = readStateValue32(buffer.data + offset);
+      dbvzChipSelects[index].lineSize = readStateValue32(buffer.data + offset);
       offset += sizeof(uint32_t);
-      chips[index].mask = readStateValue32(buffer.data + offset);
+      dbvzChipSelects[index].mask = readStateValue32(buffer.data + offset);
       offset += sizeof(uint32_t);
-      chips[index].inBootMode = readStateValue8(buffer.data + offset);
+      dbvzChipSelects[index].inBootMode = readStateValue8(buffer.data + offset);
       offset += sizeof(uint8_t);
-      chips[index].readOnly = readStateValue8(buffer.data + offset);
+      dbvzChipSelects[index].readOnly = readStateValue8(buffer.data + offset);
       offset += sizeof(uint8_t);
-      chips[index].readOnlyForProtectedMemory = readStateValue8(buffer.data + offset);
+      dbvzChipSelects[index].readOnlyForProtectedMemory = readStateValue8(buffer.data + offset);
       offset += sizeof(uint8_t);
-      chips[index].supervisorOnlyProtectedMemory = readStateValue8(buffer.data + offset);
+      dbvzChipSelects[index].supervisorOnlyProtectedMemory = readStateValue8(buffer.data + offset);
       offset += sizeof(uint8_t);
-      chips[index].unprotectedSize = readStateValue32(buffer.data + offset);
+      dbvzChipSelects[index].unprotectedSize = readStateValue32(buffer.data + offset);
       offset += sizeof(uint32_t);
    }
 
    //timing
-   palmSysclksPerClk32 = readStateValueDouble(buffer.data + offset);
+   dbvzSysclksPerClk32 = readStateValueDouble(buffer.data + offset);
    offset += sizeof(uint64_t);
    palmCycleCounter = readStateValueDouble(buffer.data + offset);
    offset += sizeof(uint64_t);
@@ -700,10 +697,10 @@ void emulatorRunFrame(void){
    m515RefreshInputState();
 
    //CPU
-   palmFrameClk32s = 0;
+   dbvzFrameClk32s = 0;
    for(; palmCycleCounter < (double)CRYSTAL_FREQUENCY / EMU_FPS; palmCycleCounter += 1.0){
       flx68000Execute();
-      palmFrameClk32s++;
+      dbvzFrameClk32s++;
    }
    palmCycleCounter -= (double)CRYSTAL_FREQUENCY / EMU_FPS;
 
