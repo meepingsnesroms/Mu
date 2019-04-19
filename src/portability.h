@@ -4,10 +4,45 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-//endian
-static inline void swap16BufferIfLittle(uint8_t* buffer, uint32_t count){
-#if !defined(EMU_BIG_ENDIAN)
+//endian/buffers
+//the read/write stuff looks messy here but makes the memory access functions alot cleaner
+#if defined(EMU_BIG_ENDIAN)
+//memory layout is the same as the Palm m515, just cast to pointer and access, 32 bit accesses are split to prevent unaligned access issues
+#define BUFFER_READ_8(segment, accessAddress, mask)  (*(uint8_t*)(segment + ((accessAddress) & (mask))))
+#define BUFFER_READ_16(segment, accessAddress, mask) (*(uint16_t*)(segment + ((accessAddress) & (mask))))
+#define BUFFER_READ_32(segment, accessAddress, mask) (*(uint16_t*)(segment + ((accessAddress) & (mask))) << 16 | *(uint16_t*)(segment + ((accessAddress) + 2 & (mask))))
+#define BUFFER_WRITE_8(segment, accessAddress, mask, value)  (*(uint8_t*)(segment + ((accessAddress) & (mask))) = (value))
+#define BUFFER_WRITE_16(segment, accessAddress, mask, value) (*(uint16_t*)(segment + ((accessAddress) & (mask))) = (value))
+#define BUFFER_WRITE_32(segment, accessAddress, mask, value) (*(uint16_t*)(segment + ((accessAddress) & (mask))) = (value) >> 16 , *(uint16_t*)(segment + ((accessAddress) + 2 & (mask))) = (value) & 0xFFFF)
+#define BUFFER_READ_8_BIG_ENDIAN  BUFFER_READ_8
+#define BUFFER_READ_16_BIG_ENDIAN BUFFER_READ_16
+#define BUFFER_READ_32_BIG_ENDIAN BUFFER_READ_32
+#define BUFFER_WRITE_8_BIG_ENDIAN  BUFFER_WRITE_8
+#define BUFFER_WRITE_16_BIG_ENDIAN BUFFER_WRITE_16
+#define BUFFER_WRITE_32_BIG_ENDIAN BUFFER_WRITE_32
+#else
+//memory layout is different from the Palm m515, optimize for opcode fetches(16 bit reads)
+#define BUFFER_READ_8(segment, accessAddress, mask)  (*(uint8_t*)(segment + ((accessAddress) & (mask) ^ 1)))
+#define BUFFER_READ_16(segment, accessAddress, mask) (*(uint16_t*)(segment + ((accessAddress) & (mask))))
+#define BUFFER_READ_32(segment, accessAddress, mask) (*(uint16_t*)(segment + ((accessAddress) & (mask))) << 16 | *(uint16_t*)(segment + ((accessAddress) + 2 & (mask))))
+#define BUFFER_WRITE_8(segment, accessAddress, mask, value)  (*(uint8_t*)(segment + ((accessAddress) & (mask) ^ 1)) = (value))
+#define BUFFER_WRITE_16(segment, accessAddress, mask, value) (*(uint16_t*)(segment + ((accessAddress) & (mask))) = (value))
+#define BUFFER_WRITE_32(segment, accessAddress, mask, value) (*(uint16_t*)(segment + ((accessAddress) & (mask))) = (value) >> 16 , *(uint16_t*)(segment + ((accessAddress) + 2 & (mask))) = (value) & 0xFFFF)
+#define BUFFER_READ_8_BIG_ENDIAN(segment, accessAddress, mask)  (segment[(accessAddress) & (mask)])
+#define BUFFER_READ_16_BIG_ENDIAN(segment, accessAddress, mask) (segment[(accessAddress) & (mask)] << 8 | segment[(accessAddress) + 1 & (mask)])
+#define BUFFER_READ_32_BIG_ENDIAN(segment, accessAddress, mask) (segment[(accessAddress) & (mask)] << 24 | segment[(accessAddress) + 1 & (mask)] << 16 | segment[(accessAddress) + 2 & (mask)] << 8 | segment[(accessAddress) + 3 & (mask)])
+#define BUFFER_WRITE_8_BIG_ENDIAN(segment, accessAddress, mask, value)  (segment[(accessAddress) & (mask)] = (value))
+#define BUFFER_WRITE_16_BIG_ENDIAN(segment, accessAddress, mask, value) (segment[(accessAddress) & (mask)] = (value) >> 8, segment[(accessAddress) + 1 & (mask)] = (value) & 0xFF)
+#define BUFFER_WRITE_32_BIG_ENDIAN(segment, accessAddress, mask, value) (segment[(accessAddress) & (mask)] = (value) >> 24, segment[(accessAddress) + 1 & (mask)] = ((value) >> 16) & 0xFF, segment[(accessAddress) + 2 & (mask)] = ((value) >> 8) & 0xFF, segment[(accessAddress) + 3 & (mask)] = (value) & 0xFF)
+#endif
+
+#define SWAP_16(x) ((uint16_t)((((uint16_t)(x) & 0x00FF) << 8) | (((uint16_t)(x) & 0xFF00) >> 8)))
+#define SWAP_32(x) ((uint32_t)((((uint32_t)(x) & 0x000000FF) << 24) | (((uint32_t)(x) & 0x0000FF00) <<  8) | (((uint32_t)(x) & 0x00FF0000) >>  8) | (((uint32_t)(x) & 0xFF000000) >> 24)))
+#define SWAP_64(x) ((((uint64_t)(x) & UINT64_C(0x00000000000000FF)) << 56) | (((uint64_t)(x) & UINT64_C(0x000000000000FF00)) << 40) | (((uint64_t)(x) & UINT64_C(0x0000000000FF0000)) << 24) | (((uint64_t)(x) & UINT64_C(0x00000000FF000000)) << 8) | (((uint64_t)(x) & UINT64_C(0x000000FF00000000)) >> 8) | (((uint64_t)(x) & UINT64_C(0x0000FF0000000000)) >> 24) | (((uint64_t)(x) & UINT64_C(0x00FF000000000000)) >> 40) | (((uint64_t)(x) & UINT64_C(0xFF00000000000000)) >> 56))
+
+static inline void swap16(uint8_t* buffer, uint32_t count){
    uint32_t index;
+
    //count specifys the number of uint16_t's that need to be swapped, the uint8_t* is because of alignment restrictions that crash on some platforms
    count *= sizeof(uint16_t);
    for(index = 0; index < count; index += 2){
@@ -15,6 +50,17 @@ static inline void swap16BufferIfLittle(uint8_t* buffer, uint32_t count){
       buffer[index] = buffer[index + 1];
       buffer[index + 1] = temp;
    }
+}
+
+static inline void swap16BufferIfLittle(uint8_t* buffer, uint32_t count){
+#if !defined(EMU_BIG_ENDIAN)
+   swap16(buffer, count);
+#endif
+}
+
+static inline void swap16BufferIfBig(uint8_t* buffer, uint32_t count){
+#if defined(EMU_BIG_ENDIAN)
+   swap16(buffer, count);
 #endif
 }
 

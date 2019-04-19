@@ -4,6 +4,5 @@
 #include <stdint.h>
 
 extern const uint16_t silkscreen160x60[];
-extern const uint16_t silkscreen320x120[];
 
 #endif

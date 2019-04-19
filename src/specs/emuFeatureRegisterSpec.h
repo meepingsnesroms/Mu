@@ -47,7 +47,7 @@ These registers will do nothing if their corresponding feature bit is not set on
 #define CMD_SET_CPU_SPEED  0x0000FFF3/*EMU_VALUE = CPU speed percent, 100% = normal*/
 #define CMD_IDLE_X_CLK32   0x0000FFF4/*EMU_VALUE = CLK32s to waste, used to remove idle loops*/
 #define CMD_SET_CYCLE_COST 0x0000FFF5/*EMU_DST = HLE API number, EMU_VALUE = how many cycles it takes*/
-#define CMD_LCD_SET_FB     0x0000FFF6/*EMU_SRC = framebuffer pointer(must be in RAM and word aligned, unused if size is 160x220), EMU_VALUE >> 16 = width, EMU_VALUE & 0xFFFF = height*/
+/*CMD_UNUSED               0x0000FFF6*/
 /*CMD_UNUSED               0x0000FFF7*/
 #define CMD_DEBUG_PRINT    0x0000FFF8/*EMU_SRC = pointer to string*/
 #define CMD_DEBUG_WATCH    0x0000FFF9/*EMU_VALUE = 0/clear watch reference or 1/make code watch reference or 2/make data watch reference, EMU_SRC = address of area(or watch area reference number), EMU_SIZE = size of area(unused if clear operation), EMU_VALUE is set to the watch areas reference number after a set operation*/

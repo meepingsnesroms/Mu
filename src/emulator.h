@@ -12,7 +12,7 @@ extern "C" {
 #include <stdio.h>
 
 #include "audio/blip_buf.h"
-#include "memoryAccess.h"//for size macros
+#include "m515Bus.h"//for size macros
 #include "specs/emuFeatureRegisterSpec.h"//for feature names
 
 //DEFINE INFO!!!

@@ -94,8 +94,6 @@ SOURCES += \
     ../../src/ads7846.c \
     ../../src/emulator.c \
     ../../src/flx68000.c \
-    ../../src/hardwareRegisters.c \
-    ../../src/memoryAccess.c \
     ../../src/pdiUsbD12.c \
     ../../src/sdCard.c \
     ../../src/sed1376.c \
@@ -107,7 +105,9 @@ SOURCES += \
     ../../src/m68k/m68kopnz.c \
     ../../src/m68k/m68kops.c \
     ../../src/expansionHardware.c \
-    settingsmanager.cpp
+    settingsmanager.cpp \
+    ../../src/m515Bus.c \
+    ../../src/dbvzRegisters.c
 
 HEADERS += \
     debugviewer.h \
@@ -128,10 +128,6 @@ HEADERS += \
     ../../src/ads7846.h \
     ../../src/emulator.h \
     ../../src/flx68000.h \
-    ../../src/hardwareRegisters.h \
-    ../../src/hardwareRegistersAccessors.c.h \
-    ../../src/hardwareRegistersTiming.c.h \
-    ../../src/memoryAccess.h \
     ../../src/pdiUsbD12.h \
     ../../src/portability.h \
     ../../src/sdCard.h \
@@ -145,7 +141,11 @@ HEADERS += \
     ../../src/expansionHardware.h \
     ../../src/sdCardAccessors.c.h \
     ../../src/sdCardCrcTables.c.h \
-    settingsmanager.h
+    settingsmanager.h \
+    ../../src/m515Bus.h \
+    ../../src/dbvzRegisterAccessors.c.h \
+    ../../src/dbvzTiming.c.h \
+    ../../src/dbvzRegisters.h
 
 FORMS += \
     mainwindow.ui \

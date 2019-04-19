@@ -3,7 +3,7 @@
 
 #include "emulator.h"
 #include "portability.h"
-#include "hardwareRegisters.h"
+#include "dbvzRegisters.h"
 #include "flx68000.h"//for flx68000GetPc()
 #include "specs/sed1376RegisterSpec.h"
 
@@ -352,7 +352,7 @@ void sed1376SetRegister(uint8_t address, uint8_t value){
 
 void sed1376Render(void){
    //render if LCD on, PLL on, power save off and force blank off, SED1376 clock is provided by the CPU, if its off so is the SED
-   if(palmMisc.lcdOn && pllIsOn() && !sed1376PowerSaveEnabled() && !(sed1376Registers[DISP_MODE] & 0x80)){
+   if(palmMisc.lcdOn && dbvzIsPllOn() && !sed1376PowerSaveEnabled() && !(sed1376Registers[DISP_MODE] & 0x80)){
       bool color = !!(sed1376Registers[PANEL_TYPE] & 0x40);
       bool pictureInPictureEnabled = !!(sed1376Registers[SPECIAL_EFFECT] & 0x10);
       uint8_t bitDepth = 1 << (sed1376Registers[DISP_MODE] & 0x07);
@@ -436,6 +436,6 @@ void sed1376Render(void){
    else{
       //black screen
       memset(sed1376Framebuffer, 0x00, 160 * 160 * sizeof(uint16_t));
-      debugLog("Cant draw screen, LCD on:%s, PLL on:%s, power save on:%s, forced blank on:%s\n", palmMisc.lcdOn ? "true" : "false", pllIsOn() ? "true" : "false", sed1376PowerSaveEnabled() ? "true" : "false", !!(sed1376Registers[DISP_MODE] & 0x80) ? "true" : "false");
+      debugLog("Cant draw screen, LCD on:%s, PLL on:%s, power save on:%s, forced blank on:%s\n", palmMisc.lcdOn ? "true" : "false", dbvzIsPllOn() ? "true" : "false", sed1376PowerSaveEnabled() ? "true" : "false", !!(sed1376Registers[DISP_MODE] & 0x80) ? "true" : "false");
    }
 }

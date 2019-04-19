@@ -4,8 +4,8 @@
 
 #include "emulator.h"
 #include "specs/dragonballVzRegisterSpec.h"
-#include "hardwareRegisters.h"
-#include "memoryAccess.h"
+#include "dbvzRegisters.h"
+#include "m515Bus.h"
 #include "portability.h"
 #include "flx68000.h"
 #include "ads7846.h"
@@ -14,25 +14,25 @@
 #include "debug/sandbox.h"
 
 
-chip_t   chips[CHIP_END];
-int8_t   pllSleepWait;
-int8_t   pllWakeWait;
-uint32_t clk32Counter;
-double   pctlrCpuClockDivider;
-double   timerCycleCounter[2];
-uint16_t timerStatusReadAcknowledge[2];
-uint8_t  portDInterruptLastValue;//used for edge triggered interrupt timing
-uint16_t spi1RxFifo[9];
-uint16_t spi1TxFifo[9];
-uint8_t  spi1RxReadPosition;
-uint8_t  spi1RxWritePosition;
-bool     spi1RxOverflowed;
-uint8_t  spi1TxReadPosition;
-uint8_t  spi1TxWritePosition;
-int32_t  pwm1ClocksToNextSample;
-uint8_t  pwm1Fifo[6];
-uint8_t  pwm1ReadPosition;
-uint8_t  pwm1WritePosition;
+dbvz_chip_t chips[DBVZ_CHIP_END];
+int8_t      pllSleepWait;
+int8_t      pllWakeWait;
+uint32_t    clk32Counter;
+double      pctlrCpuClockDivider;
+double      timerCycleCounter[2];
+uint16_t    timerStatusReadAcknowledge[2];
+uint8_t     portDInterruptLastValue;//used for edge triggered interrupt timing
+uint16_t    spi1RxFifo[9];
+uint16_t    spi1TxFifo[9];
+uint8_t     spi1RxReadPosition;
+uint8_t     spi1RxWritePosition;
+bool        spi1RxOverflowed;
+uint8_t     spi1TxReadPosition;
+uint8_t     spi1TxWritePosition;
+int32_t     pwm1ClocksToNextSample;
+uint8_t     pwm1Fifo[6];
+uint8_t     pwm1ReadPosition;
+uint8_t     pwm1WritePosition;
 
 
 static void checkInterrupts(void);
@@ -43,18 +43,18 @@ static int32_t audioGetFramePercentIncrementFromClk32s(int32_t count);
 static int32_t audioGetFramePercentIncrementFromSysclks(double count);
 static int32_t audioGetFramePercentage(void);
 
-#include "hardwareRegistersAccessors.c.h"
-#include "hardwareRegistersTiming.c.h"
+#include "dbvzRegisterAccessors.c.h"
+#include "dbvzTiming.c.h"
 
-bool pllIsOn(void){
+bool dbvzIsPllOn(void){
    return !(palmSysclksPerClk32 < 1.0);
 }
 
-bool backlightAmplifierState(void){
+bool m515BacklightAmplifierState(void){
    return !!(getPortKValue() & 0x02);
 }
 
-bool registersAreXXFFMapped(void){
+bool dbvzAreRegistersXXFFMapped(void){
    return !!(registerArrayRead8(SCR) & 0x04);
 }
 
@@ -69,9 +69,9 @@ void ads7846OverridePenState(bool value){
    if(value != (ads7846PenIrqEnabled ? !palmInput.touchscreenTouched : true)){
       if(!(registerArrayRead8(PFSEL) & registerArrayRead8(PFDIR) & 0x02)){
          if(value == !!(registerArrayRead16(ICR) & 0x0080))
-            setIprIsrBit(INT_IRQ5);
+            setIprIsrBit(DBVZ_INT_IRQ5);
          else
-            clearIprIsrBit(INT_IRQ5);
+            clearIprIsrBit(DBVZ_INT_IRQ5);
       }
       checkInterrupts();
 
@@ -81,13 +81,13 @@ void ads7846OverridePenState(bool value){
    }
 }
 
-void refreshTouchState(void){
+void m515RefreshTouchState(void){
    //called when ads7846PenIrqEnabled is changed
    updateTouchState();
    checkInterrupts();
 }
 
-void refreshInputState(void){
+void m515RefreshInputState(void){
    //update power button LED state if palmMisc.batteryCharging changed
    updatePowerButtonLedStatus();
 
@@ -115,7 +115,7 @@ int32_t interruptAcknowledge(int32_t intLevel){
    return vector;
 }
 
-void setBusErrorTimeOut(uint32_t address, bool isWrite){
+void dbvzSetBusErrorTimeOut(uint32_t address, bool isWrite){
    uint8_t scr = registerArrayRead8(SCR);
    debugLog("Bus error timeout at:0x%08X, PC:0x%08X\n", address, flx68000GetPc());
    registerArrayWrite8(SCR, scr | 0x80);
@@ -123,7 +123,7 @@ void setBusErrorTimeOut(uint32_t address, bool isWrite){
       flx68000BusError(address, isWrite);
 }
 
-void setPrivilegeViolation(uint32_t address, bool isWrite){
+void dbvzSetPrivilegeViolation(uint32_t address, bool isWrite){
    uint8_t scr = registerArrayRead8(SCR);
    debugLog("Privilege violation at:0x%08X, PC:0x%08X\n", address, flx68000GetPc());
    registerArrayWrite8(SCR, scr | 0x20);
@@ -131,7 +131,7 @@ void setPrivilegeViolation(uint32_t address, bool isWrite){
       flx68000BusError(address, isWrite);
 }
 
-void setWriteProtectViolation(uint32_t address){
+void dbvzSetWriteProtectViolation(uint32_t address){
    uint8_t scr = registerArrayRead8(SCR);
    debugLog("Write protect violation at:0x%08X, PC:0x%08X\n", address, flx68000GetPc());
    registerArrayWrite8(SCR, scr | 0x40);
@@ -143,7 +143,7 @@ static void pllWakeCpuIfOff(void){
    const int8_t pllWaitTable[4] = {32, 48, 64, 96};
 
    //PLL is off and not already in the process of waking up
-   if(!pllIsOn() && pllWakeWait == -1)
+   if(!dbvzIsPllOn() && pllWakeWait == -1)
       pllWakeWait = pllWaitTable[registerArrayRead16(PLLCR) & 0x0003];
 }
 
@@ -157,38 +157,38 @@ static void checkInterrupts(void){
    uint8_t intLevel = 0;
 
    //static interrupts
-   if(activeInterrupts & INT_EMIQ)
+   if(activeInterrupts & DBVZ_INT_EMIQ)
       intLevel = 7;//EMIQ - Emulator IRQ, has nothing to do with emulation, used for debugging on a dev board
 
-   if(intLevel < 6 && activeInterrupts & (INT_TMR1 | INT_PWM1 | INT_IRQ6))
+   if(intLevel < 6 && activeInterrupts & (DBVZ_INT_TMR1 | DBVZ_INT_PWM1 | DBVZ_INT_IRQ6))
       intLevel = 6;
 
-   if(intLevel < 5 && activeInterrupts & INT_IRQ5)
+   if(intLevel < 5 && activeInterrupts & DBVZ_INT_IRQ5)
       intLevel = 5;
 
-   if(intLevel < 4 && activeInterrupts & (INT_SPI2 | INT_UART1 | INT_WDT | INT_RTC | INT_KB | INT_RTI | INT_INT0 | INT_INT1 | INT_INT2 | INT_INT3))
+   if(intLevel < 4 && activeInterrupts & (DBVZ_INT_SPI2 | DBVZ_INT_UART1 | DBVZ_INT_WDT | DBVZ_INT_RTC | DBVZ_INT_KB | DBVZ_INT_RTI | DBVZ_INT_INT0 | DBVZ_INT_INT1 | DBVZ_INT_INT2 | DBVZ_INT_INT3))
       intLevel = 4;
 
-   if(intLevel < 3 && activeInterrupts & INT_IRQ3)
+   if(intLevel < 3 && activeInterrupts & DBVZ_INT_IRQ3)
       intLevel = 3;
 
-   if(intLevel < 2 && activeInterrupts & INT_IRQ2)
+   if(intLevel < 2 && activeInterrupts & DBVZ_INT_IRQ2)
       intLevel = 2;
 
-   if(intLevel < 1 && activeInterrupts & INT_IRQ1)
+   if(intLevel < 1 && activeInterrupts & DBVZ_INT_IRQ1)
       intLevel = 1;
 
    //configureable interrupts
-   if(intLevel < spi1IrqLevel && activeInterrupts & INT_SPI1)
+   if(intLevel < spi1IrqLevel && activeInterrupts & DBVZ_INT_SPI1)
       intLevel = spi1IrqLevel;
 
-   if(intLevel < uart2IrqLevel && activeInterrupts & INT_UART2)
+   if(intLevel < uart2IrqLevel && activeInterrupts & DBVZ_INT_UART2)
       intLevel = uart2IrqLevel;
 
-   if(intLevel < pwm2IrqLevel && activeInterrupts & INT_PWM2)
+   if(intLevel < pwm2IrqLevel && activeInterrupts & DBVZ_INT_PWM2)
       intLevel = pwm2IrqLevel;
 
-   if(intLevel < timer2IrqLevel && activeInterrupts & INT_TMR2)
+   if(intLevel < timer2IrqLevel && activeInterrupts & DBVZ_INT_TMR2)
       intLevel = timer2IrqLevel;
 
    //even masked interrupts turn off PCTLR, 4.5.4 Power Control Register MC68VZ328UM.pdf
@@ -209,55 +209,55 @@ static void checkPortDInterrupts(void){
    uint8_t portDInterruptEdgeTriggered = icrEdgeTriggered | registerArrayRead8(PDIRQEG);
    uint8_t portDInterruptEnabled = (~registerArrayRead8(PDSEL) & 0xF0) | registerArrayRead8(PDIRQEN);
    uint8_t portDIsInput = ~registerArrayRead8(PDDIR);
-   uint8_t portDInterruptTriggered = portDInterruptValue & portDInterruptEnabled & portDIsInput & (~portDInterruptEdgeTriggered | ~portDInterruptLastValue & (pllIsOn() ? 0xFF : 0xF0));
+   uint8_t portDInterruptTriggered = portDInterruptValue & portDInterruptEnabled & portDIsInput & (~portDInterruptEdgeTriggered | ~portDInterruptLastValue & (dbvzIsPllOn() ? 0xFF : 0xF0));
 
    if(portDInterruptTriggered & 0x01)
-      setIprIsrBit(INT_INT0);
+      setIprIsrBit(DBVZ_INT_INT0);
    else if(!(portDInterruptEdgeTriggered & 0x01))
-      clearIprIsrBit(INT_INT0);
+      clearIprIsrBit(DBVZ_INT_INT0);
 
    if(portDInterruptTriggered & 0x02)
-      setIprIsrBit(INT_INT1);
+      setIprIsrBit(DBVZ_INT_INT1);
    else if(!(portDInterruptEdgeTriggered & 0x02))
-      clearIprIsrBit(INT_INT1);
+      clearIprIsrBit(DBVZ_INT_INT1);
 
    if(portDInterruptTriggered & 0x04)
-      setIprIsrBit(INT_INT2);
+      setIprIsrBit(DBVZ_INT_INT2);
    else if(!(portDInterruptEdgeTriggered & 0x04))
-      clearIprIsrBit(INT_INT2);
+      clearIprIsrBit(DBVZ_INT_INT2);
 
    if(portDInterruptTriggered & 0x08)
-      setIprIsrBit(INT_INT3);
+      setIprIsrBit(DBVZ_INT_INT3);
    else if(!(portDInterruptEdgeTriggered & 0x08))
-      clearIprIsrBit(INT_INT3);
+      clearIprIsrBit(DBVZ_INT_INT3);
 
    if(portDInterruptTriggered & 0x10)
-      setIprIsrBit(INT_IRQ1);
+      setIprIsrBit(DBVZ_INT_IRQ1);
    else if(!(portDInterruptEdgeTriggered & 0x10))
-      clearIprIsrBit(INT_IRQ1);
+      clearIprIsrBit(DBVZ_INT_IRQ1);
 
    if(portDInterruptTriggered & 0x20)
-      setIprIsrBit(INT_IRQ2);
+      setIprIsrBit(DBVZ_INT_IRQ2);
    else if(!(portDInterruptEdgeTriggered & 0x20))
-      clearIprIsrBit(INT_IRQ2);
+      clearIprIsrBit(DBVZ_INT_IRQ2);
 
    if(portDInterruptTriggered & 0x40)
-      setIprIsrBit(INT_IRQ3);
+      setIprIsrBit(DBVZ_INT_IRQ3);
    else if(!(portDInterruptEdgeTriggered & 0x40))
-      clearIprIsrBit(INT_IRQ3);
+      clearIprIsrBit(DBVZ_INT_IRQ3);
 
    if(portDInterruptTriggered & 0x80)
-      setIprIsrBit(INT_IRQ6);
+      setIprIsrBit(DBVZ_INT_IRQ6);
    else if(!(portDInterruptEdgeTriggered & 0x80))
-      clearIprIsrBit(INT_IRQ6);
+      clearIprIsrBit(DBVZ_INT_IRQ6);
 
    //active low/off level triggered interrupt(triggers on 0, not a pull down resistor)
    //The SELx, POLx, IQENx, and IQEGx bits have no effect on the functionality of KBENx, 10.4.5.8 Port D Keyboard Enable Register MC68VZ328UM.pdf
    //the above has finally been verified to be correct!
    if(registerArrayRead8(PDKBEN) & ~(getPortDValue() ^ registerArrayRead8(PDPOL)) & portDIsInput)
-      setIprIsrBit(INT_KB);
+      setIprIsrBit(DBVZ_INT_KB);
    else
-      clearIprIsrBit(INT_KB);
+      clearIprIsrBit(DBVZ_INT_KB);
 
    //save to check against next time this function is called
    portDInterruptLastValue = portDInterruptTriggered;
@@ -272,10 +272,10 @@ static void printHwRegAccess(uint32_t address, uint32_t value, uint32_t size, bo
       debugLog("CPU read %d bits from register 0x%03X, PC:0x%08X.\n", size, address, flx68000GetPc());
 }
 
-uint8_t getHwRegister8(uint32_t address){
+uint8_t dbvzGetRegister8(uint32_t address){
 #if !defined(EMU_NO_SAFETY)
    if((address & 0x0000F000) != 0x0000F000){
-      setBusErrorTimeOut(address, false);
+      dbvzSetBusErrorTimeOut(address, false);
       return 0x00;
    }
 #endif
@@ -382,10 +382,10 @@ uint8_t getHwRegister8(uint32_t address){
    }
 }
 
-uint16_t getHwRegister16(uint32_t address){
+uint16_t dbvzGetRegister16(uint32_t address){
 #if !defined(EMU_NO_SAFETY)
    if((address & 0x0000F000) != 0x0000F000){
-      setBusErrorTimeOut(address, false);
+      dbvzSetBusErrorTimeOut(address, false);
       return 0x0000;
    }
 #endif
@@ -472,10 +472,10 @@ uint16_t getHwRegister16(uint32_t address){
    }
 }
 
-uint32_t getHwRegister32(uint32_t address){
+uint32_t dbvzGetRegister32(uint32_t address){
 #if !defined(EMU_NO_SAFETY)
    if((address & 0x0000F000) != 0x0000F000){
-      setBusErrorTimeOut(address, false);
+      dbvzSetBusErrorTimeOut(address, false);
       return 0x00000000;
    }
 #endif
@@ -501,10 +501,10 @@ uint32_t getHwRegister32(uint32_t address){
    }
 }
 
-void setHwRegister8(uint32_t address, uint8_t value){
+void dbvzSetRegister8(uint32_t address, uint8_t value){
 #if !defined(EMU_NO_SAFETY)
    if((address & 0x0000F000) != 0x0000F000){
-      setBusErrorTimeOut(address, true);
+      dbvzSetBusErrorTimeOut(address, true);
       return;
    }
 #endif
@@ -570,7 +570,7 @@ void setHwRegister8(uint32_t address, uint8_t value){
       case PFSEL:
          //this register controls the clock output pin for the SED1376 and IRQ line for PENIRQ
          registerArrayWrite8(PFSEL, value);
-         setSed1376Attached(sed1376ClockConnected());
+         m515SetSed1376Attached(sed1376ClockConnected());
 #if !defined(EMU_NO_SAFETY)
          updateTouchState();
          checkInterrupts();
@@ -667,10 +667,10 @@ void setHwRegister8(uint32_t address, uint8_t value){
    }
 }
 
-void setHwRegister16(uint32_t address, uint16_t value){
+void dbvzSetRegister16(uint32_t address, uint16_t value){
 #if !defined(EMU_NO_SAFETY)
    if((address & 0x0000F000) != 0x0000F000){
-      setBusErrorTimeOut(address, true);
+      dbvzSetBusErrorTimeOut(address, true);
       return;
    }
 #endif
@@ -725,15 +725,15 @@ void setHwRegister16(uint32_t address, uint16_t value){
          //1 must be written to clear INTF
          registerArrayWrite16(WATCHDOG, (value & 0x0003) | (registerArrayRead16(WATCHDOG) & (~value & 0x0080)));
          if(!(registerArrayRead16(WATCHDOG) & 0x0080))
-            clearIprIsrBit(INT_WDT);
+            clearIprIsrBit(DBVZ_INT_WDT);
          return;
 
       case RTCISR:
          registerArrayWrite16(RTCISR, registerArrayRead16(RTCISR) & ~value);
          if(!(registerArrayRead16(RTCISR) & 0xFF00))
-            clearIprIsrBit(INT_RTI);
+            clearIprIsrBit(DBVZ_INT_RTI);
          if(!(registerArrayRead16(RTCISR) & 0x003F))
-            clearIprIsrBit(INT_RTC);
+            clearIprIsrBit(DBVZ_INT_RTC);
          checkInterrupts();
          return;
 
@@ -745,7 +745,7 @@ void setHwRegister16(uint32_t address, uint16_t value){
          //CLKEN is required for SED1376 operation
          registerArrayWrite16(PLLCR, value & 0x3FBB);
          palmSysclksPerClk32 = sysclksPerClk32();
-         setSed1376Attached(sed1376ClockConnected());
+         m515SetSed1376Attached(sed1376ClockConnected());
 
          if(value & 0x0008)
             pllSleepWait = 30;//The PLL shuts down 30 clocks of CLK32 after the DISPLL bit is set in the PLLCR
@@ -785,13 +785,13 @@ void setHwRegister16(uint32_t address, uint16_t value){
 
       case CSA:{
             uint16_t oldCsa = registerArrayRead16(CSA);
-            bool oldBootMode = chips[CHIP_A0_ROM].inBootMode;
+            bool oldBootMode = chips[DBVZ_CHIP_A0_ROM].inBootMode;
 
             setCsa(value);
 
             //only reset address space if size changed, enabled/disabled or exiting boot mode
-            if((value & 0x000F) != (oldCsa & 0x000F) || chips[CHIP_A0_ROM].inBootMode != oldBootMode)
-               resetAddressSpace();
+            if((value & 0x000F) != (oldCsa & 0x000F) || chips[DBVZ_CHIP_A0_ROM].inBootMode != oldBootMode)
+               dbvzResetAddressSpace();
          }
          return;
 
@@ -802,7 +802,7 @@ void setHwRegister16(uint32_t address, uint16_t value){
 
             //only reset address space if size changed or enabled/disabled
             if((value & 0x000F) != (oldCsb & 0x000F))
-               resetAddressSpace();
+               dbvzResetAddressSpace();
          }
          return;
 
@@ -822,7 +822,7 @@ void setHwRegister16(uint32_t address, uint16_t value){
 
             //only reset address space if size changed, enabled/disabled or DRAM bit changed
             if((value & 0x020F) != (oldCsd & 0x020F))
-               resetAddressSpace();
+               dbvzResetAddressSpace();
          }
          return;
 
@@ -830,7 +830,7 @@ void setHwRegister16(uint32_t address, uint16_t value){
          //sets the starting location of ROM(0x10000000) and the PDIUSBD12 chip
          if((value & 0xFFFE) != registerArrayRead16(CSGBA)){
             setCsgba(value);
-            resetAddressSpace();
+            dbvzResetAddressSpace();
          }
          return;
 
@@ -838,7 +838,7 @@ void setHwRegister16(uint32_t address, uint16_t value){
          //sets the starting location of the SED1376(0x1FF80000)
          if((value & 0xFFFE) != registerArrayRead16(CSGBB)){
             setCsgbb(value);
-            resetAddressSpace();
+            dbvzResetAddressSpace();
          }
          return;
 
@@ -850,7 +850,7 @@ void setHwRegister16(uint32_t address, uint16_t value){
          //sets the starting location of RAM(0x00000000)
          if((value & 0xFFFE) != registerArrayRead16(CSGBD)){
             setCsgbd(value);
-            resetAddressSpace();
+            dbvzResetAddressSpace();
          }
          return;
 
@@ -861,7 +861,7 @@ void setHwRegister16(uint32_t address, uint16_t value){
             setCsgba(registerArrayRead16(CSGBA));
             setCsgbb(registerArrayRead16(CSGBB));
             setCsgbd(registerArrayRead16(CSGBD));
-            resetAddressSpace();
+            dbvzResetAddressSpace();
          }
          return;
 
@@ -875,7 +875,7 @@ void setHwRegister16(uint32_t address, uint16_t value){
                //CSA is not dependent on CSCTRL1
                setCsb(registerArrayRead16(CSB));
                setCsd(registerArrayRead16(CSD));
-               resetAddressSpace();
+               dbvzResetAddressSpace();
             }
          }
          return;
@@ -956,10 +956,10 @@ void setHwRegister16(uint32_t address, uint16_t value){
    }
 }
 
-void setHwRegister32(uint32_t address, uint32_t value){
+void dbvzSetRegister32(uint32_t address, uint32_t value){
 #if !defined(EMU_NO_SAFETY)
    if((address & 0x0000F000) != 0x0000F000){
-      setBusErrorTimeOut(address, true);
+      dbvzSetBusErrorTimeOut(address, true);
       return;
    }
 #endif
@@ -1004,11 +1004,11 @@ void setHwRegister32(uint32_t address, uint32_t value){
    }
 }
 
-void resetHwRegisters(void){
+void dbvzResetRegisters(void){
    uint32_t oldRtc = registerArrayRead32(RTCTIME);//preserve RTCTIME
    uint16_t oldDayr = registerArrayRead16(DAYR);//preserve DAYR
 
-   memset(palmReg, 0x00, REG_SIZE - BOOTLOADER_SIZE);
+   memset(palmReg, 0x00, DBVZ_REG_SIZE - DBVZ_BOOTLOADER_SIZE);
    palmSysclksPerClk32 = 0.0;
    clk32Counter = 0;
    pctlrCpuClockDivider = 1.0;
@@ -1033,19 +1033,19 @@ void resetHwRegisters(void){
 
    memset(chips, 0x00, sizeof(chips));
    //all chip selects are disabled at boot and CSA0 is mapped to 0x00000000 and covers the entire address range until CSA is set enabled
-   chips[CHIP_A0_ROM].inBootMode = true;
+   chips[DBVZ_CHIP_A0_ROM].inBootMode = true;
 
    //default sizes
-   chips[CHIP_A0_ROM].lineSize = 0x20000;
-   chips[CHIP_A1_USB].lineSize = 0x20000;
-   chips[CHIP_B0_SED].lineSize = 0x20000;
-   chips[CHIP_DX_RAM].lineSize = 0x8000;
+   chips[DBVZ_CHIP_A0_ROM].lineSize = 0x20000;
+   chips[DBVZ_CHIP_A1_USB].lineSize = 0x20000;
+   chips[DBVZ_CHIP_B0_SED].lineSize = 0x20000;
+   chips[DBVZ_CHIP_DX_RAM].lineSize = 0x8000;
 
    //masks for reading and writing
-   chips[CHIP_A0_ROM].mask = 0x003FFFFF;//4mb
-   chips[CHIP_A1_USB].mask = 0x00000002;//A1 is used as USB chip A0
-   chips[CHIP_B0_SED].mask = 0x0001FFFF;
-   chips[CHIP_DX_RAM].mask = 0x00000000;//16mb, no RAM enabled until the DRAM module is initialized
+   chips[DBVZ_CHIP_A0_ROM].mask = 0x003FFFFF;//4mb
+   chips[DBVZ_CHIP_A1_USB].mask = 0x00000002;//A1 is used as USB chip A0
+   chips[DBVZ_CHIP_B0_SED].mask = 0x0001FFFF;
+   chips[DBVZ_CHIP_DX_RAM].mask = 0x00000000;//16mb, no RAM enabled until the DRAM module is initialized
 
    //system control
    registerArrayWrite8(SCR, 0x1C);
@@ -1156,7 +1156,7 @@ void resetHwRegisters(void){
    palmSysclksPerClk32 = sysclksPerClk32();
 }
 
-void setRtc(uint16_t days, uint8_t hours, uint8_t minutes, uint8_t seconds){
+void dbvzSetRtc(uint16_t days, uint8_t hours, uint8_t minutes, uint8_t seconds){
    registerArrayWrite32(RTCTIME, hours << 24 & 0x1F000000 | minutes << 16 & 0x003F0000 | seconds & 0x0000003F);
    registerArrayWrite16(DAYR, days & 0x01FF);
 }
