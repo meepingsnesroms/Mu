@@ -22,6 +22,8 @@ DEFINES += QT_DEPRECATED_WARNINGS
 # You can also select to disable deprecated APIs only up to a certain version of Qt.
 DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000 # disables all the APIs deprecated before Qt 6.0.0
 
+CONFIG += support_palm_os5
+
 windows{
     RC_ICONS = windows/Mu.ico
     *msvc*{
@@ -76,6 +78,11 @@ CONFIG(debug, debug|release){
 }else{
     # release build, go fast
     DEFINES += EMU_NO_SAFETY
+}
+
+support_palm_os5{
+    DEFINES += EMU_SUPPORT_PALM_OS5 # the Qt build will not be supporting anything too slow to run OS 5
+    # SOURCES +=
 }
 
 CONFIG += c++11

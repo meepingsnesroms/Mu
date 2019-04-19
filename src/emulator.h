@@ -16,6 +16,7 @@ extern "C" {
 #include "specs/emuFeatureRegisterSpec.h"//for feature names
 
 //DEFINE INFO!!!
+//define EMU_SUPPORT_PALM_OS5 to compile in Tungsten C support(not reccomended for low power devices)
 //define EMU_MULTITHREADED to speed up long loops
 //define EMU_NO_SAFETY to remove all safety checks
 //define EMU_BIG_ENDIAN on big endian systems
