@@ -18,7 +18,7 @@ void flx68000PcLongJump(uint32_t newPc){
    uint32_t dataBufferGuest;
    uint32_t windowSize;
 
-   switch(bankType[START_BANK(newPc)]){
+   switch(dbvzBankType[DBVZ_START_BANK(newPc)]){
       case DBVZ_CHIP_A0_ROM:
          dataBufferHost = (uintptr_t)palmRom;
          dataBufferGuest = chips[DBVZ_CHIP_A0_ROM].start;
@@ -34,8 +34,8 @@ void flx68000PcLongJump(uint32_t newPc){
       case DBVZ_CHIP_REGISTERS:
          //needed for when EMU_NO_SAFETY is set and a function is run in the sandbox
          dataBufferHost = (uintptr_t)palmReg;
-         dataBufferGuest = BANK_ADDRESS(START_BANK(newPc));
-         windowSize = REG_SIZE;
+         dataBufferGuest = DBVZ_BANK_ADDRESS(DBVZ_START_BANK(newPc));
+         windowSize = DBVZ_REG_SIZE;
          break;
    }
 

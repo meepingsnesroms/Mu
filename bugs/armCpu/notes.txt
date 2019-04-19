@@ -1,1 +1,0 @@
-ARM executes mostly normal up until 68k functions are called when 32 bit aligned but acts weird when 16 bit aligned, there may be part of the CPU core I haven't patched yet.
