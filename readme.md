@@ -1,4 +1,4 @@
-# Palm m515/OS 4.1 emulator(Mu)
+# Palm OS emulator(Mu)
 
 This is a complete restart of my Palm OS emulator, with the last one the code got too messy and the goal too ambitious(to emulate every palm API in software and for compatibility with all Palm OS versions and devices).
 
@@ -17,11 +17,12 @@ It is the best Palm brand OS 4 device that has no special hardware builtin(cellp
 
 The Palm keyboard attachment will likely be emulated later on so the PC keyboard can be used on text fields.
 
-## What about OS 5
+## What about OS 5?
 
 I am planning on adding Tungsten C support eventually.
 
 ## Credits
+Firebird Emu (ARMv5TE Core)
 Musashi v3.4 (last version that builds outside of MAME)(68k Core)  
 blip_buf 1.1.0 (Audio Resampler)  
 http://www.iconarchive.com/show/crystal-clear-icons-by-everaldo/App-palm-icon.html (Desktop Icon)  

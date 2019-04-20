@@ -19,7 +19,7 @@
 #include "specs/emuFeatureRegisterSpec.h"
 
 
-//Memory Map of Palm m515
+//Memory map of Palm m515
 //0x00000000<->0x00FFFFFF RAM, CSC0 as RAS0, CSC1 as RAS1, CSD0 as CAS0 and CSD1 as CAS1
 //0x10000000<->0x103FFFFF ROM, CSA0, at address 0x00000000 during boot, palmos41-en-m515.rom, substitute "en" for your language code
 //0x10400000<->0x10400003 USB, CSA1
@@ -28,6 +28,10 @@
 //this buffer must be processed depending on whats in the SED1376 registers, the result is the Palm framebuffer
 //0xFFFFF000<->0xFFFFFDFF Hardware Registers
 //0xFFFFFE00<->0xFFFFFFFF Bootloader, only reads from UART into RAM and jumps to it, never executed in consumer Palms
+
+//Memory map of Tungsten C
+//TODO
+
 //VGhpcyBlbXVsYXRvciBpcyBkZWRpY2F0ZWQgdG8gdGhlIGJvdmluZSBtb28gY293cyB0aGF0IG1vby4=
 
 
@@ -73,6 +77,25 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t enab
 
    if(emulatorEmulatingTungstenC){
       //emulating Tungsten C
+      /*
+      //allocate buffers, add 4 to memory regions to prevent SIGSEGV from accessing off the end
+      palmRam = malloc(M515_RAM_SIZE + 4);
+      palmRom = malloc(M515_ROM_SIZE + 4);
+      palmReg = malloc(DBVZ_REG_SIZE + 4);
+      palmFramebuffer = malloc(320 * 320 * sizeof(uint16_t));
+      palmAudio = malloc(AUDIO_SAMPLES_PER_FRAME * 2 * sizeof(int16_t));
+      palmAudioResampler = blip_new(AUDIO_SAMPLE_RATE);//have 1 second of samples
+      if(!palmRam || !palmRom || !palmReg || !palmFramebuffer || !palmAudio || !palmAudioResampler){
+         free(palmRam);
+         free(palmRom);
+         free(palmReg);
+         free(palmFramebuffer);
+         free(palmAudio);
+         blip_delete(palmAudioResampler);
+         return EMU_ERROR_OUT_OF_MEMORY;
+      }
+      */
+
       //TODO!
    }
    else{

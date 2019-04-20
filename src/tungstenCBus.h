@@ -1,0 +1,7 @@
+#ifndef TUNGSTEN_C_BUS_H
+#define TUNGSTEN_C_BUS_H
+
+#define TUNGSTEN_C_RAM_SIZE (64 * 0x100000)//64mb RAM
+#define TUNGSTEN_C_ROM_SIZE (4 * 0x100000)//4mb ROM
+
+#endif

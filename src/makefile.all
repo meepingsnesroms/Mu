@@ -17,8 +17,12 @@ EMU_SOURCES_C := $(EMU_PATH)/emulator.c \
 	$(EMU_PATH)/m68k/m68kopac.c \
 	$(EMU_PATH)/m68k/m68kdasm.c \
 	$(EMU_PATH)/m68k/m68kcpu.c
+EMU_SOURCES_CXX := 
+EMU_SOURCES_ASM := 
 
-ifeq ($(EMU_SUPPORT_PALM_OS5),1)
+ifeq ($(EMU_SUPPORT_PALM_OS5), 1)
    EMU_DEFINES += -DEMU_SUPPORT_PALM_OS5
    # EMU_SOURCES_C +=
+   # EMU_SOURCES_CXX +=
+   # EMU_SOURCES_ASM +=
 endif

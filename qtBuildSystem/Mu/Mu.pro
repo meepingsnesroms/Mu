@@ -82,7 +82,62 @@ CONFIG(debug, debug|release){
 
 support_palm_os5{
     DEFINES += EMU_SUPPORT_PALM_OS5 # the Qt build will not be supporting anything too slow to run OS 5
-    # SOURCES +=
+
+    windows{
+        SOURCES += \
+            ../../src/armv5te/os/os-win32.c
+    }
+
+    macx|linux-g++|android{
+        SOURCES += \
+            ../../src/armv5te/os/os-linux.c
+    }
+
+    # iOS needs IS_IOS_BUILD set, but the Qt port does not support iOS currently
+
+    cpu_x86_32{
+        SOURCES += \
+            ../../src/armv5te/translate_x86.c \
+            ../../src/armv5te/asmcode_x86.S
+    }
+
+    cpu_x86_64{
+        SOURCES += \
+            ../../src/armv5te/translate_x86_64.c \
+            ../../src/armv5te/asmcode_x86_64.S
+    }
+
+    cpu_armv7{
+        SOURCES += \
+            ../../src/armv5te/translate_arm.cpp \
+            ../../src/armv5te/asmcode_arm.S
+    }
+
+    cpu_armv8{
+        SOURCES += \
+            ../../src/armv5te/translate_aarch64.cpp \
+            ../../src/armv5te/asmcode_aarch64.S
+    }
+
+    SOURCES += \
+        ../../src/armv5te/arm_interpreter.cpp \
+        ../../src/armv5te/cpu.cpp \
+        ../../src/armv5te/thumb_interpreter.cpp \
+        ../../src/armv5te/translate_aarch64.cpp \
+        ../../src/armv5te/translate_arm.cpp \
+        ../../src/armv5te/asmcode.c \
+        ../../src/armv5te/mem.c \
+        ../../src/tungstenCBus.c
+
+    HEADERS += \
+        ../../src/armv5te/os/os.h \
+        ../../src/armv5te/asmcode.h \
+        ../../src/armv5te/bitfield.h \
+        ../../src/armv5te/cpu.h \
+        ../../src/armv5te/emu.h \
+        ../../src/armv5te/mem.h \
+        ../../src/armv5te/translate.h \
+        ../../src/tungstenCBus.h
 }
 
 CONFIG += c++11
@@ -191,7 +246,10 @@ DISTFILES += \
     images/stateManager.svg \
     images/stop.svg \
     images/todo.svg \
-    images/up.svg
+    images/up.svg \
+    ../../src/armv5te/asmcode_aarch64.S \
+    ../../src/armv5te/asmcode_x86.S \
+    ../../src/armv5te/asmcode_x86_64.S
 
 RESOURCES += \
     mainwindow.qrc
