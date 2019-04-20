@@ -23,7 +23,7 @@
 #include "asmcode.h"
 #include "cpu.h"
 #include "cpudefs.h"
-#include "disasm.h"
+//#include "disasm.h"
 #include "mem.h"
 #include "mmu.h"
 #include "translate.h"

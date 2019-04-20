@@ -77,9 +77,6 @@ extern struct arm_state arm __asm__("arm");
     #define FASTCALL
 #endif
 
-typedef struct emu_snapshot emu_snapshot;
-bool cpu_resume(const emu_snapshot *s);
-bool cpu_suspend(emu_snapshot *s);
 void cpu_int_check();
 uint32_t FASTCALL get_cpsr() __asm__("get_cpsr");
 void set_cpsr_full(uint32_t cpsr);

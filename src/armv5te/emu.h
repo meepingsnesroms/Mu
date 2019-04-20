@@ -8,6 +8,8 @@
 #include "cpu.h"
 #include "mem.h"
 
+#include "../emulator.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -39,7 +41,6 @@ extern uint32_t cpu_events __asm__("cpu_events");
 
 // Settings
 extern bool exiting, debug_on_start, debug_on_warn, print_on_warn;
-extern BootOrder boot_order;
 extern bool do_translate;
 extern uint32_t product, features, asic_user_flags;
 
@@ -72,10 +73,13 @@ void add_reset_proc(void (*proc)(void));
 extern void *restart_after_exception[32];
 
 // GUI callbacks
+/*
 void gui_do_stuff(bool wait); // Called every once in a while...
 int gui_getchar(); // Serial input
 void gui_putchar(char c); // Serial output
-void gui_debug_printf(const char *fmt, ...); // Debug output #1
+*/
+#define gui_debug_printf(...) debugLog(__VA_ARGS__)
+/*
 void gui_debug_vprintf(const char *fmt, va_list ap); // Debug output #2
 void gui_perror(const char *msg); // Error output
 void gui_set_busy(bool busy); // To change the cursor, for instance
@@ -83,9 +87,11 @@ void gui_status_printf(const char *fmt, ...); // Status output
 void gui_show_speed(double speed); // Speed display output
 void gui_usblink_changed(bool state); // Notification for usblink state changes
 void gui_debugger_entered_or_left(bool entered); // Notification for debug events
+*/
 
 /* callback == 0: Stop requesting input
  * callback != 0: Call callback with input, then stop requesting */
+/*
 typedef void (*debug_input_cb)(const char *input);
 void gui_debugger_request_input(debug_input_cb callback);
 
@@ -101,6 +107,7 @@ typedef struct emu_snapshot {
     mem_snapshot mem;
     flash_snapshot flash;
 } emu_snapshot;
+*/
 
 #ifdef __cplusplus
 }

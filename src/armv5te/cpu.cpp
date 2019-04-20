@@ -433,17 +433,3 @@ void set_reg_bx(uint8_t i, uint32_t value)
         arm.reg[15] -= 1;
     }
 }
-
-bool cpu_resume(const emu_snapshot *s)
-{
-    arm = s->cpu_state;
-    cpu_events = s->cpu_state.cpu_events_state;
-    return true;
-}
-
-bool cpu_suspend(emu_snapshot *s)
-{
-    s->cpu_state = arm;
-    s->cpu_state.cpu_events_state = cpu_events;
-    return true;
-}

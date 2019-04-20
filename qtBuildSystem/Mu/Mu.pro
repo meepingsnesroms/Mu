@@ -37,6 +37,7 @@ windows{
         QMAKE_LFLAGS += -fopenmp
     }
     DEFINES += EMU_MULTITHREADED
+    CONFIG += cpu_x86_64 # this should be auto detected in the future
 }
 
 macx{
@@ -44,6 +45,7 @@ macx{
     ICON = macos/Mu.icns
     QMAKE_INFO_PLIST = macos/Info.plist
     DEFINES += EMU_MULTITHREADED
+    CONFIG += cpu_x86_64 # Mac OS is only x86_64
 }
 
 linux-g++{
@@ -51,6 +53,7 @@ linux-g++{
     QMAKE_CXXFLAGS += -fopenmp
     QMAKE_LFLAGS += -fopenmp
     DEFINES += EMU_MULTITHREADED
+    CONFIG += cpu_x86_64 # this should be auto detected in the future
 }
 
 android{
@@ -58,6 +61,7 @@ android{
     QMAKE_CXXFLAGS += -fopenmp
     QMAKE_LFLAGS += -fopenmp
     DEFINES += EMU_MULTITHREADED
+    CONFIG += cpu_armv7 # this should be auto detected in the future
 }
 
 
@@ -123,8 +127,6 @@ support_palm_os5{
         ../../src/armv5te/arm_interpreter.cpp \
         ../../src/armv5te/cpu.cpp \
         ../../src/armv5te/thumb_interpreter.cpp \
-        ../../src/armv5te/translate_aarch64.cpp \
-        ../../src/armv5te/translate_arm.cpp \
         ../../src/armv5te/asmcode.c \
         ../../src/armv5te/mem.c \
         ../../src/tungstenCBus.c
@@ -169,7 +171,8 @@ SOURCES += \
     ../../src/expansionHardware.c \
     settingsmanager.cpp \
     ../../src/m515Bus.c \
-    ../../src/dbvzRegisters.c
+    ../../src/dbvzRegisters.c \
+    ../../src/armv5te/mmu.c
 
 HEADERS += \
     debugviewer.h \
@@ -207,7 +210,12 @@ HEADERS += \
     ../../src/m515Bus.h \
     ../../src/dbvzRegisterAccessors.c.h \
     ../../src/dbvzTiming.c.h \
-    ../../src/dbvzRegisters.h
+    ../../src/dbvzRegisters.h \
+    ../../src/armv5te/cpudefs.h \
+    ../../src/armv5te/debug.h \
+    ../../src/armv5te/mmu.h \
+    ../../src/armv5te/armsnippets.h \
+    ../../src/armv5te/literalpool.h
 
 FORMS += \
     mainwindow.ui \
@@ -246,10 +254,7 @@ DISTFILES += \
     images/stateManager.svg \
     images/stop.svg \
     images/todo.svg \
-    images/up.svg \
-    ../../src/armv5te/asmcode_aarch64.S \
-    ../../src/armv5te/asmcode_x86.S \
-    ../../src/armv5te/asmcode_x86_64.S
+    images/up.svg
 
 RESOURCES += \
     mainwindow.qrc
