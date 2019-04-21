@@ -140,6 +140,7 @@ support_palm_os5{
         ../../src/pxa255/pxa255_RTC.c \
         ../../src/pxa255/pxa255_TIMR.c \
         ../../src/pxa255/pxa255_UART.c \
+        ../../src/pxa255/pxa255.c \
         ../../src/armv5te/arm_interpreter.cpp \
         ../../src/armv5te/cpu.cpp \
         ../../src/armv5te/coproc.cpp \
@@ -163,6 +164,7 @@ support_palm_os5{
         ../../src/pxa255/pxa255_UART.h \
         ../../src/pxa255/pxa255_types.h \
         ../../src/pxa255/pxa255_math64.h \
+        ../../src/pxa255/pxa255.h \
         ../../src/armv5te/os/os.h \
         ../../src/armv5te/asmcode.h \
         ../../src/armv5te/bitfield.h \

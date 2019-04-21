@@ -16,17 +16,17 @@ uint8_t dbvzBankType[DBVZ_TOTAL_MEMORY_BANKS];
 
 
 //RAM accesses
-static uint8_t ramRead8(uint32_t address){return BUFFER_READ_8(palmRam, address, dbvzChipSelects[DBVZ_CHIP_DX_RAM].mask);}
-static uint16_t ramRead16(uint32_t address){return BUFFER_READ_16(palmRam, address, dbvzChipSelects[DBVZ_CHIP_DX_RAM].mask);}
-static uint32_t ramRead32(uint32_t address){return BUFFER_READ_32(palmRam, address, dbvzChipSelects[DBVZ_CHIP_DX_RAM].mask);}
-static void ramWrite8(uint32_t address, uint8_t value){BUFFER_WRITE_8(palmRam, address, dbvzChipSelects[DBVZ_CHIP_DX_RAM].mask, value);}
-static void ramWrite16(uint32_t address, uint16_t value){BUFFER_WRITE_16(palmRam, address, dbvzChipSelects[DBVZ_CHIP_DX_RAM].mask, value);}
-static void ramWrite32(uint32_t address, uint32_t value){BUFFER_WRITE_32(palmRam, address, dbvzChipSelects[DBVZ_CHIP_DX_RAM].mask, value);}
+static uint8_t ramRead8(uint32_t address){return M68K_BUFFER_READ_8(palmRam, address, dbvzChipSelects[DBVZ_CHIP_DX_RAM].mask);}
+static uint16_t ramRead16(uint32_t address){return M68K_BUFFER_READ_16(palmRam, address, dbvzChipSelects[DBVZ_CHIP_DX_RAM].mask);}
+static uint32_t ramRead32(uint32_t address){return M68K_BUFFER_READ_32(palmRam, address, dbvzChipSelects[DBVZ_CHIP_DX_RAM].mask);}
+static void ramWrite8(uint32_t address, uint8_t value){M68K_BUFFER_WRITE_8(palmRam, address, dbvzChipSelects[DBVZ_CHIP_DX_RAM].mask, value);}
+static void ramWrite16(uint32_t address, uint16_t value){M68K_BUFFER_WRITE_16(palmRam, address, dbvzChipSelects[DBVZ_CHIP_DX_RAM].mask, value);}
+static void ramWrite32(uint32_t address, uint32_t value){M68K_BUFFER_WRITE_32(palmRam, address, dbvzChipSelects[DBVZ_CHIP_DX_RAM].mask, value);}
 
 //ROM accesses
-static uint8_t romRead8(uint32_t address){return BUFFER_READ_8(palmRom, address, dbvzChipSelects[DBVZ_CHIP_A0_ROM].mask);}
-static uint16_t romRead16(uint32_t address){return BUFFER_READ_16(palmRom, address, dbvzChipSelects[DBVZ_CHIP_A0_ROM].mask);}
-static uint32_t romRead32(uint32_t address){return BUFFER_READ_32(palmRom, address, dbvzChipSelects[DBVZ_CHIP_A0_ROM].mask);}
+static uint8_t romRead8(uint32_t address){return M68K_BUFFER_READ_8(palmRom, address, dbvzChipSelects[DBVZ_CHIP_A0_ROM].mask);}
+static uint16_t romRead16(uint32_t address){return M68K_BUFFER_READ_16(palmRom, address, dbvzChipSelects[DBVZ_CHIP_A0_ROM].mask);}
+static uint32_t romRead32(uint32_t address){return M68K_BUFFER_READ_32(palmRom, address, dbvzChipSelects[DBVZ_CHIP_A0_ROM].mask);}
 
 //SED1376 accesses
 static uint8_t sed1376Read8(uint32_t address){
@@ -35,7 +35,7 @@ static uint8_t sed1376Read8(uint32_t address){
       return 0x00;
 #endif
    if(address & SED1376_MR_BIT)
-      return BUFFER_READ_8_BIG_ENDIAN(sed1376Ram, address, dbvzChipSelects[DBVZ_CHIP_B0_SED].mask);
+      return M68K_BUFFER_READ_8_BIG_ENDIAN(sed1376Ram, address, dbvzChipSelects[DBVZ_CHIP_B0_SED].mask);
    else
       return sed1376GetRegister(address & dbvzChipSelects[DBVZ_CHIP_B0_SED].mask);
 }
@@ -45,7 +45,7 @@ static uint16_t sed1376Read16(uint32_t address){
       return 0x0000;
 #endif
    if(address & SED1376_MR_BIT)
-      return BUFFER_READ_16_BIG_ENDIAN(sed1376Ram, address, dbvzChipSelects[DBVZ_CHIP_B0_SED].mask);
+      return M68K_BUFFER_READ_16_BIG_ENDIAN(sed1376Ram, address, dbvzChipSelects[DBVZ_CHIP_B0_SED].mask);
    else
       return sed1376GetRegister(address & dbvzChipSelects[DBVZ_CHIP_B0_SED].mask);
 }
@@ -55,25 +55,25 @@ static uint32_t sed1376Read32(uint32_t address){
       return 0x00000000;
 #endif
    if(address & SED1376_MR_BIT)
-      return BUFFER_READ_32_BIG_ENDIAN(sed1376Ram, address, dbvzChipSelects[DBVZ_CHIP_B0_SED].mask);
+      return M68K_BUFFER_READ_32_BIG_ENDIAN(sed1376Ram, address, dbvzChipSelects[DBVZ_CHIP_B0_SED].mask);
    else
       return sed1376GetRegister(address & dbvzChipSelects[DBVZ_CHIP_B0_SED].mask);
 }
 static void sed1376Write8(uint32_t address, uint8_t value){
    if(address & SED1376_MR_BIT)
-      BUFFER_WRITE_8_BIG_ENDIAN(sed1376Ram, address, dbvzChipSelects[DBVZ_CHIP_B0_SED].mask, value);
+      M68K_BUFFER_WRITE_8_BIG_ENDIAN(sed1376Ram, address, dbvzChipSelects[DBVZ_CHIP_B0_SED].mask, value);
    else
       sed1376SetRegister(address & dbvzChipSelects[DBVZ_CHIP_B0_SED].mask, value);
 }
 static void sed1376Write16(uint32_t address, uint16_t value){
    if(address & SED1376_MR_BIT)
-      BUFFER_WRITE_16_BIG_ENDIAN(sed1376Ram, address, dbvzChipSelects[DBVZ_CHIP_B0_SED].mask, value);
+      M68K_BUFFER_WRITE_16_BIG_ENDIAN(sed1376Ram, address, dbvzChipSelects[DBVZ_CHIP_B0_SED].mask, value);
    else
       sed1376SetRegister(address & dbvzChipSelects[DBVZ_CHIP_B0_SED].mask, value);
 }
 static void sed1376Write32(uint32_t address, uint32_t value){
    if(address & SED1376_MR_BIT)
-      BUFFER_WRITE_32_BIG_ENDIAN(sed1376Ram, address, dbvzChipSelects[DBVZ_CHIP_B0_SED].mask, value);
+      M68K_BUFFER_WRITE_32_BIG_ENDIAN(sed1376Ram, address, dbvzChipSelects[DBVZ_CHIP_B0_SED].mask, value);
    else
       sed1376SetRegister(address & dbvzChipSelects[DBVZ_CHIP_B0_SED].mask, value);
 }

@@ -20,6 +20,7 @@
 
 #if defined(EMU_SUPPORT_PALM_OS5)
 #include "tungstenCBus.h"
+#include "pxa255/pxa255.h"
 #endif
 
 
@@ -65,7 +66,7 @@ double    palmClockMultiplier;//used by the emulator to overclock the emulated P
 
 #if defined(EMU_SUPPORT_PALM_OS5)
 static void emulatorTungstenCFrame(void){
-
+   pxa255Execute();
 }
 #endif
 
@@ -107,12 +108,12 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t enab
    if(emulatorInitialized)
       return EMU_ERROR_RESOURCE_LOCKED;
 
-   if(!palmRomDump.data)
+   if(!palmRomDump.data || palmRomDump.size < 0x8)
       return EMU_ERROR_INVALID_PARAMETER;
 
 #if defined(EMU_SUPPORT_PALM_OS5)
-   //TODO: need to check for ROMs device type here
-   emulatorEmulatingTungstenC = false;
+   //0x00000004 is boot program counter on 68k, its just 0x00000000 on ARM
+   emulatorEmulatingTungstenC = !(palmRomDump.data[0x4] || palmRomDump.data[0x5] || palmRomDump.data[0x6] || palmRomDump.data[0x7]);
 
    if(emulatorEmulatingTungstenC){
       //emulating Tungsten C
@@ -130,8 +131,24 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t enab
          blip_delete(palmAudioResampler);
          return EMU_ERROR_OUT_OF_MEMORY;
       }
+      memset(palmAudio, 0x00, AUDIO_SAMPLES_PER_FRAME * 2/*channels*/ * sizeof(int16_t));
+      memset(&palmInput, 0x00, sizeof(palmInput));
+      memset(&palmMisc, 0x00, sizeof(palmMisc));
+      memset(&palmSdCard, 0x00, sizeof(palmSdCard));
+      memset(&palmEmuFeatures, 0x00, sizeof(palmEmuFeatures));
+      palmFramebufferWidth = 320;
+      palmFramebufferHeight = 320;
+      palmMisc.batteryLevel = 100;
+      palmCycleCounter = 0.0;
+      palmEmuFeatures.info = enabledEmuFeatures;
 
-      //TODO!
+      //initialize components, I dont think theres much in a Tungsten C
+      blip_set_rates(palmAudioResampler, AUDIO_CLOCK_RATE, AUDIO_SAMPLE_RATE);
+      pxa255Init();
+      sandboxInit();
+
+      //reset everything
+      emulatorSoftReset();
    }
    else{
 #endif
@@ -211,23 +228,46 @@ void emulatorExit(void){
 
 void emulatorHardReset(void){
    //equivalent to taking the battery out and putting it back in
-   memset(palmRam, 0x00, M515_RAM_SIZE);
-   emulatorSoftReset();
-   sdCardReset();
-   dbvzSetRtc(0, 0, 0, 0);
+#if defined(EMU_SUPPORT_PALM_OS5)
+   if(emulatorEmulatingTungstenC){
+      memset(palmRam, 0x00, TUNGSTEN_C_RAM_SIZE);
+      emulatorSoftReset();
+      sdCardReset();
+   }
+   else{
+#endif
+      memset(palmRam, 0x00, M515_RAM_SIZE);
+      emulatorSoftReset();
+      sdCardReset();
+      dbvzSetRtc(0, 0, 0, 0);
+#if defined(EMU_SUPPORT_PALM_OS5)
+   }
+#endif
 }
 
 void emulatorSoftReset(void){
    //equivalent to pushing the reset button on the back of the device
-   palmEmuFeatures.value = 0x00000000;
-   palmClockMultiplier = 1.00 - DBVZ_CPU_PERCENT_WAITING;
-   sed1376Reset();
-   ads7846Reset();
-   pdiUsbD12Reset();
-   expansionHardwareReset();
-   flx68000Reset();
-   sandboxReset();
-   //sdCardReset() should not be called here, the SD card does not have a reset line and should only be reset by a power cycle
+#if defined(EMU_SUPPORT_PALM_OS5)
+   if(emulatorEmulatingTungstenC){
+      palmEmuFeatures.value = 0x00000000;
+      palmClockMultiplier = 1.00;
+      pxa255Reset();
+      sandboxReset();
+   }
+   else{
+#endif
+      palmEmuFeatures.value = 0x00000000;
+      palmClockMultiplier = 1.00 - DBVZ_CPU_PERCENT_WAITING;
+      sed1376Reset();
+      ads7846Reset();
+      pdiUsbD12Reset();
+      expansionHardwareReset();
+      flx68000Reset();
+      sandboxReset();
+      //sdCardReset() should not be called here, the SD card does not have a reset line and should only be reset by a power cycle
+#if defined(EMU_SUPPORT_PALM_OS5)
+   }
+#endif
 }
 
 void emulatorSetRtc(uint16_t days, uint8_t hours, uint8_t minutes, uint8_t seconds){

@@ -11,12 +11,12 @@ static uint8_t getPortKValue(void);
 static uint8_t getPortMValue(void);
 
 //basic accessors
-static uint8_t registerArrayRead8(uint32_t address){return BUFFER_READ_8(palmReg, address, 0xFFF);}
-static uint16_t registerArrayRead16(uint32_t address){return BUFFER_READ_16(palmReg, address, 0xFFF);}
-static uint32_t registerArrayRead32(uint32_t address){return BUFFER_READ_32(palmReg, address, 0xFFF);}
-static void registerArrayWrite8(uint32_t address, uint8_t value){BUFFER_WRITE_8(palmReg, address, 0xFFF, value);}
-static void registerArrayWrite16(uint32_t address, uint16_t value){BUFFER_WRITE_16(palmReg, address, 0xFFF, value);}
-static void registerArrayWrite32(uint32_t address, uint32_t value){BUFFER_WRITE_32(palmReg, address, 0xFFF, value);}
+static uint8_t registerArrayRead8(uint32_t address){return M68K_BUFFER_READ_8(palmReg, address, 0xFFF);}
+static uint16_t registerArrayRead16(uint32_t address){return M68K_BUFFER_READ_16(palmReg, address, 0xFFF);}
+static uint32_t registerArrayRead32(uint32_t address){return M68K_BUFFER_READ_32(palmReg, address, 0xFFF);}
+static void registerArrayWrite8(uint32_t address, uint8_t value){M68K_BUFFER_WRITE_8(palmReg, address, 0xFFF, value);}
+static void registerArrayWrite16(uint32_t address, uint16_t value){M68K_BUFFER_WRITE_16(palmReg, address, 0xFFF, value);}
+static void registerArrayWrite32(uint32_t address, uint32_t value){M68K_BUFFER_WRITE_32(palmReg, address, 0xFFF, value);}
 
 //interrupt setters, used for setting an interrupt with masking by IMR and logging in IPR
 static void setIprIsrBit(uint32_t interruptBit){

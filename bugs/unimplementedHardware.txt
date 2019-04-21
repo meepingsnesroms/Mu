@@ -54,6 +54,7 @@ MakePalmBitmap:
 
 Other:
 Support for Silkyboard 2 silkscreen:https://archive.org/details/tucows_228076_SILKYBOARD_II
+Qt port dosent support Windows touchscreen input
 
 
 Fixed:

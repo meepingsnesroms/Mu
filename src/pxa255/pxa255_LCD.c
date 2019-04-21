@@ -1,9 +1,10 @@
 #include "pxa255_LCD.h"
 #include "pxa255_mem.h"
 
+#include "../emulator.h"
 
 
-#define LCD_IMAGE		"LCD.bmp"
+
 #define UNMASKABLE_INTS		0x7C8E
 
 
@@ -225,52 +226,22 @@ static void pxa255LcdPrvDma(Pxa255lcd* lcd, void* dest, UInt32 addr, UInt32 len)
 }
 
 #ifndef EMBEDDED
-	#include <stdio.h>
-	
 	static _INLINE_ void pxa255LcdScreenDataPixel(Pxa255lcd* lcd, UInt8* buf){
-	
-		UInt8 r, g, b;
-		const UInt32 W = 640;
-		const UInt32 H = 480;
-		
-		b = buf[0] << 3;
-		r = buf[1] & 0xF8;
-		g = (buf[1] << 5) | ((buf[0] >> 3) & 0x1C);
-		
-		{
-			static UInt32 pn = 0;
-			static FILE* bmp = NULL;
-			
-			if(pn == 0){
-				bmp = fopen(LCD_IMAGE, "w+b");
-				if(bmp){
-					
-					const UInt32 off = 56;
-					const UInt32 sz = 320 * 320 * 3 + off;
-					#define LE32(x)	((int)((x) & 0xFF)), ((int)(((x) >> 8) & 0xFF)), ((int)(((x) >> 16) & 0xFF)), ((int)((x) >> 24))
-					#define LE16(x) ((int)((x) & 0xFF)), ((int)(((x) >> 8) & 0xFF))
-					
-					fprintf(bmp, "BM%c%c%c%c%c%c%c%c%c%c%c%c", LE32(sz), LE16(0), LE16(0), LE32(off));	//bitmap file header
-					fprintf(bmp, "%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c", LE32(40), LE32(W), LE32(-H), LE16(1), LE16(24), LE32(0), LE32(W * H * 3), LE32(2835), LE32(2835), LE32(0), LE32(0)); //BITMAPCOREHEADER 
-					fprintf(bmp, "%c%c",0 ,0); //spacer to align bmp data to 4 bytes
-					
-					#undef LE32
-				}
-			}
-			if(bmp){
-			
-				fprintf(bmp, "%c%c%c", b, g, r);
-			}
-			pn++;
-			if(pn == W * H){
-				pn = 0;
-				if(bmp){
-					
-					fclose(bmp);
-					bmp = NULL;
-				}
-			}
-		}
+      static UInt16 pixelX = 0;
+      static UInt16 pixelY = 0;
+
+      if(pixelX == 640){
+         pixelY++;
+         pixelX = 0;
+      }
+
+      if(pixelY == 480){
+         pixelY = 0;
+         pixelX = 0;
+      }
+
+      if(pixelX < 320 && pixelY < 320)
+         palmFramebuffer[pixelY * 320 + pixelX] = buf[0] || buf[1] << 8;
 	}
 
 	#ifndef PXA255_LCD_SUPPORTS_PALLETES

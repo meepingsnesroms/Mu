@@ -26,6 +26,38 @@
 #define DBVZ_BOOTLOADER_SIZE 0x200
 #define SED1376_MR_BIT 0x20000
 
+//buffers
+//the read/write stuff looks messy here but makes the memory access functions alot cleaner
+#if defined(EMU_BIG_ENDIAN)
+//memory layout is the same as the Palm m515, just cast to pointer and access, 32 bit accesses are split to prevent unaligned access issues
+#define M68K_BUFFER_READ_8(segment, accessAddress, mask)  (*(uint8_t*)(segment + ((accessAddress) & (mask))))
+#define M68K_BUFFER_READ_16(segment, accessAddress, mask) (*(uint16_t*)(segment + ((accessAddress) & (mask))))
+#define M68K_BUFFER_READ_32(segment, accessAddress, mask) (*(uint16_t*)(segment + ((accessAddress) & (mask))) << 16 | *(uint16_t*)(segment + ((accessAddress) + 2 & (mask))))
+#define M68K_BUFFER_WRITE_8(segment, accessAddress, mask, value)  (*(uint8_t*)(segment + ((accessAddress) & (mask))) = (value))
+#define M68K_BUFFER_WRITE_16(segment, accessAddress, mask, value) (*(uint16_t*)(segment + ((accessAddress) & (mask))) = (value))
+#define M68K_BUFFER_WRITE_32(segment, accessAddress, mask, value) (*(uint16_t*)(segment + ((accessAddress) & (mask))) = (value) >> 16 , *(uint16_t*)(segment + ((accessAddress) + 2 & (mask))) = (value) & 0xFFFF)
+#define M68K_BUFFER_READ_8_BIG_ENDIAN  M68K_BUFFER_READ_8
+#define M68K_BUFFER_READ_16_BIG_ENDIAN M68K_BUFFER_READ_16
+#define M68K_BUFFER_READ_32_BIG_ENDIAN M68K_BUFFER_READ_32
+#define M68K_BUFFER_WRITE_8_BIG_ENDIAN  M68K_BUFFER_WRITE_8
+#define M68K_BUFFER_WRITE_16_BIG_ENDIAN M68K_BUFFER_WRITE_16
+#define M68K_BUFFER_WRITE_32_BIG_ENDIAN M68K_BUFFER_WRITE_32
+#else
+//memory layout is different from the Palm m515, optimize for opcode fetches(16 bit reads)
+#define M68K_BUFFER_READ_8(segment, accessAddress, mask)  (*(uint8_t*)(segment + ((accessAddress) & (mask) ^ 1)))
+#define M68K_BUFFER_READ_16(segment, accessAddress, mask) (*(uint16_t*)(segment + ((accessAddress) & (mask))))
+#define M68K_BUFFER_READ_32(segment, accessAddress, mask) (*(uint16_t*)(segment + ((accessAddress) & (mask))) << 16 | *(uint16_t*)(segment + ((accessAddress) + 2 & (mask))))
+#define M68K_BUFFER_WRITE_8(segment, accessAddress, mask, value)  (*(uint8_t*)(segment + ((accessAddress) & (mask) ^ 1)) = (value))
+#define M68K_BUFFER_WRITE_16(segment, accessAddress, mask, value) (*(uint16_t*)(segment + ((accessAddress) & (mask))) = (value))
+#define M68K_BUFFER_WRITE_32(segment, accessAddress, mask, value) (*(uint16_t*)(segment + ((accessAddress) & (mask))) = (value) >> 16 , *(uint16_t*)(segment + ((accessAddress) + 2 & (mask))) = (value) & 0xFFFF)
+#define M68K_BUFFER_READ_8_BIG_ENDIAN(segment, accessAddress, mask)  (segment[(accessAddress) & (mask)])
+#define M68K_BUFFER_READ_16_BIG_ENDIAN(segment, accessAddress, mask) (segment[(accessAddress) & (mask)] << 8 | segment[(accessAddress) + 1 & (mask)])
+#define M68K_BUFFER_READ_32_BIG_ENDIAN(segment, accessAddress, mask) (segment[(accessAddress) & (mask)] << 24 | segment[(accessAddress) + 1 & (mask)] << 16 | segment[(accessAddress) + 2 & (mask)] << 8 | segment[(accessAddress) + 3 & (mask)])
+#define M68K_BUFFER_WRITE_8_BIG_ENDIAN(segment, accessAddress, mask, value)  (segment[(accessAddress) & (mask)] = (value))
+#define M68K_BUFFER_WRITE_16_BIG_ENDIAN(segment, accessAddress, mask, value) (segment[(accessAddress) & (mask)] = (value) >> 8, segment[(accessAddress) + 1 & (mask)] = (value) & 0xFF)
+#define M68K_BUFFER_WRITE_32_BIG_ENDIAN(segment, accessAddress, mask, value) (segment[(accessAddress) & (mask)] = (value) >> 24, segment[(accessAddress) + 1 & (mask)] = ((value) >> 16) & 0xFF, segment[(accessAddress) + 2 & (mask)] = ((value) >> 8) & 0xFF, segment[(accessAddress) + 3 & (mask)] = (value) & 0xFF)
+#endif
+
 extern uint8_t dbvzBankType[];
 
 void dbvzSetRegisterXXFFAccessMode(void);
