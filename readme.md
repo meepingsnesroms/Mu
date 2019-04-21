@@ -22,11 +22,12 @@ The Palm keyboard attachment will likely be emulated later on so the PC keyboard
 I am planning on adding Tungsten C support eventually.
 
 ## Credits
-Firebird Emu (ARMv5TE Core)
-Musashi v3.4 (last version that builds outside of MAME)(68k Core)  
-blip_buf 1.1.0 (Audio Resampler)  
-http://www.iconarchive.com/show/crystal-clear-icons-by-everaldo/App-palm-icon.html (Desktop Icon)  
-http://tango.freedesktop.org/Tango_Icon_Library (Palm Action Buttons, All UI buttons)  
+[Firebird Emu](https://github.com/nspire-emus/firebird) (ARMv5TE Core)
+[uARM](https://dmitry.gr/?r=05.Projects&proj=07.%20Linux%20on%208bit) (PXA255 CPU Peripherals)
+[Musashi v3.4](https://github.com/kstenerud/Musashi) (last version that builds outside of MAME)(68k Core)  
+[blip_buf 1.1.0](https://github.com/TASVideos/BizHawk/tree/master/blip_buf) (Audio Resampler)  
+https://www.iconarchive.com/show/crystal-clear-icons-by-everaldo/App-palm-icon.html (Desktop Icon)  
+https://tango.freedesktop.org/Tango_Icon_Library (Palm Action Buttons, All UI buttons)  
 https://www.iconfinder.com/icons/2317746/chip_computer_cpu_device_frequency_microchip_processor_icon (hwTestSuite Icon)  
 https://www.flaticon.com/free-icon/cow_235371#term=cow&page=1&position=13 (muExpDriver Icon)  
 https://findicons.com/icon/164302/cursor (Libretro Port Joystick Cursor)

@@ -130,15 +130,39 @@ support_palm_os5{
     }
 
     SOURCES += \
+        ../../src/pxa255/pxa255_mem.c \
+        ../../src/pxa255/pxa255_DMA.c \
+        ../../src/pxa255/pxa255_DSP.c \
+        ../../src/pxa255/pxa255_GPIO.c \
+        ../../src/pxa255/pxa255_IC.c \
+        ../../src/pxa255/pxa255_LCD.c \
+        ../../src/pxa255/pxa255_PwrClk.c \
+        ../../src/pxa255/pxa255_RTC.c \
+        ../../src/pxa255/pxa255_TIMR.c \
+        ../../src/pxa255/pxa255_UART.c \
         ../../src/armv5te/arm_interpreter.cpp \
         ../../src/armv5te/cpu.cpp \
         ../../src/armv5te/coproc.cpp \
         ../../src/armv5te/emuVarPool.c \
         ../../src/armv5te/thumb_interpreter.cpp \
         ../../src/armv5te/mem.c \
+        ../../src/armv5te/mmu.c \
         ../../src/tungstenCBus.c
 
     HEADERS += \
+        ../../src/pxa255/pxa255_CPU.h \
+        ../../src/pxa255/pxa255_mem.h \
+        ../../src/pxa255/pxa255_DMA.h \
+        ../../src/pxa255/pxa255_DSP.h \
+        ../../src/pxa255/pxa255_GPIO.h \
+        ../../src/pxa255/pxa255_IC.h \
+        ../../src/pxa255/pxa255_LCD.h \
+        ../../src/pxa255/pxa255_PwrClk.h \
+        ../../src/pxa255/pxa255_RTC.h \
+        ../../src/pxa255/pxa255_TIMR.h \
+        ../../src/pxa255/pxa255_UART.h \
+        ../../src/pxa255/pxa255_types.h \
+        ../../src/pxa255/pxa255_math64.h \
         ../../src/armv5te/os/os.h \
         ../../src/armv5te/asmcode.h \
         ../../src/armv5te/bitfield.h \
@@ -146,6 +170,11 @@ support_palm_os5{
         ../../src/armv5te/emu.h \
         ../../src/armv5te/mem.h \
         ../../src/armv5te/translate.h \
+        ../../src/armv5te/cpudefs.h \
+        ../../src/armv5te/debug.h \
+        ../../src/armv5te/mmu.h \
+        ../../src/armv5te/armsnippets.h \
+        ../../src/armv5te/literalpool.h \
         ../../src/tungstenCBus.h
 }
 
@@ -160,6 +189,7 @@ SOURCES += \
     mainwindow.cpp \
     statemanager.cpp \
     touchscreen.cpp \
+    settingsmanager.cpp \
     ../../src/audio/blip_buf.c \
     ../../src/debug/sandbox.c \
     ../../src/ads7846.c \
@@ -176,10 +206,8 @@ SOURCES += \
     ../../src/m68k/m68kopnz.c \
     ../../src/m68k/m68kops.c \
     ../../src/expansionHardware.c \
-    settingsmanager.cpp \
     ../../src/m515Bus.c \
-    ../../src/dbvzRegisters.c \
-    ../../src/armv5te/mmu.c
+    ../../src/dbvzRegisters.c
 
 HEADERS += \
     debugviewer.h \
@@ -187,6 +215,7 @@ HEADERS += \
     mainwindow.h \
     statemanager.h \
     touchscreen.h \
+    settingsmanager.h \
     ../../src/audio/blip_buf.h \
     ../../src/debug/sandbox.h \
     ../../src/debug/sandboxTrapNumToName.c.h \
@@ -213,16 +242,10 @@ HEADERS += \
     ../../src/expansionHardware.h \
     ../../src/sdCardAccessors.c.h \
     ../../src/sdCardCrcTables.c.h \
-    settingsmanager.h \
     ../../src/m515Bus.h \
     ../../src/dbvzRegisterAccessors.c.h \
     ../../src/dbvzTiming.c.h \
     ../../src/dbvzRegisters.h \
-    ../../src/armv5te/cpudefs.h \
-    ../../src/armv5te/debug.h \
-    ../../src/armv5te/mmu.h \
-    ../../src/armv5te/armsnippets.h \
-    ../../src/armv5te/literalpool.h
 
 FORMS += \
     mainwindow.ui \
