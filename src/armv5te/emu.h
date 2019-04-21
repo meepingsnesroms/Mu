@@ -60,8 +60,10 @@ extern int log_enabled[MAX_LOG];
 void logprintf(int type, const char *str, ...);
 void emuprintf(const char *format, ...);
 
-void warn(const char *fmt, ...);
-__attribute__((noreturn)) void error(const char *fmt, ...);
+//void warn(const char *fmt, ...);
+#define warn(...) debugLog(__VA_ARGS__)
+//__attribute__((noreturn)) void error(const char *fmt, ...);
+static inline __attribute__((noreturn)) void error(const char *fmt, ...){while(true){};}
 void throttle_timer_on();
 void throttle_timer_off();
 void throttle_timer_wait();

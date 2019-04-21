@@ -3,7 +3,7 @@
 *.dll
 *.so
 *.dylib
-*.pro.user
+*.pro.user*
 *_emscripten.bc
 /libretroBuildSystem/obj
 /libretroBuildSystem/libs

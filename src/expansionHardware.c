@@ -71,7 +71,7 @@ void expansionHardwareSetRegister(uint32_t address, uint32_t value){
          switch(value){
             case CMD_SET_CPU_SPEED:
                if(palmEmuFeatures.info & FEATURE_FAST_CPU)
-                  palmClockMultiplier = (double)palmEmuFeatures.value / 100.0 * (1.00 - EMU_CPU_PERCENT_WAITING);
+                  palmClockMultiplier = (double)palmEmuFeatures.value / 100.0 * (1.00 - DBVZ_CPU_PERCENT_WAITING);
                return;
 
             case CMD_DEBUG_PRINT:

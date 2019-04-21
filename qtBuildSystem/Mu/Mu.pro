@@ -37,7 +37,7 @@ windows{
         QMAKE_LFLAGS += -fopenmp
     }
     DEFINES += EMU_MULTITHREADED
-    CONFIG += cpu_x86_64 # this should be auto detected in the future
+    CONFIG += cpu_x86_32 # this should be auto detected in the future
 }
 
 macx{
@@ -97,12 +97,18 @@ support_palm_os5{
             ../../src/armv5te/os/os-linux.c
     }
 
+    # Windows is only supported in 32 bit mode right now(this is a limitation of the dynarec)
     # iOS needs IS_IOS_BUILD set, but the Qt port does not support iOS currently
 
     cpu_x86_32{
         SOURCES += \
             ../../src/armv5te/translate_x86.c \
             ../../src/armv5te/asmcode_x86.S
+    }
+    else{
+        # x86 has this implemented in asmcode_x86.S
+        SOURCES += \
+            ../../src/armv5te/asmcode.c
     }
 
     cpu_x86_64{
@@ -126,8 +132,9 @@ support_palm_os5{
     SOURCES += \
         ../../src/armv5te/arm_interpreter.cpp \
         ../../src/armv5te/cpu.cpp \
+        ../../src/armv5te/coproc.cpp \
+        ../../src/armv5te/emuVarPool.c \
         ../../src/armv5te/thumb_interpreter.cpp \
-        ../../src/armv5te/asmcode.c \
         ../../src/armv5te/mem.c \
         ../../src/tungstenCBus.c
 

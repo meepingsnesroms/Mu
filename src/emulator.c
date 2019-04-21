@@ -18,6 +18,10 @@
 #include "debug/sandbox.h"
 #include "specs/emuFeatureRegisterSpec.h"
 
+#if defined(EMU_SUPPORT_PALM_OS5)
+#include "tungstenCBus.h"
+#endif
+
 
 //Memory map of Palm m515
 //0x00000000<->0x00FFFFFF RAM, CSC0 as RAS0, CSC1 as RAS1, CSD0 as CAS0 and CSD1 as CAS1
@@ -30,7 +34,10 @@
 //0xFFFFFE00<->0xFFFFFFFF Bootloader, only reads from UART into RAM and jumps to it, never executed in consumer Palms
 
 //Memory map of Tungsten C
-//TODO
+//This is a map of the boot address ranges, it can be(and is) changed with the MMU
+//0x00000000<->0x003FFFFF ROM
+//0xA0000000<->0xA3FFFFFF RAM
+//TODO: get the default address ranges Palm OS sets up after boot
 
 //VGhpcyBlbXVsYXRvciBpcyBkZWRpY2F0ZWQgdG8gdGhlIGJvdmluZSBtb28gY293cyB0aGF0IG1vby4=
 
@@ -56,6 +63,38 @@ double    palmCycleCounter;//can be greater then 0 if too many cycles where run
 double    palmClockMultiplier;//used by the emulator to overclock the emulated Palm
 
 
+#if defined(EMU_SUPPORT_PALM_OS5)
+static void emulatorTungstenCFrame(void){
+
+}
+#endif
+
+static void emulatorM515Frame(void){
+   uint32_t samples;
+
+   //I/O
+   m515RefreshInputState();
+
+   //CPU
+   dbvzFrameClk32s = 0;
+   for(; palmCycleCounter < (double)M515_CRYSTAL_FREQUENCY / EMU_FPS; palmCycleCounter += 1.0){
+      flx68000Execute();
+      dbvzFrameClk32s++;
+   }
+   palmCycleCounter -= (double)M515_CRYSTAL_FREQUENCY / EMU_FPS;
+
+   //audio
+   blip_end_frame(palmAudioResampler, blip_clocks_needed(palmAudioResampler, AUDIO_SAMPLES_PER_FRAME));
+   blip_read_samples(palmAudioResampler, palmAudio, AUDIO_SAMPLES_PER_FRAME, true);
+   MULTITHREAD_LOOP(samples) for(samples = 0; samples < AUDIO_SAMPLES_PER_FRAME * 2; samples += 2)
+      palmAudio[samples + 1] = palmAudio[samples];
+
+   //video
+   sed1376Render();
+   memcpy(palmFramebuffer, sed1376Framebuffer, 160 * 160 * sizeof(uint16_t));
+   memcpy(palmFramebuffer + 160 * 160, silkscreen160x60, 160 * 60 * sizeof(uint16_t));
+}
+
 uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t enabledEmuFeatures){
    //only accept valid non debug features from the user
    enabledEmuFeatures &= FEATURE_FAST_CPU | FEATURE_SYNCED_RTC | FEATURE_HLE_APIS | FEATURE_DURABLE;
@@ -77,24 +116,20 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t enab
 
    if(emulatorEmulatingTungstenC){
       //emulating Tungsten C
-      /*
       //allocate buffers, add 4 to memory regions to prevent SIGSEGV from accessing off the end
-      palmRam = malloc(M515_RAM_SIZE + 4);
-      palmRom = malloc(M515_ROM_SIZE + 4);
-      palmReg = malloc(DBVZ_REG_SIZE + 4);
+      palmRam = malloc(TUNGSTEN_C_RAM_SIZE + 4);
+      palmRom = malloc(TUNGSTEN_C_ROM_SIZE + 4);
       palmFramebuffer = malloc(320 * 320 * sizeof(uint16_t));
       palmAudio = malloc(AUDIO_SAMPLES_PER_FRAME * 2 * sizeof(int16_t));
       palmAudioResampler = blip_new(AUDIO_SAMPLE_RATE);//have 1 second of samples
-      if(!palmRam || !palmRom || !palmReg || !palmFramebuffer || !palmAudio || !palmAudioResampler){
+      if(!palmRam || !palmRom || !palmFramebuffer || !palmAudio || !palmAudioResampler){
          free(palmRam);
          free(palmRom);
-         free(palmReg);
          free(palmFramebuffer);
          free(palmAudio);
          blip_delete(palmAudioResampler);
          return EMU_ERROR_OUT_OF_MEMORY;
       }
-      */
 
       //TODO!
    }
@@ -185,7 +220,7 @@ void emulatorHardReset(void){
 void emulatorSoftReset(void){
    //equivalent to pushing the reset button on the back of the device
    palmEmuFeatures.value = 0x00000000;
-   palmClockMultiplier = 1.00 - EMU_CPU_PERCENT_WAITING;
+   palmClockMultiplier = 1.00 - DBVZ_CPU_PERCENT_WAITING;
    sed1376Reset();
    ads7846Reset();
    pdiUsbD12Reset();
@@ -714,29 +749,14 @@ void emulatorEjectSdCard(void){
 }
 
 void emulatorRunFrame(void){
-   uint32_t samples;
-
-   //I/O
-   m515RefreshInputState();
-
-   //CPU
-   dbvzFrameClk32s = 0;
-   for(; palmCycleCounter < (double)CRYSTAL_FREQUENCY / EMU_FPS; palmCycleCounter += 1.0){
-      flx68000Execute();
-      dbvzFrameClk32s++;
-   }
-   palmCycleCounter -= (double)CRYSTAL_FREQUENCY / EMU_FPS;
-
-   //audio
-   blip_end_frame(palmAudioResampler, blip_clocks_needed(palmAudioResampler, AUDIO_SAMPLES_PER_FRAME));
-   blip_read_samples(palmAudioResampler, palmAudio, AUDIO_SAMPLES_PER_FRAME, true);
-   MULTITHREAD_LOOP(samples) for(samples = 0; samples < AUDIO_SAMPLES_PER_FRAME * 2; samples += 2)
-      palmAudio[samples + 1] = palmAudio[samples];
-
-   //video
-   sed1376Render();
-   memcpy(palmFramebuffer, sed1376Framebuffer, 160 * 160 * sizeof(uint16_t));
-   memcpy(palmFramebuffer + 160 * 160, silkscreen160x60, 160 * 60 * sizeof(uint16_t));
+#if defined(EMU_SUPPORT_PALM_OS5)
+   if(emulatorEmulatingTungstenC)
+      emulatorTungstenCFrame();
+   else
+      emulatorM515Frame();
+#else
+   emulatorM515Frame();
+#endif
 
 #if defined(EMU_SANDBOX)
    sandboxOnFrameRun();
