@@ -122,43 +122,6 @@ void memory_write_word(uint32_t addr, uint32_t value) {
     *ptr = value;
 }
 
-/* The APB (Advanced Peripheral Bus) hosts peripherals that do not require
- * high bandwidth. The bridge to the APB is accessed via addresses 90xxxxxx. */
-/* The AMBA specification does not mention anything about transfer sizes in APB,
- * so probably all reads/writes are effectively 32 bit. */
-struct apb_map_entry {
-    uint32_t (*read)(uint32_t addr);
-    void (*write)(uint32_t addr, uint32_t value);
-} apb_map[0x12];
-void apb_set_map(int entry, uint32_t (*read)(uint32_t addr), void (*write)(uint32_t addr, uint32_t value)) {
-    apb_map[entry].read = read;
-    apb_map[entry].write = write;
-}
-uint8_t apb_read_byte(uint32_t addr) {
-    if (addr >= 0x90120000) return bad_read_byte(addr);
-    return apb_map[addr >> 16 & 31].read(addr & ~3) >> ((addr & 3) << 3);
-}
-uint16_t apb_read_half(uint32_t addr) {
-    if (addr >= 0x90120000) return bad_read_half(addr);
-    return apb_map[addr >> 16 & 31].read(addr & ~2) >> ((addr & 2) << 3);
-}
-uint32_t apb_read_word(uint32_t addr) {
-    if (addr >= 0x90120000) return bad_read_word(addr);
-    return apb_map[addr >> 16 & 31].read(addr);
-}
-void apb_write_byte(uint32_t addr, uint8_t value) {
-    if (addr >= 0x90120000) { bad_write_byte(addr, value); return; }
-    apb_map[addr >> 16 & 31].write(addr & ~3, value * 0x01010101u);
-}
-void apb_write_half(uint32_t addr, uint16_t value) {
-    if (addr >= 0x90120000) { bad_write_half(addr, value); return; }
-    apb_map[addr >> 16 & 31].write(addr & ~2, value * 0x00010001u);
-}
-void apb_write_word(uint32_t addr, uint32_t value) {
-    if (addr >= 0x90120000) { bad_write_word(addr, value); return; }
-    apb_map[addr >> 16 & 31].write(addr, value);
-}
-
 uint32_t FASTCALL mmio_read_byte(uint32_t addr) {
     return read_byte_map[addr >> 26](addr);
 }

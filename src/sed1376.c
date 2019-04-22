@@ -27,8 +27,8 @@
 #define SED1376_RAM_SIZE  0x20000//actual size is 0x14000, but that cant be masked off by address lines so size is increased to prevent buffer overflow
 
 
-uint16_t sed1376Framebuffer[160 * 160];
-uint8_t  sed1376Ram[SED1376_RAM_SIZE];
+uint16_t* sed1376Framebuffer;
+uint8_t   sed1376Ram[SED1376_RAM_SIZE];
 
 static uint8_t  sed1376Registers[SED1376_REG_SIZE];
 static uint8_t  sed1376RLut[SED1376_LUT_SIZE];

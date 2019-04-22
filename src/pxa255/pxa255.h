@@ -5,8 +5,12 @@
 //this is the only file from this directory that the emu should interface with
 
 #include <stdint.h>
+#include <stdbool.h>
 
-void pxa255Init(void);
+uint16_t* pxa255Framebuffer;
+
+bool pxa255Init(uint8_t** returnRom, uint8_t** returnRam);
+void pxa255Deinit(void);
 void pxa255Reset(void);
 uint32_t pxa255StateSize(void);
 void pxa255SaveState(uint8_t* data);

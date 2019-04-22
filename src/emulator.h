@@ -142,8 +142,8 @@ typedef struct{
 }emu_reg_t;
 
 //emulator data, some are GUI interface variables, some should be left alone
-extern uint8_t*  palmRam;//access allowed to read save RAM without allocating a giant buffer, but endianness must be taken into account
 extern uint8_t*  palmRom;//dont touch
+extern uint8_t*  palmRam;//access allowed to read save RAM without allocating a giant buffer, but endianness must be taken into account
 extern uint8_t*  palmReg;//dont touch
 extern input_t   palmInput;//write allowed
 extern sd_card_t palmSdCard;//dont touch

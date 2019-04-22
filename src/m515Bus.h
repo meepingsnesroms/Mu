@@ -19,8 +19,8 @@
 //and the SED1376 is at 0x1FF80000(+ 0x20000 for framebuffer)
 #define DBVZ_EMUCS_START_ADDRESS 0xFFFC0000
 #define DBVZ_REG_START_ADDRESS 0xFFFFF000
-#define M515_RAM_SIZE (16 * 0x100000)//16mb RAM
 #define M515_ROM_SIZE (4 * 0x100000)//4mb ROM
+#define M515_RAM_SIZE (16 * 0x100000)//16mb RAM
 #define DBVZ_EMUCS_SIZE 0x20000
 #define DBVZ_REG_SIZE 0x1000//is actually 0xE00 without bootloader
 #define DBVZ_BOOTLOADER_SIZE 0x200

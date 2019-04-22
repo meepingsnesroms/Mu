@@ -2,13 +2,10 @@
 #define _PXA255_LCD_H_
 
 #include "pxa255_mem.h"
-#include "pxa255_cpu.h"
+#include "pxa255_CPU.h"
 #include "pxa255_IC.h"
 
-#ifndef EMBEDDED
-	#define PXA255_LCD_SUPPORTS_PALLETES
-#endif
-
+uint16_t* pxa255Framebuffer;
 
 /*
 	PXA255 OS LCD controller
@@ -45,11 +42,7 @@ typedef struct{
 	UInt8 intWasPending	: 1;
 	UInt8 enbChanged	: 1;
 	
-#ifdef PXA255_LCD_SUPPORTS_PALLETES
-
 	UInt8 palette[512];
-
-#endif
 
 	UInt32 frameNum;
 	

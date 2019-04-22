@@ -11,7 +11,14 @@
 extern "C" {
 #endif
 
-#define MEM_MAXSIZE (65*1024*1024) // also defined as RAM_FLAGS in asmcode.S
+#define MEM_MAXSIZE (70*1024*1024) // also defined as RAM_FLAGS in asmcode.S
+
+extern uint8_t   (*read_byte_map[64])(uint32_t addr);
+extern uint16_t  (*read_half_map[64])(uint32_t addr);
+extern uint32_t  (*read_word_map[64])(uint32_t addr);
+extern void (*write_byte_map[64])(uint32_t addr, uint8_t value);
+extern void (*write_half_map[64])(uint32_t addr, uint16_t value);
+extern void (*write_word_map[64])(uint32_t addr, uint32_t value);
 
 // Must be allocated below 2GB (see comments for mmu.c)
 extern uint8_t *mem_and_flags;
@@ -55,6 +62,13 @@ void bad_write_word(uint32_t addr, uint32_t value);
 
 void write_action(void *ptr) __asm__("write_action");
 void read_action(void *ptr) __asm__("read_action");
+
+uint8_t memory_read_byte(uint32_t addr);
+uint16_t memory_read_half(uint32_t addr);
+uint32_t memory_read_word(uint32_t addr);
+void memory_write_byte(uint32_t addr, uint8_t value);
+void memory_write_half(uint32_t addr, uint16_t value);
+void memory_write_word(uint32_t addr, uint32_t value);
 
 uint32_t FASTCALL mmio_read_byte(uint32_t addr) __asm__("mmio_read_byte");
 uint32_t FASTCALL mmio_read_half(uint32_t addr) __asm__("mmio_read_half");

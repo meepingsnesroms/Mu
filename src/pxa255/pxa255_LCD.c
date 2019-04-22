@@ -1,12 +1,8 @@
 #include "pxa255_LCD.h"
 #include "pxa255_mem.h"
-
-#include "../emulator.h"
-
-
+#include "pxa255.h"
 
 #define UNMASKABLE_INTS		0x7C8E
-
 
 static void pxa255lcdPrvUpdateInts(Pxa255lcd* lcd){
 	
@@ -225,112 +221,71 @@ static void pxa255LcdPrvDma(Pxa255lcd* lcd, void* dest, UInt32 addr, UInt32 len)
 	}
 }
 
-#ifndef EMBEDDED
-	static _INLINE_ void pxa255LcdScreenDataPixel(Pxa255lcd* lcd, UInt8* buf){
-      static UInt16 pixelX = 0;
-      static UInt16 pixelY = 0;
+static _INLINE_ void pxa255LcdScreenDataPixel(Pxa255lcd* lcd, UInt8* buf){
+   static UInt16 pixelX = 0;
+   static UInt16 pixelY = 0;
 
-      if(pixelX == 640){
-         pixelY++;
-         pixelX = 0;
+   if(pixelX == 640){
+      pixelY++;
+      pixelX = 0;
+   }
+
+   if(pixelY == 480){
+      pixelY = 0;
+      pixelX = 0;
+   }
+
+   if(pixelX < 320 && pixelY < 320)
+      pxa255Framebuffer[pixelY * 320 + pixelX] = buf[0] || buf[1] << 8;
+}
+
+static void pxa255LcdScreenDataDma(Pxa255lcd* lcd, UInt32 addr/*PA*/, UInt32 len){
+   UInt8 data[4];
+   UInt32 i, j;
+   void* ptr;
+
+   len /= 4;
+   while(len--){
+      pxa255LcdPrvDma(lcd, data, addr, 4);
+      addr += 4;
+
+      switch((lcd->lccr3 >> 24) & 7){
+
+         case 0:		//1BPP
+
+            ptr = lcd->palette + ((data[i] >> j) & 1) * 2;
+            for(i = 0; i < 4; i += 1) for(j = 0; j < 8; j += 1) pxa255LcdScreenDataPixel(lcd, ptr);
+            break;
+
+         case 1:		//2BPP
+
+            ptr = lcd->palette + ((data[i] >> j) & 3) * 2;
+            for(i = 0; i < 4; i += 1) for(j = 0; j < 8; j += 2) pxa255LcdScreenDataPixel(lcd, ptr);
+            break;
+
+         case 2:		//4BPP
+
+            ptr = lcd->palette + ((data[i] >> j) & 15) * 2;
+            for(i = 0; i < 4; i += 1) for(j = 0; j < 8; j += 4) pxa255LcdScreenDataPixel(lcd, ptr);
+            break;
+
+         case 3:		//8BPP
+
+            ptr = lcd->palette + (data[i] * 2);
+            for(i = 0; i < 4; i += 1) pxa255LcdScreenDataPixel(lcd, ptr);
+            break;
+
+         case 4:		//16BPP
+
+            for(i = 0; i < 4; i +=2 ) pxa255LcdScreenDataPixel(lcd, data + i);
+            break;
+
+         default:
+
+            ;//BAD
       }
-
-      if(pixelY == 480){
-         pixelY = 0;
-         pixelX = 0;
-      }
-
-      if(pixelX < 320 && pixelY < 320)
-         palmFramebuffer[pixelY * 320 + pixelX] = buf[0] || buf[1] << 8;
-	}
-
-	#ifndef PXA255_LCD_SUPPORTS_PALLETES
-	static void pxa255LcdSetFakePal(UInt8* buf, UInt8 bpp, UInt8 val){
-	
-		while(bpp++ < 8) val = (val << 1) | (val & 1);	//sign extend up (weird but works)
-		
-		buf[1] = (val & 0xF8) | (val >> 3);
-		buf[0] = ((val & 0xFC) << 5) | val >> 3;
-	}
-	#endif
-	
-	static void pxa255LcdScreenDataDma(Pxa255lcd* lcd, UInt32 addr/*PA*/, UInt32 len){
-		
-		UInt8 data[4];
-		UInt32 i, j;
-		void* ptr;
-	#ifndef PXA255_LCD_SUPPORTS_PALLETES
-		UInt8 val[2];
-	#endif
-		
-		len /= 4;
-		while(len--){
-			pxa255LcdPrvDma(lcd, data, addr, 4);
-			addr += 4;
-			
-			switch((lcd->lccr3 >> 24) & 7){
-				
-				case 0:		//1BPP
-					
-				#ifdef PXA255_LCD_SUPPORTS_PALLETES
-					ptr = lcd->palette + ((data[i] >> j) & 1) * 2;
-				#else
-					ptr = val;
-					pxa255LcdSetFakePal(val, 1, (data[i] >> j) & 1);
-				#endif
-					for(i = 0; i < 4; i += 1) for(j = 0; j < 8; j += 1) pxa255LcdScreenDataPixel(lcd, ptr);
-					break;
-				
-				case 1:		//2BPP
-					
-				#ifdef PXA255_LCD_SUPPORTS_PALLETES
-					ptr = lcd->palette + ((data[i] >> j) & 3) * 2;
-				#else
-					ptr = val;
-					pxa255LcdSetFakePal(val, 2, (data[i] >> j) & 3);
-				#endif
-					for(i = 0; i < 4; i += 1) for(j = 0; j < 8; j += 2) pxa255LcdScreenDataPixel(lcd, ptr);
-					break;
-				
-				case 2:		//4BPP
-					
-				#ifdef PXA255_LCD_SUPPORTS_PALLETES
-					ptr = lcd->palette + ((data[i] >> j) & 15) * 2;
-				#else
-					ptr = val;
-					pxa255LcdSetFakePal(val, 4, (data[i] >> j) & 15);
-				#endif
-					for(i = 0; i < 4; i += 1) for(j = 0; j < 8; j += 4) pxa255LcdScreenDataPixel(lcd, ptr);
-					break;
-				
-				case 3:		//8BPP
-					
-				#ifdef PXA255_LCD_SUPPORTS_PALLETES
-					ptr = lcd->palette + (data[i] * 2);
-				#else
-					ptr = val;
-					pxa255LcdSetFakePal(val, 8, data[i]);
-				#endif
-					for(i = 0; i < 4; i += 1) pxa255LcdScreenDataPixel(lcd, ptr);
-					break;
-				
-				case 4:		//16BPP
-					
-					for(i = 0; i < 4; i +=2 ) pxa255LcdScreenDataPixel(lcd, data + i);
-					break;
-				
-				default:
-					
-					;//BAD
-			}
-		}
-	}
-#else
-	static void pxa255LcdScreenDataDma(Pxa255lcd* lcd, UInt32 addr/*PA*/, UInt32 len){
-	
-		//nothing	
-	}
-#endif
+   }
+}
 
 void pxa255lcdFrame(Pxa255lcd* lcd){
 	//every other call starts a frame, the others end one [this generates spacing between interrupts so as to not confuse guest OS]
@@ -378,14 +333,12 @@ void pxa255lcdFrame(Pxa255lcd* lcd){
 				
 				if(lcd->ldcmd0 & 0x04000000UL){	//pallette data
 					
-					#ifdef PXA255_LCD_SUPPORTS_PALLETES	
-						if(len > sizeof(lcd->palette)){
-							
-							len = sizeof(lcd->palette);
-							
-							pxa255LcdPrvDma(lcd, lcd->palette, lcd->fsadr0, len);
-						}		
-					#endif
+               if(len > sizeof(lcd->palette)){
+
+                  len = sizeof(lcd->palette);
+
+                  pxa255LcdPrvDma(lcd, lcd->palette, lcd->fsadr0, len);
+               }
 				}
 				else{
 					

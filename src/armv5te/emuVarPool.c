@@ -15,8 +15,6 @@ int throttle_delay = 10; /* in milliseconds */
 
 bool exiting, debug_on_start, debug_on_warn, print_on_warn;
 bool do_translate;
-uint32_t product, features, asic_user_flags;
-bool turbo_mode;
 
 int log_enabled[MAX_LOG];
 

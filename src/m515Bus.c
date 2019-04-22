@@ -15,6 +15,11 @@
 uint8_t dbvzBankType[DBVZ_TOTAL_MEMORY_BANKS];
 
 
+//ROM accesses
+static uint8_t romRead8(uint32_t address){return M68K_BUFFER_READ_8(palmRom, address, dbvzChipSelects[DBVZ_CHIP_A0_ROM].mask);}
+static uint16_t romRead16(uint32_t address){return M68K_BUFFER_READ_16(palmRom, address, dbvzChipSelects[DBVZ_CHIP_A0_ROM].mask);}
+static uint32_t romRead32(uint32_t address){return M68K_BUFFER_READ_32(palmRom, address, dbvzChipSelects[DBVZ_CHIP_A0_ROM].mask);}
+
 //RAM accesses
 static uint8_t ramRead8(uint32_t address){return M68K_BUFFER_READ_8(palmRam, address, dbvzChipSelects[DBVZ_CHIP_DX_RAM].mask);}
 static uint16_t ramRead16(uint32_t address){return M68K_BUFFER_READ_16(palmRam, address, dbvzChipSelects[DBVZ_CHIP_DX_RAM].mask);}
@@ -22,11 +27,6 @@ static uint32_t ramRead32(uint32_t address){return M68K_BUFFER_READ_32(palmRam, 
 static void ramWrite8(uint32_t address, uint8_t value){M68K_BUFFER_WRITE_8(palmRam, address, dbvzChipSelects[DBVZ_CHIP_DX_RAM].mask, value);}
 static void ramWrite16(uint32_t address, uint16_t value){M68K_BUFFER_WRITE_16(palmRam, address, dbvzChipSelects[DBVZ_CHIP_DX_RAM].mask, value);}
 static void ramWrite32(uint32_t address, uint32_t value){M68K_BUFFER_WRITE_32(palmRam, address, dbvzChipSelects[DBVZ_CHIP_DX_RAM].mask, value);}
-
-//ROM accesses
-static uint8_t romRead8(uint32_t address){return M68K_BUFFER_READ_8(palmRom, address, dbvzChipSelects[DBVZ_CHIP_A0_ROM].mask);}
-static uint16_t romRead16(uint32_t address){return M68K_BUFFER_READ_16(palmRom, address, dbvzChipSelects[DBVZ_CHIP_A0_ROM].mask);}
-static uint32_t romRead32(uint32_t address){return M68K_BUFFER_READ_32(palmRom, address, dbvzChipSelects[DBVZ_CHIP_A0_ROM].mask);}
 
 //SED1376 accesses
 static uint8_t sed1376Read8(uint32_t address){

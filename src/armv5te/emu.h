@@ -42,17 +42,6 @@ extern uint32_t cpu_events __asm__("cpu_events");
 // Settings
 extern bool exiting, debug_on_start, debug_on_warn, print_on_warn;
 extern bool do_translate;
-extern uint32_t product, features, asic_user_flags;
-
-#define FEATURE_CX 0x05
-#define FEATURE_HWJ 0x85
-#define FEATURE_HWW 0x185
-
-#define emulate_casplus (product == 0x0C0)
-// 0C-0E (CAS, lab cradle, plain Nspire) use old ASIC
-// 0F-12 (CX CAS, CX, CM CAS, CM) use new ASIC
-#define emulate_cx (product >= 0x0F0)
-extern bool turbo_mode;
 
 enum { LOG_CPU, LOG_IO, LOG_FLASH, LOG_INTS, LOG_ICOUNT, LOG_USB, LOG_GDB, MAX_LOG };
 #define LOG_TYPE_TBL "CIFQ#UG"
