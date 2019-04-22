@@ -8,4 +8,6 @@
 #define TUNGSTEN_C_RAM_SIZE (64 * 0x100000)//64mb RAM
 #define PXA255_LCD_SIZE 0x00001000
 
+#define PXA255_START_BANK(address) ((address) >> 26)
+
 #endif

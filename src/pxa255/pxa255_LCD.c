@@ -1,6 +1,7 @@
 #include "pxa255_LCD.h"
 #include "pxa255_mem.h"
 #include "pxa255.h"
+#include "../armv5te/mem.h"
 
 #define UNMASKABLE_INTS		0x7C8E
 
@@ -15,7 +16,7 @@ static void pxa255lcdPrvUpdateInts(Pxa255lcd* lcd){
 	}
 }
 
-static Boolean pxa255lcdPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boolean write, void* buf){
+Boolean pxa255lcdPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boolean write, void* buf){
 
 	Pxa255lcd* lcd = userData;
 	UInt32 val = 0;
@@ -194,14 +195,7 @@ static Boolean pxa255lcdPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boo
 	return true;
 }
 
-static UInt32 pxa255PrvGetWord(Pxa255lcd* lcd, UInt32 addr){
-	
-	UInt32 v;
-	
-	if(!memAccess(lcd->mem, addr, 4, false, &v)) return 0;
-	
-	return v;
-}
+#define pxa255PrvGetWord(x, addr) mmio_read_word(addr)
 
 static void pxa255LcdPrvDma(Pxa255lcd* lcd, void* dest, UInt32 addr, UInt32 len){
 
@@ -359,20 +353,9 @@ void pxa255lcdFrame(Pxa255lcd* lcd){
 	pxa255lcdPrvUpdateInts(lcd);
 }
 
-
-Boolean pxa255lcdInit(Pxa255lcd* lcd, ArmMem* physMem, Pxa255ic* ic){
-	
-	
+void pxa255lcdInit(Pxa255lcd* lcd, Pxa255ic* ic){
 	__mem_zero(lcd, sizeof(Pxa255lcd));
 	
 	lcd->ic = ic;
-	lcd->mem = physMem;
 	lcd->intMask = UNMASKABLE_INTS;
-	
-	return memRegionAdd(physMem, PXA255_LCD_BASE, PXA255_LCD_SIZE, pxa255lcdPrvMemAccessF, lcd);
 }
-
-
-
-
-

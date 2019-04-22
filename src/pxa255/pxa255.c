@@ -23,30 +23,34 @@ uint16_t* pxa255Framebuffer;
 static Pxa255lcd tungstenCLcd;
 
 
+//LCD accesses
+static uint32_t pxa255LcdRead32(uint32_t addr){uint32_t out; pxa255lcdPrvMemAccessF(&tungstenCLcd, addr, 4, false, &out); return out;}
+static void pxa255LcdWrite32(uint32_t addr, uint32_t value){pxa255lcdPrvMemAccessF(&tungstenCLcd, addr, 4, true, &value);}
+
 bool pxa255Init(uint8_t** returnRom, uint8_t** returnRam){
-   uint32_t total_mem = 0;
-   int i;
+   uint32_t mem_offset = 0;
+   uint8_t i;
 
    mem_and_flags = os_reserve(MEM_MAXSIZE * 2);
+   if(!mem_and_flags)
+      return false;
 
    //ROM
    mem_areas[0].base = PXA255_ROM_START_ADDRESS;
    mem_areas[0].size = TUNGSTEN_C_ROM_SIZE;
+   mem_areas[0].ptr = mem_and_flags + mem_offset;
+   mem_offset += TUNGSTEN_C_ROM_SIZE;
 
    //RAM
    mem_areas[1].base = PXA255_RAM_START_ADDRESS;
    mem_areas[1].size = TUNGSTEN_C_RAM_SIZE;
+   mem_areas[1].ptr = mem_and_flags + mem_offset;
+   mem_offset += TUNGSTEN_C_RAM_SIZE;
 
    //LCD
    mem_areas[2].base = PXA255_LCD_START_ADDRESS;
    mem_areas[2].size = PXA255_LCD_SIZE;
-
-   for (i = 0; i < sizeof(mem_areas)/sizeof(*mem_areas); i++) {
-       if (mem_areas[i].size) {
-           mem_areas[i].ptr = mem_and_flags + total_mem;
-           total_mem += mem_areas[i].size;
-       }
-   }
+   mem_areas[2].ptr = NULL;
 
    for (i = 0; i < 64; i++) {
        // will fallback to bad_* on non-memory addresses
@@ -57,6 +61,15 @@ bool pxa255Init(uint8_t** returnRom, uint8_t** returnRam){
        write_half_map[i] = memory_write_half;
        write_word_map[i] = memory_write_word;
    }
+
+   read_byte_map[PXA255_START_BANK(PXA255_LCD_START_ADDRESS)] = bad_read_byte;
+   read_half_map[PXA255_START_BANK(PXA255_LCD_START_ADDRESS)] = bad_read_half;
+   read_word_map[PXA255_START_BANK(PXA255_LCD_START_ADDRESS)] = pxa255LcdRead32;
+   write_byte_map[PXA255_START_BANK(PXA255_LCD_START_ADDRESS)] = bad_write_byte;
+   write_half_map[PXA255_START_BANK(PXA255_LCD_START_ADDRESS)] = bad_write_half;
+   write_word_map[PXA255_START_BANK(PXA255_LCD_START_ADDRESS)] = pxa255LcdWrite32;
+
+   return true;
 }
 
 void pxa255Deinit(void){
