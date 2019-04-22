@@ -105,6 +105,9 @@ bool pxa255Init(uint8_t** returnRom, uint8_t** returnRam){
    pxa255icInit(&tungstenCIc);
    pxa255lcdInit(&tungstenCLcd, &tungstenCIc);
 
+   *returnRom = mem_areas[0].ptr;
+   *returnRam = mem_areas[1].ptr;
+
    return true;
 }
 
@@ -144,6 +147,10 @@ void pxa255Reset(void){
    //cpu_events &= EVENT_DEBUG_STEP;
 
    //PC starts at 0x00000000, the first opcode for Palm OS 5 is a jump
+}
+
+void pxa255SetRtc(uint16_t days, uint8_t hours, uint8_t minutes, uint8_t seconds){
+   //TODO: make this do something
 }
 
 uint32_t pxa255StateSize(void){

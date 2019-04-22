@@ -128,6 +128,10 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t enab
          pxa255Deinit();
          return EMU_ERROR_OUT_OF_MEMORY;
       }
+      memcpy(palmRom, palmRomDump.data, u32Min(palmRomDump.size, TUNGSTEN_C_ROM_SIZE));
+      if(palmRomDump.size < TUNGSTEN_C_ROM_SIZE)
+         memset(palmRom + palmRomDump.size, 0x00, TUNGSTEN_C_ROM_SIZE - palmRomDump.size);
+      memset(palmRam, 0x00, TUNGSTEN_C_RAM_SIZE);
       memset(palmAudio, 0x00, AUDIO_SAMPLES_PER_FRAME * 2/*channels*/ * sizeof(int16_t));
       memset(&palmInput, 0x00, sizeof(palmInput));
       memset(&palmMisc, 0x00, sizeof(palmMisc));
@@ -279,7 +283,12 @@ void emulatorSoftReset(void){
 }
 
 void emulatorSetRtc(uint16_t days, uint8_t hours, uint8_t minutes, uint8_t seconds){
-   dbvzSetRtc(days, hours, minutes, seconds);
+#if defined(EMU_SUPPORT_PALM_OS5)
+   if(emulatorEmulatingTungstenC)
+      pxa255SetRtc(days, hours, minutes, seconds);
+   else
+#endif
+      dbvzSetRtc(days, hours, minutes, seconds);
 }
 
 uint32_t emulatorGetStateSize(void){

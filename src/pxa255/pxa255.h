@@ -12,6 +12,7 @@ uint16_t* pxa255Framebuffer;
 bool pxa255Init(uint8_t** returnRom, uint8_t** returnRam);
 void pxa255Deinit(void);
 void pxa255Reset(void);
+void pxa255SetRtc(uint16_t days, uint8_t hours, uint8_t minutes, uint8_t seconds);
 uint32_t pxa255StateSize(void);
 void pxa255SaveState(uint8_t* data);
 void pxa255LoadState(uint8_t* data);
