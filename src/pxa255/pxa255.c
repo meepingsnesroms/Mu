@@ -19,13 +19,45 @@
 #include "../emulator.h"
 
 
-uint16_t* pxa255Framebuffer;
+uint16_t*        pxa255Framebuffer;
+static Pxa255ic  tungstenCIc;
 static Pxa255lcd tungstenCLcd;
 
+//PXA255 register accessors
+static uint8_t pxa255_read_byte(uint32_t addr){
 
-//LCD accesses
-static uint32_t pxa255LcdRead32(uint32_t addr){uint32_t out; pxa255lcdPrvMemAccessF(&tungstenCLcd, addr, 4, false, &out); return out;}
-static void pxa255LcdWrite32(uint32_t addr, uint32_t value){pxa255lcdPrvMemAccessF(&tungstenCLcd, addr, 4, true, &value);}
+}
+static uint16_t pxa255_read_half(uint32_t addr){
+
+}
+static uint32_t pxa255_read_word(uint32_t addr){
+   uint32_t out;
+
+   switch(addr >> 16){
+      case PXA255_LCD_BASE >> 16:
+         pxa255lcdPrvMemAccessF(&tungstenCLcd, addr, 4, false, &out);
+         return out;
+
+      default:
+         return 0x00000000;
+   }
+}
+static void pxa255_write_byte(uint32_t addr, uint8_t value){
+
+}
+static void pxa255_write_half(uint32_t addr, uint16_t value){
+
+}
+static void pxa255_write_word(uint32_t addr, uint32_t value){
+   switch(addr >> 16){
+      case PXA255_LCD_BASE >> 16:
+         pxa255lcdPrvMemAccessF(&tungstenCLcd, addr, 4, true, &value);
+         return;
+
+      default:
+         return;
+   }
+}
 
 bool pxa255Init(uint8_t** returnRom, uint8_t** returnRam){
    uint32_t mem_offset = 0;
@@ -47,12 +79,12 @@ bool pxa255Init(uint8_t** returnRom, uint8_t** returnRam){
    mem_areas[1].ptr = mem_and_flags + mem_offset;
    mem_offset += TUNGSTEN_C_RAM_SIZE;
 
-   //LCD
-   mem_areas[2].base = PXA255_LCD_START_ADDRESS;
-   mem_areas[2].size = PXA255_LCD_SIZE;
+   //CPU registers
+   mem_areas[2].base = PXA255_REG_START_ADDRESS;
+   mem_areas[2].size = PXA255_REG_SIZE;
    mem_areas[2].ptr = NULL;
 
-   for (i = 0; i < 64; i++) {
+   for(i = 0; i < 64; i++){
        // will fallback to bad_* on non-memory addresses
        read_byte_map[i] = memory_read_byte;
        read_half_map[i] = memory_read_half;
@@ -62,12 +94,16 @@ bool pxa255Init(uint8_t** returnRom, uint8_t** returnRam){
        write_word_map[i] = memory_write_word;
    }
 
-   read_byte_map[PXA255_START_BANK(PXA255_LCD_START_ADDRESS)] = bad_read_byte;
-   read_half_map[PXA255_START_BANK(PXA255_LCD_START_ADDRESS)] = bad_read_half;
-   read_word_map[PXA255_START_BANK(PXA255_LCD_START_ADDRESS)] = pxa255LcdRead32;
-   write_byte_map[PXA255_START_BANK(PXA255_LCD_START_ADDRESS)] = bad_write_byte;
-   write_half_map[PXA255_START_BANK(PXA255_LCD_START_ADDRESS)] = bad_write_half;
-   write_word_map[PXA255_START_BANK(PXA255_LCD_START_ADDRESS)] = pxa255LcdWrite32;
+   read_byte_map[PXA255_START_BANK(PXA255_REG_START_ADDRESS)] = pxa255_read_byte;
+   read_half_map[PXA255_START_BANK(PXA255_REG_START_ADDRESS)] = pxa255_read_half;
+   read_word_map[PXA255_START_BANK(PXA255_REG_START_ADDRESS)] = pxa255_read_word;
+   write_byte_map[PXA255_START_BANK(PXA255_REG_START_ADDRESS)] = pxa255_write_byte;
+   write_half_map[PXA255_START_BANK(PXA255_REG_START_ADDRESS)] = pxa255_write_half;
+   write_word_map[PXA255_START_BANK(PXA255_REG_START_ADDRESS)] = pxa255_write_word;
+
+   //set up CPU hardware
+   pxa255icInit(&tungstenCIc);
+   pxa255lcdInit(&tungstenCLcd, &tungstenCIc);
 
    return true;
 }

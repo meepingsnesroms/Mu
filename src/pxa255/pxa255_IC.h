@@ -55,8 +55,7 @@ typedef struct{
 	
 }Pxa255ic;
 
-Boolean pxa255icInit(Pxa255ic* ic, ArmCpu* cpu, ArmMem* physMem);
-
+void pxa255icInit(Pxa255ic* ic);
 void pxa255icInt(Pxa255ic* ic, UInt8 intNum, Boolean raise);		//interrupt caused by emulated hardware/ interrupt handled by guest
 
 

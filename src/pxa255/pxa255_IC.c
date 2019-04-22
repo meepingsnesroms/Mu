@@ -75,11 +75,9 @@ static Boolean pxa255icPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Bool
 	return true;
 }
 
-Boolean pxa255icInit(Pxa255ic* ic, ArmCpu* cpu, ArmMem* physMem){
+void pxa255icInit(Pxa255ic* ic){
 	
 	__mem_zero(ic, sizeof(Pxa255ic));
-	ic->cpu = cpu;
-	return memRegionAdd(physMem, PXA255_IC_BASE, PXA255_IC_SIZE, pxa255icPrvMemAccessF, ic);
 }
 
 
