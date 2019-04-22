@@ -143,7 +143,7 @@ void pxa255Reset(void){
    cpu_events = 0;
    //cpu_events &= EVENT_DEBUG_STEP;
 
-   //TODO: need to set PC
+   //PC starts at 0x00000000, the first opcode for Palm OS 5 is a jump
 }
 
 uint32_t pxa255StateSize(void){
@@ -164,6 +164,7 @@ void pxa255LoadState(uint8_t* data){
 
 void pxa255Execute(void){
    //TODO: need to set cycle_count_delta with the amout of opcodes to run
+   cycle_count_delta = -500;//just a test value
 
    // clang segfaults with that, for an iOS build :(
 #ifndef NO_SETJMP
