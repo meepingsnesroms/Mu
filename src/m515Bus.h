@@ -11,7 +11,7 @@
 #define DBVZ_END_BANK(address, size) (DBVZ_START_BANK(address) + DBVZ_NUM_BANKS(size) - 1)
 #define DBVZ_BANK_IN_RANGE(bank, address, size) ((bank) >= DBVZ_START_BANK(address) && (bank) <= DBVZ_END_BANK(address, size))
 #define DBVZ_BANK_ADDRESS(bank) ((bank) << DBVZ_BANK_SCOOT)
-#define DBVZ_TOTAL_MEMORY_BANKS (1 << (32 - DBVZ_BANK_SCOOT))//0x40000 banks for BANK_SCOOT = 14
+#define DBVZ_TOTAL_MEMORY_BANKS (1 << (32 - DBVZ_BANK_SCOOT))//0x40000 banks for *_BANK_SCOOT = 14
 
 //chip addresses and sizes
 //after boot RAM is at 0x00000000,

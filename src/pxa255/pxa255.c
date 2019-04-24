@@ -81,10 +81,10 @@ bool pxa255Init(uint8_t** returnRom, uint8_t** returnRam){
 
    //CPU registers
    mem_areas[2].base = PXA255_REG_START_ADDRESS;
-   mem_areas[2].size = PXA255_REG_SIZE;
+   mem_areas[2].size = 0x40000000;//size of address space, not all of it is mapped
    mem_areas[2].ptr = NULL;
 
-   for(i = 0; i < 64; i++){
+   for(i = 0; i < PXA255_TOTAL_MEMORY_BANKS; i++){
        // will fallback to bad_* on non-memory addresses
        read_byte_map[i] = memory_read_byte;
        read_half_map[i] = memory_read_half;
@@ -94,12 +94,15 @@ bool pxa255Init(uint8_t** returnRom, uint8_t** returnRam){
        write_word_map[i] = memory_write_word;
    }
 
-   read_byte_map[PXA255_START_BANK(PXA255_REG_START_ADDRESS)] = pxa255_read_byte;
-   read_half_map[PXA255_START_BANK(PXA255_REG_START_ADDRESS)] = pxa255_read_half;
-   read_word_map[PXA255_START_BANK(PXA255_REG_START_ADDRESS)] = pxa255_read_word;
-   write_byte_map[PXA255_START_BANK(PXA255_REG_START_ADDRESS)] = pxa255_write_byte;
-   write_half_map[PXA255_START_BANK(PXA255_REG_START_ADDRESS)] = pxa255_write_half;
-   write_word_map[PXA255_START_BANK(PXA255_REG_START_ADDRESS)] = pxa255_write_word;
+   //add PXA255 register range
+   for(i = PXA255_START_BANK(PXA255_REG_START_ADDRESS); i <= PXA255_END_BANK(PXA255_REG_START_ADDRESS, mem_areas[2].size); i++){
+      read_byte_map[i] = pxa255_read_byte;
+      read_half_map[i] = pxa255_read_half;
+      read_word_map[i] = pxa255_read_word;
+      write_byte_map[i] = pxa255_write_byte;
+      write_half_map[i] = pxa255_write_half;
+      write_word_map[i] = pxa255_write_word;
+   }
 
    //set up CPU hardware
    pxa255icInit(&tungstenCIc);
@@ -170,6 +173,12 @@ void pxa255LoadState(uint8_t* data){
 }
 
 void pxa255Execute(void){
+#if OS_HAS_PAGEFAULT_HANDLER
+    os_exception_frame_t seh_frame = { NULL, NULL };
+
+    os_faulthandler_arm(&seh_frame);
+#endif
+
    //TODO: need to set cycle_count_delta with the amout of opcodes to run
    cycle_count_delta = -500;//just a test value
 
@@ -201,6 +210,10 @@ void pxa255Execute(void){
          else
              cpu_arm_loop();
     }
+
+#if OS_HAS_PAGEFAULT_HANDLER
+    os_faulthandler_unarm(&seh_frame);
+#endif
 
     //render
     pxa255lcdFrame(&tungstenCLcd);
