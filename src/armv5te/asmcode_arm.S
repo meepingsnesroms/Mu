@@ -26,7 +26,7 @@ translation_sp: .global translation_sp
 
 #if defined(__clang__)
 /* On iOS, .text relocations are permitted and due to
-   a bug it's unable to handle to handle our way of
+   a bug it's unable to handle our way of
    avoiding them anyway... */
 
 .macro sym name, no=1

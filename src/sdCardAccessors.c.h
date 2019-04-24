@@ -89,11 +89,9 @@ static void sdCardDoResponseErrorToken(uint8_t token){
 
 //register getters
 static void sdCardGetCsd(uint8_t* csd){
-   static const uint8_t sdCardCsd[16] = {0x00, 0x2F, 0x00, 0x32, 0x5F, 0x59, 0x83, 0xB8, 0x6D, 0xB7, 0xFF, 0x9F, 0x96, 0x40, 0x00, 0x00};
    uint16_t deviceSize;
 
-   //this will go at some point, I want to build my own CID and CSD
-   memcpy(csd, sdCardCsd, 16);
+   memcpy(csd, palmSdCard.sdInfo.csd, 16);
 
    //set device size field(in multiples of 256k right now, the multiplier size also scales based on chip size), needed to get size
    deviceSize = palmSdCard.flashChip.size / SD_CARD_BLOCK_SIZE / 512;//to calculate the card capacity excluding security area ((device size + 1) * device size multiplier * max read data block length) bytes
@@ -108,21 +106,17 @@ static void sdCardGetCsd(uint8_t* csd){
 }
 
 static void sdCardGetCid(uint8_t* cid){
-   //this will go at some point, I want to build my own CID and CSD
-   static const uint8_t sdCardCid[16] = {0x1D, 0x41, 0x44, 0x53, 0x44, 0x20, 0x20, 0x20, 0x10, 0xA0, 0x50, 0x33, 0xA4, 0x00, 0x81, 0x00};
-
-   memcpy(cid, sdCardCid, 16);
+   memcpy(cid, palmSdCard.sdInfo.cid, 16);
 
    if(!palmSdCard.allowInvalidCrc)
       cid[15] = sdCardCrc7(cid, 15);
 }
 
 static void sdCardGetScr(uint8_t* scr){
-   static const uint8_t sdCardScr[8] = {0x01, 0x25, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};//dont know it this needs a CRC7 or not?
-
-   memcpy(scr, sdCardScr, 8);
+   //dont know it this needs a CRC7 or not?
+   memcpy(scr, palmSdCard.sdInfo.scr, 8);
 }
 
 static uint32_t sdCardGetOcr(void){
-   return !palmSdCard.inIdleState << 31/*power up status*/ | 0 << 30/*card capacity status*/ | 0x01FF8000/*supported voltages*/;
+   return !palmSdCard.inIdleState << 31/*power up status*/ | 0 << 30/*card capacity status*/ | palmSdCard.sdInfo.ocr/*supported voltages, misc stuff*/;
 }

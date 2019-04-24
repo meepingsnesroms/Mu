@@ -75,7 +75,7 @@ void sdCardReset(void){
       palmSdCard.receivingCommand = false;
       palmSdCard.inIdleState = true;
       //palmSdCard.chipSelect is a property of the wire to the SD card not the SD card itself
-      //palmSdCard.writeProtectSwitch is not written on reset because it is a physical property not an electronic one
+      //palmSdCard.sdInfo is not written on reset because it stores physical propertys not electronic ones
    }
 }
 
@@ -233,7 +233,7 @@ bool sdCardExchangeBit(bool bit){
 
                         case SEND_STATUS:
                            //HACK, need to add real write protection, this command is also how the host reads the value of the little switch on the side
-                           sdCardDoResponseR2(palmSdCard.inIdleState, palmSdCard.writeProtectSwitch);
+                           sdCardDoResponseR2(palmSdCard.inIdleState, palmSdCard.sdInfo.writeProtectSwitch);
                            break;
 
                         case SEND_WRITE_PROT:{
@@ -370,7 +370,7 @@ bool sdCardExchangeBit(bool bit){
                   //packet finished, verify and write block to chip
                   if(palmSdCard.allowInvalidCrc || sdCardCrc16(palmSdCard.runningCommandPacket + 1, SD_CARD_BLOCK_SIZE) == (palmSdCard.runningCommandPacket[SD_CARD_BLOCK_DATA_PACKET_SIZE - 2] << 8 | palmSdCard.runningCommandPacket[SD_CARD_BLOCK_DATA_PACKET_SIZE - 1])){
                      //HACK, also need to check if block is write protected, not just the card as a whole
-                     if(palmSdCard.runningCommandVars[0] < palmSdCard.flashChip.size && !palmSdCard.writeProtectSwitch){
+                     if(palmSdCard.runningCommandVars[0] < palmSdCard.flashChip.size && !palmSdCard.sdInfo.writeProtectSwitch){
                         memcpy(palmSdCard.flashChip.data + palmSdCard.runningCommandVars[0], palmSdCard.runningCommandPacket + 1, SD_CARD_BLOCK_SIZE);
                         sdCardDoResponseDataResponse(DR_ACCEPTED);
                      }

@@ -325,12 +325,16 @@ uint32_t emulatorGetStateSize(void){
    size += sizeof(uint8_t) * 7;//palmMisc
    size += sizeof(uint32_t) * 4;//palmEmuFeatures.(src/dst/size/value)
    size += sizeof(uint64_t);//palmSdCard.command
-   size += sizeof(uint8_t) * 8;//palmSdCard.(commandBitsRemaining/runningCommand/commandIsAcmd/allowInvalidCrc/chipSelect/receivingCommand/inIdleState/writeProtectSwitch)
+   size += sizeof(uint8_t) * 7;//palmSdCard.(commandBitsRemaining/runningCommand/commandIsAcmd/allowInvalidCrc/chipSelect/receivingCommand/inIdleState)
    size += sizeof(uint16_t) * 2;//palmSdCard.response(Read/Write)Position
    size += sizeof(int8_t);//palmSdCard.responseReadPositionBit
    size += sizeof(uint32_t) * 3;//palmSdCard.runningCommandVars
    size += SD_CARD_BLOCK_DATA_PACKET_SIZE;//palmSdCard.runningCommandPacket
    size += SD_CARD_RESPONSE_FIFO_SIZE;//palmSdCard.responseFifo
+   size += 16 * 2;//palmSdCard.sdInfo.csd/cid
+   size += 8;//palmSdCard.sdInfo.scr
+   size += sizeof(uint32_t);//palmSdCard.sdInfo.ocr
+   size += sizeof(uint8_t);//palmSdCard.sdInfo.writeProtectSwitch
    size += palmSdCard.flashChip.size;//palmSdCard.flashChip.data
 
    return size;
@@ -522,7 +526,15 @@ bool emulatorSaveState(buffer_t buffer){
    offset += sizeof(uint8_t);
    writeStateValue8(buffer.data + offset, palmSdCard.inIdleState);
    offset += sizeof(uint8_t);
-   writeStateValue8(buffer.data + offset, palmSdCard.writeProtectSwitch);
+   memcpy(buffer.data + offset, palmSdCard.sdInfo.csd, 16);
+   offset += 16;
+   memcpy(buffer.data + offset, palmSdCard.sdInfo.cid, 16);
+   offset += 16;
+   memcpy(buffer.data + offset, palmSdCard.sdInfo.scr, 8);
+   offset += 8;
+   writeStateValue32(buffer.data + offset, palmSdCard.sdInfo.ocr);
+   offset += sizeof(uint32_t);
+   writeStateValue8(buffer.data + offset, palmSdCard.sdInfo.writeProtectSwitch);
    offset += sizeof(uint8_t);
    memcpy(buffer.data + offset, palmSdCard.flashChip.data, palmSdCard.flashChip.size);
    offset += palmSdCard.flashChip.size;
@@ -720,7 +732,15 @@ bool emulatorLoadState(buffer_t buffer){
    offset += sizeof(uint8_t);
    palmSdCard.inIdleState = readStateValue8(buffer.data + offset);
    offset += sizeof(uint8_t);
-   palmSdCard.writeProtectSwitch = readStateValue8(buffer.data + offset);
+   memcpy(palmSdCard.sdInfo.csd, buffer.data + offset, 16);
+   offset += 16;
+   memcpy(palmSdCard.sdInfo.cid, buffer.data + offset, 16);
+   offset += 16;
+   memcpy(palmSdCard.sdInfo.scr, buffer.data + offset, 8);
+   offset += 8;
+   palmSdCard.sdInfo.ocr = readStateValue32(buffer.data + offset);
+   offset += sizeof(uint32_t);
+   palmSdCard.sdInfo.writeProtectSwitch = readStateValue8(buffer.data + offset);
    offset += sizeof(uint8_t);
    if(palmSdCard.flashChip.data)
       free(palmSdCard.flashChip.data);
@@ -763,7 +783,16 @@ buffer_t emulatorGetSdCardBuffer(void){
    return palmSdCard.flashChip;
 }
 
-uint32_t emulatorInsertSdCard(buffer_t image, bool writeProtectSwitch){
+uint32_t emulatorInsertSdCard(buffer_t image, sd_card_info_t* sdInfo){
+   //from the no name SD card that came instered in my test device
+   static const sd_card_info_t defaultSdInfo = {
+      {0x00, 0x2F, 0x00, 0x32, 0x5F, 0x59, 0x83, 0xB8, 0x6D, 0xB7, 0xFF, 0x9F, 0x96, 0x40, 0x00, 0x00},//csd
+      {0x1D, 0x41, 0x44, 0x53, 0x44, 0x20, 0x20, 0x20, 0x10, 0xA0, 0x50, 0x33, 0xA4, 0x00, 0x81, 0x00},//cid
+      {0x01, 0x25, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},//scr
+      0x01FF8000,//ocr
+      false//writeProtectSwitch
+   };
+
    //SD card is currently inserted
    if(palmSdCard.flashChip.data)
       return EMU_ERROR_RESOURCE_LOCKED;
@@ -790,7 +819,10 @@ uint32_t emulatorInsertSdCard(buffer_t image, bool writeProtectSwitch){
    memset(palmSdCard.flashChip.data + palmSdCard.flashChip.size, 0x00, SD_CARD_BLOCK_SIZE);
 
    //reinit SD card
-   palmSdCard.writeProtectSwitch = writeProtectSwitch;
+   if(sdInfo)
+      palmSdCard.sdInfo = *sdInfo;
+   else
+      palmSdCard.sdInfo = defaultSdInfo;
    sdCardReset();
 
    return EMU_ERROR_NONE;

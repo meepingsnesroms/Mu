@@ -104,6 +104,14 @@ typedef struct{
 }input_t;
 
 typedef struct{
+   uint8_t  csd[16];
+   uint8_t  cid[16];
+   uint8_t  scr[8];
+   uint32_t ocr;
+   bool     writeProtectSwitch;
+}sd_card_info_t;
+
+typedef struct{
    uint64_t command;
    uint8_t  commandBitsRemaining;
    uint8_t  runningCommand;
@@ -113,16 +121,12 @@ typedef struct{
    uint16_t responseReadPosition;
    int8_t   responseReadPositionBit;
    uint16_t responseWritePosition;
-   //uint8_t  csd[16];
-   //uint8_t  cid[16];
-   //uint8_t  scr[8]
-   //uint32_t ocr;
    bool     commandIsAcmd;
    bool     allowInvalidCrc;
    bool     chipSelect;
    bool     receivingCommand;
    bool     inIdleState;
-   bool     writeProtectSwitch;
+   sd_card_info_t sdInfo;
    buffer_t flashChip;
 }sd_card_t;
 
@@ -174,7 +178,7 @@ uint32_t emulatorGetRamSize(void);
 bool emulatorSaveRam(buffer_t buffer);//true = success
 bool emulatorLoadRam(buffer_t buffer);//true = success
 buffer_t emulatorGetSdCardBuffer(void);//this is a direct pointer to the SD card data, do not free it
-uint32_t emulatorInsertSdCard(buffer_t image, bool writeProtectSwitch);//use (NULL, desired size) to create a new empty SD card
+uint32_t emulatorInsertSdCard(buffer_t image, sd_card_info_t* sdInfo);//use (NULL, desired size) to create a new empty SD card, pass NULL for sdInfo to use defaults
 void emulatorEjectSdCard(void);
 void emulatorRunFrame(void);
    
