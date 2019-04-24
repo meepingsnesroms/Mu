@@ -772,9 +772,9 @@ uint32_t emulatorInsertSdCard(buffer_t image, bool writeProtectSwitch){
    if(image.size == 0x00000000 || image.size > 0x20000000)
       return EMU_ERROR_INVALID_PARAMETER;
 
-   //round up to nearest mb, prevents issues with buffer size and too small SD cards
-   palmSdCard.flashChip.size = (image.size & 0xFFF00000) + (image.size & 0x000FFFFF ? 0x00100000 : 0x00000000);
-   palmSdCard.flashChip.data = malloc(palmSdCard.flashChip.size);
+   //add SD_CARD_BLOCK_SIZE to buffer to prevent buffer overflows
+   palmSdCard.flashChip.size = image.size;
+   palmSdCard.flashChip.data = malloc(palmSdCard.flashChip.size + SD_CARD_BLOCK_SIZE);
    if(!palmSdCard.flashChip.data){
       palmSdCard.flashChip.size = 0x00000000;
       return EMU_ERROR_OUT_OF_MEMORY;
@@ -786,8 +786,8 @@ uint32_t emulatorInsertSdCard(buffer_t image, bool writeProtectSwitch){
    else
       memset(palmSdCard.flashChip.data, 0x00, image.size);
 
-   //0 out the unused part of the chip
-   memset(palmSdCard.flashChip.data + image.size, 0x00, palmSdCard.flashChip.size - image.size);
+   //clear the padding block
+   memset(palmSdCard.flashChip.data + palmSdCard.flashChip.size, 0x00, SD_CARD_BLOCK_SIZE);
 
    //reinit SD card
    palmSdCard.writeProtectSwitch = writeProtectSwitch;

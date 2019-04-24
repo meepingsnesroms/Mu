@@ -113,6 +113,10 @@ typedef struct{
    uint16_t responseReadPosition;
    int8_t   responseReadPositionBit;
    uint16_t responseWritePosition;
+   //uint8_t  csd[16];
+   //uint8_t  cid[16];
+   //uint8_t  scr[8]
+   //uint32_t ocr;
    bool     commandIsAcmd;
    bool     allowInvalidCrc;
    bool     chipSelect;
