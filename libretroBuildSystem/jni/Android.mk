@@ -4,6 +4,19 @@ CORE_DIR := $(LOCAL_PATH)/..
 
 GIT_VERSION := " $(shell git rev-parse --short HEAD || echo unknown)"
 
+# Palm OS 5 support
+EMU_SUPPORT_PALM_OS5 = 1
+EMU_OS := linux
+ifeq ($(TARGET_ARCH_ABI), x86)
+   EMU_ARCH := x86_32
+else ifeq ($(TARGET_ARCH_ABI), x86_64)
+   EMU_ARCH := x86_64
+else ifeq ($(TARGET_ARCH_ABI), armeabi-v7a)
+	EMU_ARCH := armv7
+else ifeq ($(TARGET_ARCH_ABI), arm64-v8a)
+   EMU_ARCH := armv8
+endif
+
 include $(CORE_DIR)/build/Makefile.common
 
 COREFLAGS := -ffast-math -funroll-loops -D__LIBRETRO__ -DINLINE=inline -DFRONTEND_SUPPORTS_RGB565 $(INCFLAGS) $(COREDEFINES)
