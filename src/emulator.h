@@ -150,6 +150,9 @@ typedef struct{
 }emu_reg_t;
 
 //emulator data, some are GUI interface variables, some should be left alone
+#if defined(EMU_SUPPORT_PALM_OS5)
+extern bool      palmEmulatingTungstenC;//read allowed, but not advised
+#endif
 extern uint8_t*  palmRom;//dont touch
 extern uint8_t*  palmRam;//access allowed to read save RAM without allocating a giant buffer, but endianness must be taken into account
 extern uint8_t*  palmReg;//dont touch

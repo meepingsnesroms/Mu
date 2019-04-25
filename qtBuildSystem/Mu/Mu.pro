@@ -88,22 +88,33 @@ CONFIG(debug, debug|release){
 support_palm_os5{
     DEFINES += EMU_SUPPORT_PALM_OS5 # the Qt build will not be supporting anything too slow to run OS 5
 
-    windows{
-        SOURCES += \
-            ../../src/armv5te/os/os-win32.c
-    }
+    !no_dynarec{
+        # Windows is only supported in 32 bit mode right now(this is a limitation of the dynarec)
+        # iOS needs IS_IOS_BUILD set, but the Qt port does not support iOS currently
 
-    macx|linux-g++|android{
-        SOURCES += \
-            ../../src/armv5te/os/os-linux.c
-    }
+        cpu_x86_32{
+            SOURCES += \
+                ../../src/armv5te/translate_x86.c
+        }
 
-    # Windows is only supported in 32 bit mode right now(this is a limitation of the dynarec)
-    # iOS needs IS_IOS_BUILD set, but the Qt port does not support iOS currently
+        cpu_x86_64{
+            SOURCES += \
+                ../../src/armv5te/translate_x86_64.c
+        }
+
+        cpu_armv7{
+            SOURCES += \
+                ../../src/armv5te/translate_arm.cpp
+        }
+
+        cpu_armv8{
+            SOURCES += \
+                ../../src/armv5te/translate_aarch64.cpp
+        }
+    }
 
     cpu_x86_32{
         SOURCES += \
-            ../../src/armv5te/translate_x86.c \
             ../../src/armv5te/asmcode_x86.S
     }
     else{
@@ -114,20 +125,27 @@ support_palm_os5{
 
     cpu_x86_64{
         SOURCES += \
-            ../../src/armv5te/translate_x86_64.c \
             ../../src/armv5te/asmcode_x86_64.S
     }
 
     cpu_armv7{
         SOURCES += \
-            ../../src/armv5te/translate_arm.cpp \
             ../../src/armv5te/asmcode_arm.S
     }
 
     cpu_armv8{
         SOURCES += \
-            ../../src/armv5te/translate_aarch64.cpp \
             ../../src/armv5te/asmcode_aarch64.S
+    }
+
+    windows{
+        SOURCES += \
+            ../../src/armv5te/os/os-win32.c
+    }
+
+    macx|linux-g++|android{
+        SOURCES += \
+            ../../src/armv5te/os/os-linux.c
     }
 
     SOURCES += \

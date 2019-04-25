@@ -60,7 +60,7 @@ public:
 
    std::vector<QString>& getDebugStrings();
    std::vector<uint64_t>& getDuplicateCallCount();
-   std::vector<uint32_t> getCpuRegisters();
+   QString getCpuRegisterString();
 
    uint16_t screenWidth() const{return palmFramebufferWidth;}
    uint16_t screenHeight() const{return palmFramebufferHeight;}

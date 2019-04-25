@@ -55,9 +55,11 @@ MakePalmBitmap:
 Other:
 Support for Silkyboard 2 silkscreen:https://archive.org/details/tucows_228076_SILKYBOARD_II
 Qt port dosent support Windows touchscreen input
+Qt GUI dosent resize properly with 320x320 framebuffer
 
 
 Fixed:
+ARM dynarec SIGSEGVs on exit(pushing play in the debugger still lets it continue, dont think this is a bug)
 (Feature)need to add FEATURE_DURABLE which will ignore CPU errors, increasing stability at the cost of bugginess
 (RetroArch port)set the alarm LED using retro_set_led_state_t on RetroArch
 (CPU I/O)SPI1 SPISPC register(this is just a clock divider used to slow transfers to allow the voltages to settle, since the emu has no voltages all transfers are just instant)

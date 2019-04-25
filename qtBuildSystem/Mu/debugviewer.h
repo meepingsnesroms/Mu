@@ -18,7 +18,6 @@ public:
 
 private:
    int64_t numberFromString(QString str, bool negativeAllowed);
-   QString stringFromNumber(int64_t number, bool hex, uint32_t forcedZeros = 0);
 
 private slots:
    void debugRadioButtonHandler();

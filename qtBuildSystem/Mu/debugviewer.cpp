@@ -44,24 +44,6 @@ int64_t DebugViewer::numberFromString(QString str, bool negativeAllowed){
    return value;
 }
 
-QString DebugViewer::stringFromNumber(int64_t number, bool hex, uint32_t forcedZeros){
-   QString numString;
-
-   if(hex){
-      numString += QString::number(number, 16).toUpper();
-      while(numString.length() < (int)forcedZeros)numString.push_front("0");
-      numString.push_front("0x");
-   }
-   else{
-      numString += QString::number(qAbs(number), 10);
-      while(numString.length() < (int)forcedZeros)numString.push_front("0");
-      if(number < 0)
-         numString.push_front("-");
-   }
-
-   return numString;
-}
-
 void DebugViewer::debugRadioButtonHandler(){
    switch(bitsPerEntry){
       case 8:
@@ -96,10 +78,10 @@ void DebugViewer::on_debugGetHexValues_clicked(){
       for(int64_t count = 0; count < length; count++){
          uint64_t data = emu.getEmulatorMemory(address, bits);
          QString value;
-         value += stringFromNumber(address, true, 8);
+         value += QString::asprintf("0x%08X", (uint32_t)address);
          value += ":";
          if(data != UINT64_MAX)
-            value += stringFromNumber(data, true, bits / 8 * 2);
+            value += QString::asprintf("0x%0*X", bits / 8 * 2, (uint32_t)data);
          else
             value += "Unsafe Access";
          ui->debugValueList->addItem(value);
@@ -143,16 +125,10 @@ void DebugViewer::on_debugDump_clicked(){
 }
 
 void DebugViewer::on_debugShowRegisters_clicked(){
-   std::vector<uint32_t> registers = ((MainWindow*)parentWidget())->emu.getCpuRegisters();
+   EmuWrapper& emu = ((MainWindow*)parentWidget())->emu;
 
    ui->debugValueList->clear();
-   for(uint8_t dRegs = 0; dRegs < 8; dRegs++)
-      ui->debugValueList->addItem("D" + stringFromNumber(dRegs, false, 0) + ":" + stringFromNumber(registers[dRegs], true, 8));
-   for(uint8_t aRegs = 0; aRegs < 8; aRegs++)
-      ui->debugValueList->addItem("A" + stringFromNumber(aRegs, false, 0) + ":" + stringFromNumber(registers[8 + aRegs], true, 8));
-   ui->debugValueList->addItem("SP:" + stringFromNumber(registers[15], true, 8));
-   ui->debugValueList->addItem("PC:" + stringFromNumber(registers[16], true, 8));
-   ui->debugValueList->addItem("SR:" + stringFromNumber(registers[17], true, 4));
+   ui->debugValueList->addItems(emu.getCpuRegisterString().split('\n'));
 }
 
 void DebugViewer::on_debugShowDebugLogs_clicked(){

@@ -17,7 +17,7 @@ bool flx68000IsSupervisor(void);
 void flx68000BusError(uint32_t address, bool isWrite);
 
 uint32_t flx68000GetRegister(uint8_t reg);//only for debugging
-uint32_t flx68000GetPc(void);//only for debugging
+#define flx68000GetPc() flx68000GetRegister(29/*M68K_REG_PPC*/)//only for debugging
 uint64_t flx68000ReadArbitraryMemory(uint32_t address, uint8_t size);//only for debugging
 
 #endif

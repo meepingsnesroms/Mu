@@ -19,6 +19,9 @@
 
 extern "C"{
 #include "../../src/flx68000.h"
+#if defined(EMU_SUPPORT_PALM_OS5)
+#include "../../src/pxa255/pxa255.h"
+#endif
 #include "../../src/debug/sandbox.h"
 }
 
@@ -400,12 +403,29 @@ std::vector<uint64_t>& EmuWrapper::getDuplicateCallCount(){
    return duplicateCallCount;
 }
 
-std::vector<uint32_t> EmuWrapper::getCpuRegisters(){
-   std::vector<uint32_t> registers;
+QString EmuWrapper::getCpuRegisterString(){
+   QString regString = "";
 
-   for(uint8_t reg = 0; reg < 18; reg++)
-      registers.push_back(flx68000GetRegister(reg));
-   return registers;
+#if defined(EMU_SUPPORT_PALM_OS5)
+   if(palmEmulatingTungstenC){
+      for(uint8_t regs = 0; regs < 16; regs++)
+         regString += QString::asprintf("R%d:0x%08X\n", regs, pxa255GetRegister(regs));
+      regString.resize(regString.size() - 1);//remove extra '\n'
+   }
+   else{
+#endif
+      for(uint8_t dRegs = 0; dRegs < 8; dRegs++)
+         regString += QString::asprintf("D%d:0x%08X\n", dRegs, flx68000GetRegister(dRegs));
+      for(uint8_t aRegs = 0; aRegs < 8; aRegs++)
+         regString += QString::asprintf("A%d:0x%08X\n", aRegs, flx68000GetRegister(8 + aRegs));
+      regString += QString::asprintf("SP:0x%08X\n", flx68000GetRegister(15));
+      regString += QString::asprintf("PC:0x%08X\n", flx68000GetRegister(16));
+      regString += QString::asprintf("SR:0x%04X", flx68000GetRegister(17));
+#if defined(EMU_SUPPORT_PALM_OS5)
+   }
+#endif
+
+   return regString;
 }
 
 uint64_t EmuWrapper::getEmulatorMemory(uint32_t address, uint8_t size){

@@ -19,4 +19,6 @@ void pxa255LoadState(uint8_t* data);
 
 void pxa255Execute(void);//runs the CPU for 1 frame
 
+uint32_t pxa255GetRegister(uint8_t reg);//only for debugging
+
 #endif

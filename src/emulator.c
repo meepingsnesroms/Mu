@@ -44,10 +44,10 @@
 
 
 static bool emulatorInitialized = false;
-#if defined(EMU_SUPPORT_PALM_OS5)
-static bool emulatorEmulatingTungstenC;
-#endif
 
+#if defined(EMU_SUPPORT_PALM_OS5)
+bool      palmEmulatingTungstenC;
+#endif
 uint8_t*  palmRam;
 uint8_t*  palmRom;
 uint8_t*  palmReg;
@@ -111,9 +111,9 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t enab
 
 #if defined(EMU_SUPPORT_PALM_OS5)
    //0x00000004 is boot program counter on 68k, its just 0x00000000 on ARM
-   emulatorEmulatingTungstenC = !(palmRomDump.data[0x4] || palmRomDump.data[0x5] || palmRomDump.data[0x6] || palmRomDump.data[0x7]);
+   palmEmulatingTungstenC = !(palmRomDump.data[0x4] || palmRomDump.data[0x5] || palmRomDump.data[0x6] || palmRomDump.data[0x7]);
 
-   if(emulatorEmulatingTungstenC){
+   if(palmEmulatingTungstenC){
       //emulating Tungsten C
       bool dynarecInited = false;
 
@@ -132,6 +132,7 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t enab
       if(palmRomDump.size < TUNGSTEN_C_ROM_SIZE)
          memset(palmRom + palmRomDump.size, 0x00, TUNGSTEN_C_ROM_SIZE - palmRomDump.size);
       memset(palmRam, 0x00, TUNGSTEN_C_RAM_SIZE);
+      memset(palmFramebuffer, 0x00, 320 * 320 * sizeof(uint16_t));//TODO:PXA255 code doesnt always output a picture like my SED1376 code
       memset(palmAudio, 0x00, AUDIO_SAMPLES_PER_FRAME * 2/*channels*/ * sizeof(int16_t));
       memset(&palmInput, 0x00, sizeof(palmInput));
       memset(&palmMisc, 0x00, sizeof(palmMisc));
@@ -144,11 +145,13 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t enab
       palmEmuFeatures.info = enabledEmuFeatures;
 
       //initialize components, I dont think theres much in a Tungsten C
+      pxa255Framebuffer = palmFramebuffer;
       blip_set_rates(palmAudioResampler, AUDIO_CLOCK_RATE, AUDIO_SAMPLE_RATE);
       sandboxInit();
 
       //reset everything
       emulatorSoftReset();
+      pxa255SetRtc(0, 0, 0, 0);
    }
    else{
 #endif
@@ -218,7 +221,7 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t enab
 void emulatorExit(void){
    if(emulatorInitialized){
 #if defined(EMU_SUPPORT_PALM_OS5)
-      if(!emulatorEmulatingTungstenC){
+      if(!palmEmulatingTungstenC){
 #endif
          free(palmRom);
          free(palmRam);
@@ -230,7 +233,7 @@ void emulatorExit(void){
       free(palmAudio);
       blip_delete(palmAudioResampler);
 #if defined(EMU_SUPPORT_PALM_OS5)
-      if(emulatorEmulatingTungstenC)
+      if(palmEmulatingTungstenC)
          pxa255Deinit();
 #endif
       free(palmSdCard.flashChip.data);
@@ -241,10 +244,11 @@ void emulatorExit(void){
 void emulatorHardReset(void){
    //equivalent to taking the battery out and putting it back in
 #if defined(EMU_SUPPORT_PALM_OS5)
-   if(emulatorEmulatingTungstenC){
+   if(palmEmulatingTungstenC){
       memset(palmRam, 0x00, TUNGSTEN_C_RAM_SIZE);
       emulatorSoftReset();
       sdCardReset();
+      pxa255SetRtc(0, 0, 0, 0);
    }
    else{
 #endif
@@ -260,7 +264,7 @@ void emulatorHardReset(void){
 void emulatorSoftReset(void){
    //equivalent to pushing the reset button on the back of the device
 #if defined(EMU_SUPPORT_PALM_OS5)
-   if(emulatorEmulatingTungstenC){
+   if(palmEmulatingTungstenC){
       palmEmuFeatures.value = 0x00000000;
       palmClockMultiplier = 1.00;
       pxa255Reset();
@@ -284,7 +288,7 @@ void emulatorSoftReset(void){
 
 void emulatorSetRtc(uint16_t days, uint8_t hours, uint8_t minutes, uint8_t seconds){
 #if defined(EMU_SUPPORT_PALM_OS5)
-   if(emulatorEmulatingTungstenC)
+   if(palmEmulatingTungstenC)
       pxa255SetRtc(days, hours, minutes, seconds);
    else
 #endif
@@ -839,7 +843,7 @@ void emulatorEjectSdCard(void){
 
 void emulatorRunFrame(void){
 #if defined(EMU_SUPPORT_PALM_OS5)
-   if(emulatorEmulatingTungstenC)
+   if(palmEmulatingTungstenC)
       emulatorTungstenCFrame();
    else
       emulatorM515Frame();

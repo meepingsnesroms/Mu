@@ -789,7 +789,7 @@ void sandboxReset(void){
    sandboxWatchRegionsActive = 0;
 
    //patch OS here if needed
-   sandboxCommand(SANDBOX_CMD_PATCH_OS, NULL);
+   //sandboxCommand(SANDBOX_CMD_PATCH_OS, NULL);
 
    //log all register accesses
    //sandboxCommand(SANDBOX_CMD_REGISTER_WATCH_ENABLE, NULL);
@@ -1098,9 +1098,11 @@ void sandboxOnFrameRun(void){
    //run at the end of every frame
    sandboxFramesRan++;
 
+   /*
    if(sandboxFramesRan == SANDBOX_SECONDS_TO_FRAMES(10)){
       sandboxCommand(SANDBOX_CMD_TEST_MEMORY_ALIGNMENT, NULL);
    }
+   */
 }
 
 void sandboxOnOpcodeRun(void){

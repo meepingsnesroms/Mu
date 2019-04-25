@@ -23,6 +23,7 @@ uint16_t*        pxa255Framebuffer;
 static Pxa255ic  tungstenCIc;
 static Pxa255lcd tungstenCLcd;
 
+
 //PXA255 register accessors
 static uint8_t pxa255_read_byte(uint32_t addr){
 
@@ -66,6 +67,8 @@ bool pxa255Init(uint8_t** returnRom, uint8_t** returnRam){
    mem_and_flags = os_reserve(MEM_MAXSIZE * 2);
    if(!mem_and_flags)
       return false;
+
+   addr_cache_init();
 
    //ROM
    mem_areas[0].base = PXA255_ROM_START_ADDRESS;
@@ -122,6 +125,8 @@ void pxa255Deinit(void){
        os_free(mem_and_flags, MEM_MAXSIZE * 2);
        mem_and_flags = NULL;
    }
+
+   addr_cache_deinit();
 }
 
 void pxa255Reset(void){
@@ -217,4 +222,8 @@ void pxa255Execute(void){
 
     //render
     pxa255lcdFrame(&tungstenCLcd);
+}
+
+uint32_t pxa255GetRegister(uint8_t reg){
+   return reg_pc(reg);
 }

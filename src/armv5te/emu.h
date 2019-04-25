@@ -4,6 +4,7 @@
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 #include "cpu.h"
 #include "mem.h"
@@ -52,7 +53,8 @@ void emuprintf(const char *format, ...);
 //void warn(const char *fmt, ...);
 #define warn(...) debugLog(__VA_ARGS__)
 //__attribute__((noreturn)) void error(const char *fmt, ...);
-static inline __attribute__((noreturn)) void error(const char *fmt, ...){while(true){};}
+//static inline __attribute__((noreturn)) void error(const char *fmt, ...){while(true){};}
+#define error(...) abort()
 void throttle_timer_on();
 void throttle_timer_off();
 void throttle_timer_wait();
