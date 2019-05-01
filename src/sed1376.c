@@ -3,7 +3,7 @@
 
 #include "emulator.h"
 #include "portability.h"
-#include "dbvzRegisters.h"
+#include "dbvz.h"
 #include "flx68000.h"//for flx68000GetPc()
 #include "specs/sed1376RegisterSpec.h"
 

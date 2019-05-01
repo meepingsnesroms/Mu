@@ -1,7 +1,7 @@
 EMU_DEFINES :=
 EMU_SOURCES_C := $(EMU_PATH)/emulator.c \
 	$(EMU_PATH)/m515Bus.c \
-	$(EMU_PATH)/dbvzRegisters.c \
+	$(EMU_PATH)/dbvz.c \
 	$(EMU_PATH)/flx68000.c \
 	$(EMU_PATH)/sed1376.c \
 	$(EMU_PATH)/ads7846.c \

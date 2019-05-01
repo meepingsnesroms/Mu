@@ -204,6 +204,7 @@ CONFIG += c++11
 INCLUDEPATH += $$PWD/qt-common/include
 
 SOURCES += \
+    ../../src/dbvz.c \
     debugviewer.cpp \
     emuwrapper.cpp \
     main.cpp \
@@ -227,10 +228,10 @@ SOURCES += \
     ../../src/m68k/m68kopnz.c \
     ../../src/m68k/m68kops.c \
     ../../src/expansionHardware.c \
-    ../../src/m515Bus.c \
-    ../../src/dbvzRegisters.c
+    ../../src/m515Bus.c
 
 HEADERS += \
+    ../../src/dbvz.h \
     debugviewer.h \
     emuwrapper.h \
     mainwindow.h \
@@ -266,7 +267,6 @@ HEADERS += \
     ../../src/m515Bus.h \
     ../../src/dbvzRegisterAccessors.c.h \
     ../../src/dbvzTiming.c.h \
-    ../../src/dbvzRegisters.h \
 
 FORMS += \
     mainwindow.ui \

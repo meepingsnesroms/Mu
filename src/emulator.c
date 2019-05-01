@@ -4,9 +4,8 @@
 #include <string.h>
 
 #include "audio/blip_buf.h"
-#include "flx68000.h"
 #include "emulator.h"
-#include "dbvzRegisters.h"
+#include "dbvz.h"
 #include "expansionHardware.h"
 #include "m515Bus.h"
 #include "sed1376.h"
@@ -50,7 +49,6 @@ bool      palmEmulatingTungstenC;
 #endif
 uint8_t*  palmRam;
 uint8_t*  palmRom;
-uint8_t*  palmReg;
 input_t   palmInput;
 sd_card_t palmSdCard;
 misc_hw_t palmMisc;
@@ -66,31 +64,16 @@ double    palmClockMultiplier;//used by the emulator to overclock the emulated P
 
 #if defined(EMU_SUPPORT_PALM_OS5)
 static void emulatorTungstenCFrame(void){
+   //CPU
    pxa255Execute();
 }
 #endif
 
 static void emulatorM515Frame(void){
-   uint32_t samples;
-
-   //I/O
-   m515RefreshInputState();
-
    //CPU
-   dbvzFrameClk32s = 0;
-   for(; palmCycleCounter < (double)M515_CRYSTAL_FREQUENCY / EMU_FPS; palmCycleCounter += 1.0){
-      flx68000Execute();
-      dbvzFrameClk32s++;
-   }
-   palmCycleCounter -= (double)M515_CRYSTAL_FREQUENCY / EMU_FPS;
+   dbvzExecute();
 
-   //audio
-   blip_end_frame(palmAudioResampler, blip_clocks_needed(palmAudioResampler, AUDIO_SAMPLES_PER_FRAME));
-   blip_read_samples(palmAudioResampler, palmAudio, AUDIO_SAMPLES_PER_FRAME, true);
-   MULTITHREAD_LOOP(samples) for(samples = 0; samples < AUDIO_SAMPLES_PER_FRAME * 2; samples += 2)
-      palmAudio[samples + 1] = palmAudio[samples];
-
-   //video
+   //LCD controller
    sed1376Render();
 }
 
@@ -159,14 +142,12 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t enab
       //allocate buffers, add 4 to memory regions to prevent SIGSEGV from accessing off the end
       palmRom = malloc(M515_ROM_SIZE + 4);
       palmRam = malloc(M515_RAM_SIZE + 4);
-      palmReg = malloc(DBVZ_REG_SIZE + 4);
       palmFramebuffer = malloc(160 * 220 * sizeof(uint16_t));
       palmAudio = malloc(AUDIO_SAMPLES_PER_FRAME * 2 * sizeof(int16_t));
       palmAudioResampler = blip_new(AUDIO_SAMPLE_RATE);//have 1 second of samples
-      if(!palmRom || !palmRam || !palmReg || !palmFramebuffer || !palmAudio || !palmAudioResampler){
+      if(!palmRom || !palmRam || !palmFramebuffer || !palmAudio || !palmAudioResampler){
          free(palmRom);
          free(palmRam);
-         free(palmReg);
          free(palmFramebuffer);
          free(palmAudio);
          blip_delete(palmAudioResampler);
@@ -179,15 +160,7 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t enab
          memset(palmRom + palmRomDump.size, 0x00, M515_ROM_SIZE - palmRomDump.size);
       swap16BufferIfLittle(palmRom, M515_ROM_SIZE / sizeof(uint16_t));
       memset(palmRam, 0x00, M515_RAM_SIZE);
-      if(palmBootDump.data){
-         memcpy(palmReg + DBVZ_REG_SIZE - 1 - DBVZ_BOOTLOADER_SIZE, palmBootDump.data, u32Min(palmBootDump.size, DBVZ_BOOTLOADER_SIZE));
-         if(palmBootDump.size < DBVZ_BOOTLOADER_SIZE)
-            memset(palmReg + DBVZ_REG_SIZE - 1 - DBVZ_BOOTLOADER_SIZE + palmBootDump.size, 0x00, DBVZ_BOOTLOADER_SIZE - palmBootDump.size);
-         swap16BufferIfLittle(palmReg + DBVZ_REG_SIZE - 1 - DBVZ_BOOTLOADER_SIZE, DBVZ_BOOTLOADER_SIZE / sizeof(uint16_t));
-      }
-      else{
-         memset(palmReg + DBVZ_REG_SIZE - 1 - DBVZ_BOOTLOADER_SIZE, 0x00, DBVZ_BOOTLOADER_SIZE);
-      }
+      dbvzLoadBootloader(palmBootDump.data, palmBootDump.size);
       memcpy(palmFramebuffer + 160 * 160, silkscreen160x60, 160 * 60 * sizeof(uint16_t));
       memset(palmAudio, 0x00, AUDIO_SAMPLES_PER_FRAME * 2/*channels*/ * sizeof(int16_t));
       memset(&palmInput, 0x00, sizeof(palmInput));
@@ -203,7 +176,6 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t enab
 
       //initialize components
       blip_set_rates(palmAudioResampler, AUDIO_CLOCK_RATE, AUDIO_SAMPLE_RATE);
-      flx68000Init();
       sandboxInit();
 
       //reset everything
@@ -225,7 +197,6 @@ void emulatorExit(void){
 #endif
          free(palmRom);
          free(palmRam);
-         free(palmReg);
 #if defined(EMU_SUPPORT_PALM_OS5)
       }
 #endif
@@ -278,7 +249,7 @@ void emulatorSoftReset(void){
       ads7846Reset();
       pdiUsbD12Reset();
       expansionHardwareReset();
-      flx68000Reset();
+      dbvzReset();
       sandboxReset();
       //sdCardReset() should not be called here, the SD card does not have a reset line and should only be reset by a power cycle
 #if defined(EMU_SUPPORT_PALM_OS5)
@@ -302,30 +273,24 @@ uint32_t emulatorGetStateSize(void){
    size += sizeof(uint32_t);//palmEmuFeatures.info
    size += sizeof(uint64_t);//palmSdCard.flashChip.size, needs to be done first to verify the malloc worked
    size += sizeof(uint16_t) * 2;//palmFramebuffer(Width/Height)
-   size += flx68000StateSize();
-   size += sed1376StateSize();
-   size += ads7846StateSize();
-   size += pdiUsbD12StateSize();
-   size += expansionHardwareStateSize();
+#if defined(EMU_SUPPORT_PALM_OS5)
+   if(palmEmulatingTungstenC){
+      size += pxa255StateSize();
+      size += expansionHardwareStateSize();
+      size += TUNGSTEN_C_RAM_SIZE;//system RAM buffer
+   }
+   else{
+#endif
+      size += dbvzStateSize();
+      size += sed1376StateSize();
+      size += ads7846StateSize();
+      size += pdiUsbD12StateSize();
+      size += expansionHardwareStateSize();
+      size += M515_RAM_SIZE;//system RAM buffer
+#if defined(EMU_SUPPORT_PALM_OS5)
+   }
+#endif
    size += sandboxStateSize();
-   size += M515_RAM_SIZE;//system RAM buffer
-   size += DBVZ_REG_SIZE;//hardware registers
-   size += DBVZ_TOTAL_MEMORY_BANKS;//bank handlers
-   size += sizeof(uint32_t) * 4 * DBVZ_CHIP_END;//chip select states
-   size += sizeof(uint8_t) * 5 * DBVZ_CHIP_END;//chip select states
-   size += sizeof(uint64_t) * 5;//32.32 fixed point double, timerXCycleCounter and CPU cycle timers
-   size += sizeof(int8_t);//pllSleepWait
-   size += sizeof(int8_t);//pllWakeWait
-   size += sizeof(uint32_t);//clk32Counter
-   size += sizeof(uint64_t);//pctlrCpuClockDivider
-   size += sizeof(uint16_t) * 2;//timerStatusReadAcknowledge
-   size += sizeof(uint8_t);//portDInterruptLastValue
-   size += sizeof(uint16_t) * 9;//RX 8 * 16 SPI1 FIFO, 1 index is for FIFO full
-   size += sizeof(uint16_t) * 9;//TX 8 * 16 SPI1 FIFO, 1 index is for FIFO full
-   size += sizeof(uint8_t) * 5;//spi1(R/T)x(Read/Write)Position / spi1RxOverflowed
-   size += sizeof(int32_t);//pwm1ClocksToNextSample
-   size += sizeof(uint8_t) * 6;//pwm1Fifo[6]
-   size += sizeof(uint8_t) * 2;//pwm1(Read/Write)
    size += sizeof(uint8_t) * 7;//palmMisc
    size += sizeof(uint32_t) * 4;//palmEmuFeatures.(src/dst/size/value)
    size += sizeof(uint64_t);//palmSdCard.command
@@ -352,7 +317,11 @@ bool emulatorSaveState(buffer_t buffer){
       return false;//state cant fit
 
    //state validation, wont load states that are not from the same state version
+#if defined(EMU_SUPPORT_PALM_OS5)
+   writeStateValue32(buffer.data + offset, SAVE_STATE_VERSION | (palmEmulatingTungstenC ? SAVE_STATE_FOR_TUNGSTEN_C : 0));
+#else
    writeStateValue32(buffer.data + offset, SAVE_STATE_VERSION);
+#endif
    offset += sizeof(uint32_t);
 
    //features, hotpluging emulated hardware is not supported
@@ -369,109 +338,44 @@ bool emulatorSaveState(buffer_t buffer){
    writeStateValue16(buffer.data + offset, palmFramebufferHeight);
    offset += sizeof(uint16_t);
 
-   //chips
-   flx68000SaveState(buffer.data + offset);
-   offset += flx68000StateSize();
-   sed1376SaveState(buffer.data + offset);
-   offset += sed1376StateSize();
-   ads7846SaveState(buffer.data + offset);
-   offset += ads7846StateSize();
-   pdiUsbD12SaveState(buffer.data + offset);
-   offset += pdiUsbD12StateSize();
-   expansionHardwareSaveState(buffer.data + offset);
-   offset += expansionHardwareStateSize();
+#if defined(EMU_SUPPORT_PALM_OS5)
+   if(palmEmulatingTungstenC){
+      //chips
+      pxa255SaveState(buffer.data + offset);
+      offset += pxa255StateSize();
+      expansionHardwareSaveState(buffer.data + offset);
+      offset += expansionHardwareStateSize();
+
+      //memory
+      memcpy(buffer.data + offset, palmRam, TUNGSTEN_C_RAM_SIZE);
+      swap16BufferIfLittle(buffer.data + offset, TUNGSTEN_C_RAM_SIZE / sizeof(uint16_t));
+      offset += TUNGSTEN_C_RAM_SIZE;
+   }
+   else{
+#endif
+      //chips
+      dbvzSaveState(buffer.data + offset);
+      offset += dbvzStateSize();
+      sed1376SaveState(buffer.data + offset);
+      offset += sed1376StateSize();
+      ads7846SaveState(buffer.data + offset);
+      offset += ads7846StateSize();
+      pdiUsbD12SaveState(buffer.data + offset);
+      offset += pdiUsbD12StateSize();
+      expansionHardwareSaveState(buffer.data + offset);
+      offset += expansionHardwareStateSize();
+
+      //memory
+      memcpy(buffer.data + offset, palmRam, M515_RAM_SIZE);
+      swap16BufferIfLittle(buffer.data + offset, M515_RAM_SIZE / sizeof(uint16_t));
+      offset += M515_RAM_SIZE;
+#if defined(EMU_SUPPORT_PALM_OS5)
+   }
+#endif
 
    //sandbox, does nothing when disabled
    sandboxSaveState(buffer.data + offset);
    offset += sandboxStateSize();
-
-   //memory
-   memcpy(buffer.data + offset, palmRam, M515_RAM_SIZE);
-   swap16BufferIfLittle(buffer.data + offset, M515_RAM_SIZE / sizeof(uint16_t));
-   offset += M515_RAM_SIZE;
-   memcpy(buffer.data + offset, palmReg, DBVZ_REG_SIZE);
-   swap16BufferIfLittle(buffer.data + offset, DBVZ_REG_SIZE / sizeof(uint16_t));
-   offset += DBVZ_REG_SIZE;
-   memcpy(buffer.data + offset, dbvzBankType, DBVZ_TOTAL_MEMORY_BANKS);
-   offset += DBVZ_TOTAL_MEMORY_BANKS;
-   for(index = DBVZ_CHIP_BEGIN; index < DBVZ_CHIP_END; index++){
-      writeStateValue8(buffer.data + offset, dbvzChipSelects[index].enable);
-      offset += sizeof(uint8_t);
-      writeStateValue32(buffer.data + offset, dbvzChipSelects[index].start);
-      offset += sizeof(uint32_t);
-      writeStateValue32(buffer.data + offset, dbvzChipSelects[index].lineSize);
-      offset += sizeof(uint32_t);
-      writeStateValue32(buffer.data + offset, dbvzChipSelects[index].mask);
-      offset += sizeof(uint32_t);
-      writeStateValue8(buffer.data + offset, dbvzChipSelects[index].inBootMode);
-      offset += sizeof(uint8_t);
-      writeStateValue8(buffer.data + offset, dbvzChipSelects[index].readOnly);
-      offset += sizeof(uint8_t);
-      writeStateValue8(buffer.data + offset, dbvzChipSelects[index].readOnlyForProtectedMemory);
-      offset += sizeof(uint8_t);
-      writeStateValue8(buffer.data + offset, dbvzChipSelects[index].supervisorOnlyProtectedMemory);
-      offset += sizeof(uint8_t);
-      writeStateValue32(buffer.data + offset, dbvzChipSelects[index].unprotectedSize);
-      offset += sizeof(uint32_t);
-   }
-
-   //timing
-   writeStateValueDouble(buffer.data + offset, dbvzSysclksPerClk32);
-   offset += sizeof(uint64_t);
-   writeStateValueDouble(buffer.data + offset, palmCycleCounter);
-   offset += sizeof(uint64_t);
-   writeStateValueDouble(buffer.data + offset, palmClockMultiplier);
-   offset += sizeof(uint64_t);
-   writeStateValue8(buffer.data + offset, pllSleepWait);
-   offset += sizeof(int8_t);
-   writeStateValue8(buffer.data + offset, pllWakeWait);
-   offset += sizeof(int8_t);
-   writeStateValue32(buffer.data + offset, clk32Counter);
-   offset += sizeof(uint32_t);
-   writeStateValueDouble(buffer.data + offset, pctlrCpuClockDivider);
-   offset += sizeof(uint64_t);
-   writeStateValueDouble(buffer.data + offset, timerCycleCounter[0]);
-   offset += sizeof(uint64_t);
-   writeStateValueDouble(buffer.data + offset, timerCycleCounter[1]);
-   offset += sizeof(uint64_t);
-   writeStateValue16(buffer.data + offset, timerStatusReadAcknowledge[0]);
-   offset += sizeof(uint16_t);
-   writeStateValue16(buffer.data + offset, timerStatusReadAcknowledge[1]);
-   offset += sizeof(uint16_t);
-   writeStateValue8(buffer.data + offset, portDInterruptLastValue);
-   offset += sizeof(uint8_t);
-
-   //SPI1
-   for(index = 0; index < 9; index++){
-      writeStateValue16(buffer.data + offset, spi1RxFifo[index]);
-      offset += sizeof(uint16_t);
-   }
-   for(index = 0; index < 9; index++){
-      writeStateValue16(buffer.data + offset, spi1TxFifo[index]);
-      offset += sizeof(uint16_t);
-   }
-   writeStateValue8(buffer.data + offset, spi1RxReadPosition);
-   offset += sizeof(uint8_t);
-   writeStateValue8(buffer.data + offset, spi1RxWritePosition);
-   offset += sizeof(uint8_t);
-   writeStateValue8(buffer.data + offset, spi1RxOverflowed);
-   offset += sizeof(uint8_t);
-   writeStateValue8(buffer.data + offset, spi1TxReadPosition);
-   offset += sizeof(uint8_t);
-   writeStateValue8(buffer.data + offset, spi1TxWritePosition);
-   offset += sizeof(uint8_t);
-
-   //PWM1, audio
-   writeStateValue32(buffer.data + offset, pwm1ClocksToNextSample);
-   offset += sizeof(int32_t);
-   for(index = 0; index < 6; index++){
-      writeStateValue8(buffer.data + offset, pwm1Fifo[index]);
-      offset += sizeof(uint8_t);
-   }
-   writeStateValue8(buffer.data + offset, pwm1ReadPosition);
-   offset += sizeof(uint8_t);
-   writeStateValue8(buffer.data + offset, pwm1WritePosition);
-   offset += sizeof(uint8_t);
 
    //misc
    writeStateValue8(buffer.data + offset, palmMisc.powerButtonLed);
@@ -553,8 +457,13 @@ bool emulatorLoadState(buffer_t buffer){
    uint8_t* stateSdCardBuffer;
 
    //state validation, wont load states that are not from the same state version
+#if defined(EMU_SUPPORT_PALM_OS5)
+   if(readStateValue32(buffer.data + offset) != (SAVE_STATE_VERSION | (palmEmulatingTungstenC ? SAVE_STATE_FOR_TUNGSTEN_C : 0)))
+      return false;
+#else
    if(readStateValue32(buffer.data + offset) != SAVE_STATE_VERSION)
       return false;
+#endif
    offset += sizeof(uint32_t);
 
    //features, hotpluging emulated hardware is not supported
@@ -575,109 +484,44 @@ bool emulatorLoadState(buffer_t buffer){
    palmFramebufferHeight = readStateValue16(buffer.data + offset);
    offset += sizeof(uint16_t);
 
-   //chips
-   flx68000LoadState(buffer.data + offset);
-   offset += flx68000StateSize();
-   sed1376LoadState(buffer.data + offset);
-   offset += sed1376StateSize();
-   ads7846LoadState(buffer.data + offset);
-   offset += ads7846StateSize();
-   pdiUsbD12LoadState(buffer.data + offset);
-   offset += pdiUsbD12StateSize();
-   expansionHardwareLoadState(buffer.data + offset);
-   offset += expansionHardwareStateSize();
+#if defined(EMU_SUPPORT_PALM_OS5)
+   if(palmEmulatingTungstenC){
+      //chips
+      pxa255LoadState(buffer.data + offset);
+      offset += pxa255StateSize();
+      expansionHardwareLoadState(buffer.data + offset);
+      offset += expansionHardwareStateSize();
+
+      //memory
+      memcpy(palmRam, buffer.data + offset, TUNGSTEN_C_RAM_SIZE);
+      swap16BufferIfLittle(palmRam, TUNGSTEN_C_RAM_SIZE / sizeof(uint16_t));
+      offset += TUNGSTEN_C_RAM_SIZE;
+   }
+   else{
+#endif
+      //chips
+      dbvzLoadState(buffer.data + offset);
+      offset += dbvzStateSize();
+      sed1376LoadState(buffer.data + offset);
+      offset += sed1376StateSize();
+      ads7846LoadState(buffer.data + offset);
+      offset += ads7846StateSize();
+      pdiUsbD12LoadState(buffer.data + offset);
+      offset += pdiUsbD12StateSize();
+      expansionHardwareLoadState(buffer.data + offset);
+      offset += expansionHardwareStateSize();
+
+      //memory
+      memcpy(palmRam, buffer.data + offset, M515_RAM_SIZE);
+      swap16BufferIfLittle(palmRam, M515_RAM_SIZE / sizeof(uint16_t));
+      offset += M515_RAM_SIZE;
+#if defined(EMU_SUPPORT_PALM_OS5)
+   }
+#endif
 
    //sandbox, does nothing when disabled
    sandboxLoadState(buffer.data + offset);
    offset += sandboxStateSize();
-
-   //memory
-   memcpy(palmRam, buffer.data + offset, M515_RAM_SIZE);
-   swap16BufferIfLittle(palmRam, M515_RAM_SIZE / sizeof(uint16_t));
-   offset += M515_RAM_SIZE;
-   memcpy(palmReg, buffer.data + offset, DBVZ_REG_SIZE);
-   swap16BufferIfLittle(palmReg, DBVZ_REG_SIZE / sizeof(uint16_t));
-   offset += DBVZ_REG_SIZE;
-   memcpy(dbvzBankType, buffer.data + offset, DBVZ_TOTAL_MEMORY_BANKS);
-   offset += DBVZ_TOTAL_MEMORY_BANKS;
-   for(index = DBVZ_CHIP_BEGIN; index < DBVZ_CHIP_END; index++){
-      dbvzChipSelects[index].enable = readStateValue8(buffer.data + offset);
-      offset += sizeof(uint8_t);
-      dbvzChipSelects[index].start = readStateValue32(buffer.data + offset);
-      offset += sizeof(uint32_t);
-      dbvzChipSelects[index].lineSize = readStateValue32(buffer.data + offset);
-      offset += sizeof(uint32_t);
-      dbvzChipSelects[index].mask = readStateValue32(buffer.data + offset);
-      offset += sizeof(uint32_t);
-      dbvzChipSelects[index].inBootMode = readStateValue8(buffer.data + offset);
-      offset += sizeof(uint8_t);
-      dbvzChipSelects[index].readOnly = readStateValue8(buffer.data + offset);
-      offset += sizeof(uint8_t);
-      dbvzChipSelects[index].readOnlyForProtectedMemory = readStateValue8(buffer.data + offset);
-      offset += sizeof(uint8_t);
-      dbvzChipSelects[index].supervisorOnlyProtectedMemory = readStateValue8(buffer.data + offset);
-      offset += sizeof(uint8_t);
-      dbvzChipSelects[index].unprotectedSize = readStateValue32(buffer.data + offset);
-      offset += sizeof(uint32_t);
-   }
-
-   //timing
-   dbvzSysclksPerClk32 = readStateValueDouble(buffer.data + offset);
-   offset += sizeof(uint64_t);
-   palmCycleCounter = readStateValueDouble(buffer.data + offset);
-   offset += sizeof(uint64_t);
-   palmClockMultiplier = readStateValueDouble(buffer.data + offset);
-   offset += sizeof(uint64_t);
-   pllSleepWait = readStateValue8(buffer.data + offset);
-   offset += sizeof(int8_t);
-   pllWakeWait = readStateValue8(buffer.data + offset);
-   offset += sizeof(int8_t);
-   clk32Counter = readStateValue32(buffer.data + offset);
-   offset += sizeof(uint32_t);
-   pctlrCpuClockDivider = readStateValueDouble(buffer.data + offset);
-   offset += sizeof(uint64_t);
-   timerCycleCounter[0] = readStateValueDouble(buffer.data + offset);
-   offset += sizeof(uint64_t);
-   timerCycleCounter[1] = readStateValueDouble(buffer.data + offset);
-   offset += sizeof(uint64_t);
-   timerStatusReadAcknowledge[0] = readStateValue16(buffer.data + offset);
-   offset += sizeof(uint16_t);
-   timerStatusReadAcknowledge[1] = readStateValue16(buffer.data + offset);
-   offset += sizeof(uint16_t);
-   portDInterruptLastValue = readStateValue8(buffer.data + offset);
-   offset += sizeof(uint8_t);
-
-   //SPI1
-   for(index = 0; index < 9; index++){
-      spi1RxFifo[index] = readStateValue16(buffer.data + offset);
-      offset += sizeof(uint16_t);
-   }
-   for(index = 0; index < 9; index++){
-      spi1TxFifo[index] = readStateValue16(buffer.data + offset);
-      offset += sizeof(uint16_t);
-   }
-   spi1RxReadPosition = readStateValue8(buffer.data + offset);
-   offset += sizeof(uint8_t);
-   spi1RxWritePosition = readStateValue8(buffer.data + offset);
-   offset += sizeof(uint8_t);
-   spi1RxOverflowed = readStateValue8(buffer.data + offset);
-   offset += sizeof(uint8_t);
-   spi1TxReadPosition = readStateValue8(buffer.data + offset);
-   offset += sizeof(uint8_t);
-   spi1TxWritePosition = readStateValue8(buffer.data + offset);
-   offset += sizeof(uint8_t);
-
-   //PWM1, audio
-   pwm1ClocksToNextSample = readStateValue32(buffer.data + offset);
-   offset += sizeof(int32_t);
-   for(index = 0; index < 6; index++){
-      pwm1Fifo[index] = readStateValue8(buffer.data + offset);
-      offset += sizeof(uint8_t);
-   }
-   pwm1ReadPosition = readStateValue8(buffer.data + offset);
-   offset += sizeof(uint8_t);
-   pwm1WritePosition = readStateValue8(buffer.data + offset);
-   offset += sizeof(uint8_t);
 
    //misc
    palmMisc.powerButtonLed = readStateValue8(buffer.data + offset);
@@ -754,7 +598,7 @@ bool emulatorLoadState(buffer_t buffer){
    offset += stateSdCardSize;
 
    //some modules depend on all the state memory being loaded before certian required actions can occur(refreshing cached data, freeing memory blocks)
-   flx68000LoadStateFinished();
+   dbvzLoadStateFinished();
 
    return true;
 }

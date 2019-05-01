@@ -53,7 +53,11 @@ static void debugLog(char* str, ...){};
 #define SD_CARD_BLOCK_DATA_PACKET_SIZE (1 + SD_CARD_BLOCK_SIZE + 2)
 #define SD_CARD_RESPONSE_FIFO_SIZE (SD_CARD_BLOCK_DATA_PACKET_SIZE * 3)
 #define SD_CARD_NCR_BYTES 1//how many 0xFF bytes come before the R1 response
-#define SAVE_STATE_VERSION 0
+#define SAVE_STATE_VERSION 0x00000001
+#if defined(EMU_SUPPORT_PALM_OS5)
+#define SAVE_STATE_FOR_TUNGSTEN_C 0x80000000
+#endif
+
 
 //system constants
 #define M515_CRYSTAL_FREQUENCY 32768
@@ -155,7 +159,6 @@ extern bool      palmEmulatingTungstenC;//read allowed, but not advised
 #endif
 extern uint8_t*  palmRom;//dont touch
 extern uint8_t*  palmRam;//access allowed to read save RAM without allocating a giant buffer, but endianness must be taken into account
-extern uint8_t*  palmReg;//dont touch
 extern input_t   palmInput;//write allowed
 extern sd_card_t palmSdCard;//dont touch
 extern misc_hw_t palmMisc;//read/write allowed

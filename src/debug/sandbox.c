@@ -14,7 +14,7 @@
 #include "../m68k/m68kcpu.h"
 #include "../emulator.h"
 #include "../ads7846.h"
-#include "../dbvzRegisters.h"
+#include "../dbvz.h"
 #include "../portability.h"
 #include "../specs/emuFeatureRegisterSpec.h"
 #include "sandbox.h"

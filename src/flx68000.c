@@ -3,7 +3,7 @@
 
 #include "emulator.h"
 #include "portability.h"
-#include "dbvzRegisters.h"
+#include "dbvz.h"
 #include "m515Bus.h"
 #include "m68k/m68kcpu.h"
 
@@ -79,7 +79,7 @@ uint32_t  m68k_read_pcrelative_32(uint32_t address){
 #endif
 #endif
 
-void flx68000Init(void){
+void flx68000Reset(void){
    static bool inited = false;
 
    if(!inited){
@@ -90,11 +90,7 @@ void flx68000Init(void){
 
       inited = true;
    }
-}
 
-void flx68000Reset(void){
-   dbvzResetRegisters();
-   dbvzResetAddressSpace();//address space must be reset after hardware registers because it is dependent on them
    m68k_pulse_reset();
 }
 

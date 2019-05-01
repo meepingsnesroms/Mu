@@ -4,7 +4,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-void flx68000Init(void);
 void flx68000Reset(void);
 uint32_t flx68000StateSize(void);
 void flx68000SaveState(uint8_t* data);

@@ -3,7 +3,7 @@
 
 #include "emulator.h"
 #include "portability.h"
-#include "dbvzRegisters.h"
+#include "dbvz.h"
 
 
 bool ads7846PenIrqEnabled;

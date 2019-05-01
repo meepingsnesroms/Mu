@@ -6,7 +6,7 @@
 #include "portability.h"
 #include "specs/emuFeatureRegisterSpec.h"
 #include "m515Bus.h"
-#include "dbvzRegisters.h"
+#include "dbvz.h"
 #include "silkscreen.h"
 #include "sed1376.h"
 #include "flx68000.h"

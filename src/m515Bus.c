@@ -2,7 +2,7 @@
 #include <string.h>
 
 #include "emulator.h"
-#include "dbvzRegisters.h"
+#include "dbvz.h"
 #include "expansionHardware.h"
 #include "m515Bus.h"
 #include "portability.h"
