@@ -67,12 +67,6 @@ typedef struct ArmCpu{
 	// various other cpu config options
 	UInt32		vectorBase;		//address of vector base
 
-#ifdef ARM_V6
-
-	Boolean		EEE;			//endianness one exception entry
-	Boolean		impreciseAbtWaiting;
-#endif
-
 	ArmCpuMemF	memF;
 	ArmCpuEmulErr	emulErrF;
 	ArmCpuHypercall	hypercallF;

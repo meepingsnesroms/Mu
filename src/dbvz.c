@@ -1392,9 +1392,13 @@ void dbvzLoadBootloader(uint8_t* data, uint32_t size){
       size = 0;
 
    size = u32Min(size, DBVZ_BOOTLOADER_SIZE);
+
+   //copy size bytes from buffer to bootloader area
    for(index = 0; index < size; index++)
       registerArrayWrite8(DBVZ_REG_SIZE - DBVZ_BOOTLOADER_SIZE + index, data[index]);
-   for(index = size; index < DBVZ_BOOTLOADER_SIZE; index++)
+
+   //fill remainig space with 0x00
+   for(; index < DBVZ_BOOTLOADER_SIZE; index++)
       registerArrayWrite8(DBVZ_REG_SIZE - DBVZ_BOOTLOADER_SIZE + index, 0x00);
 }
 

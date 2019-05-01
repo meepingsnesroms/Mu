@@ -19,46 +19,16 @@
 #include "../emulator.h"
 
 
+#define PXA255_IO_BASE 0x40000000
+#define PXA255_MEMCTRL_BASE 0x48000000
+
+
 uint16_t*        pxa255Framebuffer;
 static Pxa255ic  tungstenCIc;
 static Pxa255lcd tungstenCLcd;
 
 
-//PXA255 register accessors
-static uint8_t pxa255_read_byte(uint32_t addr){
-
-}
-static uint16_t pxa255_read_half(uint32_t addr){
-
-}
-static uint32_t pxa255_read_word(uint32_t addr){
-   uint32_t out;
-
-   switch(addr >> 16){
-      case PXA255_LCD_BASE >> 16:
-         pxa255lcdPrvMemAccessF(&tungstenCLcd, addr, 4, false, &out);
-         return out;
-
-      default:
-         return 0x00000000;
-   }
-}
-static void pxa255_write_byte(uint32_t addr, uint8_t value){
-
-}
-static void pxa255_write_half(uint32_t addr, uint16_t value){
-
-}
-static void pxa255_write_word(uint32_t addr, uint32_t value){
-   switch(addr >> 16){
-      case PXA255_LCD_BASE >> 16:
-         pxa255lcdPrvMemAccessF(&tungstenCLcd, addr, 4, true, &value);
-         return;
-
-      default:
-         return;
-   }
-}
+#include "pxa255Accessors.c.h"
 
 bool pxa255Init(uint8_t** returnRom, uint8_t** returnRam){
    uint32_t mem_offset = 0;
@@ -69,7 +39,9 @@ bool pxa255Init(uint8_t** returnRom, uint8_t** returnRam){
       return false;
 
    addr_cache_init();
+   memset(mem_areas, 0x00, sizeof(mem_areas));
 
+   //regions
    //ROM
    mem_areas[0].base = PXA255_ROM_START_ADDRESS;
    mem_areas[0].size = TUNGSTEN_C_ROM_SIZE;
@@ -82,11 +54,18 @@ bool pxa255Init(uint8_t** returnRom, uint8_t** returnRam){
    mem_areas[1].ptr = mem_and_flags + mem_offset;
    mem_offset += TUNGSTEN_C_RAM_SIZE;
 
-   //CPU registers
-   mem_areas[2].base = PXA255_REG_START_ADDRESS;
-   mem_areas[2].size = 0x40000000;//size of address space, not all of it is mapped
+   //PCMCIA0/1
+   mem_areas[2].base = PXA255_PCMCIA0_START_ADDRESS;
+   mem_areas[2].size = PXA255_PCMCIA0_SIZE + PXA255_PCMCIA1_SIZE;
    mem_areas[2].ptr = NULL;
 
+   //CPU registers
+   mem_areas[3].base = PXA255_REG_START_ADDRESS;
+   mem_areas[3].size = PXA255_REG_SIZE;//size of address space, not all of it is mapped
+   mem_areas[3].ptr = NULL;
+
+   //accessors
+   //default
    for(i = 0; i < PXA255_TOTAL_MEMORY_BANKS; i++){
        // will fallback to bad_* on non-memory addresses
        read_byte_map[i] = memory_read_byte;
@@ -97,15 +76,49 @@ bool pxa255Init(uint8_t** returnRom, uint8_t** returnRam){
        write_word_map[i] = memory_write_word;
    }
 
-   //add PXA255 register range
-   for(i = PXA255_START_BANK(PXA255_REG_START_ADDRESS); i <= PXA255_END_BANK(PXA255_REG_START_ADDRESS, mem_areas[2].size); i++){
-      read_byte_map[i] = pxa255_read_byte;
-      read_half_map[i] = pxa255_read_half;
-      read_word_map[i] = pxa255_read_word;
-      write_byte_map[i] = pxa255_write_byte;
-      write_half_map[i] = pxa255_write_half;
-      write_word_map[i] = pxa255_write_word;
+   //PCMCIA0
+   for(i = PXA255_START_BANK(PXA255_PCMCIA0_START_ADDRESS); i <= PXA255_END_BANK(PXA255_PCMCIA0_START_ADDRESS, PXA255_PCMCIA0_SIZE); i++){
+       read_byte_map[i] = pxa255_pcmcia0_read_byte;
+       read_half_map[i] = pxa255_pcmcia0_read_half;
+       read_word_map[i] = pxa255_pcmcia0_read_word;
+       write_byte_map[i] = pxa255_pcmcia0_write_byte;
+       write_half_map[i] = pxa255_pcmcia0_write_half;
+       write_word_map[i] = pxa255_pcmcia0_write_word;
    }
+
+   //PCMCIA1
+   for(i = PXA255_START_BANK(PXA255_PCMCIA1_START_ADDRESS); i <= PXA255_END_BANK(PXA255_PCMCIA1_START_ADDRESS, PXA255_PCMCIA1_SIZE); i++){
+       read_byte_map[i] = pxa255_pcmcia1_read_byte;
+       read_half_map[i] = pxa255_pcmcia1_read_half;
+       read_word_map[i] = pxa255_pcmcia1_read_word;
+       write_byte_map[i] = pxa255_pcmcia1_write_byte;
+       write_half_map[i] = pxa255_pcmcia1_write_half;
+       write_word_map[i] = pxa255_pcmcia1_write_word;
+   }
+
+   //IO
+   read_byte_map[PXA255_START_BANK(PXA255_IO_BASE)] = pxa255_io_read_byte;
+   read_half_map[PXA255_START_BANK(PXA255_IO_BASE)] = bad_read_half;
+   read_word_map[PXA255_START_BANK(PXA255_IO_BASE)] = pxa255_io_read_word;
+   write_byte_map[PXA255_START_BANK(PXA255_IO_BASE)] = pxa255_io_write_byte;
+   write_half_map[PXA255_START_BANK(PXA255_IO_BASE)] = bad_write_half;
+   write_word_map[PXA255_START_BANK(PXA255_IO_BASE)] = pxa255_io_write_word;
+
+   //LCD
+   read_byte_map[PXA255_START_BANK(PXA255_LCD_BASE)] = bad_read_byte;
+   read_half_map[PXA255_START_BANK(PXA255_LCD_BASE)] = bad_read_half;
+   read_word_map[PXA255_START_BANK(PXA255_LCD_BASE)] = pxa255_lcd_read_word;
+   write_byte_map[PXA255_START_BANK(PXA255_LCD_BASE)] = bad_write_byte;
+   write_half_map[PXA255_START_BANK(PXA255_LCD_BASE)] = bad_write_half;
+   write_word_map[PXA255_START_BANK(PXA255_LCD_BASE)] = pxa255_lcd_write_word;
+
+   //MEMCTRL
+   read_byte_map[PXA255_START_BANK(PXA255_MEMCTRL_BASE)] = bad_read_byte;
+   read_half_map[PXA255_START_BANK(PXA255_MEMCTRL_BASE)] = bad_read_half;
+   read_word_map[PXA255_START_BANK(PXA255_MEMCTRL_BASE)] = pxa255_memctrl_read_word;
+   write_byte_map[PXA255_START_BANK(PXA255_MEMCTRL_BASE)] = bad_write_byte;
+   write_half_map[PXA255_START_BANK(PXA255_MEMCTRL_BASE)] = bad_write_half;
+   write_word_map[PXA255_START_BANK(PXA255_MEMCTRL_BASE)] = pxa255_memctrl_write_word;
 
    //set up CPU hardware
    pxa255icInit(&tungstenCIc);

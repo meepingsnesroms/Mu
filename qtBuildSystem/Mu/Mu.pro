@@ -232,6 +232,7 @@ SOURCES += \
 
 HEADERS += \
     ../../src/dbvz.h \
+    ../../src/pxa255/pxa255Accessors.c.h \
     debugviewer.h \
     emuwrapper.h \
     mainwindow.h \
