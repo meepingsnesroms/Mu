@@ -118,13 +118,12 @@ void dbvzSetRegister32(uint32_t address, uint32_t value);
 
 //config
 void dbvzReset(void);
+void dbvzLoadBootloader(uint8_t* data, uint32_t size);
+void dbvzSetRtc(uint16_t days, uint8_t hours, uint8_t minutes, uint8_t seconds);
 uint32_t dbvzStateSize(void);
 void dbvzSaveState(uint8_t* data);
 void dbvzLoadState(uint8_t* data);
 void dbvzLoadStateFinished(void);
-
-void dbvzLoadBootloader(uint8_t* data, uint32_t size);
-void dbvzSetRtc(uint16_t days, uint8_t hours, uint8_t minutes, uint8_t seconds);
 
 void dbvzExecute(void);
 

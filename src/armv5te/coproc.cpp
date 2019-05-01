@@ -7,7 +7,8 @@ void do_cp15_mrc(uint32_t insn)
     uint32_t value;
     switch (insn & 0xEF00EF) {
         case 0x000000: /* MRC p15, 0, <Rd>, c0, c0, 0: ID Code Register */
-            value = 0x41069264; /* ARM926EJ-S revision 4 */
+            //value = 0x41069264; /* ARM926EJ-S revision 4 */
+            value = 0x69052100;//Intel PXA255 "01101001000001010010000100000000"
             break;
         case 0x000010: /* MRC p15, 0, <Rd>, c0, c0, 1: Cache Type Register */
             value = 0x1D112152; /* ICache: 16KB 4-way 8 word, DCache: 8KB 4-way 8 word */

@@ -1162,6 +1162,28 @@ void dbvzReset(void){
    flx68000Reset();
 }
 
+void dbvzLoadBootloader(uint8_t* data, uint32_t size){
+   uint16_t index;
+
+   if(!data)
+      size = 0;
+
+   size = u32Min(size, DBVZ_BOOTLOADER_SIZE);
+
+   //copy size bytes from buffer to bootloader area
+   for(index = 0; index < size; index++)
+      registerArrayWrite8(DBVZ_REG_SIZE - DBVZ_BOOTLOADER_SIZE + index, data[index]);
+
+   //fill remainig space with 0x00
+   for(; index < DBVZ_BOOTLOADER_SIZE; index++)
+      registerArrayWrite8(DBVZ_REG_SIZE - DBVZ_BOOTLOADER_SIZE + index, 0x00);
+}
+
+void dbvzSetRtc(uint16_t days, uint8_t hours, uint8_t minutes, uint8_t seconds){
+   registerArrayWrite32(RTCTIME, hours << 24 & 0x1F000000 | minutes << 16 & 0x003F0000 | seconds & 0x0000003F);
+   registerArrayWrite16(DAYR, days & 0x01FF);
+}
+
 uint32_t dbvzStateSize(void){
    uint32_t size = 0;
 
@@ -1383,28 +1405,6 @@ void dbvzLoadState(uint8_t* data){
 
 void dbvzLoadStateFinished(void){
    flx68000LoadStateFinished();
-}
-
-void dbvzLoadBootloader(uint8_t* data, uint32_t size){
-   uint16_t index;
-
-   if(!data)
-      size = 0;
-
-   size = u32Min(size, DBVZ_BOOTLOADER_SIZE);
-
-   //copy size bytes from buffer to bootloader area
-   for(index = 0; index < size; index++)
-      registerArrayWrite8(DBVZ_REG_SIZE - DBVZ_BOOTLOADER_SIZE + index, data[index]);
-
-   //fill remainig space with 0x00
-   for(; index < DBVZ_BOOTLOADER_SIZE; index++)
-      registerArrayWrite8(DBVZ_REG_SIZE - DBVZ_BOOTLOADER_SIZE + index, 0x00);
-}
-
-void dbvzSetRtc(uint16_t days, uint8_t hours, uint8_t minutes, uint8_t seconds){
-   registerArrayWrite32(RTCTIME, hours << 24 & 0x1F000000 | minutes << 16 & 0x003F0000 | seconds & 0x0000003F);
-   registerArrayWrite16(DAYR, days & 0x01FF);
 }
 
 void dbvzExecute(void){
