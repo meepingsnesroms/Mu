@@ -29,7 +29,7 @@ typedef struct{
 	
 }Pxa255timr;
 
-Boolean pxa255timrInit(Pxa255timr* timr, ArmMem* physMem, Pxa255ic* ic);
+void pxa255timrInit(Pxa255timr* timr, Pxa255ic* ic);
 void pxa255timrTick(Pxa255timr* timr);
 
 

@@ -87,6 +87,7 @@ CONFIG(debug, debug|release){
 
 support_palm_os5{
     DEFINES += EMU_SUPPORT_PALM_OS5 # the Qt build will not be supporting anything too slow to run OS 5
+    DEFINES += SUPPORT_LINUX # forces the dynarec to use accurate mode and disable Nspire OS hacks
 
     !no_dynarec{
         # Windows is only supported in 32 bit mode right now(this is a limitation of the dynarec)

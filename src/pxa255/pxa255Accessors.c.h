@@ -54,13 +54,13 @@ static void pxa255_io_write_word(uint32_t addr, uint32_t value){
 
 static uint32_t pxa255_lcd_read_word(uint32_t addr){
    uint32_t out;
-   pxa255lcdPrvMemAccessF(&tungstenCLcd, addr, 4, false, &out);
+   pxa255lcdPrvMemAccessF(&pxa255Lcd, addr, 4, false, &out);
    debugLog("32 bit PXA255 LCD register read:0x%08X\n", addr);
    return out;
 }
 
 static void pxa255_lcd_write_word(uint32_t addr, uint32_t value){
-   pxa255lcdPrvMemAccessF(&tungstenCLcd, addr, 4, true, &value);
+   pxa255lcdPrvMemAccessF(&pxa255Lcd, addr, 4, true, &value);
    debugLog("32 bit PXA255 LCD register write:0x%08X, value:0x%08X\n", addr, value);
 }
 

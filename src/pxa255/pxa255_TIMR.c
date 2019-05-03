@@ -108,11 +108,10 @@ static Boolean pxa255timrPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Bo
 }
 
 
-Boolean pxa255timrInit(Pxa255timr* timr, ArmMem* physMem, Pxa255ic* ic){
+void pxa255timrInit(Pxa255timr* timr, Pxa255ic* ic){
 	
 	__mem_zero(timr, sizeof(Pxa255timr));
 	timr->ic = ic;
-	return memRegionAdd(physMem, PXA255_TIMR_BASE, PXA255_TIMR_SIZE, pxa255timrPrvMemAccessF, timr);
 }
 
 void pxa255timrTick(Pxa255timr* timr){

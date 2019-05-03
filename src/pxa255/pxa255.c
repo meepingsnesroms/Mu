@@ -22,10 +22,13 @@
 #define PXA255_IO_BASE 0x40000000
 #define PXA255_MEMCTRL_BASE 0x48000000
 
+#define PXA255_TIMER_TICKS_PER_FRAME (TUNGSTEN_C_CPU_CRYSTAL_FREQUENCY / EMU_FPS)
 
-uint16_t*        pxa255Framebuffer;
-static Pxa255ic  tungstenCIc;
-static Pxa255lcd tungstenCLcd;
+
+uint16_t*         pxa255Framebuffer;
+static Pxa255ic   pxa255Ic;
+static Pxa255lcd  pxa255Lcd;
+static Pxa255timr pxa255Timer;
 
 
 #include "pxa255Accessors.c.h"
@@ -33,6 +36,9 @@ static Pxa255lcd tungstenCLcd;
 bool pxa255Init(uint8_t** returnRom, uint8_t** returnRam){
    uint32_t mem_offset = 0;
    uint8_t i;
+
+   //enable dynarec if available
+   do_translate = true;
 
    mem_and_flags = os_reserve(MEM_MAXSIZE * 2);
    if(!mem_and_flags)
@@ -121,8 +127,9 @@ bool pxa255Init(uint8_t** returnRom, uint8_t** returnRam){
    write_word_map[PXA255_START_BANK(PXA255_MEMCTRL_BASE)] = pxa255_memctrl_write_word;
 
    //set up CPU hardware
-   pxa255icInit(&tungstenCIc);
-   pxa255lcdInit(&tungstenCLcd, &tungstenCIc);
+   pxa255icInit(&pxa255Ic);
+   pxa255lcdInit(&pxa255Lcd, &pxa255Ic);
+   pxa255timrInit(&pxa255Timer, &pxa255Ic);
 
    *returnRom = mem_areas[0].ptr;
    *returnRam = mem_areas[1].ptr;
@@ -164,6 +171,7 @@ void pxa255Reset(void){
    memset(&arm, 0, sizeof arm);
    arm.control = 0x00050078;
    arm.cpsr_low28 = MODE_SVC | 0xC0;
+   cycle_count_delta = 0;
    cpu_events = 0;
    //cpu_events &= EVENT_DEBUG_STEP;
 
@@ -234,7 +242,10 @@ void pxa255Execute(void){
 #endif
 
     //render
-    pxa255lcdFrame(&tungstenCLcd);
+    pxa255lcdFrame(&pxa255Lcd);
+
+    //TODO: this needs to run at 3.6864 MHz
+    //pxa255timrTick(&pxa255Timer);
 }
 
 uint32_t pxa255GetRegister(uint8_t reg){

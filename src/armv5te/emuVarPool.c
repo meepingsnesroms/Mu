@@ -9,14 +9,10 @@
 
 /* cycle_count_delta is a (usually negative) number telling what the time is relative
  * to the next scheduled event. See sched.c */
-int cycle_count_delta = 0;
+int cycle_count_delta;
 
-int throttle_delay = 10; /* in milliseconds */
-
-bool exiting, debug_on_start, debug_on_warn, print_on_warn;
+bool exiting;
 bool do_translate;
-
-int log_enabled[MAX_LOG];
 
 void *restart_after_exception[32];
 
