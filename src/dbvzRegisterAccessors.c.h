@@ -107,7 +107,7 @@ int32_t pwm1FifoRunSample(int32_t now, int32_t clockOffset){
    //try to get next sample, if none are available play old sample
    if(pwm1FifoEntrys() > 0)
       pwm1ReadPosition = (pwm1ReadPosition + 1) % 6;
-   dutyCycle = fMin((float)pwm1Fifo[pwm1ReadPosition] / period, 1.00);
+   dutyCycle = floatMin((float)pwm1Fifo[pwm1ReadPosition] / period, 1.00);
 
    for(index = 0; index < repeat; index++){
 #if !defined(EMU_NO_SAFETY)
@@ -383,19 +383,22 @@ static void setSpiCont1(uint16_t value){
    if(value & oldSpiCont1 & 0x0200 && value & 0x0100){
       while(spi1TxFifoEntrys() > 0){
          uint16_t currentTxFifoEntry = spi1TxFifoRead();
-         uint16_t newRxFifoEntry = 0x0000;
+         uint16_t newRxFifoEntry;// = 0x0000;
          uint8_t bitCount = (value & 0x000F) + 1;
-         uint16_t startBit = 1 << (bitCount - 1);
-         uint8_t bits;
+         //uint16_t startBit = 1 << (bitCount - 1);
+         //uint8_t bits;
 
          //debugLog("SPI1 transfer, bitCount:%d, PC:0x%08X\n", bitCount, flx68000GetPc());
 
          //The most significant bit is output when the CPU loads the transmitted data, 13.2.3 SPI 1 Phase and Polarity Configurations MC68VZ328UM.pdf
+         /*
          for(bits = 0; bits < bitCount; bits++){
             newRxFifoEntry <<= 1;
             newRxFifoEntry |= sdCardExchangeBit(!!(currentTxFifoEntry & startBit));
             currentTxFifoEntry <<= 1;
          }
+         */
+         newRxFifoEntry = sdCardExchangeXBitsOptimized(currentTxFifoEntry, bitCount);
 
          //add received data back to RX FIFO
          spi1RxFifoWrite(newRxFifoEntry);

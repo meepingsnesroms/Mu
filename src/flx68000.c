@@ -251,7 +251,7 @@ void flx68000Execute(void){
    dbvzBeginClk32();
 
    while(cyclesRemaining >= 1.0){
-      double sysclks = dMin(cyclesRemaining, DBVZ_SYSCLK_PRECISION);
+      double sysclks = floatMin(cyclesRemaining, DBVZ_SYSCLK_PRECISION);
       int32_t cpuCycles = sysclks * pctlrCpuClockDivider * palmClockMultiplier;
 
       if(cpuCycles > 0)

@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "emulator.h"
+#include "portability.h"
 #include "specs/sdCardCommandSpec.h"
 
 
@@ -59,6 +60,21 @@ static uint16_t sdCardCrc16(uint8_t* data, uint16_t size){
 
 #include "sdCardAccessors.c.h"
 
+static void sdCardTopOffReadBuffer(void){
+   //only call during a multi block read / palmSdCard.runningCommand == READ_MULTIPLE_BLOCK
+   if(sdCardResponseFifoByteEntrys() < SD_CARD_BLOCK_SIZE){
+      sdCardDoResponseDelay(1);
+      if(palmSdCard.runningCommandVars[0] < palmSdCard.flashChip.size){
+         sdCardDoResponseDataPacket(DATA_TOKEN_DEFAULT, palmSdCard.flashChip.data + palmSdCard.runningCommandVars[0], SD_CARD_BLOCK_SIZE);
+         palmSdCard.runningCommandVars[0] += SD_CARD_BLOCK_SIZE;
+      }
+      else{
+         sdCardDoResponseErrorToken(ET_OUT_OF_RANGE);
+         palmSdCard.runningCommand = 0x00;
+      }
+   }
+}
+
 void sdCardReset(void){
    if(palmSdCard.flashChip.data){
       palmSdCard.command = UINT64_C(0x0000000000000000);
@@ -100,19 +116,8 @@ bool sdCardExchangeBit(bool bit){
       outputValue = sdCardResponseFifoReadBit();
 
       //if doing a multiblock read add data when running low
-      if(palmSdCard.runningCommand == READ_MULTIPLE_BLOCK){
-         if(sdCardResponseFifoByteEntrys() < SD_CARD_BLOCK_SIZE){
-            sdCardDoResponseDelay(1);
-            if(palmSdCard.runningCommandVars[0] < palmSdCard.flashChip.size){
-               sdCardDoResponseDataPacket(DATA_TOKEN_DEFAULT, palmSdCard.flashChip.data + palmSdCard.runningCommandVars[0], SD_CARD_BLOCK_SIZE);
-               palmSdCard.runningCommandVars[0] += SD_CARD_BLOCK_SIZE;
-            }
-            else{
-               sdCardDoResponseErrorToken(ET_OUT_OF_RANGE);
-               palmSdCard.runningCommand = 0x00;
-            }
-         }
-      }
+      if(palmSdCard.runningCommand == READ_MULTIPLE_BLOCK)
+         sdCardTopOffReadBuffer();
 
       //route received bit as command or data
       if(palmSdCard.receivingCommand){
@@ -457,4 +462,108 @@ bool sdCardExchangeBit(bool bit){
    }
 
    return outputValue;
+}
+
+static uint32_t sdCardExchangeXBitsUnoptimized(uint32_t bits, uint8_t size){
+   uint32_t returnBits = 0x00000000;
+   uint32_t mask = 1 << size - 1;
+   uint8_t count;
+
+   for(count = 0; count < size; count++){
+      returnBits <<= 1;
+      returnBits |= sdCardExchangeBit(!!(bits & mask));
+      bits <<= 1;
+   }
+
+   return returnBits;
+}
+
+uint32_t sdCardExchangeXBitsOptimized(uint32_t bits, uint8_t size){
+   //does the same as the above function but skips any unneeded behavior for speed
+   uint32_t returnBits = 0x00000000;
+   uint32_t all1s = fillBottomWith1s(0, size);
+
+   //clear unused bits that are passed
+   bits &= all1s;
+
+   if(palmSdCard.flashChip.data){
+      bool ignoreCmdBits = palmSdCard.commandBitsRemaining == 48 && (bits == all1s || bits == 0x00000000);
+      bool safeToOptimize = !palmSdCard.receivingCommand || ignoreCmdBits || palmSdCard.commandBitsRemaining > 47 && palmSdCard.commandBitsRemaining - size < 1;
+
+      if(safeToOptimize){
+         //check for simple cases
+         if(!palmSdCard.runningCommand || palmSdCard.runningCommand == READ_MULTIPLE_BLOCK){
+            //nothing will happen until this transfer is over, do fast transfer and check if FIFO needs to be refilled
+
+            if(!ignoreCmdBits){
+               palmSdCard.command <<= size;
+               palmSdCard.command |= bits;
+               palmSdCard.commandBitsRemaining -= size;
+            }
+
+            //fill return FIFO if its getting low
+            if(palmSdCard.runningCommand == READ_MULTIPLE_BLOCK)
+               sdCardTopOffReadBuffer();
+
+            switch(size){
+               case 32:
+                  returnBits |= sdCardResponseFifoReadByteOptimized() << 24;
+               case 24:
+                  returnBits |= sdCardResponseFifoReadByteOptimized() << 16;
+               case 16:
+                  returnBits |= sdCardResponseFifoReadByteOptimized() << 8;
+               case 8:
+                  returnBits |= sdCardResponseFifoReadByteOptimized();
+                  break;
+
+               default:{
+                     //slow method
+                     uint8_t count;
+
+                     for(count = 0; count < size; count++){
+                        returnBits <<= 1;
+                        returnBits |= sdCardResponseFifoReadBit();
+                     }
+                     break;
+                  }
+            }
+         }
+         else if(palmSdCard.runningCommand == WRITE_SINGLE_BLOCK || palmSdCard.runningCommand == WRITE_MULTIPLE_BLOCK){
+            //just passthrough write data
+            uint32_t currentByte = palmSdCard.runningCommandVars[2] / 8;
+            bool alignedProperly = size % 8 == 0 && palmSdCard.runningCommandVars[2] % 8 == 0;
+
+            if(alignedProperly && currentByte > 0 && currentByte + size / 8 < SD_CARD_BLOCK_DATA_PACKET_SIZE - 1){
+               //byte aligned in the middle of a data packet, can just copy data over
+               uint8_t count;
+
+               for(count = 0; count < size / 8; count++){
+                  palmSdCard.runningCommandPacket[currentByte] = bits >> (size - 8) - (count * 8) & 0xFF;
+                  palmSdCard.runningCommandVars[2] += 8;
+                  currentByte++;
+                  returnBits <<= 8;
+                  returnBits |= sdCardResponseFifoReadByteOptimized();
+               }
+            }
+            else{
+               //not write safe
+               returnBits = sdCardExchangeXBitsUnoptimized(bits, size);
+            }
+         }
+         else{
+            //unknown condition
+            returnBits = sdCardExchangeXBitsUnoptimized(bits, size);
+         }
+      }
+      else{
+         //not safe to optimize :(
+         returnBits = sdCardExchangeXBitsUnoptimized(bits, size);
+      }
+   }
+   else{
+      //not connected, fill with 1s
+      returnBits = all1s;
+   }
+
+   return returnBits;
 }

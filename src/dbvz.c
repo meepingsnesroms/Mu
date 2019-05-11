@@ -1168,7 +1168,7 @@ void dbvzLoadBootloader(uint8_t* data, uint32_t size){
    if(!data)
       size = 0;
 
-   size = u32Min(size, DBVZ_BOOTLOADER_SIZE);
+   size = uintMin(size, DBVZ_BOOTLOADER_SIZE);
 
    //copy size bytes from buffer to bootloader area
    for(index = 0; index < size; index++)

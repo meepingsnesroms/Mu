@@ -391,8 +391,8 @@ void sed1376Render(void){
             //debugLog("PIP state, start x:%d, end x:%d, start y:%d, end y:%d\n", pipStartX, pipEndX, pipStartY, pipEndY);
             //render PIP only if PIP window is onscreen
             if(pipStartX < 160 && pipStartY < 160){
-               pipEndX = u16Min(pipEndX, 160);
-               pipEndY = u16Min(pipEndY, 160);
+               pipEndX = uintMin(pipEndX, 160);
+               pipEndY = uintMin(pipEndY, 160);
                screenStartAddress = getPipStartAddress();
                lineSize = (sed1376Registers[PIP_LINE_SZ_1] << 8 | sed1376Registers[PIP_LINE_SZ_0]) * 4;
                MULTITHREAD_DOUBLE_LOOP(pixelX, pixelY) for(pixelY = pipStartY; pixelY < pipEndY; pixelY++)

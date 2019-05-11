@@ -111,7 +111,7 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t enab
          pxa255Deinit();
          return EMU_ERROR_OUT_OF_MEMORY;
       }
-      memcpy(palmRom, palmRomDump.data, u32Min(palmRomDump.size, TUNGSTEN_C_ROM_SIZE));
+      memcpy(palmRom, palmRomDump.data, uintMin(palmRomDump.size, TUNGSTEN_C_ROM_SIZE));
       if(palmRomDump.size < TUNGSTEN_C_ROM_SIZE)
          memset(palmRom + palmRomDump.size, 0x00, TUNGSTEN_C_ROM_SIZE - palmRomDump.size);
       memset(palmRam, 0x00, TUNGSTEN_C_RAM_SIZE);
@@ -155,7 +155,7 @@ uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t enab
       }
 
       //set default values
-      memcpy(palmRom, palmRomDump.data, u32Min(palmRomDump.size, M515_ROM_SIZE));
+      memcpy(palmRom, palmRomDump.data, uintMin(palmRomDump.size, M515_ROM_SIZE));
       if(palmRomDump.size < M515_ROM_SIZE)
          memset(palmRom + palmRomDump.size, 0x00, M515_ROM_SIZE - palmRomDump.size);
       swap16BufferIfLittle(palmRom, M515_ROM_SIZE / sizeof(uint16_t));
