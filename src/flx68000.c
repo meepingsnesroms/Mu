@@ -33,7 +33,7 @@ void flx68000PcLongJump(uint32_t newPc){
 
       case DBVZ_CHIP_REGISTERS:
          //needed for when EMU_NO_SAFETY is set and a function is run in the sandbox
-         dataBufferHost = (uintptr_t)palmReg;
+         dataBufferHost = (uintptr_t)dbvzReg;
          dataBufferGuest = DBVZ_BANK_ADDRESS(DBVZ_START_BANK(newPc));
          windowSize = DBVZ_REG_SIZE;
          break;
@@ -42,7 +42,7 @@ void flx68000PcLongJump(uint32_t newPc){
    memBase = dataBufferHost - dataBufferGuest - windowSize * ((newPc - dataBufferGuest) / windowSize);
 }
 
-//everything must be 16 bit aligned(accept 8 bit accesses) due to 68k unaligned access rules,
+//everything must be 16 bit aligned(except 8 bit accesses) due to 68k unaligned access rules,
 //32 bit reads are 2 16 bit reads because on some platforms 32 bit reads that arnt on 32 bit boundrys will crash the program
 #if defined(EMU_BIG_ENDIAN)
 uint16_t m68k_read_immediate_16(uint32_t address){
