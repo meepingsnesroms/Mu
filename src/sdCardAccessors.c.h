@@ -20,41 +20,46 @@ static bool sdCardResponseFifoReadBit(void){
 }
 
 static uint8_t sdCardResponseFifoReadByteOptimized(void){
-   if(sdCardResponseFifoByteEntrys() > 1){
-      if(palmSdCard.responseReadPositionBit == 7){
-         //just read the whole byte at once
-         uint8_t byte = palmSdCard.responseFifo[palmSdCard.responseReadPosition];
+   switch(sdCardResponseFifoByteEntrys()){
+      case 0:
+         //no bytes
+         return 0xFF;
 
-         palmSdCard.responseReadPosition = (palmSdCard.responseReadPosition + 1) % SD_CARD_RESPONSE_FIFO_SIZE;
-         return byte;
-      }
-      else{
-         //have to merge 2 bytes
-         uint8_t byte = 0x00;
+      case 1:{
+            //unsafe, use slow mode
+            uint8_t byte = 0x00;
+            uint8_t count;
 
-         byte |= palmSdCard.responseFifo[palmSdCard.responseReadPosition] << 7 - palmSdCard.responseReadPositionBit;
-         palmSdCard.responseReadPosition = (palmSdCard.responseReadPosition + 1) % SD_CARD_RESPONSE_FIFO_SIZE;
-         byte |= palmSdCard.responseFifo[palmSdCard.responseReadPosition] >> palmSdCard.responseReadPositionBit + 1;
-         return byte;
-      }
+            for(count = 0; count < 8; count++){
+               byte <<= 1;
+               byte |= sdCardResponseFifoReadBit();
+            }
+
+            return byte;
+         }
+
+      default:{
+            uint8_t byte;
+
+            if(palmSdCard.responseReadPositionBit == 7){
+               //just read the whole byte at once
+               byte = palmSdCard.responseFifo[palmSdCard.responseReadPosition];
+               palmSdCard.responseReadPosition = (palmSdCard.responseReadPosition + 1) % SD_CARD_RESPONSE_FIFO_SIZE;
+               return byte;
+            }
+            else{
+               //have to merge 2 bytes
+               byte = palmSdCard.responseFifo[palmSdCard.responseReadPosition] << 7 - palmSdCard.responseReadPositionBit;
+               palmSdCard.responseReadPosition = (palmSdCard.responseReadPosition + 1) % SD_CARD_RESPONSE_FIFO_SIZE;
+               byte |= palmSdCard.responseFifo[palmSdCard.responseReadPosition] >> palmSdCard.responseReadPositionBit + 1;
+               return byte;
+            }
+         }
    }
-   else{
-      //not enough bytes left, use slow accurate method
-      uint8_t byte = 0x00;
-      uint8_t count;
-
-      for(count = 0; count < 8; count++){
-         byte <<= 1;
-         byte |= sdCardResponseFifoReadBit();
-      }
-
-      return byte;
-   }
-   return 0xFF;
 }
 
 static void sdCardResponseFifoWriteByte(uint8_t value){
-   if(sdCardResponseFifoByteEntrys() < SD_CARD_RESPONSE_FIFO_SIZE - 1){
+   if(likely(sdCardResponseFifoByteEntrys() < SD_CARD_RESPONSE_FIFO_SIZE - 1)){
       palmSdCard.responseFifo[palmSdCard.responseWritePosition] = value;
       palmSdCard.responseWritePosition = (palmSdCard.responseWritePosition + 1) % SD_CARD_RESPONSE_FIFO_SIZE;
    }
@@ -100,7 +105,7 @@ static void sdCardDoResponseDataPacket(uint8_t token, const uint8_t* data, uint1
    uint16_t crc16;
    uint16_t offset;
 
-   if(palmSdCard.allowInvalidCrc)
+   if(likely(palmSdCard.allowInvalidCrc))
       crc16 = 0x0000;
    else
       crc16 = sdCardCrc16(data, size);
@@ -133,7 +138,7 @@ static void sdCardGetCsd(uint8_t* csd){
    csd[7] = deviceSize >> 2 & 0xFF;
    csd[8] = csd[8] & 0x3F | deviceSize << 6 & 0xC0;
 
-   if(!palmSdCard.allowInvalidCrc)
+   if(unlikely(!palmSdCard.allowInvalidCrc))
       csd[15] = sdCardCrc7(csd, 15);
 
    //debugLog("CSD bytes: 0x%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X\n", csd[0], csd[1], csd[2], csd[3], csd[4], csd[5], csd[6], csd[7], csd[8], csd[9], csd[10], csd[11], csd[12], csd[13], csd[14], csd[15]);
@@ -142,7 +147,7 @@ static void sdCardGetCsd(uint8_t* csd){
 static void sdCardGetCid(uint8_t* cid){
    memcpy(cid, palmSdCard.sdInfo.cid, 16);
 
-   if(!palmSdCard.allowInvalidCrc)
+   if(unlikely(!palmSdCard.allowInvalidCrc))
       cid[15] = sdCardCrc7(cid, 15);
 }
 

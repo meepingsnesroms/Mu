@@ -29,7 +29,7 @@ static bool sdCardCmdIsCrc7Valid(uint8_t command, uint32_t argument, uint8_t crc
    commandCrc = sdCardCrc7Table[commandCrc << 1 ^ (argument >> 8 & 0xFF)];
    commandCrc = sdCardCrc7Table[commandCrc << 1 ^ (argument & 0xFF)];
 
-   if(commandCrc != crc)
+   if(unlikely(commandCrc != crc))
       return false;
 #endif
 
@@ -62,9 +62,9 @@ static uint16_t sdCardCrc16(uint8_t* data, uint16_t size){
 
 static void sdCardTopOffReadBuffer(void){
    //only call during a multi block read / palmSdCard.runningCommand == READ_MULTIPLE_BLOCK
-   if(sdCardResponseFifoByteEntrys() < SD_CARD_BLOCK_SIZE){
+   if(unlikely(sdCardResponseFifoByteEntrys() < SD_CARD_BLOCK_SIZE)){
       sdCardDoResponseDelay(1);
-      if(palmSdCard.runningCommandVars[0] < palmSdCard.flashChip.size){
+      if(likely(palmSdCard.runningCommandVars[0] < palmSdCard.flashChip.size)){
          sdCardDoResponseDataPacket(DATA_TOKEN_DEFAULT, palmSdCard.flashChip.data + palmSdCard.runningCommandVars[0], SD_CARD_BLOCK_SIZE);
          palmSdCard.runningCommandVars[0] += SD_CARD_BLOCK_SIZE;
       }
@@ -111,7 +111,7 @@ bool sdCardExchangeBit(bool bit){
    bool outputValue = true;//SPI1 pins are on port j which has pull up resistors so default output value is true
 
    //make sure SD is actually plugged in and chip select is low
-   if(palmSdCard.flashChip.data && !palmSdCard.chipSelect){
+   if(likely(palmSdCard.flashChip.data && !palmSdCard.chipSelect)){
       //get output value first
       outputValue = sdCardResponseFifoReadBit();
 
@@ -150,7 +150,7 @@ bool sdCardExchangeBit(bool bit){
          }
 
          //process command if all bits are present
-         if(palmSdCard.commandBitsRemaining == 0){
+         if(unlikely(palmSdCard.commandBitsRemaining == 0)){
             uint8_t command = palmSdCard.command >> 40 & 0x3F;
             uint32_t argument = palmSdCard.command >> 8 & 0xFFFFFFFF;
             uint8_t crc = palmSdCard.command >> 1 & 0x7F;
@@ -160,7 +160,7 @@ bool sdCardExchangeBit(bool bit){
             //debugLog("SD command: isAcmd:%d, cmd:%d, arg:0x%08X, CRC:0x%02X\n", palmSdCard.commandIsAcmd, command, argument, crc);
 
             //in idle state, the card accepts only CMD0, CMD1, ACMD41, CMD58 and CMD59, any other commands will be rejected
-            if(palmSdCard.inIdleState){
+            if(unlikely(palmSdCard.inIdleState)){
                if(!palmSdCard.commandIsAcmd){
                   switch(command){
                      case GO_IDLE_STATE:
@@ -188,12 +188,12 @@ bool sdCardExchangeBit(bool bit){
             }
 
             //log blocked commands
-            if(palmSdCard.inIdleState && !doInIdleState)
+            if(unlikely(palmSdCard.inIdleState && !doInIdleState))
                debugLog("SD command blocked by idle state: isAcmd:%d, cmd:%d, arg:0x%08X, CRC:0x%02X\n", palmSdCard.commandIsAcmd, command, argument, crc);
 
-            if(!palmSdCard.inIdleState || doInIdleState){
+            if(likely(!palmSdCard.inIdleState || doInIdleState)){
                //run command
-               if(palmSdCard.allowInvalidCrc || sdCardCmdIsCrc7Valid(command, argument, crc)){
+               if(likely(palmSdCard.allowInvalidCrc) || sdCardCmdIsCrc7Valid(command, argument, crc)){
                   if(!palmSdCard.commandIsAcmd){
                      //normal command
                      switch(command){
@@ -228,7 +228,7 @@ bool sdCardExchangeBit(bool bit){
                               uint8_t cid[16];
 
                               sdCardGetCid(cid);
-                              if(!palmSdCard.allowInvalidCrc)
+                              if(unlikely(!palmSdCard.allowInvalidCrc))
                                  cid[15] = sdCardCrc7(cid, 15);
                               sdCardDoResponseR1(palmSdCard.inIdleState);
                               sdCardDoResponseDelay(1);
@@ -261,7 +261,7 @@ bool sdCardExchangeBit(bool bit){
                            break;
 
                         case STOP_TRANSMISSION:
-                           if(palmSdCard.runningCommand == READ_MULTIPLE_BLOCK){
+                           if(likely(palmSdCard.runningCommand == READ_MULTIPLE_BLOCK)){
                               palmSdCard.runningCommand = 0x00;
                               sdCardResponseFifoFlush();
                               sdCardDoResponseDelay(1);
@@ -276,7 +276,7 @@ bool sdCardExchangeBit(bool bit){
                         case READ_SINGLE_BLOCK:
                            sdCardDoResponseR1(palmSdCard.inIdleState);
                            sdCardDoResponseDelay(1);
-                           if(argument < palmSdCard.flashChip.size)
+                           if(likely(argument < palmSdCard.flashChip.size))
                               sdCardDoResponseDataPacket(DATA_TOKEN_DEFAULT, palmSdCard.flashChip.data + argument, SD_CARD_BLOCK_SIZE);
                            else
                               sdCardDoResponseErrorToken(ET_OUT_OF_RANGE);
@@ -285,7 +285,7 @@ bool sdCardExchangeBit(bool bit){
                         case READ_MULTIPLE_BLOCK:
                            sdCardDoResponseR1(palmSdCard.inIdleState);
                            sdCardDoResponseDelay(1);
-                           if(argument < palmSdCard.flashChip.size){
+                           if(likely(argument < palmSdCard.flashChip.size)){
                               palmSdCard.runningCommand = READ_MULTIPLE_BLOCK;
                               palmSdCard.runningCommandVars[0] = argument;
                               sdCardDoResponseDataPacket(DATA_TOKEN_DEFAULT, palmSdCard.flashChip.data + palmSdCard.runningCommandVars[0], SD_CARD_BLOCK_SIZE);
@@ -299,7 +299,7 @@ bool sdCardExchangeBit(bool bit){
                         case WRITE_SINGLE_BLOCK:
                         case WRITE_MULTIPLE_BLOCK:
                            sdCardDoResponseR1(palmSdCard.inIdleState);
-                           if(argument < palmSdCard.flashChip.size){
+                           if(likely(argument < palmSdCard.flashChip.size)){
                               palmSdCard.runningCommand = command;
                               palmSdCard.runningCommandVars[0] = argument;
                               palmSdCard.runningCommandVars[1] = 0x00;//last 8 received bits, used to see if a data token has been received
@@ -360,7 +360,7 @@ bool sdCardExchangeBit(bool bit){
             }
 
             //start next command if previous doesnt take any data
-            if(commandWantsData)
+            if(unlikely(commandWantsData))
                palmSdCard.receivingCommand = false;
             else
                sdCardCmdStart();
@@ -371,11 +371,11 @@ bool sdCardExchangeBit(bool bit){
          switch(palmSdCard.runningCommand){
             case WRITE_SINGLE_BLOCK:
             case WRITE_MULTIPLE_BLOCK:
-               if(palmSdCard.runningCommandVars[2] >= SD_CARD_BLOCK_DATA_PACKET_SIZE * 8){
+               if(unlikely(palmSdCard.runningCommandVars[2] >= SD_CARD_BLOCK_DATA_PACKET_SIZE * 8)){
                   //packet finished, verify and write block to chip
-                  if(palmSdCard.allowInvalidCrc || sdCardCrc16(palmSdCard.runningCommandPacket + 1, SD_CARD_BLOCK_SIZE) == (palmSdCard.runningCommandPacket[SD_CARD_BLOCK_DATA_PACKET_SIZE - 2] << 8 | palmSdCard.runningCommandPacket[SD_CARD_BLOCK_DATA_PACKET_SIZE - 1])){
+                  if(likely(palmSdCard.allowInvalidCrc) || sdCardCrc16(palmSdCard.runningCommandPacket + 1, SD_CARD_BLOCK_SIZE) == (palmSdCard.runningCommandPacket[SD_CARD_BLOCK_DATA_PACKET_SIZE - 2] << 8 | palmSdCard.runningCommandPacket[SD_CARD_BLOCK_DATA_PACKET_SIZE - 1])){
                      //HACK, also need to check if block is write protected, not just the card as a whole
-                     if(palmSdCard.runningCommandVars[0] < palmSdCard.flashChip.size && !palmSdCard.sdInfo.writeProtectSwitch){
+                     if(likely(palmSdCard.runningCommandVars[0] < palmSdCard.flashChip.size && !palmSdCard.sdInfo.writeProtectSwitch)){
                         memcpy(palmSdCard.flashChip.data + palmSdCard.runningCommandVars[0], palmSdCard.runningCommandPacket + 1, SD_CARD_BLOCK_SIZE);
                         sdCardDoResponseDataResponse(DR_ACCEPTED);
                      }
@@ -417,7 +417,7 @@ bool sdCardExchangeBit(bool bit){
                      memset(palmSdCard.runningCommandPacket, 0x00, SD_CARD_BLOCK_DATA_PACKET_SIZE);
                   }
                }
-               else if(palmSdCard.runningCommandVars[2] > 0){
+               else if(likely(palmSdCard.runningCommandVars[2] > 0)){
                   //add bit to data packet
                   palmSdCard.runningCommandPacket[palmSdCard.runningCommandVars[2] / 8] |= bit << 7 - palmSdCard.runningCommandVars[2] % 8;
                   palmSdCard.runningCommandVars[2]++;
@@ -438,12 +438,12 @@ bool sdCardExchangeBit(bool bit){
                   }
                   else{
                      //writing an undefined number of blocks
-                     if(palmSdCard.runningCommandVars[1] == DATA_TOKEN_CMD25){
+                     if(unlikely(palmSdCard.runningCommandVars[1] == DATA_TOKEN_CMD25)){
                         //accept block
                         palmSdCard.runningCommandPacket[0] = DATA_TOKEN_CMD25;
                         palmSdCard.runningCommandVars[2] = 8;
                      }
-                     else if(palmSdCard.runningCommandVars[1] == STOP_TRAN){
+                     else if(unlikely(palmSdCard.runningCommandVars[1] == STOP_TRAN)){
                         //end multiblock transfer
                         sdCardDoResponseDelay(1);
                         sdCardDoResponseBusy(1);
@@ -486,8 +486,9 @@ uint32_t sdCardExchangeXBitsOptimized(uint32_t bits, uint8_t size){
    //clear unused bits that are passed
    bits &= all1s;
 
-   if(palmSdCard.flashChip.data){
-      bool ignoreCmdBits = palmSdCard.commandBitsRemaining == 48 && (bits == all1s || bits == 0x00000000);
+   //make sure SD is actually plugged in and chip select is low
+   if(likely(palmSdCard.flashChip.data && !palmSdCard.chipSelect)){
+      bool ignoreCmdBits = palmSdCard.commandBitsRemaining == 48 && (bits == all1s || bits == 0x00000000 && !(size & 0x1));
       bool safeToOptimize = !palmSdCard.receivingCommand || ignoreCmdBits || palmSdCard.commandBitsRemaining > 47 && palmSdCard.commandBitsRemaining - size < 1;
 
       if(safeToOptimize){
@@ -561,9 +562,18 @@ uint32_t sdCardExchangeXBitsOptimized(uint32_t bits, uint8_t size){
       }
    }
    else{
-      //not connected, fill with 1s
+      //not connected, fill with 1s for the pull up resistor
       returnBits = all1s;
    }
 
    return returnBits;
 }
+
+/*
+Dident know where to put this note so it went here:
+CRCs should be safe to ignore on OS 5 as the CPU has builtin MMC support which does the CRC stuff automaticly,
+since no actual data transfer is being done there is no chance of any error so I can just return "true" for all CRC valid checks:
+intelPxa255DevelopmentGuide.pdf 15.2:
+The MMC controller also enables minimal data latency by buffering data and generating and
+checking CRCs.
+*/

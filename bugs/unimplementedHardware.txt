@@ -46,6 +46,7 @@ SD Card:
 block specific write protect bits don't work
 IRQ2 may actually be attached to the SD Card data out pin, triggering an interrupt when a 0 is received to process the return data
 need to test if Port J Pin 3(SD card chip select) is attached to Port D Pin 5(SD Card Status(IRQ2))(pinouts.ru says chip select and card detect are the same line)
+This thing: case SEND_STATUS://HACK, need to add real write protection, this command is also how the host reads the value of the little switch on the side
 
 Debug tools:
 ADS7846 channels can't be read in single reference mode in hwTestSuite

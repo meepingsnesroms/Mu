@@ -10,6 +10,7 @@
 #include "mem.h"
 
 #include "../emulator.h"
+#include "../portability.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -25,9 +26,6 @@ extern "C" {
 #define NO_SETJMP
 #endif
 
-// Helper for micro-optimization
-#define unlikely(x) __builtin_expect(x, 0)
-#define likely(x) __builtin_expect(x, 1)
 static inline uint16_t BSWAP16(uint16_t x) { return x << 8 | x >> 8; }
 #define BSWAP32(x) __builtin_bswap32(x)
 

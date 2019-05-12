@@ -36,7 +36,7 @@ windows{
         QMAKE_CXXFLAGS += -fopenmp
         QMAKE_LFLAGS += -fopenmp
     }
-    DEFINES += EMU_MULTITHREADED
+    DEFINES += EMU_MULTITHREADED EMU_MANAGE_HOST_CPU_PIPELINE
     CONFIG += cpu_x86_32 # this should be auto detected in the future
 }
 
@@ -44,7 +44,7 @@ macx{
     QMAKE_CFLAGS += -std=c89 -D__STDBOOL_H -Dinline= -Dbool=char -Dtrue=1 -Dfalse=0 # tests C89 mode
     ICON = macos/Mu.icns
     QMAKE_INFO_PLIST = macos/Info.plist
-    DEFINES += EMU_MULTITHREADED
+    DEFINES += EMU_MULTITHREADED EMU_MANAGE_HOST_CPU_PIPELINE
     CONFIG += cpu_x86_64 # Mac OS is only x86_64
 }
 
@@ -52,7 +52,7 @@ linux-g++{
     QMAKE_CFLAGS += -fopenmp
     QMAKE_CXXFLAGS += -fopenmp
     QMAKE_LFLAGS += -fopenmp
-    DEFINES += EMU_MULTITHREADED
+    DEFINES += EMU_MULTITHREADED EMU_MANAGE_HOST_CPU_PIPELINE
     CONFIG += cpu_x86_64 # this should be auto detected in the future
 }
 
@@ -60,7 +60,7 @@ android{
     QMAKE_CFLAGS += -fopenmp
     QMAKE_CXXFLAGS += -fopenmp
     QMAKE_LFLAGS += -fopenmp
-    DEFINES += EMU_MULTITHREADED
+    DEFINES += EMU_MULTITHREADED EMU_MANAGE_HOST_CPU_PIPELINE
     CONFIG += cpu_armv7 # this should be auto detected in the future
 }
 

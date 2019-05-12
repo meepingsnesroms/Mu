@@ -70,6 +70,17 @@ static inline uintmax_t rightShiftUse1s(uintmax_t value, uint8_t count){
 #define MULTITHREAD_DOUBLE_LOOP(x, y)
 #endif
 
+//pipeline
+#if defined(EMU_MANAGE_HOST_CPU_PIPELINE)
+#define unlikely(x) __builtin_expect(!!(x), false)
+#define likely(x) __builtin_expect(!!(x), true)
+#define likely_equal(x, y) __builtin_expect((x), (y))
+#else
+#define unlikely(x) x
+#define likely(x) x
+#define likely_equal(x, y) x
+#endif
+
 //range capping
 static inline uintmax_t uintMin(uintmax_t x, uintmax_t y){
    return x < y ? x : y;

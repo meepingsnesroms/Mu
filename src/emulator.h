@@ -18,6 +18,7 @@ extern "C" {
 //DEFINE INFO!!!
 //define EMU_SUPPORT_PALM_OS5 to compile in Tungsten C support(not reccomended for low power devices)
 //define EMU_MULTITHREADED to speed up long loops
+//define EMU_MANAGE_HOST_CPU_PIPELINE to optimize the CPU pipeline for the most common cases
 //define EMU_NO_SAFETY to remove all safety checks
 //define EMU_BIG_ENDIAN on big endian systems
 //to enable degguging define EMU_DEBUG, all options below do nothing unless EMU_DEBUG is defined
