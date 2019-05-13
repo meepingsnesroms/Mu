@@ -1,6 +1,6 @@
 #ifndef EMULATOR_H
 #define EMULATOR_H
-//this is the only header a frontend needs to include
+//this is the only header a frontend needs to include from the emulator
 
 #ifdef __cplusplus
 extern "C" {
@@ -21,6 +21,7 @@ extern "C" {
 //define EMU_MANAGE_HOST_CPU_PIPELINE to optimize the CPU pipeline for the most common cases
 //define EMU_NO_SAFETY to remove all safety checks
 //define EMU_BIG_ENDIAN on big endian systems
+//define EMU_HAVE_FILE_LAUNCHER to enable launching files from the host system
 //to enable degguging define EMU_DEBUG, all options below do nothing unless EMU_DEBUG is defined
 //to enable sandbox debugging define EMU_SANDBOX
 //to enable memory access logging define EMU_SANDBOX_LOG_MEMORY_ACCESSES

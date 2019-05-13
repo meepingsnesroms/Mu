@@ -348,7 +348,6 @@ bool emulatorSaveState(buffer_t buffer){
 
       //memory
       memcpy(buffer.data + offset, palmRam, TUNGSTEN_C_RAM_SIZE);
-      swap16BufferIfLittle(buffer.data + offset, TUNGSTEN_C_RAM_SIZE / sizeof(uint16_t));
       offset += TUNGSTEN_C_RAM_SIZE;
    }
    else{
@@ -494,7 +493,6 @@ bool emulatorLoadState(buffer_t buffer){
 
       //memory
       memcpy(palmRam, buffer.data + offset, TUNGSTEN_C_RAM_SIZE);
-      swap16BufferIfLittle(palmRam, TUNGSTEN_C_RAM_SIZE / sizeof(uint16_t));
       offset += TUNGSTEN_C_RAM_SIZE;
    }
    else{
@@ -604,25 +602,53 @@ bool emulatorLoadState(buffer_t buffer){
 }
 
 uint32_t emulatorGetRamSize(void){
+#if defined(EMU_SUPPORT_PALM_OS5)
+   if(palmEmulatingTungstenC)
+      return TUNGSTEN_C_RAM_SIZE;
+#endif
    return M515_RAM_SIZE;
 }
 
 bool emulatorSaveRam(buffer_t buffer){
-   if(buffer.size < M515_RAM_SIZE)
-      return false;
+#if defined(EMU_SUPPORT_PALM_OS5)
+   if(palmEmulatingTungstenC){
+      if(buffer.size < TUNGSTEN_C_RAM_SIZE)
+         return false;
 
-   memcpy(buffer.data, palmRam, M515_RAM_SIZE);
-   swap16BufferIfLittle(buffer.data, M515_RAM_SIZE / sizeof(uint16_t));
+      memcpy(buffer.data, palmRam, TUNGSTEN_C_RAM_SIZE);
+   }
+   else{
+#endif
+      if(buffer.size < M515_RAM_SIZE)
+         return false;
+
+      memcpy(buffer.data, palmRam, M515_RAM_SIZE);
+      swap16BufferIfLittle(buffer.data, M515_RAM_SIZE / sizeof(uint16_t));
+#if defined(EMU_SUPPORT_PALM_OS5)
+   }
+#endif
 
    return true;
 }
 
 bool emulatorLoadRam(buffer_t buffer){
-   if(buffer.size < M515_RAM_SIZE)
-      return false;
+#if defined(EMU_SUPPORT_PALM_OS5)
+   if(palmEmulatingTungstenC){
+      if(buffer.size < TUNGSTEN_C_RAM_SIZE)
+         return false;
 
-   memcpy(palmRam, buffer.data, M515_RAM_SIZE);
-   swap16BufferIfLittle(palmRam, M515_RAM_SIZE / sizeof(uint16_t));
+      memcpy(palmRam, buffer.data, TUNGSTEN_C_RAM_SIZE);
+   }
+   else{
+#endif
+      if(buffer.size < M515_RAM_SIZE)
+         return false;
+
+      memcpy(palmRam, buffer.data, M515_RAM_SIZE);
+      swap16BufferIfLittle(palmRam, M515_RAM_SIZE / sizeof(uint16_t));
+#if defined(EMU_SUPPORT_PALM_OS5)
+   }
+#endif
 
    return true;
 }
@@ -690,10 +716,8 @@ void emulatorRunFrame(void){
    if(palmEmulatingTungstenC)
       emulatorTungstenCFrame();
    else
-      emulatorM515Frame();
-#else
-   emulatorM515Frame();
 #endif
+      emulatorM515Frame();
 
 #if defined(EMU_SANDBOX)
    sandboxOnFrameRun();

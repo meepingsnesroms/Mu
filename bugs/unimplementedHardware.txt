@@ -57,6 +57,8 @@ Other:
 Support for Silkyboard 2 silkscreen:https://archive.org/details/tucows_228076_SILKYBOARD_II
 Qt port dosent support Windows touchscreen input
 Qt GUI dosent resize properly with 320x320 framebuffer
+File Installer isnt working yet
+need to get rid of buffer_t, its not used much anyway
 
 
 Fixed:
