@@ -13,14 +13,11 @@ extern "C" {
 int iOS_is_debugger_attached();
 #endif
 
-#if defined(_WIN32) || defined(WIN32)
+#if !defined(__x86_64__) && (defined(_WIN32) || defined(WIN32))
 #define OS_HAS_PAGEFAULT_HANDLER 1
 #else
 #define OS_HAS_PAGEFAULT_HANDLER 0
 #endif
-    
-/* Some really crappy APIs don't use UTF-8 in fopen. */
-FILE *fopen_utf8(const char *filename, const char *mode);
 
 void *os_reserve(size_t size);
 void *os_alloc_executable(size_t size);
@@ -39,9 +36,6 @@ void *os_commit(void *addr, size_t size);
 void *os_sparse_commit(void *page, size_t size);
 void os_sparse_decommit(void *page, size_t size);
 #endif
-
-void *os_map_cow(const char *filename, size_t size);
-void os_unmap_cow(void *addr, size_t size);
 
 void addr_cache_init();
 void addr_cache_deinit();

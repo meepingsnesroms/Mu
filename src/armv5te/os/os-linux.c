@@ -44,11 +44,6 @@ int iOS_is_debugger_attached()
 }
 #endif
 
-FILE *fopen_utf8(const char *filename, const char *mode)
-{
-    return fopen(filename, mode);
-}
-
 void *os_reserve(size_t size)
 {
 #ifdef __i386__
@@ -85,23 +80,6 @@ void *os_alloc_executable(size_t size)
 
     msync(ptr, size, MS_SYNC|MS_INVALIDATE);
     return ptr;
-}
-
-void *os_map_cow(const char *filename, size_t size)
-{
-    int fd = open(filename, O_RDONLY);
-    if(fd == -1)
-        return NULL;
-
-    void *ret = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
-
-    close(fd);
-    return ret == MAP_FAILED ? NULL : ret;
-}
-
-void os_unmap_cow(void *addr, size_t size)
-{
-    munmap(addr, size);
 }
 
 __attribute__((unused)) static void make_writable(void *addr)
