@@ -284,8 +284,10 @@ void retro_run(void){
 }
 
 bool retro_load_game(const struct retro_game_info *info){
-   buffer_t rom;
-   buffer_t bootloader;
+   uint8_t* romData;
+   uint32_t romSize;
+   uint8_t* bootloaderData;
+   uint32_t bootloaderSize;
    char bootloaderPath[PATH_MAX_LENGTH];
    char saveRamPath[PATH_MAX_LENGTH];
    char sdImgPath[PATH_MAX_LENGTH];
@@ -304,37 +306,37 @@ bool retro_load_game(const struct retro_game_info *info){
    environ_cb(RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY, &systemDir);
    environ_cb(RETRO_ENVIRONMENT_GET_SAVE_DIRECTORY, &saveDir);
    
-   rom.data = info->data;
-   rom.size = info->size;
+   romData = info->data;
+   romSize = info->size;
    
    //bootloader
    strlcpy(bootloaderPath, systemDir, PATH_MAX_LENGTH);
    strlcat(bootloaderPath, "/bootloader-en-m515.rom", PATH_MAX_LENGTH);
    bootloaderFile = filestream_open(bootloaderPath, RETRO_VFS_FILE_ACCESS_READ, RETRO_VFS_FILE_ACCESS_HINT_NONE);
    if(bootloaderFile){
-      bootloader.size = filestream_get_size(bootloaderFile);
-      bootloader.data = malloc(bootloader.size);
+      bootloaderSize = filestream_get_size(bootloaderFile);
+      bootloaderData = malloc(bootloaderSize);
       
-      if(bootloader.data)
-         filestream_read(bootloaderFile, bootloader.data, bootloader.size);
+      if(bootloaderData)
+         filestream_read(bootloaderFile, bootloaderData, bootloaderSize);
       else
-         bootloader.size = 0;
+         bootloaderSize = 0;
       filestream_close(bootloaderFile);
    }
    else{
-      bootloader.data = NULL;
-      bootloader.size = 0;
+      bootloaderData = NULL;
+      bootloaderSize = 0;
    }
    
    //updates the emulator configuration
    check_variables(true);
    
-   error = emulatorInit(rom, bootloader, emuFeatures);
+   error = emulatorInit(romData, romSize, bootloaderData, bootloaderSize, emuFeatures);
    if(error != EMU_ERROR_NONE)
       return false;
    
-   if(bootloader.data)
-      free(bootloader.data);
+   if(bootloaderData)
+      free(bootloaderData);
    
    //save RAM
    strlcpy(saveRamPath, saveDir, PATH_MAX_LENGTH);
@@ -353,18 +355,13 @@ bool retro_load_game(const struct retro_game_info *info){
    strlcat(sdImgPath, "/sd-en-m515.img", PATH_MAX_LENGTH);
    sdImgFile = filestream_open(sdImgPath, RETRO_VFS_FILE_ACCESS_READ, RETRO_VFS_FILE_ACCESS_HINT_NONE);
    if(sdImgFile){
-      buffer_t sdCard;
       uint32_t sdImgSize = filestream_get_size(sdImgFile);
       
-      //use the NULL, size method because it takes less RAM
-      sdCard.data = NULL;
-      sdCard.size = sdImgSize;
+      //use the NULL, size, NULL method because it takes less RAM
       
-      error = emulatorInsertSdCard(sdCard, false);
-      if(error == EMU_ERROR_NONE){
-         sdCard = emulatorGetSdCardBuffer();
-         filestream_read(sdImgFile, sdCard.data, sdImgSize);
-      }
+      error = emulatorInsertSdCard(NULL, sdImgSize, NULL);
+      if(error == EMU_ERROR_NONE)
+         filestream_read(sdImgFile, palmSdCard.flashChipData, sdImgSize);
       
       filestream_close(sdImgFile);
    }
@@ -387,7 +384,6 @@ void retro_unload_game(void){
    char sdImgPath[PATH_MAX_LENGTH];
    struct RFILE* saveRamFile;
    struct RFILE* sdImgFile;
-   buffer_t sdCard = emulatorGetSdCardBuffer();
    
    environ_cb(RETRO_ENVIRONMENT_GET_SAVE_DIRECTORY, &saveDir);
    
@@ -402,12 +398,12 @@ void retro_unload_game(void){
    }
    
    //SD card
-   if(sdCard.data){
+   if(palmSdCard.flashChipData){
       strlcpy(sdImgPath, saveDir, PATH_MAX_LENGTH);
       strlcat(sdImgPath, "/sd-en-m515.img", PATH_MAX_LENGTH);
       sdImgFile = filestream_open(sdImgPath, RETRO_VFS_FILE_ACCESS_WRITE, RETRO_VFS_FILE_ACCESS_HINT_NONE);
       if(sdImgFile){
-         filestream_write(sdImgFile, sdCard.data, sdCard.size);
+         filestream_write(sdImgFile, palmSdCard.flashChipData, palmSdCard.flashChipSize);
          filestream_close(sdImgFile);
       }
    }
@@ -431,21 +427,11 @@ size_t retro_serialize_size(void){
 }
 
 bool retro_serialize(void *data, size_t size){
-   buffer_t saveBuffer;
-   
-   saveBuffer.data = (uint8_t*)data;
-   saveBuffer.size = size;
-   
-   return emulatorSaveState(saveBuffer);
+   return emulatorSaveState(data, size);
 }
 
 bool retro_unserialize(const void *data, size_t size){
-   buffer_t saveBuffer;
-   
-   saveBuffer.data = (uint8_t*)data;
-   saveBuffer.size = size;
-   
-   return emulatorLoadState(saveBuffer);
+   return emulatorLoadState(data, size);
 }
 
 void* retro_get_memory_data(unsigned id){

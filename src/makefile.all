@@ -21,53 +21,54 @@ EMU_SOURCES_CXX :=
 EMU_SOURCES_ASM := 
 
 ifeq ($(EMU_SUPPORT_PALM_OS5), 1)
+	EMU_DEFINES += -std=c++11 # ARM emulator uses C++11
 	EMU_DEFINES += -DEMU_SUPPORT_PALM_OS5
 	EMU_DEFINES += -DSUPPORT_LINUX # forces the dynarec to use accurate mode and disable Nspire OS hacks
-	EMU_SOURCES_C += $(EMU_PATH)/src/pxa255/pxa255_mem.c \
-		$(EMU_PATH)/src/pxa255/pxa255_DMA.c \
-		$(EMU_PATH)/src/pxa255/pxa255_DSP.c \
-		$(EMU_PATH)/src/pxa255/pxa255_GPIO.c \
-		$(EMU_PATH)/src/pxa255/pxa255_IC.c \
-		$(EMU_PATH)/src/pxa255/pxa255_LCD.c \
-		$(EMU_PATH)/src/pxa255/pxa255_PwrClk.c \
-		$(EMU_PATH)/src/pxa255/pxa255_RTC.c \
-		$(EMU_PATH)/src/pxa255/pxa255_TIMR.c \
-		$(EMU_PATH)/src/pxa255/pxa255_UART.c \
-		$(EMU_PATH)/src/pxa255/pxa255.c \
-		$(EMU_PATH)/src/armv5te/emuVarPool.c \
-		$(EMU_PATH)/src/armv5te/mem.c \
-		$(EMU_PATH)/src/armv5te/mmu.c \
-		$(EMU_PATH)/src/tungstenCBus.c
-	EMU_SOURCES_CXX += $(EMU_PATH)/src/armv5te/arm_interpreter.cpp \
-		$(EMU_PATH)/src/armv5te/thumb_interpreter.cpp \
-		$(EMU_PATH)/src/armv5te/cpu.cpp \
-		$(EMU_PATH)/src/armv5te/coproc.cpp
+	EMU_SOURCES_C += $(EMU_PATH)/pxa255/pxa255_mem.c \
+		$(EMU_PATH)/pxa255/pxa255_DMA.c \
+		$(EMU_PATH)/pxa255/pxa255_DSP.c \
+		$(EMU_PATH)/pxa255/pxa255_GPIO.c \
+		$(EMU_PATH)/pxa255/pxa255_IC.c \
+		$(EMU_PATH)/pxa255/pxa255_LCD.c \
+		$(EMU_PATH)/pxa255/pxa255_PwrClk.c \
+		$(EMU_PATH)/pxa255/pxa255_RTC.c \
+		$(EMU_PATH)/pxa255/pxa255_TIMR.c \
+		$(EMU_PATH)/pxa255/pxa255_UART.c \
+		$(EMU_PATH)/pxa255/pxa255.c \
+		$(EMU_PATH)/armv5te/emuVarPool.c \
+		$(EMU_PATH)/armv5te/mem.c \
+		$(EMU_PATH)/armv5te/mmu.c \
+		$(EMU_PATH)/tungstenCBus.c
+	EMU_SOURCES_CXX += $(EMU_PATH)/armv5te/arm_interpreter.cpp \
+		$(EMU_PATH)/armv5te/thumb_interpreter.cpp \
+		$(EMU_PATH)/armv5te/cpu.cpp \
+		$(EMU_PATH)/armv5te/coproc.cpp
       
 	ifeq ($(EMU_OS), windows)
-		EMU_SOURCES_C += $(EMU_PATH)/src/armv5te/os-win32.c
+		EMU_SOURCES_C += $(EMU_PATH)/armv5te/os/os-win32.c
 	else ifeq ($(EMU_OS), linux)
-		EMU_SOURCES_C += $(EMU_PATH)/src/armv5te/os-linux.c
+		EMU_SOURCES_C += $(EMU_PATH)/armv5te/os/os-linux.c
    	endif
    
 	ifeq ($(EMU_NO_DYNAREC), 1)
 		EMU_DEFINES += -DNO_TRANSLATION
-		EMU_SOURCES_C += $(EMU_PATH)/src/armv5te/asmcode.c
+		EMU_SOURCES_C += $(EMU_PATH)/armv5te/asmcode.c
 	else
 		ifeq ($(EMU_ARCH), x86_32)
-			EMU_SOURCES_C += $(EMU_PATH)/src/armv5te/translate_x86.c
-			EMU_SOURCES_ASM += $(EMU_PATH)/src/armv5te/asmcode_x86.S
+			EMU_SOURCES_C += $(EMU_PATH)/armv5te/translate_x86.c
+			EMU_SOURCES_ASM += $(EMU_PATH)/armv5te/asmcode_x86.S
 		else ifeq ($(EMU_ARCH), x86_64)
-			EMU_SOURCES_C += $(EMU_PATH)/src/armv5te/translate_x86_64.c \
-				$(EMU_PATH)/src/armv5te/asmcode.c
-			EMU_SOURCES_ASM += $(EMU_PATH)/src/armv5te/asmcode_x86_64.S
+			EMU_SOURCES_C += $(EMU_PATH)/armv5te/translate_x86_64.c \
+				$(EMU_PATH)/armv5te/asmcode.c
+			EMU_SOURCES_ASM += $(EMU_PATH)/armv5te/asmcode_x86_64.S
 		else ifeq ($(EMU_ARCH), armv7)
-			EMU_SOURCES_C += $(EMU_PATH)/src/armv5te/asmcode.c
-			EMU_SOURCES_CXX += $(EMU_PATH)/src/armv5te/translate_arm.cpp
-			EMU_SOURCES_ASM += $(EMU_PATH)/src/armv5te/asmcode_arm.S
+			EMU_SOURCES_C += $(EMU_PATH)/armv5te/asmcode.c
+			EMU_SOURCES_CXX += $(EMU_PATH)/armv5te/translate_arm.cpp
+			EMU_SOURCES_ASM += $(EMU_PATH)/armv5te/asmcode_arm.S
 		else ifeq ($(EMU_ARCH), armv8)
-			EMU_SOURCES_C += $(EMU_PATH)/src/armv5te/asmcode.c
-			EMU_SOURCES_CXX += $(EMU_PATH)/src/armv5te/translate_aarch64.cpp
-			EMU_SOURCES_ASM += $(EMU_PATH)/src/armv5te/asmcode_aarch64.S
+			EMU_SOURCES_C += $(EMU_PATH)/armv5te/asmcode.c
+			EMU_SOURCES_CXX += $(EMU_PATH)/armv5te/translate_aarch64.cpp
+			EMU_SOURCES_ASM += $(EMU_PATH)/armv5te/asmcode_aarch64.S
 		endif
 	endif
 
