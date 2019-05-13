@@ -203,17 +203,12 @@ void * FASTCALL read_instruction(uint32_t addr)
 #endif
 }
 
-/*void cpu_thumb_loop()
-{
-    //TODO
-    assert(false);
-}*/
-
 // Update cpu_events
 void cpu_int_check()
 {
-    static std::mutex mut;
-    std::lock_guard<std::mutex> lg(mut);
+    //events arnt threaded like this in Mu, plus this breaks the RetroArch build, some undefined reference thing
+    //static std::mutex mut;
+    //std::lock_guard<std::mutex> lg(mut);
 
     if (arm.interrupts & ~arm.cpsr_low28 & 0x80)
         cpu_events |= EVENT_IRQ;

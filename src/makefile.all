@@ -21,7 +21,7 @@ EMU_SOURCES_CXX :=
 EMU_SOURCES_ASM := 
 
 ifeq ($(EMU_SUPPORT_PALM_OS5), 1)
-	EMU_DEFINES += -std=c++11 # ARM emulator uses C++11
+	# ARM emulator uses C++11 so it must be supported and enabled if Palm OS 5 support is enabled
 	EMU_DEFINES += -DEMU_SUPPORT_PALM_OS5
 	EMU_DEFINES += -DSUPPORT_LINUX # forces the dynarec to use accurate mode and disable Nspire OS hacks
 	EMU_SOURCES_C += $(EMU_PATH)/pxa255/pxa255_mem.c \

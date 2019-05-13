@@ -4,6 +4,8 @@ CORE_DIR := $(LOCAL_PATH)/..
 
 GIT_VERSION := " $(shell git rev-parse --short HEAD || echo unknown)"
 
+platform = android_jni
+
 # Palm OS 5 support
 EMU_SUPPORT_PALM_OS5 = 1
 EMU_OS := linux

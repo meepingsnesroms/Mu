@@ -34,10 +34,10 @@ else ifneq (,$(findstring armv,$(platform)))
    EMU_SUPPORT_PALM_OS5 = 1
    EMU_ARCH := armv7
    EMU_OS := linux
-else ifneq (,$(filter unix osx linux_x86 linux_x86_64 linux-portable_x86 linux-portable_x86_64,$(platform)))
+else ifneq (,$(filter unix osx osx_x86 osx_x86_64 linux_x86 linux_x86_64 linux-portable_x86 linux-portable_x86_64,$(platform)))
    # x86_* Linux
    EMU_SUPPORT_PALM_OS5 = 1
-   ifneq (,$(findstring x64,$(platform)))
+   ifneq (,$(filter osx osx_x86_64 linux_x86_64 linux-portable_x86_64,$(platform)))
       EMU_ARCH := x86_64
    else
       EMU_ARCH := x86_32
@@ -51,6 +51,12 @@ else ifeq ($(platform), osx)
 	ifeq ($(arch), ppc)
 		COREDEFINES += -DEMU_BIG_ENDIAN
 	endif
+endif
+
+ifeq ($(EMU_SUPPORT_PALM_OS5), 1)
+   ifneq ($(platform), android_jni)
+      CXXFLAGS += -std=c++11
+   endif
 endif
 
 include $(EMU_PATH)/makefile.all
