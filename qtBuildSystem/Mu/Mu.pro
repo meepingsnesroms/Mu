@@ -72,7 +72,7 @@ CONFIG(debug, debug|release){
     # DEFINES += EMU_SANDBOX_OPCODE_LEVEL_DEBUG # for breakpoints
     # DEFINES += EMU_SANDBOX_LOG_JUMPS # log large jumps
     # DEFINES += EMU_SANDBOX_LOG_APIS # for printing sysTrap* calls, EMU_SANDBOX_OPCODE_LEVEL_DEBUG must be on too
-    DEFINES += NO_TRANSLATION # easier to debug with
+    CONFIG += no_dynarec # easier to debug with
     macx|linux-g++{
         # also check for any buffer overflows and memory leaks
         # -fsanitize=undefined,leak
@@ -95,48 +95,38 @@ support_palm_os5{
 
         cpu_x86_32{
             SOURCES += \
-                ../../src/armv5te/translate_x86.c
+                ../../src/armv5te/translate_x86.c \
+                ../../src/armv5te/asmcode_x86.S
+        }
+        else{
+            # x86 has this implemented in asmcode_x86.S
+            SOURCES += \
+                ../../src/armv5te/asmcode.c
         }
 
         cpu_x86_64{
             SOURCES += \
-                ../../src/armv5te/translate_x86_64.c
+                ../../src/armv5te/translate_x86_64.c \
+                ../../src/armv5te/asmcode_x86_64.S
         }
 
         cpu_armv7{
             SOURCES += \
-                ../../src/armv5te/translate_arm.cpp
+                ../../src/armv5te/translate_arm.cpp \
+                ../../src/armv5te/asmcode_arm.S
         }
 
         cpu_armv8{
             SOURCES += \
-                ../../src/armv5te/translate_aarch64.cpp
+                ../../src/armv5te/translate_aarch64.cpp \
+                ../../src/armv5te/asmcode_aarch64.S
         }
     }
-
-    cpu_x86_32{
-        SOURCES += \
-            ../../src/armv5te/asmcode_x86.S
-    }
     else{
-        # x86 has this implemented in asmcode_x86.S
+        # use platform independant C with no dynarec
         SOURCES += \
             ../../src/armv5te/asmcode.c
-    }
-
-    cpu_x86_64{
-        SOURCES += \
-            ../../src/armv5te/asmcode_x86_64.S
-    }
-
-    cpu_armv7{
-        SOURCES += \
-            ../../src/armv5te/asmcode_arm.S
-    }
-
-    cpu_armv8{
-        SOURCES += \
-            ../../src/armv5te/asmcode_aarch64.S
+        DEFINES += NO_TRANSLATION
     }
 
     windows{

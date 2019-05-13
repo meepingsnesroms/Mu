@@ -58,10 +58,9 @@ Support for Silkyboard 2 silkscreen:https://archive.org/details/tucows_228076_SI
 Qt port dosent support Windows touchscreen input
 Qt GUI dosent resize properly with 320x320 framebuffer
 File Installer isnt working yet
-need to get rid of buffer_t, its not used much anyway
-
 
 Fixed:
+(Other)need to get rid of buffer_t, its not used much anyway
 ARM dynarec SIGSEGVs on exit(pushing play in the debugger still lets it continue, dont think this is a bug)
 (Feature)need to add FEATURE_DURABLE which will ignore CPU errors, increasing stability at the cost of bugginess
 (RetroArch port)set the alarm LED using retro_set_led_state_t on RetroArch

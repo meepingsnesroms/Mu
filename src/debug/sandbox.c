@@ -355,7 +355,7 @@ static void freePalmString(uint32_t address){
    sandboxCallGuestFunction(false, 0x00000000, MemChunkFree, "w(p)", address);
 }
 
-static bool installResourceToDevice(buffer_t resourceBuffer){
+static bool installResourceToDevice(uint8_t* data, uint32_t size){
    /*
    #define memNewChunkFlagNonMovable    0x0200
    #define memNewChunkFlagAllowLarge    0x1000  // this is not in the sdk *g*
@@ -375,7 +375,7 @@ static bool installResourceToDevice(buffer_t resourceBuffer){
    }
    */
 
-   uint32_t palmSideResourceData = sandboxCallGuestFunction(false, 0x00000000, MemChunkNew, "p(wlw)", 1/*heapID, storage RAM*/, resourceBuffer.size, 0x1200/*attr, seems to work without memOwnerID*/);
+   uint32_t palmSideResourceData = sandboxCallGuestFunction(false, 0x00000000, MemChunkNew, "p(wlw)", 1/*heapID, storage RAM*/, size, 0x1200/*attr, seems to work without memOwnerID*/);
    bool storageRamReadOnly = dbvzChipSelects[DBVZ_CHIP_DX_RAM].readOnlyForProtectedMemory;
    uint16_t error;
    uint32_t count;
@@ -385,8 +385,8 @@ static bool installResourceToDevice(buffer_t resourceBuffer){
       return false;
 
    dbvzChipSelects[DBVZ_CHIP_DX_RAM].readOnlyForProtectedMemory = false;//need to unprotect storage RAM
-   for(count = 0; count < resourceBuffer.size; count++)
-      m68k_write_memory_8(palmSideResourceData + count, resourceBuffer.data[count]);
+   for(count = 0; count < size; count++)
+      m68k_write_memory_8(palmSideResourceData + count, data[count]);
    dbvzChipSelects[DBVZ_CHIP_DX_RAM].readOnlyForProtectedMemory = storageRamReadOnly;//restore old protection state
    error = sandboxCallGuestFunction(false, 0x00000000, DmCreateDatabaseFromImage, "w(p)", palmSideResourceData);//Err DmCreateDatabaseFromImage(MemPtr bufferP);//this looks best
    sandboxCallGuestFunction(false, 0x00000000, MemChunkFree, "w(p)", palmSideResourceData);
@@ -1063,8 +1063,8 @@ uint32_t sandboxCommand(uint32_t command, void* data){
          break;
 
       case SANDBOX_CMD_DEBUG_INSTALL_APP:{
-            buffer_t* app = (buffer_t*)data;
-            bool success = installResourceToDevice(*app);
+            uintptr_t* values = data;
+            bool success = installResourceToDevice(values[0], values[1]);
 
             if(!success)
                result = EMU_ERROR_OUT_OF_MEMORY;

@@ -64,8 +64,8 @@ static void sdCardTopOffReadBuffer(void){
    //only call during a multi block read / palmSdCard.runningCommand == READ_MULTIPLE_BLOCK
    if(unlikely(sdCardResponseFifoByteEntrys() < SD_CARD_BLOCK_SIZE)){
       sdCardDoResponseDelay(1);
-      if(likely(palmSdCard.runningCommandVars[0] < palmSdCard.flashChip.size)){
-         sdCardDoResponseDataPacket(DATA_TOKEN_DEFAULT, palmSdCard.flashChip.data + palmSdCard.runningCommandVars[0], SD_CARD_BLOCK_SIZE);
+      if(likely(palmSdCard.runningCommandVars[0] < palmSdCard.flashChipSize)){
+         sdCardDoResponseDataPacket(DATA_TOKEN_DEFAULT, palmSdCard.flashChipData + palmSdCard.runningCommandVars[0], SD_CARD_BLOCK_SIZE);
          palmSdCard.runningCommandVars[0] += SD_CARD_BLOCK_SIZE;
       }
       else{
@@ -76,7 +76,7 @@ static void sdCardTopOffReadBuffer(void){
 }
 
 void sdCardReset(void){
-   if(palmSdCard.flashChip.data){
+   if(palmSdCard.flashChipData){
       palmSdCard.command = UINT64_C(0x0000000000000000);
       palmSdCard.commandBitsRemaining = 48;
       palmSdCard.runningCommand = 0x00;
@@ -97,7 +97,7 @@ void sdCardReset(void){
 
 void sdCardSetChipSelect(bool value){
    if(value != palmSdCard.chipSelect){
-      if(palmSdCard.flashChip.data){
+      if(palmSdCard.flashChipData){
          //commands start when chip select goes from high to low
          if(value == false)
             sdCardCmdStart();
@@ -111,7 +111,7 @@ bool sdCardExchangeBit(bool bit){
    bool outputValue = true;//SPI1 pins are on port j which has pull up resistors so default output value is true
 
    //make sure SD is actually plugged in and chip select is low
-   if(likely(palmSdCard.flashChip.data && !palmSdCard.chipSelect)){
+   if(likely(palmSdCard.flashChipData && !palmSdCard.chipSelect)){
       //get output value first
       outputValue = sdCardResponseFifoReadBit();
 
@@ -276,8 +276,8 @@ bool sdCardExchangeBit(bool bit){
                         case READ_SINGLE_BLOCK:
                            sdCardDoResponseR1(palmSdCard.inIdleState);
                            sdCardDoResponseDelay(1);
-                           if(likely(argument < palmSdCard.flashChip.size))
-                              sdCardDoResponseDataPacket(DATA_TOKEN_DEFAULT, palmSdCard.flashChip.data + argument, SD_CARD_BLOCK_SIZE);
+                           if(likely(argument < palmSdCard.flashChipSize))
+                              sdCardDoResponseDataPacket(DATA_TOKEN_DEFAULT, palmSdCard.flashChipData + argument, SD_CARD_BLOCK_SIZE);
                            else
                               sdCardDoResponseErrorToken(ET_OUT_OF_RANGE);
                            break;
@@ -285,10 +285,10 @@ bool sdCardExchangeBit(bool bit){
                         case READ_MULTIPLE_BLOCK:
                            sdCardDoResponseR1(palmSdCard.inIdleState);
                            sdCardDoResponseDelay(1);
-                           if(likely(argument < palmSdCard.flashChip.size)){
+                           if(likely(argument < palmSdCard.flashChipSize)){
                               palmSdCard.runningCommand = READ_MULTIPLE_BLOCK;
                               palmSdCard.runningCommandVars[0] = argument;
-                              sdCardDoResponseDataPacket(DATA_TOKEN_DEFAULT, palmSdCard.flashChip.data + palmSdCard.runningCommandVars[0], SD_CARD_BLOCK_SIZE);
+                              sdCardDoResponseDataPacket(DATA_TOKEN_DEFAULT, palmSdCard.flashChipData + palmSdCard.runningCommandVars[0], SD_CARD_BLOCK_SIZE);
                               palmSdCard.runningCommandVars[0] += SD_CARD_BLOCK_SIZE;
                            }
                            else{
@@ -299,7 +299,7 @@ bool sdCardExchangeBit(bool bit){
                         case WRITE_SINGLE_BLOCK:
                         case WRITE_MULTIPLE_BLOCK:
                            sdCardDoResponseR1(palmSdCard.inIdleState);
-                           if(likely(argument < palmSdCard.flashChip.size)){
+                           if(likely(argument < palmSdCard.flashChipSize)){
                               palmSdCard.runningCommand = command;
                               palmSdCard.runningCommandVars[0] = argument;
                               palmSdCard.runningCommandVars[1] = 0x00;//last 8 received bits, used to see if a data token has been received
@@ -375,8 +375,8 @@ bool sdCardExchangeBit(bool bit){
                   //packet finished, verify and write block to chip
                   if(likely(palmSdCard.allowInvalidCrc) || sdCardCrc16(palmSdCard.runningCommandPacket + 1, SD_CARD_BLOCK_SIZE) == (palmSdCard.runningCommandPacket[SD_CARD_BLOCK_DATA_PACKET_SIZE - 2] << 8 | palmSdCard.runningCommandPacket[SD_CARD_BLOCK_DATA_PACKET_SIZE - 1])){
                      //HACK, also need to check if block is write protected, not just the card as a whole
-                     if(likely(palmSdCard.runningCommandVars[0] < palmSdCard.flashChip.size && !palmSdCard.sdInfo.writeProtectSwitch)){
-                        memcpy(palmSdCard.flashChip.data + palmSdCard.runningCommandVars[0], palmSdCard.runningCommandPacket + 1, SD_CARD_BLOCK_SIZE);
+                     if(likely(palmSdCard.runningCommandVars[0] < palmSdCard.flashChipSize && !palmSdCard.sdInfo.writeProtectSwitch)){
+                        memcpy(palmSdCard.flashChipData + palmSdCard.runningCommandVars[0], palmSdCard.runningCommandPacket + 1, SD_CARD_BLOCK_SIZE);
                         sdCardDoResponseDataResponse(DR_ACCEPTED);
                      }
                      else{
@@ -487,7 +487,7 @@ uint32_t sdCardExchangeXBitsOptimized(uint32_t bits, uint8_t size){
    bits &= all1s;
 
    //make sure SD is actually plugged in and chip select is low
-   if(likely(palmSdCard.flashChip.data && !palmSdCard.chipSelect)){
+   if(likely(palmSdCard.flashChipData && !palmSdCard.chipSelect)){
       bool ignoreCmdBits = palmSdCard.commandBitsRemaining == 48 && (bits == all1s || bits == 0x00000000 && !(size & 0x1));
       bool safeToOptimize = !palmSdCard.receivingCommand || ignoreCmdBits || palmSdCard.commandBitsRemaining > 47 && palmSdCard.commandBitsRemaining - size < 1;
 

@@ -93,11 +93,6 @@ enum{
 
 //types
 typedef struct{
-   uint8_t* data;
-   uint32_t size;
-}buffer_t;
-
-typedef struct{
    bool  buttonUp;
    bool  buttonDown;
    
@@ -137,7 +132,8 @@ typedef struct{
    bool     receivingCommand;
    bool     inIdleState;
    sd_card_info_t sdInfo;
-   buffer_t flashChip;
+   uint8_t* flashChipData;
+   uint32_t flashChipSize;
 }sd_card_t;
 
 typedef struct{
@@ -166,7 +162,7 @@ extern bool      palmEmulatingTungstenC;//read allowed, but not advised
 extern uint8_t*  palmRom;//dont touch
 extern uint8_t*  palmRam;//access allowed to read save RAM without allocating a giant buffer, but endianness must be taken into account
 extern input_t   palmInput;//write allowed
-extern sd_card_t palmSdCard;//dont touch
+extern sd_card_t palmSdCard;//access allowed to read flash chip data without allocating a giant buffer
 extern misc_hw_t palmMisc;//read/write allowed
 extern emu_reg_t palmEmuFeatures;//dont touch
 extern uint16_t* palmFramebuffer;//read allowed
@@ -178,19 +174,20 @@ extern double    palmCycleCounter;//dont touch
 extern double    palmClockMultiplier;//dont touch
 
 //functions
-uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t enabledEmuFeatures);//calling any emulator functions before emulatorInit results in undefined behavior
+uint32_t emulatorInit(uint8_t* palmRomData, uint32_t palmRomSize, uint8_t* palmBootloaderData, uint32_t palmBootloaderSize, uint32_t enabledEmuFeatures);
 void emulatorExit(void);
 void emulatorHardReset(void);
 void emulatorSoftReset(void);
 void emulatorSetRtc(uint16_t days, uint8_t hours, uint8_t minutes, uint8_t seconds);
 uint32_t emulatorGetStateSize(void);
-bool emulatorSaveState(buffer_t buffer);//true = success
-bool emulatorLoadState(buffer_t buffer);//true = success
+bool emulatorSaveState(uint8_t* data, uint32_t size);//true = success
+bool emulatorLoadState(uint8_t* data, uint32_t size);//true = success
 uint32_t emulatorGetRamSize(void);
-bool emulatorSaveRam(buffer_t buffer);//true = success
-bool emulatorLoadRam(buffer_t buffer);//true = success
-buffer_t emulatorGetSdCardBuffer(void);//this is a direct pointer to the SD card data, do not free it
-uint32_t emulatorInsertSdCard(buffer_t image, sd_card_info_t* sdInfo);//use (NULL, desired size) to create a new empty SD card, pass NULL for sdInfo to use defaults
+bool emulatorSaveRam(uint8_t* data, uint32_t size);//true = success
+bool emulatorLoadRam(uint8_t* data, uint32_t size);//true = success
+uint32_t emulatorInsertSdCard(uint8_t* data, uint32_t size, sd_card_info_t* sdInfo);//use (NULL, desired size) to create a new empty SD card, pass NULL for sdInfo to use defaults
+uint32_t emulatorGetSdCardSize(void);
+uint32_t emulatorGetSdCardData(uint8_t* data, uint32_t size);
 void emulatorEjectSdCard(void);
 void emulatorRunFrame(void);
    
