@@ -30,11 +30,10 @@ typedef struct{
    uint32_t infoSize;//only used with LAUNCHER_FILE_TYPE_INFO_IMG
 }file_t;
 
-//
 /*
 the launcher is called after emulatorInit when its enabled
 the order is:
-emulatorInit(romFile, bootloaderFile(if m515), features);
+emulatorInit(romFileData, romFileSize, bootloaderFileData(if m515), bootloaderFileSize(if m515), features);
 for(count = 0; count < totalFiles; count++)
    launcherAddFile(file[count]);//this hands the file data buffers off to the launcher, dont attempt to free them after this, this could fail!
 launcherLaunch();//this can also fail
