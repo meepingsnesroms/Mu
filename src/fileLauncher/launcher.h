@@ -19,29 +19,39 @@ enum{
    LAUNCHER_FILE_TYPE_ZIP,
    LAUNCHER_FILE_TYPE_IMG,
    LAUNCHER_FILE_TYPE_INFO_IMG
-}
+};
 
 typedef struct{
    uint8_t  type;//file type
    bool     boot;//if set will be the application that is launched
-   uint8_t* file;
+   uint8_t* fileData;
    uint32_t fileSize;
-   uint8_t* info;//only used with LAUNCHER_FILE_TYPE_INFO_IMG
-   uint32_t infoSize;//only used with LAUNCHER_FILE_TYPE_INFO_IMG
+   void*    info;//only used with LAUNCHER_FILE_TYPE_INFO_IMG right now, sd_card_info_t*
 }file_t;
+
+extern bool launcherSaveSdCardImage;//false if loading a read only SD card image
 
 /*
 the launcher is called after emulatorInit when its enabled
 the order is:
-emulatorInit(romFileData, romFileSize, bootloaderFileData(if m515), bootloaderFileSize(if m515), features);
-for(count = 0; count < totalFiles; count++)
-   launcherAddFile(file[count]);//this hands the file data buffers off to the launcher, dont attempt to free them after this, this could fail!
-launcherLaunch();//this can also fail
+uint8_t* files[...];
+uint32_t fileCount;
+uint8_t* saveData = NULL;
+uint32_t saveSize = 0;
+uint8_t* oldSdCardData = NULL;
+uint32_t oldSdCardSize = 0;
+uint32_t error;
+
+error = emulatorInit(romFileData, romFileSize, bootloaderFileData(if m515), bootloaderFileSize(if m515), features | FEATURE_LAUNCH_APP);
+if(error)
+   return error;
+error = launcherLaunch(files, fileCount, saveData, saveSize, oldSdCardData, oldSdCardSize);//this can fail building the SD card image
+if(error)
+   return error;
 //its now safe to call emulatorFrame for frames
 */
-
-uint32_t launcherAddFile(file_t file);
-uint32_t launcherLaunch(void);
+//if first launch NULL should be passed for sramData and sdCardData
+uint32_t launcherLaunch(file_t* files, uint32_t fileCount, uint8_t* sramData, uint32_t sramSize, uint8_t* sdCardData, uint32_t sdCardSize);
    
 #ifdef __cplusplus
 }

@@ -56,7 +56,7 @@ public:
    void setPenValue(float x, float y, bool touched);
    void setKeyValue(uint8_t key, bool pressed);
 
-   uint32_t installApplication(const QString& path);
+   uint32_t debugInstallApplication(const QString& path);
 
    std::vector<QString>& getDebugStrings();
    std::vector<uint64_t>& getDuplicateCallCount();

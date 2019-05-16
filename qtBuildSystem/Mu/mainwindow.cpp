@@ -108,7 +108,7 @@ MainWindow::MainWindow(QWidget* parent) :
    ui->stateManager->installEventFilter(this);
    ui->screenshot->installEventFilter(this);
    ui->settings->installEventFilter(this);
-   ui->install->installEventFilter(this);
+   ui->debugInstall->installEventFilter(this);
    ui->debugger->installEventFilter(this);
 
    //hide onscreen keys if needed
@@ -333,7 +333,7 @@ void MainWindow::on_ctrlBtn_clicked(){
          ui->power->setEnabled(true);
 
          ui->screenshot->setEnabled(true);
-         ui->install->setEnabled(true);
+         ui->debugInstall->setEnabled(true);
          ui->stateManager->setEnabled(true);
          ui->debugger->setEnabled(true);
          ui->reset->setEnabled(true);
@@ -356,12 +356,12 @@ void MainWindow::on_ctrlBtn_clicked(){
    ui->ctrlBtn->repaint();
 }
 
-void MainWindow::on_install_clicked(){
+void MainWindow::on_debugInstall_clicked(){
    if(emu.isInited()){
       QString app = QFileDialog::getOpenFileName(this, "Select Application", QDir::root().path(), "Palm OS App (*.prc *.pdb *.pqa)");
 
       if(app != ""){
-         uint32_t error = emu.installApplication(app);
+         uint32_t error = emu.debugInstallApplication(app);
 
          if(error != EMU_ERROR_NONE)
             popupErrorDialog("Could not install app, Error:" + QString::number(error));

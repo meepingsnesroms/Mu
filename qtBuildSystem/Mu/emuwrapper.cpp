@@ -345,7 +345,7 @@ void EmuWrapper::setKeyValue(uint8_t key, bool pressed){
    }
 }
 
-uint32_t EmuWrapper::installApplication(const QString& path){
+uint32_t EmuWrapper::debugInstallApplication(const QString& path){
    bool wasPaused = isPaused();
    uint32_t error = EMU_ERROR_INVALID_PARAMETER;
    QFile appFile(path);

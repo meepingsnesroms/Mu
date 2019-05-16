@@ -196,6 +196,11 @@ INCLUDEPATH += $$PWD/qt-common/include
 
 SOURCES += \
     ../../src/dbvz.c \
+    ../../src/fileLauncher/fatFs/diskio.c \
+    ../../src/fileLauncher/fatFs/ff.c \
+    ../../src/fileLauncher/fatFs/ffsystem.c \
+    ../../src/fileLauncher/fatFs/ffunicode.c \
+    ../../src/fileLauncher/launcher.c \
     debugviewer.cpp \
     emuwrapper.cpp \
     main.cpp \
@@ -223,6 +228,10 @@ SOURCES += \
 
 HEADERS += \
     ../../src/dbvz.h \
+    ../../src/fileLauncher/fatFs/diskio.h \
+    ../../src/fileLauncher/fatFs/ff.h \
+    ../../src/fileLauncher/fatFs/ffconf.h \
+    ../../src/fileLauncher/launcher.h \
     ../../src/pxa255/pxa255Accessors.c.h \
     debugviewer.h \
     emuwrapper.h \

@@ -117,23 +117,23 @@ typedef struct{
 }sd_card_info_t;
 
 typedef struct{
-   uint64_t command;
-   uint8_t  commandBitsRemaining;
-   uint8_t  runningCommand;
-   uint32_t runningCommandVars[3];
-   uint8_t  runningCommandPacket[SD_CARD_BLOCK_DATA_PACKET_SIZE];
-   uint8_t  responseFifo[SD_CARD_RESPONSE_FIFO_SIZE];
-   uint16_t responseReadPosition;
-   int8_t   responseReadPositionBit;
-   uint16_t responseWritePosition;
-   bool     commandIsAcmd;
-   bool     allowInvalidCrc;
-   bool     chipSelect;
-   bool     receivingCommand;
-   bool     inIdleState;
+   uint64_t       command;
+   uint8_t        commandBitsRemaining;
+   uint8_t        runningCommand;
+   uint32_t       runningCommandVars[3];
+   uint8_t        runningCommandPacket[SD_CARD_BLOCK_DATA_PACKET_SIZE];
+   uint8_t        responseFifo[SD_CARD_RESPONSE_FIFO_SIZE];
+   uint16_t       responseReadPosition;
+   int8_t         responseReadPositionBit;
+   uint16_t       responseWritePosition;
+   bool           commandIsAcmd;
+   bool           allowInvalidCrc;
+   bool           chipSelect;
+   bool           receivingCommand;
+   bool           inIdleState;
    sd_card_info_t sdInfo;
-   uint8_t* flashChipData;
-   uint32_t flashChipSize;
+   uint8_t*       flashChipData;
+   uint32_t       flashChipSize;
 }sd_card_t;
 
 typedef struct{
