@@ -12,9 +12,6 @@
 #include "../emu.h"
 #include "../mmu.h"
 
-static HANDLE flash_mapping;
-static int flash_fd;
-
 void *os_reserve(size_t size)
 {
     return VirtualAlloc(NULL, size, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
