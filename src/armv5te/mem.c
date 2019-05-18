@@ -24,7 +24,7 @@ void bad_write_half(uint32_t addr, uint16_t value) { warn("Bad write_half: %08x 
 void bad_write_word(uint32_t addr, uint32_t value) { warn("Bad write_word: %08x %08x", addr, value); }
 
 uint8_t *mem_and_flags = NULL;
-struct mem_area_desc mem_areas[4];
+struct mem_area_desc mem_areas[2];
 
 void *phys_mem_ptr(uint32_t addr, uint32_t size) {
     unsigned int i;

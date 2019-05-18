@@ -60,15 +60,8 @@ bool pxa255Init(uint8_t** returnRom, uint8_t** returnRam){
    mem_areas[1].ptr = mem_and_flags + mem_offset;
    mem_offset += TUNGSTEN_C_RAM_SIZE;
 
-   //PCMCIA0/1
-   mem_areas[2].base = PXA255_PCMCIA0_START_ADDRESS;
-   mem_areas[2].size = PXA255_PCMCIA0_SIZE + PXA255_PCMCIA1_SIZE;
-   mem_areas[2].ptr = NULL;
-
-   //CPU registers
-   mem_areas[3].base = PXA255_REG_START_ADDRESS;
-   mem_areas[3].size = PXA255_REG_SIZE;//size of address space, not all of it is mapped
-   mem_areas[3].ptr = NULL;
+   //memory regions that are not directly mapped to a buffer are not added to mem_areas
+   //adding them will cause SIGSEGVs
 
    //accessors
    //default
