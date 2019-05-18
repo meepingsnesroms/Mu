@@ -2,6 +2,7 @@
 #include <QPixmap>
 #include <QImage>
 #include <QFile>
+#include <QFileInfo>
 #include <QByteArray>
 #include <QDateTime>
 #include <QDate>
@@ -16,6 +17,7 @@
 
 #include "emuwrapper.h"
 #include "../../src/emulator.h"
+#include "../../src/fileLauncher/launcher.h"
 
 extern "C"{
 #include "../../src/flx68000.h"
@@ -252,6 +254,88 @@ void EmuWrapper::reset(bool hard){
       if(!wasPaused)
          resume();
    }
+}
+
+uint32_t EmuWrapper::bootFromFileList(const QStringList& paths){
+   bool wasPaused = isPaused();
+   uint32_t error = EMU_ERROR_NONE;
+   QByteArray* fileDataBuffers = new QByteArray[paths.length()];
+   QByteArray infoBuffer;
+   file_t* files = new file_t[paths.length()];
+   sd_card_info_t cardInfo;
+   int32_t newestBootableFile = -1;
+
+   if(!wasPaused)
+      pause();
+
+   memset(files, 0x00, sizeof(file_t) * paths.length());
+
+   for(int32_t index = 0; index < paths.length(); index++){
+      QFile appFile(paths[index]);
+
+      if(appFile.open(QFile::ReadOnly)){
+         QString suffix = QFileInfo(paths[index]).suffix().toLower();
+
+         *fileDataBuffers = appFile.readAll();
+         appFile.close();
+
+         files[index].fileData = (uint8_t*)fileDataBuffers->data();
+         files[index].fileSize = fileDataBuffers->size();
+
+         if(suffix == "prc"){
+            files[index].type = LAUNCHER_FILE_TYPE_PRC;
+            newestBootableFile = index;
+         }
+         else if(suffix == "pdb"){
+            files[index].type = LAUNCHER_FILE_TYPE_PDB;
+         }
+         else if(suffix == "pqa"){
+            files[index].type = LAUNCHER_FILE_TYPE_PQA;
+            newestBootableFile = index;
+         }
+         else if(suffix == "zip"){
+            files[index].type = LAUNCHER_FILE_TYPE_ZIP;
+            newestBootableFile = index;
+         }
+         else if(suffix == "img"){
+            //check for an info file
+            //TODO parse info file if it exists
+            //memset(&cardInfo, 0x00, sizeof(cardInfo));
+            //files[index].info = &cardInfo;
+            files[index].type = LAUNCHER_FILE_TYPE_IMG;
+            newestBootableFile = index;
+         }
+         else{
+            error = EMU_ERROR_INVALID_PARAMETER;
+            goto errorOccurred;
+         }
+      }
+      else{
+         error = EMU_ERROR_RESOURCE_LOCKED;
+         goto errorOccurred;
+      }
+   }
+
+   if(newestBootableFile != -1){
+      files[newestBootableFile].boot = true;
+   }
+   else{
+      error = EMU_ERROR_INVALID_PARAMETER;
+      goto errorOccurred;
+   }
+
+   //actually pass everything to the emu
+   //TODO actually hook up the save files
+   error = launcherLaunch(files, paths.length(), NULL, 0, NULL, 0);
+
+   //need this goto because the emulator must be released before returning
+   errorOccurred:
+
+   if(!wasPaused)
+      resume();
+
+   delete[] fileDataBuffers;
+   return error;
 }
 
 uint32_t EmuWrapper::saveState(const QString& path){

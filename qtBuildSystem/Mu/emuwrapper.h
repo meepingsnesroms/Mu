@@ -48,6 +48,7 @@ public:
    void pause();
    void resume();
    void reset(bool hard);
+   uint32_t bootFromFileList(const QStringList& paths);
    uint32_t saveState(const QString& path);
    uint32_t loadState(const QString& path);
    bool isInited() const{return emuInited;}

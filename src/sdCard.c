@@ -387,21 +387,10 @@ bool sdCardExchangeBit(bool bit){
                      sdCardDoResponseDataResponse(DR_CRC_ERROR);
                   }
 
-                  //this fixes broken write mode???
-                  //this may not be a hack, elm-chan says:
+                  //write acknowledge is returned on the same bit as the event, unlike other flags which are on the bit/byte after
+                  //elm-chan says:
                   //The card responds a Data Response immediataly following the data packet from the host.
                   //The Data Response trails a busy flag and host controller must suspend the next command or data transmission until the card goes ready.
-                  //that could mean the response is returned starting on the final bit of the data packet instead of the bit after, violating byte boundrys
-                  //the return data is 1 bit misaligned, but I dont know how it gets this way
-                  //Currently:
-                  //SPI1 transfer, bitCount:8, PC:0x100A7D98(printed 1 times)
-                  //SPIRXD read, FIFO value:0x0082, SPIINTCS:0x0001(printed 1 times)
-                  //SPI1 transfer, bitCount:8, PC:0x100A5B32(printed 1 times)
-                  //SPIRXD read, FIFO value:0x0080, SPIINTCS:0x0001(printed 1 times)
-                  //Should be:
-                  //SPIRXD read, FIFO value:0x0005, SPIINTCS:0x0001(printed 1 times)
-                  //SPI1 transfer, bitCount:8, PC:0x100A5B32(printed 1 times)
-                  //SPIRXD read, FIFO value:0x0000, SPIINTCS:0x0001(printed 1 times)
                   outputValue = sdCardResponseFifoReadBit();
 
                   if(palmSdCard.runningCommand == WRITE_SINGLE_BLOCK){
@@ -467,9 +456,9 @@ bool sdCardExchangeBit(bool bit){
 static uint32_t sdCardExchangeXBitsUnoptimized(uint32_t bits, uint8_t size){
    uint32_t returnBits = 0x00000000;
    uint32_t mask = 1 << size - 1;
-   uint8_t count;
+   uint8_t index;
 
-   for(count = 0; count < size; count++){
+   for(index = 0; index < size; index++){
       returnBits <<= 1;
       returnBits |= sdCardExchangeBit(!!(bits & mask));
       bits <<= 1;
@@ -519,9 +508,9 @@ uint32_t sdCardExchangeXBitsOptimized(uint32_t bits, uint8_t size){
 
                default:{
                      //slow method
-                     uint8_t count;
+                     uint8_t index;
 
-                     for(count = 0; count < size; count++){
+                     for(index = 0; index < size; index++){
                         returnBits <<= 1;
                         returnBits |= sdCardResponseFifoReadBit();
                      }
@@ -536,10 +525,10 @@ uint32_t sdCardExchangeXBitsOptimized(uint32_t bits, uint8_t size){
 
             if(alignedProperly && currentByte > 0 && currentByte + size / 8 < SD_CARD_BLOCK_DATA_PACKET_SIZE - 1){
                //byte aligned in the middle of a data packet, can just copy data over
-               uint8_t count;
+               uint8_t index;
 
-               for(count = 0; count < size / 8; count++){
-                  palmSdCard.runningCommandPacket[currentByte] = bits >> (size - 8) - (count * 8) & 0xFF;
+               for(index = 0; index < size / 8; index++){
+                  palmSdCard.runningCommandPacket[currentByte] = bits >> (size - 8) - (index * 8) & 0xFF;
                   palmSdCard.runningCommandVars[2] += 8;
                   currentByte++;
                   returnBits <<= 8;

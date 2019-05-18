@@ -28,9 +28,9 @@ static uint8_t sdCardResponseFifoReadByteOptimized(void){
       case 1:{
             //unsafe, use slow mode
             uint8_t byte = 0x00;
-            uint8_t count;
+            uint8_t index;
 
-            for(count = 0; count < 8; count++){
+            for(index = 0; index < 8; index++){
                byte <<= 1;
                byte |= sdCardResponseFifoReadBit();
             }

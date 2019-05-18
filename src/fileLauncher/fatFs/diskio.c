@@ -1,17 +1,16 @@
-/*-----------------------------------------------------------------------*/
-/* Low level disk I/O module skeleton for FatFs     (C)ChaN, 2016        */
-/*-----------------------------------------------------------------------*/
-/* If a working storage control module is available, it should be        */
-/* attached to the FatFs via a glue function rather than modifying it.   */
-/* This is an example of glue functions to attach various exsisting      */
-/* storage control modules to the FatFs module with a defined API.       */
-/*-----------------------------------------------------------------------*/
+#include "ff.h"
+#include "diskio.h"
 
-#include "ff.h"			/* Obtains integer types */
-#include "diskio.h"		/* Declarations of disk functions */
+#include <stdbool.h>
+#include <string.h>
+#include "../../emulator.h"
 
-/* Definitions of physical drive number for each drive */
+
 #define DEV_RAM		0
+#define PALM_SD_CARD_SECTOR_SIZE 512
+
+
+static bool cardInitalized = false;
 
 
 /*-----------------------------------------------------------------------*/
@@ -22,11 +21,10 @@ DSTATUS disk_status (
 	BYTE pdrv		/* Physical drive nmuber to identify the drive */
 )
 {
-   if(pdrv == DEV_RAM){
+   if(pdrv == DEV_RAM)
+      return cardInitalized ? 0x00 : STA_NOINIT;
 
-   }
-
-	return STA_NOINIT;
+   return STA_NOINIT;
 }
 
 
@@ -40,7 +38,9 @@ DSTATUS disk_initialize (
 )
 {
    if(pdrv == DEV_RAM){
-
+      memset(palmSdCard.flashChipData, 0x00, palmSdCard.flashChipSize);
+      cardInitalized = true;
+      return 0x00;
    }
 
 	return STA_NOINIT;
@@ -60,7 +60,11 @@ DRESULT disk_read (
 )
 {
    if(pdrv == DEV_RAM){
+      if(!(sector * PALM_SD_CARD_SECTOR_SIZE + PALM_SD_CARD_SECTOR_SIZE < palmSdCard.flashChipSize))
+         return RES_ERROR;
 
+      memcpy(buff, palmSdCard.flashChipData + sector * PALM_SD_CARD_SECTOR_SIZE, count * PALM_SD_CARD_SECTOR_SIZE);
+      return RES_OK;
    }
 
 	return RES_PARERR;
@@ -82,7 +86,11 @@ DRESULT disk_write (
 )
 {
    if(pdrv == DEV_RAM){
+      if(!(sector * PALM_SD_CARD_SECTOR_SIZE + PALM_SD_CARD_SECTOR_SIZE < palmSdCard.flashChipSize))
+         return RES_ERROR;
 
+      memcpy(palmSdCard.flashChipData + sector * PALM_SD_CARD_SECTOR_SIZE, buff, count * PALM_SD_CARD_SECTOR_SIZE);
+      return RES_OK;
    }
 
 	return RES_PARERR;
@@ -102,7 +110,8 @@ DRESULT disk_ioctl (
 )
 {
    if(pdrv == DEV_RAM){
-
+      //RAM has no ioctls
+      return RES_PARERR;
    }
 
 	return RES_PARERR;

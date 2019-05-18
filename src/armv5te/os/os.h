@@ -13,7 +13,7 @@ extern "C" {
 int iOS_is_debugger_attached();
 #endif
 
-#if !defined(__x86_64__) && (defined(_WIN32) || defined(WIN32))
+#if !defined(__x86_64__) && !defined(NO_TRANSLATION) && (defined(_WIN32) || defined(WIN32))
 #define OS_HAS_PAGEFAULT_HANDLER 1
 #else
 #define OS_HAS_PAGEFAULT_HANDLER 0

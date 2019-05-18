@@ -73,6 +73,7 @@ private slots:
    void on_stateManager_clicked();
    void on_reset_clicked();
    void on_settings_clicked();
+   void on_bootApp_clicked();
 
 private:
    SettingsManager* settingsManager;

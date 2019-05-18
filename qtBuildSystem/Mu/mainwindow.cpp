@@ -110,6 +110,7 @@ MainWindow::MainWindow(QWidget* parent) :
    ui->settings->installEventFilter(this);
    ui->debugInstall->installEventFilter(this);
    ui->debugger->installEventFilter(this);
+   ui->bootApp->installEventFilter(this);
 
    //hide onscreen keys if needed
    ui->up->setHidden(hideOnscreenKeys);
@@ -337,6 +338,7 @@ void MainWindow::on_ctrlBtn_clicked(){
          ui->stateManager->setEnabled(true);
          ui->debugger->setEnabled(true);
          ui->reset->setEnabled(true);
+         ui->bootApp->setEnabled(true);
 
          ui->ctrlBtn->setIcon(QIcon(":/buttons/images/pause.svg"));
       }
@@ -358,7 +360,7 @@ void MainWindow::on_ctrlBtn_clicked(){
 
 void MainWindow::on_debugInstall_clicked(){
    if(emu.isInited()){
-      QString app = QFileDialog::getOpenFileName(this, "Select Application", QDir::root().path(), "Palm OS App (*.prc *.pdb *.pqa)");
+      QString app = QFileDialog::getOpenFileName(this, "Select File", QDir::root().path(), "Palm OS File (*.prc *.pdb *.pqa)");
 
       if(app != ""){
          uint32_t error = emu.debugInstallApplication(app);
@@ -425,4 +427,17 @@ void MainWindow::on_settings_clicked(){
 
    if(wasInited && !wasPaused)
       emu.resume();
+}
+
+void MainWindow::on_bootApp_clicked(){
+   if(emu.isInited()){
+      QString app = QFileDialog::getOpenFileName(this, "Select Application", QDir::root().path(), "Palm OS Executable File (*.prc *.pqa *.zip)");
+
+      if(app != ""){
+         uint32_t error = emu.bootFromFileList(QStringList(app));
+
+         if(error != EMU_ERROR_NONE)
+            popupErrorDialog("Could not run app, Error:" + QString::number(error));
+      }
+   }
 }

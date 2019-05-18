@@ -26,6 +26,7 @@ void os_free(void *ptr, size_t size)
     VirtualFree(ptr, 0, MEM_RELEASE);
 }
 
+#if OS_HAS_PAGEFAULT_HANDLER
 void *os_commit(void *addr, size_t size)
 {
     return VirtualAlloc(addr, size, MEM_COMMIT, PAGE_READWRITE);
@@ -41,12 +42,14 @@ void os_sparse_decommit(void *page, size_t size)
     VirtualFree(page, size, MEM_DECOMMIT);
     return;
 }
+#endif
 
 void *os_alloc_executable(size_t size)
 {
     return VirtualAlloc(NULL, size, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE);
 }
 
+#if OS_HAS_PAGEFAULT_HANDLER
 static int addr_cache_exception(PEXCEPTION_RECORD er, void *x, void *y, void *z) {
     (void) x; (void) y; (void) z;
     if (er->ExceptionCode == EXCEPTION_ACCESS_VIOLATION) {
@@ -55,6 +58,7 @@ static int addr_cache_exception(PEXCEPTION_RECORD er, void *x, void *y, void *z)
     }
     return 1; // Continue search
 }
+#endif
 
 void addr_cache_init() {
     // Don't run more than once
@@ -63,22 +67,28 @@ void addr_cache_init() {
 
     DWORD flags = MEM_RESERVE;
 
-#ifndef NDEBUG
+#if defined(AC_FLAGS)
     // Commit memory to not trigger segfaults which make debugging a PITA
     flags |= MEM_COMMIT;
 #endif
 
     addr_cache = VirtualAlloc(NULL, AC_NUM_ENTRIES * sizeof(ac_entry), flags, PAGE_READWRITE);
+    if(!addr_cache){
+       printf("Cant allocate addr_cache!\n");
+       exit(1);
+    }
 
-#ifndef NDEBUG
-    // Without segfaults we have to invalidate everything here
+#if !defined(AC_FLAGS)
     unsigned int i;
-    for(i = 0; i < AC_NUM_ENTRIES; ++i)
+    for(unsigned int i = 0; i < AC_NUM_ENTRIES; ++i)
     {
         AC_SET_ENTRY_INVALID(addr_cache[i], (i >> 1) << 10)
     }
+#else
+    memset(addr_cache, 0xFF, AC_NUM_ENTRIES * sizeof(ac_entry));
 #endif
 
+#if defined(__i386__) && !defined(NO_TRANSLATION)
     // Relocate the assembly code that wants addr_cache at a fixed address
     extern DWORD *ac_reloc_start[] __asm__("ac_reloc_start"), *ac_reloc_end[] __asm__("ac_reloc_end");
     DWORD **reloc;
@@ -88,8 +98,10 @@ void addr_cache_init() {
         **reloc += (DWORD)addr_cache;
         VirtualProtect(*reloc, 4, prot, &prot);
     }
+#endif
 }
 
+#if OS_HAS_PAGEFAULT_HANDLER
 void os_faulthandler_arm(os_exception_frame_t *frame)
 {
     assert(frame->prev == NULL);
@@ -106,16 +118,19 @@ void os_faulthandler_unarm(os_exception_frame_t *frame)
     asm ("movl %0, %%fs:(%1)" : : "r" (frame->prev), "r" (0));
     frame->prev = NULL;
 }
+#endif
 
 void addr_cache_deinit() {
     if(!addr_cache)
         return;
 
+#if defined(__i386__) && !defined(NO_TRANSLATION)
     // Undo the relocations
     extern DWORD *ac_reloc_start[] __asm__("ac_reloc_start"), *ac_reloc_end[] __asm__("ac_reloc_end");
     DWORD **reloc;
     for (reloc = ac_reloc_start; reloc != ac_reloc_end; reloc++)
         **reloc -= (DWORD)addr_cache;
+#endif
 
     VirtualFree(addr_cache, 0, MEM_RELEASE);
     addr_cache = NULL;
