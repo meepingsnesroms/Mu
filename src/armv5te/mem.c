@@ -58,14 +58,16 @@ void read_action(void *ptr) {
 
 void write_action(void *ptr) {
     // this is just debugging stuff
-    /*
     uint32_t addr = phys_mem_addr(ptr);
     uint32_t *flags = &RAM_FLAGS((size_t)ptr & ~3);
+    /*
+    // this is just debugging stuff
     if (*flags & RF_WRITE_BREAKPOINT) {
         if (!gdb_connected)
             emuprintf("Hit write breakpoint at %08x. Entering debugger.\n", addr);
         debugger(DBG_WRITE_BREAKPOINT, addr);
     }
+    */
 #ifndef NO_TRANSLATION
     if (*flags & RF_CODE_TRANSLATED) {
         logprintf(LOG_CPU, "Wrote to translated code at %08x. Deleting translations.\n", addr);
@@ -75,7 +77,6 @@ void write_action(void *ptr) {
     }
     *flags &= ~RF_CODE_EXECUTED;
 #endif
-    */
 }
 
 /* 00000000, 10000000, A4000000: ROM and RAM */
