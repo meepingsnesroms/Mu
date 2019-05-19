@@ -420,6 +420,8 @@ uint16_t dbvzGetRegister16(uint32_t address){
          }
 
       case PLLFSR:
+         //test this hack again
+         registerArrayWrite16(PLLFSR, registerArrayRead16(PLLFSR) ^ 0x8000);
          return registerArrayRead16(PLLFSR);
 
       //32 bit registers accessed as 16 bit

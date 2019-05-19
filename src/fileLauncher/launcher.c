@@ -192,13 +192,21 @@ uint32_t launcherLaunch(launcher_file_t* files, uint32_t fileCount, uint8_t* sra
       //cant load a card image if an app has been loaded already
       if(applicationFileHasBeenLoaded && files[index].type == LAUNCHER_FILE_TYPE_IMG)
          return EMU_ERROR_INVALID_PARAMETER;
+
+      if(files[index].type == LAUNCHER_FILE_TYPE_IMG)
+         cardImageHasBeenLoaded = true;
+      else
+         applicationFileHasBeenLoaded = true;
       
       //there must be exactly 1 boot file
       if(files[index].boot){
-         if(!bootFileExists)
+         if(!bootFileExists){
             bootFileExists = true;
-         else
+            bootFileNum = index;
+         }
+         else{
             return EMU_ERROR_INVALID_PARAMETER;
+         }
       }
 
       totalSize += files[index].fileSize;
@@ -273,6 +281,7 @@ uint32_t launcherLaunch(launcher_file_t* files, uint32_t fileCount, uint8_t* sra
 
    emulatorSoftReset();
    
+   /*
    //execute frames until launch is completed(or failed with a time out)
    success = false;
    palmEmuFeatures.value = 'RUN0';
@@ -287,6 +296,7 @@ uint32_t launcherLaunch(launcher_file_t* files, uint32_t fileCount, uint8_t* sra
    //timed out
    if(!success)
       return EMU_ERROR_RESOURCE_LOCKED;
+   */
 
    //worked
    return EMU_ERROR_NONE;

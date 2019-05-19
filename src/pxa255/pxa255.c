@@ -198,7 +198,7 @@ void pxa255Execute(void){
     os_faulthandler_arm(&seh_frame);
 #endif
 
-   //TODO: need to set cycle_count_delta with the amout of opcodes to run
+   //TODO: need to set cycle_count_delta with the amount of opcodes to run
    cycle_count_delta = -500;//just a test value
 
    // clang segfaults with that, for an iOS build :(

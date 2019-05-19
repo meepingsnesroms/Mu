@@ -254,6 +254,8 @@ uint32_t EmuWrapper::bootFromFileOrDirectory(const QString& mainPath){
    launcher_file_t* files;
    QFile ramFile(mainPath + ".ram");
    QFile sdCardFile(mainPath + ".sd.img");
+   bool hasSaveRam;
+   bool hasSaveSdCard;
    int newestBootableFile = -1;
 
    if(!wasPaused)
@@ -349,16 +351,18 @@ uint32_t EmuWrapper::bootFromFileOrDirectory(const QString& mainPath){
    writeOutSaves();
 
    //its OK if these fail, the buffer will just be NULL, 0 if they do
-   ramFile.open(QFile::ReadOnly | QFile::ExistingOnly);
-   sdCardFile.open(QFile::ReadOnly | QFile::ExistingOnly);
+   hasSaveRam = ramFile.open(QFile::ReadOnly | QFile::ExistingOnly);
+   hasSaveSdCard = sdCardFile.open(QFile::ReadOnly | QFile::ExistingOnly);
 
-   error = launcherLaunch(files, paths.length(), (uint8_t*)ramFile.readAll().data(), ramFile.size(), (uint8_t*)sdCardFile.readAll().data(), sdCardFile.size());
+   error = launcherLaunch(files, paths.length(), hasSaveRam ? (uint8_t*)ramFile.readAll().data() : NULL, hasSaveRam ? ramFile.size() : 0, hasSaveSdCard ? (uint8_t*)sdCardFile.readAll().data() : NULL, hasSaveSdCard ? sdCardFile.size() : 0);
    if(error != EMU_ERROR_NONE)
       goto errorOccurred;
 
    //its OK if these fail
-   ramFile.close();
-   sdCardFile.close();
+   if(hasSaveRam)
+      ramFile.close();
+   if(hasSaveSdCard)
+      sdCardFile.close();
 
    //everything worked, set output save files
    emuRamFilePath = mainPath + ".ram";
