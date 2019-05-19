@@ -16,9 +16,7 @@ enum{
    LAUNCHER_FILE_TYPE_PRC,
    LAUNCHER_FILE_TYPE_PDB,
    LAUNCHER_FILE_TYPE_PQA,
-   LAUNCHER_FILE_TYPE_ZIP,
-   LAUNCHER_FILE_TYPE_IMG,
-   LAUNCHER_FILE_TYPE_INFO_IMG
+   LAUNCHER_FILE_TYPE_IMG
 };
 
 typedef struct{
@@ -26,15 +24,16 @@ typedef struct{
    bool     boot;//if set will be the application that is launched
    uint8_t* fileData;
    uint32_t fileSize;
-   void*    info;//only used with LAUNCHER_FILE_TYPE_INFO_IMG right now, sd_card_info_t*
-}file_t;
+   uint8_t* infoData;//only used with LAUNCHER_FILE_TYPE_IMG right now
+   uint32_t infoSize;
+}launcher_file_t;
 
 extern bool launcherSaveSdCardImage;//false if loading a read only SD card image
 
 /*
 the launcher is called after emulatorInit when its enabled
 the order is:
-uint8_t* files[...];
+launcher_file_t* files[...];
 uint32_t fileCount;
 uint8_t* saveData = NULL;
 uint32_t saveSize = 0;
@@ -51,7 +50,7 @@ if(error)
 //its now safe to call emulatorFrame for frames
 */
 //if first launch NULL should be passed for sramData and sdCardData
-uint32_t launcherLaunch(file_t* files, uint32_t fileCount, uint8_t* sramData, uint32_t sramSize, uint8_t* sdCardData, uint32_t sdCardSize);
+uint32_t launcherLaunch(launcher_file_t* files, uint32_t fileCount, uint8_t* sramData, uint32_t sramSize, uint8_t* sdCardData, uint32_t sdCardSize);
    
 #ifdef __cplusplus
 }

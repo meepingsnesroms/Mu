@@ -1,6 +1,8 @@
 #include <QString>
+#include <QVector>
 #include <QPixmap>
 #include <QImage>
+#include <QDir>
 #include <QFile>
 #include <QFileInfo>
 #include <QByteArray>
@@ -11,7 +13,6 @@
 #include <new>
 #include <chrono>
 #include <thread>
-#include <vector>
 #include <string>
 #include <stdint.h>
 
@@ -30,10 +31,10 @@ extern "C"{
 
 static bool alreadyExists = false;//there can only be one of this class since it wrappers C code
 
-static std::vector<QString>  debugStrings;
-static std::vector<uint64_t> duplicateCallCount;
-uint32_t                     frontendDebugStringSize;
-char*                        frontendDebugString;
+static QVector<QString>  debugStrings;
+static QVector<uint64_t> duplicateCallCount;
+uint32_t                 frontendDebugStringSize;
+char*                    frontendDebugString;
 
 
 void frontendHandleDebugPrint(){
@@ -256,31 +257,62 @@ void EmuWrapper::reset(bool hard){
    }
 }
 
-uint32_t EmuWrapper::bootFromFileList(const QStringList& paths){
+uint32_t EmuWrapper::bootFromFileOrDirectory(const QString& mainPath){
    bool wasPaused = isPaused();
    uint32_t error = EMU_ERROR_NONE;
-   QByteArray* fileDataBuffers = new QByteArray[paths.length()];
-   QByteArray infoBuffer;
-   file_t* files = new file_t[paths.length()];
-   sd_card_info_t cardInfo;
-   int32_t newestBootableFile = -1;
+   QFileInfo pathInfo(mainPath);
+   QStringList paths;
+   QVector<QByteArray> fileDataBuffers;
+   QVector<QByteArray> fileInfoBuffers;
+   launcher_file_t* files;
+   int newestBootableFile = -1;
 
    if(!wasPaused)
       pause();
 
-   memset(files, 0x00, sizeof(file_t) * paths.length());
+   if(pathInfo.isDir()){
+      //get Palm file list
+      QDir dirInfo(mainPath);
+      QStringList filters;
 
-   for(int32_t index = 0; index < paths.length(); index++){
+      filters += "*.prc";
+      filters += "*.pdb";
+      filters += "*.pqa";
+      filters += "*.img";
+
+      paths = dirInfo.entryList(filters);
+
+      //make paths full direct paths
+      for(int index = 0; index < paths.length(); index++)
+         paths[index].prepend(mainPath + "/");
+   }
+   else if(pathInfo.exists()){
+      //use single file
+      paths = QStringList(mainPath);
+   }
+   else{
+      //error
+      error = EMU_ERROR_INVALID_PARAMETER;
+      goto errorOccurred;
+   }
+
+   fileDataBuffers.resize(paths.length());
+   fileInfoBuffers.resize(paths.length());
+   files = new launcher_file_t[paths.length()];
+
+   memset(files, 0x00, sizeof(launcher_file_t) * paths.length());
+
+   for(int index = 0; index < paths.length(); index++){
       QFile appFile(paths[index]);
 
       if(appFile.open(QFile::ReadOnly)){
          QString suffix = QFileInfo(paths[index]).suffix().toLower();
 
-         *fileDataBuffers = appFile.readAll();
+         fileDataBuffers[index] = appFile.readAll();
          appFile.close();
 
-         files[index].fileData = (uint8_t*)fileDataBuffers->data();
-         files[index].fileSize = fileDataBuffers->size();
+         files[index].fileData = (uint8_t*)fileDataBuffers[index].data();
+         files[index].fileSize = fileDataBuffers[index].size();
 
          if(suffix == "prc"){
             files[index].type = LAUNCHER_FILE_TYPE_PRC;
@@ -293,15 +325,16 @@ uint32_t EmuWrapper::bootFromFileList(const QStringList& paths){
             files[index].type = LAUNCHER_FILE_TYPE_PQA;
             newestBootableFile = index;
          }
-         else if(suffix == "zip"){
-            files[index].type = LAUNCHER_FILE_TYPE_ZIP;
-            newestBootableFile = index;
-         }
          else if(suffix == "img"){
-            //check for an info file
-            //TODO parse info file if it exists
-            //memset(&cardInfo, 0x00, sizeof(cardInfo));
-            //files[index].info = &cardInfo;
+            QFile infoFile(paths[index]);
+
+            if(infoFile.exists()){
+               if(infoFile.open(QFile::ReadOnly)){
+                  fileInfoBuffers[index] = infoFile.readAll();
+                  files[index].infoData = (uint8_t*)fileInfoBuffers[index].data();
+                  files[index].infoSize = fileInfoBuffers[index].size();
+               }
+            }
             files[index].type = LAUNCHER_FILE_TYPE_IMG;
             newestBootableFile = index;
          }
@@ -334,7 +367,6 @@ uint32_t EmuWrapper::bootFromFileList(const QStringList& paths){
    if(!wasPaused)
       resume();
 
-   delete[] fileDataBuffers;
    return error;
 }
 
@@ -454,11 +486,11 @@ uint32_t EmuWrapper::debugInstallApplication(const QString& path){
    return error;
 }
 
-std::vector<QString>& EmuWrapper::getDebugStrings(){
+QVector<QString>& EmuWrapper::getDebugStrings(){
    return debugStrings;
 }
 
-std::vector<uint64_t>& EmuWrapper::getDuplicateCallCount(){
+QVector<uint64_t>& EmuWrapper::getDuplicateCallCount(){
    return duplicateCallCount;
 }
 

@@ -1,11 +1,11 @@
 #include "debugviewer.h"
 #include "ui_debugviewer.h"
 
+#include <QVector>
 #include <QString>
 #include <QFile>
 #include <QDir>
 
-#include <vector>
 #include <stdint.h>
 
 #include "mainwindow.h"
@@ -133,8 +133,8 @@ void DebugViewer::on_debugShowRegisters_clicked(){
 
 void DebugViewer::on_debugShowDebugLogs_clicked(){
    EmuWrapper& emu = ((MainWindow*)parentWidget())->emu;
-   std::vector<QString>& debugStrings = emu.getDebugStrings();
-   std::vector<uint64_t>& duplicateCallCount = emu.getDuplicateCallCount();
+   QVector<QString>& debugStrings = emu.getDebugStrings();
+   QVector<uint64_t>& duplicateCallCount = emu.getDuplicateCallCount();
    int64_t length = numberFromString(ui->debugLength->text(), true/*negative allowed*/);
 
    ui->debugValueList->clear();

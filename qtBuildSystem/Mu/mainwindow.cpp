@@ -431,13 +431,13 @@ void MainWindow::on_settings_clicked(){
 
 void MainWindow::on_bootApp_clicked(){
    if(emu.isInited()){
-      QString app = QFileDialog::getOpenFileName(this, "Select Application", QDir::root().path(), "Palm OS Executable File (*.prc *.pqa *.zip)");
+      QString appDir = QFileDialog::getExistingDirectory(this, "Select Directory", QDir::root().path());
 
-      if(app != ""){
-         uint32_t error = emu.bootFromFileList(QStringList(app));
+      if(appDir != ""){
+         uint32_t error = emu.bootFromFileOrDirectory(appDir);
 
          if(error != EMU_ERROR_NONE)
-            popupErrorDialog("Could not run app, Error:" + QString::number(error));
+            popupErrorDialog("Could not load apps, Error:" + QString::number(error));
       }
    }
 }

@@ -1,12 +1,12 @@
 #pragma once
 
 #include <QPixmap>
+#include <QVector>
 #include <QString>
 #include <QByteArray>
 
 #include <thread>
 #include <atomic>
-#include <vector>
 #include <stdint.h>
 
 #include "../../src/emulator.h"
@@ -48,7 +48,7 @@ public:
    void pause();
    void resume();
    void reset(bool hard);
-   uint32_t bootFromFileList(const QStringList& paths);
+   uint32_t bootFromFileOrDirectory(const QString& mainPath);
    uint32_t saveState(const QString& path);
    uint32_t loadState(const QString& path);
    bool isInited() const{return emuInited;}
@@ -59,8 +59,8 @@ public:
 
    uint32_t debugInstallApplication(const QString& path);
 
-   std::vector<QString>& getDebugStrings();
-   std::vector<uint64_t>& getDuplicateCallCount();
+   QVector<QString>& getDebugStrings();
+   QVector<uint64_t>& getDuplicateCallCount();
    QString getCpuRegisterString();
 
    uint16_t screenWidth() const{return palmFramebufferWidth;}

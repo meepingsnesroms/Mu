@@ -110,8 +110,14 @@ DRESULT disk_ioctl (
 )
 {
    if(pdrv == DEV_RAM){
-      //RAM has no ioctls
-      return RES_PARERR;
+      switch(cmd){
+         case GET_BLOCK_SIZE:
+            *((uint32_t*)buff) = PALM_SD_CARD_SECTOR_SIZE;
+            return RES_OK;
+
+         default:
+            return RES_PARERR;
+      }
    }
 
 	return RES_PARERR;
