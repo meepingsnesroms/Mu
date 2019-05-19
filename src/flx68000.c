@@ -245,23 +245,8 @@ void flx68000LoadStateFinished(void){
 #endif
 }
 
-void flx68000Execute(void){
-   double cyclesRemaining = dbvzSysclksPerClk32;
-
-   dbvzBeginClk32();
-
-   while(cyclesRemaining >= 1.0){
-      double sysclks = floatMin(cyclesRemaining, DBVZ_SYSCLK_PRECISION);
-      int32_t cpuCycles = sysclks * pctlrCpuClockDivider * palmClockMultiplier;
-
-      if(cpuCycles > 0)
-         m68k_execute(cpuCycles);
-      dbvzAddSysclks(sysclks);
-
-      cyclesRemaining -= sysclks;
-   }
-
-   dbvzEndClk32();
+void flx68000Execute(int32_t cycles){
+   m68k_execute(cycles);
 }
 
 void flx68000SetIrq(uint8_t irqLevel){

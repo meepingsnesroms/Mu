@@ -175,7 +175,7 @@ extern double    palmClockMultiplier;//dont touch
 
 //functions
 uint32_t emulatorInit(uint8_t* palmRomData, uint32_t palmRomSize, uint8_t* palmBootloaderData, uint32_t palmBootloaderSize, uint32_t enabledEmuFeatures);
-void emulatorExit(void);
+void emulatorDeinit(void);
 void emulatorHardReset(void);
 void emulatorSoftReset(void);
 void emulatorSetRtc(uint16_t days, uint8_t hours, uint8_t minutes, uint8_t seconds);

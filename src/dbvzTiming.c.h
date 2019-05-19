@@ -306,9 +306,6 @@ void dbvzBeginClk32(void){
 }
 
 void dbvzEndClk32(void){
-   //currently using toggle on read hack
-   //registerArrayWrite16(PLLFSR, registerArrayRead16(PLLFSR) ^ 0x8000);
-
    //second position counter
    if(clk32Counter >= M515_CRYSTAL_FREQUENCY - 1){
       clk32Counter = 0;

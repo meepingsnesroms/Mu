@@ -190,7 +190,7 @@ uint32_t emulatorInit(uint8_t* palmRomData, uint32_t palmRomSize, uint8_t* palmB
    return EMU_ERROR_NONE;
 }
 
-void emulatorExit(void){
+void emulatorDeinit(void){
    if(emulatorInitialized){
 #if defined(EMU_SUPPORT_PALM_OS5)
       if(!palmEmulatingTungstenC){

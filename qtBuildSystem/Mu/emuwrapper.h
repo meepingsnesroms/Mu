@@ -27,6 +27,7 @@ private:
    input_t           emuInput;
 
    void emuThreadRun();
+   void writeOutSaves();
 
 public:
    enum{
@@ -57,12 +58,6 @@ public:
    void setPenValue(float x, float y, bool touched);
    void setKeyValue(uint8_t key, bool pressed);
 
-   uint32_t debugInstallApplication(const QString& path);
-
-   QVector<QString>& getDebugStrings();
-   QVector<uint64_t>& getDuplicateCallCount();
-   QString getCpuRegisterString();
-
    uint16_t screenWidth() const{return palmFramebufferWidth;}
    uint16_t screenHeight() const{return palmFramebufferHeight;}
    bool newFrameReady() const{return emuNewFrameReady;}
@@ -73,5 +68,9 @@ public:
    const int16_t* getAudioSamples() const{return palmAudio;}
    bool getPowerButtonLed() const{return palmMisc.powerButtonLed;}
 
-   uint64_t getEmulatorMemory(uint32_t address, uint8_t size);
+   QVector<QString>& debugGetLogEntrys();
+   QVector<uint64_t>& debugGetDuplicateLogEntryCount();
+   QString debugGetCpuRegisterString();
+   uint32_t debugInstallApplication(const QString& path);
+   uint64_t debugGetEmulatorMemory(uint32_t address, uint8_t size);
 };

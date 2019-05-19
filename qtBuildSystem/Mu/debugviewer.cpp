@@ -76,7 +76,7 @@ void DebugViewer::on_debugGetHexValues_clicked(){
 
    if(address != INT64_MIN && length != INT64_MIN && length != 0 && address + bits / 8 * length - 1 <= 0xFFFFFFFF){
       for(int64_t count = 0; count < length; count++){
-         uint64_t data = emu.getEmulatorMemory(address, bits);
+         uint64_t data = emu.debugGetEmulatorMemory(address, bits);
          QString value;
          value += QString::asprintf("0x%08X", (uint32_t)address);
          value += ":";
@@ -128,13 +128,13 @@ void DebugViewer::on_debugShowRegisters_clicked(){
    EmuWrapper& emu = ((MainWindow*)parentWidget())->emu;
 
    ui->debugValueList->clear();
-   ui->debugValueList->addItems(emu.getCpuRegisterString().split('\n'));
+   ui->debugValueList->addItems(emu.debugGetCpuRegisterString().split('\n'));
 }
 
 void DebugViewer::on_debugShowDebugLogs_clicked(){
    EmuWrapper& emu = ((MainWindow*)parentWidget())->emu;
-   QVector<QString>& debugStrings = emu.getDebugStrings();
-   QVector<uint64_t>& duplicateCallCount = emu.getDuplicateCallCount();
+   QVector<QString>& debugStrings = emu.debugGetLogEntrys();
+   QVector<uint64_t>& duplicateCallCount = emu.debugGetDuplicateLogEntryCount();
    int64_t length = numberFromString(ui->debugLength->text(), true/*negative allowed*/);
 
    ui->debugValueList->clear();
@@ -157,6 +157,6 @@ void DebugViewer::on_debugShowDebugLogs_clicked(){
 void DebugViewer::on_debugEraseDebugLogs_clicked(){
    EmuWrapper& emu = ((MainWindow*)parentWidget())->emu;
 
-   emu.getDebugStrings().clear();
-   emu.getDuplicateCallCount().clear();
+   emu.debugGetLogEntrys().clear();
+   emu.debugGetDuplicateLogEntryCount().clear();
 }

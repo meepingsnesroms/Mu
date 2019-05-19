@@ -10,7 +10,7 @@ void flx68000SaveState(uint8_t* data);
 void flx68000LoadState(uint8_t* data);
 void flx68000LoadStateFinished(void);
 
-void flx68000Execute(void);//runs the CPU for 1 CLK32 pulse
+void flx68000Execute(int32_t cycles);
 void flx68000SetIrq(uint8_t irqLevel);
 bool flx68000IsSupervisor(void);
 void flx68000BusError(uint32_t address, bool isWrite);

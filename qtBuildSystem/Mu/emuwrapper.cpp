@@ -29,6 +29,9 @@ extern "C"{
 }
 
 
+#define MAX_LOG_ENTRY_LENGTH 200
+
+
 static bool alreadyExists = false;//there can only be one of this class since it wrappers C code
 
 static QVector<QString>  debugStrings;
@@ -68,8 +71,8 @@ EmuWrapper::EmuWrapper(){
    emuPaused = false;
    emuNewFrameReady = false;
 
-   frontendDebugString = new char[200];
-   frontendDebugStringSize = 200;
+   frontendDebugString = new char[MAX_LOG_ENTRY_LENGTH];
+   frontendDebugStringSize = MAX_LOG_ENTRY_LENGTH;
 }
 
 EmuWrapper::~EmuWrapper(){
@@ -80,6 +83,9 @@ EmuWrapper::~EmuWrapper(){
    frontendDebugStringSize = 0;
    debugStrings.clear();
    duplicateCallCount.clear();
+
+   //allow creating a new emu class after the old one is closed
+   alreadyExists = false;
 }
 
 void EmuWrapper::emuThreadRun(){
@@ -100,34 +106,54 @@ void EmuWrapper::emuThreadRun(){
    }
 }
 
+void EmuWrapper::writeOutSaves(){
+   if(emuRamFilePath != ""){
+      QFile ramFile(emuRamFilePath);
+      uint32_t emuRamSize = emulatorGetRamSize();
+      uint8_t* emuRamData = new uint8_t[emuRamSize];
+
+      emulatorSaveRam(emuRamData, emuRamSize);
+
+      //save out RAM before exit
+      if(ramFile.open(QFile::WriteOnly | QFile::Truncate)){
+         ramFile.write((const char*)emuRamData, emuRamSize);
+         ramFile.close();
+      }
+
+      delete[] emuRamData;
+   }
+   if(emuSdCardFilePath != ""){
+      uint32_t emuSdCardSize = emulatorGetSdCardSize();
+      uint8_t* emuSdCardData = new uint8_t[emuSdCardSize];
+
+      if(emulatorGetSdCardData(emuSdCardData, emuSdCardSize) == EMU_ERROR_NONE){
+         QFile sdCardFile(emuSdCardFilePath);
+
+         //save out SD card before exit
+         if(sdCardFile.open(QFile::WriteOnly | QFile::Truncate)){
+            sdCardFile.write((const char*)emuSdCardData, emuSdCardSize);
+            sdCardFile.close();
+         }
+      }
+   }
+}
+
 uint32_t EmuWrapper::init(const QString& romPath, const QString& bootloaderPath, const QString& ramPath, const QString& sdCardPath, uint32_t features){
    if(!emuRunning && !emuInited){
       //start emu
       uint32_t error;
       QFile romFile(romPath);
       QFile bootloaderFile(bootloaderPath);
-      QByteArray romData;
-      QByteArray bootloaderData;
 
-      if(romFile.open(QFile::ReadOnly | QFile::ExistingOnly)){
-         romData = romFile.readAll();
-         romFile.close();
-      }
-      else{
+      if(!romFile.open(QFile::ReadOnly | QFile::ExistingOnly))
          return EMU_ERROR_INVALID_PARAMETER;
-      }
 
       if(bootloaderPath != ""){
-         if(bootloaderFile.open(QFile::ReadOnly | QFile::ExistingOnly)){
-            bootloaderData = bootloaderFile.readAll();
-            bootloaderFile.close();
-         }
-         else{
+         if(!bootloaderFile.open(QFile::ReadOnly | QFile::ExistingOnly))
             return EMU_ERROR_INVALID_PARAMETER;
-         }
       }
 
-      error = emulatorInit((uint8_t*)romData.data(), romData.size(), (uint8_t*)bootloaderData.data(), bootloaderData.size(), features);
+      error = emulatorInit((uint8_t*)romFile.readAll().data(), romFile.size(), (uint8_t*)bootloaderFile.readAll().data(), bootloaderFile.size(), features);
       if(error == EMU_ERROR_NONE){
          QTime now = QTime::currentTime();
 
@@ -136,33 +162,18 @@ uint32_t EmuWrapper::init(const QString& romPath, const QString& bootloaderPath,
          if(ramPath != ""){
             QFile ramFile(ramPath);
 
-            if(ramFile.exists()){
-               if(ramFile.open(QFile::ReadOnly | QFile::ExistingOnly)){
-                  QByteArray ramData;
-
-                  ramData = ramFile.readAll();
-                  ramFile.close();
-
-                  //only copy in data if its the correct size, the file will be overwritten on exit with the devices RAM either way
-                  //(changing RAM size requires a factory reset for now and always will when going from 128mb back to 16mb)
-                  if(ramData.size() == emulatorGetRamSize())
-                     emulatorLoadRam((uint8_t*)ramData.data(), ramData.size());
-               }
+            if(ramFile.open(QFile::ReadOnly | QFile::ExistingOnly)){
+               emulatorLoadRam((uint8_t*)ramFile.readAll().data(), ramFile.size());
+               ramFile.close();
             }
          }
 
          if(sdCardPath != ""){
             QFile sdCardFile(sdCardPath);
 
-            if(sdCardFile.exists()){
-               if(sdCardFile.open(QFile::ReadOnly | QFile::ExistingOnly)){
-                  QByteArray sdCardData;
-
-                  sdCardData = sdCardFile.readAll();
-                  sdCardFile.close();
-
-                  emulatorInsertSdCard((uint8_t*)sdCardData.data(), sdCardData.size(), NULL);
-               }
+            if(sdCardFile.open(QFile::ReadOnly | QFile::ExistingOnly)){
+               emulatorInsertSdCard((uint8_t*)sdCardFile.readAll().data(), sdCardFile.size(), NULL);
+               sdCardFile.close();
             }
          }
 
@@ -180,6 +191,10 @@ uint32_t EmuWrapper::init(const QString& romPath, const QString& bootloaderPath,
       else{
          return error;
       }
+
+      romFile.close();
+      if(bootloaderPath != "")
+         bootloaderFile.close();
    }
 
    return EMU_ERROR_NONE;
@@ -191,36 +206,8 @@ void EmuWrapper::exit(){
    if(emuThread.joinable())
       emuThread.join();
    if(emuInited){
-      if(emuRamFilePath != ""){
-         QFile ramFile(emuRamFilePath);
-         uint32_t emuRamSize = emulatorGetRamSize();
-         uint8_t* emuRamData = new uint8_t[emuRamSize];
-
-         emulatorSaveRam(emuRamData, emuRamSize);
-
-         //save out RAM before exit
-         if(ramFile.open(QFile::WriteOnly | QFile::Truncate)){
-            ramFile.write((const char*)emuRamData, emuRamSize);
-            ramFile.close();
-         }
-
-         delete[] emuRamData;
-      }
-      if(emuSdCardFilePath != ""){
-         uint32_t emuSdCardSize = emulatorGetSdCardSize();
-         uint8_t* emuSdCardData = new uint8_t[emuSdCardSize];
-
-         if(emulatorGetSdCardData(emuSdCardData, emuSdCardSize) == EMU_ERROR_NONE){
-            QFile sdCardFile(emuSdCardFilePath);
-
-            //save out SD card before exit
-            if(sdCardFile.open(QFile::WriteOnly | QFile::Truncate)){
-               sdCardFile.write((const char*)emuSdCardData, emuSdCardSize);
-               sdCardFile.close();
-            }
-         }
-      }
-      emulatorExit();
+      writeOutSaves();
+      emulatorDeinit();
    }
 }
 
@@ -265,6 +252,8 @@ uint32_t EmuWrapper::bootFromFileOrDirectory(const QString& mainPath){
    QVector<QByteArray> fileDataBuffers;
    QVector<QByteArray> fileInfoBuffers;
    launcher_file_t* files;
+   QFile ramFile(mainPath + ".ram");
+   QFile sdCardFile(mainPath + ".sd.img");
    int newestBootableFile = -1;
 
    if(!wasPaused)
@@ -305,7 +294,7 @@ uint32_t EmuWrapper::bootFromFileOrDirectory(const QString& mainPath){
    for(int index = 0; index < paths.length(); index++){
       QFile appFile(paths[index]);
 
-      if(appFile.open(QFile::ReadOnly)){
+      if(appFile.open(QFile::ReadOnly | QFile::ExistingOnly)){
          QString suffix = QFileInfo(paths[index]).suffix().toLower();
 
          fileDataBuffers[index] = appFile.readAll();
@@ -326,14 +315,13 @@ uint32_t EmuWrapper::bootFromFileOrDirectory(const QString& mainPath){
             newestBootableFile = index;
          }
          else if(suffix == "img"){
-            QFile infoFile(paths[index]);
+            QFile infoFile(paths[index].remove(paths[index].size() - 3, 3) + "info");//swap "img" for "info"
 
-            if(infoFile.exists()){
-               if(infoFile.open(QFile::ReadOnly)){
-                  fileInfoBuffers[index] = infoFile.readAll();
-                  files[index].infoData = (uint8_t*)fileInfoBuffers[index].data();
-                  files[index].infoSize = fileInfoBuffers[index].size();
-               }
+            if(infoFile.open(QFile::ReadOnly | QFile::ExistingOnly)){
+               fileInfoBuffers[index] = infoFile.readAll();
+               files[index].infoData = (uint8_t*)fileInfoBuffers[index].data();
+               files[index].infoSize = fileInfoBuffers[index].size();
+               infoFile.close();
             }
             files[index].type = LAUNCHER_FILE_TYPE_IMG;
             newestBootableFile = index;
@@ -357,9 +345,24 @@ uint32_t EmuWrapper::bootFromFileOrDirectory(const QString& mainPath){
       goto errorOccurred;
    }
 
-   //actually pass everything to the emu
-   //TODO actually hook up the save files
-   error = launcherLaunch(files, paths.length(), NULL, 0, NULL, 0);
+   //save the current data for the last program launched, or the standard device image if none where launched
+   writeOutSaves();
+
+   //its OK if these fail, the buffer will just be NULL, 0 if they do
+   ramFile.open(QFile::ReadOnly | QFile::ExistingOnly);
+   sdCardFile.open(QFile::ReadOnly | QFile::ExistingOnly);
+
+   error = launcherLaunch(files, paths.length(), (uint8_t*)ramFile.readAll().data(), ramFile.size(), (uint8_t*)sdCardFile.readAll().data(), sdCardFile.size());
+   if(error != EMU_ERROR_NONE)
+      goto errorOccurred;
+
+   //its OK if these fail
+   ramFile.close();
+   sdCardFile.close();
+
+   //everything worked, set output save files
+   emuRamFilePath = mainPath + ".ram";
+   emuSdCardFilePath = mainPath + ".sd.img";
 
    //need this goto because the emulator must be released before returning
    errorOccurred:
@@ -404,14 +407,11 @@ uint32_t EmuWrapper::loadState(const QString& path){
    if(!wasPaused)
       pause();
 
-   if(stateFile.open(QFile::ReadOnly)){
-      QByteArray stateDataBuffer;
-
-      stateDataBuffer = stateFile.readAll();
+   if(stateFile.open(QFile::ReadOnly | QFile::ExistingOnly)){
+      if(emulatorLoadState((uint8_t*)stateFile.readAll().data(), stateFile.size()))
+         error = EMU_ERROR_NONE;
       stateFile.close();
 
-      if(emulatorLoadState((uint8_t*)stateDataBuffer.data(), stateDataBuffer.size()))
-         error = EMU_ERROR_NONE;
    }
 
    if(!wasPaused)
@@ -461,40 +461,15 @@ void EmuWrapper::setKeyValue(uint8_t key, bool pressed){
    }
 }
 
-uint32_t EmuWrapper::debugInstallApplication(const QString& path){
-   bool wasPaused = isPaused();
-   uint32_t error = EMU_ERROR_INVALID_PARAMETER;
-   QFile appFile(path);
-
-   if(!wasPaused)
-      pause();
-
-   if(appFile.open(QFile::ReadOnly)){
-      QByteArray appDataBuffer = appFile.readAll();
-      uintptr_t values[2];
-
-      values[0] = (uintptr_t)appDataBuffer.data();
-      values[1] = appDataBuffer.size();
-
-      appFile.close();
-      error = sandboxCommand(SANDBOX_CMD_DEBUG_INSTALL_APP, values);
-   }
-
-   if(!wasPaused)
-      resume();
-
-   return error;
-}
-
-QVector<QString>& EmuWrapper::getDebugStrings(){
+QVector<QString>& EmuWrapper::debugGetLogEntrys(){
    return debugStrings;
 }
 
-QVector<uint64_t>& EmuWrapper::getDuplicateCallCount(){
+QVector<uint64_t>& EmuWrapper::debugGetDuplicateLogEntryCount(){
    return duplicateCallCount;
 }
 
-QString EmuWrapper::getCpuRegisterString(){
+QString EmuWrapper::debugGetCpuRegisterString(){
    QString regString = "";
 
 #if defined(EMU_SUPPORT_PALM_OS5)
@@ -519,6 +494,31 @@ QString EmuWrapper::getCpuRegisterString(){
    return regString;
 }
 
-uint64_t EmuWrapper::getEmulatorMemory(uint32_t address, uint8_t size){
+uint32_t EmuWrapper::debugInstallApplication(const QString& path){
+   bool wasPaused = isPaused();
+   uint32_t error = EMU_ERROR_INVALID_PARAMETER;
+   QFile appFile(path);
+
+   if(!wasPaused)
+      pause();
+
+   if(appFile.open(QFile::ReadOnly | QFile::ExistingOnly)){
+      QByteArray appDataBuffer = appFile.readAll();
+      uintptr_t values[2];
+
+      values[0] = (uintptr_t)appDataBuffer.data();
+      values[1] = appDataBuffer.size();
+
+      appFile.close();
+      error = sandboxCommand(SANDBOX_CMD_DEBUG_INSTALL_APP, values);
+   }
+
+   if(!wasPaused)
+      resume();
+
+   return error;
+}
+
+uint64_t EmuWrapper::debugGetEmulatorMemory(uint32_t address, uint8_t size){
    return flx68000ReadArbitraryMemory(address, size);
 }

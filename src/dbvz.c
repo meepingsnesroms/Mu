@@ -420,8 +420,6 @@ uint16_t dbvzGetRegister16(uint32_t address){
          }
 
       case PLLFSR:
-         //this is a hack, it makes the busy wait in HwrDelay finish instantly, prevents issues with the power button
-         registerArrayWrite16(PLLFSR, registerArrayRead16(PLLFSR) ^ 0x8000);
          return registerArrayRead16(PLLFSR);
 
       //32 bit registers accessed as 16 bit
@@ -1416,7 +1414,29 @@ void dbvzExecute(void){
    //CPU
    dbvzFrameClk32s = 0;
    for(; palmCycleCounter < (double)M515_CRYSTAL_FREQUENCY / EMU_FPS; palmCycleCounter += 1.0){
-      flx68000Execute();
+      uint8_t cpuTimeSegments;
+
+      dbvzBeginClk32();
+
+      for(cpuTimeSegments = 0; cpuTimeSegments < 2; cpuTimeSegments++){
+         double cyclesRemaining = dbvzSysclksPerClk32 / 2.0;
+
+         while(cyclesRemaining >= 1.0){
+            double sysclks = floatMin(cyclesRemaining, DBVZ_SYSCLK_PRECISION);
+            int32_t cpuCycles = sysclks * pctlrCpuClockDivider * palmClockMultiplier;
+
+            if(cpuCycles > 0)
+               flx68000Execute(cpuCycles);
+            dbvzAddSysclks(sysclks);
+
+            cyclesRemaining -= sysclks;
+         }
+
+         //toggle CLK32 bit in PLLFSR, it indicates the current state of CLK32 so it must start false and be changed to true in the middle of CLK32
+         registerArrayWrite16(PLLFSR, registerArrayRead16(PLLFSR) ^ 0x8000);
+      }
+
+      dbvzEndClk32();
       dbvzFrameClk32s++;
    }
    palmCycleCounter -= (double)M515_CRYSTAL_FREQUENCY / EMU_FPS;

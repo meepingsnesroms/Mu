@@ -16,6 +16,10 @@ add Palm Tungsten C support
 ------------------------------------------
 v1.0.0 to v1.1.0(Feb 25 2019 - Easter 2019)
 
+Core:
+*PLLFSR timing hack is gone, CLK32 bit now just toggles properly mid CLK32
+*SD card access routines are now 6<->7X faster
+
 Qt GUI:
 *can now set the feature bits
 *can now set the resource directory
