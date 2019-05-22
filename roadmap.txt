@@ -11,7 +11,7 @@ add Dragonball OG/EZ/VZ CPU builtin LCD controller support too muExpDriver, some
 v1.1.0 to v3.2.0(*** ** 2020 - *** ** 2020)
 
 Core:
-add Palm Tungsten C support
+add Palm Tungsten T3 support
 
 ------------------------------------------
 v1.0.0 to v1.1.0(Feb 25 2019 - Easter 2019)

@@ -158,7 +158,7 @@ support_palm_os5{
         ../../src/armv5te/thumb_interpreter.cpp \
         ../../src/armv5te/mem.c \
         ../../src/armv5te/mmu.c \
-        ../../src/tungstenCBus.c
+        ../../src/tungstenT3Bus.c
 
     HEADERS += \
         ../../src/pxa255/pxa255_CPU.h \
@@ -187,7 +187,7 @@ support_palm_os5{
         ../../src/armv5te/mmu.h \
         ../../src/armv5te/armsnippets.h \
         ../../src/armv5te/literalpool.h \
-        ../../src/tungstenCBus.h
+        ../../src/tungstenT3Bus.h
 }
 
 CONFIG += c++11

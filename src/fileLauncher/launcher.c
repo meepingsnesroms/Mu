@@ -7,6 +7,9 @@
 #include "fatFs/ff.h"
 
 
+#define LAUNCHER_SD_CARD_SIZE (32 * 0x100000) //SD card size for the default boot configuration
+#define LAUNCHER_BOOT_TIMEOUT 10 //in seconds
+
 bool launcherSaveSdCardImage;
 
 
@@ -15,7 +18,7 @@ static void launcherInstallPassMeM515(void){
 }
 
 #if defined(EMU_SUPPORT_PALM_OS5)
-static void launcherInstallPassMeTungstenC(void){
+static void launcherInstallPassMeTungstenT3(void){
    //works like PassMe on a DS, boots from a different slot
 }
 #endif
@@ -255,7 +258,10 @@ uint32_t launcherLaunch(launcher_file_t* files, uint32_t fileCount, uint8_t* sra
       }
       else{
          //load apps to new SD card image
-         error = emulatorInsertSdCard(NULL, totalSize, NULL);
+         if(totalSize > LAUNCHER_SD_CARD_SIZE)
+            return EMU_ERROR_OUT_OF_MEMORY;
+
+         error = emulatorInsertSdCard(NULL, LAUNCHER_SD_CARD_SIZE, NULL);
          if(error != EMU_ERROR_NONE)
             return error;
 
@@ -270,10 +276,10 @@ uint32_t launcherLaunch(launcher_file_t* files, uint32_t fileCount, uint8_t* sra
       emulatorLoadRam(sramData, sramSize);
    }
    else{
-      //install a pre specified RAM image for the current device(m515 or Tungsten C)needs to be decompressed into palmRam here
+      //install a pre specified RAM image for the current device(m515 or Tungsten T3)needs to be decompressed into palmRam here
 #if defined(EMU_SUPPORT_PALM_OS5)
-      if(palmEmulatingTungstenC)
-         launcherInstallPassMeTungstenC();
+      if(palmEmulatingTungstenT3)
+         launcherInstallPassMeTungstenT3();
       else
 #endif
          launcherInstallPassMeM515();
@@ -281,11 +287,10 @@ uint32_t launcherLaunch(launcher_file_t* files, uint32_t fileCount, uint8_t* sra
 
    emulatorSoftReset();
    
-   /*
    //execute frames until launch is completed(or failed with a time out)
    success = false;
-   palmEmuFeatures.value = 'RUN0';
-   for(index = 0; index < EMU_FPS * 10; index++){
+   palmEmuFeatures.value = cardImageHasBeenLoaded ? 'RUNC' : 'RUNA';
+   for(index = 0; index < EMU_FPS * LAUNCHER_BOOT_TIMEOUT; index++){
       emulatorRunFrame();
       if(palmEmuFeatures.value == 'STOP'){
          success = true;
@@ -296,7 +301,6 @@ uint32_t launcherLaunch(launcher_file_t* files, uint32_t fileCount, uint8_t* sra
    //timed out
    if(!success)
       return EMU_ERROR_RESOURCE_LOCKED;
-   */
 
    //worked
    return EMU_ERROR_NONE;

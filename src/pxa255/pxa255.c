@@ -15,14 +15,14 @@
 #include "../armv5te/mem.h"
 #include "../armv5te/os/os.h"
 #include "../armv5te/translate.h"
-#include "../tungstenCBus.h"
+#include "../tungstenT3Bus.h"
 #include "../emulator.h"
 
 
 #define PXA255_IO_BASE 0x40000000
 #define PXA255_MEMCTRL_BASE 0x48000000
 
-#define PXA255_TIMER_TICKS_PER_FRAME (TUNGSTEN_C_CPU_CRYSTAL_FREQUENCY / EMU_FPS)
+#define PXA255_TIMER_TICKS_PER_FRAME (TUNGSTEN_T3_CPU_CRYSTAL_FREQUENCY / EMU_FPS)
 
 
 uint16_t*         pxa255Framebuffer;
@@ -50,15 +50,15 @@ bool pxa255Init(uint8_t** returnRom, uint8_t** returnRam){
    //regions
    //ROM
    mem_areas[0].base = PXA255_ROM_START_ADDRESS;
-   mem_areas[0].size = TUNGSTEN_C_ROM_SIZE;
+   mem_areas[0].size = TUNGSTEN_T3_ROM_SIZE;
    mem_areas[0].ptr = mem_and_flags + mem_offset;
-   mem_offset += TUNGSTEN_C_ROM_SIZE;
+   mem_offset += TUNGSTEN_T3_ROM_SIZE;
 
    //RAM
    mem_areas[1].base = PXA255_RAM_START_ADDRESS;
-   mem_areas[1].size = TUNGSTEN_C_RAM_SIZE;
+   mem_areas[1].size = TUNGSTEN_T3_RAM_SIZE;
    mem_areas[1].ptr = mem_and_flags + mem_offset;
-   mem_offset += TUNGSTEN_C_RAM_SIZE;
+   mem_offset += TUNGSTEN_T3_RAM_SIZE;
 
    //memory regions that are not directly mapped to a buffer are not added to mem_areas
    //adding them will cause SIGSEGVs

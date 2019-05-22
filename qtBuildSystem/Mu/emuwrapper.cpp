@@ -477,7 +477,7 @@ QString EmuWrapper::debugGetCpuRegisterString(){
    QString regString = "";
 
 #if defined(EMU_SUPPORT_PALM_OS5)
-   if(palmEmulatingTungstenC){
+   if(palmEmulatingTungstenT3){
       for(uint8_t regs = 0; regs < 16; regs++)
          regString += QString::asprintf("R%d:0x%08X\n", regs, pxa255GetRegister(regs));
       regString.resize(regString.size() - 1);//remove extra '\n'

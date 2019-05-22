@@ -16,7 +16,7 @@ extern "C" {
 #include "specs/emuFeatureRegisterSpec.h"//for feature names
 
 //DEFINE INFO!!!
-//define EMU_SUPPORT_PALM_OS5 to compile in Tungsten C support(not reccomended for low power devices)
+//define EMU_SUPPORT_PALM_OS5 to compile in Tungsten T3 support(not reccomended for low power devices)
 //define EMU_MULTITHREADED to speed up long loops
 //define EMU_MANAGE_HOST_CPU_PIPELINE to optimize the CPU pipeline for the most common cases
 //define EMU_NO_SAFETY to remove all safety checks
@@ -57,14 +57,14 @@ static void debugLog(char* str, ...){};
 #define SD_CARD_NCR_BYTES 1//how many 0xFF bytes come before the R1 response
 #define SAVE_STATE_VERSION 0x00000001
 #if defined(EMU_SUPPORT_PALM_OS5)
-#define SAVE_STATE_FOR_TUNGSTEN_C 0x80000000
+#define SAVE_STATE_FOR_TUNGSTEN_T3 0x80000000
 #endif
 
 
 //system constants
 #if defined(EMU_SUPPORT_PALM_OS5)
-#define TUNGSTEN_C_CPU_CRYSTAL_FREQUENCY 3686400
-#define TUNGSTEN_C_RTC_CRYSTAL_FREQUENCY 32768
+#define TUNGSTEN_T3_CPU_CRYSTAL_FREQUENCY 3686400
+#define TUNGSTEN_T3_RTC_CRYSTAL_FREQUENCY 32768
 #endif
 #define M515_CRYSTAL_FREQUENCY 32768
 #define AUDIO_SAMPLES_PER_FRAME (AUDIO_SAMPLE_RATE / EMU_FPS)
@@ -157,7 +157,7 @@ typedef struct{
 
 //emulator data, some are GUI interface variables, some should be left alone
 #if defined(EMU_SUPPORT_PALM_OS5)
-extern bool      palmEmulatingTungstenC;//read allowed, but not advised
+extern bool      palmEmulatingTungstenT3;//read allowed, but not advised
 #endif
 extern uint8_t*  palmRom;//dont touch
 extern uint8_t*  palmRam;//access allowed to read save RAM without allocating a giant buffer, but endianness must be taken into account
