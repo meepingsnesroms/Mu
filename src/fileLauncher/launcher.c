@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdlib.h>
 
 #include "../emulator.h"
 #include "../portability.h"
@@ -7,7 +8,7 @@
 #include "fatFs/ff.h"
 
 
-#define LAUNCHER_SD_CARD_SIZE (32 * 0x100000) //SD card size for the default boot configuration
+#define LAUNCHER_SD_CARD_SIZE (16 * 0x100000) //SD card size for the default boot configuration
 #define LAUNCHER_BOOT_TIMEOUT 10 //in seconds
 
 bool launcherSaveSdCardImage;
@@ -46,7 +47,7 @@ static uint32_t launcherMakeBootRecord(const char* appName){
    FRESULT result;
    uint32_t written;
 
-   result = f_open(&record, "0/PASSME/BOOT.TXT", FA_WRITE | FA_CREATE_ALWAYS);
+   result = f_open(&record, "0:/PASSME/BOOT.TXT", FA_WRITE | FA_CREATE_ALWAYS);
    if(result != FR_OK)
       return EMU_ERROR_UNKNOWN;
 
@@ -67,7 +68,7 @@ static uint32_t launcherCopyPrcPdbPqaToSdCard(launcher_file_t* file, uint32_t* f
    FRESULT result;
    uint32_t written;
 
-   sprintf(name, "0/PASSME/%d.%s", *fileId, launcherGetFileExtension(file->type));
+   sprintf(name, "0:/PASSME/%d.%s", *fileId, launcherGetFileExtension(file->type));
 
    result = f_open(&application, name, FA_WRITE | FA_CREATE_ALWAYS);
    if(result != FR_OK)
@@ -101,17 +102,26 @@ static uint32_t launcherCopyPrcPdbPqaToSdCard(launcher_file_t* file, uint32_t* f
 
 static uint32_t launcherSetupSdCardImageFromApps(launcher_file_t* files, uint32_t fileCount){
    uint32_t fileId = 0;//first file is named 0.p**, next is 1.p**, and the name continues going up with the file count
+   FATFS* fsData;
    FRESULT result;
    uint32_t error;
    uint32_t index;
 
    //setup filesystem
-   result = f_mkfs("0", FM_FAT, 4096, NULL, 0);
+   result = f_mkfs("0:/", FM_FAT, SD_CARD_BLOCK_SIZE, NULL, 0);
+   if(result != FR_OK)
+      return EMU_ERROR_UNKNOWN;
+
+   fsData = malloc(sizeof(FATFS));
+   if(!fsData)
+      return EMU_ERROR_OUT_OF_MEMORY;
+
+   result = f_mount(fsData, "0:/", 1);
    if(result != FR_OK)
       return EMU_ERROR_UNKNOWN;
 
    //setup directory
-   result = f_mkdir("0/PASSME");
+   result = f_mkdir("0:/PASSME");
    if(result != FR_OK)
       return EMU_ERROR_UNKNOWN;
 
@@ -133,6 +143,9 @@ static uint32_t launcherSetupSdCardImageFromApps(launcher_file_t* files, uint32_
       if(error != EMU_ERROR_NONE)
          return error;
    }
+
+   f_unmount("0:/");
+   free(fsData);
 
    return EMU_ERROR_NONE;
 }
@@ -287,6 +300,8 @@ uint32_t launcherLaunch(launcher_file_t* files, uint32_t fileCount, uint8_t* sra
 
    emulatorSoftReset();
    
+   //leave this off until I make the PassMe program
+   /*
    //execute frames until launch is completed(or failed with a time out)
    success = false;
    palmEmuFeatures.value = cardImageHasBeenLoaded ? 'RUNC' : 'RUNA';
@@ -301,6 +316,7 @@ uint32_t launcherLaunch(launcher_file_t* files, uint32_t fileCount, uint8_t* sra
    //timed out
    if(!success)
       return EMU_ERROR_RESOURCE_LOCKED;
+   */
 
    //worked
    return EMU_ERROR_NONE;

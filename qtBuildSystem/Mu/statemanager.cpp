@@ -15,7 +15,7 @@
 StateManager::StateManager(QWidget* parent) :
    QDialog(parent),
    ui(new Ui::StateManager){
-   settings = ((MainWindow*)parent)->settings;
+   emu = &((MainWindow*)parent)->emu;
 
    //init GUI
    ui->setupUi(this);
@@ -39,8 +39,7 @@ bool StateManager::eventFilter(QObject* object, QEvent* event){
 }
 
 void StateManager::updateStateList(){
-   QString saveDirPath = settings->value("resourceDirectory", "").toString() + "/saveStates";
-   QDir saveDir(saveDirPath);
+   QDir saveDir(emu->getStatePath());
    QStringList saveStateNames;
    QStringList filter;
 
@@ -60,7 +59,7 @@ void StateManager::updateStateList(){
 
 void StateManager::updateStatePreview(){
    if(ui->states->currentItem()){
-      QString statePath = settings->value("resourceDirectory", "").toString() + "/saveStates/" + ui->states->currentItem()->text();
+      QString statePath = emu->getStatePath() + "/" + ui->states->currentItem()->text();
 
       ui->statePreview->setPixmap(QPixmap(statePath + ".png").scaled(ui->statePreview->width() * 0.98, ui->statePreview->height() * 0.98, Qt::KeepAspectRatio, Qt::SmoothTransformation));
    }
@@ -83,9 +82,9 @@ int StateManager::getStateIndexRowByName(const QString& name){
 void StateManager::on_saveState_clicked(){
    if(ui->newStateName->text() != ""){
       MainWindow* parent = (MainWindow*)parentWidget();
-      QString statePath = settings->value("resourceDirectory", "").toString() + "/saveStates/" + ui->newStateName->text();
+      QString statePath = emu->getStatePath() + "/" + ui->newStateName->text();
 
-      parent->emu.saveState(statePath + ".state");
+      parent->emu.saveState(ui->newStateName->text());
       parent->emu.getFramebuffer().save(statePath + ".png");
       updateStateList();
 
@@ -96,15 +95,15 @@ void StateManager::on_saveState_clicked(){
 void StateManager::on_loadState_clicked(){
    if(ui->states->currentItem()){
       MainWindow* parent = (MainWindow*)parentWidget();
-      QString statePath = settings->value("resourceDirectory", "").toString() + "/saveStates/" + ui->states->currentItem()->text();
+      QString statePath = emu->getStatePath() + "/" + ui->states->currentItem()->text();
 
-      parent->emu.loadState(statePath + ".state");
+      parent->emu.loadState(ui->states->currentItem()->text());
    }
 }
 
 void StateManager::on_deleteState_clicked(){
    if(ui->states->currentItem()){
-      QString statePath = settings->value("resourceDirectory", "").toString() + "/saveStates/" + ui->states->currentItem()->text();
+      QString statePath = emu->getStatePath() + "/" + ui->states->currentItem()->text();
 
       QFile(statePath + ".state").remove();
       QFile(statePath + ".png").remove();

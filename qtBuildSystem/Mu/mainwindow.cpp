@@ -162,7 +162,6 @@ void MainWindow::createHomeDirectoryTree(const QString& path){
 
    //creates directorys if not present, does nothing if they exist already
    homeDir.mkpath(".");
-   homeDir.mkpath("./saveStates");
    homeDir.mkpath("./screenshots");
    homeDir.mkpath("./debugDumps");
 }
@@ -320,7 +319,7 @@ void MainWindow::on_ctrlBtn_clicked(){
    if(!emu.isInited()){
       uint32_t enabledFeatures = getEmuFeatureList();
       QString sysDir = settings->value("resourceDirectory", "").toString();
-      uint32_t error = emu.init(sysDir + "/palmos41-en-m515.rom", QFile(sysDir + "/bootloader-en-m515.rom").exists() ? sysDir + "/bootloader-en-m515.rom" : "", sysDir + "/userdata-en-m515.ram", sysDir + "/sd-en-m515.img", enabledFeatures);
+      uint32_t error = emu.init(sysDir, "en-m515", "41", enabledFeatures);
 
       if(error == EMU_ERROR_NONE){
          ui->up->setEnabled(true);
@@ -431,13 +430,24 @@ void MainWindow::on_settings_clicked(){
 
 void MainWindow::on_bootApp_clicked(){
    if(emu.isInited()){
-      QString appDir = QFileDialog::getExistingDirectory(this, "Select Directory", QDir::root().path());
+      QString appDir;
+      bool loadedNewApp = false;
+      bool wasPaused = emu.isPaused();
 
+      if(!wasPaused)
+         emu.pause();
+
+      appDir = QFileDialog::getExistingDirectory(this, "Select Directory", QDir::root().path());
       if(appDir != ""){
          uint32_t error = emu.bootFromFileOrDirectory(appDir);
 
-         if(error != EMU_ERROR_NONE)
+         if(error == EMU_ERROR_NONE)
+            loadedNewApp = true;
+         else
             popupErrorDialog("Could not load apps, Error:" + QString::number(error));
       }
+
+      if(!wasPaused || loadedNewApp)
+         emu.resume();
    }
 }

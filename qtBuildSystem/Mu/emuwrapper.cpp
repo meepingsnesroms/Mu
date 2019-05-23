@@ -138,48 +138,45 @@ void EmuWrapper::writeOutSaves(){
    }
 }
 
-uint32_t EmuWrapper::init(const QString& romPath, const QString& bootloaderPath, const QString& ramPath, const QString& sdCardPath, uint32_t features){
+uint32_t EmuWrapper::init(const QString& assetPath, const QString& model, const QString& osVersion, uint32_t features){
    if(!emuRunning && !emuInited){
       //start emu
       uint32_t error;
-      QFile romFile(romPath);
-      QFile bootloaderFile(bootloaderPath);
+      QFile romFile(assetPath + "/palmos" + osVersion + "-" + model + ".rom");
+      QFile bootloaderFile(assetPath + "/bootloader-" + model + ".rom");
+      QFile ramFile(assetPath + "/userdata-" + model + ".ram");
+      QFile sdCardFile(assetPath + "/sd-" + model + ".img");
+      bool hasBootloader = true;
 
       if(!romFile.open(QFile::ReadOnly | QFile::ExistingOnly))
          return EMU_ERROR_INVALID_PARAMETER;
 
-      if(bootloaderPath != ""){
-         if(!bootloaderFile.open(QFile::ReadOnly | QFile::ExistingOnly))
-            return EMU_ERROR_INVALID_PARAMETER;
-      }
+      if(!bootloaderFile.open(QFile::ReadOnly | QFile::ExistingOnly))
+         hasBootloader = false;
 
-      error = emulatorInit((uint8_t*)romFile.readAll().data(), romFile.size(), (uint8_t*)bootloaderFile.readAll().data(), bootloaderFile.size(), features);
+      error = emulatorInit((uint8_t*)romFile.readAll().data(), romFile.size(), hasBootloader ? (uint8_t*)bootloaderFile.readAll().data() : NULL, hasBootloader ? bootloaderFile.size() : 0, features);
       if(error == EMU_ERROR_NONE){
          QTime now = QTime::currentTime();
 
          emulatorSetRtc(QDate::currentDate().day(), now.hour(), now.minute(), now.second());
 
-         if(ramPath != ""){
-            QFile ramFile(ramPath);
-
-            if(ramFile.open(QFile::ReadOnly | QFile::ExistingOnly)){
-               emulatorLoadRam((uint8_t*)ramFile.readAll().data(), ramFile.size());
-               ramFile.close();
-            }
+         if(ramFile.open(QFile::ReadOnly | QFile::ExistingOnly)){
+            emulatorLoadRam((uint8_t*)ramFile.readAll().data(), ramFile.size());
+            ramFile.close();
          }
 
-         if(sdCardPath != ""){
-            QFile sdCardFile(sdCardPath);
-
-            if(sdCardFile.open(QFile::ReadOnly | QFile::ExistingOnly)){
-               emulatorInsertSdCard((uint8_t*)sdCardFile.readAll().data(), sdCardFile.size(), NULL);
-               sdCardFile.close();
-            }
+         if(sdCardFile.open(QFile::ReadOnly | QFile::ExistingOnly)){
+            emulatorInsertSdCard((uint8_t*)sdCardFile.readAll().data(), sdCardFile.size(), NULL);
+            sdCardFile.close();
          }
 
          emuInput = palmInput;
-         emuRamFilePath = ramPath;
-         emuSdCardFilePath = sdCardPath;
+         emuRamFilePath = assetPath + "/userdata-" + model + ".ram";
+         emuSdCardFilePath = assetPath + "/sd-" + model + ".img";
+         emuSaveStatePath = assetPath + "/states-" + model + ".states";
+
+         //make the place to store the saves
+         QDir(assetPath + "states-" + model + ".states").mkdir(".");
 
          emuThreadJoin = false;
          emuInited = true;
@@ -193,8 +190,7 @@ uint32_t EmuWrapper::init(const QString& romPath, const QString& bootloaderPath,
       }
 
       romFile.close();
-      if(bootloaderPath != "")
-         bootloaderFile.close();
+      bootloaderFile.close();
    }
 
    return EMU_ERROR_NONE;
@@ -367,6 +363,10 @@ uint32_t EmuWrapper::bootFromFileOrDirectory(const QString& mainPath){
    //everything worked, set output save files
    emuRamFilePath = mainPath + ".ram";
    emuSdCardFilePath = mainPath + ".sd.img";
+   emuSaveStatePath = mainPath + ".states";
+
+   //make the place to store the saves
+   QDir(mainPath + ".states").mkdir(".");
 
    //need this goto because the emulator must be released before returning
    errorOccurred:
@@ -377,10 +377,10 @@ uint32_t EmuWrapper::bootFromFileOrDirectory(const QString& mainPath){
    return error;
 }
 
-uint32_t EmuWrapper::saveState(const QString& path){
+uint32_t EmuWrapper::saveState(const QString& name){
    bool wasPaused = isPaused();
    uint32_t error = EMU_ERROR_INVALID_PARAMETER;
-   QFile stateFile(path);
+   QFile stateFile(emuSaveStatePath + "/" + name + ".state");
 
    if(!wasPaused)
       pause();
@@ -403,10 +403,10 @@ uint32_t EmuWrapper::saveState(const QString& path){
    return error;
 }
 
-uint32_t EmuWrapper::loadState(const QString& path){
+uint32_t EmuWrapper::loadState(const QString& name){
    bool wasPaused = isPaused();
    uint32_t error = EMU_ERROR_INVALID_PARAMETER;
-   QFile stateFile(path);
+   QFile stateFile(emuSaveStatePath + "/" + name + ".state");
 
    if(!wasPaused)
       pause();

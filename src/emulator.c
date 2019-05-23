@@ -101,7 +101,7 @@ uint32_t emulatorInit(uint8_t* palmRomData, uint32_t palmRomSize, uint8_t* palmB
       bool dynarecInited = false;
 
       dynarecInited = pxa255Init(&palmRom, &palmRam);
-      palmFramebuffer = malloc(320 * 320 * sizeof(uint16_t));
+      palmFramebuffer = malloc(320 * 480 * sizeof(uint16_t));
       palmAudio = malloc(AUDIO_SAMPLES_PER_FRAME * 2 * sizeof(int16_t));
       palmAudioResampler = blip_new(AUDIO_SAMPLE_RATE);//have 1 second of samples
       if(!palmFramebuffer || !palmAudio || !palmAudioResampler || !dynarecInited){
@@ -115,14 +115,14 @@ uint32_t emulatorInit(uint8_t* palmRomData, uint32_t palmRomSize, uint8_t* palmB
       if(palmRomSize < TUNGSTEN_T3_ROM_SIZE)
          memset(palmRom + palmRomSize, 0x00, TUNGSTEN_T3_ROM_SIZE - palmRomSize);
       memset(palmRam, 0x00, TUNGSTEN_T3_RAM_SIZE);
-      memset(palmFramebuffer, 0x00, 320 * 320 * sizeof(uint16_t));//TODO:PXA255 code doesnt always output a picture like my SED1376 code, so clear the buffer to prevent garbage from being displayed before the first render
+      memset(palmFramebuffer, 0x00, 320 * 480 * sizeof(uint16_t));//TODO:PXA255 code doesnt always output a picture like my SED1376 code, so clear the buffer to prevent garbage from being displayed before the first render
       memset(palmAudio, 0x00, AUDIO_SAMPLES_PER_FRAME * 2/*channels*/ * sizeof(int16_t));
       memset(&palmInput, 0x00, sizeof(palmInput));
       memset(&palmMisc, 0x00, sizeof(palmMisc));
       memset(&palmSdCard, 0x00, sizeof(palmSdCard));
       memset(&palmEmuFeatures, 0x00, sizeof(palmEmuFeatures));
       palmFramebufferWidth = 320;
-      palmFramebufferHeight = 320;
+      palmFramebufferHeight = 480;
       palmMisc.batteryLevel = 100;
       palmCycleCounter = 0.0;
       palmEmuFeatures.info = enabledEmuFeatures;

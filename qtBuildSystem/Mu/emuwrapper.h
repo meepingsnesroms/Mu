@@ -24,6 +24,7 @@ private:
    std::atomic<bool> emuNewFrameReady;
    QString           emuRamFilePath;
    QString           emuSdCardFilePath;
+   QString           emuSaveStatePath;
    input_t           emuInput;
 
    void emuThreadRun();
@@ -44,14 +45,15 @@ public:
    EmuWrapper();
    ~EmuWrapper();
 
-   uint32_t init(const QString& romPath, const QString& bootloaderPath = "", const QString& ramPath = "", const QString& sdCardPath = "", uint32_t features = FEATURE_ACCURATE);
+   uint32_t init(const QString& assetPath, const QString& model, const QString& osVersion, uint32_t features = FEATURE_ACCURATE);
    void exit();
    void pause();
    void resume();
    void reset(bool hard);
    uint32_t bootFromFileOrDirectory(const QString& mainPath);
-   uint32_t saveState(const QString& path);
-   uint32_t loadState(const QString& path);
+   const QString& getStatePath() const{return emuSaveStatePath;}//needed for looking up state pictures in the GUI
+   uint32_t saveState(const QString& name);
+   uint32_t loadState(const QString& name);
    bool isInited() const{return emuInited;}
    bool isRunning() const{return emuRunning;}
    bool isPaused() const{return emuPaused;}

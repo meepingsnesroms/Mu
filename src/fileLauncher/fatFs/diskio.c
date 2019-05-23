@@ -7,7 +7,6 @@
 
 
 #define DEV_RAM		0
-#define PALM_SD_CARD_SECTOR_SIZE 512
 
 
 static bool cardInitalized = false;
@@ -38,7 +37,6 @@ DSTATUS disk_initialize (
 )
 {
    if(pdrv == DEV_RAM){
-      memset(palmSdCard.flashChipData, 0x00, palmSdCard.flashChipSize);
       cardInitalized = true;
       return 0x00;
    }
@@ -60,10 +58,10 @@ DRESULT disk_read (
 )
 {
    if(pdrv == DEV_RAM){
-      if(!(sector * PALM_SD_CARD_SECTOR_SIZE + PALM_SD_CARD_SECTOR_SIZE < palmSdCard.flashChipSize))
+      if(!(sector * SD_CARD_BLOCK_SIZE + SD_CARD_BLOCK_SIZE <= palmSdCard.flashChipSize))
          return RES_ERROR;
 
-      memcpy(buff, palmSdCard.flashChipData + sector * PALM_SD_CARD_SECTOR_SIZE, count * PALM_SD_CARD_SECTOR_SIZE);
+      memcpy(buff, palmSdCard.flashChipData + sector * SD_CARD_BLOCK_SIZE, count * SD_CARD_BLOCK_SIZE);
       return RES_OK;
    }
 
@@ -86,10 +84,10 @@ DRESULT disk_write (
 )
 {
    if(pdrv == DEV_RAM){
-      if(!(sector * PALM_SD_CARD_SECTOR_SIZE + PALM_SD_CARD_SECTOR_SIZE < palmSdCard.flashChipSize))
+      if(!(sector * SD_CARD_BLOCK_SIZE + SD_CARD_BLOCK_SIZE <= palmSdCard.flashChipSize))
          return RES_ERROR;
 
-      memcpy(palmSdCard.flashChipData + sector * PALM_SD_CARD_SECTOR_SIZE, buff, count * PALM_SD_CARD_SECTOR_SIZE);
+      memcpy(palmSdCard.flashChipData + sector * SD_CARD_BLOCK_SIZE, buff, count * SD_CARD_BLOCK_SIZE);
       return RES_OK;
    }
 
@@ -112,7 +110,16 @@ DRESULT disk_ioctl (
    if(pdrv == DEV_RAM){
       switch(cmd){
          case GET_BLOCK_SIZE:
-            *((uint32_t*)buff) = PALM_SD_CARD_SECTOR_SIZE;
+         case GET_SECTOR_SIZE:
+            *((uint32_t*)buff) = SD_CARD_BLOCK_SIZE;
+            return RES_OK;
+
+         case GET_SECTOR_COUNT:
+            *((uint32_t*)buff) = palmSdCard.flashChipSize / SD_CARD_BLOCK_SIZE;
+            return RES_OK;
+
+         case CTRL_SYNC:
+            //do nothing
             return RES_OK;
 
          default:
