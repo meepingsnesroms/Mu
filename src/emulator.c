@@ -62,21 +62,6 @@ double    palmCycleCounter;//can be greater then 0 if too many cycles where run
 double    palmClockMultiplier;//used by the emulator to overclock the emulated Palm
 
 
-#if defined(EMU_SUPPORT_PALM_OS5)
-static void emulatorTungstenT3Frame(void){
-   //CPU
-   pxa255Execute();
-}
-#endif
-
-static void emulatorM515Frame(void){
-   //CPU
-   dbvzExecute();
-
-   //LCD controller
-   sed1376Render();
-}
-
 uint32_t emulatorInit(uint8_t* palmRomData, uint32_t palmRomSize, uint8_t* palmBootloaderData, uint32_t palmBootloaderSize, uint32_t enabledEmuFeatures){
    //only accept valid non debug features from the user
    enabledEmuFeatures &= FEATURE_FAST_CPU | FEATURE_SYNCED_RTC | FEATURE_HLE_APIS | FEATURE_DURABLE;
@@ -728,11 +713,41 @@ void emulatorEjectSdCard(void){
 
 void emulatorRunFrame(void){
 #if defined(EMU_SUPPORT_PALM_OS5)
-   if(palmEmulatingTungstenT3)
-      emulatorTungstenT3Frame();
-   else
+   if(palmEmulatingTungstenT3){
+      pxa255Execute(true);
+   }
+   else{
 #endif
-      emulatorM515Frame();
+      //CPU
+      dbvzExecute();
+
+      //LCD controller
+      sed1376Render();
+#if defined(EMU_SUPPORT_PALM_OS5)
+   }
+#endif
+
+#if defined(EMU_SANDBOX)
+   sandboxOnFrameRun();
+#endif
+}
+
+void emulatorSkipFrame(void){
+   //runs frame without rendering the screen
+#if defined(EMU_SUPPORT_PALM_OS5)
+   if(palmEmulatingTungstenT3){
+      pxa255Execute(false);
+   }
+   else{
+#endif
+      //CPU
+      dbvzExecute();
+
+      //LCD controller, skip this
+      //sed1376Render();
+#if defined(EMU_SUPPORT_PALM_OS5)
+   }
+#endif
 
 #if defined(EMU_SANDBOX)
    sandboxOnFrameRun();

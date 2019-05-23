@@ -229,7 +229,7 @@ static _INLINE_ void pxa255LcdScreenDataPixel(Pxa255lcd* lcd, UInt8* buf){
       pixelX = 0;
    }
 
-   if(pixelX < 320 && pixelY < 320)
+   if(pixelX < 320 && pixelY < 420)
       pxa255Framebuffer[pixelY * 320 + pixelX] = buf[0] || buf[1] << 8;
 }
 

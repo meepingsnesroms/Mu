@@ -4,6 +4,27 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+//threads
+#if defined(EMU_MULTITHREADED)
+#define PRAGMA_STRINGIFY(x) _Pragma(#x)
+#define MULTITHREAD_LOOP(x) PRAGMA_STRINGIFY(omp parallel for private(x))
+#define MULTITHREAD_DOUBLE_LOOP(x, y) PRAGMA_STRINGIFY(omp parallel for collapse(2) private(x, y))
+#else
+#define MULTITHREAD_LOOP(x)
+#define MULTITHREAD_DOUBLE_LOOP(x, y)
+#endif
+
+//pipeline
+#if defined(EMU_MANAGE_HOST_CPU_PIPELINE)
+#define unlikely(x) __builtin_expect(!!(x), false)
+#define likely(x) __builtin_expect(!!(x), true)
+#define likely_equal(x, y) __builtin_expect((x), (y))
+#else
+#define unlikely(x) x
+#define likely(x) x
+#define likely_equal(x, y) x
+#endif
+
 //endian
 #define SWAP_16(x) ((uint16_t)((((uint16_t)(x) & 0x00FF) << 8) | (((uint16_t)(x) & 0xFF00) >> 8)))
 #define SWAP_32(x) ((uint32_t)((((uint32_t)(x) & 0x000000FF) << 24) | (((uint32_t)(x) & 0x0000FF00) <<  8) | (((uint32_t)(x) & 0x00FF0000) >>  8) | (((uint32_t)(x) & 0xFF000000) >> 24)))
@@ -14,7 +35,7 @@ static inline void swap16(uint8_t* buffer, uint32_t count){
 
    //count specifys the number of uint16_t's that need to be swapped, the uint8_t* is because of alignment restrictions that crash on some platforms
    count *= sizeof(uint16_t);
-   for(index = 0; index < count; index += 2){
+   MULTITHREAD_LOOP(index) for(index = 0; index < count; index += 2){
       uint8_t temp = buffer[index];
       buffer[index] = buffer[index + 1];
       buffer[index + 1] = temp;
@@ -59,27 +80,6 @@ static inline uintmax_t leftShiftUse1s(uintmax_t value, uint8_t count){
 static inline uintmax_t rightShiftUse1s(uintmax_t value, uint8_t count){
    return fillTopWith1s(value >> count, count);
 }
-
-//threads
-#if defined(EMU_MULTITHREADED)
-#define PRAGMA_STRINGIFY(x) _Pragma(#x)
-#define MULTITHREAD_LOOP(x) PRAGMA_STRINGIFY(omp parallel for private(x))
-#define MULTITHREAD_DOUBLE_LOOP(x, y) PRAGMA_STRINGIFY(omp parallel for collapse(2) private(x, y))
-#else
-#define MULTITHREAD_LOOP(x)
-#define MULTITHREAD_DOUBLE_LOOP(x, y)
-#endif
-
-//pipeline
-#if defined(EMU_MANAGE_HOST_CPU_PIPELINE)
-#define unlikely(x) __builtin_expect(!!(x), false)
-#define likely(x) __builtin_expect(!!(x), true)
-#define likely_equal(x, y) __builtin_expect((x), (y))
-#else
-#define unlikely(x) x
-#define likely(x) x
-#define likely_equal(x, y) x
-#endif
 
 //range capping
 static inline uintmax_t uintMin(uintmax_t x, uintmax_t y){

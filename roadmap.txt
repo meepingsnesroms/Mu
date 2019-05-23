@@ -16,11 +16,23 @@ add Palm Tungsten T3 support
 ------------------------------------------
 v1.0.0 to v1.1.0(Feb 25 2019 - Easter 2019)
 
-Core:
-*PLLFSR timing hack is gone, CLK32 bit now just toggles properly mid CLK32
-*SD card access routines are now 6<->7X faster
+RetroArch GUI:
+*allow mouse cursor to be rendered with multiple CPUs
+*now launches content like cartridge based systems
+//TODO: allow adding more content after boot
+//TODO: get booting without game to work
 
 Qt GUI:
+//TODO: get circleci builds for QT port on Win/Mac/Linux
+*added install and boot buttons to both modes, content loaded with the boot button has separate save paths just like cartridge systems
+*added instant boot option, no longer have to wait for the 5 second boot up if you dont want to
 *can now set the feature bits
 *can now set the resource directory
 *keyboard mapping support
+
+Core:
+*PLLFSR timing hack is gone, CLK32 bit now just toggles properly mid CLK32
+*SD card access routines are now 6<->7X faster
+*add a launcher to load prc/pdb/pqa files
+*add frameskip for really low power devices and when video is not needed
+*added host CPU pipeline control for another speed up

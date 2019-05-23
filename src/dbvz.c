@@ -1162,6 +1162,7 @@ void dbvzReset(void){
 
 void dbvzLoadBootloader(uint8_t* data, uint32_t size){
    uint16_t index;
+   uint16_t openMpFix;
 
    if(!data)
       size = 0;
@@ -1169,11 +1170,12 @@ void dbvzLoadBootloader(uint8_t* data, uint32_t size){
    size = uintMin(size, DBVZ_BOOTLOADER_SIZE);
 
    //copy size bytes from buffer to bootloader area
-   for(index = 0; index < size; index++)
+   MULTITHREAD_LOOP(index) for(index = 0; index < size; index++)
       registerArrayWrite8(DBVZ_REG_SIZE - DBVZ_BOOTLOADER_SIZE + index, data[index]);
 
    //fill remainig space with 0x00
-   for(; index < DBVZ_BOOTLOADER_SIZE; index++)
+   openMpFix = index;
+   MULTITHREAD_LOOP(index) for(index = openMpFix; index < DBVZ_BOOTLOADER_SIZE; index++)
       registerArrayWrite8(DBVZ_REG_SIZE - DBVZ_BOOTLOADER_SIZE + index, 0x00);
 }
 

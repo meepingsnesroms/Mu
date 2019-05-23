@@ -197,6 +197,13 @@
         </widget>
        </item>
        <item>
+        <widget class="QCheckBox" name="fastBoot">
+         <property name="text">
+          <string>Fast Boot(Fastforwards Through The Boot Screen)</string>
+         </property>
+        </widget>
+       </item>
+       <item>
         <widget class="QLabel" name="label_2">
          <property name="text">
           <string>Set Emulator Features(Restart Required):</string>

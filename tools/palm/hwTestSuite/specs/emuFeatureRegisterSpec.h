@@ -10,7 +10,7 @@ These registers will do nothing if their corresponding feature bit is not set on
 
 /*features*/
 #define FEATURE_ACCURATE   0x00000000/*no hacks/addons*/
-#define FEATURE_LAUNCH_APP 0x00000001/*used to automate the boot process*/
+/*FEATURE_UNUSED           0x00000001*/
 #define FEATURE_FAST_CPU   0x00000002/*allows the emulator to set its CPU speed*/
 /*FEATURE_UNUSED           0x00000004*/
 /*FEATURE_UNUSED           0x00000008*/

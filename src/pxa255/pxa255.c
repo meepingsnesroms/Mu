@@ -191,7 +191,7 @@ void pxa255LoadState(uint8_t* data){
 
 }
 
-void pxa255Execute(void){
+void pxa255Execute(bool wantVideo){
 #if OS_HAS_PAGEFAULT_HANDLER
     os_exception_frame_t seh_frame = { NULL, NULL };
 
@@ -235,7 +235,8 @@ void pxa255Execute(void){
 #endif
 
     //render
-    pxa255lcdFrame(&pxa255Lcd);
+    if(likely(wantVideo))
+      pxa255lcdFrame(&pxa255Lcd);
 
     //TODO: this needs to run at 3.6864 MHz
     //pxa255timrTick(&pxa255Timer);

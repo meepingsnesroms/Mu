@@ -138,7 +138,7 @@ void EmuWrapper::writeOutSaves(){
    }
 }
 
-uint32_t EmuWrapper::init(const QString& assetPath, const QString& model, const QString& osVersion, uint32_t features){
+uint32_t EmuWrapper::init(const QString& assetPath, const QString& model, const QString& osVersion, uint32_t features, bool fastBoot){
    if(!emuRunning && !emuInited){
       //start emu
       uint32_t error;
@@ -178,6 +178,12 @@ uint32_t EmuWrapper::init(const QString& assetPath, const QString& model, const 
          //make the place to store the saves
          QDir(assetPath + "states-" + model + ".states").mkdir(".");
 
+         //skip the boot screen
+         if(fastBoot)
+            for(uint32_t index = 0; index < EMU_FPS * 10.0; index++)
+               emulatorSkipFrame();
+
+         //start the thread
          emuThreadJoin = false;
          emuInited = true;
          emuRunning = true;
@@ -252,7 +258,6 @@ uint32_t EmuWrapper::bootFromFileOrDirectory(const QString& mainPath){
    QFile sdCardFile(mainPath + ".sd.img");
    bool hasSaveRam;
    bool hasSaveSdCard;
-   int newestBootableFile = -1;
 
    if(!wasPaused)
       pause();
@@ -301,18 +306,7 @@ uint32_t EmuWrapper::bootFromFileOrDirectory(const QString& mainPath){
          files[index].fileData = (uint8_t*)fileDataBuffers[index].data();
          files[index].fileSize = fileDataBuffers[index].size();
 
-         if(suffix == "prc"){
-            files[index].type = LAUNCHER_FILE_TYPE_PRC;
-            newestBootableFile = index;
-         }
-         else if(suffix == "pdb"){
-            files[index].type = LAUNCHER_FILE_TYPE_PDB;
-         }
-         else if(suffix == "pqa"){
-            files[index].type = LAUNCHER_FILE_TYPE_PQA;
-            newestBootableFile = index;
-         }
-         else if(suffix == "img"){
+         if(suffix == "img"){
             QFile infoFile(paths[index].remove(paths[index].size() - 3, 3) + "info");//swap "img" for "info"
 
             if(infoFile.open(QFile::ReadOnly | QFile::ExistingOnly)){
@@ -322,25 +316,15 @@ uint32_t EmuWrapper::bootFromFileOrDirectory(const QString& mainPath){
                infoFile.close();
             }
             files[index].type = LAUNCHER_FILE_TYPE_IMG;
-            newestBootableFile = index;
          }
          else{
-            error = EMU_ERROR_INVALID_PARAMETER;
-            goto errorOccurred;
+            files[index].type = LAUNCHER_FILE_TYPE_RESOURCE_FILE;
          }
       }
       else{
          error = EMU_ERROR_RESOURCE_LOCKED;
          goto errorOccurred;
       }
-   }
-
-   if(newestBootableFile != -1){
-      files[newestBootableFile].boot = true;
-   }
-   else{
-      error = EMU_ERROR_INVALID_PARAMETER;
-      goto errorOccurred;
    }
 
    //save the current data for the last program launched, or the standard device image if none where launched
@@ -370,6 +354,34 @@ uint32_t EmuWrapper::bootFromFileOrDirectory(const QString& mainPath){
 
    //need this goto because the emulator must be released before returning
    errorOccurred:
+
+   if(!wasPaused)
+      resume();
+
+   return error;
+}
+
+uint32_t EmuWrapper::installApplication(const QString& path){
+   bool wasPaused = isPaused();
+   uint32_t error = EMU_ERROR_INVALID_PARAMETER;
+   QFile appFile(path);
+
+   if(!wasPaused)
+      pause();
+
+   if(appFile.open(QFile::ReadOnly | QFile::ExistingOnly)){
+      QByteArray appDataBuffer = appFile.readAll();
+      QString suffix = QFileInfo(appFile).suffix().toLower();
+      launcher_file_t launcherFile;
+
+      appFile.close();
+
+      launcherFile.type = LAUNCHER_FILE_TYPE_RESOURCE_FILE;
+      launcherFile.fileData = (uint8_t*)appDataBuffer.data();
+      launcherFile.fileSize = appDataBuffer.size();
+
+      error = launcherInstallFiles(&launcherFile, 1);
+   }
 
    if(!wasPaused)
       resume();
@@ -496,31 +508,6 @@ QString EmuWrapper::debugGetCpuRegisterString(){
 #endif
 
    return regString;
-}
-
-uint32_t EmuWrapper::debugInstallApplication(const QString& path){
-   bool wasPaused = isPaused();
-   uint32_t error = EMU_ERROR_INVALID_PARAMETER;
-   QFile appFile(path);
-
-   if(!wasPaused)
-      pause();
-
-   if(appFile.open(QFile::ReadOnly | QFile::ExistingOnly)){
-      QByteArray appDataBuffer = appFile.readAll();
-      uintptr_t values[2];
-
-      values[0] = (uintptr_t)appDataBuffer.data();
-      values[1] = appDataBuffer.size();
-
-      appFile.close();
-      error = sandboxCommand(SANDBOX_CMD_DEBUG_INSTALL_APP, values);
-   }
-
-   if(!wasPaused)
-      resume();
-
-   return error;
 }
 
 uint64_t EmuWrapper::debugGetEmulatorMemory(uint32_t address, uint8_t size){

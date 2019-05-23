@@ -14,6 +14,7 @@
 
 #include "../src/emulator.h"
 #include "../src/portability.h"
+#include "../src/fileLauncher/launcher.h"
 #include "cursors.h"
 
 
@@ -31,9 +32,13 @@ static retro_input_poll_t         input_poll_cb = NULL;
 static retro_input_state_t        input_state_cb = NULL;
 
 static uint32_t emuFeatures;
+#if defined(EMU_SUPPORT_PALM_OS_5)
+static bool     useOs5;
+#endif
 static bool     useJoystickAsMouse;
 static float    touchCursorX;
 static float    touchCursorY;
+static char     contentPath[PATH_MAX_LENGTH];
 
 
 static void renderMouseCursor(int16_t screenX, int16_t screenY){
@@ -44,7 +49,7 @@ static void renderMouseCursor(int16_t screenX, int16_t screenY){
       //align cursor to side of image
       screenX -= 6;
       
-      for(y = 0; y < 32; y++)
+      MULTITHREAD_DOUBLE_LOOP(y, x) for(y = 0; y < 32; y++)
          for(x = 6; x < 26; x++)
             if(screenX + x >= 0 && screenY + y >= 0 && screenX + x < palmFramebufferWidth && screenY + y < palmFramebufferHeight)
                if(cursor32x32[y * 32 + x] != 0xFFFF)
@@ -57,7 +62,7 @@ static void renderMouseCursor(int16_t screenX, int16_t screenY){
       //align cursor to side of image
       screenX -= 3;
       
-      for(y = 0; y < 16; y++)
+      MULTITHREAD_DOUBLE_LOOP(y, x) for(y = 0; y < 16; y++)
          for(x = 3; x < 13; x++)
             if(screenX + x >= 0 && screenY + y >= 0 && screenX + x < palmFramebufferWidth && screenY + y < palmFramebufferHeight)
                if(cursor16x16[y * 16 + x] != 0xFFFF)
@@ -103,12 +108,14 @@ static void check_variables(bool booting){
    }
 
    var.key = "palm_emu_use_joystick_as_mouse";
-   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value){
-      if (!strcmp(var.value, "enabled"))
-         useJoystickAsMouse = true;
-      else
-         useJoystickAsMouse = false;
-   }
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+      useJoystickAsMouse = !strcmp(var.value, "enabled");
+   
+#if defined(EMU_SUPPORT_PALM_OS_5)
+   var.key = "palm_emu_use_os_5";
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+      useOs5 = !strcmp(var.value, "enabled"))
+#endif
 }
 
 void retro_init(void){
@@ -137,9 +144,9 @@ void retro_get_system_info(struct retro_system_info *info){
 #ifndef GIT_VERSION
 #define GIT_VERSION ""
 #endif
-   info->library_version  = "v1.0.0" GIT_VERSION;
+   info->library_version  = "v1.1.0" GIT_VERSION;
    info->need_fullpath    = false;
-   info->valid_extensions = "rom";
+   info->valid_extensions = "prc|pqa|img";
 }
 
 void retro_get_system_av_info(struct retro_system_av_info *info){
@@ -163,6 +170,9 @@ void retro_set_environment(retro_environment_t cb){
       { "palm_emu_feature_hle_apis", "HLE API Implementations; disabled|enabled" },
       { "palm_emu_feature_durable", "Ignore Invalid Behavior; disabled|enabled" },
       { "palm_emu_use_joystick_as_mouse", "Use Left Joystick As Mouse; disabled|enabled" },
+#if defined(EMU_SUPPORT_PALM_OS_5)
+      { "palm_emu_use_os_5", "Boot Apps In OS 5; disabled|enabled" },
+#endif
       { 0 }
    };
    struct retro_input_descriptor input_desc[] = {
@@ -178,8 +188,11 @@ void retro_set_environment(retro_environment_t cb){
       { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_X,                              "Notes" },
       { 0 }
    };
+   bool no_rom = true;
 
    environ_cb = cb;
+   
+   environ_cb(RETRO_ENVIRONMENT_SET_SUPPORT_NO_GAME, &no_rom);
 
    if(environ_cb(RETRO_ENVIRONMENT_GET_LOG_INTERFACE, &logging) && logging.log)
       log_cb = logging.log;
@@ -288,9 +301,11 @@ bool retro_load_game(const struct retro_game_info *info){
    uint32_t romSize;
    uint8_t* bootloaderData;
    uint32_t bootloaderSize;
+   char romPath[PATH_MAX_LENGTH];
    char bootloaderPath[PATH_MAX_LENGTH];
    char saveRamPath[PATH_MAX_LENGTH];
    char sdImgPath[PATH_MAX_LENGTH];
+   struct RFILE* romFile;
    struct RFILE* bootloaderFile;
    struct RFILE* saveRamFile;
    struct RFILE* sdImgFile;
@@ -300,14 +315,46 @@ bool retro_load_game(const struct retro_game_info *info){
    struct tm* timeInfo;
    uint32_t error;
    
-   if(info == NULL)
-      return false;
+   //updates the emulator configuration
+   check_variables(true);
+   
+   //need_fullpath is set to false because I want RetroArch to still give me the ROM as a buffer and that is disabled when that is set
+   if(info && info->path){
+      //boot application
+      strlcpy(contentPath, info->path, PATH_MAX_LENGTH);
+   }
+   else{
+      //boot standard device image, "os5" or "os4" gets appended below
+      strlcpy(contentPath, systemDir, PATH_MAX_LENGTH);
+      strlcat(contentPath, "/default", PATH_MAX_LENGTH);
+   }
    
    environ_cb(RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY, &systemDir);
    environ_cb(RETRO_ENVIRONMENT_GET_SAVE_DIRECTORY, &saveDir);
    
-   romData = info->data;
-   romSize = info->size;
+   //ROM
+   strlcpy(romPath, systemDir, PATH_MAX_LENGTH);
+#if defined(EMU_SUPPORT_PALM_OS_5)
+   if(useOs5)
+      strlcat(romPath, "/palmos52-en-t3.rom", PATH_MAX_LENGTH);
+   else
+#endif
+      strlcat(romPath, "/palmos41-en-m515.rom", PATH_MAX_LENGTH);
+   romFile = filestream_open(romPath, RETRO_VFS_FILE_ACCESS_READ, RETRO_VFS_FILE_ACCESS_HINT_NONE);
+   if(romFile){
+      romSize = filestream_get_size(romFile);
+      bootloaderData = malloc(romSize);
+      
+      if(romData)
+         filestream_read(romFile, romData, romSize);
+      else
+         romSize = 0;
+      filestream_close(romFile);
+   }
+   else{
+      //cant load without ROM
+      return false;
+   }
    
    //bootloader
    strlcpy(bootloaderPath, systemDir, PATH_MAX_LENGTH);
@@ -328,19 +375,37 @@ bool retro_load_game(const struct retro_game_info *info){
       bootloaderSize = 0;
    }
    
-   //updates the emulator configuration
-   check_variables(true);
-   
    error = emulatorInit(romData, romSize, bootloaderData, bootloaderSize, emuFeatures);
-   if(error != EMU_ERROR_NONE)
-      return false;
-   
+   free(romData);
    if(bootloaderData)
       free(bootloaderData);
    
+   if(error != EMU_ERROR_NONE)
+      return false;
+   
+   //see if RetroArch wants something launched
+   if(info && info->path){
+      launcher_file_t file;
+      
+      file.type = LAUNCHER_FILE_TYPE_RESOURCE_FILE;
+      file.fileData = info->data;
+      file.fileSize = info->size;
+      
+      //the SRAM and SD card are loaded later, so just pass NULL for now
+      error = launcherLaunch(&file, 1, NULL, 0, NULL, 0);
+      if(error != EMU_ERROR_NONE)
+         return false;
+   }
+   
    //save RAM
-   strlcpy(saveRamPath, saveDir, PATH_MAX_LENGTH);
-   strlcat(saveRamPath, "/userdata-en-m515.ram", PATH_MAX_LENGTH);
+   strlcpy(saveRamPath, contentPath, PATH_MAX_LENGTH);
+#if defined(EMU_SUPPORT_PALM_OS_5)
+   if(useOs5)
+      strlcat(saveRamPath, ".os5", PATH_MAX_LENGTH);
+   else
+#endif
+      strlcat(saveRamPath, ".os4", PATH_MAX_LENGTH);
+   strlcat(saveRamPath, ".ram", PATH_MAX_LENGTH);
    saveRamFile = filestream_open(saveRamPath, RETRO_VFS_FILE_ACCESS_READ, RETRO_VFS_FILE_ACCESS_HINT_NONE);
    if(saveRamFile){
       if(filestream_get_size(saveRamFile) == emulatorGetRamSize()){
@@ -351,8 +416,14 @@ bool retro_load_game(const struct retro_game_info *info){
    }
    
    //SD card
-   strlcpy(sdImgPath, saveDir, PATH_MAX_LENGTH);
-   strlcat(sdImgPath, "/sd-en-m515.img", PATH_MAX_LENGTH);
+   strlcpy(sdImgPath, contentPath, PATH_MAX_LENGTH);
+#if defined(EMU_SUPPORT_PALM_OS_5)
+   if(useOs5)
+      strlcat(sdImgPath, ".os5", PATH_MAX_LENGTH);
+   else
+#endif
+      strlcat(sdImgPath, ".os4", PATH_MAX_LENGTH);
+   strlcat(sdImgPath, ".sd.img", PATH_MAX_LENGTH);
    sdImgFile = filestream_open(sdImgPath, RETRO_VFS_FILE_ACCESS_READ, RETRO_VFS_FILE_ACCESS_HINT_NONE);
    if(sdImgFile){
       uint32_t sdImgSize = filestream_get_size(sdImgFile);
@@ -388,8 +459,14 @@ void retro_unload_game(void){
    environ_cb(RETRO_ENVIRONMENT_GET_SAVE_DIRECTORY, &saveDir);
    
    //save RAM
-   strlcpy(saveRamPath, saveDir, PATH_MAX_LENGTH);
-   strlcat(saveRamPath, "/userdata-en-m515.ram", PATH_MAX_LENGTH);
+   strlcpy(saveRamPath, contentPath, PATH_MAX_LENGTH);
+#if defined(EMU_SUPPORT_PALM_OS_5)
+   if(useOs5)
+      strlcat(saveRamPath, ".os5", PATH_MAX_LENGTH);
+   else
+#endif
+      strlcat(saveRamPath, ".os4", PATH_MAX_LENGTH);
+   strlcat(saveRamPath, ".ram", PATH_MAX_LENGTH);
    saveRamFile = filestream_open(saveRamPath, RETRO_VFS_FILE_ACCESS_WRITE, RETRO_VFS_FILE_ACCESS_HINT_NONE);
    if(saveRamFile){
       swap16BufferIfLittle(palmRam, emulatorGetRamSize() / sizeof(uint16_t));//this will no longer be used, so its ok to destroy it when swapping
@@ -399,8 +476,14 @@ void retro_unload_game(void){
    
    //SD card
    if(palmSdCard.flashChipData){
-      strlcpy(sdImgPath, saveDir, PATH_MAX_LENGTH);
-      strlcat(sdImgPath, "/sd-en-m515.img", PATH_MAX_LENGTH);
+      strlcpy(sdImgPath, contentPath, PATH_MAX_LENGTH);
+#if defined(EMU_SUPPORT_PALM_OS_5)
+      if(useOs5)
+         strlcat(sdImgPath, ".os5", PATH_MAX_LENGTH);
+      else
+#endif
+         strlcat(sdImgPath, ".os4", PATH_MAX_LENGTH);
+      strlcat(sdImgPath, ".sd.img", PATH_MAX_LENGTH);
       sdImgFile = filestream_open(sdImgPath, RETRO_VFS_FILE_ACCESS_WRITE, RETRO_VFS_FILE_ACCESS_HINT_NONE);
       if(sdImgFile){
          filestream_write(sdImgFile, palmSdCard.flashChipData, palmSdCard.flashChipSize);

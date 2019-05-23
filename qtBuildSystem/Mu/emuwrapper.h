@@ -45,12 +45,13 @@ public:
    EmuWrapper();
    ~EmuWrapper();
 
-   uint32_t init(const QString& assetPath, const QString& model, const QString& osVersion, uint32_t features = FEATURE_ACCURATE);
+   uint32_t init(const QString& assetPath, const QString& model, const QString& osVersion, uint32_t features = FEATURE_ACCURATE, bool fastBoot = false);
    void exit();
    void pause();
    void resume();
    void reset(bool hard);
    uint32_t bootFromFileOrDirectory(const QString& mainPath);
+   uint32_t installApplication(const QString& path);
    const QString& getStatePath() const{return emuSaveStatePath;}//needed for looking up state pictures in the GUI
    uint32_t saveState(const QString& name);
    uint32_t loadState(const QString& name);
@@ -73,6 +74,5 @@ public:
    QVector<QString>& debugGetLogEntrys();
    QVector<uint64_t>& debugGetDuplicateLogEntryCount();
    QString debugGetCpuRegisterString();
-   uint32_t debugInstallApplication(const QString& path);
    uint64_t debugGetEmulatorMemory(uint32_t address, uint8_t size);
 };

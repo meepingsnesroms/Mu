@@ -190,6 +190,7 @@ uint32_t emulatorGetSdCardSize(void);
 uint32_t emulatorGetSdCardData(uint8_t* data, uint32_t size);
 void emulatorEjectSdCard(void);
 void emulatorRunFrame(void);
+void emulatorSkipFrame(void);
    
 #ifdef __cplusplus
 }

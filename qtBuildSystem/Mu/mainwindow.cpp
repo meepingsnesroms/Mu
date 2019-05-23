@@ -29,7 +29,6 @@ MainWindow::MainWindow(QWidget* parent) :
    QMainWindow(parent),
    ui(new Ui::MainWindow){
    QAudioFormat format;
-   QString resourceDirPath;
    bool hideOnscreenKeys;
 
    //audio output
@@ -53,23 +52,32 @@ MainWindow::MainWindow(QWidget* parent) :
    audioDevice = new QAudioOutput(format, this);
    audioOut = audioDevice->start();
 
-   //resource directory
-   resourceDirPath = settings->value("resourceDirectory", "").toString();
-
-   //get default path if path not set
-   if(resourceDirPath == ""){
+   //set variables to there default if its the first boot
+   if(settings->value("firstBootCompleted", "").toString() == ""){
+      //resource dir
 #if defined(Q_OS_ANDROID)
-      resourceDirPath = "/sdcard/Mu";
+      settings->setValue("resourceDirectory", "/sdcard/Mu");
 #elif defined(Q_OS_IOS)
-      resourceDirPath = "/var/mobile/Media/Mu";
+      settings->setValue("resourceDirectory", "/var/mobile/Media/Mu");
 #else
-      resourceDirPath = QDir::homePath() + "/Mu";
+      settings->setValue("resourceDirectory", QDir::homePath() + "/Mu");
 #endif
-      settings->setValue("resourceDirectory", resourceDirPath);
-   }
+      createHomeDirectoryTree(settings->value("resourceDirectory", "").toString());
 
-   //create directory tree, in case someone deleted it since the emu was last run or it was never created
-   createHomeDirectoryTree(resourceDirPath);
+      //onscreen keys
+#if defined(Q_OS_ANDROID) && defined(Q_OS_IOS)
+      settings->setValue("hideOnscreenKeys", false);
+#else
+      //not a mobile device disable the on screen buttons
+      settings->setValue("hideOnscreenKeys", true);
+#endif
+
+      //skip boot screen, most users dont want to wait 5 seconds on boot
+      settings->setValue("fastBoot", true);
+
+      //dont run this function again unless the config is deleted
+      settings->setValue("firstBootCompleted", true);
+   }
 
    //keyboard
    for(uint8_t index = 0; index < EmuWrapper::BUTTON_TOTAL_COUNT; index++)
@@ -78,15 +86,6 @@ MainWindow::MainWindow(QWidget* parent) :
    //GUI
    ui->setupUi(this);
 
-   //check if onscreen keys should be hidden
-   if(settings->value("hideOnscreenKeys", "").toString() == ""){
-#if defined(Q_OS_ANDROID) && defined(Q_OS_IOS)
-      settings->setValue("hideOnscreenKeys", false);
-#else
-      //not a mobile device disable the on screen buttons
-      settings->setValue("hideOnscreenKeys", true);
-#endif
-   }
    hideOnscreenKeys = settings->value("hideOnscreenKeys", false).toBool();
 
    //this makes the display window and button icons resize properly
@@ -108,7 +107,7 @@ MainWindow::MainWindow(QWidget* parent) :
    ui->stateManager->installEventFilter(this);
    ui->screenshot->installEventFilter(this);
    ui->settings->installEventFilter(this);
-   ui->debugInstall->installEventFilter(this);
+   ui->install->installEventFilter(this);
    ui->debugger->installEventFilter(this);
    ui->bootApp->installEventFilter(this);
 
@@ -319,7 +318,7 @@ void MainWindow::on_ctrlBtn_clicked(){
    if(!emu.isInited()){
       uint32_t enabledFeatures = getEmuFeatureList();
       QString sysDir = settings->value("resourceDirectory", "").toString();
-      uint32_t error = emu.init(sysDir, "en-m515", "41", enabledFeatures);
+      uint32_t error = emu.init(sysDir, "en-m515", "41", enabledFeatures, settings->value("fastBoot", "").toBool());
 
       if(error == EMU_ERROR_NONE){
          ui->up->setEnabled(true);
@@ -333,7 +332,7 @@ void MainWindow::on_ctrlBtn_clicked(){
          ui->power->setEnabled(true);
 
          ui->screenshot->setEnabled(true);
-         ui->debugInstall->setEnabled(true);
+         ui->install->setEnabled(true);
          ui->stateManager->setEnabled(true);
          ui->debugger->setEnabled(true);
          ui->reset->setEnabled(true);
@@ -357,12 +356,12 @@ void MainWindow::on_ctrlBtn_clicked(){
    ui->ctrlBtn->repaint();
 }
 
-void MainWindow::on_debugInstall_clicked(){
+void MainWindow::on_install_clicked(){
    if(emu.isInited()){
       QString app = QFileDialog::getOpenFileName(this, "Select File", QDir::root().path(), "Palm OS File (*.prc *.pdb *.pqa)");
 
       if(app != ""){
-         uint32_t error = emu.debugInstallApplication(app);
+         uint32_t error = emu.installApplication(app);
 
          if(error != EMU_ERROR_NONE)
             popupErrorDialog("Could not install app, Error:" + QString::number(error));

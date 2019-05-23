@@ -23,6 +23,8 @@ SettingsManager::SettingsManager(QWidget* parent) :
    ui->homeDirectory->setText(settings->value("resourceDirectory", "").toString());
    ui->showOnscreenKeys->setChecked(!settings->value("hideOnscreenKeys", false).toBool());
 
+   ui->fastBoot->setChecked(settings->value("fastBoot", false).toBool());
+
    ui->featureFastCpu->setChecked(settings->value("featureFastCpu", false).toBool());
    ui->featureSyncedRtc->setChecked(settings->value("featureSyncedRtc", false).toBool());
    ui->featureHleApis->setChecked(settings->value("featureHleApis", false).toBool());
@@ -133,4 +135,8 @@ void SettingsManager::on_featureHleApis_toggled(bool checked){
 
 void SettingsManager::on_featureDurable_toggled(bool checked){
    settings->setValue("featureDurable", checked);
+}
+
+void SettingsManager::on_fastBoot_toggled(bool checked){
+   settings->setValue("fastBoot", checked);
 }

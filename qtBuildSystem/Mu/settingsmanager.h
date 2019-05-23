@@ -45,6 +45,8 @@ private slots:
    void on_featureHleApis_toggled(bool checked);
    void on_featureDurable_toggled(bool checked);
 
+   void on_fastBoot_toggled(bool checked);
+
 private:
    Ui::SettingsManager* ui;
    QSettings*           settings;

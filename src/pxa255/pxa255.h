@@ -17,7 +17,7 @@ uint32_t pxa255StateSize(void);
 void pxa255SaveState(uint8_t* data);
 void pxa255LoadState(uint8_t* data);
 
-void pxa255Execute(void);//runs the CPU for 1 frame
+void pxa255Execute(bool wantVideo);//runs the CPU for 1 frame
 
 uint32_t pxa255GetRegister(uint8_t reg);//only for debugging
 

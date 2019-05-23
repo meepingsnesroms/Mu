@@ -59,6 +59,9 @@ ifeq ($(EMU_SUPPORT_PALM_OS5), 1)
    endif
 endif
 
+# RetroArch needs to be able to launch files directly
+EMU_HAVE_FILE_LAUNCHER = 1
+
 include $(EMU_PATH)/makefile.all
 
 COREDEFINES += $(EMU_DEFINES)
