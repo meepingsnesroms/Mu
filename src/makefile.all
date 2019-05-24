@@ -21,7 +21,7 @@ EMU_SOURCES_CXX :=
 EMU_SOURCES_ASM := 
 
 ifeq ($(EMU_HAVE_FILE_LAUNCHER), 1)
-	EMU_SOURCES_C += $(EMU_PATH)/src/fileLauncher/launcher.c 
+	EMU_SOURCES_C += $(EMU_PATH)/fileLauncher/launcher.c 
 endif
 
 ifeq ($(EMU_SUPPORT_PALM_OS5), 1)

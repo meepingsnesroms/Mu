@@ -116,7 +116,7 @@ static void check_variables(bool booting){
 #if defined(EMU_SUPPORT_PALM_OS5)
    var.key = "palm_emu_use_os_5";
    if(environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
-      useOs5 = !strcmp(var.value, "enabled"));
+      useOs5 = !strcmp(var.value, "enabled");
 #endif
 }
 

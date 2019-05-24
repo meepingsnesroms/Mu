@@ -21,7 +21,7 @@ ifneq (,$(findstring msvc20,$(platform)))
 endif
 
 ifneq (,$(findstring windows,$(platform)))
-	# Windows
+   # Windows
    EMU_SUPPORT_PALM_OS5 = 1
    EMU_OS := windows
    ifneq (,$(findstring x64,$(platform)))
@@ -29,15 +29,20 @@ ifneq (,$(findstring windows,$(platform)))
    else
       EMU_ARCH := x86_32
    endif
-else ifneq (,$(findstring armv,$(platform)))
+else ifneq (,$(filter %armv8% %aarch64% rpi3,$(platform)))
+   # ARM Linux 64
+   EMU_SUPPORT_PALM_OS5 = 1
+   EMU_ARCH := armv8
+   EMU_OS := linux
+else ifneq (,$(filter %armv% rpi2,$(platform)))
    # ARM Linux
    EMU_SUPPORT_PALM_OS5 = 1
    EMU_ARCH := armv7
    EMU_OS := linux
-else ifneq (,$(filter unix osx osx_x86 osx_x86_64 linux_x86 linux_x86_64 linux-portable_x86 linux-portable_x86_64,$(platform)))
+else ifneq (,$(filter unix osx% linux% ,$(platform)))
    # x86_* Linux
    EMU_SUPPORT_PALM_OS5 = 1
-   ifneq (,$(filter osx osx_x86_64 linux_x86_64 linux-portable_x86_64,$(platform)))
+   ifneq (,$(filter osx %x86_64,$(platform)))
       EMU_ARCH := x86_64
    else
       EMU_ARCH := x86_32
@@ -54,8 +59,9 @@ else ifeq ($(platform), osx)
 endif
 
 # use all CPUs and focus and optimize for the most likely outcome, android is handled separately
-ifneq (,$(findstring armv windows osx linux ios,$(platform)))
-   ifeq (,$(findstring msvc ppc,$(platform)))
+# Apple broke OpenMP in there port of Clang so no Mac OS or iOS
+ifneq (,$(filter %armv% windows% linux%,$(platform)))
+   ifeq (,$(filter %msvc%,$(platform)))
       COREDEFINES += -fopenmp -DEMU_MULTITHREADED -DEMU_MANAGE_HOST_CPU_PIPELINE
    endif
 endif
