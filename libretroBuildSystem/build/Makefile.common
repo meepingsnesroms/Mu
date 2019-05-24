@@ -24,7 +24,7 @@ ifneq (,$(findstring windows,$(platform)))
    # Windows
    EMU_SUPPORT_PALM_OS5 = 1
    EMU_OS := windows
-   ifneq (,$(findstring x64,$(platform)))
+   ifneq (,$(filter %x64 %x86_64,$(platform)))
       EMU_ARCH := x86_64
    else
       EMU_ARCH := x86_32
