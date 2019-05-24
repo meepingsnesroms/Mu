@@ -43,8 +43,10 @@ extern bool do_translate;
 
 enum { LOG_CPU, LOG_IO, LOG_FLASH, LOG_INTS, LOG_ICOUNT, LOG_USB, LOG_GDB, MAX_LOG };
 #define LOG_TYPE_TBL "CIFQ#UG"
-void logprintf(int type, const char *str, ...);
-void emuprintf(const char *format, ...);
+//void logprintf(int type, const char *str, ...);
+//void emuprintf(const char *format, ...);
+#define logprintf(type, ...) debugLog(__VA_ARGS__)
+#define emuprintf(...) debugLog(__VA_ARGS__)
 
 //void warn(const char *fmt, ...);
 #define warn(...) debugLog(__VA_ARGS__)

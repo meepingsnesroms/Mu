@@ -341,6 +341,8 @@ bool retro_load_game(const struct retro_game_info *info){
    //updates the emulator configuration
    check_variables(true);
    
+   environ_cb(RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY, &systemDir);
+   
    if(info && !string_is_empty(info->path)){
       //boot application
       strlcpy(contentPath, info->path, PATH_MAX_LENGTH);
@@ -350,8 +352,6 @@ bool retro_load_game(const struct retro_game_info *info){
       strlcpy(contentPath, systemDir, PATH_MAX_LENGTH);
       strlcat(contentPath, "/default", PATH_MAX_LENGTH);
    }
-   
-   environ_cb(RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY, &systemDir);
    
    //ROM
    strlcpy(romPath, systemDir, PATH_MAX_LENGTH);
@@ -364,7 +364,7 @@ bool retro_load_game(const struct retro_game_info *info){
    romFile = filestream_open(romPath, RETRO_VFS_FILE_ACCESS_READ, RETRO_VFS_FILE_ACCESS_HINT_NONE);
    if(romFile){
       romSize = filestream_get_size(romFile);
-      bootloaderData = malloc(romSize);
+      romData = malloc(romSize);
       
       if(romData)
          filestream_read(romFile, romData, romSize);
@@ -425,8 +425,6 @@ bool retro_load_game(const struct retro_game_info *info){
          return false;
       }
       
-      file.fileData = info->data;
-      file.fileSize = info->size;
       if(string_is_equal_case_insensitive(contentPath + strlen(contentPath) - 4, ".img")){
          char infoPath[PATH_MAX_LENGTH];
          struct RFILE* infoFile;
@@ -565,7 +563,7 @@ void retro_unload_game(void){
       }
    }
    
-   emulatorExit();
+   emulatorDeinit();
 }
 
 unsigned retro_get_region(void){
