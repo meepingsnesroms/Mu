@@ -21,6 +21,7 @@ RetroArch GUI:
 *now launches content like cartridge based systems
 //TODO: allow adding more content after boot
 *booting without game works again
+*add multithreading and pipeline speedups
 
 Qt GUI:
 //TODO: get circleci builds for QT port on Win/Mac/Linux

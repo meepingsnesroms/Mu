@@ -53,6 +53,14 @@ else ifeq ($(platform), osx)
 	endif
 endif
 
+# use all CPUs and focus and optimize for the most likely outcome, android is handled separately
+ifneq (,$(findstring armv windows osx linux ios,$(platform)))
+   ifeq (,$(findstring msvc ppc,$(platform)))
+      COREDEFINES += -fopenmp -DEMU_MULTITHREADED -DEMU_MANAGE_HOST_CPU_PIPELINE
+   endif
+endif
+
+# use C++11
 ifeq ($(EMU_SUPPORT_PALM_OS5), 1)
    ifneq ($(platform), android_jni)
       CXXFLAGS += -std=c++11

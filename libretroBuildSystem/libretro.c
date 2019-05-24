@@ -146,7 +146,7 @@ void retro_get_system_info(struct retro_system_info *info){
 #define GIT_VERSION ""
 #endif
    info->library_version  = "v1.1.0" GIT_VERSION;
-   info->need_fullpath    = false;//not true, but setting this causes its own problems
+   info->need_fullpath    = true;
    info->valid_extensions = "prc|pqa|img";
 }
 
@@ -340,8 +340,7 @@ bool retro_load_game(const struct retro_game_info *info){
    //updates the emulator configuration
    check_variables(true);
    
-   //need_fullpath is set to false because I want RetroArch to still give me the ROM as a buffer and that is disabled when that is set
-   if(info && info->path){
+   if(info && !string_is_empty(info->path)){
       //boot application
       strlcpy(contentPath, info->path, PATH_MAX_LENGTH);
    }
@@ -405,17 +404,69 @@ bool retro_load_game(const struct retro_game_info *info){
       return false;
    
    //see if RetroArch wants something launched
-   if(info && info->path){
+   if(info && !string_is_empty(info->path)){
       launcher_file_t file;
+      struct RFILE* contentFile;
       
-      file.type = LAUNCHER_FILE_TYPE_RESOURCE_FILE;
+      contentFile = filestream_open(contentPath, RETRO_VFS_FILE_ACCESS_READ, RETRO_VFS_FILE_ACCESS_HINT_NONE);
+      if(contentFile){
+         file.fileSize = filestream_get_size(contentFile);
+         file.fileData = malloc(file.fileSize);
+         
+         if(file.fileData)
+            filestream_read(contentFile, file.fileData, file.fileSize);
+         else
+            return false;
+         filestream_close(contentFile);
+      }
+      else{
+         //no content at path, fail time
+         return false;
+      }
+      
       file.fileData = info->data;
       file.fileSize = info->size;
+      if(string_is_equal_case_insensitive(contentPath + strlen(contentPath) - 4, ".img")){
+         char infoPath[PATH_MAX_LENGTH];
+         struct RFILE* infoFile;
+         
+         file.type = LAUNCHER_FILE_TYPE_IMG_FILE;
+         
+         //TODO: need to load info file here
+         strlcpy(infoPath, contentPath, PATH_MAX_LENGTH);
+         infoPath[strlen(infoPath) - 4] = '\0';//chop off ".img"
+         strlcat(infoPath, ".info", PATH_MAX_LENGTH);
+         infoFile = filestream_open(infoPath, RETRO_VFS_FILE_ACCESS_READ, RETRO_VFS_FILE_ACCESS_HINT_NONE);
+         if(infoFile){
+            file.infoSize = filestream_get_size(infoFile);
+            file.infoData = malloc(file.infoSize);
+            
+            if(file.infoData)
+               filestream_read(infoFile, file.infoData, file.infoSize);
+            else
+               file.infoSize = 0;
+            filestream_close(romFile);
+         }
+         else{
+            //no info file
+            file.infoData = NULL;
+            file.infoSize = 0;
+         }
+      }
+      else{
+         file.type = LAUNCHER_FILE_TYPE_RESOURCE_FILE;
+         file.infoData = NULL;
+         file.infoSize = 0;
+      }
       
       //the SRAM and SD card are loaded after, so just pass NULL for now
       error = launcherLaunch(&file, 1, NULL, 0, NULL, 0);
       if(error != EMU_ERROR_NONE)
          return false;
+      
+      free(file.fileData);
+      if(file.infoData)
+         free(file.infoData)
    }
    
    //save RAM
