@@ -20,12 +20,15 @@ RetroArch GUI:
 *allow mouse cursor to be rendered with multiple CPUs
 *now launches content like cartridge based systems
 //TODO: allow adding more content after boot
-//TODO: get booting without game to work
+*booting without game works again
 
 Qt GUI:
 //TODO: get circleci builds for QT port on Win/Mac/Linux
+//TODO: allow reiniting the emu without closing the program
+//TODO: get icon for boot button
+*put back left/right/center keys
 *added install and boot buttons to both modes, content loaded with the boot button has separate save paths just like cartridge systems
-*added instant boot option, no longer have to wait for the 5 second boot up if you dont want to
+*added instant boot option, no longer have to wait for the 5 second boot up if you dont want to(instant boot is always on for loading games)
 *can now set the feature bits
 *can now set the resource directory
 *keyboard mapping support

@@ -95,6 +95,11 @@ enum{
 typedef struct{
    bool  buttonUp;
    bool  buttonDown;
+#if defined(EMU_SUPPORT_PALM_OS5)
+   bool  buttonLeft;
+   bool  buttonRight;
+   bool  buttonCenter;
+#endif
    
    bool  buttonCalendar;//hw button 1
    bool  buttonAddress;//hw button 2

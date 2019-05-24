@@ -75,6 +75,8 @@ MainWindow::MainWindow(QWidget* parent) :
       //skip boot screen, most users dont want to wait 5 seconds on boot
       settings->setValue("fastBoot", true);
 
+      settings->setValue("useOs5", false);
+
       //dont run this function again unless the config is deleted
       settings->setValue("firstBootCompleted", true);
    }
@@ -94,6 +96,9 @@ MainWindow::MainWindow(QWidget* parent) :
 
    ui->up->installEventFilter(this);
    ui->down->installEventFilter(this);
+   ui->left->installEventFilter(this);
+   ui->right->installEventFilter(this);
+   ui->center->installEventFilter(this);
 
    ui->calendar->installEventFilter(this);
    ui->addressBook->installEventFilter(this);
@@ -114,6 +119,9 @@ MainWindow::MainWindow(QWidget* parent) :
    //hide onscreen keys if needed
    ui->up->setHidden(hideOnscreenKeys);
    ui->down->setHidden(hideOnscreenKeys);
+   ui->left->setHidden(hideOnscreenKeys);
+   ui->right->setHidden(hideOnscreenKeys);
+   ui->center->setHidden(hideOnscreenKeys);
 
    ui->calendar->setHidden(hideOnscreenKeys);
    ui->addressBook->setHidden(hideOnscreenKeys);
@@ -191,6 +199,9 @@ void MainWindow::redraw(){
    //update current keys
    ui->up->setHidden(hideOnscreenKeys);
    ui->down->setHidden(hideOnscreenKeys);
+   ui->left->setHidden(hideOnscreenKeys);
+   ui->right->setHidden(hideOnscreenKeys);
+   ui->center->setHidden(hideOnscreenKeys);
 
    ui->calendar->setHidden(hideOnscreenKeys);
    ui->addressBook->setHidden(hideOnscreenKeys);
@@ -313,16 +324,46 @@ void MainWindow::on_down_released(){
    emu.setKeyValue(EmuWrapper::BUTTON_DOWN, false);
 }
 
+void MainWindow::on_left_pressed(){
+   emu.setKeyValue(EmuWrapper::BUTTON_LEFT, true);
+}
+
+void MainWindow::on_left_released(){
+   emu.setKeyValue(EmuWrapper::BUTTON_LEFT, false);
+}
+
+void MainWindow::on_right_pressed(){
+   emu.setKeyValue(EmuWrapper::BUTTON_RIGHT, true);
+}
+
+void MainWindow::on_right_released(){
+   emu.setKeyValue(EmuWrapper::BUTTON_RIGHT, false);
+}
+
+void MainWindow::on_center_pressed(){
+   emu.setKeyValue(EmuWrapper::BUTTON_CENTER, true);
+}
+
+void MainWindow::on_center_released(){
+   emu.setKeyValue(EmuWrapper::BUTTON_CENTER, false);
+}
+
 //emu control
 void MainWindow::on_ctrlBtn_clicked(){
    if(!emu.isInited()){
       uint32_t enabledFeatures = getEmuFeatureList();
       QString sysDir = settings->value("resourceDirectory", "").toString();
-      uint32_t error = emu.init(sysDir, "en-m515", "41", enabledFeatures, settings->value("fastBoot", "").toBool());
+      uint32_t error = emu.init(sysDir, settings->value("useOs5", false).toBool(), enabledFeatures, settings->value("fastBoot", false).toBool());
 
       if(error == EMU_ERROR_NONE){
          ui->up->setEnabled(true);
          ui->down->setEnabled(true);
+
+         if(settings->value("useOs5", false).toBool()){
+            ui->left->setEnabled(true);
+            ui->right->setEnabled(true);
+            ui->center->setEnabled(true);
+         }
 
          ui->calendar->setEnabled(true);
          ui->addressBook->setEnabled(true);

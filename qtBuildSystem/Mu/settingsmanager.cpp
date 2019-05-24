@@ -24,6 +24,7 @@ SettingsManager::SettingsManager(QWidget* parent) :
    ui->showOnscreenKeys->setChecked(!settings->value("hideOnscreenKeys", false).toBool());
 
    ui->fastBoot->setChecked(settings->value("fastBoot", false).toBool());
+   ui->useOs5->setChecked(settings->value("useOs5", false).toBool());
 
    ui->featureFastCpu->setChecked(settings->value("featureFastCpu", false).toBool());
    ui->featureSyncedRtc->setChecked(settings->value("featureSyncedRtc", false).toBool());
@@ -62,6 +63,9 @@ void SettingsManager::setKeySelectorState(int8_t key){
 void SettingsManager::updateButtonKeys(){
    ui->selectUpKey->setText(QKeySequence(settings->value("palmButton" + QString::number(EmuWrapper::BUTTON_UP) + "Key", '\0').toInt()).toString());
    ui->selectDownKey->setText(QKeySequence(settings->value("palmButton" + QString::number(EmuWrapper::BUTTON_DOWN) + "Key", '\0').toInt()).toString());
+   ui->selectLeftKey->setText(QKeySequence(settings->value("palmButton" + QString::number(EmuWrapper::BUTTON_LEFT) + "Key", '\0').toInt()).toString());
+   ui->selectRightKey->setText(QKeySequence(settings->value("palmButton" + QString::number(EmuWrapper::BUTTON_RIGHT) + "Key", '\0').toInt()).toString());
+   ui->selectCenterKey->setText(QKeySequence(settings->value("palmButton" + QString::number(EmuWrapper::BUTTON_CENTER) + "Key", '\0').toInt()).toString());
    ui->selectCalendarKey->setText(QKeySequence(settings->value("palmButton" + QString::number(EmuWrapper::BUTTON_CALENDAR) + "Key", '\0').toInt()).toString());
    ui->selectAddressBookKey->setText(QKeySequence(settings->value("palmButton" + QString::number(EmuWrapper::BUTTON_ADDRESS) + "Key", '\0').toInt()).toString());
    ui->selectTodoKey->setText(QKeySequence(settings->value("palmButton" + QString::number(EmuWrapper::BUTTON_TODO) + "Key", '\0').toInt()).toString());
@@ -90,6 +94,18 @@ void SettingsManager::on_selectUpKey_clicked(){
 
 void SettingsManager::on_selectDownKey_clicked(){
    setKeySelectorState(EmuWrapper::BUTTON_DOWN);
+}
+
+void SettingsManager::on_selectLeftKey_clicked(){
+   setKeySelectorState(EmuWrapper::BUTTON_LEFT);
+}
+
+void SettingsManager::on_selectRightKey_clicked(){
+   setKeySelectorState(EmuWrapper::BUTTON_RIGHT);
+}
+
+void SettingsManager::on_selectCenterKey_clicked(){
+   setKeySelectorState(EmuWrapper::BUTTON_CENTER);
 }
 
 void SettingsManager::on_selectCalendarKey_clicked(){
@@ -139,4 +155,8 @@ void SettingsManager::on_featureDurable_toggled(bool checked){
 
 void SettingsManager::on_fastBoot_toggled(bool checked){
    settings->setValue("fastBoot", checked);
+}
+
+void SettingsManager::on_useOs5_toggled(bool checked){
+   settings->setValue("useOs5", checked);
 }

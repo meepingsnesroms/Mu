@@ -32,7 +32,7 @@ static retro_input_poll_t         input_poll_cb = NULL;
 static retro_input_state_t        input_state_cb = NULL;
 
 static uint32_t emuFeatures;
-#if defined(EMU_SUPPORT_PALM_OS_5)
+#if defined(EMU_SUPPORT_PALM_OS5)
 static bool     useOs5;
 static bool     firstRetroRunCall;
 #endif
@@ -112,7 +112,7 @@ static void check_variables(bool booting){
    if(environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
       useJoystickAsMouse = !strcmp(var.value, "enabled");
    
-#if defined(EMU_SUPPORT_PALM_OS_5)
+#if defined(EMU_SUPPORT_PALM_OS5)
    var.key = "palm_emu_use_os_5";
    if(environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
       useOs5 = !strcmp(var.value, "enabled"))
@@ -156,7 +156,7 @@ void retro_get_system_av_info(struct retro_system_av_info *info){
 
    info->geometry.base_width   = 160;
    info->geometry.base_height  = 220;
-#if defined(EMU_SUPPORT_PALM_OS_5)
+#if defined(EMU_SUPPORT_PALM_OS5)
    info->geometry.max_width    = 320;
    info->geometry.max_height   = 480;
 #else
@@ -176,7 +176,7 @@ void retro_set_environment(retro_environment_t cb){
       { "palm_emu_feature_hle_apis", "HLE API Implementations; disabled|enabled" },
       { "palm_emu_feature_durable", "Ignore Invalid Behavior; disabled|enabled" },
       { "palm_emu_use_joystick_as_mouse", "Use Left Joystick As Mouse; disabled|enabled" },
-#if defined(EMU_SUPPORT_PALM_OS_5)
+#if defined(EMU_SUPPORT_PALM_OS5)
       { "palm_emu_use_os_5", "Boot Apps In OS 5; disabled|enabled" },
 #endif
       { 0 }
@@ -244,7 +244,7 @@ void retro_reset(void){
 void retro_run(void){
    input_poll_cb();
    
-#if defined(EMU_SUPPORT_PALM_OS_5)
+#if defined(EMU_SUPPORT_PALM_OS5)
    //some RetroArch functions can only be called from this function so call those if needed
    if(firstRetroRunCall){
       if(useOs5){
@@ -355,7 +355,7 @@ bool retro_load_game(const struct retro_game_info *info){
    
    //ROM
    strlcpy(romPath, systemDir, PATH_MAX_LENGTH);
-#if defined(EMU_SUPPORT_PALM_OS_5)
+#if defined(EMU_SUPPORT_PALM_OS5)
    if(useOs5)
       strlcat(romPath, "/palmos52-en-t3.rom", PATH_MAX_LENGTH);
    else
@@ -420,7 +420,7 @@ bool retro_load_game(const struct retro_game_info *info){
    
    //save RAM
    strlcpy(saveRamPath, contentPath, PATH_MAX_LENGTH);
-#if defined(EMU_SUPPORT_PALM_OS_5)
+#if defined(EMU_SUPPORT_PALM_OS5)
    if(useOs5)
       strlcat(saveRamPath, ".os5", PATH_MAX_LENGTH);
    else
@@ -438,7 +438,7 @@ bool retro_load_game(const struct retro_game_info *info){
    
    //SD card
    strlcpy(sdImgPath, contentPath, PATH_MAX_LENGTH);
-#if defined(EMU_SUPPORT_PALM_OS_5)
+#if defined(EMU_SUPPORT_PALM_OS5)
    if(useOs5)
       strlcat(sdImgPath, ".os5", PATH_MAX_LENGTH);
    else
@@ -467,7 +467,7 @@ bool retro_load_game(const struct retro_game_info *info){
    touchCursorX = palmFramebufferWidth / 2;
    touchCursorY = palmFramebufferHeight / 2;
    
-#if defined(EMU_SUPPORT_PALM_OS_5)
+#if defined(EMU_SUPPORT_PALM_OS5)
    firstRetroRunCall = true;
 #endif
 
@@ -482,7 +482,7 @@ void retro_unload_game(void){
    
    //save RAM
    strlcpy(saveRamPath, contentPath, PATH_MAX_LENGTH);
-#if defined(EMU_SUPPORT_PALM_OS_5)
+#if defined(EMU_SUPPORT_PALM_OS5)
    if(useOs5)
       strlcat(saveRamPath, ".os5", PATH_MAX_LENGTH);
    else
@@ -499,7 +499,7 @@ void retro_unload_game(void){
    //SD card
    if(palmSdCard.flashChipData){
       strlcpy(sdImgPath, contentPath, PATH_MAX_LENGTH);
-#if defined(EMU_SUPPORT_PALM_OS_5)
+#if defined(EMU_SUPPORT_PALM_OS5)
       if(useOs5)
          strlcat(sdImgPath, ".os5", PATH_MAX_LENGTH);
       else

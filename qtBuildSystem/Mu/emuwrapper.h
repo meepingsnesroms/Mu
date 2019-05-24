@@ -22,6 +22,7 @@ private:
    std::atomic<bool> emuRunning;
    std::atomic<bool> emuPaused;
    std::atomic<bool> emuNewFrameReady;
+   QString           emuOsName;
    QString           emuRamFilePath;
    QString           emuSdCardFilePath;
    QString           emuSaveStatePath;
@@ -34,6 +35,9 @@ public:
    enum{
       BUTTON_UP = 0,
       BUTTON_DOWN,
+      BUTTON_LEFT,
+      BUTTON_RIGHT,
+      BUTTON_CENTER,
       BUTTON_CALENDAR,
       BUTTON_ADDRESS,
       BUTTON_TODO,
@@ -45,7 +49,7 @@ public:
    EmuWrapper();
    ~EmuWrapper();
 
-   uint32_t init(const QString& assetPath, const QString& model, const QString& osVersion, uint32_t features = FEATURE_ACCURATE, bool fastBoot = false);
+   uint32_t init(const QString& assetPath, bool useOs5, uint32_t features = FEATURE_ACCURATE, bool fastBoot = false);
    void exit();
    void pause();
    void resume();

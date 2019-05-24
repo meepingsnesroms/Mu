@@ -16,5 +16,8 @@
         <file>images/up.svg</file>
         <file>images/reset.svg</file>
         <file>images/settingsManager.svg</file>
+        <file>images/center.svg</file>
+        <file>images/left.svg</file>
+        <file>images/right.svg</file>
     </qresource>
 </RCC>

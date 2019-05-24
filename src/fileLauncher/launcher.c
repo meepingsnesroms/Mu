@@ -190,21 +190,33 @@ static uint32_t launcherInstallAppTungstenT3(launcher_file_t* file){
 static void launcherCalibrateTouchscreenM515(void){
    uint32_t index;
 
-   //touch center, to skip prompt
+   //touch center first time, to skip prompt
    palmInput.touchscreenX = 160.0 / 2.0 / 160.0;
-   palmInput.touchscreenY = (220.0 - 60.0) / 2.0 / 220.0;
+   palmInput.touchscreenY = 160.0 / 2.0 / 220.0;
    palmInput.touchscreenTouched = true;
    for(index = 0; index < EMU_FPS * LAUNCHER_TOUCH_DURATION; index++)
       emulatorSkipFrame();
 
-   //release center, to skip prompt
+   //release center first time, to skip prompt
+   palmInput.touchscreenTouched = false;
+   for(index = 0; index < EMU_FPS * LAUNCHER_TOUCH_DURATION; index++)
+      emulatorSkipFrame();
+
+   //touch center second time, to skip prompt
+   palmInput.touchscreenX = 160.0 / 2.0 / 160.0;
+   palmInput.touchscreenY = 160.0 / 2.0 / 220.0;
+   palmInput.touchscreenTouched = true;
+   for(index = 0; index < EMU_FPS * LAUNCHER_TOUCH_DURATION; index++)
+      emulatorSkipFrame();
+
+   //release center second time, to skip prompt
    palmInput.touchscreenTouched = false;
    for(index = 0; index < EMU_FPS * LAUNCHER_TOUCH_DURATION; index++)
       emulatorSkipFrame();
 
    //touch upper left
-   palmInput.touchscreenX = 8.0 / 160.0;
-   palmInput.touchscreenY = 8.0 / 220.0;
+   palmInput.touchscreenX = 10.0 / 160.0;
+   palmInput.touchscreenY = 10.0 / 220.0;
    palmInput.touchscreenTouched = true;
    for(index = 0; index < EMU_FPS * LAUNCHER_TOUCH_DURATION; index++)
       emulatorSkipFrame();
@@ -215,8 +227,8 @@ static void launcherCalibrateTouchscreenM515(void){
       emulatorSkipFrame();
 
    //touch lower right
-   palmInput.touchscreenX = (160.0 - 8.0) / 160.0;
-   palmInput.touchscreenY = (220.0 - 60.0 - 8.0) / 220.0;
+   palmInput.touchscreenX = (160.0 - 10.0) / 160.0;
+   palmInput.touchscreenY = (160.0 - 10.0) / 220.0;
    palmInput.touchscreenTouched = true;
    for(index = 0; index < EMU_FPS * LAUNCHER_TOUCH_DURATION; index++)
       emulatorSkipFrame();
@@ -226,9 +238,9 @@ static void launcherCalibrateTouchscreenM515(void){
    for(index = 0; index < EMU_FPS * LAUNCHER_TOUCH_DURATION; index++)
       emulatorSkipFrame();
 
-   //touch center
+   //touch center(offset slightly to match icon)
    palmInput.touchscreenX = 160.0 / 2.0 / 160.0;
-   palmInput.touchscreenY = (220.0 - 60.0) / 2.0 / 220.0;
+   palmInput.touchscreenY = (160.0 / 2.0 - 20.0) / 220.0;
    palmInput.touchscreenTouched = true;
    for(index = 0; index < EMU_FPS * LAUNCHER_TOUCH_DURATION; index++)
       emulatorSkipFrame();
@@ -237,10 +249,56 @@ static void launcherCalibrateTouchscreenM515(void){
    palmInput.touchscreenTouched = false;
    for(index = 0; index < EMU_FPS * LAUNCHER_TOUCH_DURATION; index++)
       emulatorSkipFrame();
+
+   //touch "Next"
+   palmInput.touchscreenX = 68.0 / 160.0;
+   palmInput.touchscreenY = 153.0 / 220.0;
+   palmInput.touchscreenTouched = true;
+   for(index = 0; index < EMU_FPS * LAUNCHER_TOUCH_DURATION; index++)
+      emulatorSkipFrame();
+
+   //release "Next"
+   palmInput.touchscreenTouched = false;
+   for(index = 0; index < EMU_FPS * LAUNCHER_TOUCH_DURATION; index++)
+      emulatorSkipFrame();
+
+   //touch "Done"
+   palmInput.touchscreenX = 130.0 / 160.0;
+   palmInput.touchscreenY = 151.0 / 220.0;
+   palmInput.touchscreenTouched = true;
+   for(index = 0; index < EMU_FPS * LAUNCHER_TOUCH_DURATION; index++)
+      emulatorSkipFrame();
+
+   //release "Done"
+   palmInput.touchscreenTouched = false;
+   for(index = 0; index < EMU_FPS * LAUNCHER_TOUCH_DURATION; index++)
+      emulatorSkipFrame();
 }
 
 #if defined(EMU_SUPPORT_PALM_OS5)
 static void launcherCalibrateTouchscreenTungstenT3(void){
+   //TODO
+}
+#endif
+
+static void launcherPushHomeButtonTouchscreenM515(void){
+   uint32_t index;
+
+   //press
+   palmInput.touchscreenX = 10.0 / 160.0;
+   palmInput.touchscreenY = 160.0 + 10.0 / 220.0;
+   palmInput.touchscreenTouched = true;
+   for(index = 0; index < EMU_FPS * LAUNCHER_TOUCH_DURATION; index++)
+      emulatorSkipFrame();
+
+   //release
+   palmInput.touchscreenTouched = false;
+   for(index = 0; index < EMU_FPS * LAUNCHER_TOUCH_DURATION; index++)
+      emulatorSkipFrame();
+}
+
+#if defined(EMU_SUPPORT_PALM_OS5)
+static void launcherPushHomeButtonTouchscreenTungstenT3(void){
    //TODO
 }
 #endif
@@ -349,38 +407,19 @@ uint32_t launcherLaunch(launcher_file_t* files, uint32_t fileCount, uint8_t* sra
    }
 
    //use the existing SRAM file if available
-   if(sramData)
-      emulatorLoadRam(sramData, sramSize);
-   
-   //execute frames until launch is completed(or failed with a time out)
    if(sramData){
-      //just boot from SRAM
-      for(index = 0; index < EMU_FPS * 10.0; index++)
-         emulatorSkipFrame();
+      emulatorLoadRam(sramData, sramSize);
+      launcherBootInstantly(true);
    }
    else{
-      //start boot, calibrate touchscreen, install apps, finish boot
-      for(index = 0; index < EMU_FPS * 10.0; index++)
-         emulatorSkipFrame();
+      launcherBootInstantly(false);
 
-#if defined(EMU_SUPPORT_PALM_OS5)
-      if(palmEmulatingTungstenT3)
-         launcherCalibrateTouchscreenTungstenT3();
-      else
-#endif
-         launcherCalibrateTouchscreenM515();
-
-      //install all non img files
+      //install all resource files
       for(index = 0; index < fileCount; index++)
          if(files[index].type == LAUNCHER_FILE_TYPE_RESOURCE_FILE)
             launcherInstallFiles(&files[index], 1);
-
-      //let it refresh everything
-      for(index = 0; index < EMU_FPS * 2.0; index++)
-         emulatorSkipFrame();
    }
 
-   //worked
    return EMU_ERROR_NONE;
 }
 
@@ -406,4 +445,43 @@ uint32_t launcherInstallFiles(launcher_file_t* files, uint32_t fileCount){
    }
 
    return EMU_ERROR_NONE;
+}
+
+void launcherBootInstantly(bool hasSram){
+   uint32_t index;
+
+   if(hasSram){
+      //just boot from SRAM
+      for(index = 0; index < EMU_FPS * 7.0; index++)
+         emulatorSkipFrame();
+
+#if defined(EMU_SUPPORT_PALM_OS5)
+      if(palmEmulatingTungstenT3)
+         launcherPushHomeButtonTouchscreenTungstenT3();
+      else
+#endif
+         launcherPushHomeButtonTouchscreenM515();
+
+      //give it time to go home
+      for(index = 0; index < EMU_FPS * 1.0; index++)
+         emulatorSkipFrame();
+   }
+   else{
+      //start boot, calibrate touchscreen, skip setup
+      for(index = 0; index < EMU_FPS * 10.0; index++)
+         emulatorSkipFrame();
+
+#if defined(EMU_SUPPORT_PALM_OS5)
+      if(palmEmulatingTungstenT3)
+         launcherCalibrateTouchscreenTungstenT3();
+      else
+#endif
+         launcherCalibrateTouchscreenM515();
+
+      //goes to home screen on its own after setup
+
+      //give it time to go home
+      for(index = 0; index < EMU_FPS * 1.0; index++)
+         emulatorSkipFrame();
+   }
 }

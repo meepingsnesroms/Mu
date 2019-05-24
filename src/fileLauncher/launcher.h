@@ -52,6 +52,8 @@ uint32_t launcherLaunch(launcher_file_t* files, uint32_t fileCount, uint8_t* sra
 //only call after the emu has booted, launcherLaunch() will ensure a full boot has completed otherwise this is up to the frontend to be safe
 uint32_t launcherInstallFiles(launcher_file_t* files, uint32_t fileCount);
 
+void launcherBootInstantly(bool hasSram);
+
 #ifdef __cplusplus
 }
 #endif

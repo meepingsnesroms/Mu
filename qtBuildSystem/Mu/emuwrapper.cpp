@@ -22,9 +22,7 @@
 
 extern "C"{
 #include "../../src/flx68000.h"
-#if defined(EMU_SUPPORT_PALM_OS5)
 #include "../../src/pxa255/pxa255.h"
-#endif
 #include "../../src/debug/sandbox.h"
 }
 
@@ -138,15 +136,20 @@ void EmuWrapper::writeOutSaves(){
    }
 }
 
-uint32_t EmuWrapper::init(const QString& assetPath, const QString& model, const QString& osVersion, uint32_t features, bool fastBoot){
+uint32_t EmuWrapper::init(const QString& assetPath, bool useOs5, uint32_t features, bool fastBoot){
    if(!emuRunning && !emuInited){
       //start emu
       uint32_t error;
+      QString osVersion = useOs5 ? "52" : "41";
+      QString model = useOs5 ? "en-t3" : "en-m515";
       QFile romFile(assetPath + "/palmos" + osVersion + "-" + model + ".rom");
       QFile bootloaderFile(assetPath + "/bootloader-" + model + ".rom");
       QFile ramFile(assetPath + "/userdata-" + model + ".ram");
       QFile sdCardFile(assetPath + "/sd-" + model + ".img");
       bool hasBootloader = true;
+
+      //used to mark saves with there OS version and prevent corruption
+      emuOsName = useOs5 ? "os5" : "os4";
 
       if(!romFile.open(QFile::ReadOnly | QFile::ExistingOnly))
          return EMU_ERROR_INVALID_PARAMETER;
@@ -180,8 +183,7 @@ uint32_t EmuWrapper::init(const QString& assetPath, const QString& model, const 
 
          //skip the boot screen
          if(fastBoot)
-            for(uint32_t index = 0; index < EMU_FPS * 10.0; index++)
-               emulatorSkipFrame();
+            launcherBootInstantly(ramFile.exists());
 
          //start the thread
          emuThreadJoin = false;
@@ -254,8 +256,8 @@ uint32_t EmuWrapper::bootFromFileOrDirectory(const QString& mainPath){
    QVector<QByteArray> fileDataBuffers;
    QVector<QByteArray> fileInfoBuffers;
    launcher_file_t* files;
-   QFile ramFile(mainPath + ".ram");
-   QFile sdCardFile(mainPath + ".sd.img");
+   QFile ramFile(mainPath + "." + emuOsName + ".ram");
+   QFile sdCardFile(mainPath + "." + emuOsName + ".sd.img");
    bool hasSaveRam;
    bool hasSaveSdCard;
 
@@ -345,9 +347,9 @@ uint32_t EmuWrapper::bootFromFileOrDirectory(const QString& mainPath){
       sdCardFile.close();
 
    //everything worked, set output save files
-   emuRamFilePath = mainPath + ".ram";
-   emuSdCardFilePath = mainPath + ".sd.img";
-   emuSaveStatePath = mainPath + ".states";
+   emuRamFilePath = mainPath + "." + emuOsName + ".ram";
+   emuSdCardFilePath = mainPath + "." + emuOsName + ".sd.img";
+   emuSaveStatePath = mainPath + "." + emuOsName + ".states";
 
    //make the place to store the saves
    QDir(mainPath + ".states").mkdir(".");
@@ -452,6 +454,18 @@ void EmuWrapper::setKeyValue(uint8_t key, bool pressed){
          emuInput.buttonDown = pressed;
          break;
 
+      case BUTTON_LEFT:
+         emuInput.buttonLeft = pressed;
+         break;
+
+      case BUTTON_RIGHT:
+         emuInput.buttonRight = pressed;
+         break;
+
+      case BUTTON_CENTER:
+         emuInput.buttonCenter = pressed;
+         break;
+
       case BUTTON_CALENDAR:
          emuInput.buttonCalendar = pressed;
          break;
@@ -488,14 +502,12 @@ QVector<uint64_t>& EmuWrapper::debugGetDuplicateLogEntryCount(){
 QString EmuWrapper::debugGetCpuRegisterString(){
    QString regString = "";
 
-#if defined(EMU_SUPPORT_PALM_OS5)
    if(palmEmulatingTungstenT3){
       for(uint8_t regs = 0; regs < 16; regs++)
          regString += QString::asprintf("R%d:0x%08X\n", regs, pxa255GetRegister(regs));
       regString.resize(regString.size() - 1);//remove extra '\n'
    }
    else{
-#endif
       for(uint8_t dRegs = 0; dRegs < 8; dRegs++)
          regString += QString::asprintf("D%d:0x%08X\n", dRegs, flx68000GetRegister(dRegs));
       for(uint8_t aRegs = 0; aRegs < 8; aRegs++)
@@ -503,9 +515,7 @@ QString EmuWrapper::debugGetCpuRegisterString(){
       regString += QString::asprintf("SP:0x%08X\n", flx68000GetRegister(15));
       regString += QString::asprintf("PC:0x%08X\n", flx68000GetRegister(16));
       regString += QString::asprintf("SR:0x%04X", flx68000GetRegister(17));
-#if defined(EMU_SUPPORT_PALM_OS5)
    }
-#endif
 
    return regString;
 }

@@ -285,14 +285,17 @@ DISTFILES += \
     images/addressBook.svg \
     images/calendar.svg \
     images/center.svg \
+    images/center.svg \
     images/debugger.svg \
     images/down.svg \
     images/install.svg \
+    images/left.svg \
     images/left.svg \
     images/notes.svg \
     images/pause.svg \
     images/play.svg \
     images/power.svg \
+    images/right.svg \
     images/right.svg \
     images/screenshot.svg \
     images/settingsManager.svg \
