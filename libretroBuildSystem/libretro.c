@@ -11,6 +11,7 @@
 #include <compat/strl.h>
 #include <retro_miscellaneous.h>
 #include <streams/file_stream.h>
+#include <string/stdstring.h>
 
 #include "../src/emulator.h"
 #include "../src/portability.h"
@@ -115,7 +116,7 @@ static void check_variables(bool booting){
 #if defined(EMU_SUPPORT_PALM_OS5)
    var.key = "palm_emu_use_os_5";
    if(environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
-      useOs5 = !strcmp(var.value, "enabled"))
+      useOs5 = !strcmp(var.value, "enabled"));
 #endif
 }
 
@@ -255,7 +256,7 @@ void retro_run(void){
          geometry.max_width    = 320;
          geometry.max_height   = 480;
          geometry.aspect_ratio = 320.0 / 480.0;
-         environ_cb(RETRO_ENVIRONMENT_SET_GEOMETRY, &geo);
+         environ_cb(RETRO_ENVIRONMENT_SET_GEOMETRY, &geometry);
       }
       firstRetroRunCall = false;
    }
@@ -430,7 +431,7 @@ bool retro_load_game(const struct retro_game_info *info){
          char infoPath[PATH_MAX_LENGTH];
          struct RFILE* infoFile;
          
-         file.type = LAUNCHER_FILE_TYPE_IMG_FILE;
+         file.type = LAUNCHER_FILE_TYPE_IMG;
          
          //TODO: need to load info file here
          strlcpy(infoPath, contentPath, PATH_MAX_LENGTH);
@@ -466,7 +467,7 @@ bool retro_load_game(const struct retro_game_info *info){
       
       free(file.fileData);
       if(file.infoData)
-         free(file.infoData)
+         free(file.infoData);
    }
    
    //save RAM
