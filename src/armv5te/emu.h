@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <setjmp.h>
 
 #include "cpu.h"
 #include "mem.h"
@@ -19,11 +20,6 @@ extern "C" {
 // Can also be set manually
 #if !defined(__i386__) && !defined(__x86_64__) && !(defined(__arm__) && !defined(__thumb__)) && !(defined(__aarch64__))
 #define NO_TRANSLATION
-#endif
-
-// on iOS, setjmp and longjmp are broken
-#ifdef IS_IOS_BUILD
-#define NO_SETJMP
 #endif
 
 static inline uint16_t BSWAP16(uint16_t x) { return x << 8 | x >> 8; }
@@ -55,7 +51,7 @@ enum { LOG_CPU, LOG_IO, LOG_FLASH, LOG_INTS, LOG_ICOUNT, LOG_USB, LOG_GDB, MAX_L
 
 // Is actually a jmp_buf, but __builtin_*jmp is used instead
 // as the MinGW variant is buggy
-extern void *restart_after_exception[32];
+extern jmp_buf restart_after_exception;
 
 // GUI callbacks
 #define gui_debug_printf(...) debugLog(__VA_ARGS__)

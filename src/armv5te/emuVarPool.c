@@ -1,6 +1,7 @@
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <setjmp.h>
 
 #include "cpu.h"
 #include "mem.h"
@@ -14,6 +15,6 @@ int cycle_count_delta;
 bool exiting;
 bool do_translate;
 
-void *restart_after_exception[32];
+jmp_buf restart_after_exception;
 
 uint32_t cpu_events;

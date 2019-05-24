@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <cassert>
 #include <mutex>
+#include <setjmp.h>
 
 // Uncomment the following line to measure the time until the OS is loaded
 // #define BENCHMARK
@@ -115,11 +116,7 @@ void prefetch_abort(uint32_t mva, uint8_t status)
     cpu_exception(EX_PREFETCH_ABORT);
     if (mva == arm.reg[15])
         error("Abort occurred with exception vectors unmapped");
-    #ifndef NO_SETJMP
-        __builtin_longjmp(restart_after_exception, 1);
-    #else
-        assert(false);
-    #endif
+    longjmp(restart_after_exception, 1);
 }
 
 void data_abort(uint32_t mva, uint8_t status)
@@ -130,11 +127,7 @@ void data_abort(uint32_t mva, uint8_t status)
     arm.fault_address = mva;
     arm.data_fault_status = status;
     cpu_exception(EX_DATA_ABORT);
-    #ifndef NO_SETJMP
-        __builtin_longjmp(restart_after_exception, 1);
-    #else
-        assert(false);
-    #endif
+    longjmp(restart_after_exception, 1);
 }
 
 void undefined_instruction()
@@ -143,11 +136,7 @@ void undefined_instruction()
     warn("Undefined instruction at %08x\n", arm.reg[15]);
     arm.reg[15] += current_instr_size;
     cpu_exception(EX_UNDEFINED);
-    #ifndef NO_SETJMP
-        __builtin_longjmp(restart_after_exception, 1);
-    #else
-        assert(false);
-    #endif
+    longjmp(restart_after_exception, 1);
 }
 
 void *try_ptr(uint32_t addr)

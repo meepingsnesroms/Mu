@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stdbool.h>
+#include <setjmp.h>
 
 #include "pxa255_DMA.h"
 #include "pxa255_DSP.h"
@@ -201,11 +202,7 @@ void pxa255Execute(bool wantVideo){
    //TODO: need to set cycle_count_delta with the amount of opcodes to run
    cycle_count_delta = -500;//just a test value
 
-   // clang segfaults with that, for an iOS build :(
-#ifndef NO_SETJMP
-   // Workaround for LLVM bug #18974
-   while(__builtin_setjmp(restart_after_exception)){};
-#endif
+   while(setjmp(restart_after_exception)){};
 
    exiting = false;//exiting is never set to true, maybe I should remove it?
     while (!exiting && cycle_count_delta < 0) {
