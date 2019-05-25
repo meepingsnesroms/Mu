@@ -56,11 +56,9 @@ static void renderMouseCursor(int16_t screenX, int16_t screenY){
       for(y = 0; y < 32; y++){
          for(x = 6; x < 26; x++){
             if(screenX + x >= 0 && screenY + y >= 0 && screenX + x < palmFramebufferWidth && screenY + y < palmFramebufferHeight){
-               if(cursor32x32[y * 32 + x] != 0xFFFF){
-                  uint16_t* pixel = palmFramebuffer + (screenY + y) * palmFramebufferWidth + screenX + x;
-                  mouseCursorOldArea[y * 32 + x] = *pixel;
-                  *pixel = cursor32x32[y * 32 + x];
-               }
+               mouseCursorOldArea[y * 32 + x] = palmFramebuffer[(screenY + y) * palmFramebufferWidth + screenX + x];
+               if(cursor32x32[y * 32 + x] != 0xFFFF)
+                  palmFramebuffer[(screenY + y) * palmFramebufferWidth + screenX + x] = cursor32x32[y * 32 + x];
             }
          }
       }
@@ -75,11 +73,9 @@ static void renderMouseCursor(int16_t screenX, int16_t screenY){
       for(y = 0; y < 16; y++){
          for(x = 3; x < 13; x++){
             if(screenX + x >= 0 && screenY + y >= 0 && screenX + x < palmFramebufferWidth && screenY + y < palmFramebufferHeight){
-               if(cursor16x16[y * 16 + x] != 0xFFFF){
-                  uint16_t* pixel = palmFramebuffer + (screenY + y) * palmFramebufferWidth + screenX + x;
-                  mouseCursorOldArea[y * 16 + x] = *pixel;
-                  *pixel = cursor16x16[y * 16 + x];
-               }
+               mouseCursorOldArea[y * 16 + x] = palmFramebuffer[(screenY + y) * palmFramebufferWidth + screenX + x];
+               if(cursor16x16[y * 16 + x] != 0xFFFF)
+                  palmFramebuffer[(screenY + y) * palmFramebufferWidth + screenX + x] = cursor16x16[y * 16 + x];
             }
          }
       }
@@ -97,7 +93,7 @@ static void unrenderMouseCursor(int16_t screenX, int16_t screenY){
       for(y = 0; y < 32; y++)
          for(x = 6; x < 26; x++)
             if(screenX + x >= 0 && screenY + y >= 0 && screenX + x < palmFramebufferWidth && screenY + y < palmFramebufferHeight)
-               palmFramebuffer[(screenY + y) * palmFramebufferWidth + screenX + x] = mouseCursorOldArea[y * 32 + x];
+                  palmFramebuffer[(screenY + y) * palmFramebufferWidth + screenX + x] = mouseCursorOldArea[y * 32 + x];
    }
    else{
       int8_t x;
