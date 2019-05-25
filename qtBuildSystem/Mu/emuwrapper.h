@@ -1,12 +1,12 @@
 #pragma once
 
 #include <QPixmap>
+#include <QVector>
 #include <QString>
 #include <QByteArray>
 
 #include <thread>
 #include <atomic>
-#include <vector>
 #include <stdint.h>
 
 #include "../../src/emulator.h"
@@ -22,16 +22,22 @@ private:
    std::atomic<bool> emuRunning;
    std::atomic<bool> emuPaused;
    std::atomic<bool> emuNewFrameReady;
+   QString           emuOsName;
    QString           emuRamFilePath;
    QString           emuSdCardFilePath;
+   QString           emuSaveStatePath;
    input_t           emuInput;
 
    void emuThreadRun();
+   void writeOutSaves();
 
 public:
    enum{
       BUTTON_UP = 0,
       BUTTON_DOWN,
+      BUTTON_LEFT,
+      BUTTON_RIGHT,
+      BUTTON_CENTER,
       BUTTON_CALENDAR,
       BUTTON_ADDRESS,
       BUTTON_TODO,
@@ -43,24 +49,21 @@ public:
    EmuWrapper();
    ~EmuWrapper();
 
-   uint32_t init(const QString& romPath, const QString& bootloaderPath = "", const QString& ramPath = "", const QString& sdCardPath = "", uint32_t features = FEATURE_ACCURATE);
+   uint32_t init(const QString& assetPath, bool useOs5, uint32_t features = FEATURE_ACCURATE, bool fastBoot = false);
    void exit();
    void pause();
    void resume();
    void reset(bool hard);
-   uint32_t saveState(const QString& path);
-   uint32_t loadState(const QString& path);
+   uint32_t bootFromFileOrDirectory(const QString& mainPath);
+   uint32_t installApplication(const QString& path);
+   const QString& getStatePath() const{return emuSaveStatePath;}//needed for looking up state pictures in the GUI
+   uint32_t saveState(const QString& name);
+   uint32_t loadState(const QString& name);
    bool isInited() const{return emuInited;}
    bool isRunning() const{return emuRunning;}
    bool isPaused() const{return emuPaused;}
    void setPenValue(float x, float y, bool touched);
    void setKeyValue(uint8_t key, bool pressed);
-
-   uint32_t installApplication(const QString& path);
-
-   std::vector<QString>& getDebugStrings();
-   std::vector<uint64_t>& getDuplicateCallCount();
-   std::vector<uint32_t> getCpuRegisters();
 
    uint16_t screenWidth() const{return palmFramebufferWidth;}
    uint16_t screenHeight() const{return palmFramebufferHeight;}
@@ -72,5 +75,8 @@ public:
    const int16_t* getAudioSamples() const{return palmAudio;}
    bool getPowerButtonLed() const{return palmMisc.powerButtonLed;}
 
-   uint64_t getEmulatorMemory(uint32_t address, uint8_t size);
+   QVector<QString>& debugGetLogEntrys();
+   QVector<uint64_t>& debugGetDuplicateLogEntryCount();
+   QString debugGetCpuRegisterString();
+   uint64_t debugGetEmulatorMemory(uint32_t address, uint8_t size);
 };

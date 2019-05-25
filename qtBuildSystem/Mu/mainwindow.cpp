@@ -29,7 +29,6 @@ MainWindow::MainWindow(QWidget* parent) :
    QMainWindow(parent),
    ui(new Ui::MainWindow){
    QAudioFormat format;
-   QString resourceDirPath;
    bool hideOnscreenKeys;
 
    //audio output
@@ -53,23 +52,34 @@ MainWindow::MainWindow(QWidget* parent) :
    audioDevice = new QAudioOutput(format, this);
    audioOut = audioDevice->start();
 
-   //resource directory
-   resourceDirPath = settings->value("resourceDirectory", "").toString();
-
-   //get default path if path not set
-   if(resourceDirPath == ""){
+   //set variables to there default if its the first boot
+   if(settings->value("firstBootCompleted", "").toString() == ""){
+      //resource dir
 #if defined(Q_OS_ANDROID)
-      resourceDirPath = "/sdcard/Mu";
+      settings->setValue("resourceDirectory", "/sdcard/Mu");
 #elif defined(Q_OS_IOS)
-      resourceDirPath = "/var/mobile/Media/Mu";
+      settings->setValue("resourceDirectory", "/var/mobile/Media/Mu");
 #else
-      resourceDirPath = QDir::homePath() + "/Mu";
+      settings->setValue("resourceDirectory", QDir::homePath() + "/Mu");
 #endif
-      settings->setValue("resourceDirectory", resourceDirPath);
-   }
+      createHomeDirectoryTree(settings->value("resourceDirectory", "").toString());
 
-   //create directory tree, in case someone deleted it since the emu was last run or it was never created
-   createHomeDirectoryTree(resourceDirPath);
+      //onscreen keys
+#if defined(Q_OS_ANDROID) && defined(Q_OS_IOS)
+      settings->setValue("hideOnscreenKeys", false);
+#else
+      //not a mobile device disable the on screen buttons
+      settings->setValue("hideOnscreenKeys", true);
+#endif
+
+      //skip boot screen, most users dont want to wait 5 seconds on boot
+      settings->setValue("fastBoot", true);
+
+      settings->setValue("useOs5", false);
+
+      //dont run this function again unless the config is deleted
+      settings->setValue("firstBootCompleted", true);
+   }
 
    //keyboard
    for(uint8_t index = 0; index < EmuWrapper::BUTTON_TOTAL_COUNT; index++)
@@ -78,15 +88,6 @@ MainWindow::MainWindow(QWidget* parent) :
    //GUI
    ui->setupUi(this);
 
-   //check if onscreen keys should be hidden
-   if(settings->value("hideOnscreenKeys", "").toString() == ""){
-#if defined(Q_OS_ANDROID) && defined(Q_OS_IOS)
-      settings->setValue("hideOnscreenKeys", false);
-#else
-      //not a mobile device disable the on screen buttons
-      settings->setValue("hideOnscreenKeys", true);
-#endif
-   }
    hideOnscreenKeys = settings->value("hideOnscreenKeys", false).toBool();
 
    //this makes the display window and button icons resize properly
@@ -95,6 +96,9 @@ MainWindow::MainWindow(QWidget* parent) :
 
    ui->up->installEventFilter(this);
    ui->down->installEventFilter(this);
+   ui->left->installEventFilter(this);
+   ui->right->installEventFilter(this);
+   ui->center->installEventFilter(this);
 
    ui->calendar->installEventFilter(this);
    ui->addressBook->installEventFilter(this);
@@ -110,10 +114,14 @@ MainWindow::MainWindow(QWidget* parent) :
    ui->settings->installEventFilter(this);
    ui->install->installEventFilter(this);
    ui->debugger->installEventFilter(this);
+   ui->bootApp->installEventFilter(this);
 
    //hide onscreen keys if needed
    ui->up->setHidden(hideOnscreenKeys);
    ui->down->setHidden(hideOnscreenKeys);
+   ui->left->setHidden(hideOnscreenKeys);
+   ui->right->setHidden(hideOnscreenKeys);
+   ui->center->setHidden(hideOnscreenKeys);
 
    ui->calendar->setHidden(hideOnscreenKeys);
    ui->addressBook->setHidden(hideOnscreenKeys);
@@ -161,7 +169,6 @@ void MainWindow::createHomeDirectoryTree(const QString& path){
 
    //creates directorys if not present, does nothing if they exist already
    homeDir.mkpath(".");
-   homeDir.mkpath("./saveStates");
    homeDir.mkpath("./screenshots");
    homeDir.mkpath("./debugDumps");
 }
@@ -192,6 +199,9 @@ void MainWindow::redraw(){
    //update current keys
    ui->up->setHidden(hideOnscreenKeys);
    ui->down->setHidden(hideOnscreenKeys);
+   ui->left->setHidden(hideOnscreenKeys);
+   ui->right->setHidden(hideOnscreenKeys);
+   ui->center->setHidden(hideOnscreenKeys);
 
    ui->calendar->setHidden(hideOnscreenKeys);
    ui->addressBook->setHidden(hideOnscreenKeys);
@@ -314,16 +324,46 @@ void MainWindow::on_down_released(){
    emu.setKeyValue(EmuWrapper::BUTTON_DOWN, false);
 }
 
+void MainWindow::on_left_pressed(){
+   emu.setKeyValue(EmuWrapper::BUTTON_LEFT, true);
+}
+
+void MainWindow::on_left_released(){
+   emu.setKeyValue(EmuWrapper::BUTTON_LEFT, false);
+}
+
+void MainWindow::on_right_pressed(){
+   emu.setKeyValue(EmuWrapper::BUTTON_RIGHT, true);
+}
+
+void MainWindow::on_right_released(){
+   emu.setKeyValue(EmuWrapper::BUTTON_RIGHT, false);
+}
+
+void MainWindow::on_center_pressed(){
+   emu.setKeyValue(EmuWrapper::BUTTON_CENTER, true);
+}
+
+void MainWindow::on_center_released(){
+   emu.setKeyValue(EmuWrapper::BUTTON_CENTER, false);
+}
+
 //emu control
 void MainWindow::on_ctrlBtn_clicked(){
    if(!emu.isInited()){
       uint32_t enabledFeatures = getEmuFeatureList();
       QString sysDir = settings->value("resourceDirectory", "").toString();
-      uint32_t error = emu.init(sysDir + "/palmos41-en-m515.rom", QFile(sysDir + "/bootloader-en-m515.rom").exists() ? sysDir + "/bootloader-en-m515.rom" : "", sysDir + "/userdata-en-m515.ram", sysDir + "/sd-en-m515.img", enabledFeatures);
+      uint32_t error = emu.init(sysDir, settings->value("useOs5", false).toBool(), enabledFeatures, settings->value("fastBoot", false).toBool());
 
       if(error == EMU_ERROR_NONE){
          ui->up->setEnabled(true);
          ui->down->setEnabled(true);
+
+         if(settings->value("useOs5", false).toBool()){
+            ui->left->setEnabled(true);
+            ui->right->setEnabled(true);
+            ui->center->setEnabled(true);
+         }
 
          ui->calendar->setEnabled(true);
          ui->addressBook->setEnabled(true);
@@ -337,6 +377,7 @@ void MainWindow::on_ctrlBtn_clicked(){
          ui->stateManager->setEnabled(true);
          ui->debugger->setEnabled(true);
          ui->reset->setEnabled(true);
+         ui->bootApp->setEnabled(true);
 
          ui->ctrlBtn->setIcon(QIcon(":/buttons/images/pause.svg"));
       }
@@ -358,7 +399,7 @@ void MainWindow::on_ctrlBtn_clicked(){
 
 void MainWindow::on_install_clicked(){
    if(emu.isInited()){
-      QString app = QFileDialog::getOpenFileName(this, "Select Application", QDir::root().path(), "Palm OS App (*.prc *.pdb *.pqa)");
+      QString app = QFileDialog::getOpenFileName(this, "Select File", QDir::root().path(), "Palm OS File (*.prc *.pdb *.pqa)");
 
       if(app != ""){
          uint32_t error = emu.installApplication(app);
@@ -425,4 +466,28 @@ void MainWindow::on_settings_clicked(){
 
    if(wasInited && !wasPaused)
       emu.resume();
+}
+
+void MainWindow::on_bootApp_clicked(){
+   if(emu.isInited()){
+      QString appDir;
+      bool loadedNewApp = false;
+      bool wasPaused = emu.isPaused();
+
+      if(!wasPaused)
+         emu.pause();
+
+      appDir = QFileDialog::getExistingDirectory(this, "Select Directory", QDir::root().path());
+      if(appDir != ""){
+         uint32_t error = emu.bootFromFileOrDirectory(appDir);
+
+         if(error == EMU_ERROR_NONE)
+            loadedNewApp = true;
+         else
+            popupErrorDialog("Could not load apps, Error:" + QString::number(error));
+      }
+
+      if(!wasPaused || loadedNewApp)
+         emu.resume();
+   }
 }

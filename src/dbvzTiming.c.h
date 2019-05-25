@@ -169,35 +169,35 @@ static void rtiInterruptClk32(void){
    //this function is part of endClk32();
    uint16_t triggeredRtiInterrupts = 0x0000;
 
-   if(clk32Counter % (CRYSTAL_FREQUENCY / 512) == 0){
+   if(clk32Counter % (M515_CRYSTAL_FREQUENCY / 512) == 0){
       //RIS7 - 512HZ
       triggeredRtiInterrupts |= 0x8000;
    }
-   if(clk32Counter % (CRYSTAL_FREQUENCY / 256) == 0){
+   if(clk32Counter % (M515_CRYSTAL_FREQUENCY / 256) == 0){
       //RIS6 - 256HZ
       triggeredRtiInterrupts |= 0x4000;
    }
-   if(clk32Counter % (CRYSTAL_FREQUENCY / 128) == 0){
+   if(clk32Counter % (M515_CRYSTAL_FREQUENCY / 128) == 0){
       //RIS5 - 128HZ
       triggeredRtiInterrupts |= 0x2000;
    }
-   if(clk32Counter % (CRYSTAL_FREQUENCY / 64) == 0){
+   if(clk32Counter % (M515_CRYSTAL_FREQUENCY / 64) == 0){
       //RIS4 - 64HZ
       triggeredRtiInterrupts |= 0x1000;
    }
-   if(clk32Counter % (CRYSTAL_FREQUENCY / 32) == 0){
+   if(clk32Counter % (M515_CRYSTAL_FREQUENCY / 32) == 0){
       //RIS3 - 32HZ
       triggeredRtiInterrupts |= 0x0800;
    }
-   if(clk32Counter % (CRYSTAL_FREQUENCY / 16) == 0){
+   if(clk32Counter % (M515_CRYSTAL_FREQUENCY / 16) == 0){
       //RIS2 - 16HZ
       triggeredRtiInterrupts |= 0x0400;
    }
-   if(clk32Counter % (CRYSTAL_FREQUENCY / 8) == 0){
+   if(clk32Counter % (M515_CRYSTAL_FREQUENCY / 8) == 0){
       //RIS1 - 8HZ
       triggeredRtiInterrupts |= 0x0200;
    }
-   if(clk32Counter % (CRYSTAL_FREQUENCY / 4) == 0){
+   if(clk32Counter % (M515_CRYSTAL_FREQUENCY / 4) == 0){
       //RIS0 - 4HZ
       triggeredRtiInterrupts |= 0x0100;
    }
@@ -302,15 +302,12 @@ static void rtcAddSecondClk32(void){
 }
 
 void dbvzBeginClk32(void){
-   palmClk32Sysclks = 0.0;
+   dbvzClk32Sysclks = 0.0;
 }
 
 void dbvzEndClk32(void){
-   //currently using toggle on read hack
-   //registerArrayWrite16(PLLFSR, registerArrayRead16(PLLFSR) ^ 0x8000);
-
    //second position counter
-   if(clk32Counter >= CRYSTAL_FREQUENCY - 1){
+   if(clk32Counter >= M515_CRYSTAL_FREQUENCY - 1){
       clk32Counter = 0;
       rtcAddSecondClk32();
    }
@@ -330,7 +327,7 @@ void dbvzEndClk32(void){
    if(pllSleepWait != -1){
       if(pllSleepWait == 0){
          //disable PLL and CPU
-         palmSysclksPerClk32 = 0.0;
+         dbvzSysclksPerClk32 = 0.0;
          debugLog("PLL disabled, CPU is off!\n");
       }
       pllSleepWait--;
@@ -341,7 +338,7 @@ void dbvzEndClk32(void){
       if(pllWakeWait == 0){
          //reenable PLL and CPU
          registerArrayWrite16(PLLCR, registerArrayRead16(PLLCR) & 0xFFF7);
-         palmSysclksPerClk32 = sysclksPerClk32();
+         dbvzSysclksPerClk32 = sysclksPerClk32();
          debugLog("PLL reenabled, CPU is on!\n");
       }
       pllWakeWait--;
@@ -356,19 +353,19 @@ void dbvzAddSysclks(double count){
    samplePwm1(false/*forClk32*/, count);
 
    checkInterrupts();
-   palmClk32Sysclks += count;
+   dbvzClk32Sysclks += count;
 }
 
 static int32_t audioGetFramePercentIncrementFromClk32s(int32_t count){
-   return (double)count / ((double)CRYSTAL_FREQUENCY / EMU_FPS) * AUDIO_END_OF_FRAME;
+   return (double)count / ((double)M515_CRYSTAL_FREQUENCY / EMU_FPS) * AUDIO_END_OF_FRAME;
 }
 
 static int32_t audioGetFramePercentIncrementFromSysclks(double count){
-   return count / (palmSysclksPerClk32 * ((double)CRYSTAL_FREQUENCY / EMU_FPS)) * AUDIO_END_OF_FRAME;
+   return count / (dbvzSysclksPerClk32 * ((double)M515_CRYSTAL_FREQUENCY / EMU_FPS)) * AUDIO_END_OF_FRAME;
 }
 
 static int32_t audioGetFramePercentage(void){
    //returns how much of the frame has executed
    //0% = 0, 100% = AUDIO_END_OF_FRAME
-   return audioGetFramePercentIncrementFromClk32s(palmFrameClk32s) + (dbvzIsPllOn() ? audioGetFramePercentIncrementFromSysclks(palmClk32Sysclks) : 0);
+   return audioGetFramePercentIncrementFromClk32s(dbvzFrameClk32s) + (dbvzIsPllOn() ? audioGetFramePercentIncrementFromSysclks(dbvzClk32Sysclks) : 0);
 }

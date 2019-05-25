@@ -4,7 +4,7 @@
 
 #include "emulator.h"
 #include "specs/dragonballVzRegisterSpec.h"
-#include "dbvzRegisters.h"
+#include "dbvz.h"
 #include "m515Bus.h"
 #include "portability.h"
 #include "flx68000.h"
@@ -13,8 +13,11 @@
 #include "audio/blip_buf.h"
 #include "debug/sandbox.h"
 
-
-dbvz_chip_t chips[DBVZ_CHIP_END];
+uint8_t     dbvzReg[DBVZ_REG_SIZE];
+dbvz_chip_t dbvzChipSelects[DBVZ_CHIP_END];
+double      dbvzSysclksPerClk32;//how many SYSCLK cycles before toggling the 32.768 kHz crystal
+uint32_t    dbvzFrameClk32s;//how many CLK32s have happened in the current frame
+double      dbvzClk32Sysclks;//how many SYSCLKs have happened in the current CLK32
 int8_t      pllSleepWait;
 int8_t      pllWakeWait;
 uint32_t    clk32Counter;
@@ -47,7 +50,7 @@ static int32_t audioGetFramePercentage(void);
 #include "dbvzTiming.c.h"
 
 bool dbvzIsPllOn(void){
-   return !(palmSysclksPerClk32 < 1.0);
+   return !(dbvzSysclksPerClk32 < 1.0);
 }
 
 bool m515BacklightAmplifierState(void){
@@ -417,8 +420,6 @@ uint16_t dbvzGetRegister16(uint32_t address){
          }
 
       case PLLFSR:
-         //this is a hack, it makes the busy wait in HwrDelay finish instantly, prevents issues with the power button
-         registerArrayWrite16(PLLFSR, registerArrayRead16(PLLFSR) ^ 0x8000);
          return registerArrayRead16(PLLFSR);
 
       //32 bit registers accessed as 16 bit
@@ -744,7 +745,7 @@ void dbvzSetRegister16(uint32_t address, uint16_t value){
       case PLLCR:
          //CLKEN is required for SED1376 operation
          registerArrayWrite16(PLLCR, value & 0x3FBB);
-         palmSysclksPerClk32 = sysclksPerClk32();
+         dbvzSysclksPerClk32 = sysclksPerClk32();
          m515SetSed1376Attached(sed1376ClockConnected());
 
          if(value & 0x0008)
@@ -785,12 +786,12 @@ void dbvzSetRegister16(uint32_t address, uint16_t value){
 
       case CSA:{
             uint16_t oldCsa = registerArrayRead16(CSA);
-            bool oldBootMode = chips[DBVZ_CHIP_A0_ROM].inBootMode;
+            bool oldBootMode = dbvzChipSelects[DBVZ_CHIP_A0_ROM].inBootMode;
 
             setCsa(value);
 
             //only reset address space if size changed, enabled/disabled or exiting boot mode
-            if((value & 0x000F) != (oldCsa & 0x000F) || chips[DBVZ_CHIP_A0_ROM].inBootMode != oldBootMode)
+            if((value & 0x000F) != (oldCsa & 0x000F) || dbvzChipSelects[DBVZ_CHIP_A0_ROM].inBootMode != oldBootMode)
                dbvzResetAddressSpace();
          }
          return;
@@ -1004,12 +1005,12 @@ void dbvzSetRegister32(uint32_t address, uint32_t value){
    }
 }
 
-void dbvzResetRegisters(void){
+void dbvzReset(void){
    uint32_t oldRtc = registerArrayRead32(RTCTIME);//preserve RTCTIME
    uint16_t oldDayr = registerArrayRead16(DAYR);//preserve DAYR
 
-   memset(palmReg, 0x00, DBVZ_REG_SIZE - DBVZ_BOOTLOADER_SIZE);
-   palmSysclksPerClk32 = 0.0;
+   memset(dbvzReg, 0x00, DBVZ_REG_SIZE - DBVZ_BOOTLOADER_SIZE);
+   dbvzSysclksPerClk32 = 0.0;
    clk32Counter = 0;
    pctlrCpuClockDivider = 1.0;
    pllSleepWait = -1;
@@ -1031,21 +1032,21 @@ void dbvzResetRegisters(void){
    pwm1ReadPosition = 0;
    pwm1WritePosition = 0;
 
-   memset(chips, 0x00, sizeof(chips));
+   memset(dbvzChipSelects, 0x00, sizeof(dbvzChipSelects));
    //all chip selects are disabled at boot and CSA0 is mapped to 0x00000000 and covers the entire address range until CSA is set enabled
-   chips[DBVZ_CHIP_A0_ROM].inBootMode = true;
+   dbvzChipSelects[DBVZ_CHIP_A0_ROM].inBootMode = true;
 
    //default sizes
-   chips[DBVZ_CHIP_A0_ROM].lineSize = 0x20000;
-   chips[DBVZ_CHIP_A1_USB].lineSize = 0x20000;
-   chips[DBVZ_CHIP_B0_SED].lineSize = 0x20000;
-   chips[DBVZ_CHIP_DX_RAM].lineSize = 0x8000;
+   dbvzChipSelects[DBVZ_CHIP_A0_ROM].lineSize = 0x20000;
+   dbvzChipSelects[DBVZ_CHIP_A1_USB].lineSize = 0x20000;
+   dbvzChipSelects[DBVZ_CHIP_B0_SED].lineSize = 0x20000;
+   dbvzChipSelects[DBVZ_CHIP_DX_RAM].lineSize = 0x8000;
 
    //masks for reading and writing
-   chips[DBVZ_CHIP_A0_ROM].mask = 0x003FFFFF;//4mb
-   chips[DBVZ_CHIP_A1_USB].mask = 0x00000002;//A1 is used as USB chip A0
-   chips[DBVZ_CHIP_B0_SED].mask = 0x0001FFFF;
-   chips[DBVZ_CHIP_DX_RAM].mask = 0x00000000;//16mb, no RAM enabled until the DRAM module is initialized
+   dbvzChipSelects[DBVZ_CHIP_A0_ROM].mask = 0x003FFFFF;//4mb
+   dbvzChipSelects[DBVZ_CHIP_A1_USB].mask = 0x00000002;//A1 is used as USB chip A0
+   dbvzChipSelects[DBVZ_CHIP_B0_SED].mask = 0x0001FFFF;
+   dbvzChipSelects[DBVZ_CHIP_DX_RAM].mask = 0x00000000;//16mb, no RAM enabled until the DRAM module is initialized
 
    //system control
    registerArrayWrite8(SCR, 0x1C);
@@ -1153,10 +1154,298 @@ void dbvzResetRegisters(void){
    updateSdCardChipSelectStatus();
    updateBacklightAmplifierStatus();
 
-   palmSysclksPerClk32 = sysclksPerClk32();
+   dbvzSysclksPerClk32 = sysclksPerClk32();
+
+   dbvzResetAddressSpace();
+   flx68000Reset();
+}
+
+void dbvzLoadBootloader(uint8_t* data, uint32_t size){
+   uint16_t index;
+   uint16_t openMpFix;
+
+   if(!data)
+      size = 0;
+
+   size = uintMin(size, DBVZ_BOOTLOADER_SIZE);
+
+   //copy size bytes from buffer to bootloader area
+   MULTITHREAD_LOOP(index) for(index = 0; index < size; index++)
+      registerArrayWrite8(DBVZ_REG_SIZE - DBVZ_BOOTLOADER_SIZE + index, data[index]);
+
+   //fill remainig space with 0x00
+   openMpFix = index;
+   MULTITHREAD_LOOP(index) for(index = openMpFix; index < DBVZ_BOOTLOADER_SIZE; index++)
+      registerArrayWrite8(DBVZ_REG_SIZE - DBVZ_BOOTLOADER_SIZE + index, 0x00);
 }
 
 void dbvzSetRtc(uint16_t days, uint8_t hours, uint8_t minutes, uint8_t seconds){
    registerArrayWrite32(RTCTIME, hours << 24 & 0x1F000000 | minutes << 16 & 0x003F0000 | seconds & 0x0000003F);
    registerArrayWrite16(DAYR, days & 0x01FF);
+}
+
+uint32_t dbvzStateSize(void){
+   uint32_t size = 0;
+
+   size += flx68000StateSize();
+   size += DBVZ_REG_SIZE;//hardware registers
+   size += DBVZ_TOTAL_MEMORY_BANKS;
+   size += sizeof(uint32_t) * 4 * DBVZ_CHIP_END;//chip select states
+   size += sizeof(uint8_t) * 5 * DBVZ_CHIP_END;//chip select states
+   size += sizeof(uint64_t) * 5;//32.32 fixed point double, timerXCycleCounter and CPU cycle timers
+   size += sizeof(int8_t);//pllSleepWait
+   size += sizeof(int8_t);//pllWakeWait
+   size += sizeof(uint32_t);//clk32Counter
+   size += sizeof(uint64_t);//pctlrCpuClockDivider
+   size += sizeof(uint16_t) * 2;//timerStatusReadAcknowledge
+   size += sizeof(uint8_t);//portDInterruptLastValue
+   size += sizeof(uint16_t) * 9;//RX 8 * 16 SPI1 FIFO, 1 index is for FIFO full
+   size += sizeof(uint16_t) * 9;//TX 8 * 16 SPI1 FIFO, 1 index is for FIFO full
+   size += sizeof(uint8_t) * 5;//spi1(R/T)x(Read/Write)Position / spi1RxOverflowed
+   size += sizeof(int32_t);//pwm1ClocksToNextSample
+   size += sizeof(uint8_t) * 6;//pwm1Fifo[6]
+   size += sizeof(uint8_t) * 2;//pwm1(Read/Write)
+
+   //debugLog("size is:%d\n", size);
+
+   return size;
+}
+
+void dbvzSaveState(uint8_t* data){
+   uint32_t offset = 0;
+   uint8_t index;
+
+   //CPU core
+   flx68000SaveState(data + offset);
+   offset += flx68000StateSize();
+
+   //memory
+   memcpy(data + offset, dbvzReg, DBVZ_REG_SIZE);
+   swap16BufferIfLittle(data + offset, DBVZ_REG_SIZE / sizeof(uint16_t));
+   offset += DBVZ_REG_SIZE;
+   memcpy(data + offset, dbvzBankType, DBVZ_TOTAL_MEMORY_BANKS);
+   offset += DBVZ_TOTAL_MEMORY_BANKS;
+   for(index = DBVZ_CHIP_BEGIN; index < DBVZ_CHIP_END; index++){
+      writeStateValue8(data + offset, dbvzChipSelects[index].enable);
+      offset += sizeof(uint8_t);
+      writeStateValue32(data + offset, dbvzChipSelects[index].start);
+      offset += sizeof(uint32_t);
+      writeStateValue32(data + offset, dbvzChipSelects[index].lineSize);
+      offset += sizeof(uint32_t);
+      writeStateValue32(data + offset, dbvzChipSelects[index].mask);
+      offset += sizeof(uint32_t);
+      writeStateValue8(data + offset, dbvzChipSelects[index].inBootMode);
+      offset += sizeof(uint8_t);
+      writeStateValue8(data + offset, dbvzChipSelects[index].readOnly);
+      offset += sizeof(uint8_t);
+      writeStateValue8(data + offset, dbvzChipSelects[index].readOnlyForProtectedMemory);
+      offset += sizeof(uint8_t);
+      writeStateValue8(data + offset, dbvzChipSelects[index].supervisorOnlyProtectedMemory);
+      offset += sizeof(uint8_t);
+      writeStateValue32(data + offset, dbvzChipSelects[index].unprotectedSize);
+      offset += sizeof(uint32_t);
+   }
+
+   //timing
+   writeStateValueDouble(data + offset, dbvzSysclksPerClk32);
+   offset += sizeof(uint64_t);
+   writeStateValueDouble(data + offset, palmCycleCounter);
+   offset += sizeof(uint64_t);
+   writeStateValueDouble(data + offset, palmClockMultiplier);
+   offset += sizeof(uint64_t);
+   writeStateValue8(data + offset, pllSleepWait);
+   offset += sizeof(int8_t);
+   writeStateValue8(data + offset, pllWakeWait);
+   offset += sizeof(int8_t);
+   writeStateValue32(data + offset, clk32Counter);
+   offset += sizeof(uint32_t);
+   writeStateValueDouble(data + offset, pctlrCpuClockDivider);
+   offset += sizeof(uint64_t);
+   writeStateValueDouble(data + offset, timerCycleCounter[0]);
+   offset += sizeof(uint64_t);
+   writeStateValueDouble(data + offset, timerCycleCounter[1]);
+   offset += sizeof(uint64_t);
+   writeStateValue16(data + offset, timerStatusReadAcknowledge[0]);
+   offset += sizeof(uint16_t);
+   writeStateValue16(data + offset, timerStatusReadAcknowledge[1]);
+   offset += sizeof(uint16_t);
+   writeStateValue8(data + offset, portDInterruptLastValue);
+   offset += sizeof(uint8_t);
+
+   //SPI1
+   for(index = 0; index < 9; index++){
+      writeStateValue16(data + offset, spi1RxFifo[index]);
+      offset += sizeof(uint16_t);
+   }
+   for(index = 0; index < 9; index++){
+      writeStateValue16(data + offset, spi1TxFifo[index]);
+      offset += sizeof(uint16_t);
+   }
+   writeStateValue8(data + offset, spi1RxReadPosition);
+   offset += sizeof(uint8_t);
+   writeStateValue8(data + offset, spi1RxWritePosition);
+   offset += sizeof(uint8_t);
+   writeStateValue8(data + offset, spi1RxOverflowed);
+   offset += sizeof(uint8_t);
+   writeStateValue8(data + offset, spi1TxReadPosition);
+   offset += sizeof(uint8_t);
+   writeStateValue8(data + offset, spi1TxWritePosition);
+   offset += sizeof(uint8_t);
+
+   //PWM1, audio
+   writeStateValue32(data + offset, pwm1ClocksToNextSample);
+   offset += sizeof(int32_t);
+   for(index = 0; index < 6; index++){
+      writeStateValue8(data + offset, pwm1Fifo[index]);
+      offset += sizeof(uint8_t);
+   }
+   writeStateValue8(data + offset, pwm1ReadPosition);
+   offset += sizeof(uint8_t);
+   writeStateValue8(data + offset, pwm1WritePosition);
+   offset += sizeof(uint8_t);
+
+   //debugLog("save offset is:%d\n", offset);
+}
+
+void dbvzLoadState(uint8_t* data){
+   uint32_t offset = 0;
+   uint8_t index;
+
+   //CPU core
+   flx68000LoadState(data + offset);
+   offset += flx68000StateSize();
+
+   //memory
+   memcpy(dbvzReg, data + offset, DBVZ_REG_SIZE);
+   swap16BufferIfLittle(dbvzReg, DBVZ_REG_SIZE / sizeof(uint16_t));
+   offset += DBVZ_REG_SIZE;
+   memcpy(dbvzBankType, data + offset, DBVZ_TOTAL_MEMORY_BANKS);
+   offset += DBVZ_TOTAL_MEMORY_BANKS;
+   for(index = DBVZ_CHIP_BEGIN; index < DBVZ_CHIP_END; index++){
+      dbvzChipSelects[index].enable = readStateValue8(data + offset);
+      offset += sizeof(uint8_t);
+      dbvzChipSelects[index].start = readStateValue32(data + offset);
+      offset += sizeof(uint32_t);
+      dbvzChipSelects[index].lineSize = readStateValue32(data + offset);
+      offset += sizeof(uint32_t);
+      dbvzChipSelects[index].mask = readStateValue32(data + offset);
+      offset += sizeof(uint32_t);
+      dbvzChipSelects[index].inBootMode = readStateValue8(data + offset);
+      offset += sizeof(uint8_t);
+      dbvzChipSelects[index].readOnly = readStateValue8(data + offset);
+      offset += sizeof(uint8_t);
+      dbvzChipSelects[index].readOnlyForProtectedMemory = readStateValue8(data + offset);
+      offset += sizeof(uint8_t);
+      dbvzChipSelects[index].supervisorOnlyProtectedMemory = readStateValue8(data + offset);
+      offset += sizeof(uint8_t);
+      dbvzChipSelects[index].unprotectedSize = readStateValue32(data + offset);
+      offset += sizeof(uint32_t);
+   }
+
+   //timing
+   dbvzSysclksPerClk32 = readStateValueDouble(data + offset);
+   offset += sizeof(uint64_t);
+   palmCycleCounter = readStateValueDouble(data + offset);
+   offset += sizeof(uint64_t);
+   palmClockMultiplier = readStateValueDouble(data + offset);
+   offset += sizeof(uint64_t);
+   pllSleepWait = readStateValue8(data + offset);
+   offset += sizeof(int8_t);
+   pllWakeWait = readStateValue8(data + offset);
+   offset += sizeof(int8_t);
+   clk32Counter = readStateValue32(data + offset);
+   offset += sizeof(uint32_t);
+   pctlrCpuClockDivider = readStateValueDouble(data + offset);
+   offset += sizeof(uint64_t);
+   timerCycleCounter[0] = readStateValueDouble(data + offset);
+   offset += sizeof(uint64_t);
+   timerCycleCounter[1] = readStateValueDouble(data + offset);
+   offset += sizeof(uint64_t);
+   timerStatusReadAcknowledge[0] = readStateValue16(data + offset);
+   offset += sizeof(uint16_t);
+   timerStatusReadAcknowledge[1] = readStateValue16(data + offset);
+   offset += sizeof(uint16_t);
+   portDInterruptLastValue = readStateValue8(data + offset);
+   offset += sizeof(uint8_t);
+
+   //SPI1
+   for(index = 0; index < 9; index++){
+      spi1RxFifo[index] = readStateValue16(data + offset);
+      offset += sizeof(uint16_t);
+   }
+   for(index = 0; index < 9; index++){
+      spi1TxFifo[index] = readStateValue16(data + offset);
+      offset += sizeof(uint16_t);
+   }
+   spi1RxReadPosition = readStateValue8(data + offset);
+   offset += sizeof(uint8_t);
+   spi1RxWritePosition = readStateValue8(data + offset);
+   offset += sizeof(uint8_t);
+   spi1RxOverflowed = readStateValue8(data + offset);
+   offset += sizeof(uint8_t);
+   spi1TxReadPosition = readStateValue8(data + offset);
+   offset += sizeof(uint8_t);
+   spi1TxWritePosition = readStateValue8(data + offset);
+   offset += sizeof(uint8_t);
+
+   //PWM1, audio
+   pwm1ClocksToNextSample = readStateValue32(data + offset);
+   offset += sizeof(int32_t);
+   for(index = 0; index < 6; index++){
+      pwm1Fifo[index] = readStateValue8(data + offset);
+      offset += sizeof(uint8_t);
+   }
+   pwm1ReadPosition = readStateValue8(data + offset);
+   offset += sizeof(uint8_t);
+   pwm1WritePosition = readStateValue8(data + offset);
+   offset += sizeof(uint8_t);
+
+   //debugLog("load offset is:%d\n", offset);
+}
+
+void dbvzLoadStateFinished(void){
+   flx68000LoadStateFinished();
+}
+
+void dbvzExecute(void){
+   uint32_t samples;
+
+   //I/O
+   m515RefreshInputState();
+
+   //CPU
+   dbvzFrameClk32s = 0;
+   for(; palmCycleCounter < (double)M515_CRYSTAL_FREQUENCY / EMU_FPS; palmCycleCounter += 1.0){
+      uint8_t cpuTimeSegments;
+
+      dbvzBeginClk32();
+
+      for(cpuTimeSegments = 0; cpuTimeSegments < 2; cpuTimeSegments++){
+         double cyclesRemaining = dbvzSysclksPerClk32 / 2.0;
+
+         while(cyclesRemaining >= 1.0){
+            double sysclks = floatMin(cyclesRemaining, DBVZ_SYSCLK_PRECISION);
+            int32_t cpuCycles = sysclks * pctlrCpuClockDivider * palmClockMultiplier;
+
+            if(cpuCycles > 0)
+               flx68000Execute(cpuCycles);
+            dbvzAddSysclks(sysclks);
+
+            cyclesRemaining -= sysclks;
+         }
+
+         //toggle CLK32 bit in PLLFSR, it indicates the current state of CLK32 so it must start false and be changed to true in the middle of CLK32
+         registerArrayWrite16(PLLFSR, registerArrayRead16(PLLFSR) ^ 0x8000);
+      }
+
+      dbvzEndClk32();
+      dbvzFrameClk32s++;
+   }
+   palmCycleCounter -= (double)M515_CRYSTAL_FREQUENCY / EMU_FPS;
+
+   //audio
+   blip_end_frame(palmAudioResampler, blip_clocks_needed(palmAudioResampler, AUDIO_SAMPLES_PER_FRAME));
+   blip_read_samples(palmAudioResampler, palmAudio, AUDIO_SAMPLES_PER_FRAME, true);
+   MULTITHREAD_LOOP(samples) for(samples = 0; samples < AUDIO_SAMPLES_PER_FRAME * 2; samples += 2)
+      palmAudio[samples + 1] = palmAudio[samples];
 }

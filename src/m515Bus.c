@@ -2,7 +2,7 @@
 #include <string.h>
 
 #include "emulator.h"
-#include "dbvzRegisters.h"
+#include "dbvz.h"
 #include "expansionHardware.h"
 #include "m515Bus.h"
 #include "portability.h"
@@ -15,18 +15,18 @@
 uint8_t dbvzBankType[DBVZ_TOTAL_MEMORY_BANKS];
 
 
-//RAM accesses
-static uint8_t ramRead8(uint32_t address){return BUFFER_READ_8(palmRam, address, chips[DBVZ_CHIP_DX_RAM].mask);}
-static uint16_t ramRead16(uint32_t address){return BUFFER_READ_16(palmRam, address, chips[DBVZ_CHIP_DX_RAM].mask);}
-static uint32_t ramRead32(uint32_t address){return BUFFER_READ_32(palmRam, address, chips[DBVZ_CHIP_DX_RAM].mask);}
-static void ramWrite8(uint32_t address, uint8_t value){BUFFER_WRITE_8(palmRam, address, chips[DBVZ_CHIP_DX_RAM].mask, value);}
-static void ramWrite16(uint32_t address, uint16_t value){BUFFER_WRITE_16(palmRam, address, chips[DBVZ_CHIP_DX_RAM].mask, value);}
-static void ramWrite32(uint32_t address, uint32_t value){BUFFER_WRITE_32(palmRam, address, chips[DBVZ_CHIP_DX_RAM].mask, value);}
-
 //ROM accesses
-static uint8_t romRead8(uint32_t address){return BUFFER_READ_8(palmRom, address, chips[DBVZ_CHIP_A0_ROM].mask);}
-static uint16_t romRead16(uint32_t address){return BUFFER_READ_16(palmRom, address, chips[DBVZ_CHIP_A0_ROM].mask);}
-static uint32_t romRead32(uint32_t address){return BUFFER_READ_32(palmRom, address, chips[DBVZ_CHIP_A0_ROM].mask);}
+static uint8_t romRead8(uint32_t address){return M68K_BUFFER_READ_8(palmRom, address, dbvzChipSelects[DBVZ_CHIP_A0_ROM].mask);}
+static uint16_t romRead16(uint32_t address){return M68K_BUFFER_READ_16(palmRom, address, dbvzChipSelects[DBVZ_CHIP_A0_ROM].mask);}
+static uint32_t romRead32(uint32_t address){return M68K_BUFFER_READ_32(palmRom, address, dbvzChipSelects[DBVZ_CHIP_A0_ROM].mask);}
+
+//RAM accesses
+static uint8_t ramRead8(uint32_t address){return M68K_BUFFER_READ_8(palmRam, address, dbvzChipSelects[DBVZ_CHIP_DX_RAM].mask);}
+static uint16_t ramRead16(uint32_t address){return M68K_BUFFER_READ_16(palmRam, address, dbvzChipSelects[DBVZ_CHIP_DX_RAM].mask);}
+static uint32_t ramRead32(uint32_t address){return M68K_BUFFER_READ_32(palmRam, address, dbvzChipSelects[DBVZ_CHIP_DX_RAM].mask);}
+static void ramWrite8(uint32_t address, uint8_t value){M68K_BUFFER_WRITE_8(palmRam, address, dbvzChipSelects[DBVZ_CHIP_DX_RAM].mask, value);}
+static void ramWrite16(uint32_t address, uint16_t value){M68K_BUFFER_WRITE_16(palmRam, address, dbvzChipSelects[DBVZ_CHIP_DX_RAM].mask, value);}
+static void ramWrite32(uint32_t address, uint32_t value){M68K_BUFFER_WRITE_32(palmRam, address, dbvzChipSelects[DBVZ_CHIP_DX_RAM].mask, value);}
 
 //SED1376 accesses
 static uint8_t sed1376Read8(uint32_t address){
@@ -35,9 +35,9 @@ static uint8_t sed1376Read8(uint32_t address){
       return 0x00;
 #endif
    if(address & SED1376_MR_BIT)
-      return BUFFER_READ_8_BIG_ENDIAN(sed1376Ram, address, chips[DBVZ_CHIP_B0_SED].mask);
+      return M68K_BUFFER_READ_8_BIG_ENDIAN(sed1376Ram, address, dbvzChipSelects[DBVZ_CHIP_B0_SED].mask);
    else
-      return sed1376GetRegister(address & chips[DBVZ_CHIP_B0_SED].mask);
+      return sed1376GetRegister(address & dbvzChipSelects[DBVZ_CHIP_B0_SED].mask);
 }
 static uint16_t sed1376Read16(uint32_t address){
 #if !defined(EMU_NO_SAFETY)
@@ -45,9 +45,9 @@ static uint16_t sed1376Read16(uint32_t address){
       return 0x0000;
 #endif
    if(address & SED1376_MR_BIT)
-      return BUFFER_READ_16_BIG_ENDIAN(sed1376Ram, address, chips[DBVZ_CHIP_B0_SED].mask);
+      return M68K_BUFFER_READ_16_BIG_ENDIAN(sed1376Ram, address, dbvzChipSelects[DBVZ_CHIP_B0_SED].mask);
    else
-      return sed1376GetRegister(address & chips[DBVZ_CHIP_B0_SED].mask);
+      return sed1376GetRegister(address & dbvzChipSelects[DBVZ_CHIP_B0_SED].mask);
 }
 static uint32_t sed1376Read32(uint32_t address){
 #if !defined(EMU_NO_SAFETY)
@@ -55,33 +55,33 @@ static uint32_t sed1376Read32(uint32_t address){
       return 0x00000000;
 #endif
    if(address & SED1376_MR_BIT)
-      return BUFFER_READ_32_BIG_ENDIAN(sed1376Ram, address, chips[DBVZ_CHIP_B0_SED].mask);
+      return M68K_BUFFER_READ_32_BIG_ENDIAN(sed1376Ram, address, dbvzChipSelects[DBVZ_CHIP_B0_SED].mask);
    else
-      return sed1376GetRegister(address & chips[DBVZ_CHIP_B0_SED].mask);
+      return sed1376GetRegister(address & dbvzChipSelects[DBVZ_CHIP_B0_SED].mask);
 }
 static void sed1376Write8(uint32_t address, uint8_t value){
    if(address & SED1376_MR_BIT)
-      BUFFER_WRITE_8_BIG_ENDIAN(sed1376Ram, address, chips[DBVZ_CHIP_B0_SED].mask, value);
+      M68K_BUFFER_WRITE_8_BIG_ENDIAN(sed1376Ram, address, dbvzChipSelects[DBVZ_CHIP_B0_SED].mask, value);
    else
-      sed1376SetRegister(address & chips[DBVZ_CHIP_B0_SED].mask, value);
+      sed1376SetRegister(address & dbvzChipSelects[DBVZ_CHIP_B0_SED].mask, value);
 }
 static void sed1376Write16(uint32_t address, uint16_t value){
    if(address & SED1376_MR_BIT)
-      BUFFER_WRITE_16_BIG_ENDIAN(sed1376Ram, address, chips[DBVZ_CHIP_B0_SED].mask, value);
+      M68K_BUFFER_WRITE_16_BIG_ENDIAN(sed1376Ram, address, dbvzChipSelects[DBVZ_CHIP_B0_SED].mask, value);
    else
-      sed1376SetRegister(address & chips[DBVZ_CHIP_B0_SED].mask, value);
+      sed1376SetRegister(address & dbvzChipSelects[DBVZ_CHIP_B0_SED].mask, value);
 }
 static void sed1376Write32(uint32_t address, uint32_t value){
    if(address & SED1376_MR_BIT)
-      BUFFER_WRITE_32_BIG_ENDIAN(sed1376Ram, address, chips[DBVZ_CHIP_B0_SED].mask, value);
+      M68K_BUFFER_WRITE_32_BIG_ENDIAN(sed1376Ram, address, dbvzChipSelects[DBVZ_CHIP_B0_SED].mask, value);
    else
-      sed1376SetRegister(address & chips[DBVZ_CHIP_B0_SED].mask, value);
+      sed1376SetRegister(address & dbvzChipSelects[DBVZ_CHIP_B0_SED].mask, value);
 }
 
 static bool probeRead(uint8_t bank, uint32_t address){
-   if(chips[bank].supervisorOnlyProtectedMemory){
-      uint32_t index = address - chips[bank].start;
-      if(index >= chips[bank].unprotectedSize && !flx68000IsSupervisor()){
+   if(dbvzChipSelects[bank].supervisorOnlyProtectedMemory){
+      uint32_t index = address - dbvzChipSelects[bank].start;
+      if(index >= dbvzChipSelects[bank].unprotectedSize && !flx68000IsSupervisor()){
          dbvzSetPrivilegeViolation(address, false);
          return false;
       }
@@ -90,18 +90,18 @@ static bool probeRead(uint8_t bank, uint32_t address){
 }
 
 static bool probeWrite(uint8_t bank, uint32_t address){
-   if(chips[bank].readOnly){
+   if(dbvzChipSelects[bank].readOnly){
       dbvzSetWriteProtectViolation(address);
       return false;
    }
-   else if(chips[bank].supervisorOnlyProtectedMemory || chips[bank].readOnlyForProtectedMemory){
-      uint32_t index = address - chips[bank].start;
-      if(index >= chips[bank].unprotectedSize){
-         if(chips[bank].supervisorOnlyProtectedMemory && !flx68000IsSupervisor()){
+   else if(dbvzChipSelects[bank].supervisorOnlyProtectedMemory || dbvzChipSelects[bank].readOnlyForProtectedMemory){
+      uint32_t index = address - dbvzChipSelects[bank].start;
+      if(index >= dbvzChipSelects[bank].unprotectedSize){
+         if(dbvzChipSelects[bank].supervisorOnlyProtectedMemory && !flx68000IsSupervisor()){
             dbvzSetPrivilegeViolation(address, true);
             return false;
          }
-         if(chips[bank].readOnlyForProtectedMemory){
+         if(dbvzChipSelects[bank].readOnlyForProtectedMemory){
             dbvzSetWriteProtectViolation(address);
             return false;
          }
@@ -127,7 +127,7 @@ uint8_t m68k_read_memory_8(uint32_t address){
          return romRead8(address);
 
       case DBVZ_CHIP_A1_USB:
-         return pdiUsbD12GetRegister(!!(address & chips[DBVZ_CHIP_A1_USB].mask));
+         return pdiUsbD12GetRegister(!!(address & dbvzChipSelects[DBVZ_CHIP_A1_USB].mask));
 
       case DBVZ_CHIP_B0_SED:
          return sed1376Read8(address);
@@ -169,7 +169,7 @@ uint16_t m68k_read_memory_16(uint32_t address){
          return romRead16(address);
 
       case DBVZ_CHIP_A1_USB:
-         return pdiUsbD12GetRegister(!!(address & chips[DBVZ_CHIP_A1_USB].mask));
+         return pdiUsbD12GetRegister(!!(address & dbvzChipSelects[DBVZ_CHIP_A1_USB].mask));
 
       case DBVZ_CHIP_B0_SED:
          return sed1376Read16(address);
@@ -211,7 +211,7 @@ uint32_t m68k_read_memory_32(uint32_t address){
          return romRead32(address);
 
       case DBVZ_CHIP_A1_USB:
-         return pdiUsbD12GetRegister(!!(address & chips[DBVZ_CHIP_A1_USB].mask));
+         return pdiUsbD12GetRegister(!!(address & dbvzChipSelects[DBVZ_CHIP_A1_USB].mask));
 
       case DBVZ_CHIP_B0_SED:
          return sed1376Read32(address);
@@ -253,7 +253,7 @@ void m68k_write_memory_8(uint32_t address, uint8_t value){
          return;
 
       case DBVZ_CHIP_A1_USB:
-         pdiUsbD12SetRegister(!!(address & chips[DBVZ_CHIP_A1_USB].mask), value);
+         pdiUsbD12SetRegister(!!(address & dbvzChipSelects[DBVZ_CHIP_A1_USB].mask), value);
          return;
 
       case DBVZ_CHIP_B0_SED:
@@ -299,7 +299,7 @@ void m68k_write_memory_16(uint32_t address, uint16_t value){
          return;
 
       case DBVZ_CHIP_A1_USB:
-         pdiUsbD12SetRegister(!!(address & chips[DBVZ_CHIP_A1_USB].mask), value);
+         pdiUsbD12SetRegister(!!(address & dbvzChipSelects[DBVZ_CHIP_A1_USB].mask), value);
          return;
 
       case DBVZ_CHIP_B0_SED:
@@ -345,7 +345,7 @@ void m68k_write_memory_32(uint32_t address, uint32_t value){
          return;
 
       case DBVZ_CHIP_A1_USB:
-         pdiUsbD12SetRegister(!!(address & chips[DBVZ_CHIP_A1_USB].mask), value);
+         pdiUsbD12SetRegister(!!(address & dbvzChipSelects[DBVZ_CHIP_A1_USB].mask), value);
          return;
 
       case DBVZ_CHIP_B0_SED:
@@ -392,15 +392,15 @@ static uint8_t getProperBankType(uint32_t bank){
       return DBVZ_CHIP_REGISTERS;
    else if(palmEmuFeatures.info != FEATURE_ACCURATE && DBVZ_BANK_IN_RANGE(bank, DBVZ_EMUCS_START_ADDRESS, DBVZ_EMUCS_SIZE))
       return DBVZ_CHIP_00_EMU;
-   else if(chips[DBVZ_CHIP_A0_ROM].inBootMode || (chips[DBVZ_CHIP_A0_ROM].enable && DBVZ_BANK_IN_RANGE(bank, chips[DBVZ_CHIP_A0_ROM].start, chips[DBVZ_CHIP_A0_ROM].lineSize)))
+   else if(dbvzChipSelects[DBVZ_CHIP_A0_ROM].inBootMode || (dbvzChipSelects[DBVZ_CHIP_A0_ROM].enable && DBVZ_BANK_IN_RANGE(bank, dbvzChipSelects[DBVZ_CHIP_A0_ROM].start, dbvzChipSelects[DBVZ_CHIP_A0_ROM].lineSize)))
       return DBVZ_CHIP_A0_ROM;
-   else if(chips[DBVZ_CHIP_DX_RAM].enable && DBVZ_BANK_IN_RANGE(bank, chips[DBVZ_CHIP_DX_RAM].start, chips[DBVZ_CHIP_DX_RAM].lineSize * 2))
+   else if(dbvzChipSelects[DBVZ_CHIP_DX_RAM].enable && DBVZ_BANK_IN_RANGE(bank, dbvzChipSelects[DBVZ_CHIP_DX_RAM].start, dbvzChipSelects[DBVZ_CHIP_DX_RAM].lineSize * 2))
       return DBVZ_CHIP_DX_RAM;
-   else if(chips[DBVZ_CHIP_B0_SED].enable && DBVZ_BANK_IN_RANGE(bank, chips[DBVZ_CHIP_B0_SED].start, chips[DBVZ_CHIP_B0_SED].lineSize) && sed1376ClockConnected())
+   else if(dbvzChipSelects[DBVZ_CHIP_B0_SED].enable && DBVZ_BANK_IN_RANGE(bank, dbvzChipSelects[DBVZ_CHIP_B0_SED].start, dbvzChipSelects[DBVZ_CHIP_B0_SED].lineSize) && sed1376ClockConnected())
       return DBVZ_CHIP_B0_SED;
-   else if(chips[DBVZ_CHIP_A1_USB].enable && DBVZ_BANK_IN_RANGE(bank, chips[DBVZ_CHIP_A1_USB].start, chips[DBVZ_CHIP_A1_USB].lineSize))
+   else if(dbvzChipSelects[DBVZ_CHIP_A1_USB].enable && DBVZ_BANK_IN_RANGE(bank, dbvzChipSelects[DBVZ_CHIP_A1_USB].start, dbvzChipSelects[DBVZ_CHIP_A1_USB].lineSize))
       return DBVZ_CHIP_A1_USB;
-   else if(chips[DBVZ_CHIP_B1_NIL].enable && DBVZ_BANK_IN_RANGE(bank, chips[DBVZ_CHIP_B1_NIL].start, chips[DBVZ_CHIP_B1_NIL].lineSize))
+   else if(dbvzChipSelects[DBVZ_CHIP_B1_NIL].enable && DBVZ_BANK_IN_RANGE(bank, dbvzChipSelects[DBVZ_CHIP_B1_NIL].start, dbvzChipSelects[DBVZ_CHIP_B1_NIL].lineSize))
       return DBVZ_CHIP_B1_NIL;
 
    return DBVZ_CHIP_NONE;
@@ -423,8 +423,8 @@ void dbvzSetRegisterFFFFAccessMode(void){
 }
 
 void m515SetSed1376Attached(bool attached){
-   if(chips[DBVZ_CHIP_B0_SED].enable && dbvzBankType[DBVZ_START_BANK(chips[DBVZ_CHIP_B0_SED].start)] != (attached ? DBVZ_CHIP_B0_SED : DBVZ_CHIP_NONE))
-      memset(&dbvzBankType[DBVZ_START_BANK(chips[DBVZ_CHIP_B0_SED].start)], attached ? DBVZ_CHIP_B0_SED : DBVZ_CHIP_NONE, DBVZ_END_BANK(chips[DBVZ_CHIP_B0_SED].start, chips[DBVZ_CHIP_B0_SED].lineSize) - DBVZ_START_BANK(chips[DBVZ_CHIP_B0_SED].start) + 1);
+   if(dbvzChipSelects[DBVZ_CHIP_B0_SED].enable && dbvzBankType[DBVZ_START_BANK(dbvzChipSelects[DBVZ_CHIP_B0_SED].start)] != (attached ? DBVZ_CHIP_B0_SED : DBVZ_CHIP_NONE))
+      memset(&dbvzBankType[DBVZ_START_BANK(dbvzChipSelects[DBVZ_CHIP_B0_SED].start)], attached ? DBVZ_CHIP_B0_SED : DBVZ_CHIP_NONE, DBVZ_END_BANK(dbvzChipSelects[DBVZ_CHIP_B0_SED].start, dbvzChipSelects[DBVZ_CHIP_B0_SED].lineSize) - DBVZ_START_BANK(dbvzChipSelects[DBVZ_CHIP_B0_SED].start) + 1);
 }
 
 void dbvzResetAddressSpace(void){

@@ -20,6 +20,39 @@ ifneq (,$(findstring msvc20,$(platform)))
 	COREDEFINES += -Dinline=_inline -DINLINE=_inline
 endif
 
+ifneq (,$(findstring windows,$(platform)))
+   # Windows
+   EMU_SUPPORT_PALM_OS5 = 1
+   EMU_OS := windows
+   ifneq (,$(filter %x64 %x86_64,$(platform)))
+      EMU_ARCH := x86_64
+   else
+      EMU_ARCH := x86_32
+   endif
+else ifneq (,$(filter %armv8% %aarch64% rpi3,$(platform)))
+   # ARM Linux 64
+   EMU_SUPPORT_PALM_OS5 = 1
+   EMU_ARCH := armv8
+   EMU_OS := linux
+else ifneq (,$(filter %armv% rpi2,$(platform)))
+   # ARM Linux
+   EMU_SUPPORT_PALM_OS5 = 1
+   EMU_ARCH := armv7
+   EMU_OS := linux
+else ifneq (,$(filter unix osx% linux% ,$(platform)))
+   # x86_* Linux
+   EMU_SUPPORT_PALM_OS5 = 1
+   ifneq (,$(filter osx %x86_64,$(platform)))
+      EMU_ARCH := x86_64
+   else
+      EMU_ARCH := x86_32
+   endif
+   EMU_OS := linux
+endif
+
+# OS 5 isnt even booting yet, just turn the dynarec off to make it compile easier
+EMU_ARCH := unknown
+
 ifneq (,$(filter ps3 sncps3 psl1ght ngc wii wiiu,$(platform)))
 	COREDEFINES += -DEMU_BIG_ENDIAN
 else ifeq ($(platform), osx)
@@ -28,6 +61,24 @@ else ifeq ($(platform), osx)
 	endif
 endif
 
+# use all CPUs and focus and optimize for the most likely outcome, android is handled separately
+# Apple broke OpenMP in there port of Clang so no Mac OS or iOS
+ifneq (,$(filter %armv% windows% linux%,$(platform)))
+   ifeq (,$(filter %msvc%,$(platform)))
+      COREDEFINES += -fopenmp -DEMU_MULTITHREADED -DEMU_MANAGE_HOST_CPU_PIPELINE
+   endif
+endif
+
+# use C++11
+ifeq ($(EMU_SUPPORT_PALM_OS5), 1)
+   ifneq ($(platform), android_jni)
+      CXXFLAGS += -std=c++11
+   endif
+endif
+
+# RetroArch needs to be able to launch files directly
+EMU_HAVE_FILE_LAUNCHER = 1
+
 include $(EMU_PATH)/makefile.all
 
 COREDEFINES += $(EMU_DEFINES)
@@ -35,8 +86,8 @@ COREDEFINES += $(EMU_DEFINES)
 SOURCES_C := $(CORE_DIR)/libretro.c \
 	$(CORE_DIR)/cursors.c \
 	$(EMU_SOURCES_C)
-
-SOURCES_ASM := 
+SOURCES_CXX := $(EMU_SOURCES_CXX)
+SOURCES_ASM := $(EMU_SOURCES_ASM)
 
 ifneq ($(STATIC_LINKING), 1)
 	SOURCES_C += $(LIBRETRO_COMM_DIR)/compat/compat_strl.c \

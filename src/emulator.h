@@ -1,6 +1,6 @@
 #ifndef EMULATOR_H
 #define EMULATOR_H
-//this is the only header a frontend needs to include
+//this is the only header a frontend needs to include from the emulator
 
 #ifdef __cplusplus
 extern "C" {
@@ -16,10 +16,12 @@ extern "C" {
 #include "specs/emuFeatureRegisterSpec.h"//for feature names
 
 //DEFINE INFO!!!
-//define EMU_SUPPORT_PALM_OS5 to compile in Tungsten C support(not reccomended for low power devices)
+//define EMU_SUPPORT_PALM_OS5 to compile in Tungsten T3 support(not reccomended for low power devices)
 //define EMU_MULTITHREADED to speed up long loops
+//define EMU_MANAGE_HOST_CPU_PIPELINE to optimize the CPU pipeline for the most common cases
 //define EMU_NO_SAFETY to remove all safety checks
 //define EMU_BIG_ENDIAN on big endian systems
+//define EMU_HAVE_FILE_LAUNCHER to enable launching files from the host system
 //to enable degguging define EMU_DEBUG, all options below do nothing unless EMU_DEBUG is defined
 //to enable sandbox debugging define EMU_SANDBOX
 //to enable memory access logging define EMU_SANDBOX_LOG_MEMORY_ACCESSES
@@ -44,8 +46,8 @@ static void debugLog(char* str, ...){};
 
 //config options
 #define EMU_FPS 60
-#define EMU_SYSCLK_PRECISION 2000000//the amount of cycles to run before adding SYSCLKs, higher = faster, higher values may skip timer events and lower audio accuracy
-#define EMU_CPU_PERCENT_WAITING 0.30//account for wait states when reading memory, tested with SysInfo.prc
+#define DBVZ_SYSCLK_PRECISION 2000000//the amount of cycles to run before adding SYSCLKs, higher = faster, higher values may skip timer events and lower audio accuracy
+#define DBVZ_CPU_PERCENT_WAITING 0.30//account for wait states when reading memory, tested with SysInfo.prc
 #define AUDIO_SAMPLE_RATE 48000
 #define AUDIO_CLOCK_RATE 235929600//smallest amount of time a second can be split into:(2.0 * (14.0 * (255 + 1.0) + 15 + 1.0)) * 32768 == 235929600, used to convert the variable timing of SYSCLK and CLK32 to a fixed location in the current frame 0<->AUDIO_END_OF_FRAME
 #define AUDIO_SPEAKER_RANGE 0x6000//prevent hitting the top or bottom of the speaker when switching direction rapidly
@@ -53,10 +55,18 @@ static void debugLog(char* str, ...){};
 #define SD_CARD_BLOCK_DATA_PACKET_SIZE (1 + SD_CARD_BLOCK_SIZE + 2)
 #define SD_CARD_RESPONSE_FIFO_SIZE (SD_CARD_BLOCK_DATA_PACKET_SIZE * 3)
 #define SD_CARD_NCR_BYTES 1//how many 0xFF bytes come before the R1 response
-#define SAVE_STATE_VERSION 0
+#define SAVE_STATE_VERSION 0x00000001
+#if defined(EMU_SUPPORT_PALM_OS5)
+#define SAVE_STATE_FOR_TUNGSTEN_T3 0x80000000
+#endif
+
 
 //system constants
-#define CRYSTAL_FREQUENCY 32768
+#if defined(EMU_SUPPORT_PALM_OS5)
+#define TUNGSTEN_T3_CPU_CRYSTAL_FREQUENCY 3686400
+#define TUNGSTEN_T3_RTC_CRYSTAL_FREQUENCY 32768
+#endif
+#define M515_CRYSTAL_FREQUENCY 32768
 #define AUDIO_SAMPLES_PER_FRAME (AUDIO_SAMPLE_RATE / EMU_FPS)
 #define AUDIO_END_OF_FRAME (AUDIO_CLOCK_RATE / EMU_FPS)
 
@@ -83,13 +93,13 @@ enum{
 
 //types
 typedef struct{
-   uint8_t* data;
-   uint32_t size;
-}buffer_t;
-
-typedef struct{
    bool  buttonUp;
    bool  buttonDown;
+#if defined(EMU_SUPPORT_PALM_OS5)
+   bool  buttonLeft;
+   bool  buttonRight;
+   bool  buttonCenter;
+#endif
    
    bool  buttonCalendar;//hw button 1
    bool  buttonAddress;//hw button 2
@@ -104,22 +114,31 @@ typedef struct{
 }input_t;
 
 typedef struct{
-   uint64_t command;
-   uint8_t  commandBitsRemaining;
-   uint8_t  runningCommand;
-   uint32_t runningCommandVars[3];
-   uint8_t  runningCommandPacket[SD_CARD_BLOCK_DATA_PACKET_SIZE];
-   uint8_t  responseFifo[SD_CARD_RESPONSE_FIFO_SIZE];
-   uint16_t responseReadPosition;
-   int8_t   responseReadPositionBit;
-   uint16_t responseWritePosition;
-   bool     commandIsAcmd;
-   bool     allowInvalidCrc;
-   bool     chipSelect;
-   bool     receivingCommand;
-   bool     inIdleState;
+   uint8_t  csd[16];
+   uint8_t  cid[16];
+   uint8_t  scr[8];
+   uint32_t ocr;
    bool     writeProtectSwitch;
-   buffer_t flashChip;
+}sd_card_info_t;
+
+typedef struct{
+   uint64_t       command;
+   uint8_t        commandBitsRemaining;
+   uint8_t        runningCommand;
+   uint32_t       runningCommandVars[3];
+   uint8_t        runningCommandPacket[SD_CARD_BLOCK_DATA_PACKET_SIZE];
+   uint8_t        responseFifo[SD_CARD_RESPONSE_FIFO_SIZE];
+   uint16_t       responseReadPosition;
+   int8_t         responseReadPositionBit;
+   uint16_t       responseWritePosition;
+   bool           commandIsAcmd;
+   bool           allowInvalidCrc;
+   bool           chipSelect;
+   bool           receivingCommand;
+   bool           inIdleState;
+   sd_card_info_t sdInfo;
+   uint8_t*       flashChipData;
+   uint32_t       flashChipSize;
 }sd_card_t;
 
 typedef struct{
@@ -142,11 +161,13 @@ typedef struct{
 }emu_reg_t;
 
 //emulator data, some are GUI interface variables, some should be left alone
-extern uint8_t*  palmRam;//access allowed to read save RAM without allocating a giant buffer, but endianness must be taken into account
+#if defined(EMU_SUPPORT_PALM_OS5)
+extern bool      palmEmulatingTungstenT3;//read allowed, but not advised
+#endif
 extern uint8_t*  palmRom;//dont touch
-extern uint8_t*  palmReg;//dont touch
+extern uint8_t*  palmRam;//access allowed to read save RAM without allocating a giant buffer, but endianness must be taken into account
 extern input_t   palmInput;//write allowed
-extern sd_card_t palmSdCard;//dont touch
+extern sd_card_t palmSdCard;//access allowed to read flash chip data without allocating a giant buffer
 extern misc_hw_t palmMisc;//read/write allowed
 extern emu_reg_t palmEmuFeatures;//dont touch
 extern uint16_t* palmFramebuffer;//read allowed
@@ -154,28 +175,27 @@ extern uint16_t  palmFramebufferWidth;//read allowed
 extern uint16_t  palmFramebufferHeight;//read allowed
 extern int16_t*  palmAudio;//read allowed, 2 channel signed 16 bit audio
 extern blip_t*   palmAudioResampler;//dont touch
-extern double    palmSysclksPerClk32;//dont touch
 extern double    palmCycleCounter;//dont touch
 extern double    palmClockMultiplier;//dont touch
-extern uint32_t  palmFrameClk32s;//dont touch
-extern double    palmClk32Sysclks;//dont touch
 
 //functions
-uint32_t emulatorInit(buffer_t palmRomDump, buffer_t palmBootDump, uint32_t enabledEmuFeatures);//calling any emulator functions before emulatorInit results in undefined behavior
-void emulatorExit(void);
+uint32_t emulatorInit(uint8_t* palmRomData, uint32_t palmRomSize, uint8_t* palmBootloaderData, uint32_t palmBootloaderSize, uint32_t enabledEmuFeatures);
+void emulatorDeinit(void);
 void emulatorHardReset(void);
 void emulatorSoftReset(void);
 void emulatorSetRtc(uint16_t days, uint8_t hours, uint8_t minutes, uint8_t seconds);
 uint32_t emulatorGetStateSize(void);
-bool emulatorSaveState(buffer_t buffer);//true = success
-bool emulatorLoadState(buffer_t buffer);//true = success
+bool emulatorSaveState(uint8_t* data, uint32_t size);//true = success
+bool emulatorLoadState(uint8_t* data, uint32_t size);//true = success
 uint32_t emulatorGetRamSize(void);
-bool emulatorSaveRam(buffer_t buffer);//true = success
-bool emulatorLoadRam(buffer_t buffer);//true = success
-buffer_t emulatorGetSdCardBuffer(void);//this is a direct pointer to the SD card data, do not free it
-uint32_t emulatorInsertSdCard(buffer_t image, bool writeProtectSwitch);//use (NULL, desired size) to create a new empty SD card
+bool emulatorSaveRam(uint8_t* data, uint32_t size);//true = success
+bool emulatorLoadRam(uint8_t* data, uint32_t size);//true = success
+uint32_t emulatorInsertSdCard(uint8_t* data, uint32_t size, sd_card_info_t* sdInfo);//use (NULL, desired size) to create a new empty SD card, pass NULL for sdInfo to use defaults
+uint32_t emulatorGetSdCardSize(void);
+uint32_t emulatorGetSdCardData(uint8_t* data, uint32_t size);
 void emulatorEjectSdCard(void);
 void emulatorRunFrame(void);
+void emulatorSkipFrame(void);
    
 #ifdef __cplusplus
 }

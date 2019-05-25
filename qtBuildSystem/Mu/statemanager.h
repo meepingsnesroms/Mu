@@ -4,7 +4,9 @@
 #include <QObject>
 #include <QEvent>
 #include <QListWidgetItem>
-#include <QSettings>
+#include <QString>
+
+#include "emuwrapper.h"
 
 namespace Ui{
 class StateManager;
@@ -32,5 +34,5 @@ private slots:
 
 private:
    Ui::StateManager* ui;
-   QSettings*        settings;
+   EmuWrapper*       emu;
 };

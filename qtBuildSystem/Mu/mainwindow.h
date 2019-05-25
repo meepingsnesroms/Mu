@@ -64,6 +64,12 @@ private slots:
    void on_up_released();
    void on_down_pressed();
    void on_down_released();
+   void on_left_pressed();
+   void on_left_released();
+   void on_right_pressed();
+   void on_right_released();
+   void on_center_pressed();
+   void on_center_released();
 
    //frontend buttons
    void on_ctrlBtn_clicked();
@@ -73,6 +79,7 @@ private slots:
    void on_stateManager_clicked();
    void on_reset_clicked();
    void on_settings_clicked();
+   void on_bootApp_clicked();
 
 private:
    SettingsManager* settingsManager;

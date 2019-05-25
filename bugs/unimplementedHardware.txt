@@ -1,6 +1,4 @@
 CPU:
-sysTrapPceNativeCall, ARM Emulator
-VFP(floating point) coprocessor for ARM
 Test what bits of IMR are writable
 sandbox isnt notified about switches to Thumb mode
 function name finders for ARMv5 and Thumb are unimplemented
@@ -22,10 +20,9 @@ ICR POL(1,2,3,6) may flip the pin value as well as the interrupt, POL5 does not 
 PWM2 is not implemented
 while it is stated that the PLL is turned off "30 clocks" after the DISPLL bit is set, it doesnt state where the clocks come from, CLK32 or SYSCLK
 UART1 USTCNT1
-PLLFSR has a hack that makes busy wait loops finish faster by toggling the CLK32 bit on read, for power button issue
 should also not transfer data to SD card when MOSI, MISO or SPICLK1 are disabled
 port d data register INT* bits seem to have there data bits cleared when an edge triggered interrupt is cleared(according to MC68VZ328UM.pdf Page 10-15)
-sound plays too long when the category's menu is selected on the home screen and the pen is pressed and held in the middle of the screen(only happens there, other views of the same type don't have this issue)(effected by CPU speed, turning it up reduces the duration of the excess squeal)
+sound plays too long when the category's menu is selected on the home screen and the pen is pressed and held in the middle of the screen(only happens there, other views of the same type don't have this issue)(effected by CPU speed, turning it up reduces the duration of the excess squeal)(the home menu may be changing the clock speed when this menu is released since it refreshes a bunch of icons which is CPU intensive, if it is it would distort the audio since sysclks are only calculated at the begining of a frame the new value would not take effect until a new frame began, and since it works properly sometimes that is probably when the change occurs just at the end of the last frame and the sysclk duration refresh happens at the intended time due to the new frame starting)
 trying to beam anything will lock up the OS
 
 Memory:
@@ -46,6 +43,7 @@ SD Card:
 block specific write protect bits don't work
 IRQ2 may actually be attached to the SD Card data out pin, triggering an interrupt when a 0 is received to process the return data
 need to test if Port J Pin 3(SD card chip select) is attached to Port D Pin 5(SD Card Status(IRQ2))(pinouts.ru says chip select and card detect are the same line)
+This thing: case SEND_STATUS://HACK, need to add real write protection, this command is also how the host reads the value of the little switch on the side
 
 Debug tools:
 ADS7846 channels can't be read in single reference mode in hwTestSuite
@@ -54,9 +52,16 @@ MakePalmBitmap:
 
 Other:
 Support for Silkyboard 2 silkscreen:https://archive.org/details/tucows_228076_SILKYBOARD_II
-
+Qt port dosent support Windows touchscreen input
+Qt GUI dosent resize properly with 320x320 framebuffer
+File Installer isnt working yet
+Qt dosent have a hybrid file/folder selector so apps will always have to be launched from folders for now
 
 Fixed:
+PLLFSR has a hack that makes busy wait loops finish faster by toggling the CLK32 bit on read, for power button issue(removed, power button works as expected if you wait at least 2 seconds before pushing it again(makes sence that it cnat read the new press while its turning off the CPU))
+(CPU)VFP(floating point) coprocessor for ARM(dont think the ARM Palms even used VFP)
+(Other)need to get rid of buffer_t, its not used much anyway
+ARM dynarec SIGSEGVs on exit(pushing play in the debugger still lets it continue, dont think this is a bug)
 (Feature)need to add FEATURE_DURABLE which will ignore CPU errors, increasing stability at the cost of bugginess
 (RetroArch port)set the alarm LED using retro_set_led_state_t on RetroArch
 (CPU I/O)SPI1 SPISPC register(this is just a clock divider used to slow transfers to allow the voltages to settle, since the emu has no voltages all transfers are just instant)

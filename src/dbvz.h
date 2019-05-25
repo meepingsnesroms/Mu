@@ -1,5 +1,5 @@
-#ifndef DBVZ_REGISTERS_H
-#define DBVZ_REGISTERS_H
+#ifndef DBVZ_H
+#define DBVZ_H
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -64,7 +64,11 @@ typedef struct{
 }dbvz_chip_t;
 
 //variables
-extern dbvz_chip_t chips[];
+extern uint8_t     dbvzReg[];
+extern dbvz_chip_t dbvzChipSelects[];
+extern double      dbvzSysclksPerClk32;
+extern uint32_t    dbvzFrameClk32s;
+extern double      dbvzClk32Sysclks;
 extern int8_t      pllSleepWait;
 extern int8_t      pllWakeWait;
 extern uint32_t    clk32Counter;
@@ -113,7 +117,14 @@ void dbvzSetRegister16(uint32_t address, uint16_t value);
 void dbvzSetRegister32(uint32_t address, uint32_t value);
 
 //config
-void dbvzResetRegisters(void);
+void dbvzReset(void);
+void dbvzLoadBootloader(uint8_t* data, uint32_t size);
 void dbvzSetRtc(uint16_t days, uint8_t hours, uint8_t minutes, uint8_t seconds);
+uint32_t dbvzStateSize(void);
+void dbvzSaveState(uint8_t* data);
+void dbvzLoadState(uint8_t* data);
+void dbvzLoadStateFinished(void);
+
+void dbvzExecute(void);
 
 #endif

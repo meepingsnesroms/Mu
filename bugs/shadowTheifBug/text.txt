@@ -1,0 +1,4 @@
+Whenever I register ShadowThief, this happens:
+
+It happens on any version of Mu
+PHEM/ST is fine

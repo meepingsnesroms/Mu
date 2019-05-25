@@ -4,38 +4,28 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-//endian/buffers
-//the read/write stuff looks messy here but makes the memory access functions alot cleaner
-#if defined(EMU_BIG_ENDIAN)
-//memory layout is the same as the Palm m515, just cast to pointer and access, 32 bit accesses are split to prevent unaligned access issues
-#define BUFFER_READ_8(segment, accessAddress, mask)  (*(uint8_t*)(segment + ((accessAddress) & (mask))))
-#define BUFFER_READ_16(segment, accessAddress, mask) (*(uint16_t*)(segment + ((accessAddress) & (mask))))
-#define BUFFER_READ_32(segment, accessAddress, mask) (*(uint16_t*)(segment + ((accessAddress) & (mask))) << 16 | *(uint16_t*)(segment + ((accessAddress) + 2 & (mask))))
-#define BUFFER_WRITE_8(segment, accessAddress, mask, value)  (*(uint8_t*)(segment + ((accessAddress) & (mask))) = (value))
-#define BUFFER_WRITE_16(segment, accessAddress, mask, value) (*(uint16_t*)(segment + ((accessAddress) & (mask))) = (value))
-#define BUFFER_WRITE_32(segment, accessAddress, mask, value) (*(uint16_t*)(segment + ((accessAddress) & (mask))) = (value) >> 16 , *(uint16_t*)(segment + ((accessAddress) + 2 & (mask))) = (value) & 0xFFFF)
-#define BUFFER_READ_8_BIG_ENDIAN  BUFFER_READ_8
-#define BUFFER_READ_16_BIG_ENDIAN BUFFER_READ_16
-#define BUFFER_READ_32_BIG_ENDIAN BUFFER_READ_32
-#define BUFFER_WRITE_8_BIG_ENDIAN  BUFFER_WRITE_8
-#define BUFFER_WRITE_16_BIG_ENDIAN BUFFER_WRITE_16
-#define BUFFER_WRITE_32_BIG_ENDIAN BUFFER_WRITE_32
+//threads
+#if defined(EMU_MULTITHREADED)
+#define PRAGMA_STRINGIFY(x) _Pragma(#x)
+#define MULTITHREAD_LOOP(x) PRAGMA_STRINGIFY(omp parallel for private(x))
+#define MULTITHREAD_DOUBLE_LOOP(x, y) PRAGMA_STRINGIFY(omp parallel for collapse(2) private(x, y))
 #else
-//memory layout is different from the Palm m515, optimize for opcode fetches(16 bit reads)
-#define BUFFER_READ_8(segment, accessAddress, mask)  (*(uint8_t*)(segment + ((accessAddress) & (mask) ^ 1)))
-#define BUFFER_READ_16(segment, accessAddress, mask) (*(uint16_t*)(segment + ((accessAddress) & (mask))))
-#define BUFFER_READ_32(segment, accessAddress, mask) (*(uint16_t*)(segment + ((accessAddress) & (mask))) << 16 | *(uint16_t*)(segment + ((accessAddress) + 2 & (mask))))
-#define BUFFER_WRITE_8(segment, accessAddress, mask, value)  (*(uint8_t*)(segment + ((accessAddress) & (mask) ^ 1)) = (value))
-#define BUFFER_WRITE_16(segment, accessAddress, mask, value) (*(uint16_t*)(segment + ((accessAddress) & (mask))) = (value))
-#define BUFFER_WRITE_32(segment, accessAddress, mask, value) (*(uint16_t*)(segment + ((accessAddress) & (mask))) = (value) >> 16 , *(uint16_t*)(segment + ((accessAddress) + 2 & (mask))) = (value) & 0xFFFF)
-#define BUFFER_READ_8_BIG_ENDIAN(segment, accessAddress, mask)  (segment[(accessAddress) & (mask)])
-#define BUFFER_READ_16_BIG_ENDIAN(segment, accessAddress, mask) (segment[(accessAddress) & (mask)] << 8 | segment[(accessAddress) + 1 & (mask)])
-#define BUFFER_READ_32_BIG_ENDIAN(segment, accessAddress, mask) (segment[(accessAddress) & (mask)] << 24 | segment[(accessAddress) + 1 & (mask)] << 16 | segment[(accessAddress) + 2 & (mask)] << 8 | segment[(accessAddress) + 3 & (mask)])
-#define BUFFER_WRITE_8_BIG_ENDIAN(segment, accessAddress, mask, value)  (segment[(accessAddress) & (mask)] = (value))
-#define BUFFER_WRITE_16_BIG_ENDIAN(segment, accessAddress, mask, value) (segment[(accessAddress) & (mask)] = (value) >> 8, segment[(accessAddress) + 1 & (mask)] = (value) & 0xFF)
-#define BUFFER_WRITE_32_BIG_ENDIAN(segment, accessAddress, mask, value) (segment[(accessAddress) & (mask)] = (value) >> 24, segment[(accessAddress) + 1 & (mask)] = ((value) >> 16) & 0xFF, segment[(accessAddress) + 2 & (mask)] = ((value) >> 8) & 0xFF, segment[(accessAddress) + 3 & (mask)] = (value) & 0xFF)
+#define MULTITHREAD_LOOP(x)
+#define MULTITHREAD_DOUBLE_LOOP(x, y)
 #endif
 
+//pipeline
+#if defined(EMU_MANAGE_HOST_CPU_PIPELINE)
+#define unlikely(x) __builtin_expect(!!(x), false)
+#define likely(x) __builtin_expect(!!(x), true)
+#define likely_equal(x, y) __builtin_expect((x), (y))
+#else
+#define unlikely(x) x
+#define likely(x) x
+#define likely_equal(x, y) x
+#endif
+
+//endian
 #define SWAP_16(x) ((uint16_t)((((uint16_t)(x) & 0x00FF) << 8) | (((uint16_t)(x) & 0xFF00) >> 8)))
 #define SWAP_32(x) ((uint32_t)((((uint32_t)(x) & 0x000000FF) << 24) | (((uint32_t)(x) & 0x0000FF00) <<  8) | (((uint32_t)(x) & 0x00FF0000) >>  8) | (((uint32_t)(x) & 0xFF000000) >> 24)))
 #define SWAP_64(x) ((((uint64_t)(x) & UINT64_C(0x00000000000000FF)) << 56) | (((uint64_t)(x) & UINT64_C(0x000000000000FF00)) << 40) | (((uint64_t)(x) & UINT64_C(0x0000000000FF0000)) << 24) | (((uint64_t)(x) & UINT64_C(0x00000000FF000000)) << 8) | (((uint64_t)(x) & UINT64_C(0x000000FF00000000)) >> 8) | (((uint64_t)(x) & UINT64_C(0x0000FF0000000000)) >> 24) | (((uint64_t)(x) & UINT64_C(0x00FF000000000000)) >> 40) | (((uint64_t)(x) & UINT64_C(0xFF00000000000000)) >> 56))
@@ -45,7 +35,7 @@ static inline void swap16(uint8_t* buffer, uint32_t count){
 
    //count specifys the number of uint16_t's that need to be swapped, the uint8_t* is because of alignment restrictions that crash on some platforms
    count *= sizeof(uint16_t);
-   for(index = 0; index < count; index += 2){
+   MULTITHREAD_LOOP(index) for(index = 0; index < count; index += 2){
       uint8_t temp = buffer[index];
       buffer[index] = buffer[index + 1];
       buffer[index + 1] = temp;
@@ -64,145 +54,71 @@ static inline void swap16BufferIfBig(uint8_t* buffer, uint32_t count){
 #endif
 }
 
-//threads
-#if defined(EMU_MULTITHREADED)
-#define PRAGMA_STRINGIFY(x) _Pragma(#x)
-#define MULTITHREAD_LOOP(x) PRAGMA_STRINGIFY(omp parallel for private(x))
-#define MULTITHREAD_DOUBLE_LOOP(x, y) PRAGMA_STRINGIFY(omp parallel for collapse(2) private(x, y))
-#else
-#define MULTITHREAD_LOOP(x)
-#define MULTITHREAD_DOUBLE_LOOP(x, y)
-#endif
+//custom operators
+#define SIZEOF_BITS(value) (sizeof(value) * 8)
+
+static inline uintmax_t fillBottomWith0s(uintmax_t value, uint8_t count){
+   return value & UINTMAX_MAX << count;
+}
+
+static inline uintmax_t fillTopWith0s(uintmax_t value, uint8_t count){
+   return value & UINTMAX_MAX >> count;
+}
+
+static inline uintmax_t fillBottomWith1s(uintmax_t value, uint8_t count){
+   return value | (UINTMAX_MAX >> SIZEOF_BITS(uintmax_t) - count);
+}
+
+static inline uintmax_t fillTopWith1s(uintmax_t value, uint8_t count){
+   return value | (UINTMAX_MAX << SIZEOF_BITS(uintmax_t) - count);
+}
+
+static inline uintmax_t leftShiftUse1s(uintmax_t value, uint8_t count){
+   return fillBottomWith1s(value << count, count);
+}
+
+static inline uintmax_t rightShiftUse1s(uintmax_t value, uint8_t count){
+   return fillTopWith1s(value >> count, count);
+}
 
 //range capping
-static inline uint8_t u8Min(uint8_t x, uint8_t y){
+static inline uintmax_t uintMin(uintmax_t x, uintmax_t y){
    return x < y ? x : y;
 }
 
-static inline uint8_t u8Max(uint8_t x, uint8_t y){
+static inline uintmax_t uintMax(uintmax_t x, uintmax_t y){
    return x > y ? x : y;
 }
 
-static inline uint8_t u8Clamp(uint8_t low, uint8_t value, uint8_t high){
+static inline uintmax_t uintClamp(uintmax_t low, uintmax_t value, uintmax_t high){
    //low must always be less than high!
-   return u8Max(low, u8Min(value, high));
+   return uintMax(low, uintMin(value, high));
 }
 
-static inline uint16_t u16Min(uint16_t x, uint16_t y){
+static inline intmax_t intMin(intmax_t x, intmax_t y){
    return x < y ? x : y;
 }
 
-static inline uint16_t u16Max(uint16_t x, uint16_t y){
+static inline intmax_t intMax(intmax_t x, intmax_t y){
    return x > y ? x : y;
 }
 
-static inline uint16_t u16Clamp(uint16_t low, uint16_t value, uint16_t high){
+static inline intmax_t intClamp(intmax_t low, intmax_t value, intmax_t high){
    //low must always be less than high!
-   return u16Max(low, u16Min(value, high));
+   return intMax(low, intMin(value, high));
 }
 
-static inline uint32_t u32Min(uint32_t x, uint32_t y){
+static inline double floatMin(double x, double y){
    return x < y ? x : y;
 }
 
-static inline uint32_t u32Max(uint32_t x, uint32_t y){
+static inline double floatMax(double x, double y){
    return x > y ? x : y;
 }
 
-static inline uint32_t u32Clamp(uint32_t low, uint32_t value, uint32_t high){
+static inline double floatClamp(double low, double value, double high){
    //low must always be less than high!
-   return u32Max(low, u32Min(value, high));
-}
-
-static inline uint64_t u64Min(uint64_t x, uint64_t y){
-   return x < y ? x : y;
-}
-
-static inline uint64_t u64Max(uint64_t x, uint64_t y){
-   return x > y ? x : y;
-}
-
-static inline uint64_t u64Clamp(uint64_t low, uint64_t value, uint64_t high){
-   //low must always be less than high!
-   return u64Max(low, u64Min(value, high));
-}
-
-static inline int8_t s8Min(int8_t x, int8_t y){
-   return x < y ? x : y;
-}
-
-static inline int8_t s8Max(int8_t x, int8_t y){
-   return x > y ? x : y;
-}
-
-static inline int8_t s8Clamp(int8_t low, int8_t value, int8_t high){
-   //low must always be less than high!
-   return s8Max(low, s8Min(value, high));
-}
-
-static inline int16_t s16Min(int16_t x, int16_t y){
-   return x < y ? x : y;
-}
-
-static inline int16_t s16Max(int16_t x, int16_t y){
-   return x > y ? x : y;
-}
-
-static inline int16_t s16Clamp(int16_t low, int16_t value, int16_t high){
-   //low must always be less than high!
-   return s16Max(low, s16Min(value, high));
-}
-
-static inline int32_t s32Min(int32_t x, int32_t y){
-   return x < y ? x : y;
-}
-
-static inline int32_t s32Max(int32_t x, int32_t y){
-   return x > y ? x : y;
-}
-
-static inline int32_t s32Clamp(int32_t low, int32_t value, int32_t high){
-   //low must always be less than high!
-   return s32Max(low, s32Min(value, high));
-}
-
-static inline int64_t s64Min(int64_t x, int64_t y){
-   return x < y ? x : y;
-}
-
-static inline int64_t s64Max(int64_t x, int64_t y){
-   return x > y ? x : y;
-}
-
-static inline int64_t s64Clamp(int64_t low, int64_t value, int64_t high){
-   //low must always be less than high!
-   return s64Max(low, s64Min(value, high));
-}
-
-static inline float fMin(float x, float y){
-   return x < y ? x : y;
-}
-
-static inline float fMax(float x, float y){
-   return x > y ? x : y;
-}
-
-static inline float fClamp(float low, float value, float high){
-   //low must always be less than high!
-   return fMax(low, fMin(value, high));
-}
-
-static inline double dMin(double x, double y){
-   return x < y ? x : y;
-}
-
-static inline double dMax(double x, double y){
-   return x > y ? x : y;
-}
-
-static inline double dClamp(double low, double value, double high){
-   //low must always be less than high!
-   return dMax(low, dMin(value, high));
+   return floatMax(low, floatMin(value, high));
 }
 
 //float platform safety

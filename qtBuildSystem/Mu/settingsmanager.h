@@ -33,6 +33,9 @@ private slots:
 
    void on_selectUpKey_clicked();
    void on_selectDownKey_clicked();
+   void on_selectLeftKey_clicked();
+   void on_selectRightKey_clicked();
+   void on_selectCenterKey_clicked();
    void on_selectCalendarKey_clicked();
    void on_selectAddressBookKey_clicked();
    void on_selectTodoKey_clicked();
@@ -44,6 +47,9 @@ private slots:
    void on_featureSyncedRtc_toggled(bool checked);
    void on_featureHleApis_toggled(bool checked);
    void on_featureDurable_toggled(bool checked);
+
+   void on_fastBoot_toggled(bool checked);
+   void on_useOs5_toggled(bool checked);
 
 private:
    Ui::SettingsManager* ui;

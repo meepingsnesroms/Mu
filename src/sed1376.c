@@ -3,7 +3,7 @@
 
 #include "emulator.h"
 #include "portability.h"
-#include "dbvzRegisters.h"
+#include "dbvz.h"
 #include "flx68000.h"//for flx68000GetPc()
 #include "specs/sed1376RegisterSpec.h"
 
@@ -27,8 +27,8 @@
 #define SED1376_RAM_SIZE  0x20000//actual size is 0x14000, but that cant be masked off by address lines so size is increased to prevent buffer overflow
 
 
-uint16_t sed1376Framebuffer[160 * 160];
-uint8_t  sed1376Ram[SED1376_RAM_SIZE];
+uint16_t* sed1376Framebuffer;
+uint8_t   sed1376Ram[SED1376_RAM_SIZE];
 
 static uint8_t  sed1376Registers[SED1376_REG_SIZE];
 static uint8_t  sed1376RLut[SED1376_LUT_SIZE];
@@ -391,8 +391,8 @@ void sed1376Render(void){
             //debugLog("PIP state, start x:%d, end x:%d, start y:%d, end y:%d\n", pipStartX, pipEndX, pipStartY, pipEndY);
             //render PIP only if PIP window is onscreen
             if(pipStartX < 160 && pipStartY < 160){
-               pipEndX = u16Min(pipEndX, 160);
-               pipEndY = u16Min(pipEndY, 160);
+               pipEndX = uintMin(pipEndX, 160);
+               pipEndY = uintMin(pipEndY, 160);
                screenStartAddress = getPipStartAddress();
                lineSize = (sed1376Registers[PIP_LINE_SZ_1] << 8 | sed1376Registers[PIP_LINE_SZ_0]) * 4;
                MULTITHREAD_DOUBLE_LOOP(pixelX, pixelY) for(pixelY = pipStartY; pixelY < pipEndY; pixelY++)

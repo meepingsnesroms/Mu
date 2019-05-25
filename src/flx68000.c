@@ -3,7 +3,7 @@
 
 #include "emulator.h"
 #include "portability.h"
-#include "dbvzRegisters.h"
+#include "dbvz.h"
 #include "m515Bus.h"
 #include "m68k/m68kcpu.h"
 
@@ -21,19 +21,19 @@ void flx68000PcLongJump(uint32_t newPc){
    switch(dbvzBankType[DBVZ_START_BANK(newPc)]){
       case DBVZ_CHIP_A0_ROM:
          dataBufferHost = (uintptr_t)palmRom;
-         dataBufferGuest = chips[DBVZ_CHIP_A0_ROM].start;
-         windowSize = chips[DBVZ_CHIP_A0_ROM].mask + 1;
+         dataBufferGuest = dbvzChipSelects[DBVZ_CHIP_A0_ROM].start;
+         windowSize = dbvzChipSelects[DBVZ_CHIP_A0_ROM].mask + 1;
          break;
 
       case DBVZ_CHIP_DX_RAM:
          dataBufferHost = (uintptr_t)palmRam;
-         dataBufferGuest = chips[DBVZ_CHIP_DX_RAM].start;
-         windowSize = chips[DBVZ_CHIP_DX_RAM].mask + 1;
+         dataBufferGuest = dbvzChipSelects[DBVZ_CHIP_DX_RAM].start;
+         windowSize = dbvzChipSelects[DBVZ_CHIP_DX_RAM].mask + 1;
          break;
 
       case DBVZ_CHIP_REGISTERS:
          //needed for when EMU_NO_SAFETY is set and a function is run in the sandbox
-         dataBufferHost = (uintptr_t)palmReg;
+         dataBufferHost = (uintptr_t)dbvzReg;
          dataBufferGuest = DBVZ_BANK_ADDRESS(DBVZ_START_BANK(newPc));
          windowSize = DBVZ_REG_SIZE;
          break;
@@ -42,7 +42,7 @@ void flx68000PcLongJump(uint32_t newPc){
    memBase = dataBufferHost - dataBufferGuest - windowSize * ((newPc - dataBufferGuest) / windowSize);
 }
 
-//everything must be 16 bit aligned(accept 8 bit accesses) due to 68k unaligned access rules,
+//everything must be 16 bit aligned(except 8 bit accesses) due to 68k unaligned access rules,
 //32 bit reads are 2 16 bit reads because on some platforms 32 bit reads that arnt on 32 bit boundrys will crash the program
 #if defined(EMU_BIG_ENDIAN)
 uint16_t m68k_read_immediate_16(uint32_t address){
@@ -79,7 +79,7 @@ uint32_t  m68k_read_pcrelative_32(uint32_t address){
 #endif
 #endif
 
-void flx68000Init(void){
+void flx68000Reset(void){
    static bool inited = false;
 
    if(!inited){
@@ -90,11 +90,7 @@ void flx68000Init(void){
 
       inited = true;
    }
-}
 
-void flx68000Reset(void){
-   dbvzResetRegisters();
-   dbvzResetAddressSpace();//address space must be reset after hardware registers because it is dependent on them
    m68k_pulse_reset();
 }
 
@@ -249,23 +245,8 @@ void flx68000LoadStateFinished(void){
 #endif
 }
 
-void flx68000Execute(void){
-   double cyclesRemaining = palmSysclksPerClk32;
-
-   dbvzBeginClk32();
-
-   while(cyclesRemaining >= 1.0){
-      double sysclks = dMin(cyclesRemaining, EMU_SYSCLK_PRECISION);
-      int32_t cpuCycles = sysclks * pctlrCpuClockDivider * palmClockMultiplier;
-
-      if(cpuCycles > 0)
-         m68k_execute(cpuCycles);
-      dbvzAddSysclks(sysclks);
-
-      cyclesRemaining -= sysclks;
-   }
-
-   dbvzEndClk32();
+void flx68000Execute(int32_t cycles){
+   m68k_execute(cycles);
 }
 
 void flx68000SetIrq(uint8_t irqLevel){
@@ -287,10 +268,6 @@ void flx68000BusError(uint32_t address, bool isWrite){
 
 uint32_t flx68000GetRegister(uint8_t reg){
    return m68k_get_reg(NULL, reg);
-}
-
-uint32_t flx68000GetPc(void){
-   return m68k_get_reg(NULL, M68K_REG_PPC);
 }
 
 uint64_t flx68000ReadArbitraryMemory(uint32_t address, uint8_t size){

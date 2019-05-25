@@ -14,7 +14,7 @@
 #include "../m68k/m68kcpu.h"
 #include "../emulator.h"
 #include "../ads7846.h"
-#include "../dbvzRegisters.h"
+#include "../dbvz.h"
 #include "../portability.h"
 #include "../specs/emuFeatureRegisterSpec.h"
 #include "sandbox.h"
@@ -165,9 +165,9 @@ static void printTrapInfo(uint16_t trap){
 }
 
 bool validExecutionAddress(uint32_t address){
-   if(chips[DBVZ_CHIP_A0_ROM].inBootMode || address >= chips[DBVZ_CHIP_A0_ROM].start && address < chips[DBVZ_CHIP_A0_ROM].start + chips[DBVZ_CHIP_A0_ROM].lineSize)
+   if(dbvzChipSelects[DBVZ_CHIP_A0_ROM].inBootMode || address >= dbvzChipSelects[DBVZ_CHIP_A0_ROM].start && address < dbvzChipSelects[DBVZ_CHIP_A0_ROM].start + dbvzChipSelects[DBVZ_CHIP_A0_ROM].lineSize)
       return true;
-   if(address >= chips[DBVZ_CHIP_DX_RAM].start && address < chips[DBVZ_CHIP_DX_RAM].start + chips[DBVZ_CHIP_DX_RAM].lineSize)
+   if(address >= dbvzChipSelects[DBVZ_CHIP_DX_RAM].start && address < dbvzChipSelects[DBVZ_CHIP_DX_RAM].start + dbvzChipSelects[DBVZ_CHIP_DX_RAM].lineSize)
       return true;
    if(sandboxActive && address >= 0xFFFFFE00)//used to run custom code when in sandbox mode
       return true;
@@ -252,8 +252,8 @@ static uint32_t scanForPrivateFunctionAddress(const char* name){
    //function name format [0x**(unknown), string(with null terminator), 0x00, 0x00(if last 0x00 was on an even address, protects opcode alignemnt)]
    //this is not 100% accurate, it scans memory for a function address based on a string
    //if a duplicate set of stings is found but not encasing a function a fatal error will occur on execution
-   uint32_t rangeEnd = chips[DBVZ_CHIP_A0_ROM].start + chips[DBVZ_CHIP_A0_ROM].lineSize - 1;
-   uint32_t address = find68kString(name, chips[DBVZ_CHIP_A0_ROM].start, rangeEnd);
+   uint32_t rangeEnd = dbvzChipSelects[DBVZ_CHIP_A0_ROM].start + dbvzChipSelects[DBVZ_CHIP_A0_ROM].lineSize - 1;
+   uint32_t address = find68kString(name, dbvzChipSelects[DBVZ_CHIP_A0_ROM].start, rangeEnd);
 
    while(address < rangeEnd){
       uint32_t signatureBegining = address - 3;//last opcode of function being looked for if the string is correct
@@ -355,7 +355,7 @@ static void freePalmString(uint32_t address){
    sandboxCallGuestFunction(false, 0x00000000, MemChunkFree, "w(p)", address);
 }
 
-static bool installResourceToDevice(buffer_t resourceBuffer){
+static bool installResourceToDevice(uint8_t* data, uint32_t size){
    /*
    #define memNewChunkFlagNonMovable    0x0200
    #define memNewChunkFlagAllowLarge    0x1000  // this is not in the sdk *g*
@@ -375,8 +375,8 @@ static bool installResourceToDevice(buffer_t resourceBuffer){
    }
    */
 
-   uint32_t palmSideResourceData = sandboxCallGuestFunction(false, 0x00000000, MemChunkNew, "p(wlw)", 1/*heapID, storage RAM*/, resourceBuffer.size, 0x1200/*attr, seems to work without memOwnerID*/);
-   bool storageRamReadOnly = chips[DBVZ_CHIP_DX_RAM].readOnlyForProtectedMemory;
+   uint32_t palmSideResourceData = sandboxCallGuestFunction(false, 0x00000000, MemChunkNew, "p(wlw)", 1/*heapID, storage RAM*/, size, 0x1200/*attr, seems to work without memOwnerID*/);
+   bool storageRamReadOnly = dbvzChipSelects[DBVZ_CHIP_DX_RAM].readOnlyForProtectedMemory;
    uint16_t error;
    uint32_t count;
 
@@ -384,10 +384,10 @@ static bool installResourceToDevice(buffer_t resourceBuffer){
    if(!palmSideResourceData)
       return false;
 
-   chips[DBVZ_CHIP_DX_RAM].readOnlyForProtectedMemory = false;//need to unprotect storage RAM
-   for(count = 0; count < resourceBuffer.size; count++)
-      m68k_write_memory_8(palmSideResourceData + count, resourceBuffer.data[count]);
-   chips[DBVZ_CHIP_DX_RAM].readOnlyForProtectedMemory = storageRamReadOnly;//restore old protection state
+   dbvzChipSelects[DBVZ_CHIP_DX_RAM].readOnlyForProtectedMemory = false;//need to unprotect storage RAM
+   for(count = 0; count < size; count++)
+      m68k_write_memory_8(palmSideResourceData + count, data[count]);
+   dbvzChipSelects[DBVZ_CHIP_DX_RAM].readOnlyForProtectedMemory = storageRamReadOnly;//restore old protection state
    error = sandboxCallGuestFunction(false, 0x00000000, DmCreateDatabaseFromImage, "w(p)", palmSideResourceData);//Err DmCreateDatabaseFromImage(MemPtr bufferP);//this looks best
    sandboxCallGuestFunction(false, 0x00000000, MemChunkFree, "w(p)", palmSideResourceData);
 
@@ -789,7 +789,7 @@ void sandboxReset(void){
    sandboxWatchRegionsActive = 0;
 
    //patch OS here if needed
-   sandboxCommand(SANDBOX_CMD_PATCH_OS, NULL);
+   //sandboxCommand(SANDBOX_CMD_PATCH_OS, NULL);
 
    //log all register accesses
    //sandboxCommand(SANDBOX_CMD_REGISTER_WATCH_ENABLE, NULL);
@@ -1063,8 +1063,8 @@ uint32_t sandboxCommand(uint32_t command, void* data){
          break;
 
       case SANDBOX_CMD_DEBUG_INSTALL_APP:{
-            buffer_t* app = (buffer_t*)data;
-            bool success = installResourceToDevice(*app);
+            uintptr_t* values = data;
+            bool success = installResourceToDevice(values[0], values[1]);
 
             if(!success)
                result = EMU_ERROR_OUT_OF_MEMORY;
@@ -1098,9 +1098,11 @@ void sandboxOnFrameRun(void){
    //run at the end of every frame
    sandboxFramesRan++;
 
+   /*
    if(sandboxFramesRan == SANDBOX_SECONDS_TO_FRAMES(10)){
       sandboxCommand(SANDBOX_CMD_TEST_MEMORY_ALIGNMENT, NULL);
    }
+   */
 }
 
 void sandboxOnOpcodeRun(void){
@@ -1197,7 +1199,7 @@ void sandboxOnMemoryAccess(uint32_t address, uint8_t size, bool write, uint32_t 
             if(!functionValid)
                function = "NAME NOT FOUND";
 
-            if(address >= chips[DBVZ_CHIP_DX_RAM].start && address < chips[DBVZ_CHIP_DX_RAM].start + 0x10000){
+            if(address >= dbvzChipSelects[DBVZ_CHIP_DX_RAM].start && address < dbvzChipSelects[DBVZ_CHIP_DX_RAM].start + 0x10000){
                //low mem globals
                address &= 0xFFFF;
 
@@ -1232,7 +1234,7 @@ void sandboxOnMemoryAccess(uint32_t address, uint8_t size, bool write, uint32_t 
                      debugLog("Reading hardware register: name:%s/address:0x%08X, size:%d, function:%s/PC:0x%08X\n", registerName, address, size, function, pc);
                }
             }
-            else if(address >= chips[DBVZ_CHIP_B0_SED].start && address < chips[DBVZ_CHIP_B0_SED].start + chips[DBVZ_CHIP_B0_SED].lineSize){
+            else if(address >= dbvzChipSelects[DBVZ_CHIP_B0_SED].start && address < dbvzChipSelects[DBVZ_CHIP_B0_SED].start + dbvzChipSelects[DBVZ_CHIP_B0_SED].lineSize){
                //SED1376
                if(address & SED1376_MR_BIT){
                   //SED1376 data
