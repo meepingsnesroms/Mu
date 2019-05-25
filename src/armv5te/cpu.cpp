@@ -252,7 +252,7 @@ void set_cpsr_flags(uint32_t flags)
 }
 
 // Get full CPSR register
-uint32_t FASTCALL get_cpsr()
+uint32_t get_cpsr()
 {
     return arm.cpsr_n << 31
          | arm.cpsr_z << 30
@@ -366,7 +366,7 @@ uint32_t *ptr_spsr()
     error("Attempted to access SPSR from user or system mode");
 }
 
-uint32_t FASTCALL get_spsr() {
+uint32_t get_spsr() {
     return *ptr_spsr();
 }
 

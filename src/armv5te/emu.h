@@ -17,11 +17,6 @@
 extern "C" {
 #endif
 
-// Can also be set manually
-#if !defined(__i386__) && !defined(__x86_64__) && !(defined(__arm__) && !defined(__thumb__)) && !(defined(__aarch64__))
-#define NO_TRANSLATION
-#endif
-
 static inline uint16_t BSWAP16(uint16_t x) { return x << 8 | x >> 8; }
 #define BSWAP32(x) __builtin_bswap32(x)
 
@@ -45,12 +40,10 @@ enum { LOG_CPU, LOG_IO, LOG_FLASH, LOG_INTS, LOG_ICOUNT, LOG_USB, LOG_GDB, MAX_L
 #define emuprintf(...) debugLog(__VA_ARGS__)
 
 //void warn(const char *fmt, ...);
-#define warn(...) debugLog(__VA_ARGS__)
 //__attribute__((noreturn)) void error(const char *fmt, ...);
+#define warn(...) debugLog(__VA_ARGS__)
 #define error(...) abort()
 
-// Is actually a jmp_buf, but __builtin_*jmp is used instead
-// as the MinGW variant is buggy
 extern jmp_buf restart_after_exception;
 
 // GUI callbacks

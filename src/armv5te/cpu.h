@@ -78,10 +78,10 @@ extern struct arm_state arm __asm__("arm");
 #endif
 
 void cpu_int_check();
-uint32_t FASTCALL get_cpsr() __asm__("get_cpsr");
+uint32_t get_cpsr() __asm__("get_cpsr");
 void set_cpsr_full(uint32_t cpsr);
 void FASTCALL set_cpsr(uint32_t cpsr, uint32_t mask);
-uint32_t FASTCALL get_spsr();
+uint32_t get_spsr();
 void FASTCALL set_spsr(uint32_t cpsr, uint32_t mask);
 uint32_t *ptr_spsr();
 uint32_t get_cpsr_flags();

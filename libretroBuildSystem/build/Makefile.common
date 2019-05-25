@@ -50,6 +50,9 @@ else ifneq (,$(filter unix osx% linux% ,$(platform)))
    EMU_OS := linux
 endif
 
+# OS 5 isnt even booting yet, just turn the dynarec off to make it compile easier
+EMU_ARCH := unknown
+
 ifneq (,$(filter ps3 sncps3 psl1ght ngc wii wiiu,$(platform)))
 	COREDEFINES += -DEMU_BIG_ENDIAN
 else ifeq ($(platform), osx)

@@ -7,7 +7,7 @@ GIT_VERSION := " $(shell git rev-parse --short HEAD || echo unknown)"
 platform = android_jni
 
 # Palm OS 5 support
-EMU_SUPPORT_PALM_OS5 = 1
+EMU_SUPPORT_PALM_OS5 := 1
 EMU_OS := linux
 ifeq ($(TARGET_ARCH_ABI), x86)
    EMU_ARCH := x86_32
@@ -17,6 +17,8 @@ else ifeq ($(TARGET_ARCH_ABI), armeabi-v7a)
 	EMU_ARCH := armv7
 else ifeq ($(TARGET_ARCH_ABI), arm64-v8a)
    EMU_ARCH := armv8
+else
+   EMU_ARCH := unknown
 endif
 
 include $(CORE_DIR)/build/Makefile.common
