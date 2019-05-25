@@ -15,6 +15,7 @@
 
 #include "../src/emulator.h"
 #include "../src/portability.h"
+#include "../src/silkscreen.h"
 #include "../src/fileLauncher/launcher.h"
 #include "cursors.h"
 
@@ -41,6 +42,7 @@ static bool     useJoystickAsMouse;
 static float    touchCursorX;
 static float    touchCursorY;
 static char     contentPath[PATH_MAX_LENGTH];
+static uint16_t mouseCursorOldArea[32 * 32];
 
 
 static void renderMouseCursor(int16_t screenX, int16_t screenY){
@@ -51,11 +53,17 @@ static void renderMouseCursor(int16_t screenX, int16_t screenY){
       //align cursor to side of image
       screenX -= 6;
       
-      MULTITHREAD_DOUBLE_LOOP(y, x) for(y = 0; y < 32; y++)
-         for(x = 6; x < 26; x++)
-            if(screenX + x >= 0 && screenY + y >= 0 && screenX + x < palmFramebufferWidth && screenY + y < palmFramebufferHeight)
-               if(cursor32x32[y * 32 + x] != 0xFFFF)
-                  palmFramebuffer[(screenY + y) * palmFramebufferWidth + screenX + x] = cursor32x32[y * 32 + x];
+      for(y = 0; y < 32; y++){
+         for(x = 6; x < 26; x++){
+            if(screenX + x >= 0 && screenY + y >= 0 && screenX + x < palmFramebufferWidth && screenY + y < palmFramebufferHeight){
+               if(cursor32x32[y * 32 + x] != 0xFFFF){
+                  uint16_t* pixel = palmFramebuffer + (screenY + y) * palmFramebufferWidth + screenX + x;
+                  mouseCursorOldArea[y * 32 + x] = *pixel;
+                  *pixel = cursor32x32[y * 32 + x];
+               }
+            }
+         }
+      }
    }
    else{
       int8_t x;
@@ -64,11 +72,44 @@ static void renderMouseCursor(int16_t screenX, int16_t screenY){
       //align cursor to side of image
       screenX -= 3;
       
-      MULTITHREAD_DOUBLE_LOOP(y, x) for(y = 0; y < 16; y++)
+      for(y = 0; y < 16; y++){
+         for(x = 3; x < 13; x++){
+            if(screenX + x >= 0 && screenY + y >= 0 && screenX + x < palmFramebufferWidth && screenY + y < palmFramebufferHeight){
+               if(cursor16x16[y * 16 + x] != 0xFFFF){
+                  uint16_t* pixel = palmFramebuffer + (screenY + y) * palmFramebufferWidth + screenX + x;
+                  mouseCursorOldArea[y * 16 + x] = *pixel;
+                  *pixel = cursor16x16[y * 16 + x];
+               }
+            }
+         }
+      }
+   }
+}
+
+static void unrenderMouseCursor(int16_t screenX, int16_t screenY){
+   if(SCREEN_HIRES){
+      int8_t x;
+      int8_t y;
+      
+      //align cursors missing rectangle to side of image
+      screenX -= 6;
+      
+      for(y = 0; y < 32; y++)
+         for(x = 6; x < 26; x++)
+            if(screenX + x >= 0 && screenY + y >= 0 && screenX + x < palmFramebufferWidth && screenY + y < palmFramebufferHeight)
+               palmFramebuffer[(screenY + y) * palmFramebufferWidth + screenX + x] = mouseCursorOldArea[y * 32 + x];
+   }
+   else{
+      int8_t x;
+      int8_t y;
+      
+      //align cursors missing rectangle to side of image
+      screenX -= 3;
+      
+      for(y = 0; y < 16; y++)
          for(x = 3; x < 13; x++)
             if(screenX + x >= 0 && screenY + y >= 0 && screenX + x < palmFramebufferWidth && screenY + y < palmFramebufferHeight)
-               if(cursor16x16[y * 16 + x] != 0xFFFF)
-                  palmFramebuffer[(screenY + y) * palmFramebufferWidth + screenX + x] = cursor16x16[y * 16 + x];
+                  palmFramebuffer[(screenY + y) * palmFramebufferWidth + screenX + x] = mouseCursorOldArea[y * 16 + x];
    }
 }
 
@@ -318,6 +359,10 @@ void retro_run(void){
    audio_cb(palmAudio, AUDIO_SAMPLES_PER_FRAME);
    if(led_cb)
       led_cb(0, palmMisc.powerButtonLed);
+   
+   //repair damage done to the framebuffer by the mouse cursor
+   if(useJoystickAsMouse)
+      unrenderMouseCursor(touchCursorX, touchCursorY);
 }
 
 bool retro_load_game(const struct retro_game_info *info){
