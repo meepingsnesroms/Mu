@@ -35,6 +35,8 @@ else ifeq ($(platform),windows_msvc2003_x86)
 include $(BUILD_DIR)/Makefile.windows_msvc2003_x86
 else ifeq ($(platform),windows_msvc2005_x86)
 include $(BUILD_DIR)/Makefile.windows_msvc2005_x86
+else ifeq ($(platform),windows_msvc2008_x86)
+include $(BUILD_DIR)/Makefile.windows_msvc2008_x86
 else ifeq ($(platform),windows_msvc2010_x86)
 include $(BUILD_DIR)/Makefile.windows_msvc2010_x86
 else ifeq ($(platform),windows_msvc2010_x64)
@@ -465,7 +467,7 @@ include $(BUILD_DIR)/Makefile.common
 
 OBJECTS := $(SOURCES_C:.c=.o) $(SOURCES_CXX:.cpp=.o) $(SOURCES_ASM:.S=.o)
 
-DEFINES = $(COREDEFINES)
+DEFINES += $(COREDEFINES)
 
 ifeq ($(STATIC_LINKING), 1)
 	DEFINES += -DSTATIC_LINKING
@@ -488,6 +490,7 @@ endif
 COMMON_DEFINES += $(CODE_DEFINES) $(WARNINGS_DEFINES) $(fpic)
 
 CFLAGS += $(DEFINES) $(COMMON_DEFINES)
+CXXFLAGS += $(DEFINES) $(COMMON_DEFINES)
 
 ifneq (,$(findstring msvc,$(platform)))
 	OBJOUT = -Fo
@@ -525,8 +528,6 @@ endif
 else
 	$(CC) $(fpic) $(SHARED) $(INCFLAGS) $(LDFLAGS) $(OBJOUT)$@ $(OBJECTS) $(LIBM)
 endif
-
-	@echo "** BUILD SUCCESSFUL! GG NO RE **"
 
 %.o: %.c
 	$(CC) $(INCFLAGS) $(CFLAGS) -c $(OBJOUT)$@ $<
