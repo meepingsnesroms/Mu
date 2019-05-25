@@ -52,7 +52,7 @@ ifeq ($(EMU_SUPPORT_PALM_OS5), 1)
 		EMU_SOURCES_C += $(EMU_PATH)/armv5te/os/os-win32.c
 	else ifeq ($(EMU_OS), linux)
 		EMU_SOURCES_C += $(EMU_PATH)/armv5te/os/os-linux.c
-   	endif
+   endif
    
 	ifeq ($(EMU_NO_DYNAREC), 1)
 		EMU_DEFINES += -DNO_TRANSLATION
