@@ -1,4 +1,4 @@
-#include <cassert>
+#include <assert.h>
 
 #include "asmcode.h"
 #include "cpu.h"

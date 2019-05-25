@@ -4,8 +4,8 @@
 /* Portable and safe implementation of C bitfields
    Source: http://blog.codef00.com/2014/12/06/portable-bitfields-using-c11/ */
 
-#include <cstdint>
-#include <cstddef>
+#include <stdint.h>
+#include <stddef.h>
 #include <type_traits>
 
 template <size_t LastBit>
