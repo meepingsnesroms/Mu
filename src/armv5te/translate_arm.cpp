@@ -8,9 +8,9 @@
  * block ends, r11 is split into cpsr_nzcv again and all registers restored.
  */
 
-#include <cassert>
-#include <cstdint>
-#include <cstdio>
+#include <assert.h>
+#include <stdint.h>
+#include <stdio.h>
 
 #ifdef IS_IOS_BUILD
 #include <sys/mman.h>

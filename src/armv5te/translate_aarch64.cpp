@@ -18,8 +18,8 @@
  * to be preserved. They need to be written back into the virtual arm struct
  * before calling into compiler-generated code though.
  */
-#include <cassert>
-#include <cstdint>
+#include <assert.h>
+#include <stdint.h>
 
 #include "asmcode.h"
 #include "cpudefs.h"
