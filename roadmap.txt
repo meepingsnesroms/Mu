@@ -17,7 +17,7 @@ add Palm Tungsten T3 support
 v1.0.0 to v1.1.0(Feb 25 2019 - Easter 2019)
 
 RetroArch GUI:
-*allow mouse cursor to be rendered with multiple CPUs
+*allow mouse cursor to be rendered with multiple CPUs(removed for now)
 *now launches content like cartridge based systems
 //TODO: allow adding more content after boot
 //TODO: get EMU_MANAGE_HOST_CPU_PIPELINE working on other platforms then the main 4
