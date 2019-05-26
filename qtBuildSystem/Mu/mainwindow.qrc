@@ -19,5 +19,6 @@
         <file>images/center.svg</file>
         <file>images/left.svg</file>
         <file>images/right.svg</file>
+        <file>images/boot.svg</file>
     </qresource>
 </RCC>

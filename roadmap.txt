@@ -17,7 +17,7 @@ add Palm Tungsten T3 support
 v1.0.0 to v1.1.0(Feb 25 2019 - Easter 2019)
 
 RetroArch GUI:
-*allow mouse cursor to be rendered with multiple CPUs
+*allow mouse cursor to be rendered with multiple CPUs(removed for now)
 *now launches content like cartridge based systems
 //TODO: allow adding more content after boot
 //TODO: get EMU_MANAGE_HOST_CPU_PIPELINE working on other platforms then the main 4
@@ -27,7 +27,7 @@ RetroArch GUI:
 Qt GUI:
 //TODO: get circleci builds for QT port on Win/Mac/Linux
 //TODO: allow reiniting the emu without closing the program
-//TODO: get icon for boot button
+*boot button uses install button icon now, changed install button to icon a "+"
 *put back left/right/center keys
 *added install and boot buttons to both modes, content loaded with the boot button has separate save paths just like cartridge systems
 *added instant boot option, no longer have to wait for the 5 second boot up if you dont want to(instant boot is always on for loading games)

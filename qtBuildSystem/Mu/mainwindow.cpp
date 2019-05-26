@@ -399,14 +399,25 @@ void MainWindow::on_ctrlBtn_clicked(){
 
 void MainWindow::on_install_clicked(){
    if(emu.isInited()){
-      QString app = QFileDialog::getOpenFileName(this, "Select File", QDir::root().path(), "Palm OS File (*.prc *.pdb *.pqa)");
+      QString app;
+      bool loadedNewApp = false;
+      bool wasPaused = emu.isPaused();
 
+      if(!wasPaused)
+         emu.pause();
+
+      app = QFileDialog::getOpenFileName(this, "Select File", QDir::root().path(), "Palm OS File (*.prc *.pdb *.pqa)");
       if(app != ""){
          uint32_t error = emu.installApplication(app);
 
-         if(error != EMU_ERROR_NONE)
+         if(error == EMU_ERROR_NONE)
+            loadedNewApp = true;
+         else
             popupErrorDialog("Could not install app, Error:" + QString::number(error));
       }
+
+      if(!wasPaused || loadedNewApp)
+         emu.resume();
    }
 }
 
@@ -470,21 +481,21 @@ void MainWindow::on_settings_clicked(){
 
 void MainWindow::on_bootApp_clicked(){
    if(emu.isInited()){
-      QString appDir;
+      QString app;
       bool loadedNewApp = false;
       bool wasPaused = emu.isPaused();
 
       if(!wasPaused)
          emu.pause();
 
-      appDir = QFileDialog::getExistingDirectory(this, "Select Directory", QDir::root().path());
-      if(appDir != ""){
-         uint32_t error = emu.bootFromFileOrDirectory(appDir);
+      app = QFileDialog::getOpenFileName(this, "Select File", QDir::root().path(), "Palm OS File (*.prc *.pqa *.img)");
+      if(app != ""){
+         uint32_t error = emu.bootFromFileOrDirectory(app);
 
          if(error == EMU_ERROR_NONE)
             loadedNewApp = true;
          else
-            popupErrorDialog("Could not load apps, Error:" + QString::number(error));
+            popupErrorDialog("Could not boot app, Error:" + QString::number(error));
       }
 
       if(!wasPaused || loadedNewApp)
