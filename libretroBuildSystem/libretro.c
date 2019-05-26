@@ -151,7 +151,7 @@ static void check_variables(bool booting){
       useJoystickAsMouse = !strcmp(var.value, "enabled");
    
 #if defined(EMU_SUPPORT_PALM_OS5)
-   var.key = "palm_emu_use_os_5";
+   var.key = "palm_emu_use_os5";
    if(environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
       useOs5 = !strcmp(var.value, "enabled");
 #endif
@@ -215,7 +215,7 @@ void retro_set_environment(retro_environment_t cb){
       { "palm_emu_feature_durable", "Ignore Invalid Behavior; disabled|enabled" },
       { "palm_emu_use_joystick_as_mouse", "Use Left Joystick As Mouse; disabled|enabled" },
 #if defined(EMU_SUPPORT_PALM_OS5)
-      { "palm_emu_use_os_5", "Boot Apps In OS 5; disabled|enabled" },
+      { "palm_emu_use_os5", "Boot Apps In OS 5; disabled|enabled" },
 #endif
       { 0 }
    };
@@ -284,7 +284,7 @@ void retro_run(void){
    
 #if defined(EMU_SUPPORT_PALM_OS5)
    //some RetroArch functions can only be called from this function so call those if needed
-   if(firstRetroRunCall){
+   if(unlikely(firstRetroRunCall)){
       if(useOs5){
          struct retro_game_geometry geometry;
 
