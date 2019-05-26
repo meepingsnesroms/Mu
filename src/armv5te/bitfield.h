@@ -6,16 +6,22 @@
 
 #include <stdint.h>
 #include <stddef.h>
-#include <type_traits>
+
+//Mac OS RetroArch port is lacking <type_traits>
+template<bool B, class T, class F>
+struct typeConditional { typedef T type; };
+
+template<class T, class F>
+struct typeConditional<false, T, F> { typedef F type; };
 
 template <size_t LastBit>
 struct MinimumTypeHelper {
     typedef
-        typename std::conditional<LastBit == 0 , void,
-        typename std::conditional<LastBit <= 8 , uint8_t,
-        typename std::conditional<LastBit <= 16, uint16_t,
-        typename std::conditional<LastBit <= 32, uint32_t,
-        typename std::conditional<LastBit <= 64, uint64_t,
+        typename typeConditional<LastBit == 0 , void,
+        typename typeConditional<LastBit <= 8 , uint8_t,
+        typename typeConditional<LastBit <= 16, uint16_t,
+        typename typeConditional<LastBit <= 32, uint32_t,
+        typename typeConditional<LastBit <= 64, uint64_t,
         void>::type>::type>::type>::type>::type type;
 };
 
