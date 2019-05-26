@@ -1,12 +1,12 @@
 #include <algorithm>
-#include <cassert>
-#include <mutex>
+//#include <mutex>
+#include <assert.h>
 #include <setjmp.h>
 
 // Uncomment the following line to measure the time until the OS is loaded
 // #define BENCHMARK
 #ifdef BENCHMARK
-    #include <ctime>
+    #include <time.h>
 #endif
 
 #include "armsnippets.h"

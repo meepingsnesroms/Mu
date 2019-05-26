@@ -29,19 +29,19 @@ windows{
     *msvc*{
         QMAKE_CFLAGS += -openmp
         QMAKE_CXXFLAGS += -openmp
-        DEFINES += "_Pragma=__pragma"
+        DEFINES += "_Pragma=__pragma" EMU_MULTITHREADED
     }
     *-g++{
         QMAKE_CFLAGS += -fopenmp
         QMAKE_CXXFLAGS += -fopenmp
         QMAKE_LFLAGS += -fopenmp
+        DEFINES += EMU_MULTITHREADED EMU_MANAGE_HOST_CPU_PIPELINE
     }
-    DEFINES += EMU_MULTITHREADED EMU_MANAGE_HOST_CPU_PIPELINE
     CONFIG += cpu_x86_32 # this should be auto detected in the future
 }
 
 macx{
-    QMAKE_CFLAGS += -std=c89 -D__STDBOOL_H -Dinline= -Dbool=char -Dtrue=1 -Dfalse=0 # tests C89 mode
+    # QMAKE_CFLAGS += -std=c89 -D__STDBOOL_H -Dinline= -Dbool=char -Dtrue=1 -Dfalse=0 # tests C89 mode
     ICON = macos/Mu.icns
     QMAKE_INFO_PLIST = macos/Info.plist
     DEFINES += EMU_MULTITHREADED EMU_MANAGE_HOST_CPU_PIPELINE

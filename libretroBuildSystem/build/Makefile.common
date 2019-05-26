@@ -37,7 +37,7 @@ ifneq (,$(findstring windows,$(this_system)))
          EMU_ARCH := x86_32
       endif
    else
-      # MSVC uses its own(incompatible) syntax
+      # MSVC uses its own(incompatible) ASM syntax
       EMU_SUPPORT_PALM_OS5 := 0
    endif
 else ifneq (,$(filter %armv8% %aarch64% rpi3,$(this_system)))
@@ -52,6 +52,7 @@ else ifneq (,$(filter %armv% rpi2,$(this_system)))
    EMU_OS := linux
 else ifneq (,$(findstring armhf,$(this_system)))
    # ARM Linux ARMv5
+   # this needs to be before "linux%" because it will trigger the linux case
    EMU_SUPPORT_PALM_OS5 := 0
 else ifneq (,$(filter osx% linux% ,$(this_system)))
    # x86_* Linux
@@ -62,9 +63,6 @@ else ifneq (,$(filter osx% linux% ,$(this_system)))
       EMU_ARCH := x86_32
    endif
    EMU_OS := linux
-else
-   # Dont know, but cant run OS 5
-   EMU_SUPPORT_PALM_OS5 := 0
 endif
 
 # OS 5 isnt even booting yet, just turn the dynarec off to make it compile easier
@@ -78,14 +76,15 @@ else ifeq ($(this_system), osx)
 	endif
 endif
 
-# use all CPUs and optimize for the most likely outcome, android is handled separately
+# use all CPUs and optimize for the most likely outcome, Android is handled separately
 # Apple broke OpenMP in there port of Clang so no Mac OS or iOS
 ifneq (,$(filter %armv% windows% linux%,$(this_system)))
    ifeq (,$(findstring msvc,$(this_system)))
       COREDEFINES += -fopenmp -DEMU_MULTITHREADED -DEMU_MANAGE_HOST_CPU_PIPELINE
       LDFLAGS += -fopenmp
-   else
-      COREDEFINES += -openmp -D_Pragma=__pragma -DEMU_MULTITHREADED -DEMU_MANAGE_HOST_CPU_PIPELINE
+   else ifeq (,$(findstring msvc2003,$(this_system)))
+      #MSVC2003 dosent have OpenMP and all versions of MSVC lack __builtin_expect(x, y)
+      COREDEFINES += -openmp -D_Pragma=__pragma -DEMU_MULTITHREADED
       LDFLAGS += -openmp
    endif
 endif

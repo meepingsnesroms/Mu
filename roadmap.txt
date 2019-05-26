@@ -20,6 +20,7 @@ RetroArch GUI:
 *allow mouse cursor to be rendered with multiple CPUs
 *now launches content like cartridge based systems
 //TODO: allow adding more content after boot
+//TODO: get EMU_MANAGE_HOST_CPU_PIPELINE working on other platforms then the main 4
 *booting without game works again
 *add multithreading and pipeline speedups
 
