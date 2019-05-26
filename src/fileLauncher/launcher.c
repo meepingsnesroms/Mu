@@ -22,6 +22,14 @@ typedef struct{
 
 #define LAUNCHER_TOUCH_DURATION 0.3//in seconds
 
+//APIs called by this file
+#define MemChunkNew                    0xA011
+#define MemChunkFree                   0xA012
+#define MemPtrNew                      0xA013
+#define DmGetNextDatabaseByTypeCreator 0xA078
+#define DmCreateDatabaseFromImage      0xA07F
+#define SysUIAppSwitch                 0xA0A7
+
 
 bool launcherSaveSdCardImage;
 
@@ -161,7 +169,7 @@ static uint32_t launcherInstallAppM515(launcher_file_t* file){
    memChunkNewArgs[0] = 1/*heapID, storage RAM*/;
    memChunkNewArgs[1] = file->fileSize;
    memChunkNewArgs[2] = 0x1200/*attr, seems to work without memOwnerID*/;
-   palmSideResourceData = launcherM515CallGuestFunction(0x00000000, 0xA011/*MemChunkNew*/, "p(wlw)", memChunkNewArgs);
+   palmSideResourceData = launcherM515CallGuestFunction(0x00000000, MemChunkNew, "p(wlw)", memChunkNewArgs);
 
    //buffer not allocated
    if(!palmSideResourceData)
@@ -171,8 +179,8 @@ static uint32_t launcherInstallAppM515(launcher_file_t* file){
    MULTITHREAD_LOOP(count) for(count = 0; count < file->fileSize; count++)
       m68k_write_memory_8(palmSideResourceData + count, file->fileData[count]);
    dbvzChipSelects[DBVZ_CHIP_DX_RAM].readOnlyForProtectedMemory = storageRamReadOnly;//restore old protection state
-   error = launcherM515CallGuestFunction(0x00000000, 0xA07F/*DmCreateDatabaseFromImage*/, "w(p)", &palmSideResourceData);//Err DmCreateDatabaseFromImage(MemPtr bufferP);//this looks best
-   launcherM515CallGuestFunction(0x00000000, 0xA012/*MemChunkFree*/, "w(p)", &palmSideResourceData);
+   error = launcherM515CallGuestFunction(0x00000000, DmCreateDatabaseFromImage, "w(p)", &palmSideResourceData);//Err DmCreateDatabaseFromImage(MemPtr bufferP);//this looks best
+   launcherM515CallGuestFunction(0x00000000, MemChunkFree, "w(p)", &palmSideResourceData);
 
    //didnt install
    if(error != 0)
@@ -183,6 +191,52 @@ static uint32_t launcherInstallAppM515(launcher_file_t* file){
 
 #if defined(EMU_SUPPORT_PALM_OS5)
 static uint32_t launcherInstallAppTungstenT3(launcher_file_t* file){
+   //TODO
+   return EMU_ERROR_NOT_IMPLEMENTED;
+}
+#endif
+
+static uint32_t launcherLaunchAppM515(uint32_t appCode){
+   //Err SysUIAppSwitch(UInt16 cardNo, LocalID dbID, UInt16 cmd, MemPtr cmdPBP);
+   //Err DmGetNextDatabaseByTypeCreator(Boolean newSearch, DmSearchStatePtr stateInfoP, UInt32 type, UInt32 creator, Boolean onlyLatestVers, UInt16 *cardNoP, LocalID *dbIDP);
+   uint32_t args[7];
+   uint32_t returnBuffer;
+   uint16_t error;
+
+   args[0] = 8 * sizeof(uint32_t) + sizeof(uint16_t) + 4;
+   returnBuffer = launcherM515CallGuestFunction(0x00000000, MemPtrNew, "p(l)", args);
+   if(!returnBuffer)
+      return EMU_ERROR_OUT_OF_MEMORY;
+
+   args[0] = true;
+   args[1] = returnBuffer;
+   args[2] = 'appl';
+   args[3] = appCode;
+   args[4] = false;
+   args[5] = returnBuffer + 8 * sizeof(uint32_t);
+   args[6] = returnBuffer + 8 * sizeof(uint32_t) + sizeof(uint16_t);
+   error = launcherM515CallGuestFunction(0x00000000, DmGetNextDatabaseByTypeCreator, "w(bpllbpp)", args);
+   if(error != 0)
+      return EMU_ERROR_UNKNOWN;
+
+   args[0] = 0;//cardNo
+   args[1] = m68k_read_memory_32(returnBuffer + 8 * sizeof(uint32_t) + sizeof(uint16_t));//the LocalID
+   args[2] = 0;//sysAppLaunchCmdNormalLaunch
+   args[3] = 0;//NULL
+   error = launcherM515CallGuestFunction(0x00000000, SysUIAppSwitch, "w(wlwp)", args);
+
+   //needs to be freed even if launch fails
+   args[0] = returnBuffer;
+   launcherM515CallGuestFunction(0x00000000, MemChunkFree, "w(p)", args);
+
+   if(error != 0)
+      return EMU_ERROR_UNKNOWN;
+
+   return EMU_ERROR_NONE;
+}
+
+#if defined(EMU_SUPPORT_PALM_OS5)
+static uint32_t launcherLaunchAppTungstenT3(uint32_t appCode){
    //TODO
    return EMU_ERROR_NOT_IMPLEMENTED;
 }
@@ -350,6 +404,8 @@ uint32_t launcherLaunch(launcher_file_t* files, uint32_t fileCount, uint8_t* sra
    uint32_t totalSize = 0;
    uint32_t error;
    uint32_t index;
+   bool hasBootResource = false;
+   uint32_t bootResource;
    
    for(index = 0; index < fileCount; index++){
       //cant load a 2 card images
@@ -359,6 +415,22 @@ uint32_t launcherLaunch(launcher_file_t* files, uint32_t fileCount, uint8_t* sra
       if(files[index].type == LAUNCHER_FILE_TYPE_IMG){
          cardImageHasBeenLoaded = true;
          cardImage = index;
+      }
+      else if(files[index].type == LAUNCHER_FILE_TYPE_RESOURCE_FILE){
+         if(files[index].fileSize > 0x4D){
+            //has full prc header
+            if(files[index].fileData[0x21] & 0x01){
+               //is a prc
+               uint32_t type = readStateValue32(files[index].fileData + 0x3C);
+               uint32_t creator = readStateValue32(files[index].fileData + 0x40);
+
+               if(type == 'appl'){
+                  //is an application
+                  hasBootResource = true;
+                  bootResource = creator;
+               }
+            }
+         }
       }
 
       totalSize += files[index].fileSize;
@@ -411,6 +483,18 @@ uint32_t launcherLaunch(launcher_file_t* files, uint32_t fileCount, uint8_t* sra
    if(sramData){
       emulatorLoadRam(sramData, sramSize);
       launcherBootInstantly(true);
+
+      if(hasBootResource){
+         //launch the app
+#if defined(EMU_SUPPORT_PALM_OS5)
+         if(palmEmulatingTungstenT3)
+            error = launcherLaunchAppTungstenT3(bootResource);
+         else
+#endif
+            error = launcherLaunchAppM515(bootResource);
+         if(error != EMU_ERROR_NONE)
+            return error;
+      }
    }
    else{
       launcherBootInstantly(false);
@@ -419,6 +503,18 @@ uint32_t launcherLaunch(launcher_file_t* files, uint32_t fileCount, uint8_t* sra
       for(index = 0; index < fileCount; index++)
          if(files[index].type == LAUNCHER_FILE_TYPE_RESOURCE_FILE)
             launcherInstallFiles(&files[index], 1);
+
+      if(hasBootResource){
+         //launch the app
+#if defined(EMU_SUPPORT_PALM_OS5)
+         if(palmEmulatingTungstenT3)
+            error = launcherLaunchAppTungstenT3(bootResource);
+         else
+#endif
+            error = launcherLaunchAppM515(bootResource);
+         if(error != EMU_ERROR_NONE)
+            return error;
+      }
    }
 
    return EMU_ERROR_NONE;
