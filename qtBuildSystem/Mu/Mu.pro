@@ -282,6 +282,7 @@ DISTFILES += \
     android/res/drawable-hdpi/icon.png \
     android/res/drawable-ldpi/icon.png \
     android/res/drawable-mdpi/icon.png \
+    images/boot.svg \
     images/addressBook.svg \
     images/calendar.svg \
     images/center.svg \
