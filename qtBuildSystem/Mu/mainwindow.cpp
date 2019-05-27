@@ -260,10 +260,6 @@ void MainWindow::updateDisplay(){
 
       //allow next frame to start
       emu.frameHandled();
-
-      //update GUI
-      ui->display->repaint();
-      ui->powerButtonLed->repaint();
    }
 }
 
@@ -393,8 +389,6 @@ void MainWindow::on_ctrlBtn_clicked(){
       emu.resume();
       ui->ctrlBtn->setIcon(QIcon(":/buttons/images/pause.svg"));
    }
-
-   ui->ctrlBtn->repaint();
 }
 
 void MainWindow::on_install_clicked(){
@@ -425,7 +419,6 @@ void MainWindow::on_debugger_clicked(){
    if(emu.isInited()){
       emu.pause();
       ui->ctrlBtn->setIcon(QIcon(":/buttons/images/play.svg"));
-      ui->ctrlBtn->repaint();
       emuDebugger->exec();
    }
 }
