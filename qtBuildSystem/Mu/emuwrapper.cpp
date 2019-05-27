@@ -179,7 +179,7 @@ uint32_t EmuWrapper::init(const QString& assetPath, bool useOs5, uint32_t featur
          emuSaveStatePath = assetPath + "/states-" + model + ".states";
 
          //make the place to store the saves
-         QDir(assetPath + "states-" + model + ".states").mkdir(".");
+         QDir(emuSaveStatePath).mkdir(".");
 
          //skip the boot screen
          if(fastBoot)
@@ -352,7 +352,7 @@ uint32_t EmuWrapper::bootFromFileOrDirectory(const QString& mainPath){
    emuSaveStatePath = mainPath + "." + emuOsName + ".states";
 
    //make the place to store the saves
-   QDir(mainPath + "." + emuOsName + ".states").mkdir(".");
+   QDir(emuSaveStatePath).mkdir(".");
 
    //need this goto because the emulator must be released before returning
    errorOccurred:

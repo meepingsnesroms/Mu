@@ -25,9 +25,9 @@ RetroArch GUI:
 *add multithreading and pipeline speedups
 
 Qt GUI:
-/TODO: fix state manager not loading until a state is saved
 //TODO: get circleci builds for QT port on Win/Mac/Linux
 //TODO: allow reiniting the emu without closing the program
+*fixed state manager not loading until a state is saved
 *boot button uses install button icon now, changed install button to icon a "+"
 *put back left/right/center keys
 *added install and boot buttons to both modes, content loaded with the boot button has separate save paths just like cartridge systems
