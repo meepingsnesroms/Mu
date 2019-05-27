@@ -154,7 +154,7 @@ static uint32_t launcherM515CallGuestFunction(uint32_t address, uint16_t trap, c
    return functionReturn;
 }
 
-static uint32_t launcherInstallAppM515(launcher_file_t* file){
+static uint32_t launcherInstallAppM515(uint8_t* data, uint32_t size){
    /*
    #define memNewChunkFlagNonMovable    0x0200
    #define memNewChunkFlagAllowLarge    0x1000  // this is not in the sdk *g*
@@ -167,7 +167,7 @@ static uint32_t launcherInstallAppM515(launcher_file_t* file){
 
    //try and get guest memory buffer
    memChunkNewArgs[0] = 1/*heapID, storage RAM*/;
-   memChunkNewArgs[1] = file->fileSize;
+   memChunkNewArgs[1] = size;
    memChunkNewArgs[2] = 0x1200/*attr, seems to work without memOwnerID*/;
    palmSideResourceData = launcherM515CallGuestFunction(0x00000000, MemChunkNew, "p(wlw)", memChunkNewArgs);
 
@@ -176,8 +176,8 @@ static uint32_t launcherInstallAppM515(launcher_file_t* file){
       return false;
 
    dbvzChipSelects[DBVZ_CHIP_DX_RAM].readOnlyForProtectedMemory = false;//need to unprotect storage RAM
-   MULTITHREAD_LOOP(count) for(count = 0; count < file->fileSize; count++)
-      m68k_write_memory_8(palmSideResourceData + count, file->fileData[count]);
+   MULTITHREAD_LOOP(count) for(count = 0; count < size; count++)
+      m68k_write_memory_8(palmSideResourceData + count, data[count]);
    dbvzChipSelects[DBVZ_CHIP_DX_RAM].readOnlyForProtectedMemory = storageRamReadOnly;//restore old protection state
    error = launcherM515CallGuestFunction(0x00000000, DmCreateDatabaseFromImage, "w(p)", &palmSideResourceData);//Err DmCreateDatabaseFromImage(MemPtr bufferP);//this looks best
    launcherM515CallGuestFunction(0x00000000, MemChunkFree, "w(p)", &palmSideResourceData);
@@ -190,7 +190,7 @@ static uint32_t launcherInstallAppM515(launcher_file_t* file){
 }
 
 #if defined(EMU_SUPPORT_PALM_OS5)
-static uint32_t launcherInstallAppTungstenT3(launcher_file_t* file){
+static uint32_t launcherInstallAppTungstenT3(uint8_t* data, uint32_t size){
    //TODO
    return EMU_ERROR_NOT_IMPLEMENTED;
 }
@@ -358,192 +358,6 @@ static void launcherPushHomeButtonTouchscreenTungstenT3(void){
 }
 #endif
 
-static void launcherGetSdCardInfoFromInfoFile(launcher_file_t* file, sd_card_info_t* returnValue){
-   //parse a small binary file with the extra SD card data
-   uint32_t offset = 0;
-
-   //clear everything
-   memset(returnValue, 0x00, sizeof(sd_card_info_t));
-
-   //csd
-   if(file->infoSize < offset + 16)
-      return;
-   memcpy(returnValue->csd, file->infoData + offset, 16);
-   offset += 16;
-
-   //cid
-   if(file->infoSize < offset + 16)
-      return;
-   memcpy(returnValue->cid, file->infoData + offset, 16);
-   offset += 16;
-
-   //scr
-   if(file->infoSize < offset + 8)
-      return;
-   memcpy(returnValue->scr, file->infoData + offset, 8);
-   offset += 8;
-
-   //ocr
-   if(file->infoSize < offset + sizeof(uint32_t))
-      return;
-   returnValue->ocr = readStateValue32(file->infoData + offset);
-   offset += sizeof(uint32_t);
-
-   //writeProtectSwitch
-   if(file->infoSize < offset + sizeof(uint8_t))
-      return;
-   returnValue->writeProtectSwitch = readStateValue8(file->infoData + offset);
-   offset += sizeof(uint8_t);
-
-   //this can keep growing with new values but all the current values are fixed!!
-}
-
-uint32_t launcherLaunch(launcher_file_t* files, uint32_t fileCount, uint8_t* sramData, uint32_t sramSize, uint8_t* sdCardData, uint32_t sdCardSize){
-   bool cardImageHasBeenLoaded = false;
-   uint32_t cardImage;
-   uint32_t totalSize = 0;
-   uint32_t error;
-   uint32_t index;
-   bool hasBootResource = false;
-   uint32_t bootResource;
-   
-   for(index = 0; index < fileCount; index++){
-      //cant load a 2 card images
-      if(cardImageHasBeenLoaded && files[index].type == LAUNCHER_FILE_TYPE_IMG)
-         return EMU_ERROR_INVALID_PARAMETER;
-
-      if(files[index].type == LAUNCHER_FILE_TYPE_IMG){
-         cardImageHasBeenLoaded = true;
-         cardImage = index;
-      }
-      else if(files[index].type == LAUNCHER_FILE_TYPE_RESOURCE_FILE){
-         if(files[index].fileSize > 0x4D){
-            //has full prc header
-            if(files[index].fileData[0x21] & 0x01){
-               //is a prc
-               uint32_t type = readStateValue32(files[index].fileData + 0x3C);
-               uint32_t creator = readStateValue32(files[index].fileData + 0x40);
-
-               if(type == 'appl'){
-                  //is an application
-                  hasBootResource = true;
-                  bootResource = creator;
-               }
-            }
-         }
-      }
-
-      totalSize += files[index].fileSize;
-   }
-
-   //in case the installed apps store anything on the SD card
-   launcherSaveSdCardImage = true;
-
-   //in case the emulator is currently running with an SD card inserted
-   emulatorEjectSdCard();
-
-   //dont want a data leak, could cause glitches
-   emulatorHardReset();
-
-   //insert card if present
-   if(cardImageHasBeenLoaded){
-      if(files[cardImage].infoData){
-         //with info file
-         sd_card_info_t sdInfo;
-
-         //get SD info from file
-         launcherGetSdCardInfoFromInfoFile(&files[cardImage], &sdInfo);
-
-         //load card image
-         error = emulatorInsertSdCard(files[cardImage].fileData, files[cardImage].fileSize, &sdInfo);
-         if(error != EMU_ERROR_NONE)
-            return error;
-
-         //dont save read only card images
-         if(sdInfo.writeProtectSwitch)
-            launcherSaveSdCardImage = false;
-      }
-      else{
-         //without info file
-         error = emulatorInsertSdCard(files[0].fileData, files[0].fileSize, NULL);
-         if(error != EMU_ERROR_NONE)
-            return error;
-      }
-   }
-   else{
-      if(sdCardData){
-         //use existing SD card image
-         error = emulatorInsertSdCard(sdCardData, sdCardSize, NULL);
-         if(error != EMU_ERROR_NONE)
-            return error;
-      }
-   }
-
-   //use the existing SRAM file if available
-   if(sramData){
-      emulatorLoadRam(sramData, sramSize);
-      launcherBootInstantly(true);
-
-      if(hasBootResource){
-         //launch the app
-#if defined(EMU_SUPPORT_PALM_OS5)
-         if(palmEmulatingTungstenT3)
-            error = launcherLaunchAppTungstenT3(bootResource);
-         else
-#endif
-            error = launcherLaunchAppM515(bootResource);
-         if(error != EMU_ERROR_NONE)
-            return error;
-      }
-   }
-   else{
-      launcherBootInstantly(false);
-
-      //install all resource files
-      for(index = 0; index < fileCount; index++)
-         if(files[index].type == LAUNCHER_FILE_TYPE_RESOURCE_FILE)
-            launcherInstallFiles(&files[index], 1);
-
-      if(hasBootResource){
-         //launch the app
-#if defined(EMU_SUPPORT_PALM_OS5)
-         if(palmEmulatingTungstenT3)
-            error = launcherLaunchAppTungstenT3(bootResource);
-         else
-#endif
-            error = launcherLaunchAppM515(bootResource);
-         if(error != EMU_ERROR_NONE)
-            return error;
-      }
-   }
-
-   return EMU_ERROR_NONE;
-}
-
-uint32_t launcherInstallFiles(launcher_file_t* files, uint32_t fileCount){
-   uint32_t index;
-
-   for(index = 0; index < fileCount; index++){
-      uint32_t error;
-
-      //cant install img files
-      if(files[index].type != LAUNCHER_FILE_TYPE_RESOURCE_FILE)
-         return EMU_ERROR_INVALID_PARAMETER;
-
-#if defined(EMU_SUPPORT_PALM_OS5)
-      if(palmEmulatingTungstenT3)
-         error = launcherInstallAppTungstenT3(&files[index]);
-      else
-#endif
-         error = launcherInstallAppM515(&files[index]);
-
-      if(error != EMU_ERROR_NONE)
-         return error;
-   }
-
-   return EMU_ERROR_NONE;
-}
-
 void launcherBootInstantly(bool hasSram){
    uint32_t index;
 
@@ -581,4 +395,93 @@ void launcherBootInstantly(bool hasSram){
       for(index = 0; index < EMU_FPS * 1.0; index++)
          emulatorSkipFrame();
    }
+}
+
+uint32_t launcherInstallFile(uint8_t* data, uint32_t size){
+#if defined(EMU_SUPPORT_PALM_OS5)
+      if(palmEmulatingTungstenT3)
+         return launcherInstallAppTungstenT3(data, size);
+      else
+#endif
+         return launcherInstallAppM515(data, size);
+}
+
+bool launcherIsExecutable(uint8_t* data, uint32_t size){
+   if(size > 0x4D){
+      //has full prc header
+      if(data[0x21] & 0x01){
+         //is a prc
+         uint32_t type = readStateValue32(data + 0x3C);
+
+         if(type == 'appl')
+            return true;
+      }
+   }
+
+   return false;
+}
+
+uint32_t launcherGetAppId(uint8_t* data, uint32_t size){
+   if(size > 0x4D){
+      //has full prc header
+      if(data[0x21] & 0x01){
+         //is a prc
+         uint32_t type = readStateValue32(data + 0x3C);
+         uint32_t creator = readStateValue32(data + 0x40);
+
+         if(type == 'appl')
+            return creator;
+      }
+   }
+
+   return 0x00000000;
+}
+
+uint32_t launcherExecute(uint32_t appId){
+#if defined(EMU_SUPPORT_PALM_OS5)
+   if(palmEmulatingTungstenT3)
+      return launcherLaunchAppTungstenT3(appId);
+   else
+#endif
+      return launcherLaunchAppM515(appId);
+}
+
+void launcherGetSdCardInfoFromInfoFile(uint8_t* data, uint32_t size, sd_card_info_t* returnValue){
+   //parse a small binary file with the extra SD card data
+   uint32_t offset = 0;
+
+   //clear everything
+   memset(returnValue, 0x00, sizeof(sd_card_info_t));
+
+   //csd
+   if(size < offset + 16)
+      return;
+   memcpy(returnValue->csd, data + offset, 16);
+   offset += 16;
+
+   //cid
+   if(size < offset + 16)
+      return;
+   memcpy(returnValue->cid, data + offset, 16);
+   offset += 16;
+
+   //scr
+   if(size < offset + 8)
+      return;
+   memcpy(returnValue->scr, data + offset, 8);
+   offset += 8;
+
+   //ocr
+   if(size < offset + sizeof(uint32_t))
+      return;
+   returnValue->ocr = readStateValue32(data + offset);
+   offset += sizeof(uint32_t);
+
+   //writeProtectSwitch
+   if(size < offset + sizeof(uint8_t))
+      return;
+   returnValue->writeProtectSwitch = readStateValue8(data + offset);
+   offset += sizeof(uint8_t);
+
+   //this can keep growing with new values but all the current values are fixed!!
 }

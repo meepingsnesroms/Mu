@@ -37,6 +37,9 @@
       <layout class="QVBoxLayout" name="verticalLayout_3">
        <item>
         <widget class="QLineEdit" name="homeDirectory">
+         <property name="focusPolicy">
+          <enum>Qt::NoFocus</enum>
+         </property>
          <property name="readOnly">
           <bool>true</bool>
          </property>
@@ -44,13 +47,22 @@
        </item>
        <item>
         <widget class="QPushButton" name="pickHomeDirectory">
+         <property name="focusPolicy">
+          <enum>Qt::NoFocus</enum>
+         </property>
          <property name="text">
           <string>Pick Home Directory</string>
+         </property>
+         <property name="autoDefault">
+          <bool>false</bool>
          </property>
         </widget>
        </item>
        <item>
         <widget class="QCheckBox" name="showOnscreenKeys">
+         <property name="focusPolicy">
+          <enum>Qt::NoFocus</enum>
+         </property>
          <property name="text">
           <string>Show Onscreen Keys</string>
          </property>
@@ -58,6 +70,9 @@
        </item>
        <item>
         <widget class="QLabel" name="label">
+         <property name="focusPolicy">
+          <enum>Qt::NoFocus</enum>
+         </property>
          <property name="text">
           <string>Set Palm Button Map:</string>
          </property>
@@ -80,12 +95,18 @@
               <verstretch>0</verstretch>
              </sizepolicy>
             </property>
+            <property name="focusPolicy">
+             <enum>Qt::NoFocus</enum>
+            </property>
             <property name="text">
              <string>MAXSIZE</string>
             </property>
             <property name="icon">
              <iconset resource="mainwindow.qrc">
               <normaloff>:/buttons/images/notes.svg</normaloff>:/buttons/images/notes.svg</iconset>
+            </property>
+            <property name="autoDefault">
+             <bool>false</bool>
             </property>
            </widget>
           </item>
@@ -97,6 +118,9 @@
               <verstretch>0</verstretch>
              </sizepolicy>
             </property>
+            <property name="focusPolicy">
+             <enum>Qt::NoFocus</enum>
+            </property>
             <property name="text">
              <string>MAXSIZE</string>
             </property>
@@ -104,16 +128,25 @@
              <iconset resource="mainwindow.qrc">
               <normaloff>:/buttons/images/calendar.svg</normaloff>:/buttons/images/calendar.svg</iconset>
             </property>
+            <property name="autoDefault">
+             <bool>false</bool>
+            </property>
            </widget>
           </item>
           <item row="2" column="2">
            <widget class="QPushButton" name="selectDownKey">
+            <property name="focusPolicy">
+             <enum>Qt::NoFocus</enum>
+            </property>
             <property name="text">
              <string>MAXSIZE</string>
             </property>
             <property name="icon">
              <iconset resource="mainwindow.qrc">
               <normaloff>:/buttons/images/down.svg</normaloff>:/buttons/images/down.svg</iconset>
+            </property>
+            <property name="autoDefault">
+             <bool>false</bool>
             </property>
            </widget>
           </item>
@@ -125,12 +158,18 @@
               <verstretch>0</verstretch>
              </sizepolicy>
             </property>
+            <property name="focusPolicy">
+             <enum>Qt::NoFocus</enum>
+            </property>
             <property name="text">
              <string>MAXSIZE</string>
             </property>
             <property name="icon">
              <iconset resource="mainwindow.qrc">
               <normaloff>:/buttons/images/todo.svg</normaloff>:/buttons/images/todo.svg</iconset>
+            </property>
+            <property name="autoDefault">
+             <bool>false</bool>
             </property>
            </widget>
           </item>
@@ -142,6 +181,9 @@
               <verstretch>0</verstretch>
              </sizepolicy>
             </property>
+            <property name="focusPolicy">
+             <enum>Qt::NoFocus</enum>
+            </property>
             <property name="text">
              <string>MAXSIZE</string>
             </property>
@@ -149,16 +191,25 @@
              <iconset resource="mainwindow.qrc">
               <normaloff>:/buttons/images/power.svg</normaloff>:/buttons/images/power.svg</iconset>
             </property>
+            <property name="autoDefault">
+             <bool>false</bool>
+            </property>
            </widget>
           </item>
           <item row="0" column="2">
            <widget class="QPushButton" name="selectUpKey">
+            <property name="focusPolicy">
+             <enum>Qt::NoFocus</enum>
+            </property>
             <property name="text">
              <string>MAXSIZE</string>
             </property>
             <property name="icon">
              <iconset resource="mainwindow.qrc">
               <normaloff>:/buttons/images/up.svg</normaloff>:/buttons/images/up.svg</iconset>
+            </property>
+            <property name="autoDefault">
+             <bool>false</bool>
             </property>
            </widget>
           </item>
@@ -170,6 +221,9 @@
               <verstretch>0</verstretch>
              </sizepolicy>
             </property>
+            <property name="focusPolicy">
+             <enum>Qt::NoFocus</enum>
+            </property>
             <property name="text">
              <string>MAXSIZE</string>
             </property>
@@ -177,10 +231,16 @@
              <iconset resource="mainwindow.qrc">
               <normaloff>:/buttons/images/addressBook.svg</normaloff>:/buttons/images/addressBook.svg</iconset>
             </property>
+            <property name="autoDefault">
+             <bool>false</bool>
+            </property>
            </widget>
           </item>
           <item row="1" column="2">
            <widget class="QPushButton" name="selectCenterKey">
+            <property name="focusPolicy">
+             <enum>Qt::NoFocus</enum>
+            </property>
             <property name="text">
              <string>MAXSIZE</string>
             </property>
@@ -188,10 +248,16 @@
              <iconset resource="mainwindow.qrc">
               <normaloff>:/buttons/images/center.svg</normaloff>:/buttons/images/center.svg</iconset>
             </property>
+            <property name="autoDefault">
+             <bool>false</bool>
+            </property>
            </widget>
           </item>
           <item row="1" column="1">
            <widget class="QPushButton" name="selectLeftKey">
+            <property name="focusPolicy">
+             <enum>Qt::NoFocus</enum>
+            </property>
             <property name="text">
              <string>MAXSIZE</string>
             </property>
@@ -199,16 +265,25 @@
              <iconset resource="mainwindow.qrc">
               <normaloff>:/buttons/images/left.svg</normaloff>:/buttons/images/left.svg</iconset>
             </property>
+            <property name="autoDefault">
+             <bool>false</bool>
+            </property>
            </widget>
           </item>
           <item row="1" column="3">
            <widget class="QPushButton" name="selectRightKey">
+            <property name="focusPolicy">
+             <enum>Qt::NoFocus</enum>
+            </property>
             <property name="text">
              <string>MAXSIZE</string>
             </property>
             <property name="icon">
              <iconset resource="mainwindow.qrc">
               <normaloff>:/buttons/images/right.svg</normaloff>:/buttons/images/right.svg</iconset>
+            </property>
+            <property name="autoDefault">
+             <bool>false</bool>
             </property>
            </widget>
           </item>
@@ -224,13 +299,22 @@
        </item>
        <item>
         <widget class="QPushButton" name="clearKeyBind">
+         <property name="focusPolicy">
+          <enum>Qt::NoFocus</enum>
+         </property>
          <property name="text">
           <string>Clear Key Bind</string>
+         </property>
+         <property name="autoDefault">
+          <bool>false</bool>
          </property>
         </widget>
        </item>
        <item>
         <widget class="QCheckBox" name="useOs5">
+         <property name="focusPolicy">
+          <enum>Qt::NoFocus</enum>
+         </property>
          <property name="text">
           <string>Use OS 5</string>
          </property>
@@ -238,6 +322,9 @@
        </item>
        <item>
         <widget class="QCheckBox" name="fastBoot">
+         <property name="focusPolicy">
+          <enum>Qt::NoFocus</enum>
+         </property>
          <property name="text">
           <string>Fast Boot(Fastforwards Through The Boot Screen)</string>
          </property>
@@ -245,6 +332,9 @@
        </item>
        <item>
         <widget class="QLabel" name="label_2">
+         <property name="focusPolicy">
+          <enum>Qt::NoFocus</enum>
+         </property>
          <property name="text">
           <string>Set Emulator Features(Restart Required):</string>
          </property>
@@ -255,6 +345,9 @@
          <layout class="QGridLayout" name="gridLayout_2">
           <item row="0" column="1">
            <widget class="QCheckBox" name="featureFastCpu">
+            <property name="focusPolicy">
+             <enum>Qt::NoFocus</enum>
+            </property>
             <property name="text">
              <string>Overclocking</string>
             </property>
@@ -262,6 +355,9 @@
           </item>
           <item row="0" column="0">
            <widget class="QCheckBox" name="featureHleApis">
+            <property name="focusPolicy">
+             <enum>Qt::NoFocus</enum>
+            </property>
             <property name="text">
              <string>HLE APIs(Speed Hack)</string>
             </property>
@@ -276,6 +372,9 @@
           </item>
           <item row="3" column="0">
            <widget class="QCheckBox" name="featureSyncedRtc">
+            <property name="focusPolicy">
+             <enum>Qt::NoFocus</enum>
+            </property>
             <property name="text">
              <string>Sync Real Time Clock</string>
             </property>

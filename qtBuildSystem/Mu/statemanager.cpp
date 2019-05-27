@@ -8,6 +8,8 @@
 #include <QFile>
 #include <QDir>
 #include <QListWidgetItem>
+#include <QRegExp>
+#include <QRegExpValidator>
 
 #include "mainwindow.h"
 
@@ -21,17 +23,24 @@ StateManager::StateManager(QWidget* parent) :
    ui->setupUi(this);
 
    //this allows resizing the screenshot of the savestate
+   this->installEventFilter(this);
    ui->statePreview->installEventFilter(this);
    ui->statePreview->setObjectName("statePreview");
 
-   updateStateList();
+   noBadPaths = new QRegExpValidator(QRegExp("[a-z0-9_()-\\s]*"));
+   ui->newStateName->setValidator(noBadPaths);
 }
 
 StateManager::~StateManager(){
+   delete noBadPaths;
    delete ui;
 }
 
 bool StateManager::eventFilter(QObject* object, QEvent* event){
+   if(object->objectName() == "StateManager" && event->type() == QEvent::WindowActivate){
+      updateStateList();
+      ui->states->setCurrentRow(0);
+   }
    if(object->objectName() == "statePreview" && event->type() == QEvent::Resize)
       updateStatePreview();
 
@@ -67,8 +76,6 @@ void StateManager::updateStatePreview(){
       //remove outdated image
       ui->statePreview->clear();
    }
-
-   ui->statePreview->update();
 }
 
 int StateManager::getStateIndexRowByName(const QString& name){
@@ -115,6 +122,4 @@ void StateManager::on_deleteState_clicked(){
 
 void StateManager::on_states_currentItemChanged(QListWidgetItem* current, QListWidgetItem* previous){
    updateStatePreview();
-   ui->states->repaint();
-   ui->statePreview->repaint();
 }

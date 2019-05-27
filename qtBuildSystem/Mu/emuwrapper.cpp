@@ -15,6 +15,7 @@
 #include <thread>
 #include <string>
 #include <stdint.h>
+#include <string.h>
 
 #include "emuwrapper.h"
 #include "../../src/emulator.h"
@@ -179,7 +180,7 @@ uint32_t EmuWrapper::init(const QString& assetPath, bool useOs5, uint32_t featur
          emuSaveStatePath = assetPath + "/states-" + model + ".states";
 
          //make the place to store the saves
-         QDir(assetPath + "states-" + model + ".states").mkdir(".");
+         QDir(emuSaveStatePath).mkdir(".");
 
          //skip the boot screen
          if(fastBoot)
@@ -248,97 +249,36 @@ void EmuWrapper::reset(bool hard){
    }
 }
 
-uint32_t EmuWrapper::bootFromFileOrDirectory(const QString& mainPath){
+uint32_t EmuWrapper::bootFromFile(const QString& mainPath){
    bool wasPaused = isPaused();
    uint32_t error = EMU_ERROR_NONE;
    QFileInfo pathInfo(mainPath);
-   QStringList paths;
-   QVector<QByteArray> fileDataBuffers;
-   QVector<QByteArray> fileInfoBuffers;
-   launcher_file_t* files;
+   QFile appFile(mainPath);
    QFile ramFile(mainPath + "." + emuOsName + ".ram");
    QFile sdCardFile(mainPath + "." + emuOsName + ".sd.img");
+   QString suffix = QFileInfo(mainPath).suffix().toLower();
+   uint32_t appId;
    bool hasSaveRam;
    bool hasSaveSdCard;
 
    if(!wasPaused)
       pause();
 
-   if(pathInfo.isDir()){
-      //get Palm file list
-      QDir dirInfo(mainPath);
-      QStringList filters;
-
-      filters += "*.prc";
-      filters += "*.pdb";
-      filters += "*.pqa";
-      filters += "*.img";
-
-      paths = dirInfo.entryList(filters);
-
-      //make paths full direct paths
-      for(int index = 0; index < paths.length(); index++)
-         paths[index].prepend(mainPath + "/");
-   }
-   else if(pathInfo.exists()){
-      //use single file
-      paths = QStringList(mainPath);
-   }
-   else{
-      //error
-      error = EMU_ERROR_INVALID_PARAMETER;
-      goto errorOccurred;
-   }
-
-   fileDataBuffers.resize(paths.length());
-   fileInfoBuffers.resize(paths.length());
-   files = new launcher_file_t[paths.length()];
-
-   memset(files, 0x00, sizeof(launcher_file_t) * paths.length());
-
-   for(int index = 0; index < paths.length(); index++){
-      QFile appFile(paths[index]);
-
-      if(appFile.open(QFile::ReadOnly | QFile::ExistingOnly)){
-         QString suffix = QFileInfo(paths[index]).suffix().toLower();
-
-         fileDataBuffers[index] = appFile.readAll();
-         appFile.close();
-
-         files[index].fileData = (uint8_t*)fileDataBuffers[index].data();
-         files[index].fileSize = fileDataBuffers[index].size();
-
-         if(suffix == "img"){
-            QFile infoFile(paths[index].remove(paths[index].size() - 3, 3) + "info");//swap "img" for "info"
-
-            if(infoFile.open(QFile::ReadOnly | QFile::ExistingOnly)){
-               fileInfoBuffers[index] = infoFile.readAll();
-               files[index].infoData = (uint8_t*)fileInfoBuffers[index].data();
-               files[index].infoSize = fileInfoBuffers[index].size();
-               infoFile.close();
-            }
-            files[index].type = LAUNCHER_FILE_TYPE_IMG;
-         }
-         else{
-            files[index].type = LAUNCHER_FILE_TYPE_RESOURCE_FILE;
-         }
-      }
-      else{
-         error = EMU_ERROR_RESOURCE_LOCKED;
-         goto errorOccurred;
-      }
-   }
-
    //save the current data for the last program launched, or the standard device image if none where launched
    writeOutSaves();
 
    //its OK if these fail, the buffer will just be NULL, 0 if they do
    hasSaveRam = ramFile.open(QFile::ReadOnly | QFile::ExistingOnly);
-   hasSaveSdCard = sdCardFile.open(QFile::ReadOnly | QFile::ExistingOnly);
+   hasSaveSdCard = suffix != "img" ? sdCardFile.open(QFile::ReadOnly | QFile::ExistingOnly) : false;
 
-   error = launcherLaunch(files, paths.length(), hasSaveRam ? (uint8_t*)ramFile.readAll().data() : NULL, hasSaveRam ? ramFile.size() : 0, hasSaveSdCard ? (uint8_t*)sdCardFile.readAll().data() : NULL, hasSaveSdCard ? sdCardFile.size() : 0);
-   if(error != EMU_ERROR_NONE)
-      goto errorOccurred;
+   //fully clear the emu
+   emulatorEjectSdCard();
+   emulatorHardReset();
+
+   if(hasSaveRam)
+      emulatorLoadRam((uint8_t*)ramFile.readAll().data(), ramFile.size());
+   if(hasSaveSdCard)
+      emulatorInsertSdCard((uint8_t*)sdCardFile.readAll().data(), sdCardFile.size(), NULL);
 
    //its OK if these fail
    if(hasSaveRam)
@@ -346,16 +286,60 @@ uint32_t EmuWrapper::bootFromFileOrDirectory(const QString& mainPath){
    if(hasSaveSdCard)
       sdCardFile.close();
 
+   launcherBootInstantly(hasSaveRam);
+
+   if(appFile.open(QFile::ReadOnly | QFile::ExistingOnly)){
+      QByteArray fileBuffer = appFile.readAll();
+
+      appFile.close();
+
+      if(suffix == "img"){
+         QFile infoFile(mainPath.mid(0, mainPath.length() - 3) + "info");//swap "img" for "info"
+         sd_card_info_t sdInfo;
+
+         memset(&sdInfo, 0x00, sizeof(sdInfo));
+
+         if(infoFile.open(QFile::ReadOnly | QFile::ExistingOnly)){
+            launcherGetSdCardInfoFromInfoFile((uint8_t*)infoFile.readAll().data(), infoFile.size(), &sdInfo);
+            infoFile.close();
+         }
+
+         error = emulatorInsertSdCard((uint8_t*)fileBuffer.data(), fileBuffer.size(), &sdInfo);
+         if(error != EMU_ERROR_NONE)
+            goto errorOccurred;
+      }
+      else{
+         if(!hasSaveRam){
+            error = launcherInstallFile((uint8_t*)fileBuffer.data(), fileBuffer.size());
+            if(error != EMU_ERROR_NONE)
+               goto errorOccurred;
+         }
+         appId = launcherGetAppId((uint8_t*)fileBuffer.data(), fileBuffer.size());
+      }
+   }
+
+   //img files just boot to the homescreen
+   if(suffix != "img"){
+      error = launcherExecute(appId);
+      if(error != EMU_ERROR_NONE)
+         goto errorOccurred;
+   }
+
    //everything worked, set output save files
    emuRamFilePath = mainPath + "." + emuOsName + ".ram";
    emuSdCardFilePath = mainPath + "." + emuOsName + ".sd.img";
    emuSaveStatePath = mainPath + "." + emuOsName + ".states";
 
    //make the place to store the saves
-   QDir(mainPath + ".states").mkdir(".");
+   QDir(emuSaveStatePath).mkdir(".");
 
    //need this goto because the emulator must be released before returning
    errorOccurred:
+   if(error != EMU_ERROR_NONE){
+      //try and recover from error
+      emulatorEjectSdCard();
+      emulatorHardReset();
+   }
 
    if(!wasPaused)
       resume();
@@ -372,17 +356,8 @@ uint32_t EmuWrapper::installApplication(const QString& path){
       pause();
 
    if(appFile.open(QFile::ReadOnly | QFile::ExistingOnly)){
-      QByteArray appDataBuffer = appFile.readAll();
-      QString suffix = QFileInfo(appFile).suffix().toLower();
-      launcher_file_t launcherFile;
-
+      error = launcherInstallFile((uint8_t*)appFile.readAll().data(), appFile.size());
       appFile.close();
-
-      launcherFile.type = LAUNCHER_FILE_TYPE_RESOURCE_FILE;
-      launcherFile.fileData = (uint8_t*)appDataBuffer.data();
-      launcherFile.fileSize = appDataBuffer.size();
-
-      error = launcherInstallFiles(&launcherFile, 1);
    }
 
    if(!wasPaused)
