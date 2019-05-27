@@ -352,7 +352,7 @@ uint32_t EmuWrapper::bootFromFileOrDirectory(const QString& mainPath){
    emuSaveStatePath = mainPath + "." + emuOsName + ".states";
 
    //make the place to store the saves
-   QDir(mainPath + ".states").mkdir(".");
+   QDir(mainPath + "." + emuOsName + ".states").mkdir(".");
 
    //need this goto because the emulator must be released before returning
    errorOccurred:
