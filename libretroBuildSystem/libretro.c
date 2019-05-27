@@ -43,6 +43,7 @@ static float    touchCursorX;
 static float    touchCursorY;
 static char     contentPath[PATH_MAX_LENGTH];
 static uint16_t mouseCursorOldArea[32 * 32];
+static bool     runningImgFile;
 
 
 static void renderMouseCursor(int16_t screenX, int16_t screenY){
@@ -377,6 +378,7 @@ bool retro_load_game(const struct retro_game_info *info){
    const char* systemDir;
    time_t rawTime;
    struct tm* timeInfo;
+   bool hasSram = false;
    uint32_t error;
    
    //updates the emulator configuration
@@ -387,11 +389,13 @@ bool retro_load_game(const struct retro_game_info *info){
    if(info && !string_is_empty(info->path)){
       //boot application
       strlcpy(contentPath, info->path, PATH_MAX_LENGTH);
+      runningImgFile = string_is_equal_case_insensitive(contentPath + strlen(contentPath) - 4, ".img");
    }
    else{
       //boot standard device image, "os5" or "os4" gets appended below
       strlcpy(contentPath, systemDir, PATH_MAX_LENGTH);
       strlcat(contentPath, "/default", PATH_MAX_LENGTH);
+      runningImgFile = false;
    }
    
    //ROM
@@ -445,70 +449,6 @@ bool retro_load_game(const struct retro_game_info *info){
    if(error != EMU_ERROR_NONE)
       return false;
    
-   //see if RetroArch wants something launched
-   if(info && !string_is_empty(info->path)){
-      launcher_file_t file;
-      struct RFILE* contentFile;
-      
-      contentFile = filestream_open(contentPath, RETRO_VFS_FILE_ACCESS_READ, RETRO_VFS_FILE_ACCESS_HINT_NONE);
-      if(contentFile){
-         file.fileSize = filestream_get_size(contentFile);
-         file.fileData = malloc(file.fileSize);
-         
-         if(file.fileData)
-            filestream_read(contentFile, file.fileData, file.fileSize);
-         else
-            return false;
-         filestream_close(contentFile);
-      }
-      else{
-         //no content at path, fail time
-         return false;
-      }
-      
-      if(string_is_equal_case_insensitive(contentPath + strlen(contentPath) - 4, ".img")){
-         char infoPath[PATH_MAX_LENGTH];
-         struct RFILE* infoFile;
-         
-         file.type = LAUNCHER_FILE_TYPE_IMG;
-         
-         //TODO: need to load info file here
-         strlcpy(infoPath, contentPath, PATH_MAX_LENGTH);
-         infoPath[strlen(infoPath) - 4] = '\0';//chop off ".img"
-         strlcat(infoPath, ".info", PATH_MAX_LENGTH);
-         infoFile = filestream_open(infoPath, RETRO_VFS_FILE_ACCESS_READ, RETRO_VFS_FILE_ACCESS_HINT_NONE);
-         if(infoFile){
-            file.infoSize = filestream_get_size(infoFile);
-            file.infoData = malloc(file.infoSize);
-            
-            if(file.infoData)
-               filestream_read(infoFile, file.infoData, file.infoSize);
-            else
-               file.infoSize = 0;
-            filestream_close(romFile);
-         }
-         else{
-            //no info file
-            file.infoData = NULL;
-            file.infoSize = 0;
-         }
-      }
-      else{
-         file.type = LAUNCHER_FILE_TYPE_RESOURCE_FILE;
-         file.infoData = NULL;
-         file.infoSize = 0;
-      }
-      
-      //the SRAM and SD card are loaded after, so just pass NULL for now
-      error = launcherLaunch(&file, 1, NULL, 0, NULL, 0);
-      if(error != EMU_ERROR_NONE)
-         return false;
-      
-      free(file.fileData);
-      if(file.infoData)
-         free(file.infoData);
-   }
-   
    //save RAM
    strlcpy(saveRamPath, contentPath, PATH_MAX_LENGTH);
 #if defined(EMU_SUPPORT_PALM_OS5)
@@ -520,6 +460,7 @@ bool retro_load_game(const struct retro_game_info *info){
    strlcat(saveRamPath, ".ram", PATH_MAX_LENGTH);
    saveRamFile = filestream_open(saveRamPath, RETRO_VFS_FILE_ACCESS_READ, RETRO_VFS_FILE_ACCESS_HINT_NONE);
    if(saveRamFile){
+      hasSram = true;
       if(filestream_get_size(saveRamFile) == emulatorGetRamSize()){
          filestream_read(saveRamFile, palmRam, emulatorGetRamSize());
          swap16BufferIfLittle(palmRam, emulatorGetRamSize() / sizeof(uint16_t));
@@ -527,32 +468,99 @@ bool retro_load_game(const struct retro_game_info *info){
       filestream_close(saveRamFile);
    }
    
-   //SD card
-   strlcpy(sdImgPath, contentPath, PATH_MAX_LENGTH);
+   if(!runningImgFile){
+      //SD card
+      strlcpy(sdImgPath, contentPath, PATH_MAX_LENGTH);
 #if defined(EMU_SUPPORT_PALM_OS5)
-   if(useOs5)
-      strlcat(sdImgPath, ".os5", PATH_MAX_LENGTH);
-   else
+      if(useOs5)
+         strlcat(sdImgPath, ".os5", PATH_MAX_LENGTH);
+      else
 #endif
-      strlcat(sdImgPath, ".os4", PATH_MAX_LENGTH);
-   strlcat(sdImgPath, ".sd.img", PATH_MAX_LENGTH);
-   sdImgFile = filestream_open(sdImgPath, RETRO_VFS_FILE_ACCESS_READ, RETRO_VFS_FILE_ACCESS_HINT_NONE);
-   if(sdImgFile){
-      uint32_t sdImgSize = filestream_get_size(sdImgFile);
-      
-      //use the NULL, size, NULL method because it takes less RAM
-      
-      error = emulatorInsertSdCard(NULL, sdImgSize, NULL);
-      if(error == EMU_ERROR_NONE)
-         filestream_read(sdImgFile, palmSdCard.flashChipData, sdImgSize);
-      
-      filestream_close(sdImgFile);
+         strlcat(sdImgPath, ".os4", PATH_MAX_LENGTH);
+      strlcat(sdImgPath, ".sd.img", PATH_MAX_LENGTH);
+      sdImgFile = filestream_open(sdImgPath, RETRO_VFS_FILE_ACCESS_READ, RETRO_VFS_FILE_ACCESS_HINT_NONE);
+      if(sdImgFile){
+         uint32_t sdImgSize = filestream_get_size(sdImgFile);
+         
+         //use the NULL, size, NULL method because it takes less RAM
+         
+         error = emulatorInsertSdCard(NULL, sdImgSize, NULL);
+         if(error == EMU_ERROR_NONE)
+            filestream_read(sdImgFile, palmSdCard.flashChipData, sdImgSize);
+         
+         filestream_close(sdImgFile);
+      }
    }
    
    //set RTC
    time(&rawTime);
    timeInfo = localtime(&rawTime);
    emulatorSetRtc(timeInfo->tm_yday, timeInfo->tm_hour, timeInfo->tm_min, timeInfo->tm_sec);
+   
+   //see if RetroArch wants something launched
+   if(info && !string_is_empty(info->path)){
+      struct RFILE* contentFile;
+      uint8_t* contentData;
+      uint32_t contentSize;
+      
+      contentFile = filestream_open(contentPath, RETRO_VFS_FILE_ACCESS_READ, RETRO_VFS_FILE_ACCESS_HINT_NONE);
+      if(contentFile){
+         contentSize = filestream_get_size(contentFile);
+         contentData = malloc(contentSize);
+         
+         if(contentData)
+            filestream_read(contentFile, contentData, contentSize);
+         else
+            return false;
+         filestream_close(contentFile);
+      }
+      else{
+         //no content at path, fail time
+         return false;
+      }
+      
+      launcherBootInstantly(hasSram);
+
+      if(runningImgFile){
+         char infoPath[PATH_MAX_LENGTH];
+         struct RFILE* infoFile;
+         uint8_t* infoData = NULL;
+         uint32_t infoSize;
+         sd_card_info_t sdInfo;
+         
+         memset(&sdInfo, 0x00, sizeof(sdInfo));
+         
+         strlcpy(infoPath, contentPath, PATH_MAX_LENGTH);
+         infoPath[strlen(infoPath) - 4] = '\0';//chop off ".img"
+         strlcat(infoPath, ".info", PATH_MAX_LENGTH);
+         infoFile = filestream_open(infoPath, RETRO_VFS_FILE_ACCESS_READ, RETRO_VFS_FILE_ACCESS_HINT_NONE);
+         if(infoFile){
+            infoSize = filestream_get_size(infoFile);
+            infoData = malloc(infoSize);
+            
+            if(infoData)
+               filestream_read(infoFile, infoData, infoSize);
+
+            filestream_close(infoFile);
+         }
+         
+         if(infoData)
+            launcherGetSdCardInfoFromInfoFile(infoData, infoSize, &sdInfo);
+         error = emulatorInsertSdCard(contentData, contentSize, infoData ? &sdInfo : NULL);
+         if(infoData)
+            free(infoData);
+      }
+      else{
+         if(!hasSram)
+            error = launcherInstallFile(contentData, contentSize);
+         if(error == EMU_ERROR_NONE)
+            error = launcherExecute(launcherGetAppId(contentData, contentSize));
+      }
+      
+      free(contentData);
+      if(error != EMU_ERROR_NONE)
+         return false;
+   }
    
    //set mouse position
    touchCursorX = palmFramebufferWidth / 2;
@@ -587,20 +595,22 @@ void retro_unload_game(void){
       filestream_close(saveRamFile);
    }
    
-   //SD card
-   if(palmSdCard.flashChipData){
-      strlcpy(sdImgPath, contentPath, PATH_MAX_LENGTH);
+   if(!runningImgFile){
+      //SD card
+      if(palmSdCard.flashChipData){
+         strlcpy(sdImgPath, contentPath, PATH_MAX_LENGTH);
 #if defined(EMU_SUPPORT_PALM_OS5)
-      if(useOs5)
-         strlcat(sdImgPath, ".os5", PATH_MAX_LENGTH);
-      else
+         if(useOs5)
+            strlcat(sdImgPath, ".os5", PATH_MAX_LENGTH);
+         else
 #endif
-         strlcat(sdImgPath, ".os4", PATH_MAX_LENGTH);
-      strlcat(sdImgPath, ".sd.img", PATH_MAX_LENGTH);
-      sdImgFile = filestream_open(sdImgPath, RETRO_VFS_FILE_ACCESS_WRITE, RETRO_VFS_FILE_ACCESS_HINT_NONE);
-      if(sdImgFile){
-         filestream_write(sdImgFile, palmSdCard.flashChipData, palmSdCard.flashChipSize);
-         filestream_close(sdImgFile);
+            strlcat(sdImgPath, ".os4", PATH_MAX_LENGTH);
+         strlcat(sdImgPath, ".sd.img", PATH_MAX_LENGTH);
+         sdImgFile = filestream_open(sdImgPath, RETRO_VFS_FILE_ACCESS_WRITE, RETRO_VFS_FILE_ACCESS_HINT_NONE);
+         if(sdImgFile){
+            filestream_write(sdImgFile, palmSdCard.flashChipData, palmSdCard.flashChipSize);
+            filestream_close(sdImgFile);
+         }
       }
    }
    

@@ -483,7 +483,7 @@ void MainWindow::on_bootApp_clicked(){
 
       app = QFileDialog::getOpenFileName(this, "Select File", QDir::root().path(), "Palm OS File (*.prc *.pqa *.img)");
       if(app != ""){
-         uint32_t error = emu.bootFromFileOrDirectory(app);
+         uint32_t error = emu.bootFromFile(app);
 
          if(error == EMU_ERROR_NONE)
             loadedNewApp = true;

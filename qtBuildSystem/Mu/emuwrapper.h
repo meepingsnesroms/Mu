@@ -54,7 +54,7 @@ public:
    void pause();
    void resume();
    void reset(bool hard);
-   uint32_t bootFromFileOrDirectory(const QString& mainPath);
+   uint32_t bootFromFile(const QString& mainPath);
    uint32_t installApplication(const QString& path);
    const QString& getStatePath() const{return emuSaveStatePath;}//needed for looking up state pictures in the GUI
    uint32_t saveState(const QString& name);
