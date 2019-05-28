@@ -257,7 +257,6 @@ uint32_t EmuWrapper::bootFromFile(const QString& mainPath){
    QFile ramFile(mainPath + "." + emuOsName + ".ram");
    QFile sdCardFile(mainPath + "." + emuOsName + ".sd.img");
    QString suffix = QFileInfo(mainPath).suffix().toLower();
-   uint32_t appId;
    bool hasSaveRam;
    bool hasSaveSdCard;
 
@@ -314,20 +313,15 @@ uint32_t EmuWrapper::bootFromFile(const QString& mainPath){
             if(error != EMU_ERROR_NONE)
                goto errorOccurred;
          }
-         appId = launcherGetAppId((uint8_t*)fileBuffer.data(), fileBuffer.size());
+         error = launcherExecute(launcherGetAppId((uint8_t*)fileBuffer.data(), fileBuffer.size()));
+         if(error != EMU_ERROR_NONE)
+            goto errorOccurred;
       }
-   }
-
-   //img files just boot to the homescreen
-   if(suffix != "img"){
-      error = launcherExecute(appId);
-      if(error != EMU_ERROR_NONE)
-         goto errorOccurred;
    }
 
    //everything worked, set output save files
    emuRamFilePath = mainPath + "." + emuOsName + ".ram";
-   emuSdCardFilePath = mainPath + "." + emuOsName + ".sd.img";
+   emuSdCardFilePath = suffix != "img" ? mainPath + "." + emuOsName + ".sd.img" : "";//dont duplicate booted SD card images
    emuSaveStatePath = mainPath + "." + emuOsName + ".states";
 
    //make the place to store the saves
