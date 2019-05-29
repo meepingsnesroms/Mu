@@ -151,6 +151,7 @@ enum DataOp {
 void do_arm_instruction(Instruction i);
 // Defined in coproc.cpp
 void do_cp15_instruction(Instruction i);
+void do_cp14_instruction(Instruction i);
 
 #endif // CPUDEFS_H
 

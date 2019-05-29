@@ -8,7 +8,8 @@ void do_cp15_mrc(uint32_t insn)
     switch (insn & 0xEF00EF) {
         case 0x000000: /* MRC p15, 0, <Rd>, c0, c0, 0: ID Code Register */
             //value = 0x41069264; /* ARM926EJ-S revision 4 */
-            value = 0x69052100;//Intel PXA255 "01101001000001010010000100000000"
+            //value = 0x69052100;//Intel PXA255 "01101001000001010010000100000000"
+            value = 0x69052D05;//Intel PXA261 "01101001000001010010110100000101"
             break;
         case 0x000010: /* MRC p15, 0, <Rd>, c0, c0, 1: Cache Type Register */
             value = 0x1D112152; /* ICache: 16KB 4-way 8 word, DCache: 8KB 4-way 8 word */
@@ -45,6 +46,10 @@ void do_cp15_mrc(uint32_t insn)
             break;
         case 0x0F0000: /* MRC p15, 0, <Rd>, c15, c0, 0: Debug Override Register */
             // Unimplemented
+            value = 0;
+            break;
+        case 0x0F0001: /* MRC p15, 0, <Rd>, c15, c1, 0: Unknown */
+            //TODO: Unknown(implmentation defined cp15 register)
             value = 0;
             break;
         default:
@@ -91,6 +96,10 @@ void do_cp15_mcr(uint32_t insn)
         case 0x060000: /* MCR p15, 0, <Rd>, c6, c0, 0: Fault Address Register */
             arm.fault_address = value;
             break;
+        case 0x0F0001: /* MCR p15, 0, <Rd>, c15, c1, 0: Unknown */
+            //TODO: Unknown(implmentation defined cp15 register)
+            value = 0;
+            break;
         case 0x070080: /* MCR p15, 0, <Rd>, c7, c0, 4: Wait for interrupt */
             cycle_count_delta = 0;
             if (arm.interrupts == 0) {
@@ -133,5 +142,48 @@ void do_cp15_instruction(Instruction i)
         return do_cp15_mrc(insn);
     else
         return do_cp15_mcr(insn);
+}
+
+void do_cp14_mrc(uint32_t insn)
+{
+    uint32_t value;
+    switch (insn & 0xEF00EF) {
+        //TODO: add these
+
+        default:
+            warn("Unknown coprocessor instruction MRC %08X", insn);
+            value = 0;
+            break;
+    }
+    if ((insn >> 12 & 15) == 15) {
+        arm.cpsr_n = value >> 31 & 1;
+        arm.cpsr_z = value >> 30 & 1;
+        arm.cpsr_c = value >> 29 & 1;
+        arm.cpsr_v = value >> 28 & 1;
+    } else
+        arm.reg[insn >> 12 & 15] = value;
+}
+
+void do_cp14_mcr(uint32_t insn)
+{
+    uint32_t value = reg(insn >> 12 & 15);
+    switch (insn & 0xEF00EF) {
+        case 0x60000: /* MCR p14, 0, <Rd>, c6, c0, 0: CCLKCFG */
+            //TODO: do nothing for now, used to set CPU speed
+            break;
+
+        default:
+            warn("Unknown coprocessor instruction MCR %08X", insn);
+            break;
+    }
+}
+
+void do_cp14_instruction(Instruction i)
+{
+    uint32_t insn = i.raw;
+    if(insn & 0x00100000)
+        return do_cp14_mrc(insn);
+    else
+        return do_cp14_mcr(insn);
 }
 

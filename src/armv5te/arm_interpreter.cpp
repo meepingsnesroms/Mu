@@ -530,6 +530,8 @@ void do_arm_instruction(Instruction i)
     }
     else if((insn & 0xF000F10) == 0xE000F10)
         do_cp15_instruction(i);
+    else if((insn & 0xF000F10) == 0xE000E10)
+        do_cp14_instruction(i);
     else if((insn & 0xF000000) == 0xF000000)
         cpu_exception(EX_SWI);
     else
