@@ -27,6 +27,7 @@
 
 
 uint16_t*         pxa255Framebuffer;
+Pxa255pwrClk      pxa255PwrClk;
 static Pxa255ic   pxa255Ic;
 static Pxa255lcd  pxa255Lcd;
 static Pxa255timr pxa255Timer;
@@ -122,6 +123,7 @@ bool pxa255Init(uint8_t** returnRom, uint8_t** returnRam){
 
    //set up CPU hardware
    pxa255icInit(&pxa255Ic);
+   pxa255pwrClkInit(&pxa255PwrClk);
    pxa255lcdInit(&pxa255Lcd, &pxa255Ic);
    pxa255timrInit(&pxa255Timer, &pxa255Ic);
 

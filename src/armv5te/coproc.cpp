@@ -2,6 +2,12 @@
 #include "cpudefs.h"
 #include "mmu.h"
 
+extern "C" {
+#include "../pxa255/pxa255.h"
+#include "../pxa255/pxa255_PwrClk.h"
+}
+
+
 void do_cp15_mrc(uint32_t insn)
 {
     uint32_t value;
@@ -144,46 +150,16 @@ void do_cp15_instruction(Instruction i)
         return do_cp15_mcr(insn);
 }
 
-void do_cp14_mrc(uint32_t insn)
-{
-    uint32_t value;
-    switch (insn & 0xEF00EF) {
-        //TODO: add these
-
-        default:
-            warn("Unknown coprocessor instruction MRC %08X", insn);
-            value = 0;
-            break;
-    }
-    if ((insn >> 12 & 15) == 15) {
-        arm.cpsr_n = value >> 31 & 1;
-        arm.cpsr_z = value >> 30 & 1;
-        arm.cpsr_c = value >> 29 & 1;
-        arm.cpsr_v = value >> 28 & 1;
-    } else
-        arm.reg[insn >> 12 & 15] = value;
-}
-
-void do_cp14_mcr(uint32_t insn)
-{
-    uint32_t value = reg(insn >> 12 & 15);
-    switch (insn & 0xEF00EF) {
-        case 0x60000: /* MCR p14, 0, <Rd>, c6, c0, 0: CCLKCFG */
-            //TODO: do nothing for now, used to set CPU speed
-            break;
-
-        default:
-            warn("Unknown coprocessor instruction MCR %08X", insn);
-            break;
-    }
-}
-
 void do_cp14_instruction(Instruction i)
 {
-    uint32_t insn = i.raw;
-    if(insn & 0x00100000)
-        return do_cp14_mrc(insn);
-    else
-        return do_cp14_mcr(insn);
+    uint32_t instr = i.raw;
+    bool specialInstr = i.cond == 0xF;
+    bool success;
+
+    success = pxa255pwrClkPrvCoprocRegXferFunc(&pxa255PwrClk, specialInstr, (instr & 0x00100000) != 0, (instr >> 21) & 0x07, (instr >> 12) & 0x0F, (instr >> 16) & 0x0F, instr & 0x0F, (instr >> 5) & 0x07);
+
+    //fail if instr dosent actully exist
+    if(!success)
+       undefined_instruction();
 }
 
