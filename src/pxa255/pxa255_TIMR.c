@@ -27,7 +27,7 @@ static void pxa255timrPrvUpdate(Pxa255timr* timr){
 	pxa255timrPrvCheckMatch(timr, 3);
 }
 
-static Boolean pxa255timrPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boolean write, void* buf){
+Boolean pxa255timrPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boolean write, void* buf){
 
 	Pxa255timr* timr = userData;
 	UInt32 val = 0;

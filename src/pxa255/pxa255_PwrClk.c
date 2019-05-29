@@ -120,7 +120,6 @@ Boolean pxa255pwrClkPrvPowerMgrMemAccessF(void* userData, UInt32 pa, UInt8 size,
 }
 
 void pxa255pwrClkInit(Pxa255pwrClk* pc){
-	
 	__mem_zero(pc, sizeof(Pxa255pwrClk));
 	
 	pc->CCCR = 0x00000122UL;	//set CCCR to almost default value (we use mult 32 not 27)

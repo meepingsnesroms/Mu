@@ -195,6 +195,7 @@ void pxa255LoadState(uint8_t* data){
 }
 
 void pxa255Execute(bool wantVideo){
+   uint32_t index;
 #if OS_HAS_PAGEFAULT_HANDLER
     os_exception_frame_t seh_frame = { NULL, NULL };
 
@@ -232,13 +233,13 @@ void pxa255Execute(bool wantVideo){
 #if OS_HAS_PAGEFAULT_HANDLER
     os_faulthandler_unarm(&seh_frame);
 #endif
+    //this needs to run at 3.6864 MHz
+    for(index = 0; index < TUNGSTEN_T3_CPU_CRYSTAL_FREQUENCY / EMU_FPS; index++)
+      pxa255timrTick(&pxa255Timer);
 
     //render
     if(likely(wantVideo))
       pxa255lcdFrame(&pxa255Lcd);
-
-    //TODO: this needs to run at 3.6864 MHz
-    //pxa255timrTick(&pxa255Timer);
 }
 
 uint32_t pxa255GetRegister(uint8_t reg){

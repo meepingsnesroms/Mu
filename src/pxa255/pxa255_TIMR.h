@@ -29,6 +29,7 @@ typedef struct{
 	
 }Pxa255timr;
 
+Boolean pxa255timrPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boolean write, void* buf);
 void pxa255timrInit(Pxa255timr* timr, Pxa255ic* ic);
 void pxa255timrTick(Pxa255timr* timr);
 
