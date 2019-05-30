@@ -24,12 +24,17 @@ static uint32_t pxa255_io_read_word(uint32_t addr){
       case PXA255_STUART_BASE >> 16:
          //need to implement these
          debugLog("Unimplemented 32 bit PXA255 register read:0x%08X\n", addr);
-         return 0x00000000;
+         out = 0x00000000;
+         break;
 
       default:
          debugLog("Invalid 32 bit PXA255 register read:0x%08X\n", addr);
-         return 0x00000000;
+         out = 0x00000000;
+         break;
    }
+
+   //TODO: for some reason having this return enabled causes the error "QObject::~QObject: Timers cannot be stopped from another thread"
+   //return out;
 }
 
 static void pxa255_io_write_byte(uint32_t addr, uint8_t value){
@@ -40,13 +45,13 @@ static void pxa255_io_write_word(uint32_t addr, uint32_t value){
    switch(addr >> 16){
       case PXA255_CLOCK_MANAGER_BASE >> 16:
          pxa255pwrClkPrvClockMgrMemAccessF(&pxa255PwrClk, addr, 4, true, &value);
-         return;
+         break;
       case PXA255_POWER_MANAGER_BASE >> 16:
          pxa255pwrClkPrvPowerMgrMemAccessF(&pxa255PwrClk, addr, 4, true, &value);
-         return;
+         break;
       case PXA255_TIMR_BASE >> 16:
          pxa255timrPrvMemAccessF(&pxa255Timer, addr, 4, true, &value);
-         return;
+         break;
       case PXA255_DMA_BASE >> 16:
       case PXA255_GPIO_BASE >> 16:
       case PXA255_IC_BASE >> 16:
@@ -56,11 +61,11 @@ static void pxa255_io_write_word(uint32_t addr, uint32_t value){
       case PXA255_STUART_BASE >> 16:
          //need to implement these
          debugLog("Unimplemented 32 bit PXA255 register write:0x%08X, value:0x%08X\n", addr, value);
-         return;
+         break;
 
       default:
          debugLog("Invalid 32 bit PXA255 register write:0x%08X, value:0x%08X\n", addr, value);
-         return;
+         break;
    }
 }
 
