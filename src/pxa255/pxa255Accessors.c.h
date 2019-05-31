@@ -15,8 +15,11 @@ static uint32_t pxa255_io_read_word(uint32_t addr){
       case PXA255_TIMR_BASE >> 16:
          pxa255timrPrvMemAccessF(&pxa255Timer, addr, 4, false, &out);
          break;
-      case PXA255_DMA_BASE >> 16:
       case PXA255_GPIO_BASE >> 16:
+         pxa255gpioPrvMemAccessF(&pxa255Gpio, addr, 4, false, &out);
+         break;
+
+      case PXA255_DMA_BASE >> 16:
       case PXA255_IC_BASE >> 16:
       case PXA255_RTC_BASE >> 16:
       case PXA255_FFUART_BASE >> 16:
@@ -52,8 +55,11 @@ static void pxa255_io_write_word(uint32_t addr, uint32_t value){
       case PXA255_TIMR_BASE >> 16:
          pxa255timrPrvMemAccessF(&pxa255Timer, addr, 4, true, &value);
          break;
-      case PXA255_DMA_BASE >> 16:
       case PXA255_GPIO_BASE >> 16:
+         pxa255gpioPrvMemAccessF(&pxa255Gpio, addr, 4, true, &value);
+         break;
+
+      case PXA255_DMA_BASE >> 16:
       case PXA255_IC_BASE >> 16:
       case PXA255_RTC_BASE >> 16:
       case PXA255_FFUART_BASE >> 16:

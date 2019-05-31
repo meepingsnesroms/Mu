@@ -97,13 +97,14 @@ Boolean pxa255gpioPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boolean w
 			case 25:
 			case 26:
 				val = gpio->AFRs[pa - 21];
+            pa = (pa - 21) / 2;
 				goto recalc;
 		}
 		
 		goto done;
 		
 recalc:
-		pxa255gpioPrvRecalcValues(gpio, pa);
+      pxa255gpioPrvRecalcValues(gpio, pa);
 		
 trigger_intrs:
 		pxa255gpioPrvRecalcIntrs(gpio);

@@ -78,8 +78,11 @@ void do_cp15_mcr(uint32_t insn)
     switch (insn & 0xEF00EF) {
         case 0x010000: { /* MCR p15, 0, <Rd>, c1, c0, 0: Control Register */
             uint32_t change = value ^ arm.control;
+            //TODO: actually implement this register fully
+            /*
             if ((value & 0xFFFF8CF0) != 0x00050070)
                 error("Bad or unimplemented control register value: %x (unsupported: %x)\n", value, (value & 0xFFFF8CF8) ^ 0x00050078);
+            */
             arm.control = value;
             if (change & 1) // MMU is being turned on or off
                 addr_cache_flush();
@@ -101,10 +104,6 @@ void do_cp15_mcr(uint32_t insn)
             break;
         case 0x060000: /* MCR p15, 0, <Rd>, c6, c0, 0: Fault Address Register */
             arm.fault_address = value;
-            break;
-        case 0x0F0001: /* MCR p15, 0, <Rd>, c15, c1, 0: Unknown */
-            //TODO: Unknown(implmentation defined cp15 register)
-            value = 0;
             break;
         case 0x070080: /* MCR p15, 0, <Rd>, c7, c0, 4: Wait for interrupt */
             cycle_count_delta = 0;
@@ -134,6 +133,9 @@ void do_cp15_mcr(uint32_t insn)
                 // Normally ignored, but somehow needed for linux to boot correctly
                 addr_cache_flush();
             #endif
+            break;
+        case 0x0F0001: /* MCR p15, 0, <Rd>, c15, c1, 0: Unknown */
+            //TODO: Unknown(implmentation defined cp15 register)
             break;
         default:
             warn("Unknown coprocessor instruction MCR %08X", insn);
