@@ -173,10 +173,13 @@ extern emu_reg_t palmEmuFeatures;//dont touch
 extern uint16_t* palmFramebuffer;//read allowed
 extern uint16_t  palmFramebufferWidth;//read allowed
 extern uint16_t  palmFramebufferHeight;//read allowed
+extern uint8_t   palmScreenRefreshAmount;//read/write allowed, 100 = instant refresh, 0 = screen never changes
+extern uint16_t  palmScreenHeight;//dont touch
+extern uint16_t* palmFramebufferOld;//dont touch
 extern int16_t*  palmAudio;//read allowed, 2 channel signed 16 bit audio
 extern blip_t*   palmAudioResampler;//dont touch
 extern double    palmCycleCounter;//dont touch
-extern double    palmClockMultiplier;//dont touch
+extern double    palmClockMultiplier;//read/write allowed, setting by multiplication and cacheing the result is the best way
 
 //functions
 uint32_t emulatorInit(uint8_t* palmRomData, uint32_t palmRomSize, uint8_t* palmBootloaderData, uint32_t palmBootloaderSize, uint32_t enabledEmuFeatures);
