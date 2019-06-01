@@ -64,42 +64,6 @@ blip_t*   palmAudioResampler;
 double    palmCycleCounter;//can be greater then 0 if too many cycles where run
 double    palmClockMultiplier;//used by the emulator to overclock the emulated Palm
 
-/*
-static uint16_t emulatorFadePixel(uint16_t oldPixel, uint16_t newPixel, float refreshAmount){
-   uint8_t oldColors[3];
-   uint8_t newColors[3];
-   uint16_t output = 0;
-
-   oldColors[0] = oldPixel >> 11;
-   oldColors[1] = (oldPixel & 0x07E0) >> 6;
-   oldColors[2] = oldPixel & 0x001F;
-
-   newColors[0] = newPixel >> 11;
-   newColors[1] = (newPixel & 0x07E0) >> 6;
-   newColors[2] = newPixel & 0x001F;
-
-   newColors[0] = newColors[0] * refreshAmount;
-   newColors[1] = newColors[1] * refreshAmount;
-   newColors[2] = newColors[2] * refreshAmount;
-
-   newColors[0] += oldColors[0] * (1.0 - refreshAmount);
-   newColors[1] += oldColors[1] * (1.0 - refreshAmount);
-   newColors[2] += oldColors[2] * (1.0 - refreshAmount);
-
-   if(newColors[0] > 0x1F)
-      newColors[0] = 0x1F;
-   if(newColors[1] > 0x3F)
-      newColors[1] = 0x3F;
-   if(newColors[2] > 0x1F)
-      newColors[2] = 0x1F;
-
-   output |= newColors[0] << 11 & 0xF800;
-   output |= newColors[1] << 6 & 0x07E0;
-   output |= newColors[2] & 0x001F;
-
-   return output;
-}
-*/
 
 static uint16_t emulatorFadePixel(uint16_t oldPixel, uint16_t newPixel, float refreshAmount){
    uint16_t output = 0x0000;
@@ -218,7 +182,7 @@ uint32_t emulatorInit(uint8_t* palmRomData, uint32_t palmRomSize, uint8_t* palmB
       palmFramebufferHeight = 220;
       palmScreenHeight = 160;
       memcpy(palmFramebufferOld, palmFramebuffer, 160 * 220 * sizeof(uint16_t));
-      palmScreenRefreshAmount = 40;
+      palmScreenRefreshAmount = 50;
       palmMisc.batteryLevel = 100;
       palmCycleCounter = 0.0;
       palmEmuFeatures.info = enabledEmuFeatures;
@@ -778,9 +742,7 @@ void emulatorEjectSdCard(void){
 }
 
 void emulatorRunFrame(void){
-   uint32_t index;
-
-   if(palmScreenRefreshAmount != 0){
+   if(palmScreenRefreshAmount < 100){
       //swap buffers
       uint16_t* temp;
 
@@ -804,7 +766,7 @@ void emulatorRunFrame(void){
    }
 #endif
 
-   if(palmScreenRefreshAmount != 0){
+   if(palmScreenRefreshAmount < 100){
       //merge new framebuffer with old one and set set that as the old one
       uint16_t x;
       uint16_t y;
