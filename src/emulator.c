@@ -56,30 +56,11 @@ emu_reg_t palmEmuFeatures;
 uint16_t* palmFramebuffer;
 uint16_t  palmFramebufferWidth;
 uint16_t  palmFramebufferHeight;
-uint8_t   palmScreenRefreshAmount;
-uint16_t  palmScreenHeight;
-uint16_t* palmFramebufferOld;
 int16_t*  palmAudio;
 blip_t*   palmAudioResampler;
 double    palmCycleCounter;//can be greater then 0 if too many cycles where run
 double    palmClockMultiplier;//used by the emulator to overclock the emulated Palm
 
-
-static uint16_t emulatorFadePixel(uint16_t oldPixel, uint16_t newPixel, float refreshAmount){
-   uint16_t output = 0x0000;
-   uint16_t temp;
-
-   temp = (oldPixel >> 11) * (1.0 - refreshAmount) + (newPixel >> 11) * refreshAmount;
-   output |= (temp > 0x1F ? 0x1F : temp) << 11;
-
-   temp = ((oldPixel & 0x07E0) >> 6) * (1.0 - refreshAmount) + ((newPixel & 0x07E0) >> 6) * refreshAmount;
-   output |= (temp > 0x3F ? 0x3F : temp) << 6;
-
-   temp = (oldPixel & 0x001F) * (1.0 - refreshAmount) + (newPixel & 0x001F) * refreshAmount;
-   output |= temp > 0x1F ? 0x1F : temp;
-
-   return output;
-}
 
 uint32_t emulatorInit(uint8_t* palmRomData, uint32_t palmRomSize, uint8_t* palmBootloaderData, uint32_t palmBootloaderSize, uint32_t enabledEmuFeatures){
    //only accept valid non debug features from the user
@@ -106,12 +87,10 @@ uint32_t emulatorInit(uint8_t* palmRomData, uint32_t palmRomSize, uint8_t* palmB
 
       dynarecInited = pxa255Init(&palmRom, &palmRam);
       palmFramebuffer = malloc(320 * 480 * sizeof(uint16_t));
-      palmFramebufferOld = malloc(320 * 480 * sizeof(uint16_t));
       palmAudio = malloc(AUDIO_SAMPLES_PER_FRAME * 2 * sizeof(int16_t));
       palmAudioResampler = blip_new(AUDIO_SAMPLE_RATE);//have 1 second of samples
-      if(!palmFramebuffer || !palmFramebufferOld || !palmAudio || !palmAudioResampler || !dynarecInited){
+      if(!palmFramebuffer || !palmAudio || !palmAudioResampler || !dynarecInited){
          free(palmFramebuffer);
-         free(palmFramebufferOld);
          free(palmAudio);
          blip_delete(palmAudioResampler);
          pxa255Deinit();
@@ -129,9 +108,6 @@ uint32_t emulatorInit(uint8_t* palmRomData, uint32_t palmRomSize, uint8_t* palmB
       memset(&palmEmuFeatures, 0x00, sizeof(palmEmuFeatures));
       palmFramebufferWidth = 320;
       palmFramebufferHeight = 480;
-      palmScreenHeight = 480;
-      memcpy(palmFramebufferOld, palmFramebuffer, 320 * 480 * sizeof(uint16_t));
-      palmScreenRefreshAmount = 100;
       palmMisc.batteryLevel = 100;
       palmCycleCounter = 0.0;
       palmEmuFeatures.info = enabledEmuFeatures;
@@ -152,14 +128,12 @@ uint32_t emulatorInit(uint8_t* palmRomData, uint32_t palmRomSize, uint8_t* palmB
       palmRom = malloc(M515_ROM_SIZE + 4);
       palmRam = malloc(M515_RAM_SIZE + 4);
       palmFramebuffer = malloc(160 * 220 * sizeof(uint16_t));
-      palmFramebufferOld = malloc(160 * 220 * sizeof(uint16_t));
       palmAudio = malloc(AUDIO_SAMPLES_PER_FRAME * 2 * sizeof(int16_t));
       palmAudioResampler = blip_new(AUDIO_SAMPLE_RATE);//have 1 second of samples
-      if(!palmRom || !palmRam || !palmFramebuffer || !palmFramebufferOld || !palmAudio || !palmAudioResampler){
+      if(!palmRom || !palmRam || !palmFramebuffer || !palmAudio || !palmAudioResampler){
          free(palmRom);
          free(palmRam);
          free(palmFramebuffer);
-         free(palmFramebufferOld);
          free(palmAudio);
          blip_delete(palmAudioResampler);
          return EMU_ERROR_OUT_OF_MEMORY;
@@ -180,9 +154,6 @@ uint32_t emulatorInit(uint8_t* palmRomData, uint32_t palmRomSize, uint8_t* palmB
       memset(&palmEmuFeatures, 0x00, sizeof(palmEmuFeatures));
       palmFramebufferWidth = 160;
       palmFramebufferHeight = 220;
-      palmScreenHeight = 160;
-      memcpy(palmFramebufferOld, palmFramebuffer, 160 * 220 * sizeof(uint16_t));
-      palmScreenRefreshAmount = 50;
       palmMisc.batteryLevel = 100;
       palmCycleCounter = 0.0;
       palmEmuFeatures.info = enabledEmuFeatures;
@@ -215,7 +186,6 @@ void emulatorDeinit(void){
       }
 #endif
       free(palmFramebuffer);
-      free(palmFramebufferOld);
       free(palmAudio);
       blip_delete(palmAudioResampler);
 #if defined(EMU_SUPPORT_PALM_OS5)
@@ -742,15 +712,6 @@ void emulatorEjectSdCard(void){
 }
 
 void emulatorRunFrame(void){
-   if(palmScreenRefreshAmount < 100){
-      //swap buffers
-      uint16_t* temp;
-
-      temp = palmFramebufferOld;
-      palmFramebufferOld = palmFramebuffer;
-      palmFramebuffer = temp;
-   }
-
 #if defined(EMU_SUPPORT_PALM_OS5)
    if(palmEmulatingTungstenT3){
       pxa255Execute(true);
@@ -765,17 +726,6 @@ void emulatorRunFrame(void){
 #if defined(EMU_SUPPORT_PALM_OS5)
    }
 #endif
-
-   if(palmScreenRefreshAmount < 100){
-      //merge new framebuffer with old one and set set that as the old one
-      uint16_t x;
-      uint16_t y;
-      float refreshAmount = (float)palmScreenRefreshAmount / 100.0;
-
-      MULTITHREAD_DOUBLE_LOOP(y, x) for(y = 0; y < palmScreenHeight; y++)
-         for(x = 0; x < palmFramebufferWidth; x++)
-            palmFramebuffer[y * palmFramebufferWidth + x] = emulatorFadePixel(palmFramebufferOld[y * palmFramebufferWidth + x], palmFramebuffer[y * palmFramebufferWidth + x], refreshAmount);
-   }
 
 #if defined(EMU_SANDBOX)
    sandboxOnFrameRun();
