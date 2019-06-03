@@ -107,7 +107,7 @@ int32_t pwm1FifoRunSample(int32_t now, int32_t clockOffset){
    //try to get next sample, if none are available play old sample
    if(pwm1FifoEntrys() > 0)
       pwm1ReadPosition = (pwm1ReadPosition + 1) % 6;
-   dutyCycle = floatMin((float)pwm1Fifo[pwm1ReadPosition] / period, 1.00);
+   dutyCycle = FAST_MIN((float)pwm1Fifo[pwm1ReadPosition] / period, 1.00);
 
    for(index = 0; index < repeat; index++){
 #if !defined(EMU_NO_SAFETY)

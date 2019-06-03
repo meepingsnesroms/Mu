@@ -16,6 +16,7 @@
 #include <string>
 #include <stdint.h>
 #include <string.h>
+#include <time.h>
 
 #include "emuwrapper.h"
 #include "../../src/emulator.h"
@@ -56,6 +57,18 @@ void frontendHandleDebugPrint(){
       debugStrings.push_back(newDebugString);
       duplicateCallCount.push_back(1);
    }
+}
+
+static void frontendGetCurrentTime(uint8_t* writeBack){
+   time_t rawTime;
+   struct tm* timeInfo;
+
+   time(&rawTime);
+   timeInfo = localtime(&rawTime);
+
+   writeBack[0] = timeInfo->tm_hour;
+   writeBack[1] = timeInfo->tm_min;
+   writeBack[2] = timeInfo->tm_sec;
 }
 
 
@@ -162,6 +175,7 @@ uint32_t EmuWrapper::init(const QString& assetPath, bool useOs5, uint32_t featur
       if(error == EMU_ERROR_NONE){
          QTime now = QTime::currentTime();
 
+         palmGetRtcFromHost = frontendGetCurrentTime;
          emulatorSetRtc(QDate::currentDate().day(), now.hour(), now.minute(), now.second());
 
          if(ramFile.open(QFile::ReadOnly | QFile::ExistingOnly)){

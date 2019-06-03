@@ -60,6 +60,7 @@ int16_t*  palmAudio;
 blip_t*   palmAudioResampler;
 double    palmCycleCounter;//can be greater then 0 if too many cycles where run
 double    palmClockMultiplier;//used by the emulator to overclock the emulated Palm
+void      (*palmGetRtcFromHost)(uint8_t* writeBack);//[0] = hours, [1] = minutes, [2] = seconds
 
 
 uint32_t emulatorInit(uint8_t* palmRomData, uint32_t palmRomSize, uint8_t* palmBootloaderData, uint32_t palmBootloaderSize, uint32_t enabledEmuFeatures){
@@ -76,6 +77,8 @@ uint32_t emulatorInit(uint8_t* palmRomData, uint32_t palmRomSize, uint8_t* palmB
 
    if(!palmRomData || palmRomSize < 0x8)
       return EMU_ERROR_INVALID_PARAMETER;
+
+   palmGetRtcFromHost = NULL;
 
 #if defined(EMU_SUPPORT_PALM_OS5)
    //0x00000004 is boot program counter on 68k, its just 0x00000000 on ARM
@@ -96,7 +99,7 @@ uint32_t emulatorInit(uint8_t* palmRomData, uint32_t palmRomSize, uint8_t* palmB
          pxa255Deinit();
          return EMU_ERROR_OUT_OF_MEMORY;
       }
-      memcpy(palmRom, palmRomData, uintMin(palmRomSize, TUNGSTEN_T3_ROM_SIZE));
+      memcpy(palmRom, palmRomData, FAST_MIN(palmRomSize, TUNGSTEN_T3_ROM_SIZE));
       if(palmRomSize < TUNGSTEN_T3_ROM_SIZE)
          memset(palmRom + palmRomSize, 0x00, TUNGSTEN_T3_ROM_SIZE - palmRomSize);
       memset(palmRam, 0x00, TUNGSTEN_T3_RAM_SIZE);
@@ -140,7 +143,7 @@ uint32_t emulatorInit(uint8_t* palmRomData, uint32_t palmRomSize, uint8_t* palmB
       }
 
       //set default values
-      memcpy(palmRom, palmRomData, uintMin(palmRomSize, M515_ROM_SIZE));
+      memcpy(palmRom, palmRomData, FAST_MIN(palmRomSize, M515_ROM_SIZE));
       if(palmRomSize < M515_ROM_SIZE)
          memset(palmRom + palmRomSize, 0x00, M515_ROM_SIZE - palmRomSize);
       swap16BufferIfLittle(palmRom, M515_ROM_SIZE / sizeof(uint16_t));
