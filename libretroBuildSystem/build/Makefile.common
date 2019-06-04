@@ -3,7 +3,7 @@ LIBRETRO_COMM_DIR := $(CORE_DIR)/libretro-common
 COREDEFINES :=
 
 # my first make function!!!
-CHECK_ALL = $(foreach v,$(2),$(if $(findstring $(v),$(1)),$(v),))
+CHECK_ALL = $(strip $(foreach v,$(2),$(if $(findstring $(v),$(1)),$(v),)))
 
 INCFLAGS := -I$(LIBRETRO_COMM_DIR)/include
 
@@ -29,7 +29,6 @@ ifneq (,$(findstring msvc20,$(this_system)))
 	INCFLAGS += -I$(CORE_DIR)/fixIncludes/stdbool
 	COREDEFINES += -Dinline=_inline -DINLINE=_inline
 endif
-
 
 ifneq (,$(call CHECK_ALL,$(this_system),windows mingw))
    # Windows
