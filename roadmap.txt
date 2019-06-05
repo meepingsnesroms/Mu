@@ -22,6 +22,7 @@ RetroArch GUI:
 //TODO: allow adding more content after boot
 //TODO: get EMU_MANAGE_HOST_CPU_PIPELINE working on other platforms then the main 4
 //TODO: when compiling with "make platform=windows_x86_64" the dll wont load(theres a really good chance its because "libgomp-1.dll"(the OpenMP handler library) is missing from the RetroArch folder)
+*allow disabling the silkscreen area
 *booting without game works again
 *add multithreading and pipeline speedups
 
@@ -43,3 +44,4 @@ Core:
 *add a launcher to load prc/pdb/pqa files
 *add frameskip for really low power devices and when video is not needed
 *added host CPU pipeline control for another speed up
+*implement FEATURE_SYNCED_RTC to make the Palm clock always match the host system clock

@@ -2,3 +2,5 @@
 mincore\com\oleaut32\dispatch\ups.cpp(2125)\OLEAUT32.dll!00007FFE26F51D23: (caller: 00007FFE26F51E9A) ReturnHr(1) tid(1870) 8002801D Library not registered.
 QObject::~QObject: Timers cannot be stopped from another thread
 10:32:24: Debugging has finished
+
+Just a crash from killing the program due to a buffer overflow.

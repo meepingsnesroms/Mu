@@ -36,8 +36,7 @@ static uint32_t pxa255_io_read_word(uint32_t addr){
          break;
    }
 
-   //TODO: for some reason having this return enabled causes the error "QObject::~QObject: Timers cannot be stopped from another thread"
-   //return out;
+   return out;
 }
 
 static void pxa255_io_write_byte(uint32_t addr, uint8_t value){
