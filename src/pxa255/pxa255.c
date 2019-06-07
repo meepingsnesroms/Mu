@@ -27,9 +27,11 @@
 
 
 uint16_t*         pxa255Framebuffer;
+Pxa255pwrClk      pxa255PwrClk;
 static Pxa255ic   pxa255Ic;
 static Pxa255lcd  pxa255Lcd;
 static Pxa255timr pxa255Timer;
+static Pxa255gpio pxa255Gpio;
 
 
 #include "pxa255Accessors.c.h"
@@ -120,11 +122,6 @@ bool pxa255Init(uint8_t** returnRom, uint8_t** returnRam){
    write_half_map[PXA255_START_BANK(PXA255_MEMCTRL_BASE)] = bad_write_half;
    write_word_map[PXA255_START_BANK(PXA255_MEMCTRL_BASE)] = pxa255_memctrl_write_word;
 
-   //set up CPU hardware
-   pxa255icInit(&pxa255Ic);
-   pxa255lcdInit(&pxa255Lcd, &pxa255Ic);
-   pxa255timrInit(&pxa255Timer, &pxa255Ic);
-
    *returnRom = mem_areas[0].ptr;
    *returnRam = mem_areas[1].ptr;
 
@@ -162,6 +159,13 @@ void pxa255Reset(void){
    }
    */
 
+   //set up extra CPU hardware
+   pxa255icInit(&pxa255Ic);
+   pxa255pwrClkInit(&pxa255PwrClk);
+   pxa255lcdInit(&pxa255Lcd, &pxa255Ic);
+   pxa255timrInit(&pxa255Timer, &pxa255Ic);
+   pxa255gpioInit(&pxa255Gpio, &pxa255Ic);
+
    memset(&arm, 0, sizeof arm);
    arm.control = 0x00050078;
    arm.cpsr_low28 = MODE_SVC | 0xC0;
@@ -193,14 +197,15 @@ void pxa255LoadState(uint8_t* data){
 }
 
 void pxa255Execute(bool wantVideo){
+   uint32_t index;
 #if OS_HAS_PAGEFAULT_HANDLER
     os_exception_frame_t seh_frame = { NULL, NULL };
 
     os_faulthandler_arm(&seh_frame);
 #endif
 
-   //TODO: need to set cycle_count_delta with the amount of opcodes to run
-   cycle_count_delta = -500;//just a test value
+   //TODO: need to take the PLL into account still
+   cycle_count_delta = -1 * 60 * TUNGSTEN_T3_CPU_CRYSTAL_FREQUENCY / EMU_FPS;
 
    while(setjmp(restart_after_exception)){};
 
@@ -230,13 +235,13 @@ void pxa255Execute(bool wantVideo){
 #if OS_HAS_PAGEFAULT_HANDLER
     os_faulthandler_unarm(&seh_frame);
 #endif
+    //this needs to run at 3.6864 MHz
+    for(index = 0; index < TUNGSTEN_T3_CPU_CRYSTAL_FREQUENCY / EMU_FPS; index++)
+      pxa255timrTick(&pxa255Timer);
 
     //render
     if(likely(wantVideo))
       pxa255lcdFrame(&pxa255Lcd);
-
-    //TODO: this needs to run at 3.6864 MHz
-    //pxa255timrTick(&pxa255Timer);
 }
 
 uint32_t pxa255GetRegister(uint8_t reg){

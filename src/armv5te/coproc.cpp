@@ -2,13 +2,20 @@
 #include "cpudefs.h"
 #include "mmu.h"
 
+extern "C" {
+#include "../pxa255/pxa255.h"
+#include "../pxa255/pxa255_PwrClk.h"
+}
+
+
 void do_cp15_mrc(uint32_t insn)
 {
     uint32_t value;
     switch (insn & 0xEF00EF) {
         case 0x000000: /* MRC p15, 0, <Rd>, c0, c0, 0: ID Code Register */
             //value = 0x41069264; /* ARM926EJ-S revision 4 */
-            value = 0x69052100;//Intel PXA255 "01101001000001010010000100000000"
+            //value = 0x69052100;//Intel PXA255 "01101001000001010010000100000000"
+            value = 0x69052D05;//Intel PXA261 "01101001000001010010110100000101"
             break;
         case 0x000010: /* MRC p15, 0, <Rd>, c0, c0, 1: Cache Type Register */
             value = 0x1D112152; /* ICache: 16KB 4-way 8 word, DCache: 8KB 4-way 8 word */
@@ -47,6 +54,10 @@ void do_cp15_mrc(uint32_t insn)
             // Unimplemented
             value = 0;
             break;
+        case 0x0F0001: /* MRC p15, 0, <Rd>, c15, c1, 0: Unknown */
+            //TODO: Unknown(implmentation defined cp15 register)
+            value = 0;
+            break;
         default:
             warn("Unknown coprocessor instruction MRC %08X", insn);
             value = 0;
@@ -67,8 +78,11 @@ void do_cp15_mcr(uint32_t insn)
     switch (insn & 0xEF00EF) {
         case 0x010000: { /* MCR p15, 0, <Rd>, c1, c0, 0: Control Register */
             uint32_t change = value ^ arm.control;
+            //TODO: actually implement this register fully
+            /*
             if ((value & 0xFFFF8CF0) != 0x00050070)
                 error("Bad or unimplemented control register value: %x (unsupported: %x)\n", value, (value & 0xFFFF8CF8) ^ 0x00050078);
+            */
             arm.control = value;
             if (change & 1) // MMU is being turned on or off
                 addr_cache_flush();
@@ -120,6 +134,9 @@ void do_cp15_mcr(uint32_t insn)
                 addr_cache_flush();
             #endif
             break;
+        case 0x0F0001: /* MCR p15, 0, <Rd>, c15, c1, 0: Unknown */
+            //TODO: Unknown(implmentation defined cp15 register)
+            break;
         default:
             warn("Unknown coprocessor instruction MCR %08X", insn);
             break;
@@ -133,5 +150,18 @@ void do_cp15_instruction(Instruction i)
         return do_cp15_mrc(insn);
     else
         return do_cp15_mcr(insn);
+}
+
+void do_cp14_instruction(Instruction i)
+{
+    uint32_t instr = i.raw;
+    bool specialInstr = i.cond == 0xF;
+    bool success;
+
+    success = pxa255pwrClkPrvCoprocRegXferFunc(&pxa255PwrClk, specialInstr, (instr & 0x00100000) != 0, (instr >> 21) & 0x07, (instr >> 12) & 0x0F, (instr >> 16) & 0x0F, instr & 0x0F, (instr >> 5) & 0x07);
+
+    //fail if instr dosent actully exist
+    if(!success)
+       undefined_instruction();
 }
 

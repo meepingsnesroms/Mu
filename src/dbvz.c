@@ -1166,7 +1166,7 @@ void dbvzLoadBootloader(uint8_t* data, uint32_t size){
    if(!data)
       size = 0;
 
-   size = uintMin(size, DBVZ_BOOTLOADER_SIZE);
+   size = FAST_MIN(size, DBVZ_BOOTLOADER_SIZE);
 
    //copy size bytes from buffer to bootloader area
    for(index = 0; index < size; index++)
@@ -1422,7 +1422,7 @@ void dbvzExecute(void){
          double cyclesRemaining = dbvzSysclksPerClk32 / 2.0;
 
          while(cyclesRemaining >= 1.0){
-            double sysclks = floatMin(cyclesRemaining, DBVZ_SYSCLK_PRECISION);
+            double sysclks = FAST_MIN(cyclesRemaining, DBVZ_SYSCLK_PRECISION);
             int32_t cpuCycles = sysclks * pctlrCpuClockDivider * palmClockMultiplier;
 
             if(cpuCycles > 0)

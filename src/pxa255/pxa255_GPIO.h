@@ -37,7 +37,8 @@ typedef struct{
 #define PXA255_GPIO_AFR3		5
 #define PXA255_GPIO_NOT_PRESENT		6
 
-Boolean pxa255gpioInit(Pxa255gpio* gpio, ArmMem* physMem, Pxa255ic* ic);
+Boolean pxa255gpioPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boolean write, void* buf);
+void pxa255gpioInit(Pxa255gpio* gpio, Pxa255ic* ic);
 
 //for external use :)
 UInt8 pxa255gpioGetState(Pxa255gpio* gpio, UInt8 gpioNum);

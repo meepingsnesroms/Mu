@@ -7,7 +7,10 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-uint16_t* pxa255Framebuffer;
+#include "pxa255_PwrClk.h"
+
+extern uint16_t* pxa255Framebuffer;
+extern Pxa255pwrClk pxa255PwrClk;
 
 bool pxa255Init(uint8_t** returnRom, uint8_t** returnRam);
 void pxa255Deinit(void);

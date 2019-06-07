@@ -23,7 +23,7 @@ static void pxa255gpioPrvRecalcIntrs(Pxa255gpio* gpio){
 	pxa255icInt(gpio->ic, PXA255_I_GPIO_0, (gpio->levels[0] & 1) != 0);
 }
 
-static Boolean pxa255gpioPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boolean write, void* buf){
+Boolean pxa255gpioPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boolean write, void* buf){
 
 	Pxa255gpio* gpio = userData;
 	UInt32 val = 0;
@@ -97,13 +97,14 @@ static Boolean pxa255gpioPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Bo
 			case 25:
 			case 26:
 				val = gpio->AFRs[pa - 21];
+            pa = (pa - 21) / 2;
 				goto recalc;
 		}
 		
 		goto done;
 		
 recalc:
-		pxa255gpioPrvRecalcValues(gpio, pa);
+      pxa255gpioPrvRecalcValues(gpio, pa);
 		
 trigger_intrs:
 		pxa255gpioPrvRecalcIntrs(gpio);
@@ -167,12 +168,9 @@ done:
 }
 
 
-Boolean pxa255gpioInit(Pxa255gpio* gpio, ArmMem* physMem, Pxa255ic* ic){
-	
+void pxa255gpioInit(Pxa255gpio* gpio, Pxa255ic* ic){
 	__mem_zero(gpio, sizeof(Pxa255gpio));
 	gpio->ic = ic;
-	
-	return memRegionAdd(physMem, PXA255_GPIO_BASE, PXA255_GPIO_SIZE, pxa255gpioPrvMemAccessF, gpio);
 }
 
 void pxa255gpioSetState(Pxa255gpio* gpio, UInt8 gpioNum, Boolean on){

@@ -237,14 +237,14 @@ bool sdCardExchangeBit(bool bit){
                            break;
 
                         case SEND_STATUS:
-                           //HACK, need to add real write protection, this command is also how the host reads the value of the little switch on the side
+                           //TODO: need to add real write protection, this command is also how the host reads the value of the little switch on the side
                            sdCardDoResponseR2(palmSdCard.inIdleState, palmSdCard.sdInfo.writeProtectSwitch);
                            break;
 
                         case SEND_WRITE_PROT:{
                               const uint8_t writeProtBits[4] = {0x00, 0x00, 0x00, 0x00};
 
-                              //HACK, need to add real write protection
+                              //TODO: need to add real write protection
                               sdCardDoResponseR1(palmSdCard.inIdleState);
                               sdCardDoResponseDelay(1);
                               sdCardDoResponseDataPacket(DATA_TOKEN_DEFAULT, writeProtBits, sizeof(writeProtBits));
@@ -339,7 +339,7 @@ bool sdCardExchangeBit(bool bit){
 
                         case SET_WR_BLOCK_ERASE_COUNT:
                            sdCardDoResponseR1(palmSdCard.inIdleState);
-                           //HACK, this command isnt actually supported yet, called when formmating the SD card
+                           //TODO: this command isnt actually supported yet, called when formmating the SD card
                            break;
 
                         default:
@@ -374,7 +374,7 @@ bool sdCardExchangeBit(bool bit){
                if(unlikely(palmSdCard.runningCommandVars[2] >= SD_CARD_BLOCK_DATA_PACKET_SIZE * 8)){
                   //packet finished, verify and write block to chip
                   if(likely(palmSdCard.allowInvalidCrc) || sdCardCrc16(palmSdCard.runningCommandPacket + 1, SD_CARD_BLOCK_SIZE) == (palmSdCard.runningCommandPacket[SD_CARD_BLOCK_DATA_PACKET_SIZE - 2] << 8 | palmSdCard.runningCommandPacket[SD_CARD_BLOCK_DATA_PACKET_SIZE - 1])){
-                     //HACK, also need to check if block is write protected, not just the card as a whole
+                     //TODO: also need to check if block is write protected, not just the card as a whole
                      if(likely(palmSdCard.runningCommandVars[0] < palmSdCard.flashChipSize && !palmSdCard.sdInfo.writeProtectSwitch)){
                         memcpy(palmSdCard.flashChipData + palmSdCard.runningCommandVars[0], palmSdCard.runningCommandPacket + 1, SD_CARD_BLOCK_SIZE);
                         sdCardDoResponseDataResponse(DR_ACCEPTED);

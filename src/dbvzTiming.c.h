@@ -249,16 +249,36 @@ static void rtcAddSecondClk32(void){
       uint8_t minutes = oldRtcTime >> 16 & 0x0000003F;
       uint8_t seconds = oldRtcTime & 0x0000003F;
 
-      seconds++;
-      rtcInterruptEvents |= 0x0010;
-      if(seconds >= 60){
+      if(palmEmuFeatures.info & FEATURE_SYNCED_RTC && palmGetRtcFromHost){
+         //get new RTC value from system
          uint16_t stopwatch = registerArrayRead16(STPWCH);
+         uint8_t alarmHours = rtcAlrm >> 24;
+         uint8_t alarmMinutes = rtcAlrm >> 16 & 0x0000003F;
+         uint8_t alarmSeconds = rtcAlrm & 0x0000003F;
+         uint8_t time[3];
+
+         palmGetRtcFromHost(time);
+
+         //day rollover happened
+         if(hours > time[0]){
+            days++;
+            rtcInterruptEvents |= 0x0008;
+         }
+
+         if(time[0] != hours)
+            rtcInterruptEvents |= 0x0020;
+
+         if(time[1] != minutes)
+            rtcInterruptEvents |= 0x0002;
+
+         if(time[2] != seconds)
+            rtcInterruptEvents |= 0x0010;
 
          if(stopwatch != 0x003F){
-            if(stopwatch == 0x0000)
+            stopwatch -= FAST_ABS(time[1] - minutes);
+
+            if(stopwatch <= 0x0000)
                stopwatch = 0x003F;
-            else
-               stopwatch--;
             registerArrayWrite16(STPWCH, stopwatch);
          }
 
@@ -266,27 +286,64 @@ static void rtcAddSecondClk32(void){
          if(stopwatch == 0x003F)
             rtcInterruptEvents |= 0x0001;
 
-         minutes++;
-         seconds = 0;
-         rtcInterruptEvents |= 0x0002;
-         if(minutes >= 60){
-            hours++;
-            minutes = 0;
-            rtcInterruptEvents |= 0x0020;
-            if(hours >= 24){
-               hours = 0;
-               days++;
-               rtcInterruptEvents |= 0x0008;
+         newRtcTime = time[2];//seconds
+         newRtcTime |= time[1] << 16;//minutes
+         newRtcTime |= time[0] << 24;//hours
+
+         //check alarm range to see if it triggered in the time that has passed
+         if(days == dayAlrm){
+            if(hours < alarmHours || hours == alarmHours && minutes < alarmMinutes || hours == alarmHours && minutes == alarmMinutes && seconds < alarmSeconds){
+               //old time is before alarm
+               if(time[0] > alarmHours || time[0] == alarmHours && time[1] > alarmMinutes || time[0] == alarmHours && time[1] == alarmMinutes && time[0] >= alarmSeconds){
+                  //new time is after alarm
+                  rtcInterruptEvents |= 0x0040;
+               }
             }
          }
+
       }
+      else{
+         //standard frame based time increment
 
-      newRtcTime = seconds;
-      newRtcTime |= minutes << 16;
-      newRtcTime |= hours << 24;
+         seconds++;
+         rtcInterruptEvents |= 0x0010;
+         if(seconds >= 60){
+            uint16_t stopwatch = registerArrayRead16(STPWCH);
 
-      if(newRtcTime == rtcAlrm && days == dayAlrm)
-         rtcInterruptEvents |= 0x0040;
+            if(stopwatch != 0x003F){
+               if(stopwatch == 0x0000)
+                  stopwatch = 0x003F;
+               else
+                  stopwatch--;
+               registerArrayWrite16(STPWCH, stopwatch);
+            }
+
+            //if stopwatch ran out above or was enabled with 0x003F in the register trigger interrupt
+            if(stopwatch == 0x003F)
+               rtcInterruptEvents |= 0x0001;
+
+            minutes++;
+            seconds = 0;
+            rtcInterruptEvents |= 0x0002;
+            if(minutes >= 60){
+               hours++;
+               minutes = 0;
+               rtcInterruptEvents |= 0x0020;
+               if(hours >= 24){
+                  hours = 0;
+                  days++;
+                  rtcInterruptEvents |= 0x0008;
+               }
+            }
+         }
+
+         newRtcTime = seconds;
+         newRtcTime |= minutes << 16;
+         newRtcTime |= hours << 24;
+
+         if(newRtcTime == rtcAlrm && days == dayAlrm)
+            rtcInterruptEvents |= 0x0040;
+      }
 
       rtcInterruptEvents &= registerArrayRead16(RTCIENR);
       if(rtcInterruptEvents){

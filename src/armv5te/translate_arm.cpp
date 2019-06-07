@@ -477,6 +477,7 @@ void translate_deinit()
     translate_end = translate_current = translate_buffer = nullptr;
 }
 
+/*
 static __attribute__((unused)) void dump_translation(int index)
 {
     auto &translation = translation_table[index];
@@ -499,6 +500,7 @@ static __attribute__((unused)) void dump_translation(int index)
         }
     }
 }
+*/
 
 void translate(uint32_t pc_start, uint32_t *insn_ptr_start)
 {

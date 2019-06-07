@@ -22,7 +22,7 @@
 
 #define JOYSTICK_DEADZONE 4000
 #define JOYSTICK_MULTIPLIER 0.0001
-#define SCREEN_HIRES (!(palmFramebufferWidth == 160 && palmFramebufferHeight == 220))
+#define SCREEN_HIRES (!(palmFramebufferWidth == 160))
 
 
 static retro_log_printf_t         log_cb = NULL;
@@ -36,15 +36,29 @@ static retro_input_state_t        input_state_cb = NULL;
 static uint32_t emuFeatures;
 #if defined(EMU_SUPPORT_PALM_OS5)
 static bool     useOs5;
-static bool     firstRetroRunCall;
 #endif
+static bool     firstRetroRunCall;
+static bool     dontRenderGraffiti;
 static bool     useJoystickAsMouse;
 static float    touchCursorX;
 static float    touchCursorY;
 static char     contentPath[PATH_MAX_LENGTH];
 static uint16_t mouseCursorOldArea[32 * 32];
 static bool     runningImgFile;
+static uint16_t screenYEnd;
 
+
+static void frontendGetCurrentTime(uint8_t* writeBack){
+   time_t rawTime;
+   struct tm* timeInfo;
+
+   time(&rawTime);
+   timeInfo = localtime(&rawTime);
+
+   writeBack[0] = timeInfo->tm_hour;
+   writeBack[1] = timeInfo->tm_min;
+   writeBack[2] = timeInfo->tm_sec;
+}
 
 static void renderMouseCursor(int16_t screenX, int16_t screenY){
    if(SCREEN_HIRES){
@@ -151,6 +165,10 @@ static void check_variables(bool booting){
    if(environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
       useJoystickAsMouse = !strcmp(var.value, "enabled");
    
+   var.key = "palm_emu_disable_graffiti";
+   if(environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+      dontRenderGraffiti = !strcmp(var.value, "enabled");
+   
 #if defined(EMU_SUPPORT_PALM_OS5)
    var.key = "palm_emu_use_os5";
    if(environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
@@ -215,22 +233,28 @@ void retro_set_environment(retro_environment_t cb){
       { "palm_emu_feature_hle_apis", "HLE API Implementations; disabled|enabled" },
       { "palm_emu_feature_durable", "Ignore Invalid Behavior; disabled|enabled" },
       { "palm_emu_use_joystick_as_mouse", "Use Left Joystick As Mouse; disabled|enabled" },
+      { "palm_emu_disable_graffiti", "Disable Graffiti Area; disabled|enabled" },
 #if defined(EMU_SUPPORT_PALM_OS5)
-      { "palm_emu_use_os5", "Boot Apps In OS 5; disabled|enabled" },
+      { "palm_emu_use_os5", "Boot Apps In OS 5(DEV ONLY); disabled|enabled" },
 #endif
       { 0 }
    };
    struct retro_input_descriptor input_desc[] = {
       { 0, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_LEFT, RETRO_DEVICE_ID_ANALOG_X, "Touchscreen Mouse X" },
       { 0, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_LEFT, RETRO_DEVICE_ID_ANALOG_Y, "Touchscreen Mouse Y" },
-      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R2,                             "Touchscreen Mouse Click" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R,                             "Touchscreen Mouse Click" },
       { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP,                             "Dpad Up" },
       { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN,                           "Dpad Down" },
+#if defined(EMU_SUPPORT_PALM_OS5)
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT,                           "Dpad Left" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_RIGHT,                          "Dpad Right" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_SELECT,                         "Dpad Center" },
+#endif
       { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_START,                          "Power" },
-      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_A,                              "Date Book" },
-      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_B,                              "Address Book" },
-      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_Y,                              "To Do List" },
-      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_X,                              "Note Pad" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_Y,                              "Date Book" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_X,                              "Address Book" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_B,                              "To Do List" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_A,                              "Note Pad" },
       { 0 }
    };
    bool no_rom = true;
@@ -283,22 +307,39 @@ void retro_reset(void){
 void retro_run(void){
    input_poll_cb();
    
-#if defined(EMU_SUPPORT_PALM_OS5)
    //some RetroArch functions can only be called from this function so call those if needed
    if(unlikely(firstRetroRunCall)){
+      struct retro_game_geometry geometry;
+#if defined(EMU_SUPPORT_PALM_OS5)
       if(useOs5){
-         struct retro_game_geometry geometry;
-
-         geometry.base_width   = 320;
-         geometry.base_height  = 480;
-         geometry.max_width    = 320;
-         geometry.max_height   = 480;
-         geometry.aspect_ratio = 320.0 / 480.0;
-         environ_cb(RETRO_ENVIRONMENT_SET_GEOMETRY, &geometry);
+         if(dontRenderGraffiti){
+            geometry.base_width   = 320;
+            geometry.base_height  = 320;
+            geometry.max_width    = 320;
+            geometry.max_height   = 480;
+         }
+         else{
+            geometry.base_width   = 320;
+            geometry.base_height  = 480;
+         }
       }
+      else{
+#endif
+         if(dontRenderGraffiti){
+            geometry.base_width   = 160;
+            geometry.base_height  = 160;
+         }
+         else{
+            geometry.base_width   = 160;
+            geometry.base_height  = 220;
+         }
+#if defined(EMU_SUPPORT_PALM_OS5)
+      }
+#endif
+      geometry.aspect_ratio = (float)geometry.base_width / (float)geometry.base_height;
+      environ_cb(RETRO_ENVIRONMENT_SET_GEOMETRY, &geometry);
       firstRetroRunCall = false;
    }
-#endif
    
    //touchscreen
    if(useJoystickAsMouse){
@@ -323,24 +364,31 @@ void retro_run(void){
       
       palmInput.touchscreenX = touchCursorX / (palmFramebufferWidth - 1);
       palmInput.touchscreenY = touchCursorY / (palmFramebufferHeight - 1);
-      palmInput.touchscreenTouched = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R2);
+      palmInput.touchscreenTouched = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R);
    }
    else{
       //use RetroArch internal pointer
       palmInput.touchscreenX = ((float)input_state_cb(0, RETRO_DEVICE_POINTER, 0, RETRO_DEVICE_ID_POINTER_X) / 0x7FFF + 1.0) / 2.0;
-      palmInput.touchscreenY = ((float)input_state_cb(0, RETRO_DEVICE_POINTER, 0, RETRO_DEVICE_ID_POINTER_Y) / 0x7FFF + 1.0) / 2.0;
+      palmInput.touchscreenY = ((float)input_state_cb(0, RETRO_DEVICE_POINTER, 0, RETRO_DEVICE_ID_POINTER_Y) / 0x7FFF + 1.0) / 2.0 * ((float)screenYEnd / palmFramebufferHeight);
       palmInput.touchscreenTouched = input_state_cb(0, RETRO_DEVICE_POINTER, 0, RETRO_DEVICE_ID_POINTER_PRESSED);
    }
 
    //dpad
    palmInput.buttonUp = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP);
    palmInput.buttonDown = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN);
+#if defined(EMU_SUPPORT_PALM_OS5)
+   if(useOs5){
+      palmInput.buttonLeft = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT);
+      palmInput.buttonRight = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_RIGHT);
+      palmInput.buttonCenter = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_SELECT);
+   }
+#endif
    
    //app buttons
-   palmInput.buttonCalendar = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_A);
-   palmInput.buttonAddress = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_B);
-   palmInput.buttonTodo = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_Y);
-   palmInput.buttonNotes = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_X);
+   palmInput.buttonCalendar = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_Y);
+   palmInput.buttonAddress = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_X);
+   palmInput.buttonTodo = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_B);
+   palmInput.buttonNotes = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_A);
    
    //special buttons
    palmInput.buttonPower = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_START);
@@ -352,7 +400,7 @@ void retro_run(void){
    if(useJoystickAsMouse)
       renderMouseCursor(touchCursorX, touchCursorY);
    
-   video_cb(palmFramebuffer, palmFramebufferWidth, palmFramebufferHeight, palmFramebufferWidth * sizeof(uint16_t));
+   video_cb(palmFramebuffer, palmFramebufferWidth, screenYEnd, palmFramebufferWidth * sizeof(uint16_t));
    audio_cb(palmAudio, AUDIO_SAMPLES_PER_FRAME);
    if(led_cb)
       led_cb(0, palmMisc.powerButtonLed);
@@ -562,13 +610,28 @@ bool retro_load_game(const struct retro_game_info *info){
          return false;
    }
    
+   //set the time callback
+   palmGetRtcFromHost = frontendGetCurrentTime;
+   
    //set mouse position
    touchCursorX = palmFramebufferWidth / 2;
    touchCursorY = palmFramebufferHeight / 2;
    
+   //make touches land on the correct spot and screen render the correct size when the graffiti area is off
+   if(dontRenderGraffiti){
 #if defined(EMU_SUPPORT_PALM_OS5)
-   firstRetroRunCall = true;
+      if(useOs5)
+         screenYEnd = 320;
+      else
 #endif
+         screenYEnd = 160;
+   }
+   else{
+      screenYEnd = palmFramebufferHeight;
+   }
+   
+   //used to resize things properly
+   firstRetroRunCall = true;
 
    return true;
 }

@@ -2,6 +2,9 @@ EMU_PATH := $(CORE_DIR)/../src
 LIBRETRO_COMM_DIR := $(CORE_DIR)/libretro-common
 COREDEFINES :=
 
+# my first make function!!!
+CHECK_ALL = $(strip $(foreach v,$(2),$(if $(findstring $(v),$(1)),$(v),)))
+
 INCFLAGS := -I$(LIBRETRO_COMM_DIR)/include
 
 ifeq ($(DEBUG), 1)
@@ -10,11 +13,12 @@ else
 	COREDEFINES += -DEMU_NO_SAFETY
 endif
 
-# "unix" is not specific enough, need to know the CPU arch too
-this_system = $(platform)
-ifeq ($(this_system), unix)
-   this_system = $(shell $(CC) -dumpmachine)
+# "unix" or "win" is not specific enough, need to know the CPU arch too
+this_system := $(platform)
+ifneq (,$(filter unix win,$(this_system)))
+   this_system := $(shell $(CC) -dumpmachine)
 endif
+
 
 ifneq (,$(findstring msvc200,$(this_system)))
 	INCFLAGS += -I$(LIBRETRO_COMM_DIR)/include/compat/msvc
@@ -26,12 +30,12 @@ ifneq (,$(findstring msvc20,$(this_system)))
 	COREDEFINES += -Dinline=_inline -DINLINE=_inline
 endif
 
-ifneq (,$(findstring windows,$(this_system)))
+ifneq (,$(call CHECK_ALL,$(this_system),windows mingw))
    # Windows
    ifeq (,$(findstring msvc,$(this_system)))
       EMU_SUPPORT_PALM_OS5 := 1
       EMU_OS := windows
-      ifneq (,$(filter %x64 %x86_64,$(this_system)))
+      ifneq (,$(call CHECK_ALL,$(this_system),x86_64 x64))
          EMU_ARCH := x86_64
       else
          EMU_ARCH := x86_32
@@ -40,24 +44,24 @@ ifneq (,$(findstring windows,$(this_system)))
       # MSVC uses its own(incompatible) ASM syntax
       EMU_SUPPORT_PALM_OS5 := 0
    endif
-else ifneq (,$(filter %armv8% %aarch64% rpi3,$(this_system)))
+else ifneq (,$(call CHECK_ALL,$(this_system),armv8 aarch64))
    # ARM Linux 64
    EMU_SUPPORT_PALM_OS5 := 1
    EMU_ARCH := armv8
    EMU_OS := linux
-else ifneq (,$(filter %armv% rpi2,$(this_system)))
-   # ARM Linux
+else ifneq (,$(call CHECK_ALL,$(this_system),armv rpi2 rpi3))
+   # ARM Linux(rpi3 is aarch64 but its almost always used in 32bit mode)
    EMU_SUPPORT_PALM_OS5 := 1
    EMU_ARCH := armv7
    EMU_OS := linux
 else ifneq (,$(findstring armhf,$(this_system)))
    # ARM Linux ARMv5
-   # this needs to be before "linux%" because it will trigger the linux case
+   # this needs to be before "linux" because it will trigger the linux case
    EMU_SUPPORT_PALM_OS5 := 0
-else ifneq (,$(filter osx% linux% ,$(this_system)))
+else ifneq (,$(call CHECK_ALL,$(this_system),osx linux))
    # x86_* Linux
    EMU_SUPPORT_PALM_OS5 := 1
-   ifneq (,$(filter osx %x86_64% %x64%,$(this_system)))
+   ifneq (,$(call CHECK_ALL,$(this_system),osx x86_64 x64))
       EMU_ARCH := x86_64
    else
       EMU_ARCH := x86_32
@@ -78,7 +82,7 @@ endif
 
 # use all CPUs and optimize for the most likely outcome, Android is handled separately
 # Apple broke OpenMP in there port of Clang so no Mac OS or iOS
-ifneq (,$(filter %armv% windows% linux%,$(this_system)))
+ifneq (,$(call CHECK_ALL,$(this_system),windows linux))
    # none of libretros MSVC compilers work with these optimizations for multiple different reasons
    # they dont have the library "VCOMP.lib"
    # they are too old for the extension to exist

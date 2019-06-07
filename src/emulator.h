@@ -176,7 +176,8 @@ extern uint16_t  palmFramebufferHeight;//read allowed
 extern int16_t*  palmAudio;//read allowed, 2 channel signed 16 bit audio
 extern blip_t*   palmAudioResampler;//dont touch
 extern double    palmCycleCounter;//dont touch
-extern double    palmClockMultiplier;//dont touch
+extern double    palmClockMultiplier;//read/write allowed, setting by multiplication and cacheing the result is the best way
+extern void      (*palmGetRtcFromHost)(uint8_t* writeBack);//[0] = hours, [1] = minutes, [2] = seconds
 
 //functions
 uint32_t emulatorInit(uint8_t* palmRomData, uint32_t palmRomSize, uint8_t* palmBootloaderData, uint32_t palmBootloaderSize, uint32_t enabledEmuFeatures);

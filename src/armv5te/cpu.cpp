@@ -133,7 +133,10 @@ void data_abort(uint32_t mva, uint8_t status)
 void undefined_instruction()
 {
     fix_pc_for_fault();
-    warn("Undefined instruction at %08x\n", arm.reg[15]);
+    if(current_instr_size == 4)
+       warn("Undefined instruction 0x%08X at 0x%08X\n", read_word(arm.reg[15]), arm.reg[15]);
+    else
+       warn("Undefined instruction 0x%04X at 0x%08X\n", read_half(arm.reg[15]), arm.reg[15]);
     arm.reg[15] += current_instr_size;
     cpu_exception(EX_UNDEFINED);
     longjmp(restart_after_exception, 1);
