@@ -32,8 +32,10 @@ endif
 include $(CLEAR_VARS)
 LOCAL_MODULE    := retro
 LOCAL_SRC_FILES := $(SOURCES_C) $(SOURCES_CXX) $(SOURCES_ASM)
-LOCAL_CFLAGS    := $(COREFLAGS) -fopenmp -DEMU_MULTITHREADED -DEMU_MANAGE_HOST_CPU_PIPELINE
-LOCAL_LDFLAGS   := -Wl,-version-script=$(CORE_DIR)/build/link.T -fopenmp
+# LOCAL_CFLAGS    := $(COREFLAGS) -fopenmp -DEMU_MULTITHREADED -DEMU_MANAGE_HOST_CPU_PIPELINE
+# LOCAL_LDFLAGS   := -Wl,-version-script=$(CORE_DIR)/build/link.T -fopenmp
+LOCAL_CFLAGS    := $(COREFLAGS)
+LOCAL_LDFLAGS   := -Wl,-version-script=$(CORE_DIR)/build/link.T
 
 ifeq ($(TARGET_ARCH_ABI), armeabi-v7a)
 	LOCAL_ARM_NEON := true

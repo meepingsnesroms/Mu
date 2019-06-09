@@ -44,8 +44,8 @@ platform       = win
 PLATDEFS       = 
 PLATCFLAGS     = -fstrict-aliasing
 PLATCXXFLAGS   = -fstrict-aliasing
-PLATLDFLAGS    = -shared -lm
-PLATLDXFLAGS   = -shared -lm
+PLATLDFLAGS    = -shared -lm -static-libgcc -static-libstdc++
+PLATLDXFLAGS   = -shared -lm -static-libgcc -static-libstdc++
 
 ################
 # libretro setup
