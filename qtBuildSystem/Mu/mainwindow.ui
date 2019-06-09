@@ -43,7 +43,7 @@
         <number>0</number>
        </property>
        <item>
-        <widget class="TouchScreen" name="display">
+        <widget class="TouchScreen" name="display" native="true">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
            <horstretch>0</horstretch>
@@ -55,12 +55,6 @@
            <width>160</width>
            <height>220</height>
           </size>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-         <property name="indent">
-          <number>0</number>
          </property>
         </widget>
        </item>
@@ -525,8 +519,9 @@
  <customwidgets>
   <customwidget>
    <class>TouchScreen</class>
-   <extends>QLabel</extends>
+   <extends>QWidget</extends>
    <header>touchscreen.h</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <resources>

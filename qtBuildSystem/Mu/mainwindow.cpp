@@ -14,7 +14,6 @@
 #include <QKeyEvent>
 #include <QGraphicsScene>
 #include <QCoreApplication>
-#include <QPixmap>
 #include <QAudioOutput>
 #include <QAudioFormat>
 
@@ -236,10 +235,8 @@ bool MainWindow::eventFilter(QObject* object, QEvent* event){
          ui->display->setFixedSize(smallestRatio * 3.0, smallestRatio * 4.0);
 
          //scale framebuffer to new size and refresh
-         if(emu.isInited()){
-            ui->display->setPixmap(emu.getFramebuffer().scaled(QSize(ui->display->size().width(), ui->display->size().height()), Qt::KeepAspectRatio, Qt::SmoothTransformation));
-            ui->display->update();
-         }
+         if(emu.isInited())
+            ui->display->repaint();
       }
    }
 
@@ -249,8 +246,8 @@ bool MainWindow::eventFilter(QObject* object, QEvent* event){
 //display
 void MainWindow::updateDisplay(){
    if(emu.newFrameReady()){
-      //video, this is doing bilinear filitering in software, this is why the Qt port is broken on Android, move this to a new thread if possible
-      ui->display->setPixmap(emu.getFramebuffer().scaled(ui->display->size().width(), ui->display->size().height(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
+      //video
+      ui->display->repaint();
 
       //audio
       audioOut->write((const char*)emu.getAudioSamples(), AUDIO_SAMPLES_PER_FRAME * 2/*channels*/ * sizeof(int16_t));
@@ -428,7 +425,7 @@ void MainWindow::on_screenshot_clicked(){
       qlonglong screenshotNumber = settings->value("screenshotNum", 0).toLongLong();
       QString screenshotPath = settings->value("resourceDirectory", "").toString() + "/screenshots/screenshot" + QString::number(screenshotNumber, 10) + ".png";
 
-      emu.getFramebuffer().save(screenshotPath, "PNG", 100);
+      emu.getFramebufferImage().save(screenshotPath, "PNG", 100);
       screenshotNumber++;
       settings->setValue("screenshotNum", screenshotNumber);
    }

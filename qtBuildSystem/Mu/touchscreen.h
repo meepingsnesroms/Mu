@@ -1,9 +1,10 @@
 #pragma once
 
-#include <QLabel>
+#include <QWidget>
+#include <QPaintEvent>
 #include <QMouseEvent>
 
-class TouchScreen : public QLabel{
+class TouchScreen : public QWidget{
    Q_OBJECT
    
 private:
@@ -14,6 +15,7 @@ public:
    ~TouchScreen();
    
 protected:
+   void paintEvent(QPaintEvent* ev);
    void mousePressEvent(QMouseEvent* ev);
    void mouseMoveEvent(QMouseEvent* ev);
    void mouseReleaseEvent(QMouseEvent* ev);

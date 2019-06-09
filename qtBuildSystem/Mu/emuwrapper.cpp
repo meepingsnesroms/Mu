@@ -1,7 +1,5 @@
 #include <QString>
 #include <QVector>
-#include <QPixmap>
-#include <QImage>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>

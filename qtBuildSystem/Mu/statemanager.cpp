@@ -92,7 +92,7 @@ void StateManager::on_saveState_clicked(){
       QString statePath = emu->getStatePath() + "/" + ui->newStateName->text();
 
       parent->emu.saveState(ui->newStateName->text());
-      parent->emu.getFramebuffer().save(statePath + ".png");
+      parent->emu.getFramebufferImage().save(statePath + ".png");
       updateStateList();
 
       ui->states->setCurrentRow(getStateIndexRowByName(ui->newStateName->text()));//this also updates the preview image
