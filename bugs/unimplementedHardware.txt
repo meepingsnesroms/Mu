@@ -1,7 +1,5 @@
 CPU:
 Test what bits of IMR are writable
-sandbox isnt notified about switches to Thumb mode
-function name finders for ARMv5 and Thumb are unimplemented
 hardware registers don't have there names printed in sandbox
 
 CPU I/O:
@@ -53,11 +51,11 @@ MakePalmBitmap:
 Other:
 Support for Silkyboard 2 silkscreen:https://archive.org/details/tucows_228076_SILKYBOARD_II
 Qt port dosent support Windows touchscreen input
-Qt GUI dosent resize properly with 320x320 framebuffer
-File Installer isnt working yet
-Qt dosent have a hybrid file/folder selector so apps will always have to be launched from folders for now
 
 Fixed:
+Qt dosent have a hybrid file/folder selector so apps will always have to be launched from folders for now
+File Installer isnt working yet
+Qt GUI dosent resize properly with 320x320 framebuffer
 PLLFSR has a hack that makes busy wait loops finish faster by toggling the CLK32 bit on read, for power button issue(removed, power button works as expected if you wait at least 2 seconds before pushing it again(makes sence that it cnat read the new press while its turning off the CPU))
 (CPU)VFP(floating point) coprocessor for ARM(dont think the ARM Palms even used VFP)
 (Other)need to get rid of buffer_t, its not used much anyway
