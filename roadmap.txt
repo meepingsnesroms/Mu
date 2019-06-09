@@ -21,7 +21,9 @@ RetroArch GUI:
 *now launches content like cartridge based systems
 *make default button layout match default controller layout better
 //TODO: allow adding more content after boot
+//TODO: switch to high contrast and top left corner aligned mouse cursors
 //TODO: get EMU_MANAGE_HOST_CPU_PIPELINE working on other platforms then the main 4
+//TODO: get OpenMP working with RetroArch
 //TODO: when compiling with "make platform=windows_x86_64" the dll wont load(theres a really good chance its because "libgomp-1.dll"(the OpenMP handler library) is missing from the RetroArch folder)
 *allow disabling the silkscreen area
 *booting without game works again
@@ -30,6 +32,7 @@ RetroArch GUI:
 Qt GUI:
 //TODO: get circleci builds for QT port on Win/Mac/Linux
 //TODO: allow reiniting the emu without closing the program
+//TODO: render with OpenGL widget(should be a major speed boost)
 *fixed state manager not loading until a state is saved
 *boot button uses install button icon now, changed install button to icon a "+"
 *put back left/right/center keys
