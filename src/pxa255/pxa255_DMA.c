@@ -5,7 +5,7 @@
 #define REG_SAR 	1
 #define REG_TAR 	2
 #define REG_CR		3
-#define REG_CSR		4
+#define REG_CSR   4
 
 
 static void pxa255dmaPrvChannelRegWrite(_UNUSED_ Pxa255dma* dma, UInt8 channel, UInt8 reg, UInt32 val){

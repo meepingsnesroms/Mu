@@ -31,6 +31,13 @@ SettingsManager::SettingsManager(QWidget* parent) :
    ui->featureHleApis->setChecked(settings->value("featureHleApis", false).toBool());
    ui->featureDurable->setChecked(settings->value("featureDurable", false).toBool());
 
+#if !defined(EMU_SUPPORT_PALM_OS5)
+   ui->useOs5->hide();
+   ui->selectLeftKey->hide();
+   ui->selectRightKey->hide();
+   ui->selectCenterKey->hide();
+#endif
+
    setKeySelectorState(-1);
    updateButtonKeys();
 }

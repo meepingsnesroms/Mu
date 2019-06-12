@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include <setjmp.h>
 
+#include "pxa255.h"
 #include "pxa255_DMA.h"
 #include "pxa255_DSP.h"
 #include "pxa255_GPIO.h"
@@ -64,7 +65,7 @@ bool pxa255Init(uint8_t** returnRom, uint8_t** returnRam){
    mem_offset += TUNGSTEN_T3_RAM_SIZE;
 
    //memory regions that are not directly mapped to a buffer are not added to mem_areas
-   //adding them will cause SIGSEGVs
+   //adding them causes SIGSEGVs
 
    //accessors
    //default
@@ -246,4 +247,30 @@ void pxa255Execute(bool wantVideo){
 
 uint32_t pxa255GetRegister(uint8_t reg){
    return reg_pc(reg);
+}
+
+uint64_t pxa255ReadArbitraryMemory(uint32_t address, uint8_t size){
+   uint64_t data = UINT64_MAX;//invalid access
+
+   switch(size){
+      case 8:
+         if(read_byte_map[address >> 26] != bad_read_byte){
+            data = read_byte_map[address >> 26](address);
+         }
+         break;
+
+      case 16:
+         if(read_half_map[address >> 26] != bad_read_half){
+            data = read_half_map[address >> 26](address);
+         }
+         break;
+
+      case 32:
+         if(read_word_map[address >> 26] != bad_read_word){
+            data = read_word_map[address >> 26](address);
+         }
+         break;
+   }
+
+   return data;
 }

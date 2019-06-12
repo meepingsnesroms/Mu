@@ -26,12 +26,12 @@ static uint32_t pxa255_io_read_word(uint32_t addr){
       case PXA255_BTUART_BASE >> 16:
       case PXA255_STUART_BASE >> 16:
          //need to implement these
-         debugLog("Unimplemented 32 bit PXA255 register read:0x%08X\n", addr);
+         debugLog("Unimplemented 32 bit PXA255 register read:0x%08X, PC:0x%08X\n", addr, pxa255GetPc());
          out = 0x00000000;
          break;
 
       default:
-         debugLog("Invalid 32 bit PXA255 register read:0x%08X\n", addr);
+         debugLog("Invalid 32 bit PXA255 register read:0x%08X, PC:0x%08X\n", addr, pxa255GetPc());
          out = 0x00000000;
          break;
    }
@@ -65,11 +65,11 @@ static void pxa255_io_write_word(uint32_t addr, uint32_t value){
       case PXA255_BTUART_BASE >> 16:
       case PXA255_STUART_BASE >> 16:
          //need to implement these
-         debugLog("Unimplemented 32 bit PXA255 register write:0x%08X, value:0x%08X\n", addr, value);
+         debugLog("Unimplemented 32 bit PXA255 register write:0x%08X, value:0x%08X, PC:0x%08X\n", addr, value, pxa255GetPc());
          break;
 
       default:
-         debugLog("Invalid 32 bit PXA255 register write:0x%08X, value:0x%08X\n", addr, value);
+         debugLog("Invalid 32 bit PXA255 register write:0x%08X, value:0x%08X, PC:0x%08X\n", addr, value, pxa255GetPc());
          break;
    }
 }
@@ -87,11 +87,13 @@ static void pxa255_lcd_write_word(uint32_t addr, uint32_t value){
 }
 
 static uint32_t pxa255_memctrl_read_word(uint32_t addr){
+   //MEMCTRL only governs timing, refresh and protocol configs, not mapping, should be safe to ignore
    debugLog("32 bit PXA255 MEMCTRL register read:0x%08X\n", addr);
    return 0x00000000;
 }
 
 static void pxa255_memctrl_write_word(uint32_t addr, uint32_t value){
+   //MEMCTRL only governs timing, refresh and protocol configs, not mapping, should be safe to ignore
    debugLog("32 bit PXA255 MEMCTRL register write:0x%08X, value:0x%08X\n", addr, value);
 }
 

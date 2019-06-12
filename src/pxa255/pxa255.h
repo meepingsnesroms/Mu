@@ -23,5 +23,7 @@ void pxa255LoadState(uint8_t* data);
 void pxa255Execute(bool wantVideo);//runs the CPU for 1 frame
 
 uint32_t pxa255GetRegister(uint8_t reg);//only for debugging
+#define pxa255GetPc() pxa255GetRegister(15)
+uint64_t pxa255ReadArbitraryMemory(uint32_t address, uint8_t size);//only for debugging
 
 #endif

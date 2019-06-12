@@ -149,6 +149,10 @@ void EmuWrapper::writeOutSaves(){
 }
 
 uint32_t EmuWrapper::init(const QString& assetPath, bool useOs5, uint32_t features, bool fastBoot){
+#if !defined(EMU_SUPPORT_PALM_OS5)
+   useOs5 = false;
+#endif
+
    if(!emuRunning && !emuInited){
       //start emu
       uint32_t error;
@@ -435,6 +439,7 @@ void EmuWrapper::setKeyValue(uint8_t key, bool pressed){
          emuInput.buttonDown = pressed;
          break;
 
+#if defined(EMU_SUPPORT_PALM_OS5)
       case BUTTON_LEFT:
          emuInput.buttonLeft = pressed;
          break;
@@ -446,6 +451,7 @@ void EmuWrapper::setKeyValue(uint8_t key, bool pressed){
       case BUTTON_CENTER:
          emuInput.buttonCenter = pressed;
          break;
+#endif
 
       case BUTTON_CALENDAR:
          emuInput.buttonCalendar = pressed;
@@ -483,12 +489,14 @@ QVector<uint64_t>& EmuWrapper::debugGetDuplicateLogEntryCount(){
 QString EmuWrapper::debugGetCpuRegisterString(){
    QString regString = "";
 
+#if defined(EMU_SUPPORT_PALM_OS5)
    if(palmEmulatingTungstenT3){
       for(uint8_t regs = 0; regs < 16; regs++)
          regString += QString::asprintf("R%d:0x%08X\n", regs, pxa255GetRegister(regs));
       regString.resize(regString.size() - 1);//remove extra '\n'
    }
    else{
+#endif
       for(uint8_t dRegs = 0; dRegs < 8; dRegs++)
          regString += QString::asprintf("D%d:0x%08X\n", dRegs, flx68000GetRegister(dRegs));
       for(uint8_t aRegs = 0; aRegs < 8; aRegs++)
@@ -496,11 +504,17 @@ QString EmuWrapper::debugGetCpuRegisterString(){
       regString += QString::asprintf("SP:0x%08X\n", flx68000GetRegister(15));
       regString += QString::asprintf("PC:0x%08X\n", flx68000GetRegister(16));
       regString += QString::asprintf("SR:0x%04X", flx68000GetRegister(17));
+#if defined(EMU_SUPPORT_PALM_OS5)
    }
+#endif
 
    return regString;
 }
 
 uint64_t EmuWrapper::debugGetEmulatorMemory(uint32_t address, uint8_t size){
+#if defined(EMU_SUPPORT_PALM_OS5)
+   if(palmEmulatingTungstenT3)
+      return pxa255ReadArbitraryMemory(address, size);
+#endif
    return flx68000ReadArbitraryMemory(address, size);
 }

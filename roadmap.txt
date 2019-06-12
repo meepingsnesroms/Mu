@@ -13,7 +13,7 @@ v1.1.0 to v3.2.0(*** ** 2020 - *** ** 2020)
 RetroArch GUI:
 //TODO: allow adding more content after boot
 //TODO: get EMU_MANAGE_HOST_CPU_PIPELINE working on other platforms then the main 4
-//TODO: get OpenMP working with RetroArch
+//TODO: get OpenMP working with RetroArch(already works but breaks the no external libs rule)
 //FIXED: when compiling with "make platform=windows_x86_64" the dll wont load(theres a really good chance its because "libgomp-1.dll"(the OpenMP handler library) is missing from the RetroArch folder)(fixed by disableing OpenMP :( )
 
 Qt GUI:
