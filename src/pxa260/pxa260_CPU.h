@@ -1,7 +1,7 @@
 #ifndef _CPU_H_
 #define _CPU_H_
 
-#include "pxa255_types.h"
+#include "pxa260_types.h"
 #include "../armv5te/cpu.h"
 
 struct ArmCpu;

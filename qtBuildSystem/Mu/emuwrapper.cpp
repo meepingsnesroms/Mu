@@ -22,7 +22,7 @@
 
 extern "C"{
 #include "../../src/flx68000.h"
-#include "../../src/pxa255/pxa255.h"
+#include "../../src/pxa260/pxa260.h"
 #include "../../src/debug/sandbox.h"
 }
 
@@ -492,7 +492,7 @@ QString EmuWrapper::debugGetCpuRegisterString(){
 #if defined(EMU_SUPPORT_PALM_OS5)
    if(palmEmulatingTungstenT3){
       for(uint8_t regs = 0; regs < 16; regs++)
-         regString += QString::asprintf("R%d:0x%08X\n", regs, pxa255GetRegister(regs));
+         regString += QString::asprintf("R%d:0x%08X\n", regs, pxa260GetRegister(regs));
       regString.resize(regString.size() - 1);//remove extra '\n'
    }
    else{
@@ -514,7 +514,7 @@ QString EmuWrapper::debugGetCpuRegisterString(){
 uint64_t EmuWrapper::debugGetEmulatorMemory(uint32_t address, uint8_t size){
 #if defined(EMU_SUPPORT_PALM_OS5)
    if(palmEmulatingTungstenT3)
-      return pxa255ReadArbitraryMemory(address, size);
+      return pxa260ReadArbitraryMemory(address, size);
 #endif
    return flx68000ReadArbitraryMemory(address, size);
 }

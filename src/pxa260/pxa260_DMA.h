@@ -1,17 +1,17 @@
-#ifndef _PXA255_DMA_H_
-#define _PXA255_DMA_H_
+#ifndef _PXA260_DMA_H_
+#define _PXA260_DMA_H_
 
-#include "pxa255_mem.h"
-#include "pxa255_CPU.h"
-#include "pxa255_IC.h"
+#include "pxa260_mem.h"
+#include "pxa260_CPU.h"
+#include "pxa260_IC.h"
 
 /*
-	PXA255 OS DMA controller
+	PXA260 OS DMA controller
 
 */
 
-#define PXA255_DMA_BASE		0x40000000UL
-#define PXA255_DMA_SIZE		0x00001000UL
+#define PXA260_DMA_BASE		0x40000000UL
+#define PXA260_DMA_SIZE		0x00001000UL
 
 typedef struct{
 	
@@ -36,7 +36,7 @@ typedef struct{
 
 
 
-Boolean pxa255dmaInit(Pxa255dma* gpio, ArmMem* physMem, Pxa255ic* ic);
+Boolean pxa260dmaInit(Pxa255dma* gpio, ArmMem* physMem, Pxa255ic* ic);
 
 #endif
 

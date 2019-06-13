@@ -140,17 +140,17 @@ support_palm_os5{
     }
 
     SOURCES += \
-        ../../src/pxa255/pxa255_mem.c \
-        ../../src/pxa255/pxa255_DMA.c \
-        ../../src/pxa255/pxa255_DSP.c \
-        ../../src/pxa255/pxa255_GPIO.c \
-        ../../src/pxa255/pxa255_IC.c \
-        ../../src/pxa255/pxa255_LCD.c \
-        ../../src/pxa255/pxa255_PwrClk.c \
-        ../../src/pxa255/pxa255_RTC.c \
-        ../../src/pxa255/pxa255_TIMR.c \
-        ../../src/pxa255/pxa255_UART.c \
-        ../../src/pxa255/pxa255.c \
+        ../../src/pxa260/pxa260_mem.c \
+        ../../src/pxa260/pxa260_DMA.c \
+        ../../src/pxa260/pxa260_DSP.c \
+        ../../src/pxa260/pxa260_GPIO.c \
+        ../../src/pxa260/pxa260_IC.c \
+        ../../src/pxa260/pxa260_LCD.c \
+        ../../src/pxa260/pxa260_PwrClk.c \
+        ../../src/pxa260/pxa260_RTC.c \
+        ../../src/pxa260/pxa260_TIMR.c \
+        ../../src/pxa260/pxa260_UART.c \
+        ../../src/pxa260/pxa260.c \
         ../../src/armv5te/arm_interpreter.cpp \
         ../../src/armv5te/cpu.cpp \
         ../../src/armv5te/coproc.cpp \
@@ -161,20 +161,20 @@ support_palm_os5{
         ../../src/tungstenT3Bus.c
 
     HEADERS += \
-        ../../src/pxa255/pxa255_CPU.h \
-        ../../src/pxa255/pxa255_mem.h \
-        ../../src/pxa255/pxa255_DMA.h \
-        ../../src/pxa255/pxa255_DSP.h \
-        ../../src/pxa255/pxa255_GPIO.h \
-        ../../src/pxa255/pxa255_IC.h \
-        ../../src/pxa255/pxa255_LCD.h \
-        ../../src/pxa255/pxa255_PwrClk.h \
-        ../../src/pxa255/pxa255_RTC.h \
-        ../../src/pxa255/pxa255_TIMR.h \
-        ../../src/pxa255/pxa255_UART.h \
-        ../../src/pxa255/pxa255_types.h \
-        ../../src/pxa255/pxa255_math64.h \
-        ../../src/pxa255/pxa255.h \
+        ../../src/pxa260/pxa260_CPU.h \
+        ../../src/pxa260/pxa260_mem.h \
+        ../../src/pxa260/pxa260_DMA.h \
+        ../../src/pxa260/pxa260_DSP.h \
+        ../../src/pxa260/pxa260_GPIO.h \
+        ../../src/pxa260/pxa260_IC.h \
+        ../../src/pxa260/pxa260_LCD.h \
+        ../../src/pxa260/pxa260_PwrClk.h \
+        ../../src/pxa260/pxa260_RTC.h \
+        ../../src/pxa260/pxa260_TIMR.h \
+        ../../src/pxa260/pxa260_UART.h \
+        ../../src/pxa260/pxa260_types.h \
+        ../../src/pxa260/pxa260_math64.h \
+        ../../src/pxa260/pxa260.h \
         ../../src/armv5te/os/os.h \
         ../../src/armv5te/asmcode.h \
         ../../src/armv5te/bitfield.h \
@@ -225,7 +225,7 @@ SOURCES += \
 HEADERS += \
     ../../src/dbvz.h \
     ../../src/fileLauncher/launcher.h \
-    ../../src/pxa255/pxa255Accessors.c.h \
+    ../../src/pxa260/pxa260Accessors.c.h \
     debugviewer.h \
     emuwrapper.h \
     mainwindow.h \

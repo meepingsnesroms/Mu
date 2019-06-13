@@ -1,16 +1,16 @@
-#include "pxa255_TIMR.h"
-#include "pxa255_mem.h"
+#include "pxa260_TIMR.h"
+#include "pxa260_mem.h"
 
 
-static void pxa255timrPrvRaiseLowerInts(Pxa255timr* timr){
+static void pxa260timrPrvRaiseLowerInts(Pxa255timr* timr){
 	
-	pxa255icInt(timr->ic, PXA255_I_TIMR0, (timr->OSSR & 1) != 0);
-	pxa255icInt(timr->ic, PXA255_I_TIMR1, (timr->OSSR & 2) != 0);
-	pxa255icInt(timr->ic, PXA255_I_TIMR2, (timr->OSSR & 4) != 0);
-	pxa255icInt(timr->ic, PXA255_I_TIMR3, (timr->OSSR & 8) != 0);
+	pxa260icInt(timr->ic, PXA260_I_TIMR0, (timr->OSSR & 1) != 0);
+	pxa260icInt(timr->ic, PXA260_I_TIMR1, (timr->OSSR & 2) != 0);
+	pxa260icInt(timr->ic, PXA260_I_TIMR2, (timr->OSSR & 4) != 0);
+	pxa260icInt(timr->ic, PXA260_I_TIMR3, (timr->OSSR & 8) != 0);
 }
 
-static void pxa255timrPrvCheckMatch(Pxa255timr* timr, UInt8 idx){
+static void pxa260timrPrvCheckMatch(Pxa255timr* timr, UInt8 idx){
 	
 	UInt8 v = 1UL << idx;
 	
@@ -19,15 +19,15 @@ static void pxa255timrPrvCheckMatch(Pxa255timr* timr, UInt8 idx){
 	}
 }
 
-static void pxa255timrPrvUpdate(Pxa255timr* timr){
+static void pxa260timrPrvUpdate(Pxa255timr* timr){
 	
-	pxa255timrPrvCheckMatch(timr, 0);
-	pxa255timrPrvCheckMatch(timr, 1);
-	pxa255timrPrvCheckMatch(timr, 2);
-	pxa255timrPrvCheckMatch(timr, 3);
+	pxa260timrPrvCheckMatch(timr, 0);
+	pxa260timrPrvCheckMatch(timr, 1);
+	pxa260timrPrvCheckMatch(timr, 2);
+	pxa260timrPrvCheckMatch(timr, 3);
 }
 
-Boolean pxa255timrPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boolean write, void* buf){
+Boolean pxa260timrPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boolean write, void* buf){
 
 	Pxa255timr* timr = userData;
 	UInt32 val = 0;
@@ -43,7 +43,7 @@ Boolean pxa255timrPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boolean w
 		return true;		//we do not support non-word accesses
 	}
 	
-	pa = (pa - PXA255_TIMR_BASE) >> 2;
+	pa = (pa - PXA260_TIMR_BASE) >> 2;
 	
 	if(write){
 		val = *(UInt32*)buf;
@@ -62,7 +62,7 @@ Boolean pxa255timrPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boolean w
 			
 			case 5:
 				timr->OSSR = timr->OSSR &~ val;
-				pxa255timrPrvRaiseLowerInts(timr);
+				pxa260timrPrvRaiseLowerInts(timr);
 				break;
 			
 			case 6:
@@ -71,8 +71,8 @@ Boolean pxa255timrPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boolean w
 			
 			case 7:
 				timr->OIER = val;
-				pxa255timrPrvUpdate(timr);
-				pxa255timrPrvRaiseLowerInts(timr);
+				pxa260timrPrvUpdate(timr);
+				pxa260timrPrvRaiseLowerInts(timr);
 				break;
 		}
 	}
@@ -108,15 +108,15 @@ Boolean pxa255timrPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boolean w
 }
 
 
-void pxa255timrInit(Pxa255timr* timr, Pxa255ic* ic){
+void pxa260timrInit(Pxa255timr* timr, Pxa255ic* ic){
 	
 	__mem_zero(timr, sizeof(Pxa255timr));
 	timr->ic = ic;
 }
 
-void pxa255timrTick(Pxa255timr* timr){
+void pxa260timrTick(Pxa255timr* timr){
 	
 	timr->OSCR++;
-	pxa255timrPrvUpdate(timr);
-	pxa255timrPrvRaiseLowerInts(timr);
+	pxa260timrPrvUpdate(timr);
+	pxa260timrPrvRaiseLowerInts(timr);
 }

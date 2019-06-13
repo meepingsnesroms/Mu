@@ -1,8 +1,8 @@
-#include "pxa255_GPIO.h"
-#include "pxa255_mem.h"
+#include "pxa260_GPIO.h"
+#include "pxa260_mem.h"
 
 
-static void pxa255gpioPrvRecalcValues(Pxa255gpio* gpio, UInt32 which){
+static void pxa260gpioPrvRecalcValues(Pxa255gpio* gpio, UInt32 which){
 	
 	UInt8 i;
 	UInt32 val, bit;
@@ -16,14 +16,14 @@ static void pxa255gpioPrvRecalcValues(Pxa255gpio* gpio, UInt32 which){
 	for(i = 16; i < 32; i++, val <<= 2, bit <<= 1) if(gpio->AFRs[(which << 1) + 1] & val) gpio->levels[which] &=~ bit;	//all AFRs read as zero to CPU
 }
 
-static void pxa255gpioPrvRecalcIntrs(Pxa255gpio* gpio){
+static void pxa260gpioPrvRecalcIntrs(Pxa255gpio* gpio){
 	
-	pxa255icInt(gpio->ic, PXA255_I_GPIO_all, gpio->levels[1] || gpio->levels[2] || (gpio->levels[0] &~ 3));
-	pxa255icInt(gpio->ic, PXA255_I_GPIO_1, (gpio->levels[0] & 2) != 0);
-	pxa255icInt(gpio->ic, PXA255_I_GPIO_0, (gpio->levels[0] & 1) != 0);
+   pxa260icInt(gpio->ic, PXA260_I_GPIO_all, gpio->levels[1] || gpio->levels[2] || (gpio->levels[0] &~ 3));
+   pxa260icInt(gpio->ic, PXA260_I_GPIO_1, (gpio->levels[0] & 2) != 0);
+   pxa260icInt(gpio->ic, PXA260_I_GPIO_0, (gpio->levels[0] & 1) != 0);
 }
 
-Boolean pxa255gpioPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boolean write, void* buf){
+Boolean pxa260gpioPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boolean write, void* buf){
 
 	Pxa255gpio* gpio = userData;
 	UInt32 val = 0;
@@ -39,7 +39,7 @@ Boolean pxa255gpioPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boolean w
 		return true;		//we do not support non-word accesses
 	}
 	
-	pa = (pa - PXA255_GPIO_BASE) >> 2;
+	pa = (pa - PXA260_GPIO_BASE) >> 2;
 	
 	if(write){
 		val = *(UInt32*)buf;
@@ -104,10 +104,10 @@ Boolean pxa255gpioPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boolean w
 		goto done;
 		
 recalc:
-      pxa255gpioPrvRecalcValues(gpio, pa);
+      pxa260gpioPrvRecalcValues(gpio, pa);
 		
 trigger_intrs:
-		pxa255gpioPrvRecalcIntrs(gpio);
+      pxa260gpioPrvRecalcIntrs(gpio);
 	}
 	else{
 		switch(pa){
@@ -168,12 +168,12 @@ done:
 }
 
 
-void pxa255gpioInit(Pxa255gpio* gpio, Pxa255ic* ic){
+void pxa260gpioInit(Pxa255gpio* gpio, Pxa255ic* ic){
 	__mem_zero(gpio, sizeof(Pxa255gpio));
 	gpio->ic = ic;
 }
 
-void pxa255gpioSetState(Pxa255gpio* gpio, UInt8 gpioNum, Boolean on){
+void pxa260gpioSetState(Pxa255gpio* gpio, UInt8 gpioNum, Boolean on){
 	
 	UInt32 set = gpioNum >> 5;
 	UInt32 v = 1UL << (gpioNum & 0x1F);
@@ -185,11 +185,11 @@ void pxa255gpioSetState(Pxa255gpio* gpio, UInt8 gpioNum, Boolean on){
 	if(on) *p |= v;
 	else *p &=~ v;
 	
-	pxa255gpioPrvRecalcValues(gpio, set);
-	pxa255gpioPrvRecalcIntrs(gpio);
+   pxa260gpioPrvRecalcValues(gpio, set);
+   pxa260gpioPrvRecalcIntrs(gpio);
 }
 
-UInt8 pxa255gpioGetState(Pxa255gpio* gpio, UInt8 gpioNum){
+UInt8 pxa260gpioGetState(Pxa255gpio* gpio, UInt8 gpioNum){
 	
 	UInt32 sSet = gpioNum >> 5;
 	UInt32 bSet = gpioNum >> 4;
@@ -197,8 +197,8 @@ UInt8 pxa255gpioGetState(Pxa255gpio* gpio, UInt8 gpioNum){
 	UInt32 bV = 3UL << (gpioNum & 0x0F);
 	
 	
-	if(gpioNum >= 85) return PXA255_GPIO_NOT_PRESENT;
-	if(gpio->AFRs[bSet] & bV) return ((gpio->AFRs[bSet] & bV) >> (gpioNum & 0x0F)) + PXA255_GPIO_AFR1;
-	if(gpio->dirs[sSet] & sV) return (gpio->latches[sSet] & sV) ? PXA255_GPIO_HIGH : PXA255_GPIO_LOW;
-	return PXA255_GPIO_HiZ;
+	if(gpioNum >= 85) return PXA260_GPIO_NOT_PRESENT;
+	if(gpio->AFRs[bSet] & bV) return ((gpio->AFRs[bSet] & bV) >> (gpioNum & 0x0F)) + PXA260_GPIO_AFR1;
+	if(gpio->dirs[sSet] & sV) return (gpio->latches[sSet] & sV) ? PXA260_GPIO_HIGH : PXA260_GPIO_LOW;
+	return PXA260_GPIO_HiZ;
 }

@@ -1,10 +1,10 @@
-#include "pxa255_math64.h"
-#include "pxa255_DSP.h"
+#include "pxa260_math64.h"
+#include "pxa260_DSP.h"
 
 
 
 
-Boolean pxa255dspAccess(struct ArmCpu* cpu, void* userData, Boolean MRRC, UInt8 op, UInt8 RdLo, UInt8 RdHi, UInt8 acc){
+Boolean pxa260dspAccess(struct ArmCpu* cpu, void* userData, Boolean MRRC, UInt8 op, UInt8 RdLo, UInt8 RdHi, UInt8 acc){
 	
 	Pxa255dsp* dsp = userData;
 	
@@ -23,7 +23,7 @@ Boolean pxa255dspAccess(struct ArmCpu* cpu, void* userData, Boolean MRRC, UInt8 
 	return true;	
 }
 
-Boolean	pxa255dspOp(struct ArmCpu* cpu, void* userData, Boolean two/* MCR2/MRC2 ? */, Boolean MRC, UInt8 op1, UInt8 Rs, UInt8 opcode_3, UInt8 Rm, UInt8 acc){
+Boolean	pxa260dspOp(struct ArmCpu* cpu, void* userData, Boolean two/* MCR2/MRC2 ? */, Boolean MRC, UInt8 op1, UInt8 Rs, UInt8 opcode_3, UInt8 Rm, UInt8 acc){
 	
 	Pxa255dsp* dsp = userData;
 	UInt64 addend = u64_zero();
@@ -62,17 +62,17 @@ Boolean	pxa255dspOp(struct ArmCpu* cpu, void* userData, Boolean two/* MCR2/MRC2 
 
 
 
-Boolean pxa255dspInit(Pxa255dsp* dsp, ArmCpu* cpu){
+Boolean pxa260dspInit(Pxa255dsp* dsp, ArmCpu* cpu){
 	
 	ArmCoprocessor cp;
 	
 	
 	__mem_zero(dsp, sizeof(Pxa255dsp));
 	
-	cp.regXfer = pxa255dspOp;
+	cp.regXfer = pxa260dspOp;
 	cp.dataProcessing = NULL;
 	cp.memAccess = NULL;
-	cp.twoRegF = pxa255dspAccess;
+	cp.twoRegF = pxa260dspAccess;
 	cp.userData = dsp;
 	
 	cpuCoprocessorRegister(cpu, 0, &cp);

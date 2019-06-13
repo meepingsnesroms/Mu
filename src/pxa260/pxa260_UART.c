@@ -1,5 +1,5 @@
-#include "pxa255_UART.h"
-#include "pxa255_mem.h"
+#include "pxa260_UART.h"
+#include "pxa260_mem.h"
 
 
 
@@ -73,41 +73,41 @@
 
 
 
-static void pxa255uartPrvRecalc(Pxa255uart* uart);
+static void pxa260uartPrvRecalc(Pxa255uart* uart);
 
 
-static void pxa255uartPrvIrq(Pxa255uart* uart, Boolean raise){
+static void pxa260uartPrvIrq(Pxa255uart* uart, Boolean raise){
 	
-	pxa255icInt(uart->ic, uart->irq, !(uart->MCR & UART_MCR_LOOP) && (uart->MCR & UART_MCR_OUT2) && raise/* only raise if ints are enabled */);
+	pxa260icInt(uart->ic, uart->irq, !(uart->MCR & UART_MCR_LOOP) && (uart->MCR & UART_MCR_OUT2) && raise/* only raise if ints are enabled */);
 }
 
-static UInt16 pxa255uartPrvDefaultRead(_UNUSED_ void* userData){			//these are special funcs since they always get their own userData - the uart pointer :)
+static UInt16 pxa260uartPrvDefaultRead(_UNUSED_ void* userData){			//these are special funcs since they always get their own userData - the uart pointer :)
 	
 	return UART_CHAR_NONE;	//we read nothing..as always
 }
 
-static void pxa255uartPrvDefaultWrite(_UNUSED_ UInt16 chr, _UNUSED_ void* userData){	//these are special funcs since they always get their own userData - the uart pointer :)
+static void pxa260uartPrvDefaultWrite(_UNUSED_ UInt16 chr, _UNUSED_ void* userData){	//these are special funcs since they always get their own userData - the uart pointer :)
 	
 	//nothing to do here
 }
 
-static UInt16 pxa255uartPrvGetchar(Pxa255uart* uart){
+static UInt16 pxa260uartPrvGetchar(Pxa255uart* uart){
 	
 	Pxa255UartReadF func = uart->readF;
-	void* data = (func == pxa255uartPrvDefaultRead) ? uart : uart->accessFuncsData;
+	void* data = (func == pxa260uartPrvDefaultRead) ? uart : uart->accessFuncsData;
 	
 	return func(data);
 } 
 
-static void pxa255uartPrvPutchar(Pxa255uart* uart, UInt16 chr){
+static void pxa260uartPrvPutchar(Pxa255uart* uart, UInt16 chr){
 	
 	Pxa255UartWriteF func = uart->writeF;
-	void* data = (func == pxa255uartPrvDefaultWrite) ? uart : uart->accessFuncsData;
+	void* data = (func == pxa260uartPrvDefaultWrite) ? uart : uart->accessFuncsData;
 	
 	func(chr, data);
 }
 
-UInt8 pxa255uartPrvFifoUsed(UartFifo* fifo){	//return num spots used
+UInt8 pxa260uartPrvFifoUsed(UartFifo* fifo){	//return num spots used
 	
 	UInt8 v;
 	
@@ -118,13 +118,13 @@ UInt8 pxa255uartPrvFifoUsed(UartFifo* fifo){	//return num spots used
 	return v;
 }
 
-void pxa255uartPrvFifoFlush(UartFifo* fifo){
+void pxa260uartPrvFifoFlush(UartFifo* fifo){
 	
 	fifo->read = UART_FIFO_EMPTY;
 	fifo->write = UART_FIFO_EMPTY;
 }
 
-Boolean pxa255uartPrvFifoPut(UartFifo* fifo, UInt16 val){	//return success
+Boolean pxa260uartPrvFifoPut(UartFifo* fifo, UInt16 val){	//return success
 	
 	if(fifo->read == UART_FIFO_EMPTY){
 		
@@ -142,7 +142,7 @@ Boolean pxa255uartPrvFifoPut(UartFifo* fifo, UInt16 val){	//return success
 	return true;
 }
 
-UInt16 pxa255uartPrvFifoGet(UartFifo* fifo){
+UInt16 pxa260uartPrvFifoGet(UartFifo* fifo){
 	
 	UInt16 ret;
 	
@@ -165,7 +165,7 @@ UInt16 pxa255uartPrvFifoGet(UartFifo* fifo){
 	return ret;
 }
 
-UInt16 pxa255uartPrvFifoPeekNth(UartFifo* fifo, UInt8 n){
+UInt16 pxa260uartPrvFifoPeekNth(UartFifo* fifo, UInt8 n){
 	
 	UInt16 ret;
 	
@@ -184,9 +184,9 @@ UInt16 pxa255uartPrvFifoPeekNth(UartFifo* fifo, UInt8 n){
 	return ret;
 }
 
-UInt16 pxa255uartPrvFifoPeek(UartFifo* fifo){
+UInt16 pxa260uartPrvFifoPeek(UartFifo* fifo){
 	
-	return pxa255uartPrvFifoPeekNth(fifo, 0);
+	return pxa260uartPrvFifoPeekNth(fifo, 0);
 }
 
 
@@ -199,8 +199,8 @@ static void sendVal(Pxa255uart* uart, UInt16 v){
 	}
 	else if(uart->FCR & UART_FCR_TRFIFOE){	//put in tx fifo if in fifo mode
 		
-		pxa255uartPrvFifoPut(&uart->TX, v);
-		if(pxa255uartPrvFifoUsed(&uart->TX) > UART_FIFO_DEPTH / 2){	//we go went below half-full buffer - set appropriate bit...
+		pxa260uartPrvFifoPut(&uart->TX, v);
+		if(pxa260uartPrvFifoUsed(&uart->TX) > UART_FIFO_DEPTH / 2){	//we go went below half-full buffer - set appropriate bit...
 			
 			uart->LSR &=~ UART_LSR_TDRQ;
 		}
@@ -216,7 +216,7 @@ static void sendVal(Pxa255uart* uart, UInt16 v){
 	}	
 }
 
-static Boolean pxa255uartPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boolean write, void* buf){
+static Boolean pxa260uartPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boolean write, void* buf){
 
 	Pxa255uart* uart = userData;
 	Boolean DLAB = (uart->LCR & UART_LCR_DLAB) != 0;
@@ -263,7 +263,7 @@ static Boolean pxa255uartPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Bo
 				
 					if(t & UART_IER_DMAE){
 						
-						err_str("pxa255UART: DMA mode cannot be enabled");
+						err_str("pxa260UART: DMA mode cannot be enabled");
 						t &=~ UART_IER_DMAE;	//undo the change
 					}
 					
@@ -287,18 +287,18 @@ static Boolean pxa255uartPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Bo
 						
 						if(val & UART_FCR_RESETRF){
 							
-							pxa255uartPrvFifoFlush(&uart->RX);	//clear the RX fifo now
+							pxa260uartPrvFifoFlush(&uart->RX);	//clear the RX fifo now
 						}
 						if(val & UART_FCR_RESETTF){
 							
-							pxa255uartPrvFifoFlush(&uart->TX);	//clear the TX fifo now
+							pxa260uartPrvFifoFlush(&uart->TX);	//clear the TX fifo now
 							uart->LSR = UART_LSR_TEMT | UART_LSR_TDRQ;
 						}
 						uart->IIR = UART_IIR_FIFOES  |UART_IIR_NOINT;
 					}
 					else{
-						pxa255uartPrvFifoFlush(&uart->TX);
-						pxa255uartPrvFifoFlush(&uart->RX);
+						pxa260uartPrvFifoFlush(&uart->TX);
+						pxa260uartPrvFifoFlush(&uart->RX);
 						uart->LSR = UART_LSR_TEMT | UART_LSR_TDRQ;
 						uart->IIR = UART_IIR_NOINT;
 					}
@@ -347,8 +347,8 @@ static Boolean pxa255uartPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Bo
 				}
 				else if(uart->FCR & UART_FCR_TRFIFOE){	//fifo mode -> read fifo
 					
-					val = pxa255uartPrvFifoGet(&uart->RX);
-					if(!pxa255uartPrvFifoUsed(&uart->RX)) uart->LSR &=~ UART_LSR_DR;
+					val = pxa260uartPrvFifoGet(&uart->RX);
+					if(!pxa260uartPrvFifoUsed(&uart->RX)) uart->LSR &=~ UART_LSR_DR;
 					recalcValues = true;		//error bits might have changed
 				}
 				else{					//polled mode -> read rx polled reg
@@ -395,22 +395,22 @@ static Boolean pxa255uartPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Bo
 		else *(UInt32*)buf = val;
 	}
 	
-	if(recalcValues) pxa255uartPrvRecalc(uart);
+	if(recalcValues) pxa260uartPrvRecalc(uart);
 	
 	return true;
 }
 
-void pxa255uartSetFuncs(Pxa255uart* uart, Pxa255UartReadF readF, Pxa255UartWriteF writeF, void* userData){
+void pxa260uartSetFuncs(Pxa255uart* uart, Pxa255UartReadF readF, Pxa255UartWriteF writeF, void* userData){
 	
-	if(!readF) readF = pxa255uartPrvDefaultRead;		//these are special funcs since they get their own private data - the uart :)
-	if(!writeF) writeF = pxa255uartPrvDefaultWrite;
+	if(!readF) readF = pxa260uartPrvDefaultRead;		//these are special funcs since they get their own private data - the uart :)
+	if(!writeF) writeF = pxa260uartPrvDefaultWrite;
 	
 	uart->readF = readF;
 	uart->writeF = writeF;
 	uart->accessFuncsData = userData;
 }
 
-Boolean pxa255uartInit(Pxa255uart* uart, ArmMem* physMem, Pxa255ic* ic, UInt32 baseAddr, UInt8 irq){
+Boolean pxa260uartInit(Pxa255uart* uart, ArmMem* physMem, Pxa255ic* ic, UInt32 baseAddr, UInt8 irq){
 	
 	__mem_zero(uart, sizeof(Pxa255uart));
 	uart->ic = ic;
@@ -420,16 +420,16 @@ Boolean pxa255uartInit(Pxa255uart* uart, ArmMem* physMem, Pxa255ic* ic, UInt32 b
 	uart->IER = UART_IER_UUE | UART_IER_NRZE; 		//uart on
 	uart->LSR = UART_LSR_TEMT | UART_LSR_TDRQ;
 	uart->MSR = UART_MSR_CTS;
-	pxa255uartPrvFifoFlush(&uart->TX);
-	pxa255uartPrvFifoFlush(&uart->RX);
+	pxa260uartPrvFifoFlush(&uart->TX);
+	pxa260uartPrvFifoFlush(&uart->RX);
 	
 	
-	pxa255uartSetFuncs(uart, NULL, NULL, NULL);
+	pxa260uartSetFuncs(uart, NULL, NULL, NULL);
 	
-	return memRegionAdd(physMem, baseAddr, PXA255_UART_SIZE, pxa255uartPrvMemAccessF, uart);
+	return memRegionAdd(physMem, baseAddr, PXA260_UART_SIZE, pxa260uartPrvMemAccessF, uart);
 }
 
-void pxa255uartProcess(Pxa255uart* uart){		//send and rceive up to one character
+void pxa260uartProcess(Pxa255uart* uart){		//send and rceive up to one character
 	
 	UInt8 t;
 	UInt16 v;
@@ -437,15 +437,15 @@ void pxa255uartProcess(Pxa255uart* uart){		//send and rceive up to one character
 	//first process sending (if any)
 	if(!(uart->LSR & UART_LSR_TEMT)){
 		
-		pxa255uartPrvPutchar(uart, uart->transmitShift);
+		pxa260uartPrvPutchar(uart, uart->transmitShift);
 		
 		if(uart->FCR & UART_FCR_TRFIFOE){	//fifo mode
 			
-			t = pxa255uartPrvFifoUsed(&uart->TX);
+			t = pxa260uartPrvFifoUsed(&uart->TX);
 			
 			if(t--){
 				
-				uart->transmitShift = pxa255uartPrvFifoGet(&uart->TX);
+				uart->transmitShift = pxa260uartPrvFifoGet(&uart->TX);
 				if(t <= UART_FIFO_DEPTH / 2) uart->LSR |= UART_LSR_TDRQ;	//above half full - clear TDRQ bit
 			}
 			else{
@@ -465,7 +465,7 @@ void pxa255uartProcess(Pxa255uart* uart){		//send and rceive up to one character
 	}
 	
 	//now process receiving
-	v = pxa255uartPrvGetchar(uart);
+	v = pxa260uartPrvGetchar(uart);
 	if(v != UART_CHAR_NONE){
 		
 		uart->cyclesSinceRecv = 0;
@@ -473,7 +473,7 @@ void pxa255uartProcess(Pxa255uart* uart){		//send and rceive up to one character
 		
 		if(uart->FCR & UART_FCR_TRFIFOE){	//fifo mode
 		
-			if(!pxa255uartPrvFifoPut(&uart->RX, v)){
+			if(!pxa260uartPrvFifoPut(&uart->RX, v)){
 				
 				uart->LSR |= UART_LSR_OE;	
 			}
@@ -488,17 +488,17 @@ void pxa255uartProcess(Pxa255uart* uart){		//send and rceive up to one character
 		uart->cyclesSinceRecv++;
 	}
 	
-	pxa255uartPrvRecalc(uart);
+	pxa260uartPrvRecalc(uart);
 }
 
-static void pxa255uartPrvRecalcCharBits(Pxa255uart* uart, UInt16 c){
+static void pxa260uartPrvRecalcCharBits(Pxa255uart* uart, UInt16 c){
 	
 	if(c & UART_CHAR_BREAK) uart->LSR |= UART_LSR_BI;
 	if(c & UART_CHAR_FRAME_ERR) uart->LSR |= UART_LSR_FE;
 	if(c & UART_CHAR_PAR_ERR) uart->LSR |= UART_LSR_PE;
 }
 
-static void pxa255uartPrvRecalc(Pxa255uart* uart){
+static void pxa260uartPrvRecalc(Pxa255uart* uart){
 	
 	Boolean errorSet = false;
 	UInt8 v;
@@ -511,9 +511,9 @@ static void pxa255uartPrvRecalc(Pxa255uart* uart){
 		
 		
 		//check rx fifo for errors
-		for(v = 0; v < pxa255uartPrvFifoUsed(&uart->RX); v++){
+		for(v = 0; v < pxa260uartPrvFifoUsed(&uart->RX); v++){
 			
-			if((pxa255uartPrvFifoPeekNth(&uart->RX, v) >> 8) && (uart->IER & UART_IER_RLSE)){
+			if((pxa260uartPrvFifoPeekNth(&uart->RX, v) >> 8) && (uart->IER & UART_IER_RLSE)){
 				
 				uart->LSR |= UART_LSR_FIFOE;
 				uart->IIR |= UART_IIR_RECV_ERR;
@@ -522,9 +522,9 @@ static void pxa255uartPrvRecalc(Pxa255uart* uart){
 			}
 		}
 		
-		v = pxa255uartPrvFifoUsed(&uart->RX);
+		v = pxa260uartPrvFifoUsed(&uart->RX);
 		if(v){
-			pxa255uartPrvRecalcCharBits(uart, pxa255uartPrvFifoPeek(&uart->RX));
+			pxa260uartPrvRecalcCharBits(uart, pxa260uartPrvFifoPeek(&uart->RX));
 		}
 		
 		switch(uart->FCR & UART_FCR_ITL_MASK){
@@ -550,7 +550,7 @@ static void pxa255uartPrvRecalc(Pxa255uart* uart){
 			errorSet = true;
 			uart->IIR |= UART_IIR_RECV_DATA;
 		}
-		if(pxa255uartPrvFifoUsed(&uart->RX) && uart->cyclesSinceRecv >= 4 && (uart->IER & UART_IER_RAVIE) && !errorSet){
+		if(pxa260uartPrvFifoUsed(&uart->RX) && uart->cyclesSinceRecv >= 4 && (uart->IER & UART_IER_RAVIE) && !errorSet){
 			
 			errorSet = true;
 			uart->IIR |= UART_IIR_RCV_TIMEOUT;	
@@ -562,7 +562,7 @@ static void pxa255uartPrvRecalc(Pxa255uart* uart){
 		
 		if(uart->LSR & UART_LSR_DR){
 			
-			pxa255uartPrvRecalcCharBits(uart, c);
+			pxa260uartPrvRecalcCharBits(uart, c);
 			
 			if((c >> 8) && !errorSet && (uart->IER & UART_IER_RLSE)){
 				
@@ -584,5 +584,5 @@ static void pxa255uartPrvRecalc(Pxa255uart* uart){
 	}
 	
 	if(!errorSet) uart->IIR |= UART_IIR_NOINT;
-	pxa255uartPrvIrq(uart, errorSet);
+	pxa260uartPrvIrq(uart, errorSet);
 }

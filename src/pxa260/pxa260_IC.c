@@ -1,8 +1,8 @@
-#include "pxa255_IC.h"
-#include "pxa255_mem.h"
+#include "pxa260_IC.h"
+#include "pxa260_mem.h"
 
 
-static void pxa255icPrvHandleChanges(Pxa255ic* ic){
+static void pxa260icPrvHandleChanges(Pxa255ic* ic){
 
 	Boolean nowIrq, nowFiq;
 	UInt32 unmasked = ic->ICPR & ic->ICMR;
@@ -17,7 +17,7 @@ static void pxa255icPrvHandleChanges(Pxa255ic* ic){
 	ic->wasIrq = nowIrq;
 }
 
-static Boolean pxa255icPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boolean write, void* buf){
+static Boolean pxa260icPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boolean write, void* buf){
 	
 	Pxa255ic* ic = userData;
 	UInt32 val = 0;
@@ -33,14 +33,14 @@ static Boolean pxa255icPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Bool
 		return true;		//we do not support non-word accesses
 	}
 	
-	pa = (pa - PXA255_IC_BASE) >> 2;
+	pa = (pa - PXA260_IC_BASE) >> 2;
 	
 	if(write){
 		if(pa == 1) ic->ICMR = *(UInt32*)buf;
 		else if(pa == 2) ic->ICLR = *(UInt32*)buf;
 		else if(pa == 5) ic->ICCR = *(UInt32*)buf;
 		else return true;
-		pxa255icPrvHandleChanges(ic);
+		pxa260icPrvHandleChanges(ic);
 	}
 	else{
 		switch(pa){
@@ -75,13 +75,13 @@ static Boolean pxa255icPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Bool
 	return true;
 }
 
-void pxa255icInit(Pxa255ic* ic){
+void pxa260icInit(Pxa255ic* ic){
 	
 	__mem_zero(ic, sizeof(Pxa255ic));
 }
 
 
-void pxa255icInt(Pxa255ic* ic, UInt8 intNum, Boolean raise){		//interrupt caused by emulated hardware
+void pxa260icInt(Pxa255ic* ic, UInt8 intNum, Boolean raise){		//interrupt caused by emulated hardware
 	
 	UInt32 old_, new_;
 	
@@ -92,7 +92,7 @@ void pxa255icInt(Pxa255ic* ic, UInt8 intNum, Boolean raise){		//interrupt caused
 	
 	if(new_ != old_){
 		ic->ICPR = new_;
-		pxa255icPrvHandleChanges(ic);
+		pxa260icPrvHandleChanges(ic);
 	}
 }
 

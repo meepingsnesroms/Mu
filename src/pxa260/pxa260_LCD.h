@@ -1,21 +1,21 @@
-#ifndef _PXA255_LCD_H_
-#define _PXA255_LCD_H_
+#ifndef _PXA260_LCD_H_
+#define _PXA260_LCD_H_
 
-#include "pxa255_mem.h"
-#include "pxa255_CPU.h"
-#include "pxa255_IC.h"
+#include "pxa260_mem.h"
+#include "pxa260_CPU.h"
+#include "pxa260_IC.h"
 
-uint16_t* pxa255Framebuffer;
+uint16_t* pxa260Framebuffer;
 
 /*
-	PXA255 OS LCD controller
+	PXA260 OS LCD controller
 	
 	PURRPOSE: it's nice to have a framebuffer
 
 */
 
-#define PXA255_LCD_BASE		0x44000000UL
-#define PXA255_LCD_SIZE		0x00001000UL
+#define PXA260_LCD_BASE		0x44000000UL
+#define PXA260_LCD_SIZE		0x00001000UL
 
 
 
@@ -47,9 +47,9 @@ typedef struct{
 	
 }Pxa255lcd;
 
-Boolean pxa255lcdPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boolean write, void* buf);
-void pxa255lcdInit(Pxa255lcd* lcd, Pxa255ic* ic);
-void pxa255lcdFrame(Pxa255lcd* lcd);
+Boolean pxa260lcdPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boolean write, void* buf);
+void pxa260lcdInit(Pxa255lcd* lcd, Pxa255ic* ic);
+void pxa260lcdFrame(Pxa255lcd* lcd);
 
 #endif
 

@@ -1,7 +1,7 @@
 #ifndef _MEM_H_
 #define _MEM_H_
 
-#include "pxa255_types.h"
+#include "pxa260_types.h"
 
 #define MAX_MEM_REGIONS		16
 

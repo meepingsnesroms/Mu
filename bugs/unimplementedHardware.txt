@@ -49,8 +49,8 @@ ADS7846 channels can't be read in single reference mode in hwTestSuite
 MakePalmBitmap:
 
 Other:
-Support for Silkyboard 2 silkscreen:https://archive.org/details/tucows_228076_SILKYBOARD_II
 Qt port dosent support Windows touchscreen input
+memory dumping dosent work for OS 5 yet
 
 Fixed:
 Qt dosent have a hybrid file/folder selector so apps will always have to be launched from folders for now

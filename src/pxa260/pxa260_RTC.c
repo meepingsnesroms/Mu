@@ -1,5 +1,5 @@
-#include "pxa255_RTC.h"
-#include "pxa255_mem.h"
+#include "pxa260_RTC.h"
+#include "pxa260_mem.h"
 
 #include <sys/time.h>
 
@@ -14,7 +14,7 @@ static UInt32 rtcCurTime(void){
    return tv.tv_sec;
 }
 
-void pxa255rtcPrvUpdate(Pxa255rtc* rtc){
+void pxa260rtcPrvUpdate(Pxa255rtc* rtc){
 	
 	UInt32 time = rtcCurTime();
 	
@@ -27,11 +27,11 @@ void pxa255rtcPrvUpdate(Pxa255rtc* rtc){
 			rtc->RTSR |= 2;
 		}
 	}
-	pxa255icInt(rtc->ic, PXA255_I_RTC_ALM, (rtc->RTSR & 1) != 0);
-	pxa255icInt(rtc->ic, PXA255_I_RTC_HZ, (rtc->RTSR & 2) != 0);
+	pxa260icInt(rtc->ic, PXA260_I_RTC_ALM, (rtc->RTSR & 1) != 0);
+	pxa260icInt(rtc->ic, PXA260_I_RTC_HZ, (rtc->RTSR & 2) != 0);
 }
 
-static Boolean pxa255rtcPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boolean write, void* buf){
+static Boolean pxa260rtcPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boolean write, void* buf){
 
 	Pxa255rtc* rtc = userData;
 	UInt32 val = 0;
@@ -47,7 +47,7 @@ static Boolean pxa255rtcPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boo
 		return true;		//we do not support non-word accesses
 	}
 	
-	pa = (pa - PXA255_RTC_BASE) >> 2;
+	pa = (pa - PXA260_RTC_BASE) >> 2;
 	
 	if(write){
 		val = *(UInt32*)buf;
@@ -59,12 +59,12 @@ static Boolean pxa255rtcPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boo
 			
 			case 1:
 				rtc->RTAR = val;
-				pxa255rtcPrvUpdate(rtc);
+				pxa260rtcPrvUpdate(rtc);
 				break;
 			
 			case 2:
 				rtc->RTSR = (val &~ 3UL) | ((rtc->RTSR &~ val) & 3UL);
-				pxa255rtcPrvUpdate(rtc);
+				pxa260rtcPrvUpdate(rtc);
 				break;
 			
 			case 3:
@@ -97,16 +97,16 @@ static Boolean pxa255rtcPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boo
 }
 
 
-Boolean pxa255rtcInit(Pxa255rtc* rtc, ArmMem* physMem, Pxa255ic* ic){
+Boolean pxa260rtcInit(Pxa255rtc* rtc, ArmMem* physMem, Pxa255ic* ic){
 	
 	__mem_zero(rtc, sizeof(Pxa255rtc));
 	rtc->ic = ic;
 	rtc->RCNR_offset = 0;
 	rtc->RTTR = 0x7FFF;	//nice default value
 	rtc->lastSeenTime = rtcCurTime();
-	return memRegionAdd(physMem, PXA255_RTC_BASE, PXA255_RTC_SIZE, pxa255rtcPrvMemAccessF, rtc);
+	return memRegionAdd(physMem, PXA260_RTC_BASE, PXA260_RTC_SIZE, pxa260rtcPrvMemAccessF, rtc);
 }
 
-void pxa255rtcUpdate(Pxa255rtc* rtc){
-	pxa255rtcPrvUpdate(rtc);
+void pxa260rtcUpdate(Pxa255rtc* rtc){
+	pxa260rtcPrvUpdate(rtc);
 }

@@ -1,22 +1,22 @@
-#include "pxa255_LCD.h"
-#include "pxa255_mem.h"
-#include "pxa255.h"
+#include "pxa260_LCD.h"
+#include "pxa260_mem.h"
+#include "pxa260.h"
 #include "../armv5te/mem.h"
 
 #define UNMASKABLE_INTS		0x7C8E
 
-static void pxa255lcdPrvUpdateInts(Pxa255lcd* lcd){
+static void pxa260lcdPrvUpdateInts(Pxa255lcd* lcd){
 	
 	UInt16 ints = lcd->lcsr & lcd->intMask;
 	
 	if((ints && !lcd->intWasPending) || (!ints && lcd->intWasPending)){
 			
 		lcd->intWasPending = !!ints;
-		pxa255icInt(lcd->ic, PXA255_I_LCD, !!ints);
+		pxa260icInt(lcd->ic, PXA260_I_LCD, !!ints);
 	}
 }
 
-Boolean pxa255lcdPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boolean write, void* buf){
+Boolean pxa260lcdPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boolean write, void* buf){
 
 	Pxa255lcd* lcd = userData;
 	UInt32 val = 0;
@@ -33,7 +33,7 @@ Boolean pxa255lcdPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boolean wr
 		return true;		//we do not support non-word accesses
 	}
 	
-	pa = (pa - PXA255_LCD_BASE) >> 2;
+	pa = (pa - PXA260_LCD_BASE) >> 2;
 	
 	if(write){
 		val = *(UInt32*)buf;
@@ -66,7 +66,7 @@ Boolean pxa255lcdPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boolean wr
 					v16 |= 0x0002;
 				}
 				lcd->intMask = v16;
-				pxa255lcdPrvUpdateInts(lcd);
+				pxa260lcdPrvUpdateInts(lcd);
 				break;
 			
 			case 1:
@@ -91,7 +91,7 @@ Boolean pxa255lcdPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boolean wr
 			
 			case 14:
 				lcd->lcsr &=~ val;
-				pxa255lcdPrvUpdateInts(lcd);
+				pxa260lcdPrvUpdateInts(lcd);
 				break;
 			
 			case 15:
@@ -195,9 +195,9 @@ Boolean pxa255lcdPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boolean wr
 	return true;
 }
 
-#define pxa255PrvGetWord(x, addr) mmio_read_word(addr)
+#define pxa260PrvGetWord(x, addr) mmio_read_word(addr)
 
-static void pxa255LcdPrvDma(Pxa255lcd* lcd, void* dest, UInt32 addr, UInt32 len){
+static void pxa260LcdPrvDma(Pxa255lcd* lcd, void* dest, UInt32 addr, UInt32 len){
 
 	UInt32 t;
 	UInt8* d = dest;
@@ -206,7 +206,7 @@ static void pxa255LcdPrvDma(Pxa255lcd* lcd, void* dest, UInt32 addr, UInt32 len)
 
 	while(len){
 		
-		t = pxa255PrvGetWord(lcd, addr);
+		t = pxa260PrvGetWord(lcd, addr);
 		if(len--) *d++ = t;
 		if(len--) *d++ = t >> 8;
 		if(len--) *d++ = t >> 16;
@@ -215,7 +215,7 @@ static void pxa255LcdPrvDma(Pxa255lcd* lcd, void* dest, UInt32 addr, UInt32 len)
 	}
 }
 
-static _INLINE_ void pxa255LcdScreenDataPixel(Pxa255lcd* lcd, UInt8* buf){
+static _INLINE_ void pxa260LcdScreenDataPixel(Pxa255lcd* lcd, UInt8* buf){
    static UInt16 pixelX = 0;
    static UInt16 pixelY = 0;
 
@@ -230,17 +230,17 @@ static _INLINE_ void pxa255LcdScreenDataPixel(Pxa255lcd* lcd, UInt8* buf){
    }
 
    if(pixelX < 320 && pixelY < 420)
-      pxa255Framebuffer[pixelY * 320 + pixelX] = buf[0] || buf[1] << 8;
+      pxa260Framebuffer[pixelY * 320 + pixelX] = buf[0] || buf[1] << 8;
 }
 
-static void pxa255LcdScreenDataDma(Pxa255lcd* lcd, UInt32 addr/*PA*/, UInt32 len){
+static void pxa260LcdScreenDataDma(Pxa255lcd* lcd, UInt32 addr/*PA*/, UInt32 len){
    UInt8 data[4];
    UInt32 i, j;
    void* ptr;
 
    len /= 4;
    while(len--){
-      pxa255LcdPrvDma(lcd, data, addr, 4);
+      pxa260LcdPrvDma(lcd, data, addr, 4);
       addr += 4;
 
       switch((lcd->lccr3 >> 24) & 7){
@@ -248,30 +248,30 @@ static void pxa255LcdScreenDataDma(Pxa255lcd* lcd, UInt32 addr/*PA*/, UInt32 len
          case 0:		//1BPP
 
             ptr = lcd->palette + ((data[i] >> j) & 1) * 2;
-            for(i = 0; i < 4; i += 1) for(j = 0; j < 8; j += 1) pxa255LcdScreenDataPixel(lcd, ptr);
+            for(i = 0; i < 4; i += 1) for(j = 0; j < 8; j += 1) pxa260LcdScreenDataPixel(lcd, ptr);
             break;
 
          case 1:		//2BPP
 
             ptr = lcd->palette + ((data[i] >> j) & 3) * 2;
-            for(i = 0; i < 4; i += 1) for(j = 0; j < 8; j += 2) pxa255LcdScreenDataPixel(lcd, ptr);
+            for(i = 0; i < 4; i += 1) for(j = 0; j < 8; j += 2) pxa260LcdScreenDataPixel(lcd, ptr);
             break;
 
          case 2:		//4BPP
 
             ptr = lcd->palette + ((data[i] >> j) & 15) * 2;
-            for(i = 0; i < 4; i += 1) for(j = 0; j < 8; j += 4) pxa255LcdScreenDataPixel(lcd, ptr);
+            for(i = 0; i < 4; i += 1) for(j = 0; j < 8; j += 4) pxa260LcdScreenDataPixel(lcd, ptr);
             break;
 
          case 3:		//8BPP
 
             ptr = lcd->palette + (data[i] * 2);
-            for(i = 0; i < 4; i += 1) pxa255LcdScreenDataPixel(lcd, ptr);
+            for(i = 0; i < 4; i += 1) pxa260LcdScreenDataPixel(lcd, ptr);
             break;
 
          case 4:		//16BPP
 
-            for(i = 0; i < 4; i +=2 ) pxa255LcdScreenDataPixel(lcd, data + i);
+            for(i = 0; i < 4; i +=2 ) pxa260LcdScreenDataPixel(lcd, data + i);
             break;
 
          default:
@@ -281,7 +281,7 @@ static void pxa255LcdScreenDataDma(Pxa255lcd* lcd, UInt32 addr/*PA*/, UInt32 len
    }
 }
 
-void pxa255lcdFrame(Pxa255lcd* lcd){
+void pxa260lcdFrame(Pxa255lcd* lcd){
 	//every other call starts a frame, the others end one [this generates spacing between interrupts so as to not confuse guest OS]
 	
 	if(lcd->enbChanged){
@@ -312,10 +312,10 @@ void pxa255lcdFrame(Pxa255lcd* lcd){
 					if(lcd->fbr0 & 2) lcd->lcsr |= 0x0200;
 					descrAddr = lcd->fbr0 &~ 0xFUL;
 				} else descrAddr = lcd->fdadr0;
-				lcd->fdadr0 = pxa255PrvGetWord(lcd, descrAddr + 0);
-				lcd->fsadr0 = pxa255PrvGetWord(lcd, descrAddr + 4);
-				lcd->fidr0  = pxa255PrvGetWord(lcd, descrAddr + 8);
-				lcd->ldcmd0 = pxa255PrvGetWord(lcd, descrAddr + 12);
+				lcd->fdadr0 = pxa260PrvGetWord(lcd, descrAddr + 0);
+				lcd->fsadr0 = pxa260PrvGetWord(lcd, descrAddr + 4);
+				lcd->fidr0  = pxa260PrvGetWord(lcd, descrAddr + 8);
+				lcd->ldcmd0 = pxa260PrvGetWord(lcd, descrAddr + 12);
 			
 				lcd->state = LCD_STATE_DMA_0_START;
 				break;
@@ -331,13 +331,13 @@ void pxa255lcdFrame(Pxa255lcd* lcd){
 
                   len = sizeof(lcd->palette);
 
-                  pxa255LcdPrvDma(lcd, lcd->palette, lcd->fsadr0, len);
+                  pxa260LcdPrvDma(lcd, lcd->palette, lcd->fsadr0, len);
                }
 				}
 				else{
 					
 					lcd->frameNum++;
-					if(!(lcd->frameNum & 63)) pxa255LcdScreenDataDma(lcd, lcd->fsadr0, len);
+					if(!(lcd->frameNum & 63)) pxa260LcdScreenDataDma(lcd, lcd->fsadr0, len);
 				}
 				
 				lcd->state = LCD_STATE_DMA_0_END;
@@ -350,10 +350,10 @@ void pxa255lcdFrame(Pxa255lcd* lcd){
 				break;
 		}
 	}
-	pxa255lcdPrvUpdateInts(lcd);
+	pxa260lcdPrvUpdateInts(lcd);
 }
 
-void pxa255lcdInit(Pxa255lcd* lcd, Pxa255ic* ic){
+void pxa260lcdInit(Pxa255lcd* lcd, Pxa255ic* ic){
 	__mem_zero(lcd, sizeof(Pxa255lcd));
 	
 	lcd->ic = ic;

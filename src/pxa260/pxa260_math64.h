@@ -1,7 +1,7 @@
 #ifndef UARM_MATH_64_H
 #define UARM_MATH_64_H
 
-#include "pxa255_types.h"
+#include "pxa260_types.h"
 
 static inline UInt64 u64_from_halves(UInt32 hi, UInt32 lo) { return (((UInt64)hi) << 32ULL) | ((UInt64)lo); }
 static inline UInt64 u64_32_to_64(UInt32 v)                { return (UInt64)v; }

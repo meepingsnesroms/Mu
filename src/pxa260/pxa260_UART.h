@@ -1,15 +1,15 @@
-#ifndef _PXA255_UART_H_
-#define _PXA255_UART_H_
+#ifndef _PXA260_UART_H_
+#define _PXA260_UART_H_
 
-#include "pxa255_mem.h"
-#include "pxa255_CPU.h"
-#include "pxa255_IC.h"
+#include "pxa260_mem.h"
+#include "pxa260_CPU.h"
+#include "pxa260_IC.h"
 
 
 /*
-	PXA255 UARTs
+	PXA260 UARTs
 	
-	PXA255 has three. they are identical, but at diff base addresses. this implements one. instanciate more than one of this struct to make all 3 work if needed.
+	PXA260 has three. they are identical, but at diff base addresses. this implements one. instanciate more than one of this struct to make all 3 work if needed.
 	PURRPOSE: this is how linux talks to us :)
 
 
@@ -18,10 +18,10 @@
 
 */
 
-#define PXA255_FFUART_BASE	0x40100000UL
-#define PXA255_BTUART_BASE	0x40200000UL
-#define PXA255_STUART_BASE	0x40700000UL
-#define PXA255_UART_SIZE	0x00010000UL
+#define PXA260_FFUART_BASE	0x40100000UL
+#define PXA260_BTUART_BASE	0x40200000UL
+#define PXA260_STUART_BASE	0x40700000UL
+#define PXA260_UART_SIZE	0x00010000UL
 
 #define UART_FIFO_DEPTH		64
 
@@ -79,10 +79,10 @@ typedef struct{
 	
 }Pxa255uart;
 
-Boolean pxa255uartInit(Pxa255uart* uart, ArmMem* physMem, Pxa255ic* ic, UInt32 baseAddr, UInt8 irq);
-void pxa255uartProcess(Pxa255uart* uart);		//write out data in TX fifo and read data into RX fifo
+Boolean pxa260uartInit(Pxa255uart* uart, ArmMem* physMem, Pxa255ic* ic, UInt32 baseAddr, UInt8 irq);
+void pxa260uartProcess(Pxa255uart* uart);		//write out data in TX fifo and read data into RX fifo
 
-void pxa255uartSetFuncs(Pxa255uart* uart, Pxa255UartReadF readF, Pxa255UartWriteF writeF, void* userData);
+void pxa260uartSetFuncs(Pxa255uart* uart, Pxa255UartReadF readF, Pxa255UartWriteF writeF, void* userData);
 
 #endif
 

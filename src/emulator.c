@@ -19,7 +19,7 @@
 
 #if defined(EMU_SUPPORT_PALM_OS5)
 #include "tungstenT3Bus.h"
-#include "pxa255/pxa255.h"
+#include "pxa260/pxa260.h"
 #endif
 
 
@@ -88,7 +88,7 @@ uint32_t emulatorInit(uint8_t* palmRomData, uint32_t palmRomSize, uint8_t* palmB
       //emulating Tungsten T3
       bool dynarecInited = false;
 
-      dynarecInited = pxa255Init(&palmRom, &palmRam);
+      dynarecInited = pxa260Init(&palmRom, &palmRam);
       palmFramebuffer = malloc(320 * 480 * sizeof(uint16_t));
       palmAudio = malloc(AUDIO_SAMPLES_PER_FRAME * 2 * sizeof(int16_t));
       palmAudioResampler = blip_new(AUDIO_SAMPLE_RATE);//have 1 second of samples
@@ -96,14 +96,14 @@ uint32_t emulatorInit(uint8_t* palmRomData, uint32_t palmRomSize, uint8_t* palmB
          free(palmFramebuffer);
          free(palmAudio);
          blip_delete(palmAudioResampler);
-         pxa255Deinit();
+         pxa260Deinit();
          return EMU_ERROR_OUT_OF_MEMORY;
       }
       memcpy(palmRom, palmRomData, FAST_MIN(palmRomSize, TUNGSTEN_T3_ROM_SIZE));
       if(palmRomSize < TUNGSTEN_T3_ROM_SIZE)
          memset(palmRom + palmRomSize, 0x00, TUNGSTEN_T3_ROM_SIZE - palmRomSize);
       memset(palmRam, 0x00, TUNGSTEN_T3_RAM_SIZE);
-      memset(palmFramebuffer, 0x00, 320 * 480 * sizeof(uint16_t));//TODO:PXA255 code doesnt always output a picture like my SED1376 code, so clear the buffer to prevent garbage from being displayed before the first render
+      memset(palmFramebuffer, 0x00, 320 * 480 * sizeof(uint16_t));//TODO:PXA260 code doesnt always output a picture like my SED1376 code, so clear the buffer to prevent garbage from being displayed before the first render
       memset(palmAudio, 0x00, AUDIO_SAMPLES_PER_FRAME * 2/*channels*/ * sizeof(int16_t));
       memset(&palmInput, 0x00, sizeof(palmInput));
       memset(&palmMisc, 0x00, sizeof(palmMisc));
@@ -116,13 +116,13 @@ uint32_t emulatorInit(uint8_t* palmRomData, uint32_t palmRomSize, uint8_t* palmB
       palmEmuFeatures.info = enabledEmuFeatures;
 
       //initialize components, I dont think theres much in a Tungsten T3
-      pxa255Framebuffer = palmFramebuffer;
+      pxa260Framebuffer = palmFramebuffer;
       blip_set_rates(palmAudioResampler, AUDIO_CLOCK_RATE, AUDIO_SAMPLE_RATE);
       sandboxInit();
 
       //reset everything
       emulatorSoftReset();
-      pxa255SetRtc(0, 0, 0, 0);
+      pxa260SetRtc(0, 0, 0, 0);
    }
    else{
 #endif
@@ -193,7 +193,7 @@ void emulatorDeinit(void){
       blip_delete(palmAudioResampler);
 #if defined(EMU_SUPPORT_PALM_OS5)
       if(palmEmulatingTungstenT3)
-         pxa255Deinit();
+         pxa260Deinit();
 #endif
       free(palmSdCard.flashChipData);
       emulatorInitialized = false;
@@ -207,7 +207,7 @@ void emulatorHardReset(void){
       memset(palmRam, 0x00, TUNGSTEN_T3_RAM_SIZE);
       emulatorSoftReset();
       sdCardReset();
-      pxa255SetRtc(0, 0, 0, 0);
+      pxa260SetRtc(0, 0, 0, 0);
    }
    else{
 #endif
@@ -226,7 +226,7 @@ void emulatorSoftReset(void){
    if(palmEmulatingTungstenT3){
       palmEmuFeatures.value = 0x00000000;
       palmClockMultiplier = 1.00;
-      pxa255Reset();
+      pxa260Reset();
       sandboxReset();
    }
    else{
@@ -248,7 +248,7 @@ void emulatorSoftReset(void){
 void emulatorSetRtc(uint16_t days, uint8_t hours, uint8_t minutes, uint8_t seconds){
 #if defined(EMU_SUPPORT_PALM_OS5)
    if(palmEmulatingTungstenT3)
-      pxa255SetRtc(days, hours, minutes, seconds);
+      pxa260SetRtc(days, hours, minutes, seconds);
    else
 #endif
       dbvzSetRtc(days, hours, minutes, seconds);
@@ -263,7 +263,7 @@ uint32_t emulatorGetStateSize(void){
    size += sizeof(uint16_t) * 2;//palmFramebuffer(Width/Height)
 #if defined(EMU_SUPPORT_PALM_OS5)
    if(palmEmulatingTungstenT3){
-      size += pxa255StateSize();
+      size += pxa260StateSize();
       size += expansionHardwareStateSize();
       size += TUNGSTEN_T3_RAM_SIZE;//system RAM buffer
    }
@@ -329,8 +329,8 @@ bool emulatorSaveState(uint8_t* data, uint32_t size){
 #if defined(EMU_SUPPORT_PALM_OS5)
    if(palmEmulatingTungstenT3){
       //chips
-      pxa255SaveState(data + offset);
-      offset += pxa255StateSize();
+      pxa260SaveState(data + offset);
+      offset += pxa260StateSize();
       expansionHardwareSaveState(data + offset);
       offset += expansionHardwareStateSize();
 
@@ -474,8 +474,8 @@ bool emulatorLoadState(uint8_t* data, uint32_t size){
 #if defined(EMU_SUPPORT_PALM_OS5)
    if(palmEmulatingTungstenT3){
       //chips
-      pxa255LoadState(data + offset);
-      offset += pxa255StateSize();
+      pxa260LoadState(data + offset);
+      offset += pxa260StateSize();
       expansionHardwareLoadState(data + offset);
       offset += expansionHardwareStateSize();
 
@@ -717,7 +717,7 @@ void emulatorEjectSdCard(void){
 void emulatorRunFrame(void){
 #if defined(EMU_SUPPORT_PALM_OS5)
    if(palmEmulatingTungstenT3){
-      pxa255Execute(true);
+      pxa260Execute(true);
    }
    else{
 #endif
@@ -739,7 +739,7 @@ void emulatorSkipFrame(void){
    //runs frame without rendering the screen
 #if defined(EMU_SUPPORT_PALM_OS5)
    if(palmEmulatingTungstenT3){
-      pxa255Execute(false);
+      pxa260Execute(false);
    }
    else{
 #endif

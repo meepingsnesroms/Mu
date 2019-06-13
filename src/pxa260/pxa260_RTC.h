@@ -1,20 +1,20 @@
-#ifndef _PXA255_RTC_H_
-#define _PXA255_RTC_H_
+#ifndef _PXA260_RTC_H_
+#define _PXA260_RTC_H_
 
-#include "pxa255_mem.h"
-#include "pxa255_CPU.h"
-#include "pxa255_IC.h"
+#include "pxa260_mem.h"
+#include "pxa260_CPU.h"
+#include "pxa260_IC.h"
 
 
 /*
-	PXA255 OS RTC controller
+	PXA260 OS RTC controller
 	
 	PURRPOSE: it's nice to know what time it is
 
 */
 
-#define PXA255_RTC_BASE		0x40900000UL
-#define PXA255_RTC_SIZE		0x00001000UL
+#define PXA260_RTC_BASE		0x40900000UL
+#define PXA260_RTC_SIZE		0x00001000UL
 
 
 typedef struct{
@@ -29,8 +29,8 @@ typedef struct{
 	
 }Pxa255rtc;
 
-Boolean pxa255rtcInit(Pxa255rtc* rtc, ArmMem* physMem, Pxa255ic* ic);
-void pxa255rtcUpdate(Pxa255rtc* rtc);
+Boolean pxa260rtcInit(Pxa255rtc* rtc, ArmMem* physMem, Pxa255ic* ic);
+void pxa260rtcUpdate(Pxa255rtc* rtc);
 
 
 #endif

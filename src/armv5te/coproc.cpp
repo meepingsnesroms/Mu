@@ -3,8 +3,8 @@
 #include "mmu.h"
 
 extern "C" {
-#include "../pxa255/pxa255.h"
-#include "../pxa255/pxa255_PwrClk.h"
+#include "../pxa260/pxa260.h"
+#include "../pxa260/pxa260_PwrClk.h"
 }
 
 
@@ -14,7 +14,7 @@ void do_cp15_mrc(uint32_t insn)
     switch (insn & 0xEF00EF) {
         case 0x000000: /* MRC p15, 0, <Rd>, c0, c0, 0: ID Code Register */
             //value = 0x41069264; /* ARM926EJ-S revision 4 */
-            //value = 0x69052100;//Intel PXA255 "01101001000001010010000100000000"
+            //value = 0x69052100;//Intel PXA260 "01101001000001010010000100000000"
             value = 0x69052D05;//Intel PXA261 "01101001000001010010110100000101"
             break;
         case 0x000010: /* MRC p15, 0, <Rd>, c0, c0, 1: Cache Type Register */
@@ -158,7 +158,7 @@ void do_cp14_instruction(Instruction i)
     bool specialInstr = i.cond == 0xF;
     bool success;
 
-    success = pxa255pwrClkPrvCoprocRegXferFunc(&pxa255PwrClk, specialInstr, (instr & 0x00100000) != 0, (instr >> 21) & 0x07, (instr >> 12) & 0x0F, (instr >> 16) & 0x0F, instr & 0x0F, (instr >> 5) & 0x07);
+    success = pxa260pwrClkPrvCoprocRegXferFunc(&pxa260PwrClk, specialInstr, (instr & 0x00100000) != 0, (instr >> 21) & 0x07, (instr >> 12) & 0x0F, (instr >> 16) & 0x0F, instr & 0x0F, (instr >> 5) & 0x07);
 
     //fail if instr dosent actully exist
     if(!success)

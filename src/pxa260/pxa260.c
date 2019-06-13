@@ -2,16 +2,16 @@
 #include <stdbool.h>
 #include <setjmp.h>
 
-#include "pxa255.h"
-#include "pxa255_DMA.h"
-#include "pxa255_DSP.h"
-#include "pxa255_GPIO.h"
-#include "pxa255_IC.h"
-#include "pxa255_LCD.h"
-#include "pxa255_PwrClk.h"
-#include "pxa255_RTC.h"
-#include "pxa255_TIMR.h"
-#include "pxa255_UART.h"
+#include "pxa260.h"
+#include "pxa260_DMA.h"
+#include "pxa260_DSP.h"
+#include "pxa260_GPIO.h"
+#include "pxa260_IC.h"
+#include "pxa260_LCD.h"
+#include "pxa260_PwrClk.h"
+#include "pxa260_RTC.h"
+#include "pxa260_TIMR.h"
+#include "pxa260_UART.h"
 #include "../armv5te/cpu.h"
 #include "../armv5te/emu.h"
 #include "../armv5te/mem.h"
@@ -21,23 +21,23 @@
 #include "../emulator.h"
 
 
-#define PXA255_IO_BASE 0x40000000
-#define PXA255_MEMCTRL_BASE 0x48000000
+#define PXA260_IO_BASE 0x40000000
+#define PXA260_MEMCTRL_BASE 0x48000000
 
-#define PXA255_TIMER_TICKS_PER_FRAME (TUNGSTEN_T3_CPU_CRYSTAL_FREQUENCY / EMU_FPS)
-
-
-uint16_t*         pxa255Framebuffer;
-Pxa255pwrClk      pxa255PwrClk;
-static Pxa255ic   pxa255Ic;
-static Pxa255lcd  pxa255Lcd;
-static Pxa255timr pxa255Timer;
-static Pxa255gpio pxa255Gpio;
+#define PXA260_TIMER_TICKS_PER_FRAME (TUNGSTEN_T3_CPU_CRYSTAL_FREQUENCY / EMU_FPS)
 
 
-#include "pxa255Accessors.c.h"
+uint16_t*         pxa260Framebuffer;
+Pxa255pwrClk      pxa260PwrClk;
+static Pxa255ic   pxa260Ic;
+static Pxa255lcd  pxa260Lcd;
+static Pxa255timr pxa260Timer;
+static Pxa255gpio pxa260Gpio;
 
-bool pxa255Init(uint8_t** returnRom, uint8_t** returnRam){
+
+#include "pxa260Accessors.c.h"
+
+bool pxa260Init(uint8_t** returnRom, uint8_t** returnRam){
    uint32_t mem_offset = 0;
    uint8_t i;
 
@@ -53,13 +53,13 @@ bool pxa255Init(uint8_t** returnRom, uint8_t** returnRam){
 
    //regions
    //ROM
-   mem_areas[0].base = PXA255_ROM_START_ADDRESS;
+   mem_areas[0].base = PXA260_ROM_START_ADDRESS;
    mem_areas[0].size = TUNGSTEN_T3_ROM_SIZE;
    mem_areas[0].ptr = mem_and_flags + mem_offset;
    mem_offset += TUNGSTEN_T3_ROM_SIZE;
 
    //RAM
-   mem_areas[1].base = PXA255_RAM_START_ADDRESS;
+   mem_areas[1].base = PXA260_RAM_START_ADDRESS;
    mem_areas[1].size = TUNGSTEN_T3_RAM_SIZE;
    mem_areas[1].ptr = mem_and_flags + mem_offset;
    mem_offset += TUNGSTEN_T3_RAM_SIZE;
@@ -69,7 +69,7 @@ bool pxa255Init(uint8_t** returnRom, uint8_t** returnRam){
 
    //accessors
    //default
-   for(i = 0; i < PXA255_TOTAL_MEMORY_BANKS; i++){
+   for(i = 0; i < PXA260_TOTAL_MEMORY_BANKS; i++){
        // will fallback to bad_* on non-memory addresses
        read_byte_map[i] = memory_read_byte;
        read_half_map[i] = memory_read_half;
@@ -80,48 +80,48 @@ bool pxa255Init(uint8_t** returnRom, uint8_t** returnRam){
    }
 
    //PCMCIA0
-   for(i = PXA255_START_BANK(PXA255_PCMCIA0_START_ADDRESS); i <= PXA255_END_BANK(PXA255_PCMCIA0_START_ADDRESS, PXA255_PCMCIA0_SIZE); i++){
-       read_byte_map[i] = pxa255_pcmcia0_read_byte;
-       read_half_map[i] = pxa255_pcmcia0_read_half;
-       read_word_map[i] = pxa255_pcmcia0_read_word;
-       write_byte_map[i] = pxa255_pcmcia0_write_byte;
-       write_half_map[i] = pxa255_pcmcia0_write_half;
-       write_word_map[i] = pxa255_pcmcia0_write_word;
+   for(i = PXA260_START_BANK(PXA260_PCMCIA0_START_ADDRESS); i <= PXA260_END_BANK(PXA260_PCMCIA0_START_ADDRESS, PXA260_PCMCIA0_SIZE); i++){
+       read_byte_map[i] = pxa260_pcmcia0_read_byte;
+       read_half_map[i] = pxa260_pcmcia0_read_half;
+       read_word_map[i] = pxa260_pcmcia0_read_word;
+       write_byte_map[i] = pxa260_pcmcia0_write_byte;
+       write_half_map[i] = pxa260_pcmcia0_write_half;
+       write_word_map[i] = pxa260_pcmcia0_write_word;
    }
 
    //PCMCIA1
-   for(i = PXA255_START_BANK(PXA255_PCMCIA1_START_ADDRESS); i <= PXA255_END_BANK(PXA255_PCMCIA1_START_ADDRESS, PXA255_PCMCIA1_SIZE); i++){
-       read_byte_map[i] = pxa255_pcmcia1_read_byte;
-       read_half_map[i] = pxa255_pcmcia1_read_half;
-       read_word_map[i] = pxa255_pcmcia1_read_word;
-       write_byte_map[i] = pxa255_pcmcia1_write_byte;
-       write_half_map[i] = pxa255_pcmcia1_write_half;
-       write_word_map[i] = pxa255_pcmcia1_write_word;
+   for(i = PXA260_START_BANK(PXA260_PCMCIA1_START_ADDRESS); i <= PXA260_END_BANK(PXA260_PCMCIA1_START_ADDRESS, PXA260_PCMCIA1_SIZE); i++){
+       read_byte_map[i] = pxa260_pcmcia1_read_byte;
+       read_half_map[i] = pxa260_pcmcia1_read_half;
+       read_word_map[i] = pxa260_pcmcia1_read_word;
+       write_byte_map[i] = pxa260_pcmcia1_write_byte;
+       write_half_map[i] = pxa260_pcmcia1_write_half;
+       write_word_map[i] = pxa260_pcmcia1_write_word;
    }
 
    //IO
-   read_byte_map[PXA255_START_BANK(PXA255_IO_BASE)] = pxa255_io_read_byte;
-   read_half_map[PXA255_START_BANK(PXA255_IO_BASE)] = bad_read_half;
-   read_word_map[PXA255_START_BANK(PXA255_IO_BASE)] = pxa255_io_read_word;
-   write_byte_map[PXA255_START_BANK(PXA255_IO_BASE)] = pxa255_io_write_byte;
-   write_half_map[PXA255_START_BANK(PXA255_IO_BASE)] = bad_write_half;
-   write_word_map[PXA255_START_BANK(PXA255_IO_BASE)] = pxa255_io_write_word;
+   read_byte_map[PXA260_START_BANK(PXA260_IO_BASE)] = pxa260_io_read_byte;
+   read_half_map[PXA260_START_BANK(PXA260_IO_BASE)] = bad_read_half;
+   read_word_map[PXA260_START_BANK(PXA260_IO_BASE)] = pxa260_io_read_word;
+   write_byte_map[PXA260_START_BANK(PXA260_IO_BASE)] = pxa260_io_write_byte;
+   write_half_map[PXA260_START_BANK(PXA260_IO_BASE)] = bad_write_half;
+   write_word_map[PXA260_START_BANK(PXA260_IO_BASE)] = pxa260_io_write_word;
 
    //LCD
-   read_byte_map[PXA255_START_BANK(PXA255_LCD_BASE)] = bad_read_byte;
-   read_half_map[PXA255_START_BANK(PXA255_LCD_BASE)] = bad_read_half;
-   read_word_map[PXA255_START_BANK(PXA255_LCD_BASE)] = pxa255_lcd_read_word;
-   write_byte_map[PXA255_START_BANK(PXA255_LCD_BASE)] = bad_write_byte;
-   write_half_map[PXA255_START_BANK(PXA255_LCD_BASE)] = bad_write_half;
-   write_word_map[PXA255_START_BANK(PXA255_LCD_BASE)] = pxa255_lcd_write_word;
+   read_byte_map[PXA260_START_BANK(PXA260_LCD_BASE)] = bad_read_byte;
+   read_half_map[PXA260_START_BANK(PXA260_LCD_BASE)] = bad_read_half;
+   read_word_map[PXA260_START_BANK(PXA260_LCD_BASE)] = pxa260_lcd_read_word;
+   write_byte_map[PXA260_START_BANK(PXA260_LCD_BASE)] = bad_write_byte;
+   write_half_map[PXA260_START_BANK(PXA260_LCD_BASE)] = bad_write_half;
+   write_word_map[PXA260_START_BANK(PXA260_LCD_BASE)] = pxa260_lcd_write_word;
 
    //MEMCTRL
-   read_byte_map[PXA255_START_BANK(PXA255_MEMCTRL_BASE)] = bad_read_byte;
-   read_half_map[PXA255_START_BANK(PXA255_MEMCTRL_BASE)] = bad_read_half;
-   read_word_map[PXA255_START_BANK(PXA255_MEMCTRL_BASE)] = pxa255_memctrl_read_word;
-   write_byte_map[PXA255_START_BANK(PXA255_MEMCTRL_BASE)] = bad_write_byte;
-   write_half_map[PXA255_START_BANK(PXA255_MEMCTRL_BASE)] = bad_write_half;
-   write_word_map[PXA255_START_BANK(PXA255_MEMCTRL_BASE)] = pxa255_memctrl_write_word;
+   read_byte_map[PXA260_START_BANK(PXA260_MEMCTRL_BASE)] = bad_read_byte;
+   read_half_map[PXA260_START_BANK(PXA260_MEMCTRL_BASE)] = bad_read_half;
+   read_word_map[PXA260_START_BANK(PXA260_MEMCTRL_BASE)] = pxa260_memctrl_read_word;
+   write_byte_map[PXA260_START_BANK(PXA260_MEMCTRL_BASE)] = bad_write_byte;
+   write_half_map[PXA260_START_BANK(PXA260_MEMCTRL_BASE)] = bad_write_half;
+   write_word_map[PXA260_START_BANK(PXA260_MEMCTRL_BASE)] = pxa260_memctrl_write_word;
 
    *returnRom = mem_areas[0].ptr;
    *returnRam = mem_areas[1].ptr;
@@ -129,7 +129,7 @@ bool pxa255Init(uint8_t** returnRom, uint8_t** returnRam){
    return true;
 }
 
-void pxa255Deinit(void){
+void pxa260Deinit(void){
    if(mem_and_flags){
        // translation_table uses absolute addresses
        flush_translations();
@@ -141,7 +141,7 @@ void pxa255Deinit(void){
    addr_cache_deinit();
 }
 
-void pxa255Reset(void){
+void pxa260Reset(void){
    /*
    static void emu_reset()
    {
@@ -161,11 +161,11 @@ void pxa255Reset(void){
    */
 
    //set up extra CPU hardware
-   pxa255icInit(&pxa255Ic);
-   pxa255pwrClkInit(&pxa255PwrClk);
-   pxa255lcdInit(&pxa255Lcd, &pxa255Ic);
-   pxa255timrInit(&pxa255Timer, &pxa255Ic);
-   pxa255gpioInit(&pxa255Gpio, &pxa255Ic);
+   pxa260icInit(&pxa260Ic);
+   pxa260pwrClkInit(&pxa260PwrClk);
+   pxa260lcdInit(&pxa260Lcd, &pxa260Ic);
+   pxa260timrInit(&pxa260Timer, &pxa260Ic);
+   pxa260gpioInit(&pxa260Gpio, &pxa260Ic);
 
    memset(&arm, 0, sizeof arm);
    arm.control = 0x00050078;
@@ -177,27 +177,27 @@ void pxa255Reset(void){
    //PC starts at 0x00000000, the first opcode for Palm OS 5 is a jump
 }
 
-void pxa255SetRtc(uint16_t days, uint8_t hours, uint8_t minutes, uint8_t seconds){
+void pxa260SetRtc(uint16_t days, uint8_t hours, uint8_t minutes, uint8_t seconds){
    //TODO: make this do something
 }
 
-uint32_t pxa255StateSize(void){
+uint32_t pxa260StateSize(void){
    uint32_t size = 0;
 
    return size;
 }
 
-void pxa255SaveState(uint8_t* data){
+void pxa260SaveState(uint8_t* data){
    uint32_t offset = 0;
 
 }
 
-void pxa255LoadState(uint8_t* data){
+void pxa260LoadState(uint8_t* data){
    uint32_t offset = 0;
 
 }
 
-void pxa255Execute(bool wantVideo){
+void pxa260Execute(bool wantVideo){
    uint32_t index;
 #if OS_HAS_PAGEFAULT_HANDLER
     os_exception_frame_t seh_frame = { NULL, NULL };
@@ -238,18 +238,18 @@ void pxa255Execute(bool wantVideo){
 #endif
     //this needs to run at 3.6864 MHz
     for(index = 0; index < TUNGSTEN_T3_CPU_CRYSTAL_FREQUENCY / EMU_FPS; index++)
-      pxa255timrTick(&pxa255Timer);
+      pxa260timrTick(&pxa260Timer);
 
     //render
     if(likely(wantVideo))
-      pxa255lcdFrame(&pxa255Lcd);
+      pxa260lcdFrame(&pxa260Lcd);
 }
 
-uint32_t pxa255GetRegister(uint8_t reg){
+uint32_t pxa260GetRegister(uint8_t reg){
    return reg_pc(reg);
 }
 
-uint64_t pxa255ReadArbitraryMemory(uint32_t address, uint8_t size){
+uint64_t pxa260ReadArbitraryMemory(uint32_t address, uint8_t size){
    uint64_t data = UINT64_MAX;//invalid access
 
    switch(size){

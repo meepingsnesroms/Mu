@@ -1,5 +1,5 @@
-#include "pxa255_DMA.h"
-#include "pxa255_mem.h"
+#include "pxa260_DMA.h"
+#include "pxa260_mem.h"
 
 #define REG_DAR 	0
 #define REG_SAR 	1
@@ -8,14 +8,14 @@
 #define REG_CSR   4
 
 
-static void pxa255dmaPrvChannelRegWrite(_UNUSED_ Pxa255dma* dma, UInt8 channel, UInt8 reg, UInt32 val){
+static void pxa260dmaPrvChannelRegWrite(_UNUSED_ Pxa255dma* dma, UInt8 channel, UInt8 reg, UInt32 val){
 	
 	if(val){	//we start with zeros, so non-zero writes are all we care about
 		
 		const char* regs[] = {"DADDR", "SADDR", "TADDR", "CR", "CSR"};
 		
 		err_str("dma: writes unimpl!");
-	//	err_str("PXA255 dma engine: writes unimpl! (writing 0x");
+	//	err_str("PXA260 dma engine: writes unimpl! (writing 0x");
 	//	err_hex(val);
 	//	err_str(" to channel ");
 	//	err_dec(channel);
@@ -26,13 +26,13 @@ static void pxa255dmaPrvChannelRegWrite(_UNUSED_ Pxa255dma* dma, UInt8 channel, 
 	}
 }
 
-static UInt32 pxa255dmaPrvChannelRegRead(_UNUSED_ Pxa255dma* dma, _UNUSED_ UInt8 channel, _UNUSED_ UInt8 reg){
+static UInt32 pxa260dmaPrvChannelRegRead(_UNUSED_ Pxa255dma* dma, _UNUSED_ UInt8 channel, _UNUSED_ UInt8 reg){
 	
 	
 	return 0;	
 }
 
-static Boolean pxa255dmaPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boolean write, void* buf){
+static Boolean pxa260dmaPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boolean write, void* buf){
 
 	Pxa255dma* dma = userData;
 	UInt8 reg, set;
@@ -49,7 +49,7 @@ static Boolean pxa255dmaPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boo
 		return true;		//we do not support non-word accesses
 	}
 	
-	pa = (pa - PXA255_DMA_BASE) >> 2;
+	pa = (pa - PXA260_DMA_BASE) >> 2;
 	
 	if(write){
 		val = *(UInt32*)buf;
@@ -59,7 +59,7 @@ static Boolean pxa255dmaPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boo
 				if(pa < 16){
 					reg = REG_CSR;
 					set = pa;
-					pxa255dmaPrvChannelRegWrite(dma, set, reg, val);
+					pxa260dmaPrvChannelRegWrite(dma, set, reg, val);
 				}
 				break;
 				
@@ -72,7 +72,7 @@ static Boolean pxa255dmaPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boo
 				pa -= 128;
 				set = pa >> 2;
 				reg = pa & 3;
-				pxa255dmaPrvChannelRegWrite(dma, set, reg, val);
+				pxa260dmaPrvChannelRegWrite(dma, set, reg, val);
 				break;
 		}
 	}
@@ -82,7 +82,7 @@ static Boolean pxa255dmaPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boo
 				if(pa < 16){
 					reg = REG_CSR;
 					set = pa;
-					val = pxa255dmaPrvChannelRegRead(dma, set, reg);
+					val = pxa260dmaPrvChannelRegRead(dma, set, reg);
 				}
 				break;
 				
@@ -95,7 +95,7 @@ static Boolean pxa255dmaPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boo
 				pa -= 128;
 				set = pa >> 2;
 				reg = pa & 3;
-				val = pxa255dmaPrvChannelRegRead(dma, set, reg);
+				val = pxa260dmaPrvChannelRegRead(dma, set, reg);
 				break;
 		}
 		
@@ -106,11 +106,11 @@ static Boolean pxa255dmaPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boo
 }
 
 
-Boolean pxa255dmaInit(Pxa255dma* dma, ArmMem* physMem, Pxa255ic* ic){
+Boolean pxa260dmaInit(Pxa255dma* dma, ArmMem* physMem, Pxa255ic* ic){
 	
 	__mem_zero(dma, sizeof(Pxa255dma));
 	dma->ic = ic;
 	dma->mem = physMem;
 	
-	return memRegionAdd(physMem, PXA255_DMA_BASE, PXA255_DMA_SIZE, pxa255dmaPrvMemAccessF, dma);
+	return memRegionAdd(physMem, PXA260_DMA_BASE, PXA260_DMA_SIZE, pxa260dmaPrvMemAccessF, dma);
 }
