@@ -14,6 +14,7 @@ RetroArch GUI:
 //TODO: allow adding more content after boot
 //TODO: get EMU_MANAGE_HOST_CPU_PIPELINE working on other platforms then the main 4
 //TODO: get OpenMP working with RetroArch(already works but breaks the no external libs rule)
+//TODO: switch to high contrast and top left corner aligned mouse cursors
 //FIXED: when compiling with "make platform=windows_x86_64" the dll wont load(theres a really good chance its because "libgomp-1.dll"(the OpenMP handler library) is missing from the RetroArch folder)(fixed by disableing OpenMP :( )
 
 Qt GUI:
@@ -29,7 +30,6 @@ add Palm Tungsten T3 support
 v1.0.0 to v1.1.0(Feb 25 2019 - Easter 2019)
 
 RetroArch GUI:
-//TODO: switch to high contrast and top left corner aligned mouse cursors
 *allow mouse cursor to be rendered with multiple CPUs(removed for now)
 *now launches content like cartridge based systems
 *make default button layout match default controller layout better
@@ -38,7 +38,6 @@ RetroArch GUI:
 *add multithreading and pipeline speedups
 
 Qt GUI:
-//TODO: get circleci builds for QT port on Win/Mac/Linux
 *fixed state manager not loading until a state is saved
 *boot button uses install button icon now, changed install button to icon a "+"
 *put back left/right/center keys
