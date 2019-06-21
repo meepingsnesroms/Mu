@@ -16,41 +16,36 @@
 
 dbvz_chip_t dbvzChipSelects[DBVZ_CHIP_END];
 
-static bool        dbvzInterruptChanged;//reduces time wasted on checking interrupts that where updated to a new value identical to the old one, does not need to be in states
-static uint8_t     dbvzReg[DBVZ_REG_SIZE];
-static double      dbvzSysclksPerClk32;//how many SYSCLK cycles before toggling the 32.768 kHz crystal
-static uint32_t    dbvzFrameClk32s;//how many CLK32s have happened in the current frame
-static double      dbvzClk32Sysclks;//how many SYSCLKs have happened in the current CLK32
-static int8_t      pllSleepWait;
-static int8_t      pllWakeWait;
-static uint32_t    clk32Counter;
-static double      pctlrCpuClockDivider;
-static double      timerCycleCounter[2];
-static uint16_t    timerStatusReadAcknowledge[2];
-static uint8_t     portDInterruptLastValue;//used for edge triggered interrupt timing
-static uint16_t    spi1RxFifo[9];
-static uint16_t    spi1TxFifo[9];
-static uint8_t     spi1RxReadPosition;
-static uint8_t     spi1RxWritePosition;
-static bool        spi1RxOverflowed;
-static uint8_t     spi1TxReadPosition;
-static uint8_t     spi1TxWritePosition;
-static uint16_t    uart1RxFifo[13];
-static uint16_t    uart1TxFifo[9];
-static uint8_t     uart1RxReadPosition;
-static uint8_t     uart1RxWritePosition;
-static bool        uart1RxOverflowed;//this var may not be needed
-static uint8_t     uart1TxReadPosition;
-static uint8_t     uart1TxWritePosition;
-
-//TODO: UART2
-//uint16_t     uart2RxFifo[65];
-//uint16_t     uart2TxFifo[65];
-
-static int32_t     pwm1ClocksToNextSample;
-static uint8_t     pwm1Fifo[6];
-static uint8_t     pwm1ReadPosition;
-static uint8_t     pwm1WritePosition;
+static bool     dbvzInterruptChanged;//reduces time wasted on checking interrupts that where updated to a new value identical to the old one, does not need to be in states
+static uint8_t  dbvzReg[DBVZ_REG_SIZE];
+static double   dbvzSysclksPerClk32;//how many SYSCLK cycles before toggling the 32.768 kHz crystal
+static uint32_t dbvzFrameClk32s;//how many CLK32s have happened in the current frame
+static double   dbvzClk32Sysclks;//how many SYSCLKs have happened in the current CLK32
+static int8_t   pllSleepWait;
+static int8_t   pllWakeWait;
+static uint32_t clk32Counter;
+static double   pctlrCpuClockDivider;
+static double   timerCycleCounter[2];
+static uint16_t timerStatusReadAcknowledge[2];
+static uint8_t  portDInterruptLastValue;//used for edge triggered interrupt timing
+static uint16_t spi1RxFifo[9];
+static uint16_t spi1TxFifo[9];
+static uint8_t  spi1RxReadPosition;
+static uint8_t  spi1RxWritePosition;
+static bool     spi1RxOverflowed;
+static uint8_t  spi1TxReadPosition;
+static uint8_t  spi1TxWritePosition;
+static uint16_t uart1RxFifo[13];
+static uint16_t uart1TxFifo[9];
+static uint8_t  uart1RxReadPosition;
+static uint8_t  uart1RxWritePosition;
+static bool     uart1RxOverflowed;//this var may not be needed
+static uint8_t  uart1TxReadPosition;
+static uint8_t  uart1TxWritePosition;
+static int32_t  pwm1ClocksToNextSample;
+static uint8_t  pwm1Fifo[6];
+static uint8_t  pwm1ReadPosition;
+static uint8_t  pwm1WritePosition;
 
 
 static void checkInterrupts(void);

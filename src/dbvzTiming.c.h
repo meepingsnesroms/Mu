@@ -358,11 +358,11 @@ static void rtcAddSecondClk32(void){
    watchdogSecondTickClk32();
 }
 
-void dbvzBeginClk32(void){
+static void dbvzBeginClk32(void){
    dbvzClk32Sysclks = 0.0;
 }
 
-void dbvzEndClk32(void){
+static void dbvzEndClk32(void){
    //second position counter
    if(clk32Counter >= M515_CRYSTAL_FREQUENCY - 1){
       clk32Counter = 0;
@@ -404,7 +404,7 @@ void dbvzEndClk32(void){
    checkInterrupts();
 }
 
-void dbvzAddSysclks(double count){
+static void dbvzAddSysclks(double count){
    timer1(DBVZ_TIMER_REASON_SYSCLK, count);
    timer2(DBVZ_TIMER_REASON_SYSCLK, count);
    samplePwm1(false/*forClk32*/, count);
