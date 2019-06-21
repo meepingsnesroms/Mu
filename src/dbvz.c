@@ -42,6 +42,15 @@ static uint8_t  uart1RxWritePosition;
 static bool     uart1RxOverflowed;//this var may not be needed
 static uint8_t  uart1TxReadPosition;
 static uint8_t  uart1TxWritePosition;
+/*
+static uint16_t uart2RxFifo[65];
+static uint16_t uart2TxFifo[65];
+static uint8_t  uart2RxReadPosition;
+static uint8_t  uart2RxWritePosition;
+static bool     uart2RxOverflowed;//this var may not be needed
+static uint8_t  uart2TxReadPosition;
+static uint8_t  uart2TxWritePosition;
+*/
 static int32_t  pwm1ClocksToNextSample;
 static uint8_t  pwm1Fifo[6];
 static uint8_t  pwm1ReadPosition;
@@ -444,6 +453,16 @@ uint16_t dbvzGetRegister16(uint32_t address){
             return fifoVal;
          }
 
+      case UTX1:{
+            uint16_t uart1TxStatus = registerArrayRead16(UTX1);
+
+            uart1TxStatus |= (uart1TxFifoEntrys() == 0) << 15;
+            uart1TxStatus |= (uart1TxFifoEntrys() < 4) << 14;
+            uart1TxStatus |= (uart1TxFifoEntrys() < 8) << 13;
+
+            return uart1TxStatus;
+         }
+
       case PLLFSR:
          return registerArrayRead16(PLLFSR);
 
@@ -544,6 +563,15 @@ void dbvzSetRegister8(uint32_t address, uint8_t value){
    switch(address){
       case SCR:
          setScr(value);
+         return;
+
+      case UTX1 + 1:
+         //this is a 16 bit register but Palm OS writes to the 8 bit FIFO section alone
+         //send byte and update interrupts if enabled
+         if((registerArrayRead16(USTCNT1) & 0xA000) == 0xA000){
+            uart1RxFifoWrite(value);
+            updateUart1Interrupt();
+         }
          return;
 
       case PWMS1 + 1:
@@ -957,7 +985,13 @@ void dbvzSetRegister16(uint32_t address, uint16_t value){
          return;
 
       case UTX1:
-         setUtx1(value);
+         registerArrayWrite16(UTX1, value & 0x1F00);
+
+         //send byte and update interrupts if enabled
+         if((registerArrayRead16(USTCNT1) & 0xA000) == 0xA000){
+            uart1RxFifoWrite(value & 0x1000 ? value & 0xFF : EMU_SERIAL_BREAK);
+            updateUart1Interrupt();
+         }
          return;
 
       case PWMC1:

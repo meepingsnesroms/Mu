@@ -593,16 +593,6 @@ static void setUstcnt1(uint16_t value){
    updateUart1Interrupt();
 }
 
-static void setUtx1(uint16_t value){
-   registerArrayWrite16(UTX1, value & 0x1F00);
-
-   //send byte and update interrupts if enabled
-   if((value & 0xA000) == 0xA000){
-      updateUart1Interrupt();
-      uart1RxFifoWrite(value & 0x1000 ? value & 0xFF : EMU_SERIAL_BREAK);
-   }
-}
-
 static void setTstat1(uint16_t value){
    uint16_t oldTstat1 = registerArrayRead16(TSTAT1);
    uint16_t newTstat1 = (value & timerStatusReadAcknowledge[0]) | (oldTstat1 & ~timerStatusReadAcknowledge[0]);
