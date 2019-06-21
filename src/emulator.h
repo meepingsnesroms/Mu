@@ -83,12 +83,17 @@ enum{
 
 //port types
 enum{
-   PORT_NONE = 0,
-   PORT_USB_CRADLE,
-   PORT_SERIAL_CRADLE,
-   PORT_USB_PERIPHERAL,
-   PORT_SERIAL_PERIPHERAL,
-   PORT_END
+   EMU_PORT_NONE = 0,
+   EMU_PORT_USB_CRADLE,
+   EMU_PORT_SERIAL_CRADLE,
+   EMU_PORT_USB_PERIPHERAL,
+   EMU_PORT_SERIAL_PERIPHERAL,
+   EMU_PORT_END
+};
+
+//serial codes, behaviors of a serial connection other then the raw bytes, the data bytes are stored as uint16_t's with > 0xFF being the special codes
+enum{
+   EMU_SERIAL_BREAK = 0x100
 };
 
 //types

@@ -20,15 +20,19 @@ static void registerArrayWrite32(uint32_t address, uint32_t value){M68K_BUFFER_W
 
 //interrupt setters, used for setting an interrupt with masking by IMR and logging in IPR
 static void setIprIsrBit(uint32_t interruptBit){
-   uint32_t newIpr = registerArrayRead32(IPR) | interruptBit;
-   registerArrayWrite32(IPR, newIpr);
-   registerArrayWrite32(ISR, newIpr & ~registerArrayRead32(IMR));
+   uint32_t ipr = registerArrayRead32(IPR);
+   dbvzInterruptChanged |= !(ipr & interruptBit);
+   ipr |= interruptBit;
+   registerArrayWrite32(IPR, ipr);
+   registerArrayWrite32(ISR, ipr & ~registerArrayRead32(IMR));
 }
 
 static void clearIprIsrBit(uint32_t interruptBit){
-   uint32_t newIpr = registerArrayRead32(IPR) & ~interruptBit;
-   registerArrayWrite32(IPR, newIpr);
-   registerArrayWrite32(ISR, newIpr & ~registerArrayRead32(IMR));
+   uint32_t ipr = registerArrayRead32(IPR);
+   dbvzInterruptChanged |= !!(ipr & interruptBit);
+   ipr &= ~interruptBit;
+   registerArrayWrite32(IPR, ipr);
+   registerArrayWrite32(ISR, ipr & ~registerArrayRead32(IMR));
 }
 
 //SPI1 FIFO accessors
@@ -84,6 +88,62 @@ static void spi1TxFifoWrite(uint16_t value){
 static void spi1TxFifoFlush(void){
    spi1TxReadPosition = spi1TxWritePosition;
 }
+
+//UART1 FIFO accessors
+static uint8_t uart1RxFifoEntrys(void){
+   //check for wraparound
+   if(uart1RxWritePosition < uart1RxReadPosition)
+      return uart1RxWritePosition + 13 - uart1RxReadPosition;
+   return uart1RxWritePosition - uart1RxReadPosition;
+}
+
+static uint16_t uart1RxFifoRead(void){
+   if(uart1RxFifoEntrys() > 0)
+      uart1RxReadPosition = (uart1RxReadPosition + 1) % 13;
+   uart1RxOverflowed = false;
+   return uart1RxFifo[uart1RxReadPosition];
+}
+
+static void uart1RxFifoWrite(uint16_t value){
+   if(uart1RxFifoEntrys() < 12){
+      uart1RxWritePosition = (uart1RxWritePosition + 1) % 13;
+   }
+   else{
+      uart1RxOverflowed = true;
+      debugLog("UART1 RX FIFO overflowed\n");
+   }
+   uart1RxFifo[uart1RxWritePosition] = value;
+}
+
+static void uart1RxFifoFlush(void){
+   uart1RxReadPosition = uart1RxWritePosition;
+}
+
+static uint8_t uart1TxFifoEntrys(void){
+   //check for wraparound
+   if(uart1TxWritePosition < uart1TxReadPosition)
+      return uart1TxWritePosition + 9 - uart1TxReadPosition;
+   return uart1TxWritePosition - uart1TxReadPosition;
+}
+
+static uint16_t uart1TxFifoRead(void){
+   //dont need a safety check here, the emulator will always check that data is present before trying to access it
+   uart1TxReadPosition = (uart1TxReadPosition + 1) % 9;
+   return uart1TxFifo[uart1TxReadPosition];
+}
+
+static void uart1TxFifoWrite(uint16_t value){
+   if(uart1TxFifoEntrys() < 8){
+      uart1TxWritePosition = (uart1TxWritePosition + 1) % 9;
+      uart1TxFifo[uart1TxWritePosition] = value;
+   }
+}
+
+static void uart1TxFifoFlush(void){
+   uart1TxReadPosition = uart1TxWritePosition;
+}
+
+//TODO, UART2 FIFO accessors
 
 //PWM1 FIFO accessors
 static uint8_t pwm1FifoEntrys(void){
@@ -348,7 +408,7 @@ static void setSpiIntCs(uint16_t value){
    newSpiIntCs |= (rxEntrys >= 4) << 4;//RH
    newSpiIntCs |= (rxEntrys > 0) << 3;//RR
    newSpiIntCs |= (txEntrys == 8) << 2;//TF
-   newSpiIntCs |= (txEntrys >= 4) << 1;//TH, the datasheet contradicts itself on whether its more than or equal to 4 empty or full slots
+   newSpiIntCs |= (txEntrys >= 4) << 1;//TH, TODO: the datasheet contradicts itself on whether its more than or equal to 4 empty or full slots
    newSpiIntCs |= txEntrys == 0;//TE
 
    //if interrupt state changed update interrupts too, top 8 bits are just the enable bits for the bottom 8
@@ -477,6 +537,72 @@ static void setSpiCont2(uint16_t value){
    registerArrayWrite16(SPICONT2, value & 0xE3FF);
 }
 
+static void updateUart1Interrupt(void){
+   //the UART1 interrupt has a rather complex set of trigger methods so they all have to be checked after one changes to prevent clearing a valid interrupt thats on the same line
+   uint16_t ustcnt1 = registerArrayRead16(USTCNT1);
+   bool interruptState = false;
+
+   //is enabled
+   if(ustcnt1 & 0x8000){
+      //RX is enabled
+      if(ustcnt1 & 0x4000){
+         uint16_t urx1 = registerArrayRead16(URX1);
+
+         //TODO: old data timer is unemualted
+         //if(ustcnt1 & 0x0080 && uart1RxFifoEntrys() > 0)
+         //   interruptState = true;
+
+         if(ustcnt1 & 0x0020 && uart1RxFifoEntrys() == 12)
+            interruptState = true;
+         if(ustcnt1 & 0x0010 && uart1RxFifoEntrys() >= 8) //TODO: datasheet contradits on this, it says 4(going with 4 for now) and half full which would be 6 since RX FIFO is 12 bytes
+            interruptState = true;
+         if(ustcnt1 & 0x0008 && uart1RxFifoEntrys() > 0)
+            interruptState = true;
+      }
+
+      //TX is enabled
+      if(ustcnt1 & 0x2000){
+         uint16_t utx1 = registerArrayRead16(UTX1);
+
+         if(ustcnt1 & 0x0004 && uart1TxFifoEntrys() == 0)
+            interruptState = true;
+         if(ustcnt1 & 0x0002 && uart1TxFifoEntrys() < 4)
+            interruptState = true;
+         if(ustcnt1 & 0x0001 && uart1TxFifoEntrys() < 8)
+            interruptState = true;
+      }
+   }
+
+   if(interruptState)
+      setIprIsrBit(DBVZ_INT_UART1);
+   else
+      clearIprIsrBit(DBVZ_INT_UART1);
+   checkInterrupts();
+}
+
+static void setUstcnt1(uint16_t value){
+   //flush RX FIFO if disabled
+   if(!((value & 0xC000) == 0xC000))
+      uart1RxFifoFlush();
+
+   //flush TX FIFO if disabled
+   if(!((value & 0xA000) == 0xA000))
+      uart1TxFifoFlush();
+
+   registerArrayWrite16(USTCNT1, value);
+   updateUart1Interrupt();
+}
+
+static void setUtx1(uint16_t value){
+   registerArrayWrite16(UTX1, value & 0x1F00);
+
+   //send byte and update interrupts if enabled
+   if((value & 0xA000) == 0xA000){
+      updateUart1Interrupt();
+      uart1RxFifoWrite(value & 0x1000 ? value & 0xFF : EMU_SERIAL_BREAK);
+   }
+}
+
 static void setTstat1(uint16_t value){
    uint16_t oldTstat1 = registerArrayRead16(TSTAT1);
    uint16_t newTstat1 = (value & timerStatusReadAcknowledge[0]) | (oldTstat1 & ~timerStatusReadAcknowledge[0]);
@@ -576,6 +702,7 @@ static void setIsr(uint32_t value, bool useTopWord, bool useBottomWord){
       registerArrayWrite16(ISR + 2, registerArrayRead16(ISR + 2) & ~(value & 0xFFFF & portDEdgeSelect << 8));
    }
 
+   dbvzInterruptChanged |= true;
    checkInterrupts();
 }
 
@@ -676,7 +803,7 @@ static uint8_t getPortKValue(void){
    uint8_t portKDir = registerArrayRead8(PKDIR);
    uint8_t portKSel = registerArrayRead8(PKSEL);
 
-   portKValue |= !(palmMisc.dataPort == PORT_USB_CRADLE || palmMisc.dataPort == PORT_SERIAL_CRADLE) << 2;//true if charging
+   portKValue |= !palmMisc.batteryCharging << 2;//false if chargeing
    portKValue |= 0xFB;//floating pins are high
    portKValue &= ~portKDir & portKSel;
    portKValue |= portKData & portKDir & portKSel;

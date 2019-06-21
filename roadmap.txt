@@ -38,6 +38,7 @@ RetroArch GUI:
 *add multithreading and pipeline speedups
 
 Qt GUI:
+//TODO: saving states isn't working on Mac OS, it won't create the directory, don't know why(its not the . in the path either already tested), QDir returns false so it is failing?
 *fixed state manager not loading until a state is saved
 *boot button uses install button icon now, changed install button to icon a "+"
 *put back left/right/center keys
@@ -48,6 +49,7 @@ Qt GUI:
 *keyboard mapping support
 
 Core:
+//TODO: implement UART1/2 to fix crashing when beaming(should expose functions to read serial port and IR data)
 *PLLFSR timing hack is gone, CLK32 bit now just toggles properly mid CLK32
 *SD card access routines are now 6<->7X faster
 *add a launcher to load prc/pdb/pqa files

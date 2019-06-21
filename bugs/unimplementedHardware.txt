@@ -22,6 +22,10 @@ should also not transfer data to SD card when MOSI, MISO or SPICLK1 are disabled
 port d data register INT* bits seem to have there data bits cleared when an edge triggered interrupt is cleared(according to MC68VZ328UM.pdf Page 10-15)
 sound plays too long when the category's menu is selected on the home screen and the pen is pressed and held in the middle of the screen(only happens there, other views of the same type don't have this issue)(effected by CPU speed, turning it up reduces the duration of the excess squeal)(the home menu may be changing the clock speed when this menu is released since it refreshes a bunch of icons which is CPU intensive, if it is it would distort the audio since sysclks are only calculated at the begining of a frame the new value would not take effect until a new frame began, and since it works properly sometimes that is probably when the change occurs just at the end of the last frame and the sysclk duration refresh happens at the intended time due to the new frame starting)
 trying to beam anything will lock up the OS
+UART1 OLD DATA interrupt uses timing, may just have this be the same a DATA READY
+SPI1 rxOverflow is may not be emulated exactly as its supposed to be, the overflow data is written to the newest FIFO byte when it should probably be written to the oldest
+UART CTS pin is not emulated
+since actual UART hardware is not being used should be safe to ignore the parity bit and timing
 
 Memory:
 unknown if DRAM bit expanded address space is used for CSC when its not an extension of CSD

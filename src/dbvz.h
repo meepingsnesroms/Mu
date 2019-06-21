@@ -64,34 +64,7 @@ typedef struct{
 }dbvz_chip_t;
 
 //variables
-extern uint8_t     dbvzReg[];
 extern dbvz_chip_t dbvzChipSelects[];
-extern double      dbvzSysclksPerClk32;
-extern uint32_t    dbvzFrameClk32s;
-extern double      dbvzClk32Sysclks;
-extern int8_t      pllSleepWait;
-extern int8_t      pllWakeWait;
-extern uint32_t    clk32Counter;
-extern double      pctlrCpuClockDivider;
-extern double      timerCycleCounter[];
-extern uint16_t    timerStatusReadAcknowledge[];
-extern uint8_t     portDInterruptLastValue;
-extern uint16_t    spi1RxFifo[];
-extern uint16_t    spi1TxFifo[];
-extern uint8_t     spi1RxReadPosition;
-extern uint8_t     spi1RxWritePosition;
-extern bool        spi1RxOverflowed;
-extern uint8_t     spi1TxReadPosition;
-extern uint8_t     spi1TxWritePosition;
-extern int32_t     pwm1ClocksToNextSample;
-extern uint8_t     pwm1Fifo[];
-extern uint8_t     pwm1ReadPosition;
-extern uint8_t     pwm1WritePosition;
-
-//timing
-void dbvzBeginClk32(void);
-void dbvzEndClk32(void);
-void dbvzAddSysclks(double value);//only call between begin/endClk32
 
 //CPU
 bool dbvzIsPllOn(void);

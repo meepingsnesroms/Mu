@@ -13,29 +13,44 @@
 #include "audio/blip_buf.h"
 #include "debug/sandbox.h"
 
-uint8_t     dbvzReg[DBVZ_REG_SIZE];
+
 dbvz_chip_t dbvzChipSelects[DBVZ_CHIP_END];
-double      dbvzSysclksPerClk32;//how many SYSCLK cycles before toggling the 32.768 kHz crystal
-uint32_t    dbvzFrameClk32s;//how many CLK32s have happened in the current frame
-double      dbvzClk32Sysclks;//how many SYSCLKs have happened in the current CLK32
-int8_t      pllSleepWait;
-int8_t      pllWakeWait;
-uint32_t    clk32Counter;
-double      pctlrCpuClockDivider;
-double      timerCycleCounter[2];
-uint16_t    timerStatusReadAcknowledge[2];
-uint8_t     portDInterruptLastValue;//used for edge triggered interrupt timing
-uint16_t    spi1RxFifo[9];
-uint16_t    spi1TxFifo[9];
-uint8_t     spi1RxReadPosition;
-uint8_t     spi1RxWritePosition;
-bool        spi1RxOverflowed;
-uint8_t     spi1TxReadPosition;
-uint8_t     spi1TxWritePosition;
-int32_t     pwm1ClocksToNextSample;
-uint8_t     pwm1Fifo[6];
-uint8_t     pwm1ReadPosition;
-uint8_t     pwm1WritePosition;
+
+static bool        dbvzInterruptChanged;//reduces time wasted on checking interrupts that where updated to a new value identical to the old one, does not need to be in states
+static uint8_t     dbvzReg[DBVZ_REG_SIZE];
+static double      dbvzSysclksPerClk32;//how many SYSCLK cycles before toggling the 32.768 kHz crystal
+static uint32_t    dbvzFrameClk32s;//how many CLK32s have happened in the current frame
+static double      dbvzClk32Sysclks;//how many SYSCLKs have happened in the current CLK32
+static int8_t      pllSleepWait;
+static int8_t      pllWakeWait;
+static uint32_t    clk32Counter;
+static double      pctlrCpuClockDivider;
+static double      timerCycleCounter[2];
+static uint16_t    timerStatusReadAcknowledge[2];
+static uint8_t     portDInterruptLastValue;//used for edge triggered interrupt timing
+static uint16_t    spi1RxFifo[9];
+static uint16_t    spi1TxFifo[9];
+static uint8_t     spi1RxReadPosition;
+static uint8_t     spi1RxWritePosition;
+static bool        spi1RxOverflowed;
+static uint8_t     spi1TxReadPosition;
+static uint8_t     spi1TxWritePosition;
+static uint16_t    uart1RxFifo[13];
+static uint16_t    uart1TxFifo[9];
+static uint8_t     uart1RxReadPosition;
+static uint8_t     uart1RxWritePosition;
+static bool        uart1RxOverflowed;//this var may not be needed
+static uint8_t     uart1TxReadPosition;
+static uint8_t     uart1TxWritePosition;
+
+//TODO: UART2
+//uint16_t     uart2RxFifo[65];
+//uint16_t     uart2TxFifo[65];
+
+static int32_t     pwm1ClocksToNextSample;
+static uint8_t     pwm1Fifo[6];
+static uint8_t     pwm1ReadPosition;
+static uint8_t     pwm1WritePosition;
 
 
 static void checkInterrupts(void);
@@ -75,8 +90,8 @@ void ads7846OverridePenState(bool value){
             setIprIsrBit(DBVZ_INT_IRQ5);
          else
             clearIprIsrBit(DBVZ_INT_IRQ5);
+         checkInterrupts();
       }
-      checkInterrupts();
 
       //override over, put back real state
       updateTouchState();
@@ -91,7 +106,7 @@ void m515RefreshTouchState(void){
 }
 
 void m515RefreshInputState(void){
-   //update power button LED state if palmMisc.batteryCharging changed
+   //update power button LED state incase palmMisc.batteryCharging changed
    updatePowerButtonLedStatus();
 
    //update touchscreen
@@ -151,13 +166,25 @@ static void pllWakeCpuIfOff(void){
 }
 
 static void checkInterrupts(void){
-   uint32_t activeInterrupts = registerArrayRead32(ISR);
-   uint16_t interruptLevelControlRegister = registerArrayRead16(ILCR);
-   uint8_t spi1IrqLevel = interruptLevelControlRegister >> 12;
-   uint8_t uart2IrqLevel = interruptLevelControlRegister >> 8 & 0x0007;
-   uint8_t pwm2IrqLevel = interruptLevelControlRegister >> 4 & 0x0007;
-   uint8_t timer2IrqLevel = interruptLevelControlRegister & 0x0007;
-   uint8_t intLevel = 0;
+   uint32_t activeInterrupts;
+   uint16_t interruptLevelControlRegister;
+   uint8_t spi1IrqLevel;
+   uint8_t uart2IrqLevel;
+   uint8_t pwm2IrqLevel;
+   uint8_t timer2IrqLevel;
+   uint8_t intLevel;
+
+   //dont waste time if nothing changed
+   if(!dbvzInterruptChanged)
+      return;
+
+   activeInterrupts = registerArrayRead32(ISR);
+   interruptLevelControlRegister = registerArrayRead16(ILCR);
+   spi1IrqLevel = interruptLevelControlRegister >> 12;
+   uart2IrqLevel = interruptLevelControlRegister >> 8 & 0x0007;
+   pwm2IrqLevel = interruptLevelControlRegister >> 4 & 0x0007;
+   timer2IrqLevel = interruptLevelControlRegister & 0x0007;
+   intLevel = 0;
 
    //static interrupts
    if(activeInterrupts & DBVZ_INT_EMIQ)
@@ -202,6 +229,9 @@ static void checkInterrupts(void){
 
    //should be called even if intLevel is 0, that is how the interrupt state gets cleared
    flx68000SetIrq(intLevel);
+
+   //no interrupts have changed since the last call to this function, which is now
+   dbvzInterruptChanged = false;
 }
 
 static void checkPortDInterrupts(void){
@@ -460,6 +490,10 @@ uint16_t dbvzGetRegister16(uint32_t address){
       case SPISPC:
       case SPICONT2:
       case SPIDATA2:
+      case USTCNT1:
+      case UBAUD1:
+      case UMISC1:
+      case NIPR1:
          //simple read, no actions needed
          return registerArrayRead16(address);
 
@@ -692,12 +726,14 @@ void dbvzSetRegister16(uint32_t address, uint16_t value){
          //this is a 32 bit register but Palm OS writes to it as 16 bit chunks
          registerArrayWrite16(IMR, value & 0x00FF);
          registerArrayWrite16(ISR, registerArrayRead16(IPR) & ~registerArrayRead16(IMR));
+         dbvzInterruptChanged |= true;
          checkInterrupts();
          return;
       case IMR + 2:
          //this is a 32 bit register but Palm OS writes to it as 16 bit chunks
          registerArrayWrite16(IMR + 2, value & 0xFFFF);//Palm OS writes to reserved bits 14 and 15
          registerArrayWrite16(ISR + 2, registerArrayRead16(IPR + 2) & ~registerArrayRead16(IMR + 2));
+         dbvzInterruptChanged |= true;
          checkInterrupts();
          return;
 
@@ -894,9 +930,11 @@ void dbvzSetRegister16(uint32_t address, uint16_t value){
          return;
 
       case SPITXD:
-         spi1TxFifoWrite(value);
-         //check if SPI1 interrupts changed
-         setSpiIntCs(registerArrayRead16(SPIINTCS));
+         if(registerArrayRead16(SPICONT1) & 0x0200){
+            spi1TxFifoWrite(value);
+            //check if SPI1 interrupts changed
+            setSpiIntCs(registerArrayRead16(SPIINTCS));
+         }
          return;
 
       case SPICONT2:
@@ -909,6 +947,24 @@ void dbvzSetRegister16(uint32_t address, uint16_t value){
             registerArrayWrite16(SPIDATA2, value);
          return;
 
+      case USTCNT1:
+         setUstcnt1(value);
+         return;
+
+      case UBAUD1:
+         //just does timing stuff, should be OK to ignore
+         registerArrayWrite16(UBAUD1, value & 0x2F3F);
+         return;
+
+      case UMISC1:
+         //TODO: most of the bits here are for factory testing and can be ignored but not all of them can be
+         registerArrayWrite16(UMISC1, value & 0xFCFC);
+         return;
+
+      case UTX1:
+         setUtx1(value);
+         return;
+
       case PWMC1:
          setPwmc1(value);
          return;
@@ -919,16 +975,6 @@ void dbvzSetRegister16(uint32_t address, uint16_t value){
             pwm1FifoWrite(value >> 8);
             pwm1FifoWrite(value & 0xFF);
          }
-         return;
-
-      case USTCNT1:
-         registerArrayWrite16(UBAUD1, value);
-         //needs to recalculate interrupts here
-         return;
-
-      case UBAUD1:
-         //just does timing stuff, should be OK to ignore
-         registerArrayWrite16(UBAUD1, value & 0x2F3F);
          return;
 
       case NIPR1:
@@ -985,6 +1031,7 @@ void dbvzSetRegister32(uint32_t address, uint32_t value){
       case IMR:
          registerArrayWrite32(IMR, value & 0x00FFFFFF);//Palm OS writes to reserved bits 14 and 15
          registerArrayWrite32(ISR, registerArrayRead32(IPR) & ~registerArrayRead32(IMR));
+         dbvzInterruptChanged |= true;
          checkInterrupts();
          return;
 
@@ -1009,6 +1056,7 @@ void dbvzReset(void){
    uint32_t oldRtc = registerArrayRead32(RTCTIME);//preserve RTCTIME
    uint16_t oldDayr = registerArrayRead16(DAYR);//preserve DAYR
 
+   dbvzInterruptChanged = false;//speed hack variable
    memset(dbvzReg, 0x00, DBVZ_REG_SIZE - DBVZ_BOOTLOADER_SIZE);
    dbvzSysclksPerClk32 = 0.0;
    clk32Counter = 0;
@@ -1027,6 +1075,13 @@ void dbvzReset(void){
    spi1RxOverflowed = false;
    spi1TxReadPosition = 0;
    spi1TxWritePosition = 0;
+   memset(uart1RxFifo, 0x00, sizeof(uart1RxFifo));
+   memset(uart1TxFifo, 0x00, sizeof(uart1TxFifo));
+   uart1RxReadPosition = 0;
+   uart1RxWritePosition = 0;
+   uart1RxOverflowed = false;
+   uart1TxReadPosition = 0;
+   uart1TxWritePosition = 0;
    pwm1ClocksToNextSample = 0;
    memset(pwm1Fifo, 0x00, sizeof(pwm1Fifo));
    pwm1ReadPosition = 0;
@@ -1200,6 +1255,9 @@ uint32_t dbvzStateSize(void){
    size += sizeof(uint16_t) * 9;//RX 8 * 16 SPI1 FIFO, 1 index is for FIFO full
    size += sizeof(uint16_t) * 9;//TX 8 * 16 SPI1 FIFO, 1 index is for FIFO full
    size += sizeof(uint8_t) * 5;//spi1(R/T)x(Read/Write)Position / spi1RxOverflowed
+   size += sizeof(uint16_t) * 13;//RX 8 * 16 UART1 FIFO, 1 index is for FIFO full
+   size += sizeof(uint16_t) * 9;//TX 8 * 16 UART1 FIFO, 1 index is for FIFO full
+   size += sizeof(uint8_t) * 5;//uart(R/T)x(Read/Write)Position / uart1RxOverflowed
    size += sizeof(int32_t);//pwm1ClocksToNextSample
    size += sizeof(uint8_t) * 6;//pwm1Fifo[6]
    size += sizeof(uint8_t) * 2;//pwm1(Read/Write)
@@ -1288,6 +1346,26 @@ void dbvzSaveState(uint8_t* data){
    writeStateValue8(data + offset, spi1TxReadPosition);
    offset += sizeof(uint8_t);
    writeStateValue8(data + offset, spi1TxWritePosition);
+   offset += sizeof(uint8_t);
+
+   //UART1
+   for(index = 0; index < 13; index++){
+      writeStateValue16(data + offset, uart1RxFifo[index]);
+      offset += sizeof(uint16_t);
+   }
+   for(index = 0; index < 9; index++){
+      writeStateValue16(data + offset, uart1TxFifo[index]);
+      offset += sizeof(uint16_t);
+   }
+   writeStateValue8(data + offset, uart1RxReadPosition);
+   offset += sizeof(uint8_t);
+   writeStateValue8(data + offset, uart1RxWritePosition);
+   offset += sizeof(uint8_t);
+   writeStateValue8(data + offset, uart1RxOverflowed);
+   offset += sizeof(uint8_t);
+   writeStateValue8(data + offset, uart1TxReadPosition);
+   offset += sizeof(uint8_t);
+   writeStateValue8(data + offset, uart1TxWritePosition);
    offset += sizeof(uint8_t);
 
    //PWM1, audio
@@ -1384,6 +1462,26 @@ void dbvzLoadState(uint8_t* data){
    spi1TxReadPosition = readStateValue8(data + offset);
    offset += sizeof(uint8_t);
    spi1TxWritePosition = readStateValue8(data + offset);
+   offset += sizeof(uint8_t);
+
+   //UART1
+   for(index = 0; index < 13; index++){
+      uart1RxFifo[index] = readStateValue16(data + offset);
+      offset += sizeof(uint16_t);
+   }
+   for(index = 0; index < 9; index++){
+      uart1TxFifo[index] = readStateValue16(data + offset);
+      offset += sizeof(uint16_t);
+   }
+   uart1RxReadPosition = readStateValue8(data + offset);
+   offset += sizeof(uint8_t);
+   uart1RxWritePosition = readStateValue8(data + offset);
+   offset += sizeof(uint8_t);
+   uart1RxOverflowed = readStateValue8(data + offset);
+   offset += sizeof(uint8_t);
+   uart1TxReadPosition = readStateValue8(data + offset);
+   offset += sizeof(uint8_t);
+   uart1TxWritePosition = readStateValue8(data + offset);
    offset += sizeof(uint8_t);
 
    //PWM1, audio
