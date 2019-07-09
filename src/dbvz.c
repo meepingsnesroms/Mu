@@ -1261,9 +1261,6 @@ uint32_t dbvzStateSize(void){
    size += sizeof(uint16_t) * 9;//RX 8 * 16 SPI1 FIFO, 1 index is for FIFO full
    size += sizeof(uint16_t) * 9;//TX 8 * 16 SPI1 FIFO, 1 index is for FIFO full
    size += sizeof(uint8_t) * 5;//spi1(R/T)x(Read/Write)Position / spi1RxOverflowed
-   size += sizeof(uint16_t) * 13;//RX 8 * 16 UART1 FIFO, 1 index is for FIFO full
-   size += sizeof(uint16_t) * 9;//TX 8 * 16 UART1 FIFO, 1 index is for FIFO full
-   size += sizeof(uint8_t) * 5;//uart(R/T)x(Read/Write)Position / uart1RxOverflowed
    size += sizeof(int32_t);//pwm1ClocksToNextSample
    size += sizeof(uint8_t) * 6;//pwm1Fifo[6]
    size += sizeof(uint8_t) * 2;//pwm1(Read/Write)
@@ -1461,6 +1458,12 @@ void dbvzLoadState(uint8_t* data){
    offset += sizeof(uint8_t);
    pwm1WritePosition = readStateValue8(data + offset);
    offset += sizeof(uint8_t);
+
+   //UART1, cant load state while beaming
+   uart1RxFifoFlush();
+
+   //UART2, cant load state while syncing
+   uart1RxFifoFlush();
 
    //debugLog("load offset is:%d\n", offset);
 }
