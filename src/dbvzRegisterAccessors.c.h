@@ -91,59 +91,71 @@ static void spi1TxFifoFlush(void){
 
 //UART1 FIFO accessors
 static uint8_t uart1RxFifoEntrys(void){
-   //check for wraparound
-   if(uart1RxWritePosition < uart1RxReadPosition)
-      return uart1RxWritePosition + 13 - uart1RxReadPosition;
-   return uart1RxWritePosition - uart1RxReadPosition;
+   if(palmIrDataSize){
+      uint32_t fifoEntrys = palmIrDataSize();
+
+      return FAST_MIN(fifoEntrys, 12);
+   }
+   return 0x00;
 }
 
 static uint16_t uart1RxFifoRead(void){
-   if(uart1RxFifoEntrys() > 0)
-      uart1RxReadPosition = (uart1RxReadPosition + 1) % 13;
-   uart1RxOverflowed = false;
-   return uart1RxFifo[uart1RxReadPosition];
-}
-
-static void uart1RxFifoWrite(uint16_t value){
-   if(uart1RxFifoEntrys() < 12){
-      uart1RxWritePosition = (uart1RxWritePosition + 1) % 13;
-   }
-   else{
-      uart1RxOverflowed = true;
-      debugLog("UART1 RX FIFO overflowed\n");
-   }
-   uart1RxFifo[uart1RxWritePosition] = value;
+   if(palmIrDataReceive)
+      return palmIrDataReceive();
+   return 0x0000;
 }
 
 static void uart1RxFifoFlush(void){
-   uart1RxReadPosition = uart1RxWritePosition;
+   if(palmIrDataFlush)
+      palmIrDataFlush();
 }
 
 static uint8_t uart1TxFifoEntrys(void){
-   //check for wraparound
-   if(uart1TxWritePosition < uart1TxReadPosition)
-      return uart1TxWritePosition + 9 - uart1TxReadPosition;
-   return uart1TxWritePosition - uart1TxReadPosition;
-}
-
-static uint16_t uart1TxFifoRead(void){
-   //dont need a safety check here, the emulator will always check that data is present before trying to access it
-   uart1TxReadPosition = (uart1TxReadPosition + 1) % 9;
-   return uart1TxFifo[uart1TxReadPosition];
+   return 0;//all entrys are transmitted instantly so none are left inside the CPU
 }
 
 static void uart1TxFifoWrite(uint16_t value){
-   if(uart1TxFifoEntrys() < 8){
-      uart1TxWritePosition = (uart1TxWritePosition + 1) % 9;
-      uart1TxFifo[uart1TxWritePosition] = value;
-   }
+   if(palmIrDataSend)
+      palmIrDataSend(value);
 }
 
 static void uart1TxFifoFlush(void){
-   uart1TxReadPosition = uart1TxWritePosition;
+   //do nothing, its always empty
 }
 
-//TODO, UART2 FIFO accessors
+//UART2 FIFO accessors
+static uint8_t uart2RxFifoEntrys(void){
+   if(palmSerialDataSize){
+      uint32_t fifoEntrys = palmSerialDataSize();
+
+      return FAST_MIN(fifoEntrys, 64);
+   }
+   return 0x00;
+}
+
+static uint16_t uart2RxFifoRead(void){
+   if(palmSerialDataReceive)
+      return palmSerialDataReceive();
+   return 0x0000;
+}
+
+static void uart2RxFifoFlush(void){
+   if(palmSerialDataFlush)
+      palmSerialDataFlush();
+}
+
+static uint8_t uart2TxFifoEntrys(void){
+   return 0;//all entrys are transmitted instantly so none are left inside the CPU
+}
+
+static void uart2TxFifoWrite(uint16_t value){
+   if(palmSerialDataSend)
+      palmSerialDataSend(value);
+}
+
+static void uart2TxFifoFlush(void){
+   //do nothing, its always empty
+}
 
 //PWM1 FIFO accessors
 static uint8_t pwm1FifoEntrys(void){

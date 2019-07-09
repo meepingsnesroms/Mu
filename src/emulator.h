@@ -182,6 +182,14 @@ extern int16_t*  palmAudio;//read allowed, 2 channel signed 16 bit audio
 extern blip_t*   palmAudioResampler;//dont touch
 extern double    palmCycleCounter;//dont touch
 extern double    palmClockMultiplier;//read/write allowed, setting by multiplication and cacheing the result is the best way
+extern uint32_t  (*palmIrDataSize)(void);//returns the current number of bytes in the hosts IR receive FIFO
+extern uint16_t  (*palmIrDataReceive)(void);//called by the emulator to read the hosts IR receive FIFO
+extern void      (*palmIrDataSend)(uint16_t data);//called by the emulator to send IR data
+extern void      (*palmIrDataFlush)(void);//called by the emulator to delete all data in the hosts IR receive FIFO
+extern uint32_t  (*palmSerialDataSize)(void);//returns the current number of bytes in the hosts serial receive FIFO
+extern uint16_t  (*palmSerialDataReceive)(void);//called by the emulator to read the hosts serial receive FIFO
+extern void      (*palmSerialDataSend)(uint16_t data);//called by the emulator to send serial data
+extern void      (*palmSerialDataFlush)(void);//called by the emulator to delete all data in the hosts serial receive FIFO
 extern void      (*palmGetRtcFromHost)(uint8_t* writeBack);//[0] = hours, [1] = minutes, [2] = seconds
 
 //functions

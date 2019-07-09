@@ -300,7 +300,6 @@ static void rtcAddSecondClk32(void){
                }
             }
          }
-
       }
       else{
          //standard frame based time increment

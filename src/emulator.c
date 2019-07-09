@@ -60,6 +60,14 @@ int16_t*  palmAudio;
 blip_t*   palmAudioResampler;
 double    palmCycleCounter;//can be greater then 0 if too many cycles where run
 double    palmClockMultiplier;//used by the emulator to overclock the emulated Palm
+uint32_t  (*palmIrDataSize)(void);//returns the current number of bytes in the hosts IR receive FIFO
+uint16_t  (*palmIrDataReceive)(void);//called by the emulator to read the hosts IR receive FIFO
+void      (*palmIrDataSend)(uint16_t data);//called by the emulator to send IR data
+void      (*palmIrDataFlush)(void);//called by the emulator to delete all data in the hosts IR receive FIFO
+uint32_t  (*palmSerialDataSize)(void);//returns the current number of bytes in the hosts serial receive FIFO
+uint16_t  (*palmSerialDataReceive)(void);//called by the emulator to read the hosts serial receive FIFO
+void      (*palmSerialDataSend)(uint16_t data);//called by the emulator to send serial data
+void      (*palmSerialDataFlush)(void);//called by the emulator to delete all data in the hosts serial receive FIFO
 void      (*palmGetRtcFromHost)(uint8_t* writeBack);//[0] = hours, [1] = minutes, [2] = seconds
 
 
@@ -78,6 +86,14 @@ uint32_t emulatorInit(uint8_t* palmRomData, uint32_t palmRomSize, uint8_t* palmB
    if(!palmRomData || palmRomSize < 0x8)
       return EMU_ERROR_INVALID_PARAMETER;
 
+   palmIrDataSize = NULL;
+   palmIrDataReceive = NULL;
+   palmIrDataSend = NULL;
+   palmIrDataFlush = NULL;
+   palmSerialDataSize = NULL;
+   palmSerialDataReceive = NULL;
+   palmSerialDataSend = NULL;
+   palmSerialDataFlush = NULL;
    palmGetRtcFromHost = NULL;
 
 #if defined(EMU_SUPPORT_PALM_OS5)

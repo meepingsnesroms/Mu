@@ -35,22 +35,6 @@ static uint8_t  spi1RxWritePosition;
 static bool     spi1RxOverflowed;
 static uint8_t  spi1TxReadPosition;
 static uint8_t  spi1TxWritePosition;
-static uint16_t uart1RxFifo[13];
-static uint16_t uart1TxFifo[9];
-static uint8_t  uart1RxReadPosition;
-static uint8_t  uart1RxWritePosition;
-static bool     uart1RxOverflowed;//this var may not be needed
-static uint8_t  uart1TxReadPosition;
-static uint8_t  uart1TxWritePosition;
-/*
-static uint16_t uart2RxFifo[65];
-static uint16_t uart2TxFifo[65];
-static uint8_t  uart2RxReadPosition;
-static uint8_t  uart2RxWritePosition;
-static bool     uart2RxOverflowed;//this var may not be needed
-static uint8_t  uart2TxReadPosition;
-static uint8_t  uart2TxWritePosition;
-*/
 static int32_t  pwm1ClocksToNextSample;
 static uint8_t  pwm1Fifo[6];
 static uint8_t  pwm1ReadPosition;
@@ -569,7 +553,7 @@ void dbvzSetRegister8(uint32_t address, uint8_t value){
          //this is a 16 bit register but Palm OS writes to the 8 bit FIFO section alone
          //send byte and update interrupts if enabled
          if((registerArrayRead16(USTCNT1) & 0xA000) == 0xA000){
-            uart1RxFifoWrite(value);
+            uart1TxFifoWrite(value);
             updateUart1Interrupt();
          }
          return;
@@ -989,7 +973,7 @@ void dbvzSetRegister16(uint32_t address, uint16_t value){
 
          //send byte and update interrupts if enabled
          if((registerArrayRead16(USTCNT1) & 0xA000) == 0xA000){
-            uart1RxFifoWrite(value & 0x1000 ? value & 0xFF : EMU_SERIAL_BREAK);
+            uart1TxFifoWrite(value & 0x1000 ? value & 0xFF : EMU_SERIAL_BREAK);
             updateUart1Interrupt();
          }
          return;
@@ -1104,13 +1088,6 @@ void dbvzReset(void){
    spi1RxOverflowed = false;
    spi1TxReadPosition = 0;
    spi1TxWritePosition = 0;
-   memset(uart1RxFifo, 0x00, sizeof(uart1RxFifo));
-   memset(uart1TxFifo, 0x00, sizeof(uart1TxFifo));
-   uart1RxReadPosition = 0;
-   uart1RxWritePosition = 0;
-   uart1RxOverflowed = false;
-   uart1TxReadPosition = 0;
-   uart1TxWritePosition = 0;
    pwm1ClocksToNextSample = 0;
    memset(pwm1Fifo, 0x00, sizeof(pwm1Fifo));
    pwm1ReadPosition = 0;
@@ -1377,26 +1354,6 @@ void dbvzSaveState(uint8_t* data){
    writeStateValue8(data + offset, spi1TxWritePosition);
    offset += sizeof(uint8_t);
 
-   //UART1
-   for(index = 0; index < 13; index++){
-      writeStateValue16(data + offset, uart1RxFifo[index]);
-      offset += sizeof(uint16_t);
-   }
-   for(index = 0; index < 9; index++){
-      writeStateValue16(data + offset, uart1TxFifo[index]);
-      offset += sizeof(uint16_t);
-   }
-   writeStateValue8(data + offset, uart1RxReadPosition);
-   offset += sizeof(uint8_t);
-   writeStateValue8(data + offset, uart1RxWritePosition);
-   offset += sizeof(uint8_t);
-   writeStateValue8(data + offset, uart1RxOverflowed);
-   offset += sizeof(uint8_t);
-   writeStateValue8(data + offset, uart1TxReadPosition);
-   offset += sizeof(uint8_t);
-   writeStateValue8(data + offset, uart1TxWritePosition);
-   offset += sizeof(uint8_t);
-
    //PWM1, audio
    writeStateValue32(data + offset, pwm1ClocksToNextSample);
    offset += sizeof(int32_t);
@@ -1491,26 +1448,6 @@ void dbvzLoadState(uint8_t* data){
    spi1TxReadPosition = readStateValue8(data + offset);
    offset += sizeof(uint8_t);
    spi1TxWritePosition = readStateValue8(data + offset);
-   offset += sizeof(uint8_t);
-
-   //UART1
-   for(index = 0; index < 13; index++){
-      uart1RxFifo[index] = readStateValue16(data + offset);
-      offset += sizeof(uint16_t);
-   }
-   for(index = 0; index < 9; index++){
-      uart1TxFifo[index] = readStateValue16(data + offset);
-      offset += sizeof(uint16_t);
-   }
-   uart1RxReadPosition = readStateValue8(data + offset);
-   offset += sizeof(uint8_t);
-   uart1RxWritePosition = readStateValue8(data + offset);
-   offset += sizeof(uint8_t);
-   uart1RxOverflowed = readStateValue8(data + offset);
-   offset += sizeof(uint8_t);
-   uart1TxReadPosition = readStateValue8(data + offset);
-   offset += sizeof(uint8_t);
-   uart1TxWritePosition = readStateValue8(data + offset);
    offset += sizeof(uint8_t);
 
    //PWM1, audio
