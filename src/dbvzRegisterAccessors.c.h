@@ -105,6 +105,8 @@ static uint16_t uart1RxFifoRead(void){
    return 0x0000;
 }
 
+//no uart1RxFifoWrite, RX FIFO is written to externally
+
 static void uart1RxFifoFlush(void){
    if(palmIrDataFlush)
       palmIrDataFlush();
@@ -113,6 +115,8 @@ static void uart1RxFifoFlush(void){
 static uint8_t uart1TxFifoEntrys(void){
    return 0;//all entrys are transmitted instantly so none are left inside the CPU
 }
+
+//no uart1TxFifoRead, TX FIFO is read externally
 
 static void uart1TxFifoWrite(uint16_t value){
    if(palmIrDataSend)
@@ -139,6 +143,8 @@ static uint16_t uart2RxFifoRead(void){
    return 0x0000;
 }
 
+//no uart2RxFifoWrite, RX FIFO is written to externally
+
 static void uart2RxFifoFlush(void){
    if(palmSerialDataFlush)
       palmSerialDataFlush();
@@ -147,6 +153,8 @@ static void uart2RxFifoFlush(void){
 static uint8_t uart2TxFifoEntrys(void){
    return 0;//all entrys are transmitted instantly so none are left inside the CPU
 }
+
+//no uart2TxFifoRead, TX FIFO is read externally
 
 static void uart2TxFifoWrite(uint16_t value){
    if(palmSerialDataSend)
@@ -603,6 +611,10 @@ static void setUstcnt1(uint16_t value){
 
    registerArrayWrite16(USTCNT1, value);
    updateUart1Interrupt();
+}
+
+static void updateUart2Interrupt(void){
+   //TODO: UART2 is unemulated right now
 }
 
 static void setTstat1(uint16_t value){

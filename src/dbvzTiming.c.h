@@ -400,6 +400,10 @@ static void dbvzEndClk32(void){
       pllWakeWait--;
    }
 
+   //UART1/2, these are polled to remain thread safe
+   updateUart1Interrupt();
+   updateUart2Interrupt();
+
    checkInterrupts();
 }
 
