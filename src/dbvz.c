@@ -1463,7 +1463,7 @@ void dbvzLoadState(uint8_t* data){
    uart1RxFifoFlush();
 
    //UART2, cant load state while syncing
-   uart1RxFifoFlush();
+   uart2RxFifoFlush();
 
    //debugLog("load offset is:%d\n", offset);
 }
