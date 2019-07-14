@@ -22,8 +22,8 @@ The Palm keyboard attachment will likely be emulated later on so the PC keyboard
 I am planning on adding Tungsten T3 support as soon as possible.
 
 ## Credits
-[Firebird Emu](https://github.com/nspire-emus/firebird) (ARMv5TE Core)
-[uARM](https://dmitry.gr/?r=05.Projects&proj=07.%20Linux%20on%208bit) (PXA255 CPU Peripherals)
+[Firebird Emu](https://github.com/nspire-emus/firebird) (ARMv5TE Core)  
+[uARM](https://dmitry.gr/?r=05.Projects&proj=07.%20Linux%20on%208bit) (PXA255 CPU Peripherals)  
 [Musashi v3.4](https://github.com/kstenerud/Musashi) (last version that builds outside of MAME)(68k Core)  
 [blip_buf 1.1.0](https://github.com/TASVideos/BizHawk/tree/master/blip_buf) (Audio Resampler)  
 https://www.iconarchive.com/show/crystal-clear-icons-by-everaldo/App-palm-icon.html (Desktop Icon)  
