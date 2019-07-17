@@ -216,21 +216,12 @@ static void pxa260LcdPrvDma(Pxa255lcd* lcd, void* dest, UInt32 addr, UInt32 len)
 }
 
 static _INLINE_ void pxa260LcdScreenDataPixel(Pxa255lcd* lcd, UInt8* buf){
-   static UInt16 pixelX = 0;
-   static UInt16 pixelY = 0;
+   static UInt32 pos = 0;
 
-   if(pixelX == 640){
-      pixelY++;
-      pixelX = 0;
-   }
-
-   if(pixelY == 480){
-      pixelY = 0;
-      pixelX = 0;
-   }
-
-   if(pixelX < 320 && pixelY < 420)
-      pxa260Framebuffer[pixelY * 320 + pixelX] = buf[0] || buf[1] << 8;
+   pxa260Framebuffer[pos] = buf[0] || (buf[1] << 8);
+   pos++;
+   if(pos == 320 * 480)
+      pos = 0;
 }
 
 static void pxa260LcdScreenDataDma(Pxa255lcd* lcd, UInt32 addr/*PA*/, UInt32 len){
@@ -247,31 +238,40 @@ static void pxa260LcdScreenDataDma(Pxa255lcd* lcd, UInt32 addr/*PA*/, UInt32 len
 
          case 0:		//1BPP
 
-            ptr = lcd->palette + ((data[i] >> j) & 1) * 2;
-            for(i = 0; i < 4; i += 1) for(j = 0; j < 8; j += 1) pxa260LcdScreenDataPixel(lcd, ptr);
+            for(i = 0; i < 4; i += 1) for(j = 0; j < 8; j += 1){
+               ptr = lcd->palette + ((data[i] >> j) & 1) * 2;
+               pxa260LcdScreenDataPixel(lcd, ptr);
+            }
             break;
 
          case 1:		//2BPP
 
-            ptr = lcd->palette + ((data[i] >> j) & 3) * 2;
-            for(i = 0; i < 4; i += 1) for(j = 0; j < 8; j += 2) pxa260LcdScreenDataPixel(lcd, ptr);
+            for(i = 0; i < 4; i += 1) for(j = 0; j < 8; j += 2){
+               ptr = lcd->palette + ((data[i] >> j) & 3) * 2;
+               pxa260LcdScreenDataPixel(lcd, ptr);
+            }
             break;
 
          case 2:		//4BPP
 
-            ptr = lcd->palette + ((data[i] >> j) & 15) * 2;
-            for(i = 0; i < 4; i += 1) for(j = 0; j < 8; j += 4) pxa260LcdScreenDataPixel(lcd, ptr);
+            for(i = 0; i < 4; i += 1) for(j = 0; j < 8; j += 4){
+               ptr = lcd->palette + ((data[i] >> j) & 15) * 2;
+               pxa260LcdScreenDataPixel(lcd, ptr);
+            }
             break;
 
          case 3:		//8BPP
 
-            ptr = lcd->palette + (data[i] * 2);
-            for(i = 0; i < 4; i += 1) pxa260LcdScreenDataPixel(lcd, ptr);
+            for(i = 0; i < 4; i += 1){
+               ptr = lcd->palette + (data[i] * 2);
+               pxa260LcdScreenDataPixel(lcd, ptr);
+            }
             break;
 
          case 4:		//16BPP
 
-            for(i = 0; i < 4; i +=2 ) pxa260LcdScreenDataPixel(lcd, data + i);
+            for(i = 0; i < 4; i +=2 )
+               pxa260LcdScreenDataPixel(lcd, data + i);
             break;
 
          default:
