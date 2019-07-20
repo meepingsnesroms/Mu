@@ -417,15 +417,15 @@ static void dbvzAddSysclks(double count){
 }
 
 static int32_t audioGetFramePercentIncrementFromClk32s(int32_t count){
-   return (double)count / ((double)M515_CRYSTAL_FREQUENCY / EMU_FPS) * AUDIO_END_OF_FRAME;
+   return (double)count / ((double)M515_CRYSTAL_FREQUENCY / EMU_FPS) * DBVZ_AUDIO_END_OF_FRAME;
 }
 
 static int32_t audioGetFramePercentIncrementFromSysclks(double count){
-   return count / (dbvzSysclksPerClk32 * ((double)M515_CRYSTAL_FREQUENCY / EMU_FPS)) * AUDIO_END_OF_FRAME;
+   return count / (dbvzSysclksPerClk32 * ((double)M515_CRYSTAL_FREQUENCY / EMU_FPS)) * DBVZ_AUDIO_END_OF_FRAME;
 }
 
 static int32_t audioGetFramePercentage(void){
    //returns how much of the frame has executed
-   //0% = 0, 100% = AUDIO_END_OF_FRAME
+   //0% = 0, 100% = DBVZ_AUDIO_END_OF_FRAME
    return audioGetFramePercentIncrementFromClk32s(dbvzFrameClk32s) + (dbvzIsPllOn() ? audioGetFramePercentIncrementFromSysclks(dbvzClk32Sysclks) : 0);
 }

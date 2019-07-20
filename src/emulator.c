@@ -60,10 +60,12 @@ int16_t*  palmAudio;
 blip_t*   palmAudioResampler;
 double    palmCycleCounter;//can be greater then 0 if too many cycles where run
 double    palmClockMultiplier;//used by the emulator to overclock the emulated Palm
+void      (*palmIrSetPortProperties)(serial_port_properties_t* properties);//configure port I/O behavior, used for proxyed native I/R connections
 uint32_t  (*palmIrDataSize)(void);//returns the current number of bytes in the hosts IR receive FIFO
 uint16_t  (*palmIrDataReceive)(void);//called by the emulator to read the hosts IR receive FIFO
 void      (*palmIrDataSend)(uint16_t data);//called by the emulator to send IR data
 void      (*palmIrDataFlush)(void);//called by the emulator to delete all data in the hosts IR receive FIFO
+void      (*palmSerialSetPortProperties)(serial_port_properties_t* properties);//configure port I/O behavior, used for proxyed native serial connections
 uint32_t  (*palmSerialDataSize)(void);//returns the current number of bytes in the hosts serial receive FIFO
 uint16_t  (*palmSerialDataReceive)(void);//called by the emulator to read the hosts serial receive FIFO
 void      (*palmSerialDataSend)(uint16_t data);//called by the emulator to send serial data
@@ -86,10 +88,12 @@ uint32_t emulatorInit(uint8_t* palmRomData, uint32_t palmRomSize, uint8_t* palmB
    if(!palmRomData || palmRomSize < 0x8)
       return EMU_ERROR_INVALID_PARAMETER;
 
+   palmIrSetPortProperties = NULL;
    palmIrDataSize = NULL;
    palmIrDataReceive = NULL;
    palmIrDataSend = NULL;
    palmIrDataFlush = NULL;
+   palmSerialSetPortProperties = NULL;
    palmSerialDataSize = NULL;
    palmSerialDataReceive = NULL;
    palmSerialDataSend = NULL;
@@ -133,7 +137,7 @@ uint32_t emulatorInit(uint8_t* palmRomData, uint32_t palmRomSize, uint8_t* palmB
 
       //initialize components, I dont think theres much in a Tungsten T3
       pxa260Framebuffer = palmFramebuffer;
-      blip_set_rates(palmAudioResampler, AUDIO_CLOCK_RATE, AUDIO_SAMPLE_RATE);
+      blip_set_rates(palmAudioResampler, DBVZ_AUDIO_MAX_CLOCK_RATE, AUDIO_SAMPLE_RATE);
       sandboxInit();
 
       //reset everything
@@ -179,7 +183,7 @@ uint32_t emulatorInit(uint8_t* palmRomData, uint32_t palmRomSize, uint8_t* palmB
       sed1376Framebuffer = palmFramebuffer;
 
       //initialize components
-      blip_set_rates(palmAudioResampler, AUDIO_CLOCK_RATE, AUDIO_SAMPLE_RATE);
+      blip_set_rates(palmAudioResampler, DBVZ_AUDIO_MAX_CLOCK_RATE, AUDIO_SAMPLE_RATE);
       sandboxInit();
 
       //reset everything
@@ -268,6 +272,15 @@ void emulatorSetRtc(uint16_t days, uint8_t hours, uint8_t minutes, uint8_t secon
    else
 #endif
       dbvzSetRtc(days, hours, minutes, seconds);
+}
+
+void emulatorSetCpuSpeed(uint16_t percent){
+#if defined(EMU_SUPPORT_PALM_OS5)
+   if(palmEmulatingTungstenT3)
+      palmClockMultiplier = (double)percent / 100.0;//TODO, dont know ARM CPU speeds yet
+   else
+#endif
+      palmClockMultiplier = (double)percent / 100.0 * (1.00 - DBVZ_CPU_PERCENT_WAITING);
 }
 
 uint32_t emulatorGetStateSize(void){

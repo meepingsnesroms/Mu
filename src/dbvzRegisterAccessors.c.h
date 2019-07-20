@@ -191,7 +191,7 @@ int32_t pwm1FifoRunSample(int32_t now, int32_t clockOffset){
 
    for(index = 0; index < repeat; index++){
 #if !defined(EMU_NO_SAFETY)
-      if(audioNow + audioSampleDuration >= AUDIO_CLOCK_RATE)
+      if(audioNow + audioSampleDuration >= DBVZ_AUDIO_MAX_CLOCK_RATE)
          break;
 #endif
 
@@ -557,6 +557,26 @@ static void setSpiCont2(uint16_t value){
    registerArrayWrite16(SPICONT2, value & 0xE3FF);
 }
 
+static void updateUart1PortState(void){
+   if(palmIrSetPortProperties){
+      uint16_t ustcnt1 = registerArrayRead16(USTCNT1);
+      uint16_t ubaud1 = registerArrayRead16(UBAUD1);
+      uint8_t divider = 1 << (ubaud1 >> 8 & 0x07);
+      uint8_t prescaler = 65 - (ubaud1 & 0x001F);
+      bool baudSrc = !!(ubaud1 & 0x0800);
+      serial_port_properties_t properties;
+
+      properties.enable = !!(ustcnt1 & 0x8000);
+      properties.enableParity = !!(ustcnt1 & 0x0800);
+      properties.oddParity = !!(ustcnt1 & 0x0400);
+      properties.stopBits = !!(ustcnt1 & 0x0200) ? 2 : 1;
+      properties.use8BitMode = !!(ustcnt1 & 0x0100);
+      properties.baudRate = (baudSrc ? EMU_SERIAL_USE_EXTERNAL_CLOCK_SOURCE : sysclksPerClk32() * M515_CRYSTAL_FREQUENCY) / prescaler / divider;
+
+      palmIrSetPortProperties(&properties);
+   }
+}
+
 static void updateUart1Interrupt(void){
    //the UART1 interrupt has a rather complex set of trigger methods so they all have to be checked after one changes to prevent clearing a valid interrupt thats on the same line
    uint16_t ustcnt1 = registerArrayRead16(USTCNT1);
@@ -611,6 +631,12 @@ static void setUstcnt1(uint16_t value){
 
    registerArrayWrite16(USTCNT1, value);
    updateUart1Interrupt();
+}
+
+static void updateUart2PortState(void){
+   if(palmSerialSetPortProperties){
+      //TODO: UART2 is unemulated right now
+   }
 }
 
 static void updateUart2Interrupt(void){
