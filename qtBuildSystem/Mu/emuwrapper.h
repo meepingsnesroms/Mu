@@ -49,7 +49,7 @@ public:
    EmuWrapper();
    ~EmuWrapper();
 
-   uint32_t init(const QString& assetPath, bool useOs5, uint32_t features = FEATURE_ACCURATE, bool fastBoot = false);
+   uint32_t init(const QString& assetPath, uint8_t osVersion, uint32_t features = FEATURE_ACCURATE, bool fastBoot = false);
    void exit();
    void pause();
    void resume();

@@ -74,7 +74,7 @@ MainWindow::MainWindow(QWidget* parent) :
       //skip boot screen, most users dont want to wait 5 seconds on boot
       settings->setValue("fastBoot", true);
 
-      settings->setValue("useOs5", false);
+      settings->setValue("palmOsVersion", 4);
 
       //dont run this function again unless the config is deleted
       settings->setValue("firstBootCompleted", true);
@@ -346,13 +346,13 @@ void MainWindow::on_ctrlBtn_clicked(){
    if(!emu.isInited()){
       uint32_t enabledFeatures = getEmuFeatureList();
       QString sysDir = settings->value("resourceDirectory", "").toString();
-      uint32_t error = emu.init(sysDir, settings->value("useOs5", false).toBool(), enabledFeatures, settings->value("fastBoot", false).toBool());
+      uint32_t error = emu.init(sysDir, settings->value("palmOsVersion", false).toInt(), enabledFeatures, settings->value("fastBoot", false).toBool());
 
       if(error == EMU_ERROR_NONE){
          ui->up->setEnabled(true);
          ui->down->setEnabled(true);
 
-         if(settings->value("useOs5", false).toBool()){
+         if(settings->value("palmOsVersion", false).toInt() > 4){
             ui->left->setEnabled(true);
             ui->right->setEnabled(true);
             ui->center->setEnabled(true);

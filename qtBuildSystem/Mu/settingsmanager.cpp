@@ -24,7 +24,7 @@ SettingsManager::SettingsManager(QWidget* parent) :
    ui->showOnscreenKeys->setChecked(!settings->value("hideOnscreenKeys", false).toBool());
 
    ui->fastBoot->setChecked(settings->value("fastBoot", false).toBool());
-   ui->useOs5->setChecked(settings->value("useOs5", false).toBool());
+   ui->palmOsVersion->setValue(settings->value("palmOsVersion", false).toInt());
 
    ui->featureFastCpu->setChecked(settings->value("featureFastCpu", false).toBool());
    ui->featureSyncedRtc->setChecked(settings->value("featureSyncedRtc", false).toBool());
@@ -32,7 +32,8 @@ SettingsManager::SettingsManager(QWidget* parent) :
    ui->featureDurable->setChecked(settings->value("featureDurable", false).toBool());
 
 #if !defined(EMU_SUPPORT_PALM_OS5)
-   ui->useOs5->hide();
+   ui->palmOsVersionLabel->hide();
+   ui->palmOsVersion->hide();
    ui->selectLeftKey->hide();
    ui->selectRightKey->hide();
    ui->selectCenterKey->hide();
@@ -164,6 +165,6 @@ void SettingsManager::on_fastBoot_toggled(bool checked){
    settings->setValue("fastBoot", checked);
 }
 
-void SettingsManager::on_useOs5_toggled(bool checked){
-   settings->setValue("useOs5", checked);
+void SettingsManager::on_palmOsVersion_valueChanged(int arg1){
+   settings->setValue("palmOsVersion", arg1);
 }

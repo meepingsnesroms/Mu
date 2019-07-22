@@ -49,7 +49,7 @@ private slots:
    void on_featureDurable_toggled(bool checked);
 
    void on_fastBoot_toggled(bool checked);
-   void on_useOs5_toggled(bool checked);
+   void on_palmOsVersion_valueChanged(int arg1);
 
 private:
    Ui::SettingsManager* ui;

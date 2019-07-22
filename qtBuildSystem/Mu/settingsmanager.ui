@@ -30,8 +30,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>630</width>
-        <height>417</height>
+        <width>616</width>
+        <height>440</height>
        </rect>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -311,12 +311,19 @@
         </widget>
        </item>
        <item>
-        <widget class="QCheckBox" name="useOs5">
-         <property name="focusPolicy">
-          <enum>Qt::NoFocus</enum>
-         </property>
+        <widget class="QLabel" name="palmOsVersionLabel">
          <property name="text">
-          <string>Use OS 5</string>
+          <string>Palm OS Version:</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QSpinBox" name="palmOsVersion">
+         <property name="minimum">
+          <number>4</number>
+         </property>
+         <property name="maximum">
+          <number>6</number>
          </property>
         </widget>
        </item>

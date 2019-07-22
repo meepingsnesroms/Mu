@@ -148,7 +148,7 @@ void EmuWrapper::writeOutSaves(){
    }
 }
 
-uint32_t EmuWrapper::init(const QString& assetPath, bool useOs5, uint32_t features, bool fastBoot){
+uint32_t EmuWrapper::init(const QString& assetPath, uint8_t osVersion, uint32_t features, bool fastBoot){
 #if !defined(EMU_SUPPORT_PALM_OS5)
    useOs5 = false;
 #endif
@@ -156,16 +156,16 @@ uint32_t EmuWrapper::init(const QString& assetPath, bool useOs5, uint32_t featur
    if(!emuRunning && !emuInited){
       //start emu
       uint32_t error;
-      QString osVersion = useOs5 ? "52" : "41";
-      QString model = useOs5 ? "en-t3" : "en-m515";
-      QFile romFile(assetPath + "/palmos" + osVersion + "-" + model + ".rom");
+      QString osVersionId = osVersion == 4 ? "41" : osVersion == 5 ? "52" : QString::number((int)osVersion) + "0";
+      QString model = osVersion > 4 ? "en-t3" : "en-m515";
+      QFile romFile(assetPath + "/palmos" + osVersionId + "-" + model + ".rom");
       QFile bootloaderFile(assetPath + "/bootloader-" + model + ".rom");
       QFile ramFile(assetPath + "/userdata-" + model + ".ram");
       QFile sdCardFile(assetPath + "/sd-" + model + ".img");
       bool hasBootloader = true;
 
       //used to mark saves with there OS version and prevent corruption
-      emuOsName = useOs5 ? "os5" : "os4";
+      emuOsName = "os" + QString::number((int)osVersion);
 
       if(!romFile.open(QFile::ReadOnly | QFile::ExistingOnly))
          return EMU_ERROR_INVALID_PARAMETER;
