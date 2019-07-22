@@ -139,6 +139,7 @@ uint32_t emulatorInit(uint8_t* palmRomData, uint32_t palmRomSize, uint8_t* palmB
       pxa260Framebuffer = palmFramebuffer;
       blip_set_rates(palmAudioResampler, DBVZ_AUDIO_MAX_CLOCK_RATE, AUDIO_SAMPLE_RATE);
       sandboxInit();
+      sandboxSetCpuArch(SANDBOX_CPU_ARCH_ARMV5);
 
       //reset everything
       emulatorSoftReset();
@@ -185,6 +186,7 @@ uint32_t emulatorInit(uint8_t* palmRomData, uint32_t palmRomSize, uint8_t* palmB
       //initialize components
       blip_set_rates(palmAudioResampler, DBVZ_AUDIO_MAX_CLOCK_RATE, AUDIO_SAMPLE_RATE);
       sandboxInit();
+      sandboxSetCpuArch(SANDBOX_CPU_ARCH_M68K);
 
       //reset everything
       emulatorSoftReset();

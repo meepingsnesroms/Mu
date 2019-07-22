@@ -49,6 +49,7 @@ This thing: case SEND_STATUS://HACK, need to add real write protection, this com
 
 Debug tools:
 ADS7846 channels can't be read in single reference mode in hwTestSuite
+Mu sandbox dosent have memory and opcode hooks setup when in ARMv5 mode
 
 MakePalmBitmap:
 
