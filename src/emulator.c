@@ -16,7 +16,6 @@
 #include "portability.h"
 #include "debug/sandbox.h"
 #include "specs/emuFeatureRegisterSpec.h"
-
 #if defined(EMU_SUPPORT_PALM_OS5)
 #include "tungstenT3Bus.h"
 #include "pxa260/pxa260.h"
@@ -140,6 +139,9 @@ uint32_t emulatorInit(uint8_t* palmRomData, uint32_t palmRomSize, uint8_t* palmB
       blip_set_rates(palmAudioResampler, DBVZ_AUDIO_MAX_CLOCK_RATE, AUDIO_SAMPLE_RATE);
       sandboxInit();
       sandboxSetCpuArch(SANDBOX_CPU_ARCH_ARMV5);
+
+      //TODO:remove this
+      sandboxCommand(SANDBOX_CMD_PATCH_OS, NULL);
 
       //reset everything
       emulatorSoftReset();

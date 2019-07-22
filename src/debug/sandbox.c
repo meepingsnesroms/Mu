@@ -19,7 +19,6 @@
 #include "../specs/emuFeatureRegisterSpec.h"
 #include "sandbox.h"
 #include "trapNames.h"
-
 #if defined(EMU_SUPPORT_PALM_OS5)
 #include "../armv5te/cpu.h"
 #endif
@@ -104,13 +103,15 @@ static void patchOsRom(uint32_t address, char* patch){
    uint32_t swapSize = patchBytes / sizeof(uint16_t) + 1;
    char conv[5] = "0xXX";
 
-   swap16BufferIfLittle(&palmRom[swapBegin], swapSize);
+   if(sandboxCurrentCpuArch == SANDBOX_CPU_ARCH_M68K)
+      swap16BufferIfLittle(&palmRom[swapBegin], swapSize);
    for(offset = 0; offset < patchBytes; offset++){
       conv[2] = patch[offset * 2];
       conv[3] = patch[offset * 2 + 1];
       palmRom[address + offset] = strtol(conv, NULL, 0);
    }
-   swap16BufferIfLittle(&palmRom[swapBegin], swapSize);
+   if(sandboxCurrentCpuArch == SANDBOX_CPU_ARCH_M68K)
+      swap16BufferIfLittle(&palmRom[swapBegin], swapSize);
 }
 
 static const char* m515GetLowMemGlobalName(uint32_t address){
@@ -374,12 +375,9 @@ static bool m515InstallResourceToDevice(uint8_t* data, uint32_t size){
      SysAppInfoPtr appInfoP;
      UInt16        ownerID;
 
-     ownerID =
-       ((SysAppInfoPtr)SysGetAppInfo(&appInfoP, &appInfoP))->memOwnerID;
+     ownerID = ((SysAppInfoPtr)SysGetAppInfo(&appInfoP, &appInfoP))->memOwnerID;
 
-     return MemChunkNew ( 0, size, ownerID |
-                memNewChunkFlagNonMovable |
-                memNewChunkFlagAllowLarge );
+     return MemChunkNew (0, size, ownerID | memNewChunkFlagNonMovable | memNewChunkFlagAllowLarge);
 
    }
    */
@@ -607,25 +605,16 @@ static uint32_t m515CallGuestFunction(bool fallthrough, uint32_t address, uint16
 
 void sandboxInit(void){
    //nothing to init yet
+   sandboxCurrentCpuArch = SANDBOX_CPU_ARCH_M68K;
 }
 
 void sandboxReset(void){
    sandboxActive = false;
    sandboxControlHandoff = false;
-   sandboxCurrentCpuArch = SANDBOX_CPU_ARCH_M68K;
    sandboxFramesRan = 0;
 
    memset(sandboxWatchRegions, 0x00, sizeof(sandboxWatchRegions));
    sandboxWatchRegionsActive = 0;
-
-   //patch OS here if needed
-   //sandboxCommand(SANDBOX_CMD_PATCH_OS, NULL);
-
-   //log all register accesses
-   //sandboxCommand(SANDBOX_CMD_REGISTER_WATCH_ENABLE, NULL);
-
-   //monitor for strange jumps
-   //sandboxSetWatchRegion(0x00000000, 0xFFFFFFFE, SANDBOX_WATCH_CODE);
 }
 
 uint32_t sandboxStateSize(void){
@@ -721,13 +710,19 @@ uint32_t sandboxCommand(uint32_t command, void* data){
 
    switch(command){
       case SANDBOX_CMD_PATCH_OS:{
-            //double dynamic heap size, verified working
-            //HwrCalcDynamicRAMSize_10005CC6:
-            //HwrCalcDynamicRAMSize_10083B0A:
-            //patchOsRom(0x5CC6, "203C000800004E75");//move.l 0x80000, d0; rts
-            //patchOsRom(0x83B0A, "203C000800004E75");//move.l 0x80000, d0; rts
-            //patchOsRom(0x5CC6, "203C001000004E75");//move.l 0x100000, d0; rts
-            //patchOsRom(0x83B0A, "203C001000004E75");//move.l 0x100000, d0; rts
+            if(sandboxCurrentCpuArch == SANDBOX_CPU_ARCH_M68K){
+               //double dynamic heap size, verified working
+               //HwrCalcDynamicRAMSize_10005CC6:
+               //HwrCalcDynamicRAMSize_10083B0A:
+               //patchOsRom(0x5CC6, "203C000800004E75");//move.l 0x80000, d0; rts
+               //patchOsRom(0x83B0A, "203C000800004E75");//move.l 0x80000, d0; rts
+               //patchOsRom(0x5CC6, "203C001000004E75");//move.l 0x100000, d0; rts
+               //patchOsRom(0x83B0A, "203C001000004E75");//move.l 0x100000, d0; rts
+            }
+            else{
+               //disable weird SD chip
+               patchOsRom(0x333EC6, "0000");//blocks out the slot driver
+            }
          }
          break;
 
