@@ -587,28 +587,30 @@ static void updateUart1Interrupt(void){
       //RX is enabled
       if(ustcnt1 & 0x4000){
          uint16_t urx1 = registerArrayRead16(URX1);
+         uint8_t entrys = uart1RxFifoEntrys();
 
          //TODO: old data timer is unemualted
-         //if(ustcnt1 & 0x0080 && uart1RxFifoEntrys() > 0)
+         //if(ustcnt1 & 0x0080 && entrys > 0)
          //   interruptState = true;
 
-         if(ustcnt1 & 0x0020 && uart1RxFifoEntrys() == 12)
+         if(ustcnt1 & 0x0020 && entrys == 12)
             interruptState = true;
-         if(ustcnt1 & 0x0010 && uart1RxFifoEntrys() >= 8) //TODO: datasheet contradits on this, it says 4(going with 4 for now) and half full which would be 6 since RX FIFO is 12 bytes
+         if(ustcnt1 & 0x0010 && entrys > 6)
             interruptState = true;
-         if(ustcnt1 & 0x0008 && uart1RxFifoEntrys() > 0)
+         if(ustcnt1 & 0x0008 && entrys > 0)
             interruptState = true;
       }
 
       //TX is enabled
       if(ustcnt1 & 0x2000){
          uint16_t utx1 = registerArrayRead16(UTX1);
+         uint8_t entrys = uart1TxFifoEntrys();
 
-         if(ustcnt1 & 0x0004 && uart1TxFifoEntrys() == 0)
+         if(ustcnt1 & 0x0004 && entrys == 0)
             interruptState = true;
-         if(ustcnt1 & 0x0002 && uart1TxFifoEntrys() < 4)
+         if(ustcnt1 & 0x0002 && entrys < 4)
             interruptState = true;
-         if(ustcnt1 & 0x0001 && uart1TxFifoEntrys() < 8)
+         if(ustcnt1 & 0x0001 && entrys < 8)
             interruptState = true;
       }
    }
@@ -635,12 +637,81 @@ static void setUstcnt1(uint16_t value){
 
 static void updateUart2PortState(void){
    if(palmSerialSetPortProperties){
-      //TODO: UART2 is unemulated right now
+      uint16_t ustcnt2 = registerArrayRead16(USTCNT2);
+      uint16_t ubaud2 = registerArrayRead16(UBAUD2);
+      uint8_t divider = 1 << (ubaud2 >> 8 & 0x07);
+      uint8_t prescaler = 65 - (ubaud2 & 0x001F);
+      bool baudSrc = !!(ubaud2 & 0x0800);
+      serial_port_properties_t properties;
+
+      properties.enable = !!(ustcnt2 & 0x8000);
+      properties.enableParity = !!(ustcnt2 & 0x0800);
+      properties.oddParity = !!(ustcnt2 & 0x0400);
+      properties.stopBits = !!(ustcnt2 & 0x0200) ? 2 : 1;
+      properties.use8BitMode = !!(ustcnt2 & 0x0100);
+      properties.baudRate = (baudSrc ? EMU_SERIAL_USE_EXTERNAL_CLOCK_SOURCE : sysclksPerClk32() * M515_CRYSTAL_FREQUENCY) / prescaler / divider;
+
+      palmSerialSetPortProperties(&properties);
    }
 }
 
 static void updateUart2Interrupt(void){
-   //TODO: UART2 is unemulated right now
+   //TODO: get half full information from HMARK, below values are invalid
+   //the UART2 interrupt has a rather complex set of trigger methods so they all have to be checked after one changes to prevent clearing a valid interrupt thats on the same line
+   uint16_t ustcnt2 = registerArrayRead16(USTCNT2);
+   bool interruptState = false;
+
+   //is enabled
+   if(ustcnt2 & 0x8000){
+      //RX is enabled
+      if(ustcnt2 & 0x4000){
+         uint16_t urx2 = registerArrayRead16(URX2);
+         uint8_t entrys = uart2RxFifoEntrys();
+
+         //TODO: old data timer is unemualted
+         //if(ustcnt2 & 0x0080 && entrys > 0)
+         //   interruptState = true;
+
+         if(ustcnt2 & 0x0020 && entrys == 64)
+            interruptState = true;
+         if(ustcnt2 & 0x0010 && entrys > 32)
+            interruptState = true;
+         if(ustcnt2 & 0x0008 && entrys > 0)
+            interruptState = true;
+      }
+
+      //TX is enabled
+      if(ustcnt2 & 0x2000){
+         uint16_t utx2 = registerArrayRead16(UTX2);
+         uint8_t entrys = uart2TxFifoEntrys();
+
+         if(ustcnt2 & 0x0004 && entrys == 0)
+            interruptState = true;
+         if(ustcnt2 & 0x0002 && entrys < 32)
+            interruptState = true;
+         if(ustcnt2 & 0x0001 && entrys < 64)
+            interruptState = true;
+      }
+   }
+
+   if(interruptState)
+      setIprIsrBit(DBVZ_INT_UART2);
+   else
+      clearIprIsrBit(DBVZ_INT_UART2);
+   checkInterrupts();
+}
+
+static void setUstcnt2(uint16_t value){
+   //flush RX FIFO if disabled
+   if(!((value & 0xC000) == 0xC000))
+      uart2RxFifoFlush();
+
+   //flush TX FIFO if disabled
+   if(!((value & 0xA000) == 0xA000))
+      uart2TxFifoFlush();
+
+   registerArrayWrite16(USTCNT2, value);
+   updateUart2Interrupt();
 }
 
 static void setTstat1(uint16_t value){

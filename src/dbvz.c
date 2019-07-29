@@ -439,12 +439,24 @@ uint16_t dbvzGetRegister16(uint32_t address){
 
       case UTX1:{
             uint16_t uart1TxStatus = registerArrayRead16(UTX1);
+            uint8_t entrys = uart1TxFifoEntrys();
 
-            uart1TxStatus |= (uart1TxFifoEntrys() == 0) << 15;
-            uart1TxStatus |= (uart1TxFifoEntrys() < 4) << 14;
-            uart1TxStatus |= (uart1TxFifoEntrys() < 8) << 13;
+            uart1TxStatus |= (entrys == 0) << 15;
+            uart1TxStatus |= (entrys < 4) << 14;
+            uart1TxStatus |= (entrys < 8) << 13;
 
             return uart1TxStatus;
+         }
+
+      case UTX2:{
+            uint16_t uart2TxStatus = registerArrayRead16(UTX2);
+            uint8_t entrys = uart2TxFifoEntrys();
+
+            uart2TxStatus |= (entrys == 0) << 15;
+            uart2TxStatus |= (entrys < 4) << 14;
+            uart2TxStatus |= (entrys < 8) << 13;
+
+            return uart2TxStatus;
          }
 
       case PLLFSR:
@@ -492,6 +504,11 @@ uint16_t dbvzGetRegister16(uint32_t address){
       case UBAUD1:
       case UMISC1:
       case NIPR1:
+      case USTCNT2:
+      case UBAUD2:
+      case UMISC2:
+      case NIPR2:
+      case HMARK:
          //simple read, no actions needed
          return registerArrayRead16(address);
 
@@ -555,6 +572,15 @@ void dbvzSetRegister8(uint32_t address, uint8_t value){
          if((registerArrayRead16(USTCNT1) & 0xA000) == 0xA000){
             uart1TxFifoWrite(value);
             updateUart1Interrupt();
+         }
+         return;
+
+      case UTX2 + 1:
+         //this is a 16 bit register but Palm OS writes to the 8 bit FIFO section alone
+         //send byte and update interrupts if enabled
+         if((registerArrayRead16(USTCNT2) & 0xA000) == 0xA000){
+            uart2TxFifoWrite(value);
+            updateUart2Interrupt();
          }
          return;
 
@@ -975,6 +1001,30 @@ void dbvzSetRegister16(uint32_t address, uint16_t value){
          if((registerArrayRead16(USTCNT1) & 0xA000) == 0xA000){
             uart1TxFifoWrite(value & 0x1000 ? value & 0xFF : EMU_SERIAL_BREAK);
             updateUart1Interrupt();
+         }
+         return;
+
+      case USTCNT2:
+         setUstcnt2(value);
+         return;
+
+      case UBAUD2:
+         //just does timing stuff, should be OK to ignore
+         registerArrayWrite16(UBAUD2, value & 0x2F3F);
+         return;
+
+      case UMISC2:
+         //TODO: most of the bits here are for factory testing and can be ignored but not all of them can be
+         registerArrayWrite16(UMISC2, value & 0xFCFC);
+         return;
+
+      case UTX2:
+         registerArrayWrite16(UTX2, value & 0x1F00);
+
+         //send byte and update interrupts if enabled
+         if((registerArrayRead16(USTCNT2) & 0xA000) == 0xA000){
+            uart2TxFifoWrite(value & 0x1000 ? value & 0xFF : EMU_SERIAL_BREAK);
+            updateUart2Interrupt();
          }
          return;
 
