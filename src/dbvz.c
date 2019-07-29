@@ -1028,6 +1028,11 @@ void dbvzSetRegister16(uint32_t address, uint16_t value){
          }
          return;
 
+      case HMARK:
+         registerArrayWrite16(HMARK, value & 0x0F0F);
+         updateUart2Interrupt();
+         return;
+
       case PWMC1:
          setPwmc1(value);
          return;

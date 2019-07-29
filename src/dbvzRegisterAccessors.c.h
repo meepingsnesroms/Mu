@@ -656,9 +656,11 @@ static void updateUart2PortState(void){
 }
 
 static void updateUart2Interrupt(void){
-   //TODO: get half full information from HMARK, below values are invalid
    //the UART2 interrupt has a rather complex set of trigger methods so they all have to be checked after one changes to prevent clearing a valid interrupt thats on the same line
    uint16_t ustcnt2 = registerArrayRead16(USTCNT2);
+   uint16_t hmark = registerArrayRead16(HMARK);
+   uint8_t hmarkRx = (hmark & 0x0F) * 4;
+   uint8_t hmarkTx = (hmark >> 8) * 4;
    bool interruptState = false;
 
    //is enabled
@@ -674,7 +676,7 @@ static void updateUart2Interrupt(void){
 
          if(ustcnt2 & 0x0020 && entrys == 64)
             interruptState = true;
-         if(ustcnt2 & 0x0010 && entrys > 32)
+         if(ustcnt2 & 0x0010 && entrys > hmarkRx && hmarkRx != 0x00)
             interruptState = true;
          if(ustcnt2 & 0x0008 && entrys > 0)
             interruptState = true;
@@ -687,7 +689,7 @@ static void updateUart2Interrupt(void){
 
          if(ustcnt2 & 0x0004 && entrys == 0)
             interruptState = true;
-         if(ustcnt2 & 0x0002 && entrys < 32)
+         if(ustcnt2 & 0x0002 && entrys < hmarkTx && hmarkTx != 0x00)
             interruptState = true;
          if(ustcnt2 & 0x0001 && entrys < 64)
             interruptState = true;
