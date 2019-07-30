@@ -150,3 +150,12 @@ static void pxa260_pcmcia1_write_half(uint32_t addr, uint16_t value){
 static void pxa260_pcmcia1_write_word(uint32_t addr, uint32_t value){
    debugLog("PCMCIA1 32 bit write:0x%08X, value:0x%08X\n", addr, value);
 }
+
+static uint16_t pxa260_static_chip_select_2_read_half(uint32_t addr){
+   return w86l488Read16(addr & 0x0E);
+}
+
+static void pxa260_static_chip_select_2_write_half(uint32_t addr, uint16_t value){
+   w86l488Write16(addr & 0x0E, value);
+}
+

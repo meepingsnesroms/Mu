@@ -398,7 +398,7 @@ bool emulatorSaveState(uint8_t* data, uint32_t size){
    offset += sandboxStateSize();
 
    //misc
-   writeStateValue8(data + offset, palmMisc.powerButtonLed);
+   writeStateValue8(data + offset, palmMisc.greenLed);
    offset += sizeof(uint8_t);
    writeStateValue8(data + offset, palmMisc.lcdOn);
    offset += sizeof(uint8_t);
@@ -543,7 +543,7 @@ bool emulatorLoadState(uint8_t* data, uint32_t size){
    offset += sandboxStateSize();
 
    //misc
-   palmMisc.powerButtonLed = readStateValue8(data + offset);
+   palmMisc.greenLed = readStateValue8(data + offset);
    offset += sizeof(uint8_t);
    palmMisc.lcdOn = readStateValue8(data + offset);
    offset += sizeof(uint8_t);

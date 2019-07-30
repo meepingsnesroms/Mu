@@ -73,7 +73,7 @@ public:
    //calling these while newFrameReady() == false is undefined behavior, the other thread may be writing to them
    const QImage getFramebufferImage(){return QImage((uchar*)palmFramebuffer, palmFramebufferWidth, palmFramebufferHeight, palmFramebufferWidth * sizeof(uint16_t), QImage::Format_RGB16);}
    const int16_t* getAudioSamples() const{return palmAudio;}
-   bool getPowerButtonLed() const{return palmMisc.powerButtonLed;}
+   bool getPowerButtonLed() const{return palmMisc.greenLed;}
 
    QVector<QString>& debugGetLogEntrys();
    QVector<uint64_t>& debugGetDuplicateLogEntryCount();

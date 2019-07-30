@@ -157,8 +157,7 @@ support_palm_os5{
         ../../src/armv5te/emuVarPool.c \
         ../../src/armv5te/thumb_interpreter.cpp \
         ../../src/armv5te/mem.c \
-        ../../src/armv5te/mmu.c \
-        ../../src/tungstenT3Bus.c
+        ../../src/armv5te/mmu.c
 
     HEADERS += \
         ../../src/pxa260/pxa260_CPU.h \
@@ -197,6 +196,8 @@ INCLUDEPATH += $$PWD/qt-common/include
 SOURCES += \
     ../../src/dbvz.c \
     ../../src/fileLauncher/launcher.c \
+    ../../src/tps65010.c \
+    ../../src/w86l488.c \
     debugviewer.cpp \
     emuwrapper.cpp \
     main.cpp \
@@ -226,6 +227,8 @@ HEADERS += \
     ../../src/dbvz.h \
     ../../src/fileLauncher/launcher.h \
     ../../src/pxa260/pxa260Accessors.c.h \
+    ../../src/tps65010.h \
+    ../../src/w86l488.h \
     debugviewer.h \
     emuwrapper.h \
     mainwindow.h \

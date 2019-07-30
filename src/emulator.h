@@ -156,7 +156,10 @@ typedef struct{
 }sd_card_t;
 
 typedef struct{
-   bool    powerButtonLed;
+   bool    greenLed;
+#if defined(EMU_SUPPORT_PALM_OS5)
+   bool    redLed;
+#endif
    bool    lcdOn;
    uint8_t backlightLevel;
    bool    vibratorOn;

@@ -974,7 +974,7 @@ static uint16_t getPwmc1(void){
 
 //updaters
 static void updatePowerButtonLedStatus(void){
-   palmMisc.powerButtonLed = !!(getPortBValue() & 0x40) != palmMisc.batteryCharging;
+   palmMisc.greenLed = !!(getPortBValue() & 0x40) != palmMisc.batteryCharging;
 }
 
 static void updateVibratorStatus(void){

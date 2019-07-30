@@ -42,7 +42,8 @@ ifeq ($(EMU_SUPPORT_PALM_OS5), 1)
 		$(EMU_PATH)/armv5te/emuVarPool.c \
 		$(EMU_PATH)/armv5te/mem.c \
 		$(EMU_PATH)/armv5te/mmu.c \
-		$(EMU_PATH)/tungstenT3Bus.c
+      $(EMU_PATH)/tps65010.c \
+      $(EMU_PATH)/w86l488.c
 	EMU_SOURCES_CXX += $(EMU_PATH)/armv5te/arm_interpreter.cpp \
 		$(EMU_PATH)/armv5te/thumb_interpreter.cpp \
 		$(EMU_PATH)/armv5te/cpu.cpp \

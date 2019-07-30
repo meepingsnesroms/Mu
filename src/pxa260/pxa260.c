@@ -123,6 +123,14 @@ bool pxa260Init(uint8_t** returnRom, uint8_t** returnRam){
    write_half_map[PXA260_START_BANK(PXA260_MEMCTRL_BASE)] = bad_write_half;
    write_word_map[PXA260_START_BANK(PXA260_MEMCTRL_BASE)] = pxa260_memctrl_write_word;
 
+   //W86L488
+   read_byte_map[PXA260_START_BANK(TUNGSTEN_T3_W86L488_START_ADDRESS)] = bad_read_byte;
+   read_half_map[PXA260_START_BANK(TUNGSTEN_T3_W86L488_START_ADDRESS)] = pxa260_static_chip_select_2_read_half;
+   read_word_map[PXA260_START_BANK(TUNGSTEN_T3_W86L488_START_ADDRESS)] = bad_read_word;
+   write_byte_map[PXA260_START_BANK(TUNGSTEN_T3_W86L488_START_ADDRESS)] = bad_write_byte;
+   write_half_map[PXA260_START_BANK(TUNGSTEN_T3_W86L488_START_ADDRESS)] = pxa260_static_chip_select_2_write_half;
+   write_word_map[PXA260_START_BANK(TUNGSTEN_T3_W86L488_START_ADDRESS)] = bad_write_word;
+
    *returnRom = mem_areas[0].ptr;
    *returnRam = mem_areas[1].ptr;
 
