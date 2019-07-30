@@ -175,6 +175,7 @@ void pxa260Reset(void){
    pxa260lcdInit(&pxa260Lcd, &pxa260Ic);
    pxa260timrInit(&pxa260Timer, &pxa260Ic);
    pxa260gpioInit(&pxa260Gpio, &pxa260Ic);
+   pxa260I2cReset();
 
    memset(&arm, 0, sizeof arm);
    arm.control = 0x00050078;

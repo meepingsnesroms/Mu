@@ -96,15 +96,6 @@ enum{
 #define EMU_SERIAL_FRAME_ERROR 0x200
 #define EMU_SERIAL_BREAK (EMU_SERIAL_PARITY_ERROR | 0x00)
 
-//I2C codes, representing the different states of SDA(bit 0) and SCL(bit 1)
-enum{
-   EMU_I2C_0 = 0,
-   EMU_I2C_1,
-   EMU_I2C_START,
-   EMU_I2C_STOP,
-   EMU_I2C_FLOATING_BUS//if a slave isnt writing to the pins it will return this and the next slave device will be read
-};
-
 //types
 typedef struct{
    bool     enable;
