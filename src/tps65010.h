@@ -10,6 +10,6 @@ void tps65010SaveState(uint8_t* data);
 void tps65010LoadState(uint8_t* data);
 
 void tps65010SetChipSelect(bool value);
-bool tps65010ExchangeBit(bool bit);
+uint8_t tps65010I2cExchange(uint8_t i2cBus);
 
 #endif

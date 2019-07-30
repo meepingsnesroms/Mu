@@ -28,6 +28,7 @@ void tps65010SetChipSelect(bool value){
    
 }
 
-bool tps65010ExchangeBit(bool bit){
-   debugLog("Unimplemented T3 PMU exchange, bit:%d\n", bit);
+uint8_t tps65010I2cExchange(uint8_t i2cBus){
+   debugLog("Unimplemented T3 PMU exchange, bus:%d\n", i2cBus);
+   return EMU_I2C_FLOATING_BUS;
 }
