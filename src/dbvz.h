@@ -65,6 +65,7 @@ typedef struct{
 
 //variables
 extern dbvz_chip_t dbvzChipSelects[];
+extern uint8_t     dbvzReg[];//needed for direct execution of the DBVZ regs without a RAM access function
 
 //CPU
 bool dbvzIsPllOn(void);

@@ -402,8 +402,12 @@ void retro_run(void){
    
    video_cb(palmFramebuffer, palmFramebufferWidth, screenYEnd, palmFramebufferWidth * sizeof(uint16_t));
    audio_cb(palmAudio, AUDIO_SAMPLES_PER_FRAME);
-   if(led_cb)
-      led_cb(0, palmMisc.powerButtonLed);
+   if(led_cb){
+      led_cb(0, palmMisc.greenLed);
+#if defined(EMU_SUPPORT_PALM_OS5)
+      led_cb(1, palmMisc.redLed);
+#endif
+   }
    
    //repair damage done to the framebuffer by the mouse cursor
    if(useJoystickAsMouse)

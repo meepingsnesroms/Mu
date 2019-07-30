@@ -15,9 +15,9 @@
 
 
 dbvz_chip_t dbvzChipSelects[DBVZ_CHIP_END];
+uint8_t     dbvzReg[DBVZ_REG_SIZE];
 
 static bool     dbvzInterruptChanged;//reduces time wasted on checking interrupts that where updated to a new value identical to the old one, does not need to be in states
-static uint8_t  dbvzReg[DBVZ_REG_SIZE];
 static double   dbvzSysclksPerClk32;//how many SYSCLK cycles before toggling the 32.768 kHz crystal
 static uint32_t dbvzFrameClk32s;//how many CLK32s have happened in the current frame
 static double   dbvzClk32Sysclks;//how many SYSCLKs have happened in the current CLK32
