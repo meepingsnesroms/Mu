@@ -2,8 +2,6 @@
 #include "pxa260_DSP.h"
 
 
-
-
 Boolean pxa260dspAccess(struct ArmCpu* cpu, void* userData, Boolean MRRC, UInt8 op, UInt8 RdLo, UInt8 RdHi, UInt8 acc){
 	
 	Pxa255dsp* dsp = userData;

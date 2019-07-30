@@ -196,6 +196,7 @@ INCLUDEPATH += $$PWD/qt-common/include
 SOURCES += \
     ../../src/dbvz.c \
     ../../src/fileLauncher/launcher.c \
+    ../../src/pxa260/pxa260I2c.c \
     ../../src/tps65010.c \
     ../../src/w86l488.c \
     debugviewer.cpp \
@@ -227,6 +228,7 @@ HEADERS += \
     ../../src/dbvz.h \
     ../../src/fileLauncher/launcher.h \
     ../../src/pxa260/pxa260Accessors.c.h \
+    ../../src/pxa260/pxa260I2c.h \
     ../../src/tps65010.h \
     ../../src/w86l488.h \
     debugviewer.h \

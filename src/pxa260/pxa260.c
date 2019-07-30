@@ -12,6 +12,7 @@
 #include "pxa260_RTC.h"
 #include "pxa260_TIMR.h"
 #include "pxa260_UART.h"
+#include "pxa260I2c.h"
 #include "../armv5te/cpu.h"
 #include "../armv5te/emu.h"
 #include "../armv5te/mem.h"

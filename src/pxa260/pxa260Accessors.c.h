@@ -18,6 +18,9 @@ static uint32_t pxa260_io_read_word(uint32_t addr){
       case PXA260_GPIO_BASE >> 16:
          pxa260gpioPrvMemAccessF(&pxa260Gpio, addr, 4, false, &out);
          break;
+      case PXA260_I2C_BASE >> 16:
+         out = pxa260I2cReadWord(addr);
+         break;
 
       case PXA260_DMA_BASE >> 16:
       case PXA260_IC_BASE >> 16:
@@ -56,6 +59,9 @@ static void pxa260_io_write_word(uint32_t addr, uint32_t value){
          break;
       case PXA260_GPIO_BASE >> 16:
          pxa260gpioPrvMemAccessF(&pxa260Gpio, addr, 4, true, &value);
+         break;
+      case PXA260_I2C_BASE >> 16:
+         pxa260I2cWriteWord(addr, value);
          break;
 
       case PXA260_DMA_BASE >> 16:
