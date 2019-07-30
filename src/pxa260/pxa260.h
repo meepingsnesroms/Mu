@@ -9,8 +9,9 @@
 
 #include "pxa260_PwrClk.h"
 
-extern uint16_t* pxa260Framebuffer;
+extern uint16_t*    pxa260Framebuffer;
 extern Pxa255pwrClk pxa260PwrClk;
+extern Pxa255ic     pxa260Ic;
 
 bool pxa260Init(uint8_t** returnRom, uint8_t** returnRam);
 void pxa260Deinit(void);

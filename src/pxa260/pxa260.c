@@ -28,9 +28,10 @@
 #define PXA260_TIMER_TICKS_PER_FRAME (TUNGSTEN_T3_CPU_CRYSTAL_FREQUENCY / EMU_FPS)
 
 
-uint16_t*         pxa260Framebuffer;
-Pxa255pwrClk      pxa260PwrClk;
-static Pxa255ic   pxa260Ic;
+uint16_t*    pxa260Framebuffer;
+Pxa255pwrClk pxa260PwrClk;
+Pxa255ic     pxa260Ic;
+
 static Pxa255lcd  pxa260Lcd;
 static Pxa255timr pxa260Timer;
 static Pxa255gpio pxa260Gpio;

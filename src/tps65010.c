@@ -39,6 +39,7 @@ static bool    tps65010SelectedRegisterAlreadySet;
 
 static void tps65010WriteRegister(uint8_t address, uint8_t value){
    //TODO: add register writes
+   debugLog("TPS65010 register writes are unimplemented, address:0x%02X, value:0x%02X\n", address, value);
 }
 
 void tps65010Reset(void){

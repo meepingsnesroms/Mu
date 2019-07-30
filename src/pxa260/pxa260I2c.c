@@ -2,6 +2,8 @@
 
 #include "../emulator.h"
 #include "../tps65010.h"
+#include "pxa260.h"
+#include "pxa260_IC.h"
 #include "pxa260I2c.h"
 
 
@@ -62,14 +64,45 @@ void pxa260I2cWriteWord(uint32_t address, uint32_t value){
          return;
 
       case ICR:
-         //TODO: transfer stuff here
+         //TODO: this is incomplete
 
-         //some of the bits have special behavior
-         //pxa260I2cIcr = value & 0xFFFF;
+         pxa260I2cIcr = value & 0xFFFF;//this is wrong
+
+         if(value & 0x0001)
+            tps65010I2cExchange(I2C_START);
+         if(value & 0x0008){
+            uint8_t index;
+
+            for(index = 0; index < 8; index++){
+               uint8_t receiveValue = tps65010I2cExchange((pxa260I2cBuffer & 1 << 7 - index) ? I2C_1 : I2C_0);
+
+               if(receiveValue != I2C_FLOATING_BUS){
+                  pxa260I2cBuffer <<= 1;
+                  pxa260I2cBuffer |= receiveValue == I2C_1;
+                  pxa260I2cBus = receiveValue;
+               }
+            }
+         }
+         if(value & 0x0002)
+            tps65010I2cExchange(I2C_STOP);
+
+         //TODO: run the CPU 200 opcodes here
+
+         if(value & 0x0100)
+            pxa260icInt(&pxa260Ic, PXA260_I_I2C, true);
          return;
 
       case ISR:
          //TODO: clear bits when written with 1s
+         if(value & 0x0080){
+            //IDBR RECEIVE FULL
+            //TODO: interrupt stuff
+         }
+
+         if(value & 0x0040){
+            //IDBR TRANSMIT EMPTY
+            //TODO: interrupt stuff
+         }
          return;
 
       case ISAR:
