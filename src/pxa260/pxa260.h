@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include "pxa260_IC.h"
 #include "pxa260_PwrClk.h"
 
 extern uint16_t*    pxa260Framebuffer;

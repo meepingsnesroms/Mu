@@ -87,9 +87,12 @@ void pxa260I2cWriteWord(uint32_t address, uint32_t value){
             tps65010I2cExchange(I2C_STOP);
 
          //TODO: run the CPU 200 opcodes here
+         //just storing the trigger code here untill delays work
 
-         if(value & 0x0100)
+         if(value & 0x0100){
+            pxa260I2cIsr |= 0x0040;
             pxa260icInt(&pxa260Ic, PXA260_I_I2C, true);
+         }
          return;
 
       case ISR:

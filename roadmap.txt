@@ -35,7 +35,7 @@ RetroArch GUI:
 *make default button layout match default controller layout better
 *allow disabling the silkscreen area
 *booting without game works again
-*add multithreading and pipeline speedups
+*add multithreading and pipeline speedups(disabled for now because of compiling issues)
 
 Qt GUI:
 //TODO: allow using host serial ports in Palm OS

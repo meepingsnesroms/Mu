@@ -13,6 +13,7 @@
 #include "pxa260_TIMR.h"
 #include "pxa260_UART.h"
 #include "pxa260I2c.h"
+#include "pxa260Timing.h"
 #include "../armv5te/cpu.h"
 #include "../armv5te/emu.h"
 #include "../armv5te/mem.h"
@@ -177,6 +178,7 @@ void pxa260Reset(void){
    pxa260timrInit(&pxa260Timer, &pxa260Ic);
    pxa260gpioInit(&pxa260Gpio, &pxa260Ic);
    pxa260I2cReset();
+   pxa260TimingReset();
 
    memset(&arm, 0, sizeof arm);
    arm.control = 0x00050078;
@@ -210,49 +212,15 @@ void pxa260LoadState(uint8_t* data){
 
 void pxa260Execute(bool wantVideo){
    uint32_t index;
-#if OS_HAS_PAGEFAULT_HANDLER
-    os_exception_frame_t seh_frame = { NULL, NULL };
 
-    os_faulthandler_arm(&seh_frame);
-#endif
+   pxa260TimingRun(TUNGSTEN_T3_CPU_CRYSTAL_FREQUENCY / EMU_FPS);
 
-   //TODO: need to take the PLL into account still
-   cycle_count_delta = -1 * 60 * TUNGSTEN_T3_CPU_CRYSTAL_FREQUENCY / EMU_FPS;
-
-   while(setjmp(restart_after_exception)){};
-
-   exiting = false;//exiting is never set to true, maybe I should remove it?
-    while (!exiting && cycle_count_delta < 0) {
-         if (cpu_events & (EVENT_FIQ | EVENT_IRQ)) {
-             // Align PC in case the interrupt occurred immediately after a jump
-             if (arm.cpsr_low28 & 0x20)
-                 arm.reg[15] &= ~1;
-             else
-                 arm.reg[15] &= ~3;
-
-             if (cpu_events & EVENT_WAITING)
-                 arm.reg[15] += 4; // Skip over wait instruction
-
-             arm.reg[15] += 4;
-             cpu_exception((cpu_events & EVENT_FIQ) ? EX_FIQ : EX_IRQ);
-         }
-         cpu_events &= ~EVENT_WAITING;//this might need to be move above?
-
-         if (arm.cpsr_low28 & 0x20)
-             cpu_thumb_loop();
-         else
-             cpu_arm_loop();
-    }
-
-#if OS_HAS_PAGEFAULT_HANDLER
-    os_faulthandler_unarm(&seh_frame);
-#endif
-    //this needs to run at 3.6864 MHz
-    for(index = 0; index < TUNGSTEN_T3_CPU_CRYSTAL_FREQUENCY / EMU_FPS; index++)
+   //this needs to run at 3.6864 MHz
+   for(index = 0; index < TUNGSTEN_T3_CPU_CRYSTAL_FREQUENCY / EMU_FPS; index++)
       pxa260timrTick(&pxa260Timer);
 
-    //render
-    if(likely(wantVideo))
+   //render
+   if(likely(wantVideo))
       pxa260lcdFrame(&pxa260Lcd);
 }
 
