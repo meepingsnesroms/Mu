@@ -44,6 +44,9 @@ bool pxa260Init(uint8_t** returnRom, uint8_t** returnRam){
    uint32_t mem_offset = 0;
    uint8_t i;
 
+   //set timing callback pointers
+   pxa260TimingInit();
+
    //enable dynarec if available
    do_translate = true;
 

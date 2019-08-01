@@ -3,6 +3,7 @@
 
 #include "../armv5te/emu.h"
 #include "../armv5te/cpu.h"
+#include "pxa260I2c.h"
 #include "pxa260Timing.h"
 
 
@@ -20,6 +21,10 @@ static int32_t pxa260TimingGetDurationUntilNextEvent(int32_t duration/*call with
          duration = pxa260TimingQueuedEvents[index].wait;
 
    return duration;
+}
+
+void pxa260TimingInit(void){
+   pxa260TimingCallbacks[PXA260_TIMING_CALLBACK_I2C_TRANSMIT_EMPTY] = pxa260I2cTransmitEmpty;
 }
 
 void pxa260TimingReset(void){
@@ -87,11 +92,12 @@ void pxa260TimingRun(int32_t cycles){
              cpu_arm_loop();
    }
 
-   if(pxa260TimingLeftoverCycles > 0){
-      //remove the unused cycles
-      addCycles -= pxa260TimingLeftoverCycles;
-      pxa260TimingLeftoverCycles = 0;
-   }
+   //if more then the requested cycles are executed count those too
+   addCycles += cycle_count_delta;
+
+   //remove the unused cycles
+   addCycles -= pxa260TimingLeftoverCycles;
+   pxa260TimingLeftoverCycles = 0;
 
    for(index = 0; index < sizeof(pxa260TimingQueuedEvents) / sizeof(event_t); index++){
       if(pxa260TimingQueuedEvents[index].active){

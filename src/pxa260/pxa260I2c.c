@@ -4,6 +4,7 @@
 #include "../tps65010.h"
 #include "pxa260.h"
 #include "pxa260_IC.h"
+#include "pxa260Timing.h"
 #include "pxa260I2c.h"
 
 
@@ -73,6 +74,8 @@ void pxa260I2cWriteWord(uint32_t address, uint32_t value){
          if(value & 0x0008){
             uint8_t index;
 
+            debugLog("I2C transfer attempted\n");
+
             for(index = 0; index < 8; index++){
                uint8_t receiveValue = tps65010I2cExchange((pxa260I2cBuffer & 1 << 7 - index) ? I2C_1 : I2C_0);
 
@@ -82,17 +85,11 @@ void pxa260I2cWriteWord(uint32_t address, uint32_t value){
                   pxa260I2cBus = receiveValue;
                }
             }
+
+            pxa260TimingQueueEvent(200, PXA260_TIMING_CALLBACK_I2C_TRANSMIT_EMPTY);
          }
          if(value & 0x0002)
             tps65010I2cExchange(I2C_STOP);
-
-         //TODO: run the CPU 200 opcodes here
-         //just storing the trigger code here untill delays work
-
-         if(value & 0x0100){
-            pxa260I2cIsr |= 0x0040;
-            pxa260icInt(&pxa260Ic, PXA260_I_I2C, true);
-         }
          return;
 
       case ISR:
@@ -116,4 +113,11 @@ void pxa260I2cWriteWord(uint32_t address, uint32_t value){
          debugLog("Unimplemented I2C register write, reg:0x%04X, value:0x%08X\n", address, value);
          return;
    }
+}
+
+void pxa260I2cTransmitEmpty(void){
+   pxa260I2cIsr |= 0x0040;
+   if(pxa260I2cIcr & 0x0100)
+      pxa260icInt(&pxa260Ic, PXA260_I_I2C, true);
+   debugLog("I2C transmit empty triggered\n");
 }

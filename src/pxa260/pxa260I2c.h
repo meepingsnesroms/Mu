@@ -32,4 +32,6 @@ void pxa260I2cReset(void);
 uint32_t pxa260I2cReadWord(uint32_t address);
 void pxa260I2cWriteWord(uint32_t address, uint32_t value);
 
+void pxa260I2cTransmitEmpty(void);
+
 #endif
