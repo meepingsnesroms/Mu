@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <stdbool.h>
 
 #include "../emulator.h"
 #include "../tps65010.h"
@@ -20,7 +21,15 @@ uint8_t  pxa260I2cBuffer;
 uint16_t pxa260I2cIcr;
 uint16_t pxa260I2cIsr;
 uint16_t pxa260I2cIsar;
+bool     pxa260I2cUnitBusy;
 
+
+static void pxa260I2cUpdateInterrupt(void){
+   if(pxa260I2cIcr & 0x0100 && pxa260I2cIsr & 0x0040 || pxa260I2cIcr & 0x0200 && pxa260I2cIsr & 0x0080)
+      pxa260icInt(&pxa260Ic, PXA260_I_I2C, true);
+   else
+      pxa260icInt(&pxa260Ic, PXA260_I_I2C, false);
+}
 
 void pxa260I2cReset(void){
    pxa260I2cBus = I2C_FLOATING_BUS;
@@ -28,6 +37,7 @@ void pxa260I2cReset(void){
    pxa260I2cIcr = 0x0000;
    pxa260I2cIsr = 0x0000;
    pxa260I2cIsar = 0x0000;
+   pxa260I2cUnitBusy = false;
 }
 
 uint32_t pxa260I2cReadWord(uint32_t address){
@@ -72,36 +82,59 @@ void pxa260I2cWriteWord(uint32_t address, uint32_t value){
          if(value & 0x0001)
             tps65010I2cExchange(I2C_START);
          if(value & 0x0008){
-            uint8_t index;
+            if(pxa260I2cIsr & 0x0001){
+               //receive
+               uint8_t index;
 
-            debugLog("I2C transfer attempted\n");
+               debugLog("I2C transfer(receive) attempted\n");
 
-            for(index = 0; index < 8; index++){
-               uint8_t receiveValue = tps65010I2cExchange((pxa260I2cBuffer & 1 << 7 - index) ? I2C_1 : I2C_0);
-
-               if(receiveValue != I2C_FLOATING_BUS){
+               for(index = 0; index < 8; index++){
                   pxa260I2cBuffer <<= 1;
-                  pxa260I2cBuffer |= receiveValue == I2C_1;
-                  pxa260I2cBus = receiveValue;
+                  pxa260I2cBuffer |= tps65010I2cExchange(I2C_FLOATING_BUS) & I2C_1;
                }
-            }
 
-            pxa260TimingQueueEvent(200, PXA260_TIMING_CALLBACK_I2C_TRANSMIT_EMPTY);
+               pxa260I2cUnitBusy = true;
+               pxa260TimingQueueEvent(200, PXA260_TIMING_CALLBACK_I2C_RECEIVE_FULL);
+            }
+            else{
+               //send
+               uint8_t index;
+
+               debugLog("I2C transfer(send) attempted\n");
+
+               for(index = 0; index < 8; index++)
+                  tps65010I2cExchange((pxa260I2cBuffer & 1 << 7 - index) ? I2C_1 : I2C_0);
+
+               pxa260I2cUnitBusy = true;
+               pxa260TimingQueueEvent(200, PXA260_TIMING_CALLBACK_I2C_TRANSMIT_EMPTY);
+            }
          }
-         if(value & 0x0002)
+         if(value & 0x0002){
             tps65010I2cExchange(I2C_STOP);
+
+            //clear read/write bit
+            pxa260I2cIsr &= 0xFFFE;
+         }
          return;
 
-      case ISR:
-         //TODO: clear bits when written with 1s
-         if(value & 0x0080){
-            //IDBR RECEIVE FULL
-            //TODO: interrupt stuff
-         }
+      case ISR:{
+            if(value & 0x0080){
+               //IDBR RECEIVE FULL
+               pxa260I2cIsr &= 0xFF7F;
+            }
 
-         if(value & 0x0040){
-            //IDBR TRANSMIT EMPTY
-            //TODO: interrupt stuff
+            if(value & 0x0040){
+               //IDBR TRANSMIT EMPTY
+               pxa260I2cIsr &= 0xFFBF;
+            }
+
+            //unit busy
+            pxa260I2cIsr |= pxa260I2cUnitBusy << 2;
+
+            //read write setting
+            pxa260I2cIsr = pxa260I2cIsr & 0xFFFE | value & 0x0001;
+
+            pxa260I2cUpdateInterrupt();
          }
          return;
 
@@ -117,7 +150,14 @@ void pxa260I2cWriteWord(uint32_t address, uint32_t value){
 
 void pxa260I2cTransmitEmpty(void){
    pxa260I2cIsr |= 0x0040;
-   if(pxa260I2cIcr & 0x0100)
-      pxa260icInt(&pxa260Ic, PXA260_I_I2C, true);
+   pxa260I2cUnitBusy = false;
+   pxa260I2cUpdateInterrupt();
    debugLog("I2C transmit empty triggered\n");
+}
+
+void pxa260I2cReceiveFull(void){
+   pxa260I2cIsr |= 0x0080;
+   pxa260I2cUnitBusy = false;
+   pxa260I2cUpdateInterrupt();
+   debugLog("I2C receive full triggered\n");
 }

@@ -25,6 +25,7 @@ static int32_t pxa260TimingGetDurationUntilNextEvent(int32_t duration/*call with
 
 void pxa260TimingInit(void){
    pxa260TimingCallbacks[PXA260_TIMING_CALLBACK_I2C_TRANSMIT_EMPTY] = pxa260I2cTransmitEmpty;
+   pxa260TimingCallbacks[PXA260_TIMING_CALLBACK_I2C_RECEIVE_FULL] = pxa260I2cReceiveFull;
 }
 
 void pxa260TimingReset(void){

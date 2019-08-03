@@ -2,6 +2,7 @@
 #define PXA260_I2C_H
 
 #include <stdint.h>
+#include <stdbool.h>
 
 #define PXA260_I2C_BASE	0x40300000
 #define PXA260_I2C_SIZE	0x00010000
@@ -26,6 +27,7 @@ extern uint8_t  pxa260I2cBuffer;
 extern uint16_t pxa260I2cIcr;
 extern uint16_t pxa260I2cIsr;
 extern uint16_t pxa260I2cIsar;
+extern bool     pxa260I2cUnitBusy;
 
 void pxa260I2cReset(void);
 
@@ -33,5 +35,6 @@ uint32_t pxa260I2cReadWord(uint32_t address);
 void pxa260I2cWriteWord(uint32_t address, uint32_t value);
 
 void pxa260I2cTransmitEmpty(void);
+void pxa260I2cReceiveFull(void);
 
 #endif
