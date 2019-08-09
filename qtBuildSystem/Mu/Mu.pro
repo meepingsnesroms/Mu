@@ -197,6 +197,7 @@ SOURCES += \
     ../../src/dbvz.c \
     ../../src/fileLauncher/launcher.c \
     ../../src/pxa260/pxa260I2c.c \
+    ../../src/pxa260/pxa260Memctrl.c \
     ../../src/pxa260/pxa260Timing.c \
     ../../src/tps65010.c \
     ../../src/w86l488.c \
@@ -230,6 +231,7 @@ HEADERS += \
     ../../src/fileLauncher/launcher.h \
     ../../src/pxa260/pxa260Accessors.c.h \
     ../../src/pxa260/pxa260I2c.h \
+    ../../src/pxa260/pxa260Memctrl.h \
     ../../src/pxa260/pxa260Timing.h \
     ../../src/tps65010.h \
     ../../src/w86l488.h \

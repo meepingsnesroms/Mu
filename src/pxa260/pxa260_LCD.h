@@ -26,7 +26,7 @@ uint16_t* pxa260Framebuffer;
 
 typedef struct{
 
-	Pxa255ic* ic;
+   Pxa260ic* ic;
 	
 	//registers
 	UInt32 lccr0, lccr1, lccr2, lccr3, fbr0, fbr1, liicr, trgbr, tcr;
@@ -45,11 +45,11 @@ typedef struct{
 
 	UInt32 frameNum;
 	
-}Pxa255lcd;
+}Pxa260lcd;
 
 Boolean pxa260lcdPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boolean write, void* buf);
-void pxa260lcdInit(Pxa255lcd* lcd, Pxa255ic* ic);
-void pxa260lcdFrame(Pxa255lcd* lcd);
+void pxa260lcdInit(Pxa260lcd* lcd, Pxa260ic* ic);
+void pxa260lcdFrame(Pxa260lcd* lcd);
 
 #endif
 

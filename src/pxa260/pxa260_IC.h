@@ -53,10 +53,10 @@ typedef struct{
 	
 	Boolean wasIrq, wasFiq;
 	
-}Pxa255ic;
+}Pxa260ic;
 
-void pxa260icInit(Pxa255ic* ic);
-void pxa260icInt(Pxa255ic* ic, UInt8 intNum, Boolean raise);		//interrupt caused by emulated hardware/ interrupt handled by guest
+void pxa260icInit(Pxa260ic* ic);
+void pxa260icInt(Pxa260ic* ic, UInt8 intNum, Boolean raise);		//interrupt caused by emulated hardware/ interrupt handled by guest
 
 
 #endif

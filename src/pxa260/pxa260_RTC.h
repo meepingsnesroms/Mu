@@ -19,7 +19,7 @@
 
 typedef struct{
 
-	Pxa255ic* ic;
+   Pxa260ic* ic;
 	
 	UInt32 RCNR_offset;	//RTC counter offset from our local time
 	UInt32 RTAR;		//RTC alarm
@@ -27,10 +27,10 @@ typedef struct{
 	UInt32 RTTR;		//RTC trim - we ignore this alltogether
 	UInt32 lastSeenTime;	//for HZ interrupt
 	
-}Pxa255rtc;
+}Pxa260rtc;
 
-Boolean pxa260rtcInit(Pxa255rtc* rtc, ArmMem* physMem, Pxa255ic* ic);
-void pxa260rtcUpdate(Pxa255rtc* rtc);
+Boolean pxa260rtcInit(Pxa260rtc* rtc, ArmMem* physMem, Pxa260ic* ic);
+void pxa260rtcUpdate(Pxa260rtc* rtc);
 
 
 #endif

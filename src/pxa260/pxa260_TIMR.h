@@ -19,7 +19,7 @@
 
 typedef struct{
 
-	Pxa255ic* ic;
+   Pxa260ic* ic;
 	
 	UInt32 OSMR[4];	//Match Register 0-3
 	UInt32 OIER;	//Interrupt Enable
@@ -27,11 +27,11 @@ typedef struct{
 	UInt32 OSCR;	//Counter Register
 	UInt32 OSSR;	//Status Register
 	
-}Pxa255timr;
+}Pxa260timr;
 
 Boolean pxa260timrPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boolean write, void* buf);
-void pxa260timrInit(Pxa255timr* timr, Pxa255ic* ic);
-void pxa260timrTick(Pxa255timr* timr);
+void pxa260timrInit(Pxa260timr* timr, Pxa260ic* ic);
+void pxa260timrTick(Pxa260timr* timr);
 
 
 #endif

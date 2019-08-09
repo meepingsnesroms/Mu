@@ -3,7 +3,7 @@
 
 Boolean pxa260pwrClkPrvCoprocRegXferFunc(void* userData, Boolean two, Boolean read, UInt8 op1, UInt8 Rx, UInt8 CRn, UInt8 CRm, UInt8 op2){
 	
-	Pxa255pwrClk* pc = userData;
+	Pxa260pwrClk* pc = userData;
 	UInt32 val = 0;
 	
 	if(!read) val = cpuGetRegExternal(cpu, Rx);
@@ -47,7 +47,7 @@ success:
 
 Boolean pxa260pwrClkPrvClockMgrMemAccessF(void* userData, UInt32 pa, UInt8 size, Boolean write, void* buf){
 
-	Pxa255pwrClk* pc = userData;
+	Pxa260pwrClk* pc = userData;
 	UInt32 val = 0;
 	
 	if(size != 4) {
@@ -90,7 +90,7 @@ Boolean pxa260pwrClkPrvClockMgrMemAccessF(void* userData, UInt32 pa, UInt8 size,
 
 Boolean pxa260pwrClkPrvPowerMgrMemAccessF(void* userData, UInt32 pa, UInt8 size, Boolean write, void* buf){
 
-	Pxa255pwrClk* pc = userData;
+	Pxa260pwrClk* pc = userData;
 	UInt32 val = 0;
 	
 	if(size != 4) {
@@ -119,8 +119,8 @@ Boolean pxa260pwrClkPrvPowerMgrMemAccessF(void* userData, UInt32 pa, UInt8 size,
 	return true;
 }
 
-void pxa260pwrClkInit(Pxa255pwrClk* pc){
-	__mem_zero(pc, sizeof(Pxa255pwrClk));
+void pxa260pwrClkInit(Pxa260pwrClk* pc){
+	__mem_zero(pc, sizeof(Pxa260pwrClk));
 	
 	pc->CCCR = 0x00000122UL;	//set CCCR to almost default value (we use mult 32 not 27)
 	pc->CKEN = 0x000179EFUL;	//set CKEN to default value

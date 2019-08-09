@@ -2,7 +2,7 @@
 #include "pxa260_mem.h"
 
 
-static void pxa260icPrvHandleChanges(Pxa255ic* ic){
+static void pxa260icPrvHandleChanges(Pxa260ic* ic){
 
 	Boolean nowIrq, nowFiq;
 	UInt32 unmasked = ic->ICPR & ic->ICMR;
@@ -19,7 +19,7 @@ static void pxa260icPrvHandleChanges(Pxa255ic* ic){
 
 static Boolean pxa260icPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boolean write, void* buf){
 	
-	Pxa255ic* ic = userData;
+	Pxa260ic* ic = userData;
 	UInt32 val = 0;
 	
 	if(size != 4) {
@@ -75,13 +75,13 @@ static Boolean pxa260icPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Bool
 	return true;
 }
 
-void pxa260icInit(Pxa255ic* ic){
+void pxa260icInit(Pxa260ic* ic){
 	
-	__mem_zero(ic, sizeof(Pxa255ic));
+	__mem_zero(ic, sizeof(Pxa260ic));
 }
 
 
-void pxa260icInt(Pxa255ic* ic, UInt8 intNum, Boolean raise){		//interrupt caused by emulated hardware
+void pxa260icInt(Pxa260ic* ic, UInt8 intNum, Boolean raise){		//interrupt caused by emulated hardware
 	
 	UInt32 old_, new_;
 	

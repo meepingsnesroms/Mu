@@ -8,7 +8,7 @@
 #define REG_CSR   4
 
 
-static void pxa260dmaPrvChannelRegWrite(_UNUSED_ Pxa255dma* dma, UInt8 channel, UInt8 reg, UInt32 val){
+static void pxa260dmaPrvChannelRegWrite(_UNUSED_ Pxa260dma* dma, UInt8 channel, UInt8 reg, UInt32 val){
 	
 	if(val){	//we start with zeros, so non-zero writes are all we care about
 		
@@ -26,7 +26,7 @@ static void pxa260dmaPrvChannelRegWrite(_UNUSED_ Pxa255dma* dma, UInt8 channel, 
 	}
 }
 
-static UInt32 pxa260dmaPrvChannelRegRead(_UNUSED_ Pxa255dma* dma, _UNUSED_ UInt8 channel, _UNUSED_ UInt8 reg){
+static UInt32 pxa260dmaPrvChannelRegRead(_UNUSED_ Pxa260dma* dma, _UNUSED_ UInt8 channel, _UNUSED_ UInt8 reg){
 	
 	
 	return 0;	
@@ -34,7 +34,7 @@ static UInt32 pxa260dmaPrvChannelRegRead(_UNUSED_ Pxa255dma* dma, _UNUSED_ UInt8
 
 static Boolean pxa260dmaPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boolean write, void* buf){
 
-	Pxa255dma* dma = userData;
+   Pxa260dma* dma = userData;
 	UInt8 reg, set;
 	UInt32 val = 0;
 	
@@ -106,9 +106,9 @@ static Boolean pxa260dmaPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boo
 }
 
 
-Boolean pxa260dmaInit(Pxa255dma* dma, ArmMem* physMem, Pxa255ic* ic){
+Boolean pxa260dmaInit(Pxa260dma* dma, ArmMem* physMem, Pxa260ic* ic){
 	
-	__mem_zero(dma, sizeof(Pxa255dma));
+   __mem_zero(dma, sizeof(Pxa260dma));
 	dma->ic = ic;
 	dma->mem = physMem;
 	

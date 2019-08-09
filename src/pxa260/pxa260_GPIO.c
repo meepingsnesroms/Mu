@@ -2,30 +2,39 @@
 #include "pxa260_mem.h"
 
 
-static void pxa260gpioPrvRecalcValues(Pxa255gpio* gpio, UInt32 which){
-	
-	UInt8 i;
-	UInt32 val, bit;
-	
-	val = gpio->dirs[which];
-	gpio->levels[which] = (gpio->latches[which] & val) | (gpio->inputs[which] & (~val));
-	
-	val = 3;
-	bit = 1;
-	for(i = 0 ; i < 16; i++, val <<= 2, bit <<= 1) if(gpio->AFRs[(which << 1) + 0] & val) gpio->levels[which] &=~ bit;	//all AFRs read as zero to CPU
-	for(i = 16; i < 32; i++, val <<= 2, bit <<= 1) if(gpio->AFRs[(which << 1) + 1] & val) gpio->levels[which] &=~ bit;	//all AFRs read as zero to CPU
+static void pxa260gpioPrvRecalcValues(Pxa260gpio* gpio, UInt32 which){
+
+   UInt8 i;
+   UInt32 val, bit, newVal, oldVal = gpio->levels[which];
+
+   val = gpio->dirs[which];
+   newVal = (gpio->latches[which] & val) | (gpio->inputs[which] & (~val));
+
+   val = 3;
+   bit = 1;
+   for(i = 0 ; i < 16; i++, val <<= 2, bit <<= 1) if(gpio->AFRs[(which << 1) + 0] & val) newVal &=~ bit;	//all AFRs read as zero to CPU
+   for(i = 16; i < 32; i++, val <<= 2, bit <<= 1) if(gpio->AFRs[(which << 1) + 1] & val) newVal &=~ bit;	//all AFRs read as zero to CPU
+
+   gpio->levels[which] = newVal;
+
+   if (newVal != oldVal) {
+      UInt32 wentHi = newVal &~ oldVal;
+      UInt32 wentLo = oldVal &~ newVal;
+
+      gpio->detStatus[which] |= (wentHi & gpio->riseDet[which]) | (wentLo & gpio->fallDet[which]);
+   }
 }
 
-static void pxa260gpioPrvRecalcIntrs(Pxa255gpio* gpio){
-	
-   pxa260icInt(gpio->ic, PXA260_I_GPIO_all, gpio->levels[1] || gpio->levels[2] || (gpio->levels[0] &~ 3));
-   pxa260icInt(gpio->ic, PXA260_I_GPIO_1, (gpio->levels[0] & 2) != 0);
-   pxa260icInt(gpio->ic, PXA260_I_GPIO_0, (gpio->levels[0] & 1) != 0);
+static void pxa260gpioPrvRecalcIntrs(Pxa260gpio* gpio){
+
+   pxa260icInt(gpio->ic, PXA260_I_GPIO_all, gpio->detStatus[1] || gpio->detStatus[2] || (gpio->detStatus[0] &~ 3));
+   pxa260icInt(gpio->ic, PXA260_I_GPIO_1, (gpio->detStatus[0] & 2) != 0);
+   pxa260icInt(gpio->ic, PXA260_I_GPIO_0, (gpio->detStatus[0] & 1) != 0);
 }
 
 Boolean pxa260gpioPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boolean write, void* buf){
 
-	Pxa255gpio* gpio = userData;
+   Pxa260gpio* gpio = userData;
 	UInt32 val = 0;
 	
 	if(size != 4) {
@@ -62,14 +71,14 @@ Boolean pxa260gpioPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boolean w
 			case 7:
 			case 8:
 				pa -= 6;
-				gpio->levels[pa] |= val;
+            gpio->latches[pa] |= val;
 				goto recalc;
 			
 			case 9:
 			case 10:
 			case 11:
 				pa -= 9;
-				gpio->levels[pa] &=~ val;
+            gpio->latches[pa] &=~ val;
 				goto recalc;
 			
 			case 12:
@@ -96,8 +105,8 @@ Boolean pxa260gpioPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boolean w
 			case 24:
 			case 25:
 			case 26:
-				val = gpio->AFRs[pa - 21];
-            pa = (pa - 21) / 2;
+            gpio->AFRs[pa - 21] = val;
+            //pa = (pa - 21) / 2;
 				goto recalc;
 		}
 		
@@ -168,12 +177,12 @@ done:
 }
 
 
-void pxa260gpioInit(Pxa255gpio* gpio, Pxa255ic* ic){
-	__mem_zero(gpio, sizeof(Pxa255gpio));
+void pxa260gpioInit(Pxa260gpio* gpio, Pxa260ic* ic){
+   __mem_zero(gpio, sizeof(Pxa260gpio));
 	gpio->ic = ic;
 }
 
-void pxa260gpioSetState(Pxa255gpio* gpio, UInt8 gpioNum, Boolean on){
+void pxa260gpioSetState(Pxa260gpio* gpio, UInt8 gpioNum, Boolean on){
 	
 	UInt32 set = gpioNum >> 5;
 	UInt32 v = 1UL << (gpioNum & 0x1F);
@@ -189,7 +198,7 @@ void pxa260gpioSetState(Pxa255gpio* gpio, UInt8 gpioNum, Boolean on){
    pxa260gpioPrvRecalcIntrs(gpio);
 }
 
-UInt8 pxa260gpioGetState(Pxa255gpio* gpio, UInt8 gpioNum){
+UInt8 pxa260gpioGetState(Pxa260gpio* gpio, UInt8 gpioNum){
 	
 	UInt32 sSet = gpioNum >> 5;
 	UInt32 bSet = gpioNum >> 4;
@@ -198,7 +207,7 @@ UInt8 pxa260gpioGetState(Pxa255gpio* gpio, UInt8 gpioNum){
 	
 	
 	if(gpioNum >= 85) return PXA260_GPIO_NOT_PRESENT;
-	if(gpio->AFRs[bSet] & bV) return ((gpio->AFRs[bSet] & bV) >> (gpioNum & 0x0F)) + PXA260_GPIO_AFR1;
+   if(gpio->AFRs[bSet] & bV) return ((gpio->AFRs[bSet] & bV) >> (gpioNum & 0x0F)) - 1 + PXA260_GPIO_AFR1;
 	if(gpio->dirs[sSet] & sV) return (gpio->latches[sSet] & sV) ? PXA260_GPIO_HIGH : PXA260_GPIO_LOW;
 	return PXA260_GPIO_HiZ;
 }

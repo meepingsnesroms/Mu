@@ -562,7 +562,7 @@ uint32_t sdCardExchangeXBitsOptimized(uint32_t bits, uint8_t size){
 Dident know where to put this note so it went here:
 CRCs should be safe to ignore on OS 5 as the CPU has builtin MMC support which does the CRC stuff automaticly,
 since no actual data transfer is being done there is no chance of any error so I can just return "true" for all CRC valid checks:
-intelPxa255DevelopmentGuide.pdf 15.2:
+intelPxa260DevelopmentGuide.pdf 15.2:
 The MMC controller also enables minimal data latency by buffering data and generating and
 checking CRCs.
 */

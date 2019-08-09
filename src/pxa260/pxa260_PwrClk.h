@@ -8,7 +8,7 @@ typedef struct{
 	UInt32 CCCR, CKEN, OSCR;	//clocks manager regs
 	UInt32 pwrRegs[13];		//we care so little about these, we don't even name them
 	Boolean turbo;
-}Pxa255pwrClk;
+}Pxa260pwrClk;
 
 
 #define PXA260_CLOCK_MANAGER_BASE	0x41300000UL
@@ -20,6 +20,6 @@ typedef struct{
 Boolean pxa260pwrClkPrvCoprocRegXferFunc(void* userData, Boolean two, Boolean read, UInt8 op1, UInt8 Rx, UInt8 CRn, UInt8 CRm, UInt8 op2);
 Boolean pxa260pwrClkPrvClockMgrMemAccessF(void* userData, UInt32 pa, UInt8 size, Boolean write, void* buf);
 Boolean pxa260pwrClkPrvPowerMgrMemAccessF(void* userData, UInt32 pa, UInt8 size, Boolean write, void* buf);
-void pxa260pwrClkInit(Pxa255pwrClk* pc);
+void pxa260pwrClkInit(Pxa260pwrClk* pc);
 
 #endif

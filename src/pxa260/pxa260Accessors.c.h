@@ -92,17 +92,6 @@ static void pxa260_lcd_write_word(uint32_t addr, uint32_t value){
    debugLog("32 bit PXA260 LCD register write:0x%08X, value:0x%08X\n", addr, value);
 }
 
-static uint32_t pxa260_memctrl_read_word(uint32_t addr){
-   //MEMCTRL only governs timing, refresh and protocol configs, not mapping, should be safe to ignore
-   debugLog("32 bit PXA260 MEMCTRL register read:0x%08X\n", addr);
-   return 0x00000000;
-}
-
-static void pxa260_memctrl_write_word(uint32_t addr, uint32_t value){
-   //MEMCTRL only governs timing, refresh and protocol configs, not mapping, should be safe to ignore
-   debugLog("32 bit PXA260 MEMCTRL register write:0x%08X, value:0x%08X\n", addr, value);
-}
-
 static uint8_t pxa260_pcmcia0_read_byte(uint32_t addr){
    debugLog("PCMCIA0 8 bit read:0x%08X\n", addr);
    return 0x00;

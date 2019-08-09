@@ -90,7 +90,7 @@ void pxa260I2cWriteWord(uint32_t address, uint32_t value){
 
                for(index = 0; index < 8; index++){
                   pxa260I2cBuffer <<= 1;
-                  pxa260I2cBuffer |= tps65010I2cExchange(I2C_FLOATING_BUS) & I2C_1;
+                  pxa260I2cBuffer |= !!(tps65010I2cExchange(I2C_FLOATING_BUS) & I2C_1);
                }
 
                pxa260I2cUnitBusy = true;

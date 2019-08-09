@@ -21,22 +21,22 @@ typedef struct{
 	UInt32 CR;	//command register
 	UInt32 CSR;	//control and status register
 	
-}Pxa255dmaChannel;
+}Pxa260dmaChannel;
 
 typedef struct{
 
-	Pxa255ic* ic;
+	Pxa260ic* ic;
 	ArmMem* mem;
 	
 	UInt16 DINT;
-	Pxa255dmaChannel channels[16];
+	Pxa260dmaChannel channels[16];
 	UInt8 CMR[40];			//channel map registers	[  we store lower 8 bits only :-)  ]
 	
-}Pxa255dma;
+}Pxa260dma;
 
 
 
-Boolean pxa260dmaInit(Pxa255dma* gpio, ArmMem* physMem, Pxa255ic* ic);
+Boolean pxa260dmaInit(Pxa260dma* gpio, ArmMem* physMem, Pxa260ic* ic);
 
 #endif
 

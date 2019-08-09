@@ -31,8 +31,8 @@
 #define UART_CHAR_PAR_ERR	0x200
 #define UART_CHAR_NONE		0x100
 
-typedef UInt16	(*Pxa255UartReadF)(void* userData);
-typedef void	(*Pxa255UartWriteF)(UInt16 chr, void* userData);
+typedef UInt16	(*Pxa260UartReadF)(void* userData);
+typedef void	(*Pxa260UartWriteF)(UInt16 chr, void* userData);
 
 #define UART_FIFO_EMPTY	0xFF
 
@@ -46,11 +46,11 @@ typedef struct{
 
 typedef struct{
 
-	Pxa255ic* ic;
+   Pxa260ic* ic;
 	UInt32 baseAddr;
 	
-	Pxa255UartReadF readF;
-	Pxa255UartWriteF writeF;
+   Pxa260UartReadF readF;
+   Pxa260UartWriteF writeF;
 	void* accessFuncsData;
 	
 	UartFifo TX, RX;
@@ -77,12 +77,12 @@ typedef struct{
 	
 	
 	
-}Pxa255uart;
+}Pxa260uart;
 
-Boolean pxa260uartInit(Pxa255uart* uart, ArmMem* physMem, Pxa255ic* ic, UInt32 baseAddr, UInt8 irq);
-void pxa260uartProcess(Pxa255uart* uart);		//write out data in TX fifo and read data into RX fifo
+Boolean pxa260uartInit(Pxa260uart* uart, ArmMem* physMem, Pxa260ic* ic, UInt32 baseAddr, UInt8 irq);
+void pxa260uartProcess(Pxa260uart* uart);		//write out data in TX fifo and read data into RX fifo
 
-void pxa260uartSetFuncs(Pxa255uart* uart, Pxa255UartReadF readF, Pxa255UartWriteF writeF, void* userData);
+void pxa260uartSetFuncs(Pxa260uart* uart, Pxa260UartReadF readF, Pxa260UartWriteF writeF, void* userData);
 
 #endif
 

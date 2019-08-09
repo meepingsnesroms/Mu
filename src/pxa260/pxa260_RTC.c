@@ -14,7 +14,7 @@ static UInt32 rtcCurTime(void){
    return tv.tv_sec;
 }
 
-void pxa260rtcPrvUpdate(Pxa255rtc* rtc){
+void pxa260rtcPrvUpdate(Pxa260rtc* rtc){
 	
 	UInt32 time = rtcCurTime();
 	
@@ -33,7 +33,7 @@ void pxa260rtcPrvUpdate(Pxa255rtc* rtc){
 
 static Boolean pxa260rtcPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boolean write, void* buf){
 
-	Pxa255rtc* rtc = userData;
+	Pxa260rtc* rtc = userData;
 	UInt32 val = 0;
 	
 	if(size != 4) {
@@ -97,9 +97,9 @@ static Boolean pxa260rtcPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boo
 }
 
 
-Boolean pxa260rtcInit(Pxa255rtc* rtc, ArmMem* physMem, Pxa255ic* ic){
+Boolean pxa260rtcInit(Pxa260rtc* rtc, ArmMem* physMem, Pxa260ic* ic){
 	
-	__mem_zero(rtc, sizeof(Pxa255rtc));
+	__mem_zero(rtc, sizeof(Pxa260rtc));
 	rtc->ic = ic;
 	rtc->RCNR_offset = 0;
 	rtc->RTTR = 0x7FFF;	//nice default value
@@ -107,6 +107,6 @@ Boolean pxa260rtcInit(Pxa255rtc* rtc, ArmMem* physMem, Pxa255ic* ic){
 	return memRegionAdd(physMem, PXA260_RTC_BASE, PXA260_RTC_SIZE, pxa260rtcPrvMemAccessF, rtc);
 }
 
-void pxa260rtcUpdate(Pxa255rtc* rtc){
+void pxa260rtcUpdate(Pxa260rtc* rtc){
 	pxa260rtcPrvUpdate(rtc);
 }

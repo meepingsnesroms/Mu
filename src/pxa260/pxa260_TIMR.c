@@ -2,7 +2,7 @@
 #include "pxa260_mem.h"
 
 
-static void pxa260timrPrvRaiseLowerInts(Pxa255timr* timr){
+static void pxa260timrPrvRaiseLowerInts(Pxa260timr* timr){
 	
 	pxa260icInt(timr->ic, PXA260_I_TIMR0, (timr->OSSR & 1) != 0);
 	pxa260icInt(timr->ic, PXA260_I_TIMR1, (timr->OSSR & 2) != 0);
@@ -10,7 +10,7 @@ static void pxa260timrPrvRaiseLowerInts(Pxa255timr* timr){
 	pxa260icInt(timr->ic, PXA260_I_TIMR3, (timr->OSSR & 8) != 0);
 }
 
-static void pxa260timrPrvCheckMatch(Pxa255timr* timr, UInt8 idx){
+static void pxa260timrPrvCheckMatch(Pxa260timr* timr, UInt8 idx){
 	
 	UInt8 v = 1UL << idx;
 	
@@ -19,7 +19,7 @@ static void pxa260timrPrvCheckMatch(Pxa255timr* timr, UInt8 idx){
 	}
 }
 
-static void pxa260timrPrvUpdate(Pxa255timr* timr){
+static void pxa260timrPrvUpdate(Pxa260timr* timr){
 	
 	pxa260timrPrvCheckMatch(timr, 0);
 	pxa260timrPrvCheckMatch(timr, 1);
@@ -29,7 +29,7 @@ static void pxa260timrPrvUpdate(Pxa255timr* timr){
 
 Boolean pxa260timrPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boolean write, void* buf){
 
-	Pxa255timr* timr = userData;
+	Pxa260timr* timr = userData;
 	UInt32 val = 0;
 	
 	if(size != 4) {
@@ -108,13 +108,13 @@ Boolean pxa260timrPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boolean w
 }
 
 
-void pxa260timrInit(Pxa255timr* timr, Pxa255ic* ic){
+void pxa260timrInit(Pxa260timr* timr, Pxa260ic* ic){
 	
-	__mem_zero(timr, sizeof(Pxa255timr));
+	__mem_zero(timr, sizeof(Pxa260timr));
 	timr->ic = ic;
 }
 
-void pxa260timrTick(Pxa255timr* timr){
+void pxa260timrTick(Pxa260timr* timr){
 	
 	timr->OSCR++;
 	pxa260timrPrvUpdate(timr);

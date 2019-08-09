@@ -10,11 +10,11 @@ typedef struct{
 	
 	UInt64 acc0;
 	
-}Pxa255dsp;
+}Pxa260dsp;
 
 
 
-Boolean pxa260dspInit(Pxa255dsp* dsp, ArmCpu* cpu);
+Boolean pxa260dspInit(Pxa260dsp* dsp, ArmCpu* cpu);
 
 
 #endif

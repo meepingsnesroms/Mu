@@ -13,6 +13,7 @@
 #include "pxa260_TIMR.h"
 #include "pxa260_UART.h"
 #include "pxa260I2c.h"
+#include "pxa260Memctrl.h"
 #include "pxa260Timing.h"
 #include "../armv5te/cpu.h"
 #include "../armv5te/emu.h"
@@ -30,12 +31,12 @@
 
 
 uint16_t*    pxa260Framebuffer;
-Pxa255pwrClk pxa260PwrClk;
-Pxa255ic     pxa260Ic;
+Pxa260pwrClk pxa260PwrClk;
+Pxa260ic     pxa260Ic;
 
-static Pxa255lcd  pxa260Lcd;
-static Pxa255timr pxa260Timer;
-static Pxa255gpio pxa260Gpio;
+static Pxa260lcd  pxa260Lcd;
+static Pxa260timr pxa260Timer;
+static Pxa260gpio pxa260Gpio;
 
 
 #include "pxa260Accessors.c.h"
@@ -124,10 +125,10 @@ bool pxa260Init(uint8_t** returnRom, uint8_t** returnRam){
    //MEMCTRL
    read_byte_map[PXA260_START_BANK(PXA260_MEMCTRL_BASE)] = bad_read_byte;
    read_half_map[PXA260_START_BANK(PXA260_MEMCTRL_BASE)] = bad_read_half;
-   read_word_map[PXA260_START_BANK(PXA260_MEMCTRL_BASE)] = pxa260_memctrl_read_word;
+   read_word_map[PXA260_START_BANK(PXA260_MEMCTRL_BASE)] = pxa260MemctrlReadWord;
    write_byte_map[PXA260_START_BANK(PXA260_MEMCTRL_BASE)] = bad_write_byte;
    write_half_map[PXA260_START_BANK(PXA260_MEMCTRL_BASE)] = bad_write_half;
-   write_word_map[PXA260_START_BANK(PXA260_MEMCTRL_BASE)] = pxa260_memctrl_write_word;
+   write_word_map[PXA260_START_BANK(PXA260_MEMCTRL_BASE)] = pxa260MemctrlWriteWord;
 
    //W86L488
    read_byte_map[PXA260_START_BANK(TUNGSTEN_T3_W86L488_START_ADDRESS)] = bad_read_byte;
@@ -181,6 +182,7 @@ void pxa260Reset(void){
    pxa260timrInit(&pxa260Timer, &pxa260Ic);
    pxa260gpioInit(&pxa260Gpio, &pxa260Ic);
    pxa260I2cReset();
+   pxa260MemctrlReset();
    pxa260TimingReset();
 
    memset(&arm, 0, sizeof arm);
