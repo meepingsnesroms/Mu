@@ -270,6 +270,14 @@ uint32_t flx68000GetRegister(uint8_t reg){
    return m68k_get_reg(NULL, reg);
 }
 
+uint32_t flx68000GetPc(void){
+   return m68k_get_reg(NULL, 16);
+}
+
+uint32_t flx68000GetStatusRegister(void){
+   return m68k_get_reg(NULL, 17);
+}
+
 uint64_t flx68000ReadArbitraryMemory(uint32_t address, uint8_t size){
    uint64_t data = UINT64_MAX;//invalid access
 

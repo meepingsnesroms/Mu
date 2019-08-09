@@ -493,7 +493,11 @@ QString EmuWrapper::debugGetCpuRegisterString(){
    if(palmEmulatingTungstenT3){
       for(uint8_t regs = 0; regs < 16; regs++)
          regString += QString::asprintf("R%d:0x%08X\n", regs, pxa260GetRegister(regs));
-      regString.resize(regString.size() - 1);//remove extra '\n'
+      regString += QString::asprintf("SP:0x%08X\n", pxa260GetRegister(13));
+      regString += QString::asprintf("LR:0x%08X\n", pxa260GetRegister(14));
+      regString += QString::asprintf("PC:0x%08X\n", pxa260GetPc());
+      regString += QString::asprintf("CPSR:0x%08X\n", pxa260GetCpsr());
+      regString += QString::asprintf("SPSR:0x%08X", pxa260GetSpsr());
    }
    else{
 #endif
@@ -502,8 +506,8 @@ QString EmuWrapper::debugGetCpuRegisterString(){
       for(uint8_t aRegs = 0; aRegs < 8; aRegs++)
          regString += QString::asprintf("A%d:0x%08X\n", aRegs, flx68000GetRegister(8 + aRegs));
       regString += QString::asprintf("SP:0x%08X\n", flx68000GetRegister(15));
-      regString += QString::asprintf("PC:0x%08X\n", flx68000GetRegister(16));
-      regString += QString::asprintf("SR:0x%04X", flx68000GetRegister(17));
+      regString += QString::asprintf("PC:0x%08X\n", flx68000GetPc());
+      regString += QString::asprintf("SR:0x%04X", flx68000GetStatusRegister());
 #if defined(EMU_SUPPORT_PALM_OS5)
    }
 #endif

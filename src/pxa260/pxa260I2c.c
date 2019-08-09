@@ -77,7 +77,7 @@ void pxa260I2cWriteWord(uint32_t address, uint32_t value){
       case ICR:
          //TODO: this is incomplete
 
-         pxa260I2cIcr = value & 0x0000FFFF;//this is wrong
+         pxa260I2cIcr = value & 0xFFFF;//this is wrong
 
          if(value & 0x0001)
             tps65010I2cExchange(I2C_START);
@@ -118,15 +118,13 @@ void pxa260I2cWriteWord(uint32_t address, uint32_t value){
          return;
 
       case ISR:{
-            if(value & 0x0080){
-               //IDBR RECEIVE FULL
+            //clear IDBR RECEIVE FULL
+            if(value & 0x0080)
                pxa260I2cIsr &= 0xFF7F;
-            }
 
-            if(value & 0x0040){
-               //IDBR TRANSMIT EMPTY
+            //clear IDBR TRANSMIT EMPTY
+            if(value & 0x0040)
                pxa260I2cIsr &= 0xFFBF;
-            }
 
             //unit busy
             pxa260I2cIsr |= pxa260I2cUnitBusy << 2;

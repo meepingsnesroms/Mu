@@ -25,7 +25,9 @@ void pxa260LoadState(uint8_t* data);
 void pxa260Execute(bool wantVideo);//runs the CPU for 1 frame
 
 uint32_t pxa260GetRegister(uint8_t reg);//only for debugging
-#define pxa260GetPc() pxa260GetRegister(15)
+#define pxa260GetPc() pxa260GetRegister(15)//only for debugging
+uint32_t pxa260GetCpsr(void);//only for debugging
+uint32_t pxa260GetSpsr(void);//only for debugging
 uint64_t pxa260ReadArbitraryMemory(uint32_t address, uint8_t size);//only for debugging
 
 #endif

@@ -234,6 +234,14 @@ uint32_t pxa260GetRegister(uint8_t reg){
    return reg_pc(reg);
 }
 
+uint32_t pxa260GetCpsr(void){
+   return get_cpsr();
+}
+
+uint32_t pxa260GetSpsr(void){
+   return get_spsr();
+}
+
 uint64_t pxa260ReadArbitraryMemory(uint32_t address, uint8_t size){
    uint64_t data = UINT64_MAX;//invalid access
 
