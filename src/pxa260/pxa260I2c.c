@@ -77,7 +77,7 @@ void pxa260I2cWriteWord(uint32_t address, uint32_t value){
       case ICR:
          //TODO: this is incomplete
 
-         pxa260I2cIcr = value & 0xFFFF;//this is wrong
+         pxa260I2cIcr = value & 0x0000FFFF;//this is wrong
 
          if(value & 0x0001)
             tps65010I2cExchange(I2C_START);

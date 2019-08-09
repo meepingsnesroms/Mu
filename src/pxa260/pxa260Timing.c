@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <string.h>
+#include <setjmp.h>
 
 #include "../armv5te/emu.h"
 #include "../armv5te/cpu.h"

@@ -22,7 +22,7 @@ uint32_t pxa260MemctrlReadWord(uint32_t address){
    switch(address){
 
       default:
-         debugLog("32 bit PXA260 MEMCTRL register read:0x%04X\n", address);
+         debugLog("Unimplimented 32 bit PXA260 MEMCTRL register read:0x%04X\n", address);
          if(address / 4 < 0x64)
             return pxa260MemctrlRegisters[address / 4];
          return 0x00000000;
@@ -35,7 +35,7 @@ void pxa260MemctrlWriteWord(uint32_t address, uint32_t value){
    switch(address){
 
       default:
-         debugLog("32 bit PXA260 MEMCTRL register write:0x%08X, value:0x%04X\n", address, value);
+         debugLog("Unimplimented 32 bit PXA260 MEMCTRL register write:0x%04X, value:0x%08X\n", address, value);
          if(address / 4 < 0x64)
             pxa260MemctrlRegisters[address / 4] = value;
          return;

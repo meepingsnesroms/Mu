@@ -1,6 +1,5 @@
 #include <stdint.h>
 #include <stdbool.h>
-#include <setjmp.h>
 
 #include "pxa260.h"
 #include "pxa260_DMA.h"
@@ -14,6 +13,7 @@
 #include "pxa260_UART.h"
 #include "pxa260I2c.h"
 #include "pxa260Memctrl.h"
+#include "pxa260Ssp.h"
 #include "pxa260Timing.h"
 #include "../armv5te/cpu.h"
 #include "../armv5te/emu.h"
@@ -183,6 +183,7 @@ void pxa260Reset(void){
    pxa260gpioInit(&pxa260Gpio, &pxa260Ic);
    pxa260I2cReset();
    pxa260MemctrlReset();
+   pxa260SspReset();
    pxa260TimingReset();
 
    memset(&arm, 0, sizeof arm);
