@@ -5,6 +5,7 @@
 #include "../armv5te/emu.h"
 #include "../armv5te/cpu.h"
 #include "pxa260I2c.h"
+#include "pxa260Ssp.h"
 #include "pxa260Timing.h"
 
 
@@ -27,6 +28,7 @@ static int32_t pxa260TimingGetDurationUntilNextEvent(int32_t duration/*call with
 void pxa260TimingInit(void){
    pxa260TimingCallbacks[PXA260_TIMING_CALLBACK_I2C_TRANSMIT_EMPTY] = pxa260I2cTransmitEmpty;
    pxa260TimingCallbacks[PXA260_TIMING_CALLBACK_I2C_RECEIVE_FULL] = pxa260I2cReceiveFull;
+   pxa260TimingCallbacks[PXA260_TIMING_CALLBACK_SSP_TRANSFER_COMPLETE] = pxa260SspTransferComplete;
 }
 
 void pxa260TimingReset(void){

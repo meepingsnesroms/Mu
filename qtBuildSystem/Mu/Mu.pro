@@ -201,6 +201,7 @@ SOURCES += \
     ../../src/pxa260/pxa260Ssp.c \
     ../../src/pxa260/pxa260Timing.c \
     ../../src/tps65010.c \
+    ../../src/tsc2101.c \
     ../../src/w86l488.c \
     debugviewer.cpp \
     emuwrapper.cpp \
@@ -236,6 +237,7 @@ HEADERS += \
     ../../src/pxa260/pxa260Ssp.h \
     ../../src/pxa260/pxa260Timing.h \
     ../../src/tps65010.h \
+    ../../src/tsc2101.h \
     ../../src/w86l488.h \
     debugviewer.h \
     emuwrapper.h \

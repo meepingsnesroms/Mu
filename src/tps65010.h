@@ -2,7 +2,6 @@
 #define TPS65010_H
 
 #include <stdint.h>
-#include <stdbool.h>
 
 void tps65010Reset(void);
 uint32_t tps65010StateSize(void);

@@ -19,6 +19,9 @@
 #if defined(EMU_SUPPORT_PALM_OS5)
 #include "tungstenT3Bus.h"
 #include "pxa260/pxa260.h"
+#include "tps65010.h"
+#include "tsc2101.h"
+#include "w86l488.h"
 #endif
 
 
@@ -251,6 +254,9 @@ void emulatorSoftReset(void){
       palmEmuFeatures.value = 0x00000000;
       palmClockMultiplier = 1.00;
       pxa260Reset();
+      tps65010Reset();
+      tsc2101Reset();
+      w86l488Reset();
       sandboxReset();
    }
    else{
