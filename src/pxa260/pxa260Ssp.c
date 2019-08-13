@@ -99,12 +99,11 @@ static void pxa260SspUpdateInterrupt(void){
       if(pxa260SspSscr1 & 0x0002){
          uint8_t tft = ((pxa260SspSscr1 >> 6) & 0x000F) + 1;
 
-         if(pxa260SspTxFifoEntrys() >= tft)
+         if(pxa260SspTxFifoEntrys() <= tft)
             trigger = true;
       }
    }
 
-   //debugLog("Unimplimented PXA260 SSP interrupt check\n");
    if(trigger)
       pxa260icInt(&pxa260Ic, PXA260_I_SSP, true);
    else
@@ -148,10 +147,8 @@ uint32_t pxa260SspReadWord(uint32_t address){
             else
                rfl--;
 
-            if(tfl == 0)
-               tfl = 0xF;
-            else
-               tfl--;
+            if(tfl == 16)
+               tfl = 0x0;
 
             value |= rfl << 12;
             value |= tfl << 8;
