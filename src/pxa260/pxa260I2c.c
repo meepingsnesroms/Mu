@@ -9,6 +9,8 @@
 #include "pxa260I2c.h"
 
 
+#define PXA260_I2C_TRANSFER_DURATION 200
+
 #define IBMR 0x1680
 #define IDBR 0x1688
 #define ICR 0x1690
@@ -94,7 +96,7 @@ void pxa260I2cWriteWord(uint32_t address, uint32_t value){
                }
 
                pxa260I2cUnitBusy = true;
-               pxa260TimingQueueEvent(200, PXA260_TIMING_CALLBACK_I2C_RECEIVE_FULL);
+               pxa260TimingQueueEvent(PXA260_I2C_TRANSFER_DURATION, PXA260_TIMING_CALLBACK_I2C_RECEIVE_FULL);
             }
             else{
                //send
@@ -106,7 +108,7 @@ void pxa260I2cWriteWord(uint32_t address, uint32_t value){
                   tps65010I2cExchange((pxa260I2cBuffer & 1 << 7 - index) ? I2C_1 : I2C_0);
 
                pxa260I2cUnitBusy = true;
-               pxa260TimingQueueEvent(200, PXA260_TIMING_CALLBACK_I2C_TRANSMIT_EMPTY);
+               pxa260TimingQueueEvent(PXA260_I2C_TRANSFER_DURATION, PXA260_TIMING_CALLBACK_I2C_TRANSMIT_EMPTY);
             }
          }
          if(value & 0x0002){

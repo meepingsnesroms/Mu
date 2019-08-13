@@ -9,6 +9,8 @@
 #include "../emulator.h"
 
 
+#define PXA260_SSP_TRANSFER_DURATION 10
+
 #define SSCR0 0x0000
 #define SSCR1 0x0004
 #define SSSR 0x0008
@@ -17,7 +19,6 @@
 
 uint32_t pxa260SspSscr0;
 uint32_t pxa260SspSscr1;
-uint32_t pxa260SspSssr;
 uint16_t pxa260SspRxFifo[17];
 uint16_t pxa260SspTxFifo[17];
 uint8_t  pxa260SspRxReadPosition;
@@ -82,8 +83,29 @@ static void pxa260SspTxFifoFlush(void){
 }
 
 static void pxa260SspUpdateInterrupt(void){
-   debugLog("Unimplimented PXA260 SSP interrupt check\n");
-   if(/*TODO*/ false)
+   bool trigger = false;
+
+   //SYNCHRONOUS SERIAL PORT ENABLE
+   if(pxa260SspSscr0 & 0x0080){
+      //RECEIVE FIFO INTERRUPT
+      if(pxa260SspSscr1 & 0x0001){
+         uint8_t rft = ((pxa260SspSscr1 >> 10) & 0x000F) + 1;
+
+         if(pxa260SspRxFifoEntrys() >= rft)
+            trigger = true;
+      }
+
+      //TRANSMIT FIFO INTERRUPT
+      if(pxa260SspSscr1 & 0x0002){
+         uint8_t tft = ((pxa260SspSscr1 >> 6) & 0x000F) + 1;
+
+         if(pxa260SspTxFifoEntrys() >= tft)
+            trigger = true;
+      }
+   }
+
+   //debugLog("Unimplimented PXA260 SSP interrupt check\n");
+   if(trigger)
       pxa260icInt(&pxa260Ic, PXA260_I_SSP, true);
    else
       pxa260icInt(&pxa260Ic, PXA260_I_SSP, false);
@@ -92,7 +114,6 @@ static void pxa260SspUpdateInterrupt(void){
 void pxa260SspReset(void){
    pxa260SspSscr0 = 0x0000;
    pxa260SspSscr1 = 0x0000;
-   pxa260SspSssr = 0xF004;
    memset(pxa260SspRxFifo, 0x00, sizeof(pxa260SspRxFifo));
    memset(pxa260SspTxFifo, 0x00, sizeof(pxa260SspTxFifo));
    pxa260SspRxReadPosition = 0;
@@ -113,8 +134,36 @@ uint32_t pxa260SspReadWord(uint32_t address){
       case SSCR1:
          return pxa260SspSscr1;
 
-      case SSSR:
-         return pxa260SspSssr;//TODO: need to return FIFO state too
+      case SSSR:{
+            uint8_t rft = ((pxa260SspSscr1 >> 10) & 0x000F) + 1;
+            uint8_t tft = ((pxa260SspSscr1 >> 6) & 0x000F) + 1;
+            uint8_t rfl = pxa260SspRxFifoEntrys();
+            uint8_t tfl = pxa260SspTxFifoEntrys();
+            uint16_t value = 0x0000;
+
+            debugLog("Unimplimented PXA260 SSP SSSR read\n");
+
+            if(rfl == 0)
+               rfl = 0xF;
+            else
+               rfl--;
+
+            if(tfl == 0)
+               tfl = 0xF;
+            else
+               tfl--;
+
+            value |= rfl << 12;
+            value |= tfl << 8;
+            value |= pxa260SspRxOverflowed << 7;
+            value |= (pxa260SspRxFifoEntrys() >= rft) << 6;
+            value |= (pxa260SspTxFifoEntrys() <= tft) << 5;
+            value |= pxa260SspTransfering << 4;
+            value |= (pxa260SspRxFifoEntrys() > 0) << 3;
+            value |= (pxa260SspTxFifoEntrys() < 16) << 2;
+
+            return value;
+         }
 
       case SSDR:{
             uint16_t fifoVal = pxa260SspRxFifoRead();
@@ -142,6 +191,9 @@ void pxa260SspWriteWord(uint32_t address, uint32_t value){
             pxa260SspTxFifoFlush();
             pxa260SspTransfering = false;
          }
+
+         if((value & 0x0080) != (pxa260SspSscr0 & 0x0080))
+            pxa260SspUpdateInterrupt();
          return;
 
       case SSCR1:
@@ -150,8 +202,6 @@ void pxa260SspWriteWord(uint32_t address, uint32_t value){
          return;
 
       case SSSR:
-         pxa260SspSssr = pxa260SspSssr & 0x00FE | value & 0xFF00;
-
          //clear RECEIVE FIFO OVERRUN
          if(value & 0x0080)
             pxa260SspRxOverflowed = false;
@@ -160,10 +210,11 @@ void pxa260SspWriteWord(uint32_t address, uint32_t value){
          return;
 
       case SSDR:
+         debugLog("PXA260 SSP write:0x%08X\n", value);
          pxa260SspTxFifoWrite(value);
          if(!pxa260SspTransfering){
             pxa260SspTransfering = true;
-            pxa260TimingQueueEvent(10, PXA260_TIMING_CALLBACK_SSP_TRANSFER_COMPLETE);
+            pxa260TimingQueueEvent(PXA260_SSP_TRANSFER_DURATION, PXA260_TIMING_CALLBACK_SSP_TRANSFER_COMPLETE);
          }
          pxa260SspUpdateInterrupt();
          return;
@@ -178,7 +229,7 @@ void pxa260SspTransferComplete(void){
    //check if still transfering, if SSP is disabled mid transfer FIFOs get cleared and weird behavior will occur here
    if(pxa260SspTransfering){
       uint8_t index;
-      uint8_t bitCount = (pxa260SspSscr0 & 0x000F) + 1;
+      uint8_t bitCount = (pxa260SspSscr0 & 0x000F);
       uint16_t output = pxa260SspTxFifoRead();
       uint16_t input = 0x0000;
 
@@ -190,16 +241,16 @@ void pxa260SspTransferComplete(void){
       state as defined by the protocol.
       */
 
-      for(index = 0; index < bitCount; index++){
+      for(index = 0; index <= bitCount; index++){
          input <<= 1;
-         input |= tsc2101ExchangeBit(output >> bitCount - 1 + index & 0x0001);
+         input |= tsc2101ExchangeBit(output >> bitCount - index & 0x0001);
       }
 
       pxa260SspRxFifoWrite(input);
 
       //if still transmitting, need to enqueue next event
       if(pxa260SspTxFifoEntrys() > 0)
-         pxa260TimingQueueEvent(10, PXA260_TIMING_CALLBACK_SSP_TRANSFER_COMPLETE);
+         pxa260TimingQueueEvent(PXA260_SSP_TRANSFER_DURATION, PXA260_TIMING_CALLBACK_SSP_TRANSFER_COMPLETE);
       else
          pxa260SspTransfering = false;
 

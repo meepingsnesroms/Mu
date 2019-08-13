@@ -39,7 +39,7 @@ static bool    tps65010SelectedRegisterAlreadySet;
 
 static void tps65010WriteRegister(uint8_t address, uint8_t value){
    //TODO: add register writes
-   debugLog("TPS65010 register writes are unimplemented, address:0x%02X, value:0x%02X\n", address, value);
+   debugLog("Unimplemented TPS65010 register write, address:0x%02X, value:0x%02X\n", address, value);
 }
 
 void tps65010Reset(void){
@@ -92,7 +92,10 @@ uint8_t tps65010I2cExchange(uint8_t i2cBus){
    tps65010CurrentI2cByte |= (i2cBus == I2C_1);
    if(tps65010CurrentI2cByteBitsRemaining > 0){
       if(tps65010State == I2C_SENDING){
-         newI2cBus = (tps65010Registers[tps65010SelectedRegister] && 1 << (tps65010CurrentI2cByteBitsRemaining - 1)) ? I2C_1 : I2C_0;
+         if(tps65010SelectedRegister < 0x11)
+            newI2cBus = (tps65010Registers[tps65010SelectedRegister] && 1 << (tps65010CurrentI2cByteBitsRemaining - 1)) ? I2C_1 : I2C_0;
+         else
+            newI2cBus = 0x00;
       }
       tps65010CurrentI2cByteBitsRemaining--;
    }

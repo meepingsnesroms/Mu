@@ -1,6 +1,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include "emulator.h"
+
 
 void tsc2101Reset(void){
 
@@ -19,5 +21,5 @@ void tsc2101LoadState(uint8_t* data){
 }
 
 bool tsc2101ExchangeBit(bool bit){
-
+   debugLog("Unimplemented TSC2101 transfer:%d\n", bit);
 }

@@ -9,7 +9,6 @@
 
 extern uint32_t pxa260SspSscr0;
 extern uint32_t pxa260SspSscr1;
-extern uint32_t pxa260SspSssr;
 extern uint16_t pxa260SspRxFifo[];
 extern uint16_t pxa260SspTxFifo[];
 extern uint8_t  pxa260SspRxReadPosition;
