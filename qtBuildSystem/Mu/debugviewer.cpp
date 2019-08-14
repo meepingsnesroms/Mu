@@ -7,6 +7,7 @@
 #include <QDir>
 
 #include <stdint.h>
+#include <stdio.h>
 
 #include "mainwindow.h"
 #include "emuwrapper.h"
@@ -108,7 +109,7 @@ void DebugViewer::on_debug32Bit_clicked(){
    debugRadioButtonHandler();
 }
 
-void DebugViewer::on_debugDump_clicked(){
+void DebugViewer::on_debugDumpToFile_clicked(){
    QString fileBuffer;
    QFile fileOut(((MainWindow*)parentWidget())->settings->value("resourceDirectory", "").toString() + "/debugDumps/" + ui->debugFilePath->text());
 
@@ -122,6 +123,12 @@ void DebugViewer::on_debugDump_clicked(){
       fileOut.write(fileBuffer.toStdString().c_str());
       fileOut.close();
    }
+}
+
+void DebugViewer::on_debugDumpToTerminal_clicked(){
+   for(int index = 0; index < ui->debugValueList->count(); index++)
+      printf("%s\n", ui->debugValueList->item(index)->text().toStdString().c_str());
+   fflush(stdout);
 }
 
 void DebugViewer::on_debugShowRegisters_clicked(){

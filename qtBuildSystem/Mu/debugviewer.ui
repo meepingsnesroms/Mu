@@ -45,10 +45,48 @@
       </sizepolicy>
      </property>
      <layout class="QGridLayout" name="gridLayout_2">
+      <item row="2" column="1">
+       <widget class="QRadioButton" name="debug8Bit">
+        <property name="text">
+         <string>8bit</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0" rowspan="11">
+       <widget class="QListWidget" name="debugValueList"/>
+      </item>
       <item row="2" column="2">
        <widget class="QRadioButton" name="debug16Bit">
         <property name="text">
          <string>16bit</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="1" colspan="3">
+       <widget class="QLineEdit" name="debugFilePath">
+        <property name="placeholderText">
+         <string>File Path</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1" colspan="3">
+       <widget class="QLineEdit" name="debugAddress">
+        <property name="placeholderText">
+         <string>Address</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="1" colspan="3">
+       <widget class="QLineEdit" name="debugLength">
+        <property name="placeholderText">
+         <string>Length</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="3">
+       <widget class="QRadioButton" name="debug32Bit">
+        <property name="text">
+         <string>32bit</string>
         </property>
        </widget>
       </item>
@@ -62,61 +100,10 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="0" rowspan="10">
-       <widget class="QListWidget" name="debugValueList"/>
-      </item>
-      <item row="2" column="3">
-       <widget class="QRadioButton" name="debug32Bit">
-        <property name="text">
-         <string>32bit</string>
-        </property>
-       </widget>
-      </item>
-      <item row="9" column="1" colspan="3">
-       <widget class="QPushButton" name="debugDump">
-        <property name="text">
-         <string>Dump To File</string>
-        </property>
-        <property name="autoDefault">
-         <bool>false</bool>
-        </property>
-       </widget>
-      </item>
       <item row="6" column="1" colspan="3">
        <widget class="QPushButton" name="debugShowRegisters">
         <property name="text">
          <string>Show Registers</string>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="1" colspan="3">
-       <widget class="QLineEdit" name="debugLength">
-        <property name="placeholderText">
-         <string>Length</string>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="1">
-       <widget class="QRadioButton" name="debug8Bit">
-        <property name="text">
-         <string>8bit</string>
-        </property>
-       </widget>
-      </item>
-      <item row="8" column="1" colspan="3">
-       <widget class="QPushButton" name="debugEraseDebugLogs">
-        <property name="text">
-         <string>Erase Debug Logs</string>
-        </property>
-        <property name="autoDefault">
-         <bool>false</bool>
-        </property>
-       </widget>
-      </item>
-      <item row="4" column="1" colspan="3">
-       <widget class="QLineEdit" name="debugFilePath">
-        <property name="placeholderText">
-         <string>File Path</string>
         </property>
        </widget>
       </item>
@@ -130,10 +117,33 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="1" colspan="3">
-       <widget class="QLineEdit" name="debugAddress">
-        <property name="placeholderText">
-         <string>Address</string>
+      <item row="9" column="1" colspan="3">
+       <widget class="QPushButton" name="debugDumpToFile">
+        <property name="text">
+         <string>Dump To File</string>
+        </property>
+        <property name="autoDefault">
+         <bool>false</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="8" column="1" colspan="3">
+       <widget class="QPushButton" name="debugEraseDebugLogs">
+        <property name="text">
+         <string>Erase Debug Logs</string>
+        </property>
+        <property name="autoDefault">
+         <bool>false</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="10" column="1" colspan="3">
+       <widget class="QPushButton" name="debugDumpToTerminal">
+        <property name="text">
+         <string>Dump To Terminal</string>
+        </property>
+        <property name="autoDefault">
+         <bool>false</bool>
         </property>
        </widget>
       </item>

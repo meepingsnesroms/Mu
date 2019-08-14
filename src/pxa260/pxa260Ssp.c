@@ -140,8 +140,6 @@ uint32_t pxa260SspReadWord(uint32_t address){
             uint8_t tfl = pxa260SspTxFifoEntrys();
             uint16_t value = 0x0000;
 
-            debugLog("Unimplimented PXA260 SSP SSSR read\n");
-
             if(rfl == 0)
                rfl = 0xF;
             else

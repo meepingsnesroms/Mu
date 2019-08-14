@@ -28,7 +28,8 @@ private slots:
    void on_debug16Bit_clicked();
    void on_debug32Bit_clicked();
 
-   void on_debugDump_clicked();
+   void on_debugDumpToFile_clicked();
+   void on_debugDumpToTerminal_clicked();
    void on_debugShowRegisters_clicked();
    void on_debugShowDebugLogs_clicked();
    void on_debugEraseDebugLogs_clicked();

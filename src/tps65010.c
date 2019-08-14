@@ -90,15 +90,13 @@ uint8_t tps65010I2cExchange(uint8_t i2cBus){
    }
 
    tps65010CurrentI2cByte |= (i2cBus == I2C_1);
-   if(tps65010CurrentI2cByteBitsRemaining > 0){
-      if(tps65010State == I2C_SENDING){
-         if(tps65010SelectedRegister < 0x11)
-            newI2cBus = (tps65010Registers[tps65010SelectedRegister] && 1 << (tps65010CurrentI2cByteBitsRemaining - 1)) ? I2C_1 : I2C_0;
-         else
-            newI2cBus = 0x00;
-      }
-      tps65010CurrentI2cByteBitsRemaining--;
+   if(tps65010State == I2C_SENDING){
+      if(tps65010SelectedRegister < 0x11)
+         newI2cBus = (tps65010Registers[tps65010SelectedRegister] && 1 << (tps65010CurrentI2cByteBitsRemaining - 1)) ? I2C_1 : I2C_0;
+      else
+         newI2cBus = I2C_0;
    }
+   tps65010CurrentI2cByteBitsRemaining--;
 
    if(tps65010CurrentI2cByteBitsRemaining == 0){
       //process data from byte
