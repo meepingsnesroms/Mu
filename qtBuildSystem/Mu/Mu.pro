@@ -184,6 +184,7 @@ support_palm_os5{
         ../../src/pxa260/pxa260Ssp.h \
         ../../src/pxa260/pxa260_types.h \
         ../../src/pxa260/pxa260_math64.h \
+        ../../src/pxa260/pxa260Accessors.c.h \
         ../../src/pxa260/pxa260.h \
         ../../src/armv5te/os/os.h \
         ../../src/armv5te/asmcode.h \

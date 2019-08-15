@@ -24,9 +24,11 @@ static uint32_t pxa260_io_read_word(uint32_t addr){
       case PXA260_SSP_BASE >> 16:
          out = pxa260SspReadWord(addr);
          break;
+      case PXA260_IC_BASE >> 16:
+         pxa260icPrvMemAccessF(&pxa260Ic, addr, 4, false, &out);
+         break;
 
       case PXA260_DMA_BASE >> 16:
-      case PXA260_IC_BASE >> 16:
       case PXA260_RTC_BASE >> 16:
       case PXA260_FFUART_BASE >> 16:
       case PXA260_BTUART_BASE >> 16:
@@ -69,9 +71,11 @@ static void pxa260_io_write_word(uint32_t addr, uint32_t value){
       case PXA260_SSP_BASE >> 16:
          pxa260SspWriteWord(addr, value);
          break;
+      case PXA260_IC_BASE >> 16:
+         pxa260icPrvMemAccessF(&pxa260Ic, addr, 4, true, &value);
+         break;
 
       case PXA260_DMA_BASE >> 16:
-      case PXA260_IC_BASE >> 16:
       case PXA260_RTC_BASE >> 16:
       case PXA260_FFUART_BASE >> 16:
       case PXA260_BTUART_BASE >> 16:

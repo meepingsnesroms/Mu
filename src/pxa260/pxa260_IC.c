@@ -17,7 +17,7 @@ static void pxa260icPrvHandleChanges(Pxa260ic* ic){
 	ic->wasIrq = nowIrq;
 }
 
-static Boolean pxa260icPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boolean write, void* buf){
+Boolean pxa260icPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boolean write, void* buf){
 	
 	Pxa260ic* ic = userData;
 	UInt32 val = 0;
@@ -76,7 +76,6 @@ static Boolean pxa260icPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Bool
 }
 
 void pxa260icInit(Pxa260ic* ic){
-	
 	__mem_zero(ic, sizeof(Pxa260ic));
 }
 

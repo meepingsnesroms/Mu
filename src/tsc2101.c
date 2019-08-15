@@ -46,6 +46,7 @@ static uint8_t  tsc2101CurrentPage;
 static uint8_t  tsc2101CurrentRegister;
 static bool     tsc2101CommandFinished;
 static bool     tsc2101Read;
+static bool     tsc2101ChipSelect;
 
 
 static uint16_t tsc2101RegisterRead(uint8_t page, uint8_t address){
@@ -54,7 +55,7 @@ static uint16_t tsc2101RegisterRead(uint8_t page, uint8_t address){
    switch(combinedRegisterNumber){
       case TOUCH_CONTROL_STATUS:
          //simple read, no actions needed
-         return tsc2101Registers[combinedRegisterNumber];
+         //return tsc2101Registers[combinedRegisterNumber];
 
       default:
          debugLog("Unimplemented TSC2101 register read, page:0x%01X, address:0x%02X\n", page, address);
@@ -81,6 +82,7 @@ void tsc2101Reset(void){
    tsc2101CurrentRegister = 0;
    tsc2101CommandFinished = false;
    tsc2101Read = false;
+   tsc2101ChipSelect = true;
 
    //TODO: need to add all the registers here
    tsc2101Registers[TOUCH_CONTROL_STATUS] = 0x8000;
@@ -99,8 +101,11 @@ void tsc2101LoadState(uint8_t* data){
 }
 
 void tsc2101SetChipSelect(bool value){
-   tsc2101CurrentWordBitsRemaining = 16;
-   tsc2101Read = false;
+   if(value && !tsc2101ChipSelect){
+      tsc2101CurrentWordBitsRemaining = 16;
+      tsc2101Read = false;
+   }
+   tsc2101ChipSelect = value;
 }
 
 bool tsc2101ExchangeBit(bool bit){

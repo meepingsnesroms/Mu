@@ -55,6 +55,7 @@ typedef struct{
 	
 }Pxa260ic;
 
+Boolean pxa260icPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boolean write, void* buf);
 void pxa260icInit(Pxa260ic* ic);
 void pxa260icInt(Pxa260ic* ic, UInt8 intNum, Boolean raise);		//interrupt caused by emulated hardware/ interrupt handled by guest
 
