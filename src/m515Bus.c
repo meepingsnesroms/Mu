@@ -3,7 +3,6 @@
 
 #include "emulator.h"
 #include "dbvz.h"
-#include "expansionHardware.h"
 #include "m515Bus.h"
 #include "portability.h"
 #include "flx68000.h"
@@ -135,13 +134,11 @@ uint8_t m68k_read_memory_8(uint32_t address){
       case DBVZ_CHIP_DX_RAM:
          return ramRead8(address);
 
-      case DBVZ_CHIP_00_EMU:
-         return 0x00;
-
       case DBVZ_CHIP_REGISTERS:
          return dbvzGetRegister8(address);
 
       case DBVZ_CHIP_B1_NIL:
+      case DBVZ_CHIP_00_EMU:
       case DBVZ_CHIP_NONE:
          dbvzSetBusErrorTimeOut(address, false);
          return 0x00;
@@ -177,13 +174,11 @@ uint16_t m68k_read_memory_16(uint32_t address){
       case DBVZ_CHIP_DX_RAM:
          return ramRead16(address);
 
-      case DBVZ_CHIP_00_EMU:
-         return 0x0000;
-
       case DBVZ_CHIP_REGISTERS:
          return dbvzGetRegister16(address);
 
       case DBVZ_CHIP_B1_NIL:
+      case DBVZ_CHIP_00_EMU:
       case DBVZ_CHIP_NONE:
          dbvzSetBusErrorTimeOut(address, false);
          return 0x0000;
@@ -219,13 +214,11 @@ uint32_t m68k_read_memory_32(uint32_t address){
       case DBVZ_CHIP_DX_RAM:
          return ramRead32(address);
 
-      case DBVZ_CHIP_00_EMU:
-         return expansionHardwareGetRegister(address);
-
       case DBVZ_CHIP_REGISTERS:
          return dbvzGetRegister32(address);
 
       case DBVZ_CHIP_B1_NIL:
+      case DBVZ_CHIP_00_EMU:
       case DBVZ_CHIP_NONE:
          dbvzSetBusErrorTimeOut(address, false);
          return 0x00000000;
@@ -264,14 +257,12 @@ void m68k_write_memory_8(uint32_t address, uint8_t value){
          ramWrite8(address, value);
          return;
 
-      case DBVZ_CHIP_00_EMU:
-         return;
-
       case DBVZ_CHIP_REGISTERS:
          dbvzSetRegister8(address, value);
          return;
 
       case DBVZ_CHIP_B1_NIL:
+      case DBVZ_CHIP_00_EMU:
       case DBVZ_CHIP_NONE:
          dbvzSetBusErrorTimeOut(address, true);
          return;
@@ -310,14 +301,12 @@ void m68k_write_memory_16(uint32_t address, uint16_t value){
          ramWrite16(address, value);
          return;
 
-      case DBVZ_CHIP_00_EMU:
-         return;
-
       case DBVZ_CHIP_REGISTERS:
          dbvzSetRegister16(address, value);
          return;
 
       case DBVZ_CHIP_B1_NIL:
+      case DBVZ_CHIP_00_EMU:
       case DBVZ_CHIP_NONE:
          dbvzSetBusErrorTimeOut(address, true);
          return;
@@ -356,15 +345,12 @@ void m68k_write_memory_32(uint32_t address, uint32_t value){
          ramWrite32(address, value);
          return;
 
-      case DBVZ_CHIP_00_EMU:
-         expansionHardwareSetRegister(address, value);
-         return;
-
       case DBVZ_CHIP_REGISTERS:
          dbvzSetRegister32(address, value);
          return;
 
       case DBVZ_CHIP_B1_NIL:
+      case DBVZ_CHIP_00_EMU:
       case DBVZ_CHIP_NONE:
          dbvzSetBusErrorTimeOut(address, true);
          return;
@@ -390,7 +376,7 @@ static uint8_t getProperBankType(uint32_t bank){
    //EMUCS also cant be covered by normal chip selects
    if(DBVZ_BANK_IN_RANGE(bank, DBVZ_REG_START_ADDRESS, DBVZ_REG_SIZE) || ((bank & 0x00FF) == 0x00FF && dbvzAreRegistersXXFFMapped()))
       return DBVZ_CHIP_REGISTERS;
-   else if(palmEmuFeatures.info != FEATURE_ACCURATE && DBVZ_BANK_IN_RANGE(bank, DBVZ_EMUCS_START_ADDRESS, DBVZ_EMUCS_SIZE))
+   else if(DBVZ_BANK_IN_RANGE(bank, DBVZ_EMUCS_START_ADDRESS, DBVZ_EMUCS_SIZE))
       return DBVZ_CHIP_00_EMU;
    else if(dbvzChipSelects[DBVZ_CHIP_A0_ROM].inBootMode || (dbvzChipSelects[DBVZ_CHIP_A0_ROM].enable && DBVZ_BANK_IN_RANGE(bank, dbvzChipSelects[DBVZ_CHIP_A0_ROM].start, dbvzChipSelects[DBVZ_CHIP_A0_ROM].lineSize)))
       return DBVZ_CHIP_A0_ROM;

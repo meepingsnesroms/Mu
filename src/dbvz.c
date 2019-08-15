@@ -3,8 +3,6 @@
 #include <string.h>
 
 #include "emulator.h"
-#include "specs/dragonballVzRegisterSpec.h"
-#include "dbvz.h"
 #include "m515Bus.h"
 #include "portability.h"
 #include "flx68000.h"
@@ -12,6 +10,10 @@
 #include "sdCard.h"
 #include "audio/blip_buf.h"
 #include "debug/sandbox.h"
+#include "dbvz.h"
+
+
+#include "dbvzRegisterNames.h"
 
 
 dbvz_chip_t dbvzChipSelects[DBVZ_CHIP_END];

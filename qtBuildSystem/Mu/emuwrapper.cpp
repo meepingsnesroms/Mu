@@ -148,7 +148,7 @@ void EmuWrapper::writeOutSaves(){
    }
 }
 
-uint32_t EmuWrapper::init(const QString& assetPath, uint8_t osVersion, uint32_t features, bool fastBoot){
+uint32_t EmuWrapper::init(const QString& assetPath, uint8_t osVersion, bool syncRtc, bool allowInvalidBehavior, bool fastBoot){
 #if !defined(EMU_SUPPORT_PALM_OS5)
    useOs5 = false;
 #endif
@@ -173,7 +173,7 @@ uint32_t EmuWrapper::init(const QString& assetPath, uint8_t osVersion, uint32_t 
       if(!bootloaderFile.open(QFile::ReadOnly | QFile::ExistingOnly))
          hasBootloader = false;
 
-      error = emulatorInit((uint8_t*)romFile.readAll().data(), romFile.size(), hasBootloader ? (uint8_t*)bootloaderFile.readAll().data() : NULL, hasBootloader ? bootloaderFile.size() : 0, features);
+      error = emulatorInit((uint8_t*)romFile.readAll().data(), romFile.size(), hasBootloader ? (uint8_t*)bootloaderFile.readAll().data() : NULL, hasBootloader ? bootloaderFile.size() : 0, syncRtc, allowInvalidBehavior);
       if(error == EMU_ERROR_NONE){
          QTime now = QTime::currentTime();
 
@@ -259,6 +259,20 @@ void EmuWrapper::reset(bool hard){
          emulatorHardReset();
       else
          emulatorSoftReset();
+
+      if(!wasPaused)
+         resume();
+   }
+}
+
+void EmuWrapper::setCpuSpeed(double speed){
+   if(emuInited){
+      bool wasPaused = isPaused();
+
+      if(!wasPaused)
+         pause();
+
+      emulatorSetCpuSpeed(speed);
 
       if(!wasPaused)
          resume();

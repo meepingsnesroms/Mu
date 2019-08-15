@@ -42,7 +42,7 @@ enum{
    DBVZ_CHIP_B1_NIL,
    //DBVZ_CHIP_CX_RAM, //CSC* is owned by CSD during normal operation
    DBVZ_CHIP_DX_RAM,
-   DBVZ_CHIP_00_EMU, //used for EMUCS on hardware, used by the emu registers here
+   DBVZ_CHIP_00_EMU,
    DBVZ_CHIP_REGISTERS,
    DBVZ_CHIP_NONE,
    DBVZ_CHIP_END

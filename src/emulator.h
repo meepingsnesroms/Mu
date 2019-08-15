@@ -13,7 +13,6 @@ extern "C" {
 
 #include "audio/blip_buf.h"
 #include "m515Bus.h"//for size macros
-#include "specs/emuFeatureRegisterSpec.h"//for feature names
 
 //DEFINE INFO!!!
 //define EMU_SUPPORT_PALM_OS5 to compile in Tungsten T3 support(not reccomended for low power devices)
@@ -168,15 +167,6 @@ typedef struct{
    uint8_t dataPort;
 }misc_hw_t;
 
-typedef struct{
-   uint32_t info;
-   uint32_t src;
-   uint32_t dst;
-   uint32_t size;
-   uint32_t value;
-   //uint32_t cmd;//one time use, has no variable
-}emu_reg_t;
-
 //emulator data, some are GUI interface variables, some should be left alone
 #if defined(EMU_SUPPORT_PALM_OS5)
 extern bool      palmEmulatingTungstenT3;//read allowed, but not advised
@@ -186,7 +176,6 @@ extern uint8_t*  palmRam;//access allowed to read save RAM without allocating a 
 extern input_t   palmInput;//write allowed
 extern sd_card_t palmSdCard;//access allowed to read flash chip data without allocating a giant buffer
 extern misc_hw_t palmMisc;//read/write allowed
-extern emu_reg_t palmEmuFeatures;//dont touch
 extern uint16_t* palmFramebuffer;//read allowed
 extern uint16_t  palmFramebufferWidth;//read allowed
 extern uint16_t  palmFramebufferHeight;//read allowed
@@ -194,6 +183,8 @@ extern int16_t*  palmAudio;//read allowed, 2 channel signed 16 bit audio
 extern blip_t*   palmAudioResampler;//dont touch
 extern double    palmCycleCounter;//dont touch
 extern double    palmClockMultiplier;//dont touch
+extern bool      palmSyncRtc;//dont touch
+extern bool      palmAllowInvalidBehavior;//dont touch
 extern void      (*palmIrSetPortProperties)(serial_port_properties_t* properties);//configure port I/O behavior, used for proxyed native I/R connections
 extern uint32_t  (*palmIrDataSize)(void);//returns the current number of bytes in the hosts IR receive FIFO
 extern uint16_t  (*palmIrDataReceive)(void);//called by the emulator to read the hosts IR receive FIFO
@@ -207,12 +198,12 @@ extern void      (*palmSerialDataFlush)(void);//called by the emulator to delete
 extern void      (*palmGetRtcFromHost)(uint8_t* writeBack);//[0] = hours, [1] = minutes, [2] = seconds
 
 //functions
-uint32_t emulatorInit(uint8_t* palmRomData, uint32_t palmRomSize, uint8_t* palmBootloaderData, uint32_t palmBootloaderSize, uint32_t enabledEmuFeatures);
+uint32_t emulatorInit(uint8_t* palmRomData, uint32_t palmRomSize, uint8_t* palmBootloaderData, uint32_t palmBootloaderSize, bool syncRtc, bool allowInvalidBehavior);
 void emulatorDeinit(void);
 void emulatorHardReset(void);
 void emulatorSoftReset(void);
 void emulatorSetRtc(uint16_t days, uint8_t hours, uint8_t minutes, uint8_t seconds);
-void emulatorSetCpuSpeed(uint16_t percent);
+void emulatorSetCpuSpeed(double speed);
 uint32_t emulatorGetStateSize(void);
 bool emulatorSaveState(uint8_t* data, uint32_t size);//true = success
 bool emulatorLoadState(uint8_t* data, uint32_t size);//true = success

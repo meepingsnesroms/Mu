@@ -150,6 +150,10 @@ support_palm_os5{
         ../../src/pxa260/pxa260_RTC.c \
         ../../src/pxa260/pxa260_TIMR.c \
         ../../src/pxa260/pxa260_UART.c \
+        ../../src/pxa260/pxa260I2c.c \
+        ../../src/pxa260/pxa260Memctrl.c \
+        ../../src/pxa260/pxa260Timing.c \
+        ../../src/pxa260/pxa260Ssp.c \
         ../../src/pxa260/pxa260.c \
         ../../src/armv5te/arm_interpreter.cpp \
         ../../src/armv5te/cpu.cpp \
@@ -157,7 +161,10 @@ support_palm_os5{
         ../../src/armv5te/emuVarPool.c \
         ../../src/armv5te/thumb_interpreter.cpp \
         ../../src/armv5te/mem.c \
-        ../../src/armv5te/mmu.c
+        ../../src/armv5te/mmu.c \
+        ../../src/tps65010.c \
+        ../../src/tsc2101.c \
+        ../../src/w86l488.c
 
     HEADERS += \
         ../../src/pxa260/pxa260_CPU.h \
@@ -171,6 +178,10 @@ support_palm_os5{
         ../../src/pxa260/pxa260_RTC.h \
         ../../src/pxa260/pxa260_TIMR.h \
         ../../src/pxa260/pxa260_UART.h \
+        ../../src/pxa260/pxa260I2c.h \
+        ../../src/pxa260/pxa260Memctrl.h \
+        ../../src/pxa260/pxa260Timing.h \
+        ../../src/pxa260/pxa260Ssp.h \
         ../../src/pxa260/pxa260_types.h \
         ../../src/pxa260/pxa260_math64.h \
         ../../src/pxa260/pxa260.h \
@@ -186,7 +197,10 @@ support_palm_os5{
         ../../src/armv5te/mmu.h \
         ../../src/armv5te/armsnippets.h \
         ../../src/armv5te/literalpool.h \
-        ../../src/tungstenT3Bus.h
+        ../../src/tungstenT3Bus.h \
+        ../../src/tps65010.h \
+        ../../src/tsc2101.h \
+        ../../src/w86l488.h
 }
 
 CONFIG += c++11
@@ -194,86 +208,69 @@ CONFIG += c++11
 INCLUDEPATH += $$PWD/qt-common/include
 
 SOURCES += \
-    ../../src/dbvz.c \
-    ../../src/fileLauncher/launcher.c \
-    ../../src/pxa260/pxa260I2c.c \
-    ../../src/pxa260/pxa260Memctrl.c \
-    ../../src/pxa260/pxa260Ssp.c \
-    ../../src/pxa260/pxa260Timing.c \
-    ../../src/tps65010.c \
-    ../../src/tsc2101.c \
-    ../../src/w86l488.c \
-    debugviewer.cpp \
-    emuwrapper.cpp \
-    main.cpp \
-    mainwindow.cpp \
-    statemanager.cpp \
-    touchscreen.cpp \
-    settingsmanager.cpp \
-    ../../src/audio/blip_buf.c \
-    ../../src/debug/sandbox.c \
     ../../src/ads7846.c \
+    ../../src/audio/blip_buf.c \
+    ../../src/dbvz.c \
+    ../../src/debug/sandbox.c \
     ../../src/emulator.c \
+    ../../src/fileLauncher/launcher.c \
     ../../src/flx68000.c \
-    ../../src/pdiUsbD12.c \
-    ../../src/sdCard.c \
-    ../../src/sed1376.c \
-    ../../src/silkscreen.c \
+    ../../src/m515Bus.c \
     ../../src/m68k/m68kcpu.c \
     ../../src/m68k/m68kdasm.c \
     ../../src/m68k/m68kopac.c \
     ../../src/m68k/m68kopdm.c \
     ../../src/m68k/m68kopnz.c \
     ../../src/m68k/m68kops.c \
-    ../../src/expansionHardware.c \
-    ../../src/m515Bus.c
+    ../../src/pdiUsbD12.c \
+    ../../src/sdCard.c \
+    ../../src/sed1376.c \
+    ../../src/silkscreen.c \
+    debugviewer.cpp \
+    emuwrapper.cpp \
+    main.cpp \
+    mainwindow.cpp \
+    statemanager.cpp \
+    touchscreen.cpp \
+    settingsmanager.cpp
 
 HEADERS += \
-    ../../src/dbvz.h \
-    ../../src/fileLauncher/launcher.h \
-    ../../src/pxa260/pxa260Accessors.c.h \
-    ../../src/pxa260/pxa260I2c.h \
-    ../../src/pxa260/pxa260Memctrl.h \
-    ../../src/pxa260/pxa260Ssp.h \
-    ../../src/pxa260/pxa260Timing.h \
-    ../../src/tps65010.h \
-    ../../src/tsc2101.h \
-    ../../src/w86l488.h \
-    debugviewer.h \
-    emuwrapper.h \
-    mainwindow.h \
-    statemanager.h \
-    touchscreen.h \
-    settingsmanager.h \
+    ../../src/ads7846.h \
     ../../src/audio/blip_buf.h \
+    ../../src/dbvz.h \
+    ../../src/dbvzRegisterAccessors.c.h \
+    ../../src/dbvzRegisterNames.h \
+    ../../src/dbvzTiming.c.h \
     ../../src/debug/sandbox.h \
     ../../src/debug/sandboxTrapNumToName.c.h \
     ../../src/debug/trapNames.h \
+    ../../src/emulator.h \
+    ../../src/fileLauncher/launcher.h \
+    ../../src/flx68000.h \
+    ../../src/m515Bus.h \
     ../../src/m68k/m68k.h \
     ../../src/m68k/m68kconf.h \
     ../../src/m68k/m68kcpu.h \
     ../../src/m68k/m68kexternal.h \
     ../../src/m68k/m68kops.h \
-    ../../src/specs/dragonballVzRegisterSpec.h \
-    ../../src/ads7846.h \
-    ../../src/emulator.h \
-    ../../src/flx68000.h \
     ../../src/pdiUsbD12.h \
+    ../../src/pdiUsbD12CommandNames.h \
     ../../src/portability.h \
     ../../src/sdCard.h \
+    ../../src/sdCardAccessors.c.h \
+    ../../src/sdCardCommandNames.h \
+    ../../src/sdCardCrcTables.c.h \
     ../../src/sed1376.h \
     ../../src/sed1376Accessors.c.h \
+    ../../src/sed1376RegisterNames.h \
     ../../src/silkscreen.h \
-    ../../src/specs/sed1376RegisterSpec.h \
-    ../../src/specs/pdiUsbD12CommandSpec.h \
-    ../../src/specs/emuFeatureRegisterSpec.h \
-    ../../src/specs/sdCardCommandSpec.h \
-    ../../src/expansionHardware.h \
-    ../../src/sdCardAccessors.c.h \
-    ../../src/sdCardCrcTables.c.h \
-    ../../src/m515Bus.h \
-    ../../src/dbvzRegisterAccessors.c.h \
-    ../../src/dbvzTiming.c.h \
+    debugviewer.h \
+    emuwrapper.h \
+    mainwindow.h \
+    statemanager.h \
+    touchscreen.h \
+    settingsmanager.h
+
 
 FORMS += \
     mainwindow.ui \
@@ -285,6 +282,7 @@ CONFIG += mobility
 MOBILITY = 
 
 DISTFILES += \
+    ../../src/fileLauncher/readme.md \
     android/AndroidManifest.xml \
     android/gradle/wrapper/gradle-wrapper.jar \
     android/gradlew \

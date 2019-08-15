@@ -9,6 +9,7 @@
 #include <QKeyEvent>
 
 #include "mainwindow.h"
+#include "emuwrapper.h"
 
 
 SettingsManager::SettingsManager(QWidget* parent) :
@@ -26,9 +27,7 @@ SettingsManager::SettingsManager(QWidget* parent) :
    ui->fastBoot->setChecked(settings->value("fastBoot", false).toBool());
    ui->palmOsVersion->setValue(settings->value("palmOsVersion", false).toInt());
 
-   ui->featureFastCpu->setChecked(settings->value("featureFastCpu", false).toBool());
    ui->featureSyncedRtc->setChecked(settings->value("featureSyncedRtc", false).toBool());
-   ui->featureHleApis->setChecked(settings->value("featureHleApis", false).toBool());
    ui->featureDurable->setChecked(settings->value("featureDurable", false).toBool());
 
 #if !defined(EMU_SUPPORT_PALM_OS5)
@@ -145,16 +144,8 @@ void SettingsManager::on_clearKeyBind_clicked(){
    }
 }
 
-void SettingsManager::on_featureFastCpu_toggled(bool checked){
-   settings->setValue("featureFastCpu", checked);
-}
-
 void SettingsManager::on_featureSyncedRtc_toggled(bool checked){
    settings->setValue("featureSyncedRtc", checked);
-}
-
-void SettingsManager::on_featureHleApis_toggled(bool checked){
-   settings->setValue("featureHleApis", checked);
 }
 
 void SettingsManager::on_featureDurable_toggled(bool checked){
@@ -163,6 +154,14 @@ void SettingsManager::on_featureDurable_toggled(bool checked){
 
 void SettingsManager::on_fastBoot_toggled(bool checked){
    settings->setValue("fastBoot", checked);
+}
+
+void SettingsManager::on_cpuSpeed_valueChanged(double arg1){
+   EmuWrapper& emu = ((MainWindow*)parentWidget())->emu;
+
+   settings->setValue("cpuSpeed", arg1);
+   if(emu.isInited())
+      emu.setCpuSpeed(arg1);
 }
 
 void SettingsManager::on_palmOsVersion_valueChanged(int arg1){

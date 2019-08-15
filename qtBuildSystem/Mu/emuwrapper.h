@@ -49,11 +49,12 @@ public:
    EmuWrapper();
    ~EmuWrapper();
 
-   uint32_t init(const QString& assetPath, uint8_t osVersion, uint32_t features = FEATURE_ACCURATE, bool fastBoot = false);
+   uint32_t init(const QString& assetPath, uint8_t osVersion, bool syncRtc = false, bool allowInvalidBehavior = false, bool fastBoot = false);
    void exit();
    void pause();
    void resume();
    void reset(bool hard);
+   void setCpuSpeed(double speed);
    uint32_t bootFromFile(const QString& mainPath);
    uint32_t installApplication(const QString& path);
    const QString& getStatePath() const{return emuSaveStatePath;}//needed for looking up state pictures in the GUI

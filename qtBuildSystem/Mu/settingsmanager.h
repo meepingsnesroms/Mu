@@ -43,12 +43,11 @@ private slots:
    void on_selectPowerKey_clicked();
    void on_clearKeyBind_clicked();
 
-   void on_featureFastCpu_toggled(bool checked);
    void on_featureSyncedRtc_toggled(bool checked);
-   void on_featureHleApis_toggled(bool checked);
    void on_featureDurable_toggled(bool checked);
 
    void on_fastBoot_toggled(bool checked);
+   void on_cpuSpeed_valueChanged(double arg1);
    void on_palmOsVersion_valueChanged(int arg1);
 
 private:

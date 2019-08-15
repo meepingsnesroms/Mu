@@ -172,17 +172,6 @@ void MainWindow::createHomeDirectoryTree(const QString& path){
    homeDir.mkpath("./debugDumps");
 }
 
-uint32_t MainWindow::getEmuFeatureList(){
-   uint32_t features = FEATURE_ACCURATE;
-
-   features |= settings->value("featureFastCpu", false).toBool() ? FEATURE_FAST_CPU : 0;
-   features |= settings->value("featureSyncedRtc", false).toBool() ? FEATURE_SYNCED_RTC : 0;
-   features |= settings->value("featureHleApis", false).toBool() ? FEATURE_HLE_APIS : 0;
-   features |= settings->value("featureDurable", false).toBool() ? FEATURE_DURABLE : 0;
-
-   return features;
-}
-
 void MainWindow::popupErrorDialog(const QString& error){
    QMessageBox::critical(this, "Mu", error, QMessageBox::Ok);
 }
@@ -344,11 +333,12 @@ void MainWindow::on_center_released(){
 //emu control
 void MainWindow::on_ctrlBtn_clicked(){
    if(!emu.isInited()){
-      uint32_t enabledFeatures = getEmuFeatureList();
       QString sysDir = settings->value("resourceDirectory", "").toString();
-      uint32_t error = emu.init(sysDir, settings->value("palmOsVersion", false).toInt(), enabledFeatures, settings->value("fastBoot", false).toBool());
+      uint32_t error = emu.init(sysDir, settings->value("palmOsVersion", false).toInt(), settings->value("featureSyncedRtc", false).toBool(), settings->value("featureDurable", false).toBool(), settings->value("fastBoot", false).toBool());
 
       if(error == EMU_ERROR_NONE){
+         emu.setCpuSpeed(settings->value("cpuSpeed", 1.00).toDouble());
+
          ui->up->setEnabled(true);
          ui->down->setEnabled(true);
 

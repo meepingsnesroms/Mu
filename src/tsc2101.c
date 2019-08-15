@@ -39,7 +39,7 @@ enum{
 };
 
 
-static uint16_t tsc2101Registers[0xFF];
+static uint16_t tsc2101Registers[0x100];
 static uint16_t tsc2101CurrentWord;
 static uint8_t  tsc2101CurrentWordBitsRemaining;
 static uint8_t  tsc2101CurrentPage;

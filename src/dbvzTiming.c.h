@@ -1,6 +1,6 @@
 //both timer functions can call eachother define them here
-static void timer1(uint8_t reason, double sysclk);
-static void timer2(uint8_t reason, double sysclk);
+static void timer1(uint8_t reason, double sysclks);
+static void timer2(uint8_t reason, double sysclks);
 
 static void timer1(uint8_t reason, double sysclks){
    uint16_t timer1Control = registerArrayRead16(TCTL1);
@@ -249,7 +249,7 @@ static void rtcAddSecondClk32(void){
       uint8_t minutes = oldRtcTime >> 16 & 0x0000003F;
       uint8_t seconds = oldRtcTime & 0x0000003F;
 
-      if(palmEmuFeatures.info & FEATURE_SYNCED_RTC && palmGetRtcFromHost){
+      if(palmSyncRtc && palmGetRtcFromHost){
          //get new RTC value from system
          uint16_t stopwatch = registerArrayRead16(STPWCH);
          uint8_t alarmHours = rtcAlrm >> 24;

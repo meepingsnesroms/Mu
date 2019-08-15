@@ -1,7 +1,0 @@
-HLE API forwarder
-Builtin Dragonball VZ LCD controller emulation
-Crash on first load when pressing "Emulator", probably caused by accessing the config file wrong(happens after driver is deleted and reinstalled)
-
-
-Fixed:
-GUI

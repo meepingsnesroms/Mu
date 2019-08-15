@@ -4,12 +4,13 @@
 
 #include "emulator.h"
 #include "portability.h"
-#include "specs/pdiUsbD12CommandSpec.h"
 
 
 //this is only emulating the commands and USB transfer, the internals of the chip are not documented so any invalid behavior may not match that of the original chip
 //running a new command before finishing the previous one will result in corruption
 
+
+#include "pdiUsbD12CommandNames.h"
 
 #define PDIUSBD12_CMD_NONE 0xFF
 #define PDIUSBD12_TRANSFER_BUFFER_SIZE 131

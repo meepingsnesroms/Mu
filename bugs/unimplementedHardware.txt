@@ -55,9 +55,10 @@ Other:
 Qt port dosent support Windows touchscreen input
 memory dumping dosent work for OS 5 yet
 T3 I2C currently has no ACK bits(should work without them its just inaccurate)
-remove specs folder, make the headers belong to the main file of the target chip being emulated
+make the headers belong to the main file of the target chip being emulated
 
 Fixed:
+remove specs folder
 UART1 USTCNT1
 trying to beam anything will lock up the OS
 Qt dosent have a hybrid file/folder selector so apps will always have to be launched from folders for now

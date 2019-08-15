@@ -38,7 +38,6 @@ public:
    void createHomeDirectoryTree(const QString& path);
 
 private:
-   uint32_t getEmuFeatureList();
    void popupErrorDialog(const QString& error);
    void popupInformationDialog(const QString& info);
    void redraw();

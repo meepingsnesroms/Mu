@@ -5,7 +5,6 @@
 #include "portability.h"
 #include "dbvz.h"
 #include "flx68000.h"//for flx68000GetPc()
-#include "specs/sed1376RegisterSpec.h"
 
 
 //the SED1376 has only 16 address lines(17 if you count the line that switches between registers and framebuffer) and 16 data lines, the most you can read at once is 16 bits, registers are 8 bits
@@ -21,20 +20,18 @@
 //The LCD power-on sequence is activated by programming the Power Save Mode Enable bit (REG[A0h] bit 0) to 0.
 //The LCD power-off sequence is activated by programming the Power Save Mode Enable bit (REG[A0h] bit 0) to 1.
 
-//TODO: remove size declarations and append file namespace to all vars and functions
-#define SED1376_REG_SIZE 0xB4
-#define SED1376_LUT_SIZE 0x100
-#define SED1376_RAM_SIZE  0x20000//actual size is 0x14000, but that cant be masked off by address lines so size is increased to prevent buffer overflow
+
+#include "sed1376RegisterNames.h"
 
 
 uint16_t* sed1376Framebuffer;
-uint8_t   sed1376Ram[SED1376_RAM_SIZE];
+uint8_t   sed1376Ram[0x20000];
 
-static uint8_t  sed1376Registers[SED1376_REG_SIZE];
-static uint8_t  sed1376RLut[SED1376_LUT_SIZE];
-static uint8_t  sed1376GLut[SED1376_LUT_SIZE];
-static uint8_t  sed1376BLut[SED1376_LUT_SIZE];
-static uint16_t sed1376OutputLut[SED1376_LUT_SIZE];//used to speed up pixel conversion
+static uint8_t  sed1376Registers[0xB4];
+static uint8_t  sed1376RLut[0x100];
+static uint8_t  sed1376GLut[0x100];
+static uint8_t  sed1376BLut[0x100];
+static uint16_t sed1376OutputLut[0x100];//used to speed up pixel conversion
 static uint32_t screenStartAddress;
 static uint16_t lineSize;
 static uint16_t (*renderPixel)(uint16_t x, uint16_t y);
@@ -107,12 +104,12 @@ static uint32_t getPipStartAddress(void){
 }
 
 void sed1376Reset(void){
-   memset(sed1376Registers, 0x00, SED1376_REG_SIZE);
-   memset(sed1376OutputLut, 0x00, SED1376_LUT_SIZE * sizeof(uint16_t));
-   memset(sed1376RLut, 0x00, SED1376_LUT_SIZE);
-   memset(sed1376GLut, 0x00, SED1376_LUT_SIZE);
-   memset(sed1376BLut, 0x00, SED1376_LUT_SIZE);
-   memset(sed1376Ram, 0x00, SED1376_RAM_SIZE);
+   memset(sed1376Registers, 0x00, sizeof(sed1376Registers));
+   memset(sed1376OutputLut, 0x00, sizeof(sed1376OutputLut));
+   memset(sed1376RLut, 0x00, sizeof(sed1376RLut));
+   memset(sed1376GLut, 0x00, sizeof(sed1376GLut));
+   memset(sed1376BLut, 0x00, sizeof(sed1376BLut));
+   memset(sed1376Ram, 0x00, sizeof(sed1376Ram));
 
    palmMisc.backlightLevel = 0;
    palmMisc.lcdOn = false;
@@ -129,9 +126,11 @@ void sed1376Reset(void){
 uint32_t sed1376StateSize(void){
    uint32_t size = 0;
 
-   size += SED1376_REG_SIZE;
-   size += SED1376_LUT_SIZE * 3;
-   size += SED1376_RAM_SIZE;
+   size += sizeof(sed1376Registers);
+   size += sizeof(sed1376RLut);
+   size += sizeof(sed1376GLut);
+   size += sizeof(sed1376BLut);
+   size += sizeof(sed1376Ram);
 
    return size;
 }
@@ -139,35 +138,35 @@ uint32_t sed1376StateSize(void){
 void sed1376SaveState(uint8_t* data){
    uint32_t offset = 0;
 
-   memcpy(data + offset, sed1376Registers, SED1376_REG_SIZE);
-   offset += SED1376_REG_SIZE;
-   memcpy(data + offset, sed1376RLut, SED1376_LUT_SIZE);
-   offset += SED1376_LUT_SIZE;
-   memcpy(data + offset, sed1376GLut, SED1376_LUT_SIZE);
-   offset += SED1376_LUT_SIZE;
-   memcpy(data + offset, sed1376BLut, SED1376_LUT_SIZE);
-   offset += SED1376_LUT_SIZE;
-   memcpy(data + offset, sed1376Ram, SED1376_RAM_SIZE);
-   offset += SED1376_RAM_SIZE;
+   memcpy(data + offset, sed1376Registers, sizeof(sed1376Registers));
+   offset += sizeof(sed1376Registers);
+   memcpy(data + offset, sed1376RLut, sizeof(sed1376RLut));
+   offset += sizeof(sed1376RLut);
+   memcpy(data + offset, sed1376GLut, sizeof(sed1376GLut));
+   offset += sizeof(sed1376GLut);
+   memcpy(data + offset, sed1376BLut, sizeof(sed1376BLut));
+   offset += sizeof(sed1376BLut);
+   memcpy(data + offset, sed1376Ram, sizeof(sed1376Ram));
+   offset += sizeof(sed1376Ram);
 }
 
 void sed1376LoadState(uint8_t* data){
    uint32_t offset = 0;
    uint16_t index;
 
-   memcpy(sed1376Registers, data + offset, SED1376_REG_SIZE);
-   offset += SED1376_REG_SIZE;
-   memcpy(sed1376RLut, data + offset, SED1376_LUT_SIZE);
-   offset += SED1376_LUT_SIZE;
-   memcpy(sed1376GLut, data + offset, SED1376_LUT_SIZE);
-   offset += SED1376_LUT_SIZE;
-   memcpy(sed1376BLut, data + offset, SED1376_LUT_SIZE);
-   offset += SED1376_LUT_SIZE;
-   memcpy(sed1376Ram, data + offset, SED1376_RAM_SIZE);
-   offset += SED1376_RAM_SIZE;
+   memcpy(sed1376Registers, data + offset, sizeof(sed1376Registers));
+   offset += sizeof(sed1376Registers);
+   memcpy(sed1376RLut, data + offset, sizeof(sed1376RLut));
+   offset += sizeof(sed1376RLut);
+   memcpy(sed1376GLut, data + offset, sizeof(sed1376GLut));
+   offset += sizeof(sed1376GLut);
+   memcpy(sed1376BLut, data + offset, sizeof(sed1376BLut));
+   offset += sizeof(sed1376BLut);
+   memcpy(sed1376Ram, data + offset, sizeof(sed1376Ram));
+   offset += sizeof(sed1376Ram);
 
    //refresh LUT
-   MULTITHREAD_LOOP(index) for(index = 0; index < SED1376_LUT_SIZE; index++)
+   MULTITHREAD_LOOP(index) for(index = 0; index < 0x100; index++)
       sed1376OutputLut[index] = makeRgb16FromSed666(sed1376RLut[index], sed1376GLut[index], sed1376BLut[index]);
 }
 

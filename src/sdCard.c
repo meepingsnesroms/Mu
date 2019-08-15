@@ -4,7 +4,9 @@
 
 #include "emulator.h"
 #include "portability.h"
-#include "specs/sdCardCommandSpec.h"
+
+
+#include "sdCardCommandNames.h"
 
 
 #include "sdCardCrcTables.c.h"

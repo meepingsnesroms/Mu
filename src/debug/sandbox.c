@@ -16,7 +16,6 @@
 #include "../ads7846.h"
 #include "../dbvz.h"
 #include "../portability.h"
-#include "../specs/emuFeatureRegisterSpec.h"
 #include "sandbox.h"
 #include "trapNames.h"
 #if defined(EMU_SUPPORT_PALM_OS5)
@@ -57,7 +56,6 @@ typedef struct{
 
 
 static bool                   sandboxActive;//used to "log out" of the emulator once a test has finished
-static bool                   sandboxControlHandoff;//used for functions that depend on timing, hands full control to the m68k
 static uint8_t                sandboxCurrentCpuArch;
 static m68k_local_cpu_state_t sandboxOldFunctionM68kCpuState;
 static uint64_t               sandboxFramesRan;
@@ -65,7 +63,7 @@ static mem_region_t           sandboxWatchRegions[SANDBOX_MAX_WATCH_REGIONS];//c
 static uint16_t               sandboxWatchRegionsActive;//number of used sandboxWatchRegions entrys
 
 
-static uint32_t m515CallGuestFunction(bool fallthrough, uint32_t address, uint16_t trap, const char* prototype, ...);
+static uint32_t m515CallGuestFunction(uint32_t address, uint16_t trap, const char* prototype, ...);
 
 #include "sandboxTrapNumToName.c.h"
 
@@ -395,7 +393,7 @@ static bool m515InstallResourceToDevice(uint8_t* data, uint32_t size){
    for(count = 0; count < size; count++)
       m68k_write_memory_8(palmSideResourceData + count, data[count]);
    dbvzChipSelects[DBVZ_CHIP_DX_RAM].readOnlyForProtectedMemory = storageRamReadOnly;//restore old protection state
-   error = m515CallGuestFunction(false, 0x00000000, DmCreateDatabaseFromImage, "w(p)", palmSideResourceData);//Err DmCreateDatabaseFromImage(MemPtr bufferP);//this looks best
+   error = m515CallGuestFunction(0x00000000, DmCreateDatabaseFromImage, "w(p)", palmSideResourceData);//Err DmCreateDatabaseFromImage(MemPtr bufferP);//this looks best
    m515CallGuestFunction(false, 0x00000000, MemChunkFree, "w(p)", palmSideResourceData);
 
    //didnt install
@@ -454,7 +452,7 @@ static void m515RestoreCpuState(void){
    m68k_set_reg(M68K_REG_D0, sandboxOldFunctionM68kCpuState.d0);
 }
 
-static uint32_t m515CallGuestFunction(bool fallthrough, uint32_t address, uint16_t trap, const char* prototype, ...){
+static uint32_t m515CallGuestFunction(uint32_t address, uint16_t trap, const char* prototype, ...){
    //prototype is a Java style function signature describing values passed and returned "v(wllp)"
    //is return void and pass a uint16_t(word), 2 uint32_t(long) and 1 pointer
    //valid types are b(yte), w(ord), l(ong), p(ointer) and v(oid), a capital letter means its a return pointer
@@ -554,47 +552,34 @@ static uint32_t m515CallGuestFunction(bool fallthrough, uint32_t address, uint16
       callWriteOut += 2;
    }
 
-   //end execution with CMD_EXECUTION_DONE
-   m68k_write_memory_16(callWriteOut, 0x23FC);//move.l data imm to address at imm2 opcode
-   callWriteOut += 2;
-   m68k_write_memory_32(callWriteOut, CMD_DEBUG_EXEC_END);
-   callWriteOut += 4;
-   m68k_write_memory_32(callWriteOut, EMU_REG_ADDR(EMU_CMD));
-   callWriteOut += 4;
-
-   sandboxActive = true;
-   if(fallthrough)
-      sandboxControlHandoff = true;
-   else
-      m68ki_cpu.stopped = 0;
+   m68ki_cpu.stopped = 0;
    m68k_set_reg(M68K_REG_SP, stackFrameStart - newStackFrameSize);
    m68k_set_reg(M68K_REG_PC, callStart);
 
-   if(!fallthrough){
-      while(sandboxActive)
-         m68k_execute(1);//m68k_execute() always runs requested cycles + extra cycles of the final opcode, this executes 1 opcode
-      if(prototype[0] == 'p')
-         functionReturn = m68k_get_reg(NULL, M68K_REG_A0);
-      else if(prototype[0] == 'b' || prototype[0] == 'w' || prototype[0] == 'l')
-         functionReturn = m68k_get_reg(NULL, M68K_REG_D0);
-      m68ki_cpu.stopped = oldStopped;
-      m515RestoreCpuState();
+   while(m68k_get_reg(NULL, M68K_REG_PC) != callWriteOut)
+      m68k_execute(1);//m68k_execute() always runs requested cycles + extra cycles of the final opcode, this executes 1 opcode
 
-      //remap all argument pointers
-      for(count = 0; count < functionReturnPointerIndex; count++){
-         switch(functionReturnPointers[count].bytes){
-            case 1:
-               *(uint8_t*)functionReturnPointers[count].hostPointer = m68k_read_memory_8(functionReturnPointers[count].emuPointer);
-               break;
+   if(prototype[0] == 'p')
+      functionReturn = m68k_get_reg(NULL, M68K_REG_A0);
+   else if(prototype[0] == 'b' || prototype[0] == 'w' || prototype[0] == 'l')
+      functionReturn = m68k_get_reg(NULL, M68K_REG_D0);
+   m68ki_cpu.stopped = oldStopped;
+   m515RestoreCpuState();
 
-            case 2:
-               *(uint16_t*)functionReturnPointers[count].hostPointer = m68k_read_memory_16(functionReturnPointers[count].emuPointer);
-               break;
+   //remap all argument pointers
+   for(count = 0; count < functionReturnPointerIndex; count++){
+      switch(functionReturnPointers[count].bytes){
+         case 1:
+            *(uint8_t*)functionReturnPointers[count].hostPointer = m68k_read_memory_8(functionReturnPointers[count].emuPointer);
+            break;
 
-            case 4:
-               *(uint32_t*)functionReturnPointers[count].hostPointer = m68k_read_memory_32(functionReturnPointers[count].emuPointer);
-               break;
-         }
+         case 2:
+            *(uint16_t*)functionReturnPointers[count].hostPointer = m68k_read_memory_16(functionReturnPointers[count].emuPointer);
+            break;
+
+         case 4:
+            *(uint32_t*)functionReturnPointers[count].hostPointer = m68k_read_memory_32(functionReturnPointers[count].emuPointer);
+            break;
       }
    }
 
@@ -610,7 +595,6 @@ void sandboxInit(void){
 
 void sandboxReset(void){
    sandboxActive = false;
-   sandboxControlHandoff = false;
    sandboxFramesRan = 0;
 
    memset(sandboxWatchRegions, 0x00, sizeof(sandboxWatchRegions));
@@ -636,8 +620,6 @@ void sandboxSaveState(uint8_t* data){
    uint16_t index;
 
    writeStateValue8(data + offset, sandboxActive);
-   offset += sizeof(uint8_t);
-   writeStateValue8(data + offset, sandboxControlHandoff);
    offset += sizeof(uint8_t);
    writeStateValue8(data + offset, sandboxCurrentCpuArch);//currently cant be ARMv5 during a frame boundry but that may change
    offset += sizeof(uint8_t);
@@ -671,8 +653,6 @@ void sandboxLoadState(uint8_t* data){
 
    sandboxActive = readStateValue8(data + offset);
    offset += sizeof(uint8_t);
-   sandboxControlHandoff = readStateValue8(data + offset);
-   offset += sizeof(uint8_t);
    sandboxCurrentCpuArch = readStateValue8(data + offset);//currently cant be ARMv5 during a frame boundry but that may change
    offset += sizeof(uint8_t);
    sandboxOldFunctionM68kCpuState.sp = readStateValue32(data + offset);
@@ -701,10 +681,6 @@ void sandboxLoadState(uint8_t* data){
 
 uint32_t sandboxCommand(uint32_t command, void* data){
    uint32_t result = EMU_ERROR_NONE;
-
-   //tests cant run properly(they hang forever) unless the debug return hook is enabled, it also completly destroys accuracy to execute hacked in asm buffers
-   if(!(palmEmuFeatures.info & FEATURE_DEBUG))
-      return EMU_ERROR_NOT_IMPLEMENTED;
 
    debugLog("Sandbox: Command %d started\n", command);
 
@@ -932,16 +908,6 @@ bool sandboxRunning(void){
    return sandboxActive;
 }
 
-void sandboxReturn(void){
-   sandboxActive = false;
-   if(sandboxControlHandoff){
-      //control was just handed back to the host
-      sandboxControlHandoff = false;
-      m515RestoreCpuState();
-      debugLog("Sandbox: Control returned to host\n");
-   }
-}
-
 uint16_t sandboxSetWatchRegion(uint32_t address, uint32_t size, uint8_t type){
    uint16_t index;
 
@@ -1006,7 +972,6 @@ void sandboxOnFrameRun(void){}
 void sandboxOnOpcodeRun(void){}
 void sandboxOnMemoryAccess(uint32_t address, uint8_t size, bool write, uint32_t value){}
 bool sandboxRunning(void){return false;}
-void sandboxReturn(void){}
 uint16_t sandboxSetWatchRegion(uint32_t address, uint32_t size, uint8_t type){return 0;}
 void sandboxClearWatchRegion(uint16_t index){}
 void sandboxSetCpuArch(uint8_t arch){}
