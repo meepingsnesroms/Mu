@@ -10,7 +10,7 @@
 //running a new command before finishing the previous one will result in corruption
 
 
-#include "pdiUsbD12CommandNames.h"
+#include "pdiUsbD12CommandNames.c.h"
 
 #define PDIUSBD12_CMD_NONE 0xFF
 #define PDIUSBD12_TRANSFER_BUFFER_SIZE 131

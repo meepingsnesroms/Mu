@@ -1,5 +1,3 @@
-#ifndef PDI_USB_D12_COMMAND_NAMES_H
-#define PDI_USB_D12_COMMAND_NAMES_H
 /*PDIUSBD12 Commands*/
 
 #define SELECT_ENDPOINT_CTRL_OUT 0x00
@@ -19,5 +17,3 @@
 #define READ_INTERRUPT_REGISTER  0xF4
 
 #define SET_DMA                  0xFB
-
-#endif

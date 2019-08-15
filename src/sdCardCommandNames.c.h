@@ -1,5 +1,3 @@
-#ifndef SD_CARD_COMMAND_NAMES_H
-#define SD_CARD_COMMAND_NAMES_H
 /*SD Card Commands*/
 /*Command Format:01IIIIIIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACCCCCCC1*/
 /*48 bits, I = index, A = argument, C = CRC*/
@@ -63,5 +61,3 @@
 #define DR_ACCEPTED    0x05
 #define DR_CRC_ERROR   0x0B
 #define DR_WRITE_ERROR 0x0D
-
-#endif

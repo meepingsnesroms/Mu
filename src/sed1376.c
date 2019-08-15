@@ -21,7 +21,7 @@
 //The LCD power-off sequence is activated by programming the Power Save Mode Enable bit (REG[A0h] bit 0) to 1.
 
 
-#include "sed1376RegisterNames.h"
+#include "sed1376RegisterNames.c.h"
 
 
 uint16_t* sed1376Framebuffer;
@@ -32,46 +32,46 @@ static uint8_t  sed1376RLut[0x100];
 static uint8_t  sed1376GLut[0x100];
 static uint8_t  sed1376BLut[0x100];
 static uint16_t sed1376OutputLut[0x100];//used to speed up pixel conversion
-static uint32_t screenStartAddress;
-static uint16_t lineSize;
-static uint16_t (*renderPixel)(uint16_t x, uint16_t y);
+static uint32_t sed1376ScreenStartAddress;
+static uint16_t sed1376LineSize;
+static uint16_t (*sed1376RenderPixel)(uint16_t x, uint16_t y);
 
 
 #include "sed1376Accessors.c.h"
 
-static uint32_t getBufferStartAddress(void){
-   uint32_t screenStartAddress = sed1376Registers[DISP_ADDR_2] << 16 | sed1376Registers[DISP_ADDR_1] << 8 | sed1376Registers[DISP_ADDR_0];
+static uint32_t sed1376GetBufferStartAddress(void){
+   uint32_t sed1376ScreenStartAddress = sed1376Registers[DISP_ADDR_2] << 16 | sed1376Registers[DISP_ADDR_1] << 8 | sed1376Registers[DISP_ADDR_0];
    switch((sed1376Registers[SPECIAL_EFFECT] & 0x03) * 90){
       case 0:
          //desired byte address / 4.
-         screenStartAddress *= 4;
+         sed1376ScreenStartAddress *= 4;
          break;
 
       case 90:
          //((desired byte address + (panel height * bpp / 8)) / 4) - 1.
-         screenStartAddress += 1;
-         screenStartAddress *= 4;
-         //screenStartAddress - (panelHeight * bpp / 8);
+         sed1376ScreenStartAddress += 1;
+         sed1376ScreenStartAddress *= 4;
+         //sed1376ScreenStartAddress - (panelHeight * bpp / 8);
          break;
 
       case 180:
          //((desired byte address + (panel width * panel height * bpp / 8)) / 4) - 1.
-         screenStartAddress += 1;
-         screenStartAddress *= 4;
-         //screenStartAddress - (panelWidth * panelHeight * bpp / 8);
+         sed1376ScreenStartAddress += 1;
+         sed1376ScreenStartAddress *= 4;
+         //sed1376ScreenStartAddress - (panelWidth * panelHeight * bpp / 8);
          break;
 
       case 270:
          //(desired byte address + ((panel width - 1) * panel height * bpp / 8)) / 4.
-         screenStartAddress *= 4;
-         //screenStartAddress -= ((panelWidth - 1) * panelHeight * bpp / 8);
+         sed1376ScreenStartAddress *= 4;
+         //sed1376ScreenStartAddress -= ((panelWidth - 1) * panelHeight * bpp / 8);
          break;
    }
 
-   return screenStartAddress;
+   return sed1376ScreenStartAddress;
 }
 
-static uint32_t getPipStartAddress(void){
+static uint32_t sed1376GetPipStartAddress(void){
    uint32_t pipStartAddress = sed1376Registers[PIP_ADDR_2] << 16 | sed1376Registers[PIP_ADDR_1] << 8 | sed1376Registers[PIP_ADDR_0];
    switch((sed1376Registers[SPECIAL_EFFECT] & 0x03) * 90){
       case 0:
@@ -114,7 +114,7 @@ void sed1376Reset(void){
    palmMisc.backlightLevel = 0;
    palmMisc.lcdOn = false;
 
-   renderPixel = NULL;
+   sed1376RenderPixel = NULL;
 
    sed1376Registers[REV_CODE] = 0x28;
    sed1376Registers[DISP_BUFF_SIZE] = 0x14;
@@ -358,19 +358,19 @@ void sed1376Render(void){
       uint16_t rotation = 90 * (sed1376Registers[SPECIAL_EFFECT] & 0x03);
       uint32_t index;
 
-      screenStartAddress = getBufferStartAddress();
-      lineSize = (sed1376Registers[LINE_SIZE_1] << 8 | sed1376Registers[LINE_SIZE_0]) * 4;
+      sed1376ScreenStartAddress = sed1376GetBufferStartAddress();
+      sed1376LineSize = (sed1376Registers[LINE_SIZE_1] << 8 | sed1376Registers[LINE_SIZE_0]) * 4;
       selectRenderer(color, bitDepth);
 
-      if(renderPixel){
+      if(sed1376RenderPixel){
          uint16_t pixelX;
          uint16_t pixelY;
 
          MULTITHREAD_DOUBLE_LOOP(pixelX, pixelY) for(pixelY = 0; pixelY < 160; pixelY++)
             for(pixelX = 0; pixelX < 160; pixelX++)
-               sed1376Framebuffer[pixelY * 160 + pixelX] = renderPixel(pixelX, pixelY);
+               sed1376Framebuffer[pixelY * 160 + pixelX] = sed1376RenderPixel(pixelX, pixelY);
 
-         //debugLog("Screen start address:0x%08X, buffer width:%d, swivel view:%d degrees\n", screenStartAddress, lineSize, rotation);
+         //debugLog("Screen start address:0x%08X, buffer width:%d, swivel view:%d degrees\n", sed1376ScreenStartAddress, lineSize, rotation);
          //debugLog("Screen format, color:%s, BPP:%d\n", boolString(color), bitDepth);
 
          if(pictureInPictureEnabled){
@@ -392,11 +392,11 @@ void sed1376Render(void){
             if(pipStartX < 160 && pipStartY < 160){
                pipEndX = FAST_MIN(pipEndX, 160);
                pipEndY = FAST_MIN(pipEndY, 160);
-               screenStartAddress = getPipStartAddress();
-               lineSize = (sed1376Registers[PIP_LINE_SZ_1] << 8 | sed1376Registers[PIP_LINE_SZ_0]) * 4;
+               sed1376ScreenStartAddress = sed1376GetPipStartAddress();
+               sed1376LineSize = (sed1376Registers[PIP_LINE_SZ_1] << 8 | sed1376Registers[PIP_LINE_SZ_0]) * 4;
                MULTITHREAD_DOUBLE_LOOP(pixelX, pixelY) for(pixelY = pipStartY; pixelY < pipEndY; pixelY++)
                   for(pixelX = pipStartX; pixelX < pipEndX; pixelX++)
-                     sed1376Framebuffer[pixelY * 160 + pixelX] = renderPixel(pixelX, pixelY);
+                     sed1376Framebuffer[pixelY * 160 + pixelX] = sed1376RenderPixel(pixelX, pixelY);
             }
          }
 

@@ -6,7 +6,7 @@
 #include "portability.h"
 
 
-#include "sdCardCommandNames.h"
+#include "sdCardCommandNames.c.h"
 
 
 #include "sdCardCrcTables.c.h"

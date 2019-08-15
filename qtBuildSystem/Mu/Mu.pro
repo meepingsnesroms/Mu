@@ -239,7 +239,7 @@ HEADERS += \
     ../../src/audio/blip_buf.h \
     ../../src/dbvz.h \
     ../../src/dbvzRegisterAccessors.c.h \
-    ../../src/dbvzRegisterNames.h \
+    ../../src/dbvzRegisterNames.c.h \
     ../../src/dbvzTiming.c.h \
     ../../src/debug/sandbox.h \
     ../../src/debug/sandboxTrapNumToName.c.h \
@@ -254,15 +254,15 @@ HEADERS += \
     ../../src/m68k/m68kexternal.h \
     ../../src/m68k/m68kops.h \
     ../../src/pdiUsbD12.h \
-    ../../src/pdiUsbD12CommandNames.h \
+    ../../src/pdiUsbD12CommandNames.c.h \
     ../../src/portability.h \
     ../../src/sdCard.h \
     ../../src/sdCardAccessors.c.h \
-    ../../src/sdCardCommandNames.h \
+    ../../src/sdCardCommandNames.c.h \
     ../../src/sdCardCrcTables.c.h \
     ../../src/sed1376.h \
     ../../src/sed1376Accessors.c.h \
-    ../../src/sed1376RegisterNames.h \
+    ../../src/sed1376RegisterNames.c.h \
     ../../src/silkscreen.h \
     debugviewer.h \
     emuwrapper.h \

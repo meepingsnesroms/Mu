@@ -13,7 +13,7 @@
 #include "dbvz.h"
 
 
-#include "dbvzRegisterNames.h"
+#include "dbvzRegisterNames.c.h"
 
 
 dbvz_chip_t dbvzChipSelects[DBVZ_CHIP_END];

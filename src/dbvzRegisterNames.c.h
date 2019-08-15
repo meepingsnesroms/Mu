@@ -1,8 +1,4 @@
-#ifndef DBVZ_REGISTER_NAMES_H
-#define DBVZ_REGISTER_NAMES_H
-
 /*Dragonball VZ Register Definitions*/
-#define HW_REG_ADDR(x) (0xFFFFF000 | (x))
 
 /*SIM - System Integration Module*/
 #define SCR       0x000/*System Control Register*/
@@ -176,5 +172,3 @@
 #define DRAMMC    0xC00/*DRAM Memory Configuration Register*/
 #define DRAMC     0xC02/*DRAM Control Register*/
 #define SDCTRL    0xC04/*SDRAM Control Register*/
-
-#endif

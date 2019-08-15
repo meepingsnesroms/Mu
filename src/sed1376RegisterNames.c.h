@@ -1,5 +1,3 @@
-#ifndef SED1376_REGISTER_NAMES_H
-#define SED1376_REGISTER_NAMES_H
 /*SED1376 Register Definitions*/
 
 /*Read-Only Configuration Registers*/
@@ -83,5 +81,3 @@
 #define PWM_CONFIG      0xB1
 #define PWM_LENGTH      0xB2
 #define PWM_DUTY_CYCLE  0xB3
-
-#endif
