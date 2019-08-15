@@ -44,18 +44,18 @@ static void tps65010WriteRegister(uint8_t address, uint8_t value){
 
 void tps65010Reset(void){
    memset(tps65010Registers, 0x00, sizeof(tps65010Registers));
+   tps65010CurrentI2cByte = 0x00;
+   tps65010CurrentI2cByteBitsRemaining = 8;
+   tps65010SelectedRegister = 0x00;
+   tps65010State = I2C_WAIT_FOR_ADDR;
+   tps65010SelectedRegisterAlreadySet = false;
+
    tps65010Registers[MASK1] = 0xFF;
    tps65010Registers[MASK2] = 0xFF;
    tps65010Registers[CHGCONFIG] = 0x1B;
    tps65010Registers[VDCDC1] = 0x72;//TODO: 0x7(2/3) need to check DEFMAIN pin
    tps65010Registers[VDCDC2] = 0x68;//TODO: 0x(6/7)8 need to check DEFCORE pin
    tps65010Registers[VREGS1] = 0x88;
-
-   tps65010CurrentI2cByte = 0x00;
-   tps65010CurrentI2cByteBitsRemaining = 8;
-   tps65010SelectedRegister = 0x00;
-   tps65010State = I2C_WAIT_FOR_ADDR;
-   tps65010SelectedRegisterAlreadySet = false;
 }
 
 uint32_t tps65010StateSize(void){

@@ -21,7 +21,7 @@
 //The LCD power-on sequence is activated by programming the Power Save Mode Enable bit (REG[A0h] bit 0) to 0.
 //The LCD power-off sequence is activated by programming the Power Save Mode Enable bit (REG[A0h] bit 0) to 1.
 
-
+//TODO: remove size declarations and append file namespace to all vars and functions
 #define SED1376_REG_SIZE 0xB4
 #define SED1376_LUT_SIZE 0x100
 #define SED1376_RAM_SIZE  0x20000//actual size is 0x14000, but that cant be masked off by address lines so size is increased to prevent buffer overflow

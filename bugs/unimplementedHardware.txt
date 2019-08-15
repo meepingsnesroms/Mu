@@ -55,6 +55,7 @@ Other:
 Qt port dosent support Windows touchscreen input
 memory dumping dosent work for OS 5 yet
 T3 I2C currently has no ACK bits(should work without them its just inaccurate)
+remove specs folder, make the headers belong to the main file of the target chip being emulated
 
 Fixed:
 UART1 USTCNT1
