@@ -33,7 +33,9 @@ static retro_environment_t        environ_cb = NULL;
 static retro_input_poll_t         input_poll_cb = NULL;
 static retro_input_state_t        input_state_cb = NULL;
 
-static uint32_t emuFeatures;
+static double   cpuSpeed;
+static bool     syncRtc;
+static bool     allowInvalidBehavior;
 #if defined(EMU_SUPPORT_PALM_OS5)
 static bool     useOs5;
 #endif
@@ -138,27 +140,17 @@ static void check_variables(bool booting){
    struct retro_variable var = {0};
 
    if(booting){
-      emuFeatures = FEATURE_ACCURATE;
-      
-      var.key = "palm_emu_feature_fast_cpu";
+      var.key = "palm_emu_cpu_speed";
       if(environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
-         if(!strcmp(var.value, "enabled"))
-            emuFeatures |= FEATURE_FAST_CPU;
+         cpuSpeed = atoi(var.value);
       
       var.key = "palm_emu_feature_synced_rtc";
       if(environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
-         if(!strcmp(var.value, "enabled"))
-            emuFeatures |= FEATURE_SYNCED_RTC;
-      
-      var.key = "palm_emu_feature_hle_apis";
-      if(environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
-         if(!strcmp(var.value, "enabled"))
-            emuFeatures |= FEATURE_HLE_APIS;
+         syncRtc = !strcmp(var.value, "enabled");
       
       var.key = "palm_emu_feature_durable";
       if(environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
-         if(!strcmp(var.value, "enabled"))
-            emuFeatures |= FEATURE_DURABLE;
+         allowInvalidBehavior = !strcmp(var.value, "enabled");
    }
 
    var.key = "palm_emu_use_joystick_as_mouse";
@@ -228,9 +220,8 @@ void retro_set_environment(retro_environment_t cb){
    struct retro_vfs_interface_info vfs_getter = { 1, NULL };
    struct retro_led_interface led_getter;
    struct retro_variable vars[] = {
-      { "palm_emu_feature_fast_cpu", "Custom CPU Speeds; disabled|enabled" },
+      { "palm_emu_cpu_speed", "CPU Speed; 1.0|1.5|2.0|2.5|3.0|0.5" },
       { "palm_emu_feature_synced_rtc", "Force Match System Clock; disabled|enabled" },
-      { "palm_emu_feature_hle_apis", "HLE API Implementations; disabled|enabled" },
       { "palm_emu_feature_durable", "Ignore Invalid Behavior; disabled|enabled" },
       { "palm_emu_use_joystick_as_mouse", "Use Left Joystick As Mouse; disabled|enabled" },
       { "palm_emu_disable_graffiti", "Disable Graffiti Area; disabled|enabled" },
@@ -493,7 +484,7 @@ bool retro_load_game(const struct retro_game_info *info){
       bootloaderSize = 0;
    }
    
-   error = emulatorInit(romData, romSize, bootloaderData, bootloaderSize, emuFeatures);
+   error = emulatorInit(romData, romSize, bootloaderData, bootloaderSize, syncRtc, allowInvalidBehavior);
    free(romData);
    if(bootloaderData)
       free(bootloaderData);
@@ -636,6 +627,9 @@ bool retro_load_game(const struct retro_game_info *info){
    
    //used to resize things properly
    firstRetroRunCall = true;
+   
+   //set default CPU speed
+   emulatorSetCpuSpeed(cpuSpeed);
 
    return true;
 }
