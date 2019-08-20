@@ -74,7 +74,7 @@ static void tsc2101RegisterWrite(uint8_t page, uint8_t address, uint16_t value){
    }
 }
 
-void tsc2101Reset(void){
+void tsc2101Reset(bool isBoot){
    memset(tsc2101Registers, 0x00, sizeof(tsc2101Registers));
    tsc2101CurrentWord = 0x0000;
    tsc2101CurrentWordBitsRemaining = 16;
@@ -82,7 +82,9 @@ void tsc2101Reset(void){
    tsc2101CurrentRegister = 0;
    tsc2101CommandFinished = false;
    tsc2101Read = false;
-   tsc2101ChipSelect = true;
+
+   if(isBoot)
+      tsc2101ChipSelect = true;
 
    //TODO: need to add all the registers here
    tsc2101Registers[TOUCH_CONTROL_STATUS] = 0x8000;
@@ -110,6 +112,9 @@ void tsc2101SetChipSelect(bool value){
 
 bool tsc2101ExchangeBit(bool bit){
    bool output = true;//TODO: SPI return value is usualy true but this is unverified
+
+   if(tsc2101ChipSelect)
+      return true;
 
    if(!tsc2101Read){
       tsc2101CurrentWord <<= 1;

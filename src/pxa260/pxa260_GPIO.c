@@ -1,6 +1,31 @@
 #include "pxa260_GPIO.h"
 #include "pxa260_mem.h"
+#include "../tsc2101.h"
+#include "../emulator.h"
 
+
+static void pxa260gpioOnOutputPinUpdated(Pxa260gpio* gpio, UInt8 gpioNum){
+   //the pin value is not sent to this function because it is usually not needed and can be fetched with pxa260gpioGetState
+
+   debugLog("PXA260 GPIO %d set:%d\n", gpioNum, pxa260gpioGetState(gpio, gpioNum));
+
+   switch(gpioNum){
+      case 24:
+         //TSC2101 chip select
+         tsc2101SetChipSelect(!!pxa260gpioGetState(gpio, gpioNum));
+         break;
+
+      case 40:
+         //TSC2101 reset
+         if(pxa260gpioGetState(gpio, gpioNum) == PXA260_GPIO_LOW)
+            tsc2101Reset(false);
+         break;
+
+      default:
+         //debugLog("Unimplimented PXA260 GPIO %d set:%d\n", gpioNum, pxa260gpioGetState(gpio, gpioNum));
+         break;
+   }
+}
 
 static void pxa260gpioPrvRecalcValues(Pxa260gpio* gpio, UInt32 which){
 
@@ -20,8 +45,17 @@ static void pxa260gpioPrvRecalcValues(Pxa260gpio* gpio, UInt32 which){
    if (newVal != oldVal) {
       UInt32 wentHi = newVal &~ oldVal;
       UInt32 wentLo = oldVal &~ newVal;
+      UInt32 outputChanged = (wentHi | wentLo) & gpio->dirs[which];
 
       gpio->detStatus[which] |= (wentHi & gpio->riseDet[which]) | (wentLo & gpio->fallDet[which]);
+
+      if(outputChanged){
+         UInt8 index;
+
+         for(index = 0; index < 32; index++)
+            if(outputChanged & 1UL << index)
+               pxa260gpioOnOutputPinUpdated(gpio, which * 32 + index);
+      }
    }
 }
 
@@ -106,7 +140,7 @@ Boolean pxa260gpioPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boolean w
 			case 25:
 			case 26:
             gpio->AFRs[pa - 21] = val;
-            //pa = (pa - 21) / 2;
+            pa = (pa - 21) / 2;
 				goto recalc;
 		}
 		

@@ -244,7 +244,7 @@ void emulatorSoftReset(void){
       palmClockMultiplier = 1.00;
       pxa260Reset();
       tps65010Reset();
-      tsc2101Reset();
+      tsc2101Reset(true);
       w86l488Reset();
       sandboxReset();
    }
