@@ -67,6 +67,9 @@ static void tsc2101RegisterWrite(uint8_t page, uint8_t address, uint16_t value){
    uint8_t combinedRegisterNumber = TSC2101_REG_LOCATION(page, address);
 
    switch(combinedRegisterNumber){
+      case TOUCH_CONTROL_TSC_ADC:
+         //debugLog("Set TSC2101 ADC Control\n");
+         //return;
 
       default:
          debugLog("Unimplemented TSC2101 register write, page:0x%01X, address:0x%02X, value:0x%04X\n", page, address, value);
@@ -126,12 +129,15 @@ bool tsc2101ExchangeBit(bool bit){
    }
    tsc2101CurrentWordBitsRemaining--;
 
+   //debugLog("TSC2101 bits remaining %d\n", tsc2101CurrentWordBitsRemaining);
+
    if(tsc2101CurrentWordBitsRemaining == 0){
       if(!tsc2101CommandFinished){
          //write command word
          tsc2101CurrentPage = tsc2101CurrentWord >> 11 & 0x000F;
          tsc2101CurrentRegister = tsc2101CurrentWord >> 5 & 0x003F;
          tsc2101Read = !!(tsc2101CurrentWord & 0x8000);
+         tsc2101CommandFinished = true;
          if(tsc2101Read){
             //add first data word
             tsc2101CurrentWord = tsc2101RegisterRead(tsc2101CurrentPage, tsc2101CurrentRegister);
@@ -140,6 +146,7 @@ bool tsc2101ExchangeBit(bool bit){
       }
       else if(!tsc2101Read){
          //write data word
+         //debugLog("TSC2101 should write now!\n");
          if(tsc2101CurrentRegister < 0x40){
             tsc2101RegisterWrite(tsc2101CurrentPage, tsc2101CurrentRegister, tsc2101CurrentWord);
             tsc2101CurrentRegister++;
