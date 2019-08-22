@@ -1,5 +1,11 @@
 static uint8_t pxa260_io_read_byte(uint32_t addr){
-   //is only vaild for UART stuff
+   debugLog("Invalid 8 bit PXA260 register read:0x%08X, PC:0x%08X\n", addr, pxa260GetPc());
+   return 0x00;
+}
+
+static uint16_t pxa260_io_read_half(uint32_t addr){
+   debugLog("Invalid 16 bit PXA260 register read:0x%08X, PC:0x%08X\n", addr, pxa260GetPc());
+   return 0x0000;
 }
 
 static uint32_t pxa260_io_read_word(uint32_t addr){
@@ -23,6 +29,9 @@ static uint32_t pxa260_io_read_word(uint32_t addr){
          break;
       case PXA260_SSP_BASE >> 16:
          out = pxa260SspReadWord(addr);
+         break;
+      case PXA260_UDC_BASE >> 16:
+         out = pxa260UdcReadWord(addr);
          break;
       case PXA260_IC_BASE >> 16:
          pxa260icPrvMemAccessF(&pxa260Ic, addr, 4, false, &out);
@@ -48,7 +57,11 @@ static uint32_t pxa260_io_read_word(uint32_t addr){
 }
 
 static void pxa260_io_write_byte(uint32_t addr, uint8_t value){
-   //is only vaild for UART stuff
+   debugLog("Invalid 8 bit PXA260 register write:0x%08X, value:0x%02X, PC:0x%08X\n", addr, value, pxa260GetPc());
+}
+
+static void pxa260_io_write_half(uint32_t addr, uint16_t value){
+   debugLog("Invalid 16 bit PXA260 register write:0x%08X, value:0x%04X, PC:0x%08X\n", addr, value, pxa260GetPc());
 }
 
 static void pxa260_io_write_word(uint32_t addr, uint32_t value){
@@ -70,6 +83,9 @@ static void pxa260_io_write_word(uint32_t addr, uint32_t value){
          break;
       case PXA260_SSP_BASE >> 16:
          pxa260SspWriteWord(addr, value);
+         break;
+      case PXA260_UDC_BASE >> 16:
+         pxa260UdcWriteWord(addr, value);
          break;
       case PXA260_IC_BASE >> 16:
          pxa260icPrvMemAccessF(&pxa260Ic, addr, 4, true, &value);

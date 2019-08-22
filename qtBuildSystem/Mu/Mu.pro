@@ -154,6 +154,7 @@ support_palm_os5{
         ../../src/pxa260/pxa260Memctrl.c \
         ../../src/pxa260/pxa260Timing.c \
         ../../src/pxa260/pxa260Ssp.c \
+        ../../src/pxa260/pxa260Udc.c \
         ../../src/pxa260/pxa260.c \
         ../../src/armv5te/arm_interpreter.cpp \
         ../../src/armv5te/cpu.cpp \
@@ -182,6 +183,7 @@ support_palm_os5{
         ../../src/pxa260/pxa260Memctrl.h \
         ../../src/pxa260/pxa260Timing.h \
         ../../src/pxa260/pxa260Ssp.h \
+        ../../src/pxa260/pxa260Udc.h \
         ../../src/pxa260/pxa260_types.h \
         ../../src/pxa260/pxa260_math64.h \
         ../../src/pxa260/pxa260Accessors.c.h \

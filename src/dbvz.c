@@ -148,7 +148,7 @@ void dbvzSetWriteProtectViolation(uint32_t address){
 }
 
 static void pllWakeCpuIfOff(void){
-   const int8_t pllWaitTable[4] = {32, 48, 64, 96};
+   static const int8_t pllWaitTable[4] = {32, 48, 64, 96};
 
    //PLL is off and not already in the process of waking up
    if(!dbvzIsPllOn() && pllWakeWait == -1)

@@ -3,6 +3,10 @@
 #include <string.h>
 
 #include "emulator.h"
+#include "tsc2101.h"
+
+
+//TODO: using GPIO1 as an interrupt dosent work
 
 
 #define TSC2101_REG_LOCATION(page, address) ((page) << 6 | (address))
@@ -49,13 +53,92 @@ static bool     tsc2101Read;
 static bool     tsc2101ChipSelect;
 
 
+static uint16_t tsc2101GetAnalogMask(void){
+   const uint16_t masks[4] = {0xFFF, 0xFF0, 0xFFC, 0xFFF};
+
+   return masks[tsc2101Registers[TOUCH_CONTROL_TSC_ADC] >> 8 & 0x0003];
+}
+
+static uint16_t tsc2101GetXValue(void){
+   //TODO: get fake touch range values
+   return (uint16_t)(palmInput.touchscreenX * 0xFFF) & tsc2101GetAnalogMask();
+}
+
+static uint16_t tsc2101GetYValue(void){
+   //TODO: get fake touch range values
+   return (uint16_t)(palmInput.touchscreenY * 0xFFF) & tsc2101GetAnalogMask();
+}
+
+static uint16_t tsc2101GetZ1Value(void){
+   //TODO: get fake touch range values
+   return 0x777 & tsc2101GetAnalogMask();
+}
+
+static uint16_t tsc2101GetZ2Value(void){
+   //TODO: get fake touch range values
+   return 0x777 & tsc2101GetAnalogMask();
+}
+
+static uint16_t tsc2101GetBatValue(void){
+   return 0x777 & tsc2101GetAnalogMask();
+}
+
+static uint16_t tsc2101GetAux1Value(void){
+   if(tsc2101Registers[TOUCH_CONTROL_MEASUREMENT_CONFIGURATION] & 0x4000)
+      return 0x777 & tsc2101GetAnalogMask();//resistance
+   return 0x777 & tsc2101GetAnalogMask();//voltage
+}
+
+static uint16_t tsc2101GetAux2Value(void){
+   if(tsc2101Registers[TOUCH_CONTROL_MEASUREMENT_CONFIGURATION] & 0x2000)
+      return 0x777 & tsc2101GetAnalogMask();//resistance
+   return 0x777 & tsc2101GetAnalogMask();//voltage
+}
+
+static uint16_t tsc2101GetTemp1Value(void){
+   return 0x777 & tsc2101GetAnalogMask();
+}
+
+static uint16_t tsc2101GetTemp2Value(void){
+   return 0x777 & tsc2101GetAnalogMask();
+}
+
+static void tsc2101ResetRegisters(void){
+   memset(tsc2101Registers, 0x00, sizeof(tsc2101Registers));
+
+   //TODO: need to add all the registers here
+   tsc2101Registers[TOUCH_CONTROL_STATUS] = 0x8000;
+
+   tsc2101RefreshInterrupt();
+}
+
 static uint16_t tsc2101RegisterRead(uint8_t page, uint8_t address){
    uint8_t combinedRegisterNumber = TSC2101_REG_LOCATION(page, address);
 
    switch(combinedRegisterNumber){
+      case TOUCH_CONTROL_TSC_ADC:
+         return tsc2101Registers[TOUCH_CONTROL_TSC_ADC] & 0x3FFF | palmInput.touchscreenTouched << 15 | 1 << 14/*TODO: this states the ADC is never busy*/;
+
       case TOUCH_CONTROL_STATUS:
-         //simple read, no actions needed
-         //return tsc2101Registers[combinedRegisterNumber];
+         //TODO: just always saying new data is available to avoid timing
+         debugLog("TSC2101 read status register\n");
+         return tsc2101Registers[TOUCH_CONTROL_STATUS] | 0x0FDE;
+
+      case TOUCH_CONTROL_RESET_CONTROL_REGISTER:
+         return 0xFFFF;
+
+         /*
+      case TOUCH_DATA_X:
+      case TOUCH_DATA_Y:
+      case TOUCH_DATA_Z1:
+      case TOUCH_DATA_Z2:
+      case TOUCH_DATA_BAT:
+      case TOUCH_DATA_AUX1:
+      case TOUCH_DATA_AUX2:
+      case TOUCH_DATA_TEMP1:
+      case TOUCH_DATA_TEMP2:
+         return 0x0000;
+         */
 
       default:
          debugLog("Unimplemented TSC2101 register read, page:0x%01X, address:0x%02X\n", page, address);
@@ -68,8 +151,53 @@ static void tsc2101RegisterWrite(uint8_t page, uint8_t address, uint16_t value){
 
    switch(combinedRegisterNumber){
       case TOUCH_CONTROL_TSC_ADC:
-         //debugLog("Set TSC2101 ADC Control\n");
-         //return;
+         tsc2101Registers[TOUCH_CONTROL_TSC_ADC] = value;
+         tsc2101RefreshInterrupt();
+         return;
+
+      case TOUCH_CONTROL_RESET_CONTROL_REGISTER:
+         if(value == 0xBB00)
+            tsc2101ResetRegisters();
+         return;
+
+      case TOUCH_CONTROL_CONFIGURATION:
+         //TODO: TOUCH_CONTROL_CONFIGURATION SWPDTD bit
+         debugLog("TSC2101 config register writes not fully implemented\n");
+         tsc2101Registers[TOUCH_CONTROL_CONFIGURATION] = value & 0x007F;
+         tsc2101RefreshInterrupt();
+         return;
+
+      case TOUCH_CONTROL_TEMPERATURE_MAX:
+      case TOUCH_CONTROL_TEMPERATURE_MIN:
+      case TOUCH_CONTROL_AUX1_MAX:
+      case TOUCH_CONTROL_AUX1_MIN:
+      case TOUCH_CONTROL_AUX2_MAX:
+      case TOUCH_CONTROL_AUX2_MIN:
+         tsc2101Registers[combinedRegisterNumber] = value & 0x1FFF;
+         tsc2101RefreshInterrupt();
+         return;
+
+      case TOUCH_CONTROL_MEASUREMENT_CONFIGURATION:
+         tsc2101Registers[TOUCH_CONTROL_MEASUREMENT_CONFIGURATION] = value & 0xFE04;
+         tsc2101RefreshInterrupt();
+         return;
+
+      case TOUCH_DATA_X:
+      case TOUCH_DATA_Y:
+      case TOUCH_DATA_Z1:
+      case TOUCH_DATA_Z2:
+      case TOUCH_DATA_BAT:
+      case TOUCH_DATA_AUX1:
+      case TOUCH_DATA_AUX2:
+      case TOUCH_DATA_TEMP1:
+      case TOUCH_DATA_TEMP2:
+         //invalid write, ignore
+         return;
+
+      case TOUCH_CONTROL_PROGRAMMABLE_DELAY:
+         //simple write, no actions needed
+         tsc2101Registers[combinedRegisterNumber] = value;
+         return;
 
       default:
          debugLog("Unimplemented TSC2101 register write, page:0x%01X, address:0x%02X, value:0x%04X\n", page, address, value);
@@ -78,7 +206,6 @@ static void tsc2101RegisterWrite(uint8_t page, uint8_t address, uint16_t value){
 }
 
 void tsc2101Reset(bool isBoot){
-   memset(tsc2101Registers, 0x00, sizeof(tsc2101Registers));
    tsc2101CurrentWord = 0x0000;
    tsc2101CurrentWordBitsRemaining = 16;
    tsc2101CurrentPage = 0;
@@ -89,8 +216,7 @@ void tsc2101Reset(bool isBoot){
    if(isBoot)
       tsc2101ChipSelect = true;
 
-   //TODO: need to add all the registers here
-   tsc2101Registers[TOUCH_CONTROL_STATUS] = 0x8000;
+   tsc2101ResetRegisters();
 }
 
 uint32_t tsc2101StateSize(void){
@@ -129,8 +255,6 @@ bool tsc2101ExchangeBit(bool bit){
    }
    tsc2101CurrentWordBitsRemaining--;
 
-   //debugLog("TSC2101 bits remaining %d\n", tsc2101CurrentWordBitsRemaining);
-
    if(tsc2101CurrentWordBitsRemaining == 0){
       if(!tsc2101CommandFinished){
          //write command word
@@ -167,4 +291,54 @@ bool tsc2101ExchangeBit(bool bit){
    }
 
    return output;
+}
+
+void tsc2101RefreshInterrupt(void){
+   bool interruptTriggered = false;
+
+   //check if PINTDAV is data or pen and data interrupt
+   if(tsc2101Registers[TOUCH_CONTROL_STATUS] >> 14 & 0x0003){
+      uint16_t aux1 = tsc2101GetAux1Value();
+      uint16_t aux2 = tsc2101GetAux2Value();
+      uint16_t temp1 = tsc2101GetTemp1Value();
+      uint16_t temp2 = tsc2101GetTemp2Value();
+      bool useTemp2 = !!(tsc2101Registers[TOUCH_CONTROL_MEASUREMENT_CONFIGURATION] & 0x8000);
+      uint16_t temperatureMax = tsc2101Registers[TOUCH_CONTROL_TEMPERATURE_MAX];
+      uint16_t temperatureMin = tsc2101Registers[TOUCH_CONTROL_TEMPERATURE_MIN];
+      uint16_t aux1Max = tsc2101Registers[TOUCH_CONTROL_AUX1_MAX];
+      uint16_t aux1Min = tsc2101Registers[TOUCH_CONTROL_AUX1_MIN];
+      uint16_t aux2Max = tsc2101Registers[TOUCH_CONTROL_AUX2_MAX];
+      uint16_t aux2Min = tsc2101Registers[TOUCH_CONTROL_AUX2_MIN];
+
+      //TODO: all enable flags for range checking say they apply to scan measurement, dont know if this is always on or not
+
+      if(temperatureMax & 0x1000 && (useTemp2 ? temp2 : temp1) >= (temperatureMax & 0xFFF))
+         interruptTriggered = true;
+
+      if(temperatureMin & 0x1000 && (useTemp2 ? temp2 : temp1) <= (temperatureMin & 0xFFF))
+         interruptTriggered = true;
+
+      if(aux1Max & 0x1000 && aux1 >= (aux1Max & 0xFFF))
+         interruptTriggered = true;
+
+      if(aux1Min & 0x1000 && aux1 <= (aux1Min & 0xFFF))
+         interruptTriggered = true;
+
+      if(aux2Max & 0x1000 && aux2 >= (aux2Max & 0xFFF))
+         interruptTriggered = true;
+
+      if(aux2Min & 0x1000 && aux2 <= (aux2Min & 0xFFF))
+         interruptTriggered = true;
+   }
+
+   //check PINTDAV is pen or pen and data interrupt and pen is down
+   if((tsc2101Registers[TOUCH_CONTROL_STATUS] >> 14 & 0x0003) != 0x0001)
+      if(palmInput.touchscreenTouched)
+         interruptTriggered = true;
+
+   if(interruptTriggered){
+      //TODO: need to pull a pin low
+   }
+
+   debugLog("TSC2101 PINTDAV not fully implemented\n");
 }

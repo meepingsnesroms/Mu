@@ -14,6 +14,7 @@
 #include "pxa260I2c.h"
 #include "pxa260Memctrl.h"
 #include "pxa260Ssp.h"
+#include "pxa260Udc.h"
 #include "pxa260Timing.h"
 #include "../armv5te/cpu.h"
 #include "../armv5te/emu.h"
@@ -108,10 +109,10 @@ bool pxa260Init(uint8_t** returnRom, uint8_t** returnRam){
 
    //IO
    read_byte_map[PXA260_START_BANK(PXA260_IO_BASE)] = pxa260_io_read_byte;
-   read_half_map[PXA260_START_BANK(PXA260_IO_BASE)] = bad_read_half;
+   read_half_map[PXA260_START_BANK(PXA260_IO_BASE)] = pxa260_io_read_half;
    read_word_map[PXA260_START_BANK(PXA260_IO_BASE)] = pxa260_io_read_word;
    write_byte_map[PXA260_START_BANK(PXA260_IO_BASE)] = pxa260_io_write_byte;
-   write_half_map[PXA260_START_BANK(PXA260_IO_BASE)] = bad_write_half;
+   write_half_map[PXA260_START_BANK(PXA260_IO_BASE)] = pxa260_io_write_half;
    write_word_map[PXA260_START_BANK(PXA260_IO_BASE)] = pxa260_io_write_word;
 
    //LCD
@@ -184,6 +185,7 @@ void pxa260Reset(void){
    pxa260I2cReset();
    pxa260MemctrlReset();
    pxa260SspReset();
+   pxa260UdcReset();
    pxa260TimingReset();
 
    memset(&arm, 0, sizeof arm);

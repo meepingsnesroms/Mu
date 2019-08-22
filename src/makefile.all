@@ -41,6 +41,7 @@ ifeq ($(EMU_SUPPORT_PALM_OS5), 1)
 		$(EMU_PATH)/pxa260/pxa260Memctrl.c \
 		$(EMU_PATH)/pxa260/pxa260Timing.c \
 		$(EMU_PATH)/pxa260/pxa260Ssp.c \
+		$(EMU_PATH)/pxa260/pxa260Udc.c \
 		$(EMU_PATH)/pxa260/pxa260.c \
 		$(EMU_PATH)/armv5te/emuVarPool.c \
 		$(EMU_PATH)/armv5te/mem.c \
