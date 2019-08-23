@@ -261,7 +261,7 @@ void *addr_cache_miss(uint32_t virt, bool writing, fault_proc *fault) {
     return ptr;
 }
 
-void addr_cache_flush() {
+void addr_cache_flush(void) {
     #ifndef SUPPORT_LINUX
         /* The OS does something incredibly stupid: For every access to the flash,
          * it disables the MMU and flushes all buffers and caches. Argh.

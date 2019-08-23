@@ -108,6 +108,8 @@ static void tsc2101ResetRegisters(void){
 
    //TODO: need to add all the registers here
    tsc2101Registers[TOUCH_CONTROL_STATUS] = 0x8000;
+   //tsc2101Registers[TOUCH_CONTROL_BUFFER_MODE] = 0x0200;//TODO: return buffer emupt flag based on real buffer size
+   tsc2101Registers[TOUCH_CONTROL_REFERENCE] = 0x0002;
 
    tsc2101RefreshInterrupt();
 }
@@ -127,7 +129,6 @@ static uint16_t tsc2101RegisterRead(uint8_t page, uint8_t address){
       case TOUCH_CONTROL_RESET_CONTROL_REGISTER:
          return 0xFFFF;
 
-         /*
       case TOUCH_DATA_X:
       case TOUCH_DATA_Y:
       case TOUCH_DATA_Z1:
@@ -137,8 +138,8 @@ static uint16_t tsc2101RegisterRead(uint8_t page, uint8_t address){
       case TOUCH_DATA_AUX2:
       case TOUCH_DATA_TEMP1:
       case TOUCH_DATA_TEMP2:
+         debugLog("Unimplemented TSC2101 analog port read:%d\n", combinedRegisterNumber);
          return 0x0000;
-         */
 
       default:
          debugLog("Unimplemented TSC2101 register read, page:0x%01X, address:0x%02X\n", page, address);
@@ -153,6 +154,11 @@ static void tsc2101RegisterWrite(uint8_t page, uint8_t address, uint16_t value){
       case TOUCH_CONTROL_TSC_ADC:
          tsc2101Registers[TOUCH_CONTROL_TSC_ADC] = value;
          tsc2101RefreshInterrupt();
+         return;
+
+      case TOUCH_CONTROL_REFERENCE:
+         //TODO: may need to divide the values by the referece voltage then multiply by 0xFFF
+         tsc2101Registers[TOUCH_CONTROL_REFERENCE] = value & 0x001F;
          return;
 
       case TOUCH_CONTROL_RESET_CONTROL_REGISTER:
@@ -235,6 +241,7 @@ void tsc2101SetChipSelect(bool value){
    if(value && !tsc2101ChipSelect){
       tsc2101CurrentWordBitsRemaining = 16;
       tsc2101Read = false;
+      tsc2101CommandFinished = false;
    }
    tsc2101ChipSelect = value;
 }

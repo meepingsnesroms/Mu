@@ -26,7 +26,7 @@ extern uint8_t  pxa260I2cBus;
 extern uint8_t  pxa260I2cBuffer;
 extern uint16_t pxa260I2cIcr;
 extern uint16_t pxa260I2cIsr;
-extern uint16_t pxa260I2cIsar;
+extern uint8_t  pxa260I2cIsar;
 extern bool     pxa260I2cUnitBusy;
 
 void pxa260I2cReset(void);

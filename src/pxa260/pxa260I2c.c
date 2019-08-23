@@ -22,7 +22,7 @@ uint8_t  pxa260I2cBus;
 uint8_t  pxa260I2cBuffer;
 uint16_t pxa260I2cIcr;
 uint16_t pxa260I2cIsr;
-uint16_t pxa260I2cIsar;
+uint8_t  pxa260I2cIsar;
 bool     pxa260I2cUnitBusy;
 
 
@@ -38,7 +38,7 @@ void pxa260I2cReset(void){
    pxa260I2cBuffer = 0x00;
    pxa260I2cIcr = 0x0000;
    pxa260I2cIsr = 0x0000;
-   pxa260I2cIsar = 0x0000;
+   pxa260I2cIsar = 0x00;
    pxa260I2cUnitBusy = false;
 }
 
