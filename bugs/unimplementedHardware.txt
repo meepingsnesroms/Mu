@@ -39,6 +39,9 @@ electrical noise on lines(conversions probably should have +-20 added to values)
 in the edge case that SPICLK2 is disabled while using ADS7846 and a 1 was the last bit shifted out 0s will still be shifted in
 need to to verify behavior of differential mode bit
 
+TSC2101:
+values of AUX1 and AUX2 are unknown an need to be tested, emulation has issues with the USB port shortly after and it would make sense that since the T3 has the same connector as the m515 AUX1 is the device type resistor in the bottom connector
+
 SD Card:
 block specific write protect bits don't work
 IRQ2 may actually be attached to the SD Card data out pin, triggering an interrupt when a 0 is received to process the return data
