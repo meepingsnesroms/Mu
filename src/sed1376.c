@@ -407,26 +407,6 @@ void sed1376Render(void){
          if((sed1376Registers[DISP_MODE] & 0x30) == 0x10)
             MULTITHREAD_LOOP(index) for(index = 0; index < 160 * 160; index++)
                sed1376Framebuffer[index] = ~sed1376Framebuffer[index];
-
-
-         //backlight level, 0 = 1/4 color intensity, 1 = 1/2 color intensity, 2 = full color intensity
-         switch(palmMisc.backlightLevel){
-            case 0:
-               MULTITHREAD_LOOP(index) for(index = 0; index < 160 * 160; index++){
-                  sed1376Framebuffer[index] >>= 2;
-                  sed1376Framebuffer[index] &= 0x39E7;
-               }
-               break;
-            case 1:
-               MULTITHREAD_LOOP(index) for(index = 0; index < 160 * 160; index++){
-                  sed1376Framebuffer[index] >>= 1;
-                  sed1376Framebuffer[index] &= 0x7BEF;
-               }
-               break;
-            case 2:
-               //nothing
-               break;
-         }
       }
       else{
          debugLog("Invalid screen format, color:%s, BPP:%d, rotation:%d\n", color ? "true" : "false", bitDepth, rotation);

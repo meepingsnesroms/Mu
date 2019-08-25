@@ -702,9 +702,39 @@ void emulatorEjectSdCard(void){
 }
 
 void emulatorRunFrame(void){
+   uint16_t index;
+
 #if defined(EMU_SUPPORT_PALM_OS5)
    if(palmEmulatingTungstenT3){
       pxa260Execute(true);
+
+      /*
+      //backlight level, 0% = 1/4 color intensity, 50% = 1/2 color intensity, 100% = full color intensity
+      switch(palmMisc.backlightLevel){
+         case 0:
+            MULTITHREAD_LOOP(index) for(index = 0; index < 320 * 480; index++){
+               palmFramebuffer[index] >>= 2;
+               palmFramebuffer[index] &= 0x39E7;
+            }
+            break;
+
+         case 50:
+            MULTITHREAD_LOOP(index) for(index = 0; index < 320 * 480; index++){
+               palmFramebuffer[index] >>= 1;
+               palmFramebuffer[index] &= 0x7BEF;
+            }
+            break;
+
+         case 100:
+            //nothing
+            break;
+
+         default:
+            //TODO: the T3 supports full range backlight intensity, need to calculate the value here
+            debugLog("Unsupported backlight value\n");
+            break;
+      }
+      */
    }
    else{
 #endif
@@ -713,6 +743,31 @@ void emulatorRunFrame(void){
 
       //LCD controller
       sed1376Render();
+
+      //backlight level, 0% = 1/4 color intensity, 50% = 1/2 color intensity, 100% = full color intensity
+      switch(palmMisc.backlightLevel){
+         case 0:
+            MULTITHREAD_LOOP(index) for(index = 0; index < 160 * 160; index++){
+               palmFramebuffer[index] >>= 2;
+               palmFramebuffer[index] &= 0x39E7;
+            }
+            break;
+
+         case 50:
+            MULTITHREAD_LOOP(index) for(index = 0; index < 160 * 160; index++){
+               palmFramebuffer[index] >>= 1;
+               palmFramebuffer[index] &= 0x7BEF;
+            }
+            break;
+
+         case 100:
+            //nothing
+            break;
+
+         default:
+            debugLog("Invalid backlight value\n");
+            break;
+      }
 #if defined(EMU_SUPPORT_PALM_OS5)
    }
 #endif

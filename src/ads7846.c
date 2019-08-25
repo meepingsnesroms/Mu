@@ -202,15 +202,15 @@ bool ads7846ExchangeBit(bool bitIn){
                      break;
 
                   case 2:
-                     //battery, unknown hasent gotten low enough to test yet
+                     //battery
                      //ads7846OutputValue = 0x600;//5%
                      //ads7846OutputValue = 0x61C;//30%
                      //ads7846OutputValue = 0x63C;//40%
                      //ads7846OutputValue = 0x65C;//60%
                      //ads7846OutputValue = 0x67C;//80%
                      //ads7846OutputValue = 0x68C;//100%
-                     ads7846OutputValue = 0x69C;//100%
-                     //ads7846OutputValue = ads7846RangeMap(0, 100, palmMisc.batteryLevel, 0x000, 0x7F8);
+                     //ads7846OutputValue = 0x69C;//100%
+                     ads7846OutputValue = ads7846RangeMap(0, 100, palmMisc.batteryLevel, 0x5FD, 0x68C);
                      break;
 
                   case 3:

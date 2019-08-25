@@ -990,7 +990,7 @@ static void updateSdCardChipSelectStatus(void){
 }
 
 static void updateBacklightAmplifierStatus(void){
-   palmMisc.backlightLevel = (palmMisc.backlightLevel > 0) ? (1 + m515BacklightAmplifierState()) : 0;
+   palmMisc.backlightLevel = (palmMisc.backlightLevel > 0) ? (50 + m515BacklightAmplifierState() * 50) : 0;
 }
 
 static void updateTouchState(void){
