@@ -88,7 +88,7 @@ void pxa260TimingRun(int32_t cycles){
              arm.reg[15] += 4;
              cpu_exception((cpu_events & EVENT_FIQ) ? EX_FIQ : EX_IRQ);
          }
-         cpu_events &= ~EVENT_WAITING;//this might need to be move above?
+         cpu_events &= ~EVENT_WAITING;//the wait opcode will be executed again if still waiting, that will clear the remaining cycle count and exit the function again
 
          if (arm.cpsr_low28 & 0x20)
              cpu_thumb_loop();

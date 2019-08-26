@@ -2,6 +2,7 @@
 #define _CPU_H_
 
 #include "pxa260_types.h"
+#include "../armv5te/emu.h"
 #include "../armv5te/cpu.h"
 
 struct ArmCpu;
@@ -81,14 +82,8 @@ typedef struct ArmCpu{
 #define cpuSetReg(x, regNum, value) set_reg(regNum, value)
 
 //void cpuIrq(ArmCpu* cpu, Boolean fiq, Boolean raise);	//unraise when acknowledged
-/*
-static inline void cpuIrq(ArmCpu* cpu, Boolean fiq, Boolean raise){
-   if(raise)
-      cpu_exception(fiq ? EX_FIQ : EX_IRQ);
-   //TODO: may need to fix not doing anything when cleared
-}
-*/
-#define cpuIrq(x, fiq, raise) if(raise)cpu_exception(fiq ? EX_FIQ : EX_IRQ)
+//#define cpuIrq(x, fiq, raise) if(raise)cpu_exception(fiq ? EX_FIQ : EX_IRQ)
+#define cpuIrq(x, fiq, raise) (raise ? (cpu_events |= (fiq ? EVENT_FIQ : EVENT_IRQ)) : (cpu_events &= (fiq ? ~EVENT_FIQ : ~EVENT_IRQ)))
 
 //void cpuCoprocessorRegister(ArmCpu* cpu, UInt8 cpNum, ArmCoprocessor* coproc);
 //void cpuCoprocessorUnregister(ArmCpu* cpu, UInt8 cpNum);
