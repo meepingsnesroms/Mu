@@ -139,6 +139,9 @@ bool sdCardExchangeBit(bool bit){
                if(!bit)
                   bitValid = false;
                break;
+
+            default:
+               break;
          }
 
          //add the bit or start new command if invalid

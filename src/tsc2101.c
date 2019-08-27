@@ -8,6 +8,8 @@
 
 //TODO: using GPIO1 as an interrupt dosent work
 //TODO: self controlled scanning mode is unimplemented
+//TODO: single shot/continuos modes
+//TODO: HCTLM is wrong
 
 
 #define TSC2101_REG_LOCATION(page, address) ((page) << 6 | (address))
@@ -67,17 +69,54 @@ static uint8_t tsc2101BufferFifoEntrys(void){
 }
 
 static uint16_t tsc2101BufferFifoRead(void){
+   uint16_t value = 0x0000;
+
+   //FUF flag
+   if(tsc2101BufferFifoEntrys() == 64)
+      value |= 0x8000;
+
+   //get data
    if(tsc2101BufferFifoEntrys() > 0)
       tsc2101BufferReadPosition = (tsc2101BufferReadPosition + 1) % 65;
-   return tsc2101Registers[BUFFER_START + tsc2101BufferReadPosition];
+
+   value |= tsc2101Registers[BUFFER_START + tsc2101BufferReadPosition];
+
+   //EMF flag
+   if(tsc2101BufferFifoEntrys() == 0)
+      value |= 0x4000;
+
+   return value;
 }
 
-static void tsc2101BufferFifoWrite(uint16_t value){
-   if(tsc2101BufferFifoEntrys() < 64)
+static void tsc2101BufferFifoWrite(uint8_t who){
+   uint16_t value = tsc2101Registers[who];
+
+   switch(who){
+      case TOUCH_DATA_X:
+      case TOUCH_DATA_Z1:
+      case TOUCH_DATA_BAT:
+      case TOUCH_DATA_AUX2:
+         //nothing, bit 12 is 0
+         break;
+
+      case TOUCH_DATA_Y:
+      case TOUCH_DATA_Z2:
+      case TOUCH_DATA_AUX1:
+         value |= 0x1000;
+         break;
+
+      default:
+         debugLog("TSC2101 invalid data register written to buffer:%d\n", who);
+         break;
+   }
+
+   if(tsc2101BufferFifoEntrys() < 64){
       tsc2101BufferWritePosition = (tsc2101BufferWritePosition + 1) % 65;
-   else
-      debugLog("tsc2101 buffer FIFO overflowed\n");
-   tsc2101Registers[BUFFER_START + tsc2101BufferWritePosition] = value;
+      tsc2101Registers[BUFFER_START + tsc2101BufferWritePosition] = value;
+   }
+   else{
+      debugLog("TSC2101 buffer FIFO overflowed\n");
+   }
 }
 
 static void tsc2101BufferFifoFlush(void){
@@ -145,8 +184,10 @@ static void tsc2101Scan(void){
          tsc2101Registers[TOUCH_DATA_X] = tsc2101GetXValue();
          tsc2101Registers[TOUCH_DATA_Y] = tsc2101GetYValue();
          tsc2101HasNewData |= 1 << TOUCH_DATA_X | 1 << TOUCH_DATA_Y;
+
          if(tsc2101Registers[TOUCH_CONTROL_BUFFER_MODE] & 0x8000){
-            //TODO: support buffer mode
+            tsc2101BufferFifoWrite(TOUCH_DATA_Y);
+            tsc2101BufferFifoWrite(TOUCH_DATA_X);
          }
          break;
 
@@ -157,8 +198,12 @@ static void tsc2101Scan(void){
          tsc2101Registers[TOUCH_DATA_Z1] = tsc2101GetZ1Value();
          tsc2101Registers[TOUCH_DATA_Z2] = tsc2101GetZ2Value();
          tsc2101HasNewData |= 1 << TOUCH_DATA_X | 1 << TOUCH_DATA_Y | 1 << TOUCH_DATA_Z1 | 1 << TOUCH_DATA_Z2;
+
          if(tsc2101Registers[TOUCH_CONTROL_BUFFER_MODE] & 0x8000){
-            //TODO: support buffer mode
+            tsc2101BufferFifoWrite(TOUCH_DATA_Y);
+            tsc2101BufferFifoWrite(TOUCH_DATA_X);
+            tsc2101BufferFifoWrite(TOUCH_DATA_Z1);
+            tsc2101BufferFifoWrite(TOUCH_DATA_Z2);
          }
          break;
 
@@ -166,18 +211,18 @@ static void tsc2101Scan(void){
          //touch x
          tsc2101Registers[TOUCH_DATA_X] = tsc2101GetXValue();
          tsc2101HasNewData |= 1 << TOUCH_DATA_X;
-         if(tsc2101Registers[TOUCH_CONTROL_BUFFER_MODE] & 0x8000){
-            //TODO: support buffer mode
-         }
+
+         if(tsc2101Registers[TOUCH_CONTROL_BUFFER_MODE] & 0x8000)
+            tsc2101BufferFifoWrite(TOUCH_DATA_X);
          break;
 
       case 0x4:
          //touch y
          tsc2101Registers[TOUCH_DATA_Y] = tsc2101GetYValue();
          tsc2101HasNewData |= 1 << TOUCH_DATA_Y;
-         if(tsc2101Registers[TOUCH_CONTROL_BUFFER_MODE] & 0x8000){
-            //TODO: support buffer mode
-         }
+
+         if(tsc2101Registers[TOUCH_CONTROL_BUFFER_MODE] & 0x8000)
+            tsc2101BufferFifoWrite(TOUCH_DATA_Y);
          break;
 
       case 0x5:
@@ -185,8 +230,10 @@ static void tsc2101Scan(void){
          tsc2101Registers[TOUCH_DATA_Z1] = tsc2101GetZ1Value();
          tsc2101Registers[TOUCH_DATA_Z2] = tsc2101GetZ2Value();
          tsc2101HasNewData |= 1 << TOUCH_DATA_Z1 | 1 << TOUCH_DATA_Z2;
+
          if(tsc2101Registers[TOUCH_CONTROL_BUFFER_MODE] & 0x8000){
-            //TODO: support buffer mode
+            tsc2101BufferFifoWrite(TOUCH_DATA_Z1);
+            tsc2101BufferFifoWrite(TOUCH_DATA_Z2);
          }
          break;
 
@@ -194,41 +241,42 @@ static void tsc2101Scan(void){
          //battery
          tsc2101Registers[TOUCH_DATA_BAT] = tsc2101GetBatValue();
          tsc2101HasNewData |= 1 << TOUCH_DATA_BAT;
-         if(tsc2101Registers[TOUCH_CONTROL_BUFFER_MODE] & 0x8000){
-            //TODO: support buffer mode
-         }
+
+         if(tsc2101Registers[TOUCH_CONTROL_BUFFER_MODE] & 0x8000)
+            tsc2101BufferFifoWrite(TOUCH_DATA_BAT);
          break;
 
       case 0x7:
          //AUX1
          tsc2101Registers[TOUCH_DATA_AUX1] = tsc2101GetAux1Value();
          tsc2101HasNewData |= 1 << TOUCH_DATA_AUX1;
-         if(tsc2101Registers[TOUCH_CONTROL_BUFFER_MODE] & 0x8000){
-            //TODO: support buffer mode
-         }
+
+         if(tsc2101Registers[TOUCH_CONTROL_BUFFER_MODE] & 0x8000)
+            tsc2101BufferFifoWrite(TOUCH_DATA_AUX1);
          break;
 
       case 0x8:
          //AUX2
          tsc2101Registers[TOUCH_DATA_AUX2] = tsc2101GetAux2Value();
          tsc2101HasNewData |= 1 << TOUCH_DATA_AUX2;
-         if(tsc2101Registers[TOUCH_CONTROL_BUFFER_MODE] & 0x8000){
-            //TODO: support buffer mode
-         }
+
+         if(tsc2101Registers[TOUCH_CONTROL_BUFFER_MODE] & 0x8000)
+            tsc2101BufferFifoWrite(TOUCH_DATA_AUX2);
          break;
 
       case 0x9:
          //auto scan
          //TODO: implement
+         debugLog("TSC2101 auto scan unimplemented\n");
          break;
 
       case 0xA:
          //TEMP1
          tsc2101Registers[TOUCH_DATA_TEMP1] = tsc2101GetTemp1Value();
          tsc2101HasNewData |= 1 << TOUCH_DATA_TEMP1;
-         if(tsc2101Registers[TOUCH_CONTROL_BUFFER_MODE] & 0x8000){
-            //TODO: support buffer mode
-         }
+
+         if(tsc2101Registers[TOUCH_CONTROL_BUFFER_MODE] & 0x8000)
+            tsc2101BufferFifoWrite(TOUCH_DATA_TEMP1);
          break;
 
       case 0xB:
@@ -237,8 +285,11 @@ static void tsc2101Scan(void){
          tsc2101Registers[TOUCH_DATA_AUX1] = tsc2101GetAux1Value();
          tsc2101Registers[TOUCH_DATA_AUX2] = tsc2101GetAux2Value();
          tsc2101HasNewData |= 1 << TOUCH_DATA_BAT | 1 << TOUCH_DATA_AUX1 | 1 << TOUCH_DATA_AUX2;
+
          if(tsc2101Registers[TOUCH_CONTROL_BUFFER_MODE] & 0x8000){
-            //TODO: support buffer mode
+            tsc2101BufferFifoWrite(TOUCH_DATA_BAT);
+            tsc2101BufferFifoWrite(TOUCH_DATA_AUX1);
+            tsc2101BufferFifoWrite(TOUCH_DATA_AUX2);
          }
          break;
 
@@ -246,9 +297,9 @@ static void tsc2101Scan(void){
          //TEMP2
          tsc2101Registers[TOUCH_DATA_TEMP2] = tsc2101GetTemp2Value();
          tsc2101HasNewData |= 1 << TOUCH_DATA_TEMP2;
-         if(tsc2101Registers[TOUCH_CONTROL_BUFFER_MODE] & 0x8000){
-            //TODO: support buffer mode
-         }
+
+         if(tsc2101Registers[TOUCH_CONTROL_BUFFER_MODE] & 0x8000)
+            tsc2101BufferFifoWrite(TOUCH_DATA_TEMP2);
          break;
 
       default:
@@ -303,6 +354,8 @@ static uint16_t tsc2101RegisterRead(uint8_t page, uint8_t address){
          return tsc2101Registers[combinedRegisterNumber];
 
       default:
+         if(page == 3)
+            return tsc2101BufferFifoRead();
          debugLog("Unimplemented TSC2101 register read, page:0x%01X, address:0x%02X\n", page, address);
          return 0x0000;//TODO: this may need to be 0xFFFF
    }
@@ -314,7 +367,7 @@ static void tsc2101RegisterWrite(uint8_t page, uint8_t address, uint16_t value){
    switch(combinedRegisterNumber){
       case TOUCH_CONTROL_TSC_ADC:
          tsc2101Registers[TOUCH_CONTROL_TSC_ADC] = value;
-         tsc2101RefreshInterrupt();
+         tsc2101Scan();//TODO: this should probably be on a timer
          return;
 
       case TOUCH_CONTROL_REFERENCE:
@@ -367,6 +420,8 @@ static void tsc2101RegisterWrite(uint8_t page, uint8_t address, uint16_t value){
          return;
 
       default:
+         if(page == 3)
+            debugLog("TSC2101 attempted to write buffer register:0x%02X, value:0x%04X\n", address, value);
          debugLog("Unimplemented TSC2101 register write, page:0x%01X, address:0x%02X, value:0x%04X\n", page, address, value);
          return;
    }

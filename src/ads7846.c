@@ -116,7 +116,7 @@ bool ads7846ExchangeBit(bool bitIn){
       //control byte and busy cycle finished, get output value
       bool bitMode = !!(ads7846ControlByte & 0x08);
       bool differentialMode = !(ads7846ControlByte & 0x04);
-      uint8_t channel = (ads7846ControlByte & 0x70) >> 4;
+      uint8_t channel = ads7846ControlByte >> 4 & 0x07;
       uint8_t powerSave = ads7846ControlByte & 0x03;
 
       //debugLog("Accessed ADS7846 Ch:%d, %d bits, %s Mode, Power Save:%d, PC:0x%08X.\n", channel, bitMode ? 8 : 12, differentialMode ? "Diff" : "Normal", ads7846ControlByte & 0x03, flx68000GetPc());

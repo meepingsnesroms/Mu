@@ -87,6 +87,10 @@ static void selectRenderer(bool color, uint8_t bpp){
          case 16:
             sed1376RenderPixel = get16BppColor;
             break;
+
+         default:
+            debugLog("SED1376 invalid color bpp:%d\n", bpp);
+            break;
       }
    }
    else{
@@ -109,6 +113,10 @@ static void selectRenderer(bool color, uint8_t bpp){
 
          case 16:
             sed1376RenderPixel = get16BppMonochrome;
+            break;
+
+         default:
+            debugLog("SED1376 invalid grayscale bpp:%d\n", bpp);
             break;
       }
    }
