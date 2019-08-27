@@ -7,6 +7,7 @@
 
 
 //TODO: using GPIO1 as an interrupt dosent work
+//TODO: self controlled scanning mode is unimplemented
 
 
 #define TSC2101_REG_LOCATION(page, address) ((page) << 6 | (address))
@@ -48,6 +49,7 @@ enum{
 static uint16_t tsc2101Registers[0x100];
 static uint8_t  tsc2101BufferReadPosition;
 static uint8_t  tsc2101BufferWritePosition;
+static uint16_t tsc2101HasNewData;
 static uint16_t tsc2101CurrentWord;
 static uint8_t  tsc2101CurrentWordBitsRemaining;
 static uint8_t  tsc2101CurrentPage;
@@ -132,7 +134,134 @@ static uint16_t tsc2101GetTemp2Value(void){
    return 0x777 & tsc2101GetAnalogMask();
 }
 
+static void tsc2101Scan(void){
+   switch(tsc2101Registers[TOUCH_CONTROL_TSC_ADC] >> 10 & 0x000F){
+      case 0x0:
+         //none
+         break;
+
+      case 0x1:
+         //touch x and y
+         tsc2101Registers[TOUCH_DATA_X] = tsc2101GetXValue();
+         tsc2101Registers[TOUCH_DATA_Y] = tsc2101GetYValue();
+         tsc2101HasNewData |= 1 << TOUCH_DATA_X | 1 << TOUCH_DATA_Y;
+         if(tsc2101Registers[TOUCH_CONTROL_BUFFER_MODE] & 0x8000){
+            //TODO: support buffer mode
+         }
+         break;
+
+      case 0x2:
+         //touch x, y, z1 and z2
+         tsc2101Registers[TOUCH_DATA_X] = tsc2101GetXValue();
+         tsc2101Registers[TOUCH_DATA_Y] = tsc2101GetYValue();
+         tsc2101Registers[TOUCH_DATA_Z1] = tsc2101GetZ1Value();
+         tsc2101Registers[TOUCH_DATA_Z2] = tsc2101GetZ2Value();
+         tsc2101HasNewData |= 1 << TOUCH_DATA_X | 1 << TOUCH_DATA_Y | 1 << TOUCH_DATA_Z1 | 1 << TOUCH_DATA_Z2;
+         if(tsc2101Registers[TOUCH_CONTROL_BUFFER_MODE] & 0x8000){
+            //TODO: support buffer mode
+         }
+         break;
+
+      case 0x3:
+         //touch x
+         tsc2101Registers[TOUCH_DATA_X] = tsc2101GetXValue();
+         tsc2101HasNewData |= 1 << TOUCH_DATA_X;
+         if(tsc2101Registers[TOUCH_CONTROL_BUFFER_MODE] & 0x8000){
+            //TODO: support buffer mode
+         }
+         break;
+
+      case 0x4:
+         //touch y
+         tsc2101Registers[TOUCH_DATA_Y] = tsc2101GetYValue();
+         tsc2101HasNewData |= 1 << TOUCH_DATA_Y;
+         if(tsc2101Registers[TOUCH_CONTROL_BUFFER_MODE] & 0x8000){
+            //TODO: support buffer mode
+         }
+         break;
+
+      case 0x5:
+         //touch z1 and z2
+         tsc2101Registers[TOUCH_DATA_Z1] = tsc2101GetZ1Value();
+         tsc2101Registers[TOUCH_DATA_Z2] = tsc2101GetZ2Value();
+         tsc2101HasNewData |= 1 << TOUCH_DATA_Z1 | 1 << TOUCH_DATA_Z2;
+         if(tsc2101Registers[TOUCH_CONTROL_BUFFER_MODE] & 0x8000){
+            //TODO: support buffer mode
+         }
+         break;
+
+      case 0x6:
+         //battery
+         tsc2101Registers[TOUCH_DATA_BAT] = tsc2101GetBatValue();
+         tsc2101HasNewData |= 1 << TOUCH_DATA_BAT;
+         if(tsc2101Registers[TOUCH_CONTROL_BUFFER_MODE] & 0x8000){
+            //TODO: support buffer mode
+         }
+         break;
+
+      case 0x7:
+         //AUX1
+         tsc2101Registers[TOUCH_DATA_AUX1] = tsc2101GetAux1Value();
+         tsc2101HasNewData |= 1 << TOUCH_DATA_AUX1;
+         if(tsc2101Registers[TOUCH_CONTROL_BUFFER_MODE] & 0x8000){
+            //TODO: support buffer mode
+         }
+         break;
+
+      case 0x8:
+         //AUX2
+         tsc2101Registers[TOUCH_DATA_AUX2] = tsc2101GetAux2Value();
+         tsc2101HasNewData |= 1 << TOUCH_DATA_AUX2;
+         if(tsc2101Registers[TOUCH_CONTROL_BUFFER_MODE] & 0x8000){
+            //TODO: support buffer mode
+         }
+         break;
+
+      case 0x9:
+         //auto scan
+         //TODO: implement
+         break;
+
+      case 0xA:
+         //TEMP1
+         tsc2101Registers[TOUCH_DATA_TEMP1] = tsc2101GetTemp1Value();
+         tsc2101HasNewData |= 1 << TOUCH_DATA_TEMP1;
+         if(tsc2101Registers[TOUCH_CONTROL_BUFFER_MODE] & 0x8000){
+            //TODO: support buffer mode
+         }
+         break;
+
+      case 0xB:
+         //BAT, AUX1 and AUX2
+         tsc2101Registers[TOUCH_DATA_BAT] = tsc2101GetBatValue();
+         tsc2101Registers[TOUCH_DATA_AUX1] = tsc2101GetAux1Value();
+         tsc2101Registers[TOUCH_DATA_AUX2] = tsc2101GetAux2Value();
+         tsc2101HasNewData |= 1 << TOUCH_DATA_BAT | 1 << TOUCH_DATA_AUX1 | 1 << TOUCH_DATA_AUX2;
+         if(tsc2101Registers[TOUCH_CONTROL_BUFFER_MODE] & 0x8000){
+            //TODO: support buffer mode
+         }
+         break;
+
+      case 0xC:
+         //TEMP2
+         tsc2101Registers[TOUCH_DATA_TEMP2] = tsc2101GetTemp2Value();
+         tsc2101HasNewData |= 1 << TOUCH_DATA_TEMP2;
+         if(tsc2101Registers[TOUCH_CONTROL_BUFFER_MODE] & 0x8000){
+            //TODO: support buffer mode
+         }
+         break;
+
+      default:
+         //just turns power lines on, do nothing
+         break;
+   }
+
+   tsc2101RefreshInterrupt();
+}
+
 static void tsc2101ResetRegisters(void){
+   tsc2101HasNewData = 0x0000;
+
    memset(tsc2101Registers, 0x00, sizeof(tsc2101Registers));
 
    //TODO: need to add all the registers here
@@ -170,7 +299,7 @@ static uint16_t tsc2101RegisterRead(uint8_t page, uint8_t address){
       case TOUCH_DATA_AUX2:
       case TOUCH_DATA_TEMP1:
       case TOUCH_DATA_TEMP2:
-         //simple read, no actions needed
+         tsc2101HasNewData &= ~(1 << combinedRegisterNumber);
          return tsc2101Registers[combinedRegisterNumber];
 
       default:
@@ -272,6 +401,8 @@ void tsc2101LoadState(uint8_t* data){
 }
 
 void tsc2101SetChipSelect(bool value){
+   //TODO: ADCSM references a "stop bit", this is likely when chip select goes high but I have no proof
+   //also dont know if the scan type value in the register is set to 0x0
    if(value && !tsc2101ChipSelect){
       tsc2101CurrentWordBitsRemaining = 16;
       tsc2101Read = false;
@@ -335,14 +466,14 @@ bool tsc2101ExchangeBit(bool bit){
 }
 
 void tsc2101RefreshInterrupt(void){
-   bool interruptTriggered = false;
+   debugLog("TSC2101 PINTDAV not fully implemented\n");
 
    //check if PINTDAV is data or pen and data interrupt
    if(tsc2101Registers[TOUCH_CONTROL_STATUS] >> 14 & 0x0003){
-      uint16_t aux1 = tsc2101GetAux1Value();
-      uint16_t aux2 = tsc2101GetAux2Value();
-      uint16_t temp1 = tsc2101GetTemp1Value();
-      uint16_t temp2 = tsc2101GetTemp2Value();
+      uint16_t aux1 = tsc2101Registers[TOUCH_DATA_AUX1];
+      uint16_t aux2 = tsc2101Registers[TOUCH_DATA_AUX2];
+      uint16_t temp1 = tsc2101Registers[TOUCH_DATA_TEMP1];
+      uint16_t temp2 = tsc2101Registers[TOUCH_DATA_TEMP2];
       bool useTemp2 = !!(tsc2101Registers[TOUCH_CONTROL_MEASUREMENT_CONFIGURATION] & 0x8000);
       uint16_t temperatureMax = tsc2101Registers[TOUCH_CONTROL_TEMPERATURE_MAX];
       uint16_t temperatureMin = tsc2101Registers[TOUCH_CONTROL_TEMPERATURE_MIN];
@@ -351,35 +482,45 @@ void tsc2101RefreshInterrupt(void){
       uint16_t aux2Max = tsc2101Registers[TOUCH_CONTROL_AUX2_MAX];
       uint16_t aux2Min = tsc2101Registers[TOUCH_CONTROL_AUX2_MIN];
 
-      //TODO: all enable flags for range checking say they apply to scan measurement, dont know if this is always on or not
-
       if(temperatureMax & 0x1000 && (useTemp2 ? temp2 : temp1) >= (temperatureMax & 0xFFF))
-         interruptTriggered = true;
+         goto trigger;
 
       if(temperatureMin & 0x1000 && (useTemp2 ? temp2 : temp1) <= (temperatureMin & 0xFFF))
-         interruptTriggered = true;
+         goto trigger;
 
       if(aux1Max & 0x1000 && aux1 >= (aux1Max & 0xFFF))
-         interruptTriggered = true;
+         goto trigger;
 
       if(aux1Min & 0x1000 && aux1 <= (aux1Min & 0xFFF))
-         interruptTriggered = true;
+         goto trigger;
 
       if(aux2Max & 0x1000 && aux2 >= (aux2Max & 0xFFF))
-         interruptTriggered = true;
+         goto trigger;
 
       if(aux2Min & 0x1000 && aux2 <= (aux2Min & 0xFFF))
-         interruptTriggered = true;
+         goto trigger;
+
+      if(tsc2101Registers[TOUCH_CONTROL_BUFFER_MODE] & 0x8000){
+         //buffer mode, check if data is in buffer
+         if(tsc2101BufferFifoEntrys() > 0)
+            goto trigger;
+      }
+      else{
+         //register mode
+         if(tsc2101HasNewData)
+            goto trigger;
+      }
    }
 
    //check PINTDAV is pen or pen and data interrupt and pen is down
    if((tsc2101Registers[TOUCH_CONTROL_STATUS] >> 14 & 0x0003) != 0x0001)
       if(palmInput.touchscreenTouched)
-         interruptTriggered = true;
+         goto trigger;
 
-   if(interruptTriggered){
-      //TODO: need to pull a pin low
-   }
+   //TODO: set pin high
+   return;
 
-   debugLog("TSC2101 PINTDAV not fully implemented\n");
+   trigger:
+   //TODO: set pin low
+   return;
 }

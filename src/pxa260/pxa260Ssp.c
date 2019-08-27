@@ -83,8 +83,6 @@ static void pxa260SspTxFifoFlush(void){
 }
 
 static void pxa260SspUpdateInterrupt(void){
-   bool trigger = false;
-
    //SYNCHRONOUS SERIAL PORT ENABLE
    if(pxa260SspSscr0 & 0x0080){
       //RECEIVE FIFO INTERRUPT
@@ -92,7 +90,7 @@ static void pxa260SspUpdateInterrupt(void){
          uint8_t rft = ((pxa260SspSscr1 >> 10) & 0x000F) + 1;
 
          if(pxa260SspRxFifoEntrys() >= rft)
-            trigger = true;
+            goto trigger;
       }
 
       //TRANSMIT FIFO INTERRUPT
@@ -100,14 +98,16 @@ static void pxa260SspUpdateInterrupt(void){
          uint8_t tft = ((pxa260SspSscr1 >> 6) & 0x000F) + 1;
 
          if(pxa260SspTxFifoEntrys() <= tft)
-            trigger = true;
+            goto trigger;
       }
    }
 
-   if(trigger)
-      pxa260icInt(&pxa260Ic, PXA260_I_SSP, true);
-   else
-      pxa260icInt(&pxa260Ic, PXA260_I_SSP, false);
+   pxa260icInt(&pxa260Ic, PXA260_I_SSP, false);
+   return;
+
+   trigger:
+   pxa260icInt(&pxa260Ic, PXA260_I_SSP, true);
+   return;
 }
 
 void pxa260SspReset(void){
