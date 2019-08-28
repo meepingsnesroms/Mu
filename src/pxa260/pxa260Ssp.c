@@ -209,7 +209,7 @@ void pxa260SspWriteWord(uint32_t address, uint32_t value){
          pxa260SspTxFifoWrite(value);
          if(!pxa260SspTransfering){
             pxa260SspTransfering = true;
-            pxa260TimingQueueEvent(PXA260_SSP_TRANSFER_DURATION, PXA260_TIMING_CALLBACK_SSP_TRANSFER_COMPLETE);
+            pxa260TimingTriggerEvent(PXA260_TIMING_CALLBACK_SSP_TRANSFER_COMPLETE, PXA260_SSP_TRANSFER_DURATION);
          }
          pxa260SspUpdateInterrupt();
          return;
@@ -245,7 +245,7 @@ void pxa260SspTransferComplete(void){
 
       //if still transmitting, need to enqueue next event
       if(pxa260SspTxFifoEntrys() > 0)
-         pxa260TimingQueueEvent(PXA260_SSP_TRANSFER_DURATION, PXA260_TIMING_CALLBACK_SSP_TRANSFER_COMPLETE);
+         pxa260TimingTriggerEvent(PXA260_TIMING_CALLBACK_SSP_TRANSFER_COMPLETE, PXA260_SSP_TRANSFER_DURATION);
       else
          pxa260SspTransfering = false;
 

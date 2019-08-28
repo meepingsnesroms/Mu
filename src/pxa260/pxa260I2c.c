@@ -96,7 +96,7 @@ void pxa260I2cWriteWord(uint32_t address, uint32_t value){
                }
 
                pxa260I2cUnitBusy = true;
-               pxa260TimingQueueEvent(PXA260_I2C_TRANSFER_DURATION, PXA260_TIMING_CALLBACK_I2C_RECEIVE_FULL);
+               pxa260TimingTriggerEvent(PXA260_TIMING_CALLBACK_I2C_RECEIVE_FULL, PXA260_I2C_TRANSFER_DURATION);
             }
             else{
                //send
@@ -108,7 +108,7 @@ void pxa260I2cWriteWord(uint32_t address, uint32_t value){
                   tps65010I2cExchange((pxa260I2cBuffer & 1 << 7 - index) ? I2C_1 : I2C_0);
 
                pxa260I2cUnitBusy = true;
-               pxa260TimingQueueEvent(PXA260_I2C_TRANSFER_DURATION, PXA260_TIMING_CALLBACK_I2C_TRANSMIT_EMPTY);
+               pxa260TimingTriggerEvent(PXA260_TIMING_CALLBACK_I2C_TRANSMIT_EMPTY, PXA260_I2C_TRANSFER_DURATION);
             }
          }
          if(value & 0x0002){

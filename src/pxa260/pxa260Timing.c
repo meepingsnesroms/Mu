@@ -2,6 +2,7 @@
 #include <string.h>
 #include <setjmp.h>
 
+#include "../tsc2101.h"
 #include "../armv5te/os/os.h"
 #include "../armv5te/emu.h"
 #include "../armv5te/cpu.h"
@@ -10,18 +11,21 @@
 #include "pxa260Timing.h"
 
 
-static int32_t pxa260TimingLeftoverCycles;
+#define PXA260_TIMING_NEVER 0xFFFFFFFF
 
-void (*pxa260TimingCallbacks[PXA260_TIMING_TOTAL_CALLBACKS])(void);
-event_t pxa260TimingQueuedEvents[20];
+
+static int32_t pxa260TimingLeftoverCycles;//doesnt need to go in save states
+
+void    (*pxa260TimingCallbacks[PXA260_TIMING_TOTAL_CALLBACKS])(void);
+int32_t pxa260TimingQueuedEvents[PXA260_TIMING_TOTAL_CALLBACKS];
 
 
 static int32_t pxa260TimingGetDurationUntilNextEvent(int32_t duration/*call with how long you want to run*/){
    uint8_t index;
 
-   for(index = 0; index < sizeof(pxa260TimingQueuedEvents) / sizeof(event_t); index++)
-      if(pxa260TimingQueuedEvents[index].active && pxa260TimingQueuedEvents[index].wait < duration)
-         duration = pxa260TimingQueuedEvents[index].wait;
+   for(index = 0; index < PXA260_TIMING_TOTAL_CALLBACKS; index++)
+      if(pxa260TimingQueuedEvents[index] != PXA260_TIMING_NEVER && pxa260TimingQueuedEvents[index] < duration)
+         duration = pxa260TimingQueuedEvents[index];
 
    return duration;
 }
@@ -30,30 +34,27 @@ void pxa260TimingInit(void){
    pxa260TimingCallbacks[PXA260_TIMING_CALLBACK_I2C_TRANSMIT_EMPTY] = pxa260I2cTransmitEmpty;
    pxa260TimingCallbacks[PXA260_TIMING_CALLBACK_I2C_RECEIVE_FULL] = pxa260I2cReceiveFull;
    pxa260TimingCallbacks[PXA260_TIMING_CALLBACK_SSP_TRANSFER_COMPLETE] = pxa260SspTransferComplete;
+   pxa260TimingCallbacks[PXA260_TIMING_CALLBACK_TSC2101_SCAN] = tsc2101Scan;
 }
 
 void pxa260TimingReset(void){
-   memset(pxa260TimingQueuedEvents, 0x00, sizeof(pxa260TimingQueuedEvents));
-}
-
-void pxa260TimingQueueEvent(int32_t wait, uint8_t callbackId){
    uint8_t index;
 
-   for(index = 0; index < sizeof(pxa260TimingQueuedEvents) / sizeof(event_t); index++){
-      if(!pxa260TimingQueuedEvents[index].active){
-         //found empty slot, enqueue event
-         pxa260TimingQueuedEvents[index].wait = wait;
-         pxa260TimingQueuedEvents[index].callbackId = callbackId;
-         pxa260TimingQueuedEvents[index].active = true;
-         if(wait < -cycle_count_delta){
-            pxa260TimingLeftoverCycles = -cycle_count_delta - wait;
-            cycle_count_delta = -wait;
-         }
-         return;
-      }
-   }
+   for(index = 0; index < PXA260_TIMING_TOTAL_CALLBACKS; index++)
+      pxa260TimingQueuedEvents[index] = PXA260_TIMING_NEVER;
+}
 
-   debugLog("Unable to find CPU event slot!!!");
+void pxa260TimingTriggerEvent(uint8_t callbackId, int32_t wait){
+   pxa260TimingQueuedEvents[callbackId] = wait;
+   //dont need to check if in handler since cycle_count_delta is 0 or positive when in handlers are called
+   if(wait < -cycle_count_delta){
+      pxa260TimingLeftoverCycles = -cycle_count_delta - wait;
+      cycle_count_delta = -wait;
+   }
+}
+
+void pxa260TimingCancelEvent(uint8_t callbackId){
+   pxa260TimingQueuedEvents[callbackId] = PXA260_TIMING_NEVER;
 }
 
 void pxa260TimingRun(int32_t cycles){
@@ -104,13 +105,13 @@ void pxa260TimingRun(int32_t cycles){
    addCycles -= pxa260TimingLeftoverCycles;
    pxa260TimingLeftoverCycles = 0;
 
-   for(index = 0; index < sizeof(pxa260TimingQueuedEvents) / sizeof(event_t); index++){
-      if(pxa260TimingQueuedEvents[index].active){
-         pxa260TimingQueuedEvents[index].wait -= addCycles;
-         if(pxa260TimingQueuedEvents[index].wait <= 0){
+   for(index = 0; index < PXA260_TIMING_TOTAL_CALLBACKS; index++){
+      if(pxa260TimingQueuedEvents[index] != PXA260_TIMING_NEVER){
+         pxa260TimingQueuedEvents[index] -= addCycles;
+         if(pxa260TimingQueuedEvents[index] <= 0){
             //execute event
-            pxa260TimingCallbacks[pxa260TimingQueuedEvents[index].callbackId]();
-            pxa260TimingQueuedEvents[index].active = false;
+            pxa260TimingQueuedEvents[index] = PXA260_TIMING_NEVER;//set to never before calling function because it may retrigger the event and we dont want the new one cleared
+            pxa260TimingCallbacks[index]();
          }
       }
    }

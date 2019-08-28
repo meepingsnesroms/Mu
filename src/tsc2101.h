@@ -14,4 +14,6 @@ bool tsc2101ExchangeBit(bool bit);
 void tsc2101RefreshInterrupt(void);//called after touchscreen update to flush the values
 //TODO: this chip seems to do audio output, need to add a 16bit optimized transfer function
 
+void tsc2101Scan(void);
+
 #endif
