@@ -55,7 +55,7 @@ typedef struct{
 extern uint16_t palmButtons;
 extern uint16_t palmButtonsLastFrame;
 extern Boolean  isM515;
-extern Boolean  haveKsyms;
+extern Boolean  isT3;
 extern Boolean  skipFrameDelay;
 extern uint8_t* sharedDataBuffer;
 

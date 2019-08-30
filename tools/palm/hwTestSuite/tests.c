@@ -11,7 +11,8 @@
 #include "tools.h"
 #include "cpu.h"
 #include "ugui.h"
-#include "undocumentedApis.h"
+#include "viewer.h"
+#include "armPrimitives.h"
 
 
 var testButtonInput(void){
@@ -367,47 +368,6 @@ var ads7846Read(void){
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
 
-var ads7846ReadOsVersion(void){
-   static Boolean firstRun = true;
-   static uint16_t mode;
-   uint8_t ads7846Channel;
-   uint16_t channelData[8];
-   uint16_t y = 0;
-   
-   
-   if(firstRun){
-      firstRun = false;
-      mode = 0;
-      debugSafeScreenClear(C_WHITE);
-   }
-   
-   if(getButtonPressed(buttonSelect)){
-      mode++;/*modes 0-8 are valid, 9 is to test invalid args*/
-      if(mode > 9)
-         mode = 0;
-   }
-   
-   if(getButtonPressed(buttonBack)){
-      firstRun = true;
-      exitSubprogram();
-   }
-   
-   memset(channelData, 0x00, 8 * sizeof(uint16_t));
-   customCall_HwrADC(mode, channelData);
-   
-   StrPrintF(sharedDataBuffer, "Mode:%d", mode);
-   UG_PutString(0, y, sharedDataBuffer);
-   y += FONT_HEIGHT + 1;
-   
-   for(ads7846Channel = 0; ads7846Channel < 8; ads7846Channel++){
-      StrPrintF(sharedDataBuffer, "Ch:%d Value:0x%04X", ads7846Channel, channelData[ads7846Channel]);
-      UG_PutString(0, y, sharedDataBuffer);
-      y += FONT_HEIGHT + 1;
-   }
-   
-   return makeVar(LENGTH_0, TYPE_NULL, 0);
-}
-
 var getClk32Frequency(void){
    static Boolean firstRun = true;
    
@@ -464,12 +424,14 @@ var getCpuInfo(void){
       StrPrintF(sharedDataBuffer, "CPU Type:%s", getCpuString());
       UG_PutString(0, y, sharedDataBuffer);
       y += (FONT_HEIGHT + 1) * 5;
-      StrPrintF(sharedDataBuffer, "SCR:0x%02X", readArbitraryMemory8(HW_REG_ADDR(SCR)));
-      UG_PutString(0, y, sharedDataBuffer);
-      y += FONT_HEIGHT + 1;
-      StrPrintF(sharedDataBuffer, "CPU ID(IDR):0x%08lX", readArbitraryMemory32(HW_REG_ADDR(IDR)));
-      UG_PutString(0, y, sharedDataBuffer);
-      y += FONT_HEIGHT + 1;
+      if(getPhysicalCpuType() & CPU_M68K){
+         StrPrintF(sharedDataBuffer, "SCR:0x%02X", readArbitraryMemory8(HW_REG_ADDR(SCR)));
+         UG_PutString(0, y, sharedDataBuffer);
+         y += FONT_HEIGHT + 1;
+         StrPrintF(sharedDataBuffer, "CPU ID(IDR):0x%08lX", readArbitraryMemory32(HW_REG_ADDR(IDR)));
+         UG_PutString(0, y, sharedDataBuffer);
+         y += FONT_HEIGHT + 1;
+      }
    }
    
    if(getButtonPressed(buttonBack)){
@@ -944,7 +906,7 @@ var unaligned32bitAccess(void){
       uint8_t* align16Buffer = buffer;
       uint32_t* test;
       
-      //make sure its 16 bit aligned but not 32 bit aligned
+      /*make sure its 16 bit aligned but not 32 bit aligned*/
       while(((uint32_t)align16Buffer & 0x3) != 0x2)
          align16Buffer++;
       
@@ -1006,5 +968,15 @@ var isIrq2AttachedToSdCardChipSelect(void){
 var callSysUnimplemented(void){
    /*used to test the SysUnimplemented handler in MuExpDriver*/
    SysUnimplemented();
+   return makeVar(LENGTH_0, TYPE_NULL, 0);
+}
+
+var testArmRead(void){
+   uint32_t value = armRead32(0x20000010);
+   
+   /*should return the word "Palm" backwards*/
+   setSubprogramArgs(makeVar(LENGTH_ANY, TYPE_PTR, (uint64_t)value));
+   callSubprogram(valueViewer);
+   
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }

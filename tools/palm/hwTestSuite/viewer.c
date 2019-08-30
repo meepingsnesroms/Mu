@@ -295,7 +295,7 @@ void resetFunctionViewer(void){
    hwTests[totalHwTests].testFunction = callSysUnimplemented;
    totalHwTests++;
    
-   if(cpuType & CPU_M68K || cpuType == CPU_NONE){
+   if(cpuType & CPU_M68K){
       /*68k only functions*/
       if((cpuType & CPU_M68K_TYPES) != CPU_M68K_328){
          /*original dragonball doesnt have a bootloader*/
@@ -378,12 +378,6 @@ void resetFunctionViewer(void){
          totalHwTests++;
       }
       
-      if(haveKsyms){
-         StrNCopy(hwTests[totalHwTests].name, "ADS7846 OS Read", TEST_NAME_LENGTH);
-         hwTests[totalHwTests].testFunction = ads7846ReadOsVersion;
-         totalHwTests++;
-      }
-      
       StrNCopy(hwTests[totalHwTests].name, "Manual LSSA", TEST_NAME_LENGTH);
       hwTests[totalHwTests].testFunction = manualLssa;
       totalHwTests++;
@@ -398,6 +392,12 @@ void resetFunctionViewer(void){
       
       StrNCopy(hwTests[totalHwTests].name, "Is IRQ2 = SD Card CS", TEST_NAME_LENGTH);
       hwTests[totalHwTests].testFunction = isIrq2AttachedToSdCardChipSelect;
+      totalHwTests++;
+   }
+   
+   if(cpuType & CPU_ARM){
+      StrNCopy(hwTests[totalHwTests].name, "Test ARM Read", TEST_NAME_LENGTH);
+      hwTests[totalHwTests].testFunction = testArmRead;
       totalHwTests++;
    }
 }

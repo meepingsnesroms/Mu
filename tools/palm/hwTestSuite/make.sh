@@ -11,7 +11,7 @@ if [ "$1" = "clean" ]; then
    exit
 fi
 
-declare -a FILES=("testSuite" "viewer" "tools" "tests" "cpu" "emuFunctions" "ugui" "undocumentedApis" "debug")
+declare -a FILES=("testSuite" "armPrimitives" "viewer" "tools" "tests" "cpu" "ugui" "debug")
 CFLAGS="-palmos4 -O3"
 
 if [ "$1" = "debug" ]; then
