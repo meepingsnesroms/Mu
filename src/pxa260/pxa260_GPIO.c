@@ -7,7 +7,7 @@
 static void pxa260gpioOnOutputPinUpdated(Pxa260gpio* gpio, UInt8 gpioNum){
    //the pin value is not sent to this function because it is usually not needed and can be fetched with pxa260gpioGetState
 
-   debugLog("PXA260 GPIO %d set:%d\n", gpioNum, pxa260gpioGetState(gpio, gpioNum));
+   //debugLog("PXA260 GPIO %d set:%d\n", gpioNum, pxa260gpioGetState(gpio, gpioNum));
 
    switch(gpioNum){
       case 24:
@@ -22,7 +22,7 @@ static void pxa260gpioOnOutputPinUpdated(Pxa260gpio* gpio, UInt8 gpioNum){
          break;
 
       default:
-         //debugLog("Unimplimented PXA260 GPIO %d set:%d\n", gpioNum, pxa260gpioGetState(gpio, gpioNum));
+         debugLog("Unimplimented PXA260 GPIO %d set:%d\n", gpioNum, pxa260gpioGetState(gpio, gpioNum));
          break;
    }
 }

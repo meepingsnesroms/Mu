@@ -9,6 +9,7 @@ uint32_t tsc2101StateSize(void);
 void tsc2101SaveState(uint8_t* data);
 void tsc2101LoadState(uint8_t* data);
 
+void tsc2101SetPwrDn(bool value);
 void tsc2101SetChipSelect(bool value);
 bool tsc2101ExchangeBit(bool bit);
 void tsc2101RefreshInterrupt(void);//called after touchscreen update to flush the values

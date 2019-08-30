@@ -34,10 +34,10 @@
 uint16_t*    pxa260Framebuffer;
 Pxa260pwrClk pxa260PwrClk;
 Pxa260ic     pxa260Ic;
+Pxa260gpio   pxa260Gpio;
 
 static Pxa260lcd  pxa260Lcd;
 static Pxa260timr pxa260Timer;
-static Pxa260gpio pxa260Gpio;
 
 
 #include "pxa260Accessors.c.h"

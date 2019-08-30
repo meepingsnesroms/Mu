@@ -9,10 +9,12 @@
 
 #include "pxa260_IC.h"
 #include "pxa260_PwrClk.h"
+#include "pxa260_GPIO.h"
 
 extern uint16_t*    pxa260Framebuffer;
 extern Pxa260pwrClk pxa260PwrClk;
 extern Pxa260ic     pxa260Ic;
+extern Pxa260gpio   pxa260Gpio;
 
 bool pxa260Init(uint8_t** returnRom, uint8_t** returnRam);
 void pxa260Deinit(void);

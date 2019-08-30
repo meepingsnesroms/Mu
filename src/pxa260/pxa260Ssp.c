@@ -205,8 +205,8 @@ void pxa260SspWriteWord(uint32_t address, uint32_t value){
          return;
 
       case SSDR:
-         debugLog("PXA260 SSP write:0x%08X\n", value);
-         pxa260SspTxFifoWrite(value);
+         //debugLog("PXA260 SSP write:0x%08X\n", value);
+         pxa260SspTxFifoWrite(value & 0xFFFF);
          if(!pxa260SspTransfering){
             pxa260SspTransfering = true;
             pxa260TimingTriggerEvent(PXA260_TIMING_CALLBACK_SSP_TRANSFER_COMPLETE, PXA260_SSP_TRANSFER_DURATION);

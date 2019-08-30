@@ -3,16 +3,19 @@
 #include <string.h>
 
 #include "emulator.h"
+#include "pxa260/pxa260.h"
+#include "pxa260/pxa260_GPIO.h"
 #include "pxa260/pxa260Timing.h"
 #include "tsc2101.h"
 
 
 //TODO: using GPIO1 as an interrupt dosent work
+//TODO: using GPIO1 as headphone detect dosent work
 //TODO: self controlled scanning mode is unimplemented
 //TODO: single shot/continuos modes
 //TODO: HCTLM is wrong
 
-#define TSC2101_SCAN_DURATION 10000//in PXA260 opcodes//TODO: this may need to be calculated based on the timing params in the registers
+#define TSC2101_SCAN_DURATION 10//10000//in PXA260 opcodes//TODO: this may need to be calculated based on the timing params in the registers
 #define TSC2101_REG_LOCATION(page, address) ((page) << 6 | (address))
 
 enum{
@@ -59,6 +62,7 @@ static uint8_t  tsc2101CurrentPage;
 static uint8_t  tsc2101CurrentRegister;
 static bool     tsc2101CommandFinished;
 static bool     tsc2101Read;
+static bool     tsc2101On;
 static bool     tsc2101ChipSelect;
 
 
@@ -155,12 +159,15 @@ static uint16_t tsc2101GetBatValue(void){
 }
 
 static uint16_t tsc2101GetAux1Value(void){
+   //TODO: likely port detect resistor
+   debugLog("TSC2101 AUX1 detect type:%s\n", (tsc2101Registers[TOUCH_CONTROL_MEASUREMENT_CONFIGURATION] & 0x4000) ? "resistance" : "voltage");
    if(tsc2101Registers[TOUCH_CONTROL_MEASUREMENT_CONFIGURATION] & 0x4000)
-      return 0x777 & tsc2101GetAnalogMask();//resistance
-   return 0x777 & tsc2101GetAnalogMask();//voltage
+      return 0xFFF & tsc2101GetAnalogMask();//resistance
+   return 0xFFF & tsc2101GetAnalogMask();//voltage
 }
 
 static uint16_t tsc2101GetAux2Value(void){
+   debugLog("TSC2101 AUX2 detect type:%s\n", (tsc2101Registers[TOUCH_CONTROL_MEASUREMENT_CONFIGURATION] & 0x2000) ? "resistance" : "voltage");
    if(tsc2101Registers[TOUCH_CONTROL_MEASUREMENT_CONFIGURATION] & 0x2000)
       return 0x777 & tsc2101GetAnalogMask();//resistance
    return 0x777 & tsc2101GetAnalogMask();//voltage
@@ -197,10 +204,21 @@ static uint16_t tsc2101RegisterRead(uint8_t page, uint8_t address){
       case TOUCH_CONTROL_STATUS:{
             uint16_t value = tsc2101Registers[TOUCH_CONTROL_STATUS] & 0xF000;
 
-            value |= !!(tsc2101HasNewData) << 10;
-            //TODO: not returning individual status bits yet
+            value |= !!(tsc2101HasNewData) << 11;
+            value |= !!(tsc2101HasNewData & 1 << TOUCH_DATA_X) << 10;
+            value |= !!(tsc2101HasNewData & 1 << TOUCH_DATA_Y) << 9;
+            value |= !!(tsc2101HasNewData & 1 << TOUCH_DATA_Z1) << 8;
+            value |= !!(tsc2101HasNewData & 1 << TOUCH_DATA_Z2) << 7;
+            value |= !!(tsc2101HasNewData & 1 << TOUCH_DATA_BAT) << 6;
+            //value |= !!(tsc2101HasNewData & 1 << TOUCH_DATA_RESERVED_X) << 5;
+            value |= !!(tsc2101HasNewData & 1 << TOUCH_DATA_AUX1) << 4;
+            value |= !!(tsc2101HasNewData & 1 << TOUCH_DATA_AUX2) << 3;
+            value |= !!(tsc2101HasNewData & 1 << TOUCH_DATA_TEMP1) << 2;
+            value |= !!(tsc2101HasNewData & 1 << TOUCH_DATA_TEMP2) << 1;
 
-            debugLog("TSC2101 read status register\n");
+            //TODO: implement host control and power down status bits
+
+            debugLog("TSC2101 read status register, PC:0x%08X\n", pxa260GetPc());
             return value;
          }
 
@@ -220,7 +238,9 @@ static uint16_t tsc2101RegisterRead(uint8_t page, uint8_t address){
       case TOUCH_DATA_AUX2:
       case TOUCH_DATA_TEMP1:
       case TOUCH_DATA_TEMP2:
+         debugLog("TSC2101 read ADC data register:%d\n", combinedRegisterNumber);
          tsc2101HasNewData &= ~(1 << combinedRegisterNumber);
+         tsc2101RefreshInterrupt();//clearing the new data bit could trigger an interrupt
          return tsc2101Registers[combinedRegisterNumber];
 
       default:
@@ -238,6 +258,7 @@ static void tsc2101RegisterWrite(uint8_t page, uint8_t address, uint16_t value){
       case TOUCH_CONTROL_TSC_ADC:
          tsc2101Registers[TOUCH_CONTROL_TSC_ADC] = value;
          pxa260TimingTriggerEvent(PXA260_TIMING_CALLBACK_TSC2101_SCAN, TSC2101_SCAN_DURATION);
+         debugLog("TSC2101 scan set to 0x%01X\n", value >> 10 & 0x000F);
          return;
 
       case TOUCH_CONTROL_STATUS:
@@ -321,8 +342,10 @@ void tsc2101Reset(bool isBoot){
    tsc2101Read = false;
    pxa260TimingCancelEvent(PXA260_TIMING_CALLBACK_TSC2101_SCAN);
 
-   if(isBoot)
+   if(isBoot){
+      tsc2101On = true;
       tsc2101ChipSelect = true;
+   }
 
    tsc2101ResetRegisters();
 }
@@ -339,6 +362,16 @@ void tsc2101LoadState(uint8_t* data){
 
 }
 
+void tsc2101SetPwrDn(bool value){
+   //TODO: assuming low turns the chip off and high leave it on, may be wrong
+   tsc2101On = value;
+   if(!tsc2101On){
+      //TODO: aborting conversion, may be wrong
+      tsc2101Registers[TOUCH_CONTROL_TSC_ADC] &= 0xC3FF;
+      pxa260TimingCancelEvent(PXA260_TIMING_CALLBACK_TSC2101_SCAN);
+   }
+}
+
 void tsc2101SetChipSelect(bool value){
    if(value && !tsc2101ChipSelect){
       tsc2101CurrentWordBitsRemaining = 16;
@@ -353,7 +386,8 @@ void tsc2101SetChipSelect(bool value){
 bool tsc2101ExchangeBit(bool bit){
    bool output = true;//TODO: SPI return value is usualy true but this is unverified
 
-   if(tsc2101ChipSelect)
+   //TODO: assuming hardware power down disable the chip entirely, including the SPI interface, may be wrong
+   if(!tsc2101On || tsc2101ChipSelect)
       return true;
 
    if(!tsc2101Read){
@@ -445,11 +479,13 @@ void tsc2101RefreshInterrupt(void){
       if(palmInput.touchscreenTouched)
          goto trigger;
 
-   //TODO: set pin high
+   //TODO: using invaild pin reference, check against hardware
+   pxa260gpioSetState(&pxa260Gpio, 37, PXA260_GPIO_HIGH);
    return;
 
    trigger:
-   //TODO: set pin low
+   //TODO: using invaild pin reference, check against hardware
+   pxa260gpioSetState(&pxa260Gpio, 37, PXA260_GPIO_LOW);
    return;
 }
 
@@ -531,21 +567,21 @@ void tsc2101Scan(void){
          break;
 
       case 0x7:
-         //AUX1
-         tsc2101Registers[TOUCH_DATA_AUX1] = tsc2101GetAux1Value();
-         tsc2101HasNewData |= 1 << TOUCH_DATA_AUX1;
-
-         if(tsc2101Registers[TOUCH_CONTROL_BUFFER_MODE] & 0x8000)
-            tsc2101BufferFifoWrite(TOUCH_DATA_AUX1);
-         break;
-
-      case 0x8:
          //AUX2
          tsc2101Registers[TOUCH_DATA_AUX2] = tsc2101GetAux2Value();
          tsc2101HasNewData |= 1 << TOUCH_DATA_AUX2;
 
          if(tsc2101Registers[TOUCH_CONTROL_BUFFER_MODE] & 0x8000)
             tsc2101BufferFifoWrite(TOUCH_DATA_AUX2);
+         break;
+
+      case 0x8:
+         //AUX1
+         tsc2101Registers[TOUCH_DATA_AUX1] = tsc2101GetAux1Value();
+         tsc2101HasNewData |= 1 << TOUCH_DATA_AUX1;
+
+         if(tsc2101Registers[TOUCH_CONTROL_BUFFER_MODE] & 0x8000)
+            tsc2101BufferFifoWrite(TOUCH_DATA_AUX1);
          break;
 
       case 0x9:
@@ -593,11 +629,11 @@ void tsc2101Scan(void){
          break;
    }
 
-   tsc2101RefreshInterrupt();
-
    if(keepScanning)
       pxa260TimingTriggerEvent(PXA260_TIMING_CALLBACK_TSC2101_SCAN, TSC2101_SCAN_DURATION);
    else
       tsc2101Registers[TOUCH_CONTROL_TSC_ADC] &= 0xC3FF;
+
+   tsc2101RefreshInterrupt();
 }
 
