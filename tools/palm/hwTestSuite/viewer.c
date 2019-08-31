@@ -181,11 +181,6 @@ var valueViewer(void){
    var value = getSubprogramArgs();
    uint64_t varData = getVarValue(value);
    
-   if(getButtonPressed(buttonBack)){
-      clearNeeded = true;
-      exitSubprogram();
-   }
-   
    if(clearNeeded){
       debugSafeScreenClear(C_WHITE);
       
@@ -224,6 +219,13 @@ var valueViewer(void){
       
       clearNeeded = false;
    }
+   
+   if(getButtonPressed(buttonBack)){
+      clearNeeded = true;
+      exitSubprogram();
+   }
+   
+   return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
 
 var hexViewer(void){
@@ -283,10 +285,6 @@ void resetFunctionViewer(void){
    hwTests[totalHwTests].testFunction = getDeviceInfo;
    totalHwTests++;
    
-   StrNCopy(hwTests[totalHwTests].name, "Get Pen Position", TEST_NAME_LENGTH);
-   hwTests[totalHwTests].testFunction = getPenPosition;
-   totalHwTests++;
-   
    StrNCopy(hwTests[totalHwTests].name, "Unaligned 32 Bit Acs", TEST_NAME_LENGTH);
    hwTests[totalHwTests].testFunction = unaligned32bitAccess;
    totalHwTests++;
@@ -330,6 +328,10 @@ void resetFunctionViewer(void){
       
       StrNCopy(hwTests[totalHwTests].name, "Button Test", TEST_NAME_LENGTH);
       hwTests[totalHwTests].testFunction = testButtonInput;
+      totalHwTests++;
+      
+      StrNCopy(hwTests[totalHwTests].name, "Get Pen Position", TEST_NAME_LENGTH);
+      hwTests[totalHwTests].testFunction = getPenPosition;
       totalHwTests++;
       
       StrNCopy(hwTests[totalHwTests].name, "Get CLK32 Freq", TEST_NAME_LENGTH);
@@ -396,8 +398,8 @@ void resetFunctionViewer(void){
    }
    
    if(cpuType & CPU_ARM){
-      StrNCopy(hwTests[totalHwTests].name, "Test ARM Read", TEST_NAME_LENGTH);
-      hwTests[totalHwTests].testFunction = testArmRead;
+      StrNCopy(hwTests[totalHwTests].name, "Test ARM Mode Access", TEST_NAME_LENGTH);
+      hwTests[totalHwTests].testFunction = testArmAccess;
       totalHwTests++;
    }
 }

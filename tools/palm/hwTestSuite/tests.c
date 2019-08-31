@@ -971,12 +971,19 @@ var callSysUnimplemented(void){
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
 
-var testArmRead(void){
-   uint32_t value = armRead32(0x20000010);
+var testArmAccess(void){
+   uint32_t value;
    
-   /*should return the word "Palm" backwards*/
-   setSubprogramArgs(makeVar(LENGTH_ANY, TYPE_PTR, (uint64_t)value));
-   callSubprogram(valueViewer);
+   /*should return 0x12345678*/
+   armWrite8((uint32_t)sharedDataBuffer, 0x12);
+   value = (uint32_t)armRead8((uint32_t)sharedDataBuffer) << 8 | 0x34;
+   armWrite16((uint32_t)sharedDataBuffer, value);
+   value = (uint32_t)armRead16((uint32_t)sharedDataBuffer) << 8 | 0x56;
+   armWrite32((uint32_t)sharedDataBuffer, value);
+   value = (uint32_t)armRead32((uint32_t)sharedDataBuffer) << 8 | 0x78;
+   
+   setSubprogramArgs(makeVar(LENGTH_32, TYPE_UINT, (uint64_t)value));
+   execSubprogram(valueViewer);
    
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
