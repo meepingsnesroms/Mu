@@ -79,7 +79,6 @@ uint8_t tps65010I2cExchange(uint8_t i2cBus){
 
    if(i2cBus == I2C_START){
       tps65010State = I2C_WAIT_FOR_ADDR;
-      tps65010SelectedRegisterAlreadySet = false;
       return I2C_FLOATING_BUS;
    }
    else if(i2cBus == I2C_STOP){
@@ -89,6 +88,7 @@ uint8_t tps65010I2cExchange(uint8_t i2cBus){
       return I2C_FLOATING_BUS;
    }
 
+   tps65010CurrentI2cByte <<= 1;
    tps65010CurrentI2cByte |= (i2cBus == I2C_1);
    if(tps65010State == I2C_SENDING){
       if(tps65010SelectedRegister < 0x11)
@@ -100,23 +100,35 @@ uint8_t tps65010I2cExchange(uint8_t i2cBus){
 
    if(tps65010CurrentI2cByteBitsRemaining == 0){
       //process data from byte
-      if(tps65010State == I2C_WAIT_FOR_ADDR){
-         if((tps65010CurrentI2cByte & 0xFE) == 0x90){
-            //the address is of this device
-            tps65010State = (tps65010CurrentI2cByte & 0x01) ? I2C_SENDING : I2C_RECEIVING;
-         }
-         else{
-            tps65010State = I2C_NOT_SELECTED;
-         }
-      }
-      else if(tps65010State == I2C_RECEIVING){
-         if(tps65010SelectedRegisterAlreadySet){
-            tps65010WriteRegister(tps65010SelectedRegister, tps65010CurrentI2cByte);
-         }
-         else{
-            tps65010SelectedRegister = tps65010CurrentI2cByte;
-            tps65010SelectedRegisterAlreadySet = true;
-         }
+      switch(tps65010State){
+         case I2C_WAIT_FOR_ADDR:
+            if((tps65010CurrentI2cByte & 0xFE) == 0x90){
+               //the address is of this device
+               tps65010State = (tps65010CurrentI2cByte & 0x01) ? I2C_SENDING : I2C_RECEIVING;
+            }
+            else{
+               tps65010State = I2C_NOT_SELECTED;
+            }
+            break;
+
+         case I2C_RECEIVING:
+            if(tps65010SelectedRegisterAlreadySet){
+               tps65010WriteRegister(tps65010SelectedRegister, tps65010CurrentI2cByte);
+               tps65010SelectedRegisterAlreadySet = false;
+            }
+            else{
+               tps65010SelectedRegister = tps65010CurrentI2cByte;
+               tps65010SelectedRegisterAlreadySet = true;
+            }
+            break;
+
+         case I2C_SENDING:
+            tps65010SelectedRegisterAlreadySet = false;
+            break;
+
+         default:
+            debugLog("TPS65010 dont know what to do with byte, cmd:%d\n", tps65010State);
+            break;
       }
 
       tps65010CurrentI2cByteBitsRemaining = 8;

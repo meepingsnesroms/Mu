@@ -10,6 +10,13 @@ static void pxa260gpioOnOutputPinUpdated(Pxa260gpio* gpio, UInt8 gpioNum){
    //debugLog("PXA260 GPIO %d set:%d\n", gpioNum, pxa260gpioGetState(gpio, gpioNum));
 
    switch(gpioNum){
+      /*
+      case 19:
+      case 20:
+      case 21:
+      case 22:
+         */
+
       case 24:
          //TSC2101 chip select
          tsc2101SetChipSelect(!!pxa260gpioGetState(gpio, gpioNum));
@@ -106,6 +113,7 @@ Boolean pxa260gpioPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boolean w
 			case 8:
 				pa -= 6;
             gpio->latches[pa] |= val;
+            debugLog("PXA260 GPIO register read:%d\n", pa);
 				goto recalc;
 			
 			case 9:
