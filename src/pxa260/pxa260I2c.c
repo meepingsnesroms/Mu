@@ -90,18 +90,22 @@ void pxa260I2cWriteWord(uint32_t address, uint32_t value){
 
                //add unit busy bit
                pxa260I2cIsr |= 0x0004;
+
+               //add read/write bit
+               pxa260I2cIsr |= pxa260I2cBuffer & 0x0001;
             }
             if(value & 0x0008){
-               if(pxa260I2cIsr & 0x0001){
+               //must always send 1 byte to start exchange so if start is true force write
+               if(pxa260I2cIsr & 0x0001 && !(value & 0x0001)){
                   //receive
                   uint8_t index;
-
-                  debugLog("I2C transfer(receive) attempted\n");
 
                   for(index = 0; index < 8; index++){
                      pxa260I2cBuffer <<= 1;
                      pxa260I2cBuffer |= !!(tps65010I2cExchange(I2C_FLOATING_BUS) & I2C_1);
                   }
+
+                  debugLog("I2C transfer(receive) attempted: 0x%02X\n", pxa260I2cBuffer);
 
                   pxa260TimingTriggerEvent(PXA260_TIMING_CALLBACK_I2C_RECEIVE_FULL, PXA260_I2C_TRANSFER_DURATION);
                }
@@ -127,13 +131,10 @@ void pxa260I2cWriteWord(uint32_t address, uint32_t value){
          return;
 
       case ISR:{
-            //debugLog("PXA260 I2C write to ISR:0x%04X\n", value & 0xFFFF);
+            //debugLog("PXA260 ISR write :0x%04X\n", value & 0xFFFF);
 
             //clear all clear on write 1 bits
             pxa260I2cIsr = pxa260I2cIsr & ~(value & 0x07F0);
-
-            //read write setting
-            pxa260I2cIsr = pxa260I2cIsr & 0xFFFE | value & 0x0001;
 
             pxa260I2cUpdateInterrupt();
          }

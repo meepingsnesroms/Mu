@@ -92,7 +92,7 @@ uint8_t tps65010I2cExchange(uint8_t i2cBus){
    tps65010CurrentI2cByte |= (i2cBus == I2C_1);
    if(tps65010State == I2C_SENDING){
       if(tps65010SelectedRegister < 0x11)
-         newI2cBus = (tps65010Registers[tps65010SelectedRegister] && 1 << (tps65010CurrentI2cByteBitsRemaining - 1)) ? I2C_1 : I2C_0;
+         newI2cBus = (tps65010Registers[tps65010SelectedRegister] & 1 << (tps65010CurrentI2cByteBitsRemaining - 1)) ? I2C_1 : I2C_0;
       else
          newI2cBus = I2C_0;
    }
@@ -105,6 +105,8 @@ uint8_t tps65010I2cExchange(uint8_t i2cBus){
             if((tps65010CurrentI2cByte & 0xFE) == 0x90){
                //the address is of this device
                tps65010State = (tps65010CurrentI2cByte & 0x01) ? I2C_SENDING : I2C_RECEIVING;
+               if(tps65010State == I2C_SENDING)
+                  debugLog("TPS65010 reading register:address:0x%02X\n", tps65010SelectedRegister);
             }
             else{
                tps65010State = I2C_NOT_SELECTED;
