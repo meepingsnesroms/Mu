@@ -3,8 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "audio/blip_buf.h"
 #include "emulator.h"
+#include "audio/blip_buf.h"
 #include "dbvz.h"
 #include "m515Bus.h"
 #include "sed1376.h"

@@ -1,12 +1,12 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include "../emulator.h"
-#include "../tps65010.h"
 #include "pxa260.h"
 #include "pxa260_IC.h"
 #include "pxa260Timing.h"
 #include "pxa260I2c.h"
+#include "../emulator.h"
+#include "../tps65010.h"
 
 
 #define PXA260_I2C_TRANSFER_DURATION 200
@@ -75,13 +75,13 @@ void pxa260I2cWriteWord(uint32_t address, uint32_t value){
 
    switch(address){
       case IDBR:
-         debugLog("PXA260 I2C IDBR write:0x%02X, PC:0x%08X\n", value & 0xFF, pxa260GetPc());
+         //debugLog("PXA260 I2C IDBR write:0x%02X, PC:0x%08X\n", value & 0xFF, pxa260GetPc());
          pxa260I2cBuffer = value & 0xFF;
          return;
 
       case ICR:
          //TODO: this is incomplete
-         //debugLog("PXA260 ICR write 0x%04X, PC:0x%08X\n", value & 0xFFFF, pxa260GetPc());
+         //debugLog("PXA260 I2C ICR write 0x%04X, PC:0x%08X\n", value & 0xFFFF, pxa260GetPc());
 
          if(!(pxa260I2cIcr & 0x0008) && value & 0x0040){
             //I2C unit enabled and not transfering right now, its ok to start a transfer
@@ -131,7 +131,7 @@ void pxa260I2cWriteWord(uint32_t address, uint32_t value){
          return;
 
       case ISR:{
-            //debugLog("PXA260 ISR write :0x%04X\n", value & 0xFFFF);
+            //debugLog("PXA260 I2C ISR write :0x%04X\n", value & 0xFFFF);
 
             //clear all clear on write 1 bits
             pxa260I2cIsr = pxa260I2cIsr & ~(value & 0x07F0);

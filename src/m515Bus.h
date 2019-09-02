@@ -2,6 +2,7 @@
 #define M515_BUS_H
 
 #include <stdint.h>
+#include <stdbool.h>
 
 //address space
 //new bank size (0x4000)

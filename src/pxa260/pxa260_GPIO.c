@@ -1,3 +1,4 @@
+#include "pxa260.h"
 #include "pxa260_GPIO.h"
 #include "pxa260_mem.h"
 #include "../tsc2101.h"
@@ -113,7 +114,6 @@ Boolean pxa260gpioPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boolean w
 			case 8:
 				pa -= 6;
             gpio->latches[pa] |= val;
-            debugLog("PXA260 GPIO register read:%d\n", pa);
 				goto recalc;
 			
 			case 9:
@@ -166,6 +166,7 @@ trigger_intrs:
 			case 1:
 			case 2:
 				val = gpio->levels[pa - 0];
+            debugLog("PXA260 GPIO register read:%d, PC:0x%08X\n", pa, pxa260GetPc());
 				break;
 			
 			case 3:

@@ -2,13 +2,13 @@
 #include <string.h>
 #include <setjmp.h>
 
+#include "pxa260I2c.h"
+#include "pxa260Ssp.h"
+#include "pxa260Timing.h"
 #include "../tsc2101.h"
 #include "../armv5te/os/os.h"
 #include "../armv5te/emu.h"
 #include "../armv5te/cpu.h"
-#include "pxa260I2c.h"
-#include "pxa260Ssp.h"
-#include "pxa260Timing.h"
 
 
 #define PXA260_TIMING_NEVER 0xFFFFFFFF

@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include <string.h>
 
+#include "dbvz.h"
 #include "emulator.h"
 #include "m515Bus.h"
 #include "portability.h"
@@ -10,7 +11,6 @@
 #include "sdCard.h"
 #include "audio/blip_buf.h"
 #include "debug/sandbox.h"
-#include "dbvz.h"
 
 
 #include "dbvzRegisterNames.c.h"

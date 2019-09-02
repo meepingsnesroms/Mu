@@ -2,11 +2,11 @@
 #include <stdbool.h>
 #include <string.h>
 
+#include "tsc2101.h"
 #include "emulator.h"
 #include "pxa260/pxa260.h"
 #include "pxa260/pxa260_GPIO.h"
 #include "pxa260/pxa260Timing.h"
-#include "tsc2101.h"
 
 
 //TODO: using GPIO1 as an interrupt dosent work

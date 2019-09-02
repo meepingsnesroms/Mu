@@ -1,7 +1,7 @@
 #include <stdint.h>
 
-#include "../emulator.h"
 #include "pxa260.h"
+#include "../emulator.h"
 
 
 #define UDCCR 0x0000
@@ -36,6 +36,7 @@ void pxa260UdcWriteWord(uint32_t address, uint32_t value){
    switch(address){
       case UDCCR:
          //TODO: is incomplete
+         debugLog("PXA260 UDC UDCCR write:0x%08X\n", value);
          pxa260UdcUdccr = value & 0xFF;
          return;
 
