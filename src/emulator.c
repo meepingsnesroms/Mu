@@ -241,7 +241,7 @@ void emulatorSoftReset(void){
    //equivalent to pushing the reset button on the back of the device
 #if defined(EMU_SUPPORT_PALM_OS5)
    if(palmEmulatingTungstenT3){
-      palmClockMultiplier = 1.00;
+      palmClockMultiplier = 1.00 - TUNGSTEN_T3_CPU_PERCENT_WAITING;
       pxa260Reset();
       tps65010Reset();
       tsc2101Reset(true);
@@ -274,7 +274,7 @@ void emulatorSetRtc(uint16_t days, uint8_t hours, uint8_t minutes, uint8_t secon
 void emulatorSetCpuSpeed(double speed){
 #if defined(EMU_SUPPORT_PALM_OS5)
    if(palmEmulatingTungstenT3)
-      palmClockMultiplier = speed;//TODO: dont know ARM CPU speeds yet
+      palmClockMultiplier = speed * (1.00 - TUNGSTEN_T3_CPU_PERCENT_WAITING);
    else
 #endif
       palmClockMultiplier = speed * (1.00 - DBVZ_CPU_PERCENT_WAITING);

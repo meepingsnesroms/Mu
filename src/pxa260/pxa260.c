@@ -221,7 +221,7 @@ void pxa260LoadState(uint8_t* data){
 void pxa260Execute(bool wantVideo){
    uint32_t index;
 
-   pxa260TimingRun(TUNGSTEN_T3_CPU_CRYSTAL_FREQUENCY / EMU_FPS * palmClockMultiplier);
+   pxa260TimingRun(TUNGSTEN_T3_CPU_PLL_FREQUENCY / EMU_FPS * palmClockMultiplier);
 
    //this needs to run at 3.6864 MHz
    for(index = 0; index < TUNGSTEN_T3_CPU_CRYSTAL_FREQUENCY / EMU_FPS; index++)

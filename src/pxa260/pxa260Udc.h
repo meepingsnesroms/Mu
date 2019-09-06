@@ -7,6 +7,7 @@
 #define PXA260_UDC_SIZE	0x00010000
 
 extern uint8_t pxa260UdcUdccr;
+extern uint8_t pxa260UdcUicr0;
 
 void pxa260UdcReset(void);
 
