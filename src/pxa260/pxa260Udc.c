@@ -107,15 +107,17 @@ void pxa260UdcWriteWord(uint32_t address, uint32_t value){
          return;
 
       case UICR0:
-         debugLog("PXA260 UDC UICR0 write:0x%02X\n", value & 0xFF);
+         //debugLog("PXA260 UDC UICR0 write:0x%02X\n", value & 0xFF);
          pxa260UdcUicr0 = value & 0xFF;
-         //TODO: need to update interrupts
+         //dont need to check interrupts
+         //from datasheet: It only blocks future zero to one transitions of the interrupt bit.
          return;
 
       case UICR1:
-         debugLog("PXA260 UDC UICR1 write:0x%02X\n", value & 0xFF);
+         //debugLog("PXA260 UDC UICR1 write:0x%02X\n", value & 0xFF);
          pxa260UdcUicr1 = value & 0xFF;
-         //TODO: need to update interrupts
+         //dont need to check interrupts
+         //from datasheet: It only blocks future zero to one transitions of the interrupt bit.
          return;
 
       case USIR0:
