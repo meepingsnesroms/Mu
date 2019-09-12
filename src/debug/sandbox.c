@@ -698,6 +698,8 @@ uint32_t sandboxCommand(uint32_t command, void* data){
             else{
                //disable weird SD chip
                patchOsRom(0x333EC6, "0000");//blocks out the slot driver
+               patchOsRom(0x205C, "0000A0E1");//blocks idle loop jump with NOP
+               //patchOsRom(0x1FE8, "0000A0E10000A0E10000A0E10000A0E10000A0E10000A0E10000A0E10000A0E10000A0E10000A0E10000A0E10000A0E10000A0E10000A0E1");//blocks idle loop with NOPs
             }
          }
          break;

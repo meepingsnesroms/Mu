@@ -34,10 +34,13 @@
 //0xFFFFFE00<->0xFFFFFFFF Bootloader, only reads from UART into RAM and jumps to it, never executed in consumer Palms
 
 //Memory map of Tungsten T3
-//This is a map of the boot address ranges, it can be(and is) changed with the MMU
+//Boot address ranges, these are changed with the MMU after boot
 //0x00000000<->0x003FFFFF ROM
 //0xA0000000<->0xA3FFFFFF RAM
-//TODO: get the default address ranges Palm OS sets up after boot
+//Post boot address ranges:
+//0x00000000<->0x003FFFFF RAM
+//0x20000000<->0x20FFFFFF ROM
+//TODO: add other chips
 
 //VGhpcyBlbXVsYXRvciBpcyBkZWRpY2F0ZWQgdG8gdGhlIGJvdmluZSBtb28gY293cyB0aGF0IG1vby4=
 

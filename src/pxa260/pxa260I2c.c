@@ -105,7 +105,7 @@ void pxa260I2cWriteWord(uint32_t address, uint32_t value){
                      pxa260I2cBuffer |= !!(tps65010I2cExchange(I2C_FLOATING_BUS) & I2C_1);
                   }
 
-                  debugLog("I2C transfer(receive) attempted: 0x%02X\n", pxa260I2cBuffer);
+                  //debugLog("I2C transfer(receive) attempted: 0x%02X\n", pxa260I2cBuffer);
 
                   pxa260TimingTriggerEvent(PXA260_TIMING_CALLBACK_I2C_RECEIVE_FULL, PXA260_I2C_TRANSFER_DURATION);
                }
@@ -113,7 +113,7 @@ void pxa260I2cWriteWord(uint32_t address, uint32_t value){
                   //send
                   uint8_t index;
 
-                  debugLog("I2C transfer(send) attempted: 0x%02X\n", pxa260I2cBuffer);
+                  //debugLog("I2C transfer(send) attempted: 0x%02X\n", pxa260I2cBuffer);
 
                   for(index = 0; index < 8; index++)
                      tps65010I2cExchange((pxa260I2cBuffer & 1 << 7 - index) ? I2C_1 : I2C_0);
@@ -162,7 +162,7 @@ void pxa260I2cTransmitEmpty(void){
       pxa260I2cIsr &= 0xFFFA;
 
    pxa260I2cUpdateInterrupt();
-   debugLog("I2C transmit empty triggered\n");
+   //debugLog("I2C transmit empty triggered\n");
 }
 
 void pxa260I2cReceiveFull(void){
@@ -177,5 +177,5 @@ void pxa260I2cReceiveFull(void){
       pxa260I2cIsr &= 0xFFFA;
 
    pxa260I2cUpdateInterrupt();
-   debugLog("I2C receive full triggered\n");
+   //debugLog("I2C receive full triggered\n");
 }

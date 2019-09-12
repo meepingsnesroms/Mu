@@ -6,17 +6,30 @@
 
 #define UDCCR 0x0000
 //...
+#define UDCCS0 0x0010
+//...
 #define UICR0 0x0050
+#define UICR1 0x0054
+//...
+#define UFNHR 0x0060
 
 
 uint8_t pxa260UdcUdccr;
+uint8_t pxa260UdcUdccs0;
 uint8_t pxa260UdcUicr0;
+uint8_t pxa260UdcUicr1;
+uint8_t pxa260UdcUfnhr;
 
 
 void pxa260UdcReset(void){
    pxa260UdcUdccr = 0xA0;
    //...
+   pxa260UdcUdccs0 = 0x00;
+   //...
    pxa260UdcUicr0 = 0xFF;
+   pxa260UdcUicr1 = 0xFF;
+   //...
+   pxa260UdcUfnhr = 0x40;
 }
 
 uint32_t pxa260UdcReadWord(uint32_t address){
@@ -28,9 +41,18 @@ uint32_t pxa260UdcReadWord(uint32_t address){
          debugLog("Snoot boop, PC:0x%08X\n", pxa260GetPc());
          return pxa260UdcUdccr;
 
+      case UDCCS0:
+         //TODO: need to | with RECEIVE FIFO NOT EMPTY
+         return pxa260UdcUdccs0;
+
       case UICR0:
-         //simple read, no actions needed
          return pxa260UdcUicr0;
+
+      case UICR1:
+         return pxa260UdcUicr0;
+
+      case UFNHR:
+         return pxa260UdcUfnhr;
 
       default:
          debugLog("Unimplimented 32 bit PXA260 UDC register read:0x%04X\n", address);
@@ -50,6 +72,11 @@ void pxa260UdcWriteWord(uint32_t address, uint32_t value){
 
       case UICR0:
          pxa260UdcUicr0 = value & 0xFF;
+         //TODO: need to update interrupts
+         return;
+
+      case UICR1:
+         pxa260UdcUicr1 = value & 0xFF;
          //TODO: need to update interrupts
          return;
 
