@@ -30,6 +30,6 @@ uint32_t pxa260GetRegister(uint8_t reg);//only for debugging
 #define pxa260GetPc() pxa260GetRegister(15)//only for debugging
 uint32_t pxa260GetCpsr(void);//only for debugging
 uint32_t pxa260GetSpsr(void);//only for debugging
-uint64_t pxa260ReadArbitraryMemory(uint32_t address, uint8_t size);//only for debugging
+uint64_t pxa260ReadArbitraryMemory(uint32_t address, uint8_t size);//only for debugging, uses physical address not MMU mapped
 
 #endif

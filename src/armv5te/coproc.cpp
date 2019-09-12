@@ -84,8 +84,11 @@ void do_cp15_mcr(uint32_t insn)
                 error("Bad or unimplemented control register value: %x (unsupported: %x)\n", value, (value & 0xFFFF8CF8) ^ 0x00050078);
             */
             arm.control = value;
-            if (change & 1) // MMU is being turned on or off
-                addr_cache_flush();
+            if (change & 1){
+               // MMU is being turned on or off
+               addr_cache_flush();
+               emuprintf("Turned MMU %s\n", value & 1 ? "on" : "off");
+            }
             break;
         }
         case 0x020000: /* MCR p15, 0, <Rd>, c2, c0, 0: Translation Table Base Register */

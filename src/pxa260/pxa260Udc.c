@@ -38,7 +38,7 @@ uint32_t pxa260UdcReadWord(uint32_t address){
    switch(address){
       case UDCCR:
          //TODO: is incomplete
-         debugLog("Snoot boop, PC:0x%08X\n", pxa260GetPc());
+         debugLog("PXA260 UDC UDCCR read, PC:0x%08X\n", pxa260GetPc());
          return pxa260UdcUdccr;
 
       case UDCCS0:
@@ -68,6 +68,12 @@ void pxa260UdcWriteWord(uint32_t address, uint32_t value){
          //TODO: is incomplete
          debugLog("PXA260 UDC UDCCR write:0x%08X\n", value);
          pxa260UdcUdccr = value & 0xFF;
+         return;
+
+      case UDCCS0:
+         pxa260UdcUdccs0 &= ~(value & 0x91);//clear clear on 1 bits
+         pxa260UdcUdccs0 |= value & 0x26;//set set on 1 bits
+         //TODO: need to update interrupts
          return;
 
       case UICR0:
