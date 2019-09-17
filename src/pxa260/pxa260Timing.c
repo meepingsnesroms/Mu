@@ -4,6 +4,7 @@
 
 #include "pxa260I2c.h"
 #include "pxa260Ssp.h"
+#include "pxa260Udc.h"
 #include "pxa260Timing.h"
 #include "../tsc2101.h"
 #include "../armv5te/os/os.h"
@@ -34,6 +35,7 @@ void pxa260TimingInit(void){
    pxa260TimingCallbacks[PXA260_TIMING_CALLBACK_I2C_TRANSMIT_EMPTY] = pxa260I2cTransmitEmpty;
    pxa260TimingCallbacks[PXA260_TIMING_CALLBACK_I2C_RECEIVE_FULL] = pxa260I2cReceiveFull;
    pxa260TimingCallbacks[PXA260_TIMING_CALLBACK_SSP_TRANSFER_COMPLETE] = pxa260SspTransferComplete;
+   pxa260TimingCallbacks[PXA260_TIMING_CALLBACK_UDC_DEVICE_RESUME_COMPLETE] = pxa260UdcDeviceResumeComplete;
    pxa260TimingCallbacks[PXA260_TIMING_CALLBACK_TSC2101_SCAN] = tsc2101Scan;
 }
 

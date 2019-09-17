@@ -14,4 +14,6 @@ void pxa260UdcReset(void);
 uint32_t pxa260UdcReadWord(uint32_t address);
 void pxa260UdcWriteWord(uint32_t address, uint32_t value);
 
+void pxa260UdcDeviceResumeComplete(void);
+
 #endif

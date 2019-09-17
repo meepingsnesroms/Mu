@@ -1,8 +1,17 @@
 #include <stdint.h>
 
 #include "pxa260.h"
+#include "pxa260_IC.h"
+#include "pxa260Timing.h"
 #include "../emulator.h"
 
+
+/*
+USB devices have pull up resistors, USB hosts have pull down resistors, therefore being unplugged does not issue USB reset commands
+*/
+
+
+#define PXA260_UDC_DEVICE_RESUME_DURATION 10
 
 #define UDCCR 0x0000
 //...
@@ -25,8 +34,23 @@ uint8_t pxa260UdcUsir1;
 uint8_t pxa260UdcUfnhr;
 
 
+static void pxa260UdcUpdateInterrupt(void){
+   //USB reset
+   if(pxa260UdcUdccr & 0x40 && !(pxa260UdcUdccr & 0x80))
+      goto trigger;
+
+   //TODO: need to check other interrupts
+
+   pxa260icInt(&pxa260Ic, PXA260_I_USB, false);
+   return;
+
+   trigger:
+   pxa260icInt(&pxa260Ic, PXA260_I_USB, true);
+   return;
+}
+
 void pxa260UdcReset(void){
-   pxa260UdcUdccr = 0xA0;
+   pxa260UdcUdccr = 0xA0;// | 0x02;//TODO: never receiving a USB reset, nothing connected
    //...
    pxa260UdcUdccs0 = 0x00;
    //...
@@ -84,26 +108,23 @@ void pxa260UdcWriteWord(uint32_t address, uint32_t value){
    switch(address){
       case UDCCR:
          debugLog("PXA260 UDC UDCCR write:0x%02X\n", value & 0xFF);
-         if(value & 0x01){
-            if(value & 0x04)
-               debugLog("PXA260 UDC DEVICE RESUME SET\n");
+         if(value & 0x04 && !(pxa260UdcUdccr & 0x04)){
+            debugLog("PXA260 UDC DEVICE RESUME SET\n");
+            pxa260UdcUdccr |= 0x04;
+            pxa260TimingTriggerEvent(PXA260_TIMING_CALLBACK_UDC_DEVICE_RESUME_COMPLETE, PXA260_UDC_DEVICE_RESUME_DURATION);
+         }
 
-            pxa260UdcUdccr = pxa260UdcUdccr & 0x5E | value & 0xA1;//write normal bits
-            pxa260UdcUdccr &= ~(value & 0x58);//clear clear on 1 bits
-            pxa260UdcUdccr |= value & 0x04;//set set on 1 bits
-         }
-         else{
-            debugLog("PXA260 UDC reset\n");
-            pxa260UdcReset();
-         }
-         //TODO: need to update interrupts
+         pxa260UdcUdccr = pxa260UdcUdccr & 0x5E | value & 0xA1;//write normal bits
+         pxa260UdcUdccr &= ~(value & 0x58);//clear clear on 1 bits
+
+         pxa260UdcUpdateInterrupt();
          return;
 
       case UDCCS0:
          debugLog("PXA260 UDC UDCCS0 write:0x%02X\n", value & 0xFF);
          pxa260UdcUdccs0 &= ~(value & 0x91);//clear clear on 1 bits
          pxa260UdcUdccs0 |= value & 0x26;//set set on 1 bits
-         //TODO: need to update interrupts
+         pxa260UdcUpdateInterrupt();
          return;
 
       case UICR0:
@@ -123,24 +144,28 @@ void pxa260UdcWriteWord(uint32_t address, uint32_t value){
       case USIR0:
          debugLog("PXA260 UDC USIR0 write:0x%02X\n", value & 0xFF);
          pxa260UdcUsir0 &= ~(value & 0xFF);
-         //TODO: need to update interrupts
+         pxa260UdcUpdateInterrupt();
          return;
 
       case USIR1:
          debugLog("PXA260 UDC USIR1 write:0x%02X\n", value & 0xFF);
          pxa260UdcUicr1 &= ~(value & 0xFF);
-         //TODO: need to update interrupts
+         pxa260UdcUpdateInterrupt();
          return;
 
       case UFNHR:
          debugLog("PXA260 UDC UFNHR write:0x%02X\n", value & 0xFF);
          pxa260UdcUfnhr = pxa260UdcUfnhr & 0xBF | value & 0x40;//write normal bits
          pxa260UdcUfnhr &= ~(value & 0xB8);//clear clear on 1 bits
-         //TODO: need to update interrupts
+         pxa260UdcUpdateInterrupt();
          return;
 
       default:
          debugLog("Unimplimented 32 bit PXA260 UDC register write:0x%04X, value:0x%02X\n", address, value);
          return;
    }
+}
+
+void pxa260UdcDeviceResumeComplete(void){
+   pxa260UdcUdccr &= 0xFB;
 }
