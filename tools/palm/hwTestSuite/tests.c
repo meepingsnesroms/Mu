@@ -987,3 +987,8 @@ var testArmAccess(void){
    
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
+
+var tsc2101ReadAllAnalogValues(void){
+   
+   return makeVar(LENGTH_0, TYPE_NULL, 0);
+}

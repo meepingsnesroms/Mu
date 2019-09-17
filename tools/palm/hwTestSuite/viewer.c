@@ -380,10 +380,6 @@ void resetFunctionViewer(void){
          totalHwTests++;
       }
       
-      StrNCopy(hwTests[totalHwTests].name, "Manual LSSA", TEST_NAME_LENGTH);
-      hwTests[totalHwTests].testFunction = manualLssa;
-      totalHwTests++;
-      
       StrNCopy(hwTests[totalHwTests].name, "TSTAT1 Semaphore Info", TEST_NAME_LENGTH);
       hwTests[totalHwTests].testFunction = tstat1GetSemaphoreLockOrder;
       totalHwTests++;
@@ -401,5 +397,12 @@ void resetFunctionViewer(void){
       StrNCopy(hwTests[totalHwTests].name, "Test ARM Mode Access", TEST_NAME_LENGTH);
       hwTests[totalHwTests].testFunction = testArmAccess;
       totalHwTests++;
+      
+      if(isT3){
+         StrNCopy(hwTests[totalHwTests].name, "TSC2101 ADC Read", TEST_NAME_LENGTH);
+         hwTests[totalHwTests].testFunction = tsc2101ReadAllAnalogValues;
+         totalHwTests++;
+      }
+      
    }
 }
