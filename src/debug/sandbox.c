@@ -3,7 +3,7 @@
 
 
 #if defined(EMU_DEBUG) && defined(EMU_SANDBOX)
-//this wrappers 68k code and allows calling it for tests, this should be useful for determining if hardware accesses are correct
+//this wrappers 68K code and allows calling it for tests, this should be useful for determining if hardware accesses are correct
 //Note: when running a test the emulator runs at native speed and no clocks are emulated
 #include <stdlib.h>
 #include <string.h>
@@ -59,7 +59,7 @@ static bool                   sandboxActive;//used to "log out" of the emulator 
 static uint8_t                sandboxCurrentCpuArch;
 static m68k_local_cpu_state_t sandboxOldFunctionM68kCpuState;
 static uint64_t               sandboxFramesRan;
-static mem_region_t           sandboxWatchRegions[SANDBOX_MAX_WATCH_REGIONS];//code locations in 68k address space to be sandboxed
+static mem_region_t           sandboxWatchRegions[SANDBOX_MAX_WATCH_REGIONS];//code locations in 68K address space to be sandboxed
 static uint16_t               sandboxWatchRegionsActive;//number of used sandboxWatchRegions entrys
 
 

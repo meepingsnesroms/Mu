@@ -294,7 +294,7 @@ void resetFunctionViewer(void){
    totalHwTests++;
    
    if(cpuType & CPU_M68K){
-      /*68k only functions*/
+      /*68K only functions*/
       if((cpuType & CPU_M68K_TYPES) != CPU_M68K_328){
          /*original dragonball doesnt have a bootloader*/
          StrNCopy(hwTests[totalHwTests].name, "Dump Bootloader", TEST_NAME_LENGTH);

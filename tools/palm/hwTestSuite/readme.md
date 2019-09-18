@@ -4,7 +4,8 @@ The tests are:
 Get Dragonball CPU Version  
 Dump Bootloader(EZ, VZ, SZ)  
 RAM Browser  
-Various Palm m515 Protocol And Pinout Tests
+Various Palm m515 Protocol And Pinout Tests  
+Various Tungsten T3 Protocol And Pinout Tests
 
 
 ## Warning

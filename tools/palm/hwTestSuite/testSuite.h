@@ -62,7 +62,7 @@ extern uint8_t* sharedDataBuffer;
 /*
 functions
 no inline functions
-old gcc versions have broken handling of inline functions where variables with the same name
+old GCC versions have broken handling of inline functions where variables with the same name
 inside the function and outside can result in the outside variable being written
 c89 also doesnt support them
 */

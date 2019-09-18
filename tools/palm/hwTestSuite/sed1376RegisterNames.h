@@ -1,5 +1,6 @@
 #ifndef SED1376_REGISTER_NAMES_H
 #define SED1376_REGISTER_NAMES_H
+
 /*SED1376 Register Definitions*/
 
 /*Read-Only Configuration Registers*/
