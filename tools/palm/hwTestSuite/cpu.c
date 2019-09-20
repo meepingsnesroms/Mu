@@ -2,7 +2,7 @@
 #include <stdint.h>
 
 #include "testSuite.h"
-#include "specs/dragonballVzRegisterSpec.h"
+#include "dbvzRegisterNames.h"
 #include "viewer.h"
 #include "cpu.h"
 

@@ -9,6 +9,7 @@
 /*defines*/
 #define CODE_SECTION(codeSection) __attribute__((section(codeSection)))
 #define ALIGN(size) __attribute__((aligned(size)))
+#define HW_REG_ADDR(x) (0xFFFFF000 | (x))
 
 #define SHARED_DATA_BUFFER_SIZE 1000
 

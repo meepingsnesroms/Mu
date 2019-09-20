@@ -4,7 +4,7 @@
 #include <string.h>
 #include <Extensions/ExpansionMgr/VFSMgr.h>
 
-#include "specs/dragonballVzRegisterSpec.h"
+#include "dbvzRegisterNames.h"
 #include "testSuite.h"
 #include "viewer.h"
 #include "debug.h"
