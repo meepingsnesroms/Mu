@@ -56,3 +56,14 @@ void armWrite32(uint32_t address, uint32_t value){
    setValue[7] = EndianSwap32(value);
    PceNativeCall(setValue, NULL);
 }
+
+void callArmTests(uint32_t* data){
+   MemHandle armHandle;
+   MemPtr armPointer;
+   
+   armHandle = DmGetResource(ARM_RESOURCE_TYPE, ARM_RESOURCE_ID);
+   armPointer = MemHandleLock(armHandle);
+   PceNativeCall(armPointer, data);
+   MemHandleUnlock(armHandle);
+   DmReleaseResource(armHandle);
+}
