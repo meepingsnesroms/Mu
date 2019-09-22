@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include "testSuiteConfig.h"
+#include "testSuite.h"
 
 /* -------------------------------------------------------------------------------- */
 /* -- CONFIG SECTION                                                             -- */
@@ -43,23 +44,13 @@
 
 /* Specify platform-dependent integer types here */
 
-#define __UG_FONT_DATA const
+#define __UG_FONT_DATA const CODE_SECTION("ugui")
 typedef uint8_t      UG_U8;
 typedef int8_t       UG_S8;
 typedef uint16_t     UG_U16;
 typedef int16_t      UG_S16;
 typedef uint32_t     UG_U32;
 typedef int32_t      UG_S32;
-
-
-/* Example for dsPIC33
-typedef unsigned char         UG_U8;
-typedef signed char           UG_S8;
-typedef unsigned int          UG_U16;
-typedef signed int            UG_S16;
-typedef unsigned long int     UG_U32;
-typedef signed long int       UG_S32;
-*/
 
 /* -------------------------------------------------------------------------------- */
 /* -------------------------------------------------------------------------------- */

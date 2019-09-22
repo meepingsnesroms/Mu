@@ -394,8 +394,8 @@ void resetFunctionViewer(void){
    }
    
    if(cpuType & CPU_ARM){
-      StrNCopy(hwTests[totalHwTests].name, "Test ARM Mode Access", TEST_NAME_LENGTH);
-      hwTests[totalHwTests].testFunction = testArmAccess;
+      StrNCopy(hwTests[totalHwTests].name, "Test ARM Exchange", TEST_NAME_LENGTH);
+      hwTests[totalHwTests].testFunction = testArmDataExchange;
       totalHwTests++;
       
       if(isT3){

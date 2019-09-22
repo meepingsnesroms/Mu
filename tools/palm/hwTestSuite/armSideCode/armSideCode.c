@@ -18,6 +18,10 @@ USED unsigned long runTest(const void* emulStateP, void* userData68KP, /*Call68K
    oldInts = disableInts();
    
    switch(test){
+      case ARM_TEST_DATA_EXCHANGE:
+         returnArgCount = testArmDataExchange(args);
+         break;
+         
       case ARM_TEST_TSC2101_READ_ADC_VALUES:
          returnArgCount = readAllTsc2101AdcValues(args);
          break;

@@ -3,6 +3,13 @@
 #include "tsc2101Driver.h"
 
 
+uint32_t testArmDataExchange(uint32_t* args){
+   args[1] = args[0];
+   args[0] = 0x12345678;
+   
+   return 2;
+}
+
 uint32_t readAllTsc2101AdcValues(uint32_t* args){
    //uint16_t tsc2101OldStatus = tsc2101Read(TOUCH_CONTROL_TSC_ADC);
    
@@ -22,5 +29,5 @@ uint32_t readAllTsc2101AdcValues(uint32_t* args){
    
    //tsc2101Write(TOUCH_CONTROL_TSC_ADC, tsc2101OldStatus);
    
-   return 0x0B;
+   return 11;
 }

@@ -972,30 +972,82 @@ var callSysUnimplemented(void){
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
 
-var testArmAccess(void){
-   uint32_t value;
+var testArmDataExchange(void){
+   ALIGN(4) uint32_t* args[3];
+   static Boolean firstRun = true;
+   uint16_t y = 0;
    
-   /*should return 0x12345678*/
-   armWrite8((uint32_t)sharedDataBuffer, 0x12);
-   value = (uint32_t)armRead8((uint32_t)sharedDataBuffer) << 8 | 0x34;
-   armWrite16((uint32_t)sharedDataBuffer, value);
-   value = (uint32_t)armRead16((uint32_t)sharedDataBuffer) << 8 | 0x56;
-   armWrite32((uint32_t)sharedDataBuffer, value);
-   value = (uint32_t)armRead32((uint32_t)sharedDataBuffer) << 8 | 0x78;
+   if(firstRun){
+      firstRun = false;
+      debugSafeScreenClear(C_WHITE);
+      
+   }
    
-   setSubprogramArgs(makeVar(LENGTH_32, TYPE_UINT, (uint64_t)value));
-   execSubprogram(valueViewer);
+   if(getButtonPressed(buttonBack)){
+      firstRun = true;
+      exitSubprogram();
+   }
+   
+   args[0] = ARM_TEST_DATA_EXCHANGE;
+   args[1] = 0x13245768;
+   callArmTests(args, 1);
+   
+   StrPrintF(sharedDataBuffer, "0x12345678:0x%08lX", args[1]);
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   StrPrintF(sharedDataBuffer, "0x13245768:0x%08lX", args[2]);
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
    
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
 
 var tsc2101ReadAllAnalogValues(void){
-   ALIGN(4) uint32_t args[0x0C];
+   ALIGN(4) uint32_t args[12];
+   static Boolean firstRun = true;
+   uint16_t y = 0;
+   
+   if(firstRun){
+      firstRun = false;
+      debugSafeScreenClear(C_WHITE);
+      
+   }
+   
+   if(getButtonPressed(buttonBack)){
+      firstRun = true;
+      exitSubprogram();
+   }
    
    args[0] = ARM_TEST_TSC2101_READ_ADC_VALUES;
    callArmTests(args, 0);
    
-   /*TODO: use output*/
+   StrPrintF(sharedDataBuffer, "X:0x%04X", args[1]);
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   StrPrintF(sharedDataBuffer, "Y:0x%04X", args[2]);
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   StrPrintF(sharedDataBuffer, "Z1:0x%04X", args[3]);
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   StrPrintF(sharedDataBuffer, "Z2:0x%04X", args[4]);
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   StrPrintF(sharedDataBuffer, "BAT:0x%04X", args[6]);
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   StrPrintF(sharedDataBuffer, "AUX1:0x%04X", args[8]);
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   StrPrintF(sharedDataBuffer, "AUX2:0x%04X", args[9]);
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   StrPrintF(sharedDataBuffer, "TEMP1:0x%04X", args[10]);
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   StrPrintF(sharedDataBuffer, "TEMP2:0x%04X", args[11]);
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
    
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }

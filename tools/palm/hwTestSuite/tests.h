@@ -25,7 +25,7 @@ var playConstantTone(void);
 var unaligned32bitAccess(void);
 var isIrq2AttachedToSdCardChipSelect(void);
 var callSysUnimplemented(void);
-var testArmAccess(void);
+var testArmDataExchange(void);
 var tsc2101ReadAllAnalogValues(void);
 
 #endif
