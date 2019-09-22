@@ -1010,7 +1010,6 @@ var tsc2101ReadAllAnalogValues(void){
    if(firstRun){
       firstRun = false;
       debugSafeScreenClear(C_WHITE);
-      
    }
    
    if(getButtonPressed(buttonBack)){
@@ -1021,31 +1020,31 @@ var tsc2101ReadAllAnalogValues(void){
    args[0] = ARM_TEST_TSC2101_READ_ADC_VALUES;
    callArmTests(args, 0);
    
-   StrPrintF(sharedDataBuffer, "X:0x%04X", args[1]);
+   StrPrintF(sharedDataBuffer, "X:0x%04lX", args[1]);
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
-   StrPrintF(sharedDataBuffer, "Y:0x%04X", args[2]);
+   StrPrintF(sharedDataBuffer, "Y:0x%04lX", args[2]);
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
-   StrPrintF(sharedDataBuffer, "Z1:0x%04X", args[3]);
+   StrPrintF(sharedDataBuffer, "Z1:0x%04lX", args[3]);
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
-   StrPrintF(sharedDataBuffer, "Z2:0x%04X", args[4]);
+   StrPrintF(sharedDataBuffer, "Z2:0x%04lX", args[4]);
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
-   StrPrintF(sharedDataBuffer, "BAT:0x%04X", args[6]);
+   StrPrintF(sharedDataBuffer, "BAT:0x%04lX", args[6]);
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
-   StrPrintF(sharedDataBuffer, "AUX1:0x%04X", args[8]);
+   StrPrintF(sharedDataBuffer, "AUX1:0x%04lX", args[8]);
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
-   StrPrintF(sharedDataBuffer, "AUX2:0x%04X", args[9]);
+   StrPrintF(sharedDataBuffer, "AUX2:0x%04lX", args[9]);
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
-   StrPrintF(sharedDataBuffer, "TEMP1:0x%04X", args[10]);
+   StrPrintF(sharedDataBuffer, "TEMP1:0x%04lX", args[10]);
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
-   StrPrintF(sharedDataBuffer, "TEMP2:0x%04X", args[11]);
+   StrPrintF(sharedDataBuffer, "TEMP2:0x%04lX", args[11]);
    UG_PutString(0, y, sharedDataBuffer);
    y += FONT_HEIGHT + 1;
    
