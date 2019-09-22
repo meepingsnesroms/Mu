@@ -11,15 +11,10 @@
 /tools/palm/hwTestSuite/*.bin
 /tools/palm/hwTestSuite/*.grc
 /tools/palm/hwTestSuite/*.prc
+/tools/palm/hwTestSuite/armCode
 /tools/palm/hwTestSuite/TstSuite
 /tools/palm/hwTestSuite/TstSuite-sections.s
 /tools/palm/hwTestSuite/TstSuite-sections.ld
-/tools/palm/muExpansionDriver/*.bin
-/tools/palm/muExpansionDriver/*.grc
-/tools/palm/muExpansionDriver/*.prc
-/tools/palm/muExpansionDriver/muExpDriver
-/tools/palm/muExpansionDriver/blobs/*.S68
-/tools/palm/muExpansionDriver/blobs/*.L68
 /tools/desktop/build-BufferGraphViewer-*
 /tools/desktop/build-MakePalmBitmap-*
 /tools/desktop/export16BitImageProperly/convert

@@ -1,0 +1,30 @@
+
+MEMORY
+{
+	rom : ORIGIN = 0x10000000, LENGTH = 256K
+	ram : ORIGIN = 0x20000000, LENGTH = 512K
+	
+	trash : ORIGIN = 0xffff0000, LENGTH = 65535
+}
+
+SECTIONS
+{
+	.vec : {
+		KEEP( *(.vectors) ) ;
+		*(.vectors);
+	}  > rom
+	 
+	.text : { *(.text) *(.text.*) ; }  > rom
+	.rodata : { *(.rodata) *(.rodata.*) ; . = ALIGN(4); __data_data = ABSOLUTE(.) ; }  > rom
+
+	.data : AT ( ADDR ( .rodata ) + SIZEOF ( .rodata ) ) { . = ALIGN(4); __data_start = ADDR ( .data ) + . ; *(.data) ; *(.data.*) ; . = ALIGN(4); __data_end = ADDR ( .data ) + . ; } > ram
+	
+	.bss  :  { . = ALIGN(4); __bss_start = ABSOLUTE(.) ; *(.bss) *(.bss.*) *(COMMON) ; . = ALIGN(4); __bss_end  = ABSOLUTE(.) ; } > ram
+	
+	.trash1 : { *(.ARM.exidx) *(.ARM.exidx.*) ; }  > trash
+	.trash2 : { *(.init) *(.init.*) ; *(.fini) *(.fini.*) ; }  > trash
+}
+
+ENTRY (vecs);
+
+

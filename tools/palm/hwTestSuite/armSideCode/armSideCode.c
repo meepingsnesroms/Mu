@@ -12,3 +12,9 @@ unsigned long runTest(const void* emulStateP, void* userData68KP, /*Call68KFuncT
 
    return 0;
 }
+
+void __attribute__((naked,section(".vectors"))) vecs(void){
+	asm volatile(
+		"B	runTest								\n\t"
+	);
+}
