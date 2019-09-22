@@ -13,6 +13,7 @@
 #include "ugui.h"
 #include "viewer.h"
 #include "armPrimitives.h"
+#include "armSideCode/armSideCode.h"
 
 
 var testButtonInput(void){
@@ -989,6 +990,12 @@ var testArmAccess(void){
 }
 
 var tsc2101ReadAllAnalogValues(void){
+   ALIGN(4) uint32_t args[0x0C];
+   
+   args[0] = ARM_TEST_TSC2101_READ_ADC_VALUES;
+   callArmTests(args, 0);
+   
+   /*TODO: use output*/
    
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }

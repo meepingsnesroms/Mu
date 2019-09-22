@@ -4,6 +4,10 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 cd $DIR
 
+# wipe old logs
+clear
+clear
+
 APPNAME="TstSuite"
 
 M68K_CFLAGS="-palmos4 -O3"
