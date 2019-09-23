@@ -1,8 +1,9 @@
 #include "pxa260_math64.h"
+#include "pxa260_CPU.h"
 #include "pxa260_DSP.h"
 
 
-Boolean pxa260dspAccess(struct ArmCpu* cpu, void* userData, Boolean MRRC, UInt8 op, UInt8 RdLo, UInt8 RdHi, UInt8 acc){
+Boolean pxa260dspAccess(void* userData, Boolean MRRC, UInt8 op, UInt8 RdLo, UInt8 RdHi, UInt8 acc){
 	
    Pxa260dsp* dsp = userData;
 	
@@ -60,20 +61,22 @@ Boolean	pxa260dspOp(struct ArmCpu* cpu, void* userData, Boolean two/* MCR2/MRC2 
 
 
 
-Boolean pxa260dspInit(Pxa260dsp* dsp, ArmCpu* cpu){
+void pxa260dspInit(Pxa260dsp* dsp){
 	
-	ArmCoprocessor cp;
+   //ArmCoprocessor cp;
 	
 	
    __mem_zero(dsp, sizeof(Pxa260dsp));
 	
-	cp.regXfer = pxa260dspOp;
+   /*
+   cp.regXfer = pxa260dspOp;
 	cp.dataProcessing = NULL;
 	cp.memAccess = NULL;
 	cp.twoRegF = pxa260dspAccess;
 	cp.userData = dsp;
 	
 	cpuCoprocessorRegister(cpu, 0, &cp);
+   */
 
-	return true;
+   //return true;
 }

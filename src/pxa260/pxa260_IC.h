@@ -1,7 +1,6 @@
 #ifndef _PXA260_IC_H_
 #define _PXA260_IC_H_
 
-#include "pxa260_mem.h"
 #include "pxa260_CPU.h"
 #include <stdio.h> 
 
@@ -44,8 +43,6 @@
 
 typedef struct{
 
-	ArmCpu* cpu;
-	
 	UInt32 ICMR;	//Mask Register
 	UInt32 ICLR;	//Level Register
 	UInt32 ICCR;	//Control Register

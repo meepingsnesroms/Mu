@@ -1,7 +1,6 @@
 #ifndef _PXA260_UART_H_
 #define _PXA260_UART_H_
 
-#include "pxa260_mem.h"
 #include "pxa260_CPU.h"
 #include "pxa260_IC.h"
 
@@ -79,7 +78,7 @@ typedef struct{
 	
 }Pxa260uart;
 
-Boolean pxa260uartInit(Pxa260uart* uart, ArmMem* physMem, Pxa260ic* ic, UInt32 baseAddr, UInt8 irq);
+void pxa260uartInit(Pxa260uart* uart, Pxa260ic* ic, UInt32 baseAddr, UInt8 irq);
 void pxa260uartProcess(Pxa260uart* uart);		//write out data in TX fifo and read data into RX fifo
 
 void pxa260uartSetFuncs(Pxa260uart* uart, Pxa260UartReadF readF, Pxa260UartWriteF writeF, void* userData);

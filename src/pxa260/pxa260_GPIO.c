@@ -1,6 +1,5 @@
 #include "pxa260.h"
 #include "pxa260_GPIO.h"
-#include "pxa260_mem.h"
 #include "../tsc2101.h"
 #include "../emulator.h"
 
@@ -92,7 +91,7 @@ Boolean pxa260gpioPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boolean w
 	
 	pa = (pa - PXA260_GPIO_BASE) >> 2;
 
-   debugLog("PXA260 GPIO access:0x%04X, write:%d, PC:0x%08X\n", pa, write, pxa260GetPc());
+   //debugLog("PXA260 GPIO access:0x%04X, write:%d, PC:0x%08X\n", pa, write, pxa260GetPc());
 	
 	if(write){
 		val = *(UInt32*)buf;

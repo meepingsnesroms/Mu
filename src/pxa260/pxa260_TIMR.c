@@ -1,6 +1,5 @@
 #include "pxa260.h"
 #include "pxa260_TIMR.h"
-#include "pxa260_mem.h"
 #include "../emulator.h"
 
 

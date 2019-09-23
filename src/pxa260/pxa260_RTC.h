@@ -1,7 +1,6 @@
 #ifndef _PXA260_RTC_H_
 #define _PXA260_RTC_H_
 
-#include "pxa260_mem.h"
 #include "pxa260_CPU.h"
 #include "pxa260_IC.h"
 
@@ -29,7 +28,7 @@ typedef struct{
 	
 }Pxa260rtc;
 
-Boolean pxa260rtcInit(Pxa260rtc* rtc, ArmMem* physMem, Pxa260ic* ic);
+void pxa260rtcInit(Pxa260rtc* rtc, Pxa260ic* ic);
 void pxa260rtcUpdate(Pxa260rtc* rtc);
 
 

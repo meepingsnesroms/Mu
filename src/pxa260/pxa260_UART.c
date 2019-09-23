@@ -1,5 +1,4 @@
 #include "pxa260_UART.h"
-#include "pxa260_mem.h"
 
 
 
@@ -410,7 +409,7 @@ void pxa260uartSetFuncs(Pxa260uart* uart, Pxa260UartReadF readF, Pxa260UartWrite
 	uart->accessFuncsData = userData;
 }
 
-Boolean pxa260uartInit(Pxa260uart* uart, ArmMem* physMem, Pxa260ic* ic, UInt32 baseAddr, UInt8 irq){
+void pxa260uartInit(Pxa260uart* uart, Pxa260ic* ic, UInt32 baseAddr, UInt8 irq){
 	
 	__mem_zero(uart, sizeof(Pxa260uart));
 	uart->ic = ic;
@@ -426,7 +425,7 @@ Boolean pxa260uartInit(Pxa260uart* uart, ArmMem* physMem, Pxa260ic* ic, UInt32 b
 	
 	pxa260uartSetFuncs(uart, NULL, NULL, NULL);
 	
-	return memRegionAdd(physMem, baseAddr, PXA260_UART_SIZE, pxa260uartPrvMemAccessF, uart);
+   //return memRegionAdd(physMem, baseAddr, PXA260_UART_SIZE, pxa260uartPrvMemAccessF, uart);
 }
 
 void pxa260uartProcess(Pxa260uart* uart){		//send and rceive up to one character

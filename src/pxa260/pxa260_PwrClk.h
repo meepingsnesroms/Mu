@@ -1,7 +1,6 @@
 #ifndef _PXA260_PWR_CLK_H_
 #define _PXA260_PWR_CLK_H_
 
-#include "pxa260_mem.h"
 #include "pxa260_CPU.h"
 
 typedef struct{

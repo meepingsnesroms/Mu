@@ -140,7 +140,6 @@ support_palm_os5{
     }
 
     SOURCES += \
-        ../../src/pxa260/pxa260_mem.c \
         ../../src/pxa260/pxa260_DMA.c \
         ../../src/pxa260/pxa260_DSP.c \
         ../../src/pxa260/pxa260_GPIO.c \
@@ -169,7 +168,6 @@ support_palm_os5{
 
     HEADERS += \
         ../../src/pxa260/pxa260_CPU.h \
-        ../../src/pxa260/pxa260_mem.h \
         ../../src/pxa260/pxa260_DMA.h \
         ../../src/pxa260/pxa260_DSP.h \
         ../../src/pxa260/pxa260_GPIO.h \

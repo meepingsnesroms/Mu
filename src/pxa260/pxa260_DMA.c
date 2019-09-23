@@ -1,5 +1,5 @@
+#include "pxa260.h"
 #include "pxa260_DMA.h"
-#include "pxa260_mem.h"
 
 #define REG_DAR 	0
 #define REG_SAR 	1
@@ -50,6 +50,8 @@ static Boolean pxa260dmaPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boo
 	}
 	
 	pa = (pa - PXA260_DMA_BASE) >> 2;
+
+   debugLog("PXA260 DMA access:0x%04X, write:%d, PC:0x%08X\n", pa, write, pxa260GetPc());
 	
 	if(write){
 		val = *(UInt32*)buf;
@@ -106,11 +108,12 @@ static Boolean pxa260dmaPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boo
 }
 
 
-Boolean pxa260dmaInit(Pxa260dma* dma, ArmMem* physMem, Pxa260ic* ic){
+void pxa260dmaInit(Pxa260dma* dma, Pxa260ic* ic){
 	
    __mem_zero(dma, sizeof(Pxa260dma));
 	dma->ic = ic;
-	dma->mem = physMem;
+   //dma->mem = physMem;
 	
-	return memRegionAdd(physMem, PXA260_DMA_BASE, PXA260_DMA_SIZE, pxa260dmaPrvMemAccessF, dma);
+   //return memRegionAdd(physMem, PXA260_DMA_BASE, PXA260_DMA_SIZE, pxa260dmaPrvMemAccessF, dma);
+   return true;
 }

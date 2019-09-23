@@ -1,5 +1,4 @@
 #include "pxa260_IC.h"
-#include "pxa260_mem.h"
 
 
 static void pxa260icPrvHandleChanges(Pxa260ic* ic){

@@ -1,7 +1,6 @@
 #ifndef _PXA260_DMA_H_
 #define _PXA260_DMA_H_
 
-#include "pxa260_mem.h"
 #include "pxa260_CPU.h"
 #include "pxa260_IC.h"
 
@@ -26,7 +25,6 @@ typedef struct{
 typedef struct{
 
 	Pxa260ic* ic;
-	ArmMem* mem;
 	
 	UInt16 DINT;
 	Pxa260dmaChannel channels[16];
@@ -34,9 +32,7 @@ typedef struct{
 	
 }Pxa260dma;
 
-
-
-Boolean pxa260dmaInit(Pxa260dma* gpio, ArmMem* physMem, Pxa260ic* ic);
+void pxa260dmaInit(Pxa260dma* gpio, Pxa260ic* ic);
 
 #endif
 

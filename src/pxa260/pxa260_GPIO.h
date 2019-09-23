@@ -1,7 +1,6 @@
 #ifndef _PXA260_GPIO_H_
 #define _PXA260_GPIO_H_
 
-#include "pxa260_mem.h"
 #include "pxa260_CPU.h"
 #include "pxa260_IC.h"
 

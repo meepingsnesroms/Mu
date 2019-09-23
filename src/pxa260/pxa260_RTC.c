@@ -1,5 +1,5 @@
+#include "pxa260.h"
 #include "pxa260_RTC.h"
-#include "pxa260_mem.h"
 
 #include <sys/time.h>
 
@@ -48,6 +48,8 @@ static Boolean pxa260rtcPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boo
 	}
 	
 	pa = (pa - PXA260_RTC_BASE) >> 2;
+
+   debugLog("PXA260 RTC access:0x%04X, write:%d, PC:0x%08X\n", pa, write, pxa260GetPc());
 	
 	if(write){
 		val = *(UInt32*)buf;
@@ -97,14 +99,14 @@ static Boolean pxa260rtcPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boo
 }
 
 
-Boolean pxa260rtcInit(Pxa260rtc* rtc, ArmMem* physMem, Pxa260ic* ic){
+void pxa260rtcInit(Pxa260rtc* rtc, Pxa260ic* ic){
 	
 	__mem_zero(rtc, sizeof(Pxa260rtc));
 	rtc->ic = ic;
 	rtc->RCNR_offset = 0;
 	rtc->RTTR = 0x7FFF;	//nice default value
 	rtc->lastSeenTime = rtcCurTime();
-	return memRegionAdd(physMem, PXA260_RTC_BASE, PXA260_RTC_SIZE, pxa260rtcPrvMemAccessF, rtc);
+   //return memRegionAdd(physMem, PXA260_RTC_BASE, PXA260_RTC_SIZE, pxa260rtcPrvMemAccessF, rtc);
 }
 
 void pxa260rtcUpdate(Pxa260rtc* rtc){

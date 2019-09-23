@@ -1,5 +1,4 @@
 #include "pxa260_LCD.h"
-#include "pxa260_mem.h"
 #include "pxa260.h"
 #include "../armv5te/mem.h"
 
