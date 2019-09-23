@@ -47,7 +47,7 @@ Boolean pxa260timrPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boolean w
 	
 	pa = (pa - PXA260_TIMR_BASE) >> 2;
 
-   //debugLog("PXA260 TIMR access:0x%04X, write:%d\n", pa, write);
+   //debugLog("PXA260 TIMR access:0x%04X, write:%d, PC:0x%08X\n", pa, write, pxa260GetPc());
 	
 	if(write){
 		val = *(UInt32*)buf;
