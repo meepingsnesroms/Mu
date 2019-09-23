@@ -221,6 +221,8 @@ void pxa260LoadState(uint8_t* data){
 void pxa260Execute(bool wantVideo){
    uint32_t index;
 
+   pxa260gpioUpdateKeyMatrix(&pxa260Gpio);
+
    //pxa260TimingRun(TUNGSTEN_T3_CPU_PLL_FREQUENCY / EMU_FPS * palmClockMultiplier);
    pxa260TimingRun(20000);
 

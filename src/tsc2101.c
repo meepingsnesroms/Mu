@@ -163,7 +163,8 @@ static uint16_t tsc2101GetAux1Value(void){
    debugLog("TSC2101 AUX1 detect type:%s\n", (tsc2101Registers[TOUCH_CONTROL_MEASUREMENT_CONFIGURATION] & 0x4000) ? "resistance" : "voltage");
    if(tsc2101Registers[TOUCH_CONTROL_MEASUREMENT_CONFIGURATION] & 0x4000)
       return 0xFFF & tsc2101GetAnalogMask();//resistance
-   return 0xFFF & tsc2101GetAnalogMask();//voltage
+   //return 0xFFF & tsc2101GetAnalogMask();//voltage
+   return 0xE50 & tsc2101GetAnalogMask();//voltage, TODO: this is a hack
 }
 
 static uint16_t tsc2101GetAux2Value(void){

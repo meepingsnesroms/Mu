@@ -11,12 +11,13 @@ static void pxa260gpioOnOutputPinUpdated(Pxa260gpio* gpio, UInt8 gpioNum){
    //debugLog("PXA260 GPIO %d set:%d\n", gpioNum, pxa260gpioGetState(gpio, gpioNum));
 
    switch(gpioNum){
-      /*
       case 19:
       case 20:
       case 21:
       case 22:
-         */
+      case 33:
+         pxa260gpioUpdateKeyMatrix(gpio);
+         break;
 
       case 24:
          //TSC2101 chip select
@@ -30,13 +31,12 @@ static void pxa260gpioOnOutputPinUpdated(Pxa260gpio* gpio, UInt8 gpioNum){
          break;
 
       default:
-         debugLog("Unimplimented PXA260 GPIO %d set:%d\n", gpioNum, pxa260gpioGetState(gpio, gpioNum));
+         debugLog("Unimplimented PXA260 GPIO %d set:%d, PC:0x%08X\n", gpioNum, pxa260gpioGetState(gpio, gpioNum), pxa260GetPc());
          break;
    }
 }
 
 static void pxa260gpioPrvRecalcValues(Pxa260gpio* gpio, UInt32 which){
-
    UInt8 i;
    UInt32 val, bit, newVal, oldVal = gpio->levels[which];
 
@@ -242,15 +242,54 @@ void pxa260gpioSetState(Pxa260gpio* gpio, UInt8 gpioNum, Boolean on){
 }
 
 UInt8 pxa260gpioGetState(Pxa260gpio* gpio, UInt8 gpioNum){
-	
 	UInt32 sSet = gpioNum >> 5;
 	UInt32 bSet = gpioNum >> 4;
 	UInt32 sV = 1UL << (gpioNum & 0x1F);
 	UInt32 bV = 3UL << (gpioNum & 0x0F);
 	
-	
 	if(gpioNum >= 85) return PXA260_GPIO_NOT_PRESENT;
    if(gpio->AFRs[bSet] & bV) return ((gpio->AFRs[bSet] & bV) >> (gpioNum & 0x0F)) - 1 + PXA260_GPIO_AFR1;
 	if(gpio->dirs[sSet] & sV) return (gpio->latches[sSet] & sV) ? PXA260_GPIO_HIGH : PXA260_GPIO_LOW;
 	return PXA260_GPIO_HiZ;
+}
+
+void pxa260gpioUpdateKeyMatrix(Pxa260gpio* gpio){
+   bool inRail0 = true;
+   bool inRail1 = true;
+   bool inRail2 = true;
+
+   if(!!pxa260gpioGetState(gpio, 19)){
+      //outRail0
+      inRail0 &= !palmInput.buttonAddress;
+      inRail1 &= !palmInput.buttonDown;
+   }
+   if(!!pxa260gpioGetState(gpio, 20)){
+      //outRail1
+      inRail1 &= !palmInput.buttonLeft;
+      inRail2 &= !palmInput.buttonNotes;
+   }
+   if(!!pxa260gpioGetState(gpio, 21)){
+      //outRail2
+      inRail1 &= !palmInput.buttonRight;
+      inRail2 &= !palmInput.buttonTodo;
+   }
+   if(!!pxa260gpioGetState(gpio, 22)){
+      //outRail3
+      //TODO: implement this button
+      //inRail0 &= !palmInput.buttonVoice;
+      inRail2 &= !palmInput.buttonCenter;
+   }
+   if(!!pxa260gpioGetState(gpio, 33)){
+      //outRail4
+      inRail0 &= !palmInput.buttonCalendar;
+      inRail1 &= !palmInput.buttonUp;
+   }
+
+   pxa260gpioSetState(gpio, 0, inRail0);
+   pxa260gpioSetState(gpio, 10, inRail1);
+   pxa260gpioSetState(gpio, 11, inRail2);
+
+   //TODO: move these to the init routine
+   pxa260gpioSetState(gpio, 3, true);//set the slider postion
+   pxa260gpioSetState(gpio, 12, false);//prevent HotSync button from being pressed
 }

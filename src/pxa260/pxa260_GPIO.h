@@ -43,6 +43,7 @@ void pxa260gpioInit(Pxa260gpio* gpio, Pxa260ic* ic);
 //for external use :)
 UInt8 pxa260gpioGetState(Pxa260gpio* gpio, UInt8 gpioNum);
 void pxa260gpioSetState(Pxa260gpio* gpio, UInt8 gpioNum, Boolean on);	//we can only set value (and only of input pins), not direction
+void pxa260gpioUpdateKeyMatrix(Pxa260gpio* gpio);
 
 #endif
 
