@@ -2,6 +2,8 @@
 #include <string.h>
 #include <setjmp.h>
 
+#include "pxa260.h"
+#include "pxa260_TIMR.h"
 #include "pxa260I2c.h"
 #include "pxa260Ssp.h"
 #include "pxa260Udc.h"
@@ -10,6 +12,7 @@
 #include "../armv5te/os/os.h"
 #include "../armv5te/emu.h"
 #include "../armv5te/cpu.h"
+#include "../emulator.h"
 
 
 #define PXA260_TIMING_NEVER 0xFFFFFFFF
@@ -32,6 +35,7 @@ static int32_t pxa260TimingGetDurationUntilNextEvent(int32_t duration/*call with
 }
 
 void pxa260TimingInit(void){
+   pxa260TimingCallbacks[PXA260_TIMING_CALLBACK_TICK_CPU_TIMER] = pxa260TimingTickCpuTimer;
    pxa260TimingCallbacks[PXA260_TIMING_CALLBACK_I2C_TRANSMIT_EMPTY] = pxa260I2cTransmitEmpty;
    pxa260TimingCallbacks[PXA260_TIMING_CALLBACK_I2C_RECEIVE_FULL] = pxa260I2cReceiveFull;
    pxa260TimingCallbacks[PXA260_TIMING_CALLBACK_SSP_TRANSFER_COMPLETE] = pxa260SspTransferComplete;
@@ -125,4 +129,9 @@ void pxa260TimingRun(int32_t cycles){
 #if OS_HAS_PAGEFAULT_HANDLER
    os_faulthandler_unarm(&seh_frame);
 #endif
+}
+
+void pxa260TimingTickCpuTimer(void){
+   pxa260timrTick(&pxa260Timer);
+   pxa260TimingTriggerEvent(PXA260_TIMING_CALLBACK_TICK_CPU_TIMER, TUNGSTEN_T3_CPU_PLL_FREQUENCY / TUNGSTEN_T3_CPU_CRYSTAL_FREQUENCY * palmClockMultiplier);
 }

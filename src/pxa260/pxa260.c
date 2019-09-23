@@ -35,9 +35,9 @@ uint16_t*    pxa260Framebuffer;
 Pxa260pwrClk pxa260PwrClk;
 Pxa260ic     pxa260Ic;
 Pxa260gpio   pxa260Gpio;
+Pxa260timr   pxa260Timer;
 
 static Pxa260lcd  pxa260Lcd;
-static Pxa260timr pxa260Timer;
 
 
 #include "pxa260Accessors.c.h"
@@ -188,6 +188,9 @@ void pxa260Reset(void){
    pxa260UdcReset();
    pxa260TimingReset();
 
+   //set first timer event
+   pxa260TimingTriggerEvent(PXA260_TIMING_CALLBACK_TICK_CPU_TIMER, TUNGSTEN_T3_CPU_PLL_FREQUENCY / TUNGSTEN_T3_CPU_CRYSTAL_FREQUENCY * palmClockMultiplier);
+
    memset(&arm, 0, sizeof arm);
    arm.control = 0x00050078;
    arm.cpsr_low28 = MODE_SVC | 0xC0;
@@ -223,12 +226,12 @@ void pxa260Execute(bool wantVideo){
 
    pxa260gpioUpdateKeyMatrix(&pxa260Gpio);
 
-   //pxa260TimingRun(TUNGSTEN_T3_CPU_PLL_FREQUENCY / EMU_FPS * palmClockMultiplier);
-   pxa260TimingRun(20000);
+   pxa260TimingRun(TUNGSTEN_T3_CPU_PLL_FREQUENCY / EMU_FPS * palmClockMultiplier);
+   //pxa260TimingRun(20000);
 
    //this needs to run at 3.6864 MHz
-   for(index = 0; index < TUNGSTEN_T3_CPU_CRYSTAL_FREQUENCY / EMU_FPS; index++)
-      pxa260timrTick(&pxa260Timer);
+   //for(index = 0; index < TUNGSTEN_T3_CPU_CRYSTAL_FREQUENCY / EMU_FPS; index++)
+     // pxa260timrTick(&pxa260Timer);
 
    //render
    if(likely(wantVideo))

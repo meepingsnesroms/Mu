@@ -4,7 +4,8 @@
 #include <stdint.h>
 
 enum{
-   PXA260_TIMING_CALLBACK_I2C_TRANSMIT_EMPTY = 0,
+   PXA260_TIMING_CALLBACK_TICK_CPU_TIMER = 0,
+   PXA260_TIMING_CALLBACK_I2C_TRANSMIT_EMPTY,
    PXA260_TIMING_CALLBACK_I2C_RECEIVE_FULL,
    PXA260_TIMING_CALLBACK_SSP_TRANSFER_COMPLETE,
    PXA260_TIMING_CALLBACK_UDC_DEVICE_RESUME_COMPLETE,
@@ -21,5 +22,7 @@ void pxa260TimingReset(void);
 void pxa260TimingTriggerEvent(uint8_t callbackId, int32_t wait);
 void pxa260TimingCancelEvent(uint8_t callbackId);
 void pxa260TimingRun(int32_t cycles);//this runs the CPU
+
+void pxa260TimingTickCpuTimer(void);
 
 #endif
