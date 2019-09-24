@@ -19,6 +19,7 @@
 #include "../armv5te/cpu.h"
 #include "../armv5te/emu.h"
 #include "../armv5te/mem.h"
+#include "../armv5te/mmu.h"
 #include "../armv5te/os/os.h"
 #include "../armv5te/translate.h"
 #include "../tungstenT3Bus.h"
@@ -197,6 +198,7 @@ void pxa260Reset(void){
    cycle_count_delta = 0;
    cpu_events = 0;
    //cpu_events &= EVENT_DEBUG_STEP;
+   addr_cache_flush();//SIGSEGVs on reset without this because the MMU needs to be turned off
 
    //PC starts at 0x00000000, the first opcode for Palm OS 5 is a jump
 }

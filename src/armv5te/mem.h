@@ -11,7 +11,7 @@
 extern "C" {
 #endif
 
-#define MEM_MAXSIZE (70*1024*1024) // also defined as RAM_FLAGS in asmcode.S
+#define MEM_MAXSIZE (80*1024*1024) // also defined as RAM_FLAGS in asmcode.S
 
 extern uint8_t   (*read_byte_map[64])(uint32_t addr);
 extern uint16_t  (*read_half_map[64])(uint32_t addr);

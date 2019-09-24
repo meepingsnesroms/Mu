@@ -131,6 +131,7 @@ uint32_t emulatorInit(uint8_t* palmRomData, uint32_t palmRomSize, uint8_t* palmB
       palmFramebufferHeight = 480;
       palmMisc.batteryLevel = 100;
       palmCycleCounter = 0.0;
+      palmClockMultiplier = 1.00 - TUNGSTEN_T3_CPU_PERCENT_WAITING;
 
       //initialize components, I dont think theres much in a Tungsten T3
       pxa260Framebuffer = palmFramebuffer;
@@ -179,6 +180,7 @@ uint32_t emulatorInit(uint8_t* palmRomData, uint32_t palmRomSize, uint8_t* palmB
       palmFramebufferHeight = 220;
       palmMisc.batteryLevel = 100;
       palmCycleCounter = 0.0;
+      palmClockMultiplier = 1.00 - DBVZ_CPU_PERCENT_WAITING;
       sed1376Framebuffer = palmFramebuffer;
 
       //initialize components
@@ -244,7 +246,6 @@ void emulatorSoftReset(void){
    //equivalent to pushing the reset button on the back of the device
 #if defined(EMU_SUPPORT_PALM_OS5)
    if(palmEmulatingTungstenT3){
-      palmClockMultiplier = 1.00 - TUNGSTEN_T3_CPU_PERCENT_WAITING;
       pxa260Reset();
       tps65010Reset();
       tsc2101Reset(true);
@@ -253,7 +254,6 @@ void emulatorSoftReset(void){
    }
    else{
 #endif
-      palmClockMultiplier = 1.00 - DBVZ_CPU_PERCENT_WAITING;
       sed1376Reset();
       ads7846Reset();
       pdiUsbD12Reset();

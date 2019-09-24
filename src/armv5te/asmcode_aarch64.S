@@ -67,7 +67,7 @@ translation_next_enter:
 	ldr w23, [x23]
 	cbnz w23, save_return // if(cpu_events) goto save_return;
 
-	mov x21, #65*1024*1024
+        mov x21, #80*1024*1024
 	ldr w21, [x0, x21] // w21 = RAM_FLAGS(x0)
 	tbz w21, #5, save_return // if((RAM_FLAGS(x0) & RF_CODE_TRANSLATED) == 0) goto save_return;
 	lsr w21, w21, #9 // w21 = w21 >> RFS_TRANSLATION_INDEX
