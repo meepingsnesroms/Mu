@@ -192,7 +192,7 @@ static void tsc2101ResetRegisters(void){
    tsc2101Registers[TOUCH_CONTROL_REFERENCE] = 0x0002;
    //currenly at register 0x5 of touch control
 
-   tsc2101RefreshInterrupt();
+   tsc2101UpdateInterrupt();
 }
 
 static uint16_t tsc2101RegisterRead(uint8_t page, uint8_t address){
@@ -241,7 +241,7 @@ static uint16_t tsc2101RegisterRead(uint8_t page, uint8_t address){
       case TOUCH_DATA_TEMP2:
          debugLog("TSC2101 read ADC data register:%d\n", combinedRegisterNumber);
          tsc2101HasNewData &= ~(1 << combinedRegisterNumber);
-         tsc2101RefreshInterrupt();//clearing the new data bit could trigger an interrupt
+         tsc2101UpdateInterrupt();//clearing the new data bit could trigger an interrupt
          return tsc2101Registers[combinedRegisterNumber];
 
       default:
@@ -264,7 +264,7 @@ static void tsc2101RegisterWrite(uint8_t page, uint8_t address, uint16_t value){
 
       case TOUCH_CONTROL_STATUS:
          tsc2101Registers[TOUCH_CONTROL_STATUS] = value & 0xC000;
-         tsc2101RefreshInterrupt();//interrupt type might have changed
+         tsc2101UpdateInterrupt();//interrupt type might have changed
          return;
 
       case TOUCH_CONTROL_BUFFER_MODE:
@@ -272,7 +272,7 @@ static void tsc2101RegisterWrite(uint8_t page, uint8_t address, uint16_t value){
             tsc2101BufferFifoFlush();
 
          tsc2101Registers[TOUCH_CONTROL_BUFFER_MODE] = value & 0xF800;
-         tsc2101RefreshInterrupt();//need to refresh innterupt because the trigger level may have changed
+         tsc2101UpdateInterrupt();//need to refresh innterupt because the trigger level may have changed
          return;
 
       case TOUCH_CONTROL_REFERENCE:
@@ -289,7 +289,7 @@ static void tsc2101RegisterWrite(uint8_t page, uint8_t address, uint16_t value){
          //TODO: TOUCH_CONTROL_CONFIGURATION SWPDTD bit
          debugLog("TSC2101 config register writes not fully implemented\n");
          tsc2101Registers[TOUCH_CONTROL_CONFIGURATION] = value & 0x007F;
-         tsc2101RefreshInterrupt();
+         tsc2101UpdateInterrupt();
          return;
 
       case TOUCH_CONTROL_TEMPERATURE_MAX:
@@ -299,12 +299,12 @@ static void tsc2101RegisterWrite(uint8_t page, uint8_t address, uint16_t value){
       case TOUCH_CONTROL_AUX2_MAX:
       case TOUCH_CONTROL_AUX2_MIN:
          tsc2101Registers[combinedRegisterNumber] = value & 0x1FFF;
-         tsc2101RefreshInterrupt();
+         tsc2101UpdateInterrupt();
          return;
 
       case TOUCH_CONTROL_MEASUREMENT_CONFIGURATION:
          tsc2101Registers[TOUCH_CONTROL_MEASUREMENT_CONFIGURATION] = value & 0xFE04;
-         tsc2101RefreshInterrupt();
+         tsc2101UpdateInterrupt();
          return;
 
       case TOUCH_DATA_X:
@@ -439,7 +439,7 @@ bool tsc2101ExchangeBit(bool bit){
    return output;
 }
 
-void tsc2101RefreshInterrupt(void){
+void tsc2101UpdateInterrupt(void){
    debugLog("TSC2101 PINTDAV not fully implemented\n");
 
    //check if PINTDAV is data or pen and data interrupt
@@ -635,6 +635,6 @@ void tsc2101Scan(void){
    else
       tsc2101Registers[TOUCH_CONTROL_TSC_ADC] &= 0xC3FF;
 
-   tsc2101RefreshInterrupt();
+   tsc2101UpdateInterrupt();
 }
 

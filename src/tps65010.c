@@ -37,9 +37,60 @@ static uint8_t tps65010State;
 static bool    tps65010SelectedRegisterAlreadySet;
 
 
+static uint8_t tps65010ReadRegister(uint8_t address){
+   switch(address){
+      /*
+      case ACKINT1:
+      case ACKINT2:
+         //TODO: dont know proper behavior, datasheet says the CPU shouldnt need to access this
+         //should probably clear the ints
+         return 0x00;
+
+      case DEFGPIO:
+         //TODO: read GPIO state
+         return tps65010Registers[DEFGPIO];
+      */
+
+      case CHGSTATUS:
+      case REGSTATUS:
+      case MASK1:
+      case MASK2:
+      case CHGCONFIG:
+      case LED1_ON:
+      case LED1_PER:
+      case LED2_ON:
+      case LED2_PER:
+      case VDCDC1:
+      case VDCDC2:
+      case VREGS1:
+      case MASK3:
+         //simple read, no actions needed
+         return tps65010Registers[address];
+
+      default:
+         debugLog("Unimplemented TPS65010 register read, address:0x%02X\n", address);
+         return 0x00;
+   }
+}
+
 static void tps65010WriteRegister(uint8_t address, uint8_t value){
-   //TODO: add register writes
-   debugLog("Unimplemented TPS65010 register write, address:0x%02X, value:0x%02X\n", address, value);
+   switch(address){
+      /*
+      case MASK3:
+         tps65010Registers[address] = value;
+         debugLog("TPS65010 MASK3 write, value:0x%02X\n", value);
+         return;
+
+      case DEFGPIO:
+         tps65010Registers[address] = value;
+         debugLog("TPS65010 DEFGPIO write, value:0x%02X\n", value);
+         return;
+       */
+
+      default:
+         debugLog("Unimplemented TPS65010 register write, address:0x%02X, value:0x%02X\n", address, value);
+         return;
+   }
 }
 
 void tps65010Reset(void){
@@ -88,13 +139,12 @@ uint8_t tps65010I2cExchange(uint8_t i2cBus){
       return I2C_FLOATING_BUS;
    }
 
-   tps65010CurrentI2cByte <<= 1;
-   tps65010CurrentI2cByte |= (i2cBus == I2C_1);
-   if(tps65010State == I2C_SENDING){
-      if(tps65010SelectedRegister < 0x11)
-         newI2cBus = (tps65010Registers[tps65010SelectedRegister] & 1 << (tps65010CurrentI2cByteBitsRemaining - 1)) ? I2C_1 : I2C_0;
-      else
-         newI2cBus = I2C_0;
+   if(tps65010State != I2C_SENDING){
+      tps65010CurrentI2cByte <<= 1;
+      tps65010CurrentI2cByte |= (i2cBus == I2C_1);
+   }
+   else{
+      newI2cBus = (tps65010CurrentI2cByte & 1 << (tps65010CurrentI2cByteBitsRemaining - 1)) ? I2C_1 : I2C_0;
    }
    tps65010CurrentI2cByteBitsRemaining--;
 
@@ -106,7 +156,7 @@ uint8_t tps65010I2cExchange(uint8_t i2cBus){
                //the address is of this device
                tps65010State = (tps65010CurrentI2cByte & 0x01) ? I2C_SENDING : I2C_RECEIVING;
                if(tps65010State == I2C_SENDING)
-                  debugLog("TPS65010 reading register:address:0x%02X\n", tps65010SelectedRegister);
+                  tps65010CurrentI2cByte = tps65010ReadRegister(tps65010SelectedRegister);
             }
             else{
                tps65010State = I2C_NOT_SELECTED;
@@ -137,4 +187,8 @@ uint8_t tps65010I2cExchange(uint8_t i2cBus){
    }
 
    return newI2cBus;
+}
+
+void tps65010UpdateInterrupt(void){
+   //TODO: implement this
 }

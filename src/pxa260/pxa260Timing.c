@@ -80,7 +80,7 @@ void pxa260TimingRun(int32_t cycles){
 
    keepRunning:
    addCycles = pxa260TimingGetDurationUntilNextEvent(cycles);
-   cycle_count_delta = -addCycles;
+   cycle_count_delta = -addCycles * palmClockMultiplier;
 
    while (!exiting && cycle_count_delta < 0) {
          if (cpu_events & (EVENT_FIQ | EVENT_IRQ)) {
@@ -105,7 +105,7 @@ void pxa260TimingRun(int32_t cycles){
    }
 
    //if more then the requested cycles are executed count those too
-   addCycles += cycle_count_delta;
+   addCycles += cycle_count_delta / palmClockMultiplier;
 
    //remove the unused cycles
    addCycles -= pxa260TimingLeftoverCycles;
@@ -133,5 +133,5 @@ void pxa260TimingRun(int32_t cycles){
 
 void pxa260TimingTickCpuTimer(void){
    pxa260timrTick(&pxa260Timer);
-   pxa260TimingTriggerEvent(PXA260_TIMING_CALLBACK_TICK_CPU_TIMER, TUNGSTEN_T3_CPU_PLL_FREQUENCY / TUNGSTEN_T3_CPU_CRYSTAL_FREQUENCY * palmClockMultiplier);
+   pxa260TimingTriggerEvent(PXA260_TIMING_CALLBACK_TICK_CPU_TIMER, TUNGSTEN_T3_CPU_PLL_FREQUENCY / TUNGSTEN_T3_CPU_CRYSTAL_FREQUENCY);
 }

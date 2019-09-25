@@ -9,5 +9,6 @@ void tps65010SaveState(uint8_t* data);
 void tps65010LoadState(uint8_t* data);
 
 uint8_t tps65010I2cExchange(uint8_t i2cBus);
+void tps65010UpdateInterrupt(void);//called when buttons are refreshed or an SD card is inserted
 
 #endif

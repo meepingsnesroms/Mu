@@ -23,6 +23,8 @@
 #include "../armv5te/os/os.h"
 #include "../armv5te/translate.h"
 #include "../tungstenT3Bus.h"
+#include "../tsc2101.h"
+#include "../tps65010.h"
 #include "../emulator.h"
 
 
@@ -190,7 +192,7 @@ void pxa260Reset(void){
    pxa260TimingReset();
 
    //set first timer event
-   pxa260TimingTriggerEvent(PXA260_TIMING_CALLBACK_TICK_CPU_TIMER, TUNGSTEN_T3_CPU_PLL_FREQUENCY / TUNGSTEN_T3_CPU_CRYSTAL_FREQUENCY * palmClockMultiplier);
+   pxa260TimingTriggerEvent(PXA260_TIMING_CALLBACK_TICK_CPU_TIMER, TUNGSTEN_T3_CPU_PLL_FREQUENCY / TUNGSTEN_T3_CPU_CRYSTAL_FREQUENCY);
 
    memset(&arm, 0, sizeof arm);
    arm.control = 0x00050078;
@@ -226,14 +228,11 @@ void pxa260LoadState(uint8_t* data){
 void pxa260Execute(bool wantVideo){
    uint32_t index;
 
+   tsc2101UpdateInterrupt();
+   tps65010UpdateInterrupt();
    pxa260gpioUpdateKeyMatrix(&pxa260Gpio);
 
-   pxa260TimingRun(TUNGSTEN_T3_CPU_PLL_FREQUENCY / EMU_FPS * palmClockMultiplier);
-   //pxa260TimingRun(20000);
-
-   //this needs to run at 3.6864 MHz
-   //for(index = 0; index < TUNGSTEN_T3_CPU_CRYSTAL_FREQUENCY / EMU_FPS; index++)
-     // pxa260timrTick(&pxa260Timer);
+   pxa260TimingRun(TUNGSTEN_T3_CPU_PLL_FREQUENCY / EMU_FPS);
 
    //render
    if(likely(wantVideo))

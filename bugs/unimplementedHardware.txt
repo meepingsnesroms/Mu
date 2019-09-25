@@ -63,6 +63,8 @@ GPIO lines from misc chips to CPU are not implemented
 
 
 Fixed:
+Endian compatibility is broken(the CPU state needs to be standardized)
+RetroArch port crashes on exit(needed to check if environ_cb returned true, switched to libretro-common filestreams too)
 make the headers belong to the main file of the target chip being emulated for specs
 remove specs folder
 UART1 USTCNT1

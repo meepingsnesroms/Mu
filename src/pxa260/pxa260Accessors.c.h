@@ -108,6 +108,7 @@ static void pxa260_io_write_word(uint32_t addr, uint32_t value){
 
 static uint32_t pxa260_lcd_read_word(uint32_t addr){
    uint32_t out;
+
    pxa260lcdPrvMemAccessF(&pxa260Lcd, addr, 4, false, &out);
    debugLog("32 bit PXA260 LCD register read:0x%08X\n", addr);
    return out;
