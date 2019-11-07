@@ -20,5 +20,6 @@
         <file>images/left.svg</file>
         <file>images/right.svg</file>
         <file>images/boot.svg</file>
+        <file>images/voiceMemo.svg</file>
     </qresource>
 </RCC>

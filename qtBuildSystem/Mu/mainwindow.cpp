@@ -28,7 +28,6 @@ MainWindow::MainWindow(QWidget* parent) :
    QMainWindow(parent),
    ui(new Ui::MainWindow){
    QAudioFormat format;
-   bool hideOnscreenKeys;
 
    //audio output
    format.setSampleRate(AUDIO_SAMPLE_RATE);
@@ -87,8 +86,6 @@ MainWindow::MainWindow(QWidget* parent) :
    //GUI
    ui->setupUi(this);
 
-   hideOnscreenKeys = settings->value("hideOnscreenKeys", false).toBool();
-
    //this makes the display window and button icons resize properly
    ui->centralWidget->installEventFilter(this);
    ui->centralWidget->setObjectName("centralWidget");
@@ -103,6 +100,7 @@ MainWindow::MainWindow(QWidget* parent) :
    ui->addressBook->installEventFilter(this);
    ui->todo->installEventFilter(this);
    ui->notes->installEventFilter(this);
+   ui->voiceMemo->installEventFilter(this);
 
    ui->power->installEventFilter(this);
 
@@ -115,19 +113,7 @@ MainWindow::MainWindow(QWidget* parent) :
    ui->debugger->installEventFilter(this);
    ui->bootApp->installEventFilter(this);
 
-   //hide onscreen keys if needed
-   ui->up->setHidden(hideOnscreenKeys);
-   ui->down->setHidden(hideOnscreenKeys);
-   ui->left->setHidden(hideOnscreenKeys);
-   ui->right->setHidden(hideOnscreenKeys);
-   ui->center->setHidden(hideOnscreenKeys);
-
-   ui->calendar->setHidden(hideOnscreenKeys);
-   ui->addressBook->setHidden(hideOnscreenKeys);
-   ui->todo->setHidden(hideOnscreenKeys);
-   ui->notes->setHidden(hideOnscreenKeys);
-
-   ui->power->setHidden(hideOnscreenKeys);
+   redraw();
 
 #if !defined(EMU_DEBUG) || defined(Q_OS_ANDROID) || defined(Q_OS_IOS)
    //doesnt support debug tools
@@ -195,6 +181,7 @@ void MainWindow::redraw(){
    ui->addressBook->setHidden(hideOnscreenKeys);
    ui->todo->setHidden(hideOnscreenKeys);
    ui->notes->setHidden(hideOnscreenKeys);
+   ui->voiceMemo->setHidden(hideOnscreenKeys);
 
    ui->power->setHidden(hideOnscreenKeys);
 
@@ -218,7 +205,7 @@ bool MainWindow::eventFilter(QObject* object, QEvent* event){
          ui->displayContainer->setFixedHeight(ui->centralWidget->height() * (hideOnscreenKeys ? 0.80 : 0.60));
 
          smallestRatio = qMin(ui->displayContainer->size().width() * 0.98 / 3.0 , ui->displayContainer->size().height() * 0.98 / 4.0);
-         //the 0.98 above allows the display to shrink, without it the displayContainer couldent shrink because of the fixed size of the display
+         //the 0.98 above allows the display to shrink, without it the displayContainer couldnt shrink because of the fixed size of the display
 
          //set new size
          ui->display->setFixedSize(smallestRatio * 3.0, smallestRatio * 4.0);
@@ -280,6 +267,14 @@ void MainWindow::on_todo_pressed(){
 
 void MainWindow::on_todo_released(){
    emu.setKeyValue(EmuWrapper::BUTTON_TODO, false);
+}
+
+void MainWindow::on_voiceMemo_pressed(){
+   emu.setKeyValue(EmuWrapper::BUTTON_VOICE_MEMO, false);
+}
+
+void MainWindow::on_voiceMemo_released(){
+   emu.setKeyValue(EmuWrapper::BUTTON_VOICE_MEMO, false);
 }
 
 void MainWindow::on_notes_pressed(){
@@ -352,6 +347,9 @@ void MainWindow::on_ctrlBtn_clicked(){
          ui->addressBook->setEnabled(true);
          ui->todo->setEnabled(true);
          ui->notes->setEnabled(true);
+
+         if(settings->value("palmOsVersion", false).toInt() > 4)
+            ui->voiceMemo->setEnabled(true);
 
          ui->power->setEnabled(true);
 

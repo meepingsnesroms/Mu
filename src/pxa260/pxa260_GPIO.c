@@ -276,8 +276,7 @@ void pxa260gpioUpdateKeyMatrix(Pxa260gpio* gpio){
    }
    if(!!pxa260gpioGetState(gpio, 22)){
       //outRail3
-      //TODO: implement this button
-      //inRail0 &= !palmInput.buttonVoice;
+      inRail0 &= !palmInput.buttonVoiceMemo;
       inRail2 &= !palmInput.buttonCenter;
    }
    if(!!pxa260gpioGetState(gpio, 33)){

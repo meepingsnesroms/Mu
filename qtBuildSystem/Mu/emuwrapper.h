@@ -42,6 +42,7 @@ public:
       BUTTON_ADDRESS,
       BUTTON_TODO,
       BUTTON_NOTES,
+      BUTTON_VOICE_MEMO,
       BUTTON_POWER,
       BUTTON_TOTAL_COUNT
    };

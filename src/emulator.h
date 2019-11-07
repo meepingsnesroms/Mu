@@ -120,6 +120,9 @@ typedef struct{
    bool  buttonAddress;//hw button 2
    bool  buttonTodo;//hw button 3
    bool  buttonNotes;//hw button 4
+#if defined(EMU_SUPPORT_PALM_OS5)
+   bool  buttonVoiceMemo;
+#endif
    
    bool  buttonPower;
    

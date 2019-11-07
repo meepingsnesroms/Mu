@@ -60,6 +60,7 @@ memory dumping dosent work for OS 5 yet
 T3 I2C currently has no ACK bits(should work without them its just inaccurate)(I2C works fine though)
 T3 emulation attempts to set GPIO1(reset button) as an output
 GPIO lines from misc chips to CPU are not implemented
+PXA260 idle mode is unimplemented
 
 
 Fixed:

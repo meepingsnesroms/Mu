@@ -30,14 +30,6 @@ SettingsManager::SettingsManager(QWidget* parent) :
    ui->featureSyncedRtc->setChecked(settings->value("featureSyncedRtc", false).toBool());
    ui->featureDurable->setChecked(settings->value("featureDurable", false).toBool());
 
-#if !defined(EMU_SUPPORT_PALM_OS5)
-   ui->palmOsVersionLabel->hide();
-   ui->palmOsVersion->hide();
-   ui->selectLeftKey->hide();
-   ui->selectRightKey->hide();
-   ui->selectCenterKey->hide();
-#endif
-
    setKeySelectorState(-1);
    updateButtonKeys();
 }
@@ -77,6 +69,7 @@ void SettingsManager::updateButtonKeys(){
    ui->selectAddressBookKey->setText(QKeySequence(settings->value("palmButton" + QString::number(EmuWrapper::BUTTON_ADDRESS) + "Key", '\0').toInt()).toString());
    ui->selectTodoKey->setText(QKeySequence(settings->value("palmButton" + QString::number(EmuWrapper::BUTTON_TODO) + "Key", '\0').toInt()).toString());
    ui->selectNotesKey->setText(QKeySequence(settings->value("palmButton" + QString::number(EmuWrapper::BUTTON_NOTES) + "Key", '\0').toInt()).toString());
+   ui->selectVoiceMemoKey->setText(QKeySequence(settings->value("palmButton" + QString::number(EmuWrapper::BUTTON_VOICE_MEMO) + "Key", '\0').toInt()).toString());
    ui->selectPowerKey->setText(QKeySequence(settings->value("palmButton" + QString::number(EmuWrapper::BUTTON_POWER) + "Key", '\0').toInt()).toString());
 }
 
@@ -129,6 +122,10 @@ void SettingsManager::on_selectTodoKey_clicked(){
 
 void SettingsManager::on_selectNotesKey_clicked(){
    setKeySelectorState(EmuWrapper::BUTTON_NOTES);
+}
+
+void SettingsManager::on_selectVoiceMemoKey_clicked(){
+   setKeySelectorState(EmuWrapper::BUTTON_VOICE_MEMO);
 }
 
 void SettingsManager::on_selectPowerKey_clicked(){

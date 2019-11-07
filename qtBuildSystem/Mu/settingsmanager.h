@@ -40,6 +40,7 @@ private slots:
    void on_selectAddressBookKey_clicked();
    void on_selectTodoKey_clicked();
    void on_selectNotesKey_clicked();
+   void on_selectVoiceMemoKey_clicked();
    void on_selectPowerKey_clicked();
    void on_clearKeyBind_clicked();
 

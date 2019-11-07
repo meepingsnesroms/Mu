@@ -4,6 +4,7 @@
 
 #include "emulator.h"
 #include "pxa260/pxa260I2c.h"
+#include "pxa260/pxa260.h"
 
 
 //I2C address is 100100X(X set by IFLSB pin)(seems to be 0, first byte transmitted over I2C is 0x90(0b10010000))
@@ -68,7 +69,7 @@ static uint8_t tps65010ReadRegister(uint8_t address){
          return tps65010Registers[address];
 
       default:
-         debugLog("Unimplemented TPS65010 register read, address:0x%02X\n", address);
+         debugLog("Unimplemented TPS65010 register read, address:0x%02X, PC:0x%08X\n", address, pxa260GetPc());
          return 0x00;
    }
 }
@@ -88,7 +89,7 @@ static void tps65010WriteRegister(uint8_t address, uint8_t value){
        */
 
       default:
-         debugLog("Unimplemented TPS65010 register write, address:0x%02X, value:0x%02X\n", address, value);
+         debugLog("Unimplemented TPS65010 register write, address:0x%02X, value:0x%02X, PC:0x%08X\n", address, value, pxa260GetPc());
          return;
    }
 }

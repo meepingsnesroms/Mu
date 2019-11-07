@@ -1,4 +1,5 @@
 #include "pxa260_PwrClk.h"
+#include "pxa260.h"
 
 
 Boolean pxa260pwrClkPrvCoprocRegXferFunc(void* userData, Boolean two, Boolean read, UInt8 op1, UInt8 Rx, UInt8 CRn, UInt8 CRm, UInt8 op2){
@@ -13,7 +14,9 @@ Boolean pxa260pwrClkPrvCoprocRegXferFunc(void* userData, Boolean two, Boolean re
 		switch(CRn){
 			
 			case 6:
-				if(read) val = 0;
+            if(read){
+               val = 0;
+            }
 				else{
 					pc->turbo = (val & 1) != 0;
 					if(val & 2){
@@ -28,10 +31,12 @@ Boolean pxa260pwrClkPrvCoprocRegXferFunc(void* userData, Boolean two, Boolean re
 				}
 			
 			case 7:
-				if(read) val = pc->turbo ? 1 : 0;
+            if(read){
+               val = pc->turbo ? 1 : 0;
+            }
 				else if(val != 0){
 					
-				//	fprintf(stderr, "Someone tried to set processor power mode (cp14 reg7) to 0x%08lX\n", val);
+               debugLog("Someone tried to set processor power mode (cp14 reg7) to 0x%08X, PC:0x%08X\n", val, pxa260GetPc());
 				}
 				goto success;
 		}
