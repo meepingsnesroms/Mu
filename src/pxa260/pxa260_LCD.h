@@ -1,5 +1,5 @@
-#ifndef _PXA260_LCD_H_
-#define _PXA260_LCD_H_
+#ifndef PXA260_LCD_H
+#define PXA260_LCD_H
 
 #include "pxa260_CPU.h"
 #include "pxa260_IC.h"

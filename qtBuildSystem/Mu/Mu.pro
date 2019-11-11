@@ -22,6 +22,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 # You can also select to disable deprecated APIs only up to a certain version of Qt.
 DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000 # disables all the APIs deprecated before Qt 6.0.0
 
+# OS 5 support is mandatory for the QT port
 CONFIG += support_palm_os5
 
 windows{
@@ -158,6 +159,7 @@ support_palm_os5{
         ../../src/armv5te/arm_interpreter.cpp \
         ../../src/armv5te/cpu.cpp \
         ../../src/armv5te/coproc.cpp \
+        ../../src/armv5te/disasm.c \
         ../../src/armv5te/emuVarPool.c \
         ../../src/armv5te/thumb_interpreter.cpp \
         ../../src/armv5te/mem.c \
@@ -190,6 +192,7 @@ support_palm_os5{
         ../../src/armv5te/asmcode.h \
         ../../src/armv5te/bitfield.h \
         ../../src/armv5te/cpu.h \
+        ../../src/armv5te/disasm.h \
         ../../src/armv5te/emu.h \
         ../../src/armv5te/mem.h \
         ../../src/armv5te/translate.h \

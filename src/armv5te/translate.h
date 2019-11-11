@@ -1,7 +1,7 @@
 /* Declarations for translate.c */
 
-#ifndef _H_TRANSLATE
-#define _H_TRANSLATE
+#ifndef H_TRANSLATE
+#define H_TRANSLATE
 
 #include <stdbool.h>
 #include <stdint.h>

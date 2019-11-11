@@ -1,5 +1,5 @@
-#ifndef _PXA260_PWR_CLK_H_
-#define _PXA260_PWR_CLK_H_
+#ifndef PXA260_PWR_CLK_H
+#define PXA260_PWR_CLK_H
 
 #include "pxa260_CPU.h"
 

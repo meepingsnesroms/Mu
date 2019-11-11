@@ -1,5 +1,5 @@
-#ifndef _H_EMU
-#define _H_EMU
+#ifndef H_EMU
+#define H_EMU
 
 #include <stdarg.h>
 #include <stdbool.h>

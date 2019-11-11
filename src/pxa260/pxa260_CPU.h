@@ -1,5 +1,5 @@
-#ifndef _CPU_H_
-#define _CPU_H_
+#ifndef PXA260_CPU_H
+#define PXA260_CPU_H
 
 #include "pxa260_types.h"
 #include "../armv5te/emu.h"

@@ -1,7 +1,7 @@
 /* Declarations for memory.c */
 
-#ifndef _H_MEM
-#define _H_MEM
+#ifndef H_MEM
+#define H_MEM
 
 #include <stdint.h>
 

@@ -94,6 +94,19 @@ void DebugViewer::on_debugGetHexValues_clicked(){
    }
 }
 
+void DebugViewer::on_debugDecompile_clicked(){
+   EmuWrapper& emu = ((MainWindow*)parentWidget())->emu;
+   int64_t address = numberFromString(ui->debugAddress->text(), true/*negative not allowed*/);
+   int64_t length = numberFromString(ui->debugLength->text(), true/*negative not allowed*/);
+
+   ui->debugValueList->clear();
+
+   if(address != INT64_MIN && length != INT64_MIN && length != 0)
+      ui->debugValueList->addItems(emu.debugDisassemble(address, length).split('\n'));
+   else
+      ui->debugValueList->addItem("Invalid Parameters");
+}
+
 void DebugViewer::on_debug8Bit_clicked(){
     bitsPerEntry = 8;
     debugRadioButtonHandler();

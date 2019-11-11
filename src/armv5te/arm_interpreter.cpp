@@ -376,7 +376,7 @@ void do_arm_instruction(Instruction i)
                 value <<= 1;
             set_reg(insn >> 12 & 15, zeros);
         } else if ((insn & 0xFFF000F0) == 0xE1200070) {
-            gui_debug_printf("Software breakpoint at %08x (%04x)\n",
+            gui_debug_printf("Software breakpoint at %08X (%04X)\n",
                       arm.reg[15], (insn >> 4 & 0xFFF0) | (insn & 0xF));
             debugger(DBG_EXEC_BREAKPOINT, 0);
         } else

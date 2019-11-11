@@ -183,16 +183,6 @@
  */
 
 
-/* Set to your compiler's static inline keyword to enable it, or
- * set it to blank to disable it.
- * If you define MUSASHI_INLINE in the makefile, it will override this value.
- * NOTE: not enabling inline functions will SEVERELY slow down emulation.
- */
-#ifndef MUSASHI_INLINE
-#define MUSASHI_INLINE static inline
-#endif /* MUSASHI_INLINE */
-
-
 /* ======================================================================== */
 /* ============================== END OF FILE ============================= */
 /* ======================================================================== */

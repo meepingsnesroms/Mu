@@ -1,5 +1,5 @@
-#ifndef _PXA260_DSP_H_
-#define _PXA260_DSP_H_
+#ifndef PXA260_DSP_H
+#define PXA260_DSP_H
 
 #include "pxa260_types.h"
 

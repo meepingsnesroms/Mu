@@ -1,5 +1,5 @@
-#ifndef _PXA260_DMA_H_
-#define _PXA260_DMA_H_
+#ifndef PXA260_DMA_H
+#define PXA260_DMA_H
 
 #include "pxa260_CPU.h"
 #include "pxa260_IC.h"

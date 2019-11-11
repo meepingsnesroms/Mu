@@ -23,6 +23,7 @@ private slots:
    void debugRadioButtonHandler();
 
    void on_debugGetHexValues_clicked();
+   void on_debugDecompile_clicked();
 
    void on_debug8Bit_clicked();
    void on_debug16Bit_clicked();

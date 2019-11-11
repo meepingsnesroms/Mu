@@ -68,7 +68,7 @@ void mmu_dump_tables(void) {
                 page_type = "1kB";
             }
 section:;
-            gui_debug_printf("%08x -> %08x (%s) (0x%8x)\n", virt_addr + j * (1 << virt_shift), l1_entry & -page_size, page_type, l1_entry);
+            gui_debug_printf("%08X -> %08X (%s) (0x%8x)\n", virt_addr + j * (1 << virt_shift), l1_entry & -page_size, page_type, l1_entry);
         }
     }
 }
@@ -246,10 +246,10 @@ void *addr_cache_miss(uint32_t virt, bool writing, fault_proc *fault) {
     uint8_t *ptr = phys_mem_ptr(phys, 1);
     if (ptr && !(writing && (RAM_FLAGS((size_t)ptr & ~3) & RF_READ_ONLY))) {
         AC_SET_ENTRY_PTR(entry, virt, ptr)
-                //printf("addr_cache_miss VA=%08x ptr=%p entry=%p\n", virt, ptr, entry);
+                //printf("addr_cache_miss VA=%08X ptr=%p entry=%p\n", virt, ptr, entry);
     } else {
         AC_SET_ENTRY_PHYS(entry, virt, phys)
-                //printf("addr_cache_miss VA=%08x PA=%08x entry=%p\n", virt, phys, entry);
+                //printf("addr_cache_miss VA=%08X PA=%08X entry=%p\n", virt, phys, entry);
     }
     uint32_t oldoffset = ac_valid_list[ac_valid_index];
     uint32_t offset = (virt >> 10) * 2 + writing;

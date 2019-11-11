@@ -1,5 +1,5 @@
-#ifndef _H_MMU
-#define _H_MMU
+#ifndef H_MMU
+#define H_MMU
 
 #include "cpu.h"
 #include "emu.h"

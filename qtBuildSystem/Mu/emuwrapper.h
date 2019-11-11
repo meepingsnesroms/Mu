@@ -81,4 +81,5 @@ public:
    QVector<uint64_t>& debugGetDuplicateLogEntryCount();
    QString debugGetCpuRegisterString();
    uint64_t debugGetEmulatorMemory(uint32_t address, uint8_t size);
+   QString debugDisassemble(uint32_t address, uint32_t opcodes);
 };

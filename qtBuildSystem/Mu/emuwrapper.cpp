@@ -22,7 +22,9 @@
 
 extern "C"{
 #include "../../src/flx68000.h"
+#include "../../src/m68k/m68k.h"
 #include "../../src/pxa260/pxa260.h"
+#include "../../src/armv5te/disasm.h"
 #include "../../src/debug/sandbox.h"
 }
 
@@ -527,4 +529,33 @@ uint64_t EmuWrapper::debugGetEmulatorMemory(uint32_t address, uint8_t size){
    if(palmEmulatingTungstenT3)
       return pxa260ReadArbitraryMemory(address, size);
    return flx68000ReadArbitraryMemory(address, size);
+}
+
+QString EmuWrapper::debugDisassemble(uint32_t address, uint32_t opcodes){
+   QString output = "";
+
+   if(palmEmulatingTungstenT3){
+      for(uint32_t index = 0; index < opcodes; index++){
+         address += disasm_arm_insn(address);
+         output += disasmReturnBuf;
+         output += '\n';
+      }
+   }
+   else{
+      char temp[100];
+
+      for(uint32_t index = 0; index < opcodes; index++){
+         uint8_t opcodeSize = m68k_disassemble(temp, address, M68K_CPU_TYPE_DBVZ);
+         QString opcodeHex = "";
+
+         for(uint8_t opcodeByteIndex = 0; opcodeByteIndex < opcodeSize; opcodeByteIndex++)
+            opcodeHex += QString::asprintf("%02X", flx68000ReadArbitraryMemory(address + opcodeByteIndex, 8));
+
+         output += QString::asprintf("0x%08X: 0x%s\t%s \n", address, opcodeHex.toStdString().c_str(), temp);
+
+         address += opcodeSize;
+      }
+   }
+
+   return output;
 }

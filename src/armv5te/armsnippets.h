@@ -1,7 +1,7 @@
 /* Declarations for armsnippets */
 
-#ifndef _H_ARMSNIPPETS
-#define _H_ARMSNIPPETS
+#ifndef H_ARMSNIPPETS
+#define H_ARMSNIPPETS
 
 //#include <stdbool.h>
 
