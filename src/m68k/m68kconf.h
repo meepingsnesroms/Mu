@@ -57,6 +57,7 @@
 #define M68K_EMULATE_010            OPT_OFF
 #define M68K_EMULATE_EC020          OPT_OFF
 #define M68K_EMULATE_020            OPT_OFF
+#define M68K_EMULATE_040            OPT_ON
 
 
 /* If ON, the CPU will call m68k_read_immediate_xx() for immediate addressing
@@ -100,13 +101,41 @@
 #define M68K_EMULATE_TRACE          OPT_OFF
 #endif
 
-
 /* If ON, CPU will call the output reset callback when it encounters a reset
  * instruction.
  */
 #define M68K_EMULATE_RESET          OPT_SPECIFY_HANDLER
 #define M68K_RESET_CALLBACK()       emulatorSoftReset()
 
+/* If ON, CPU will call the callback when it encounters a cmpi.l #v, dn
+ * instruction.
+ */
+#define M68K_CMPILD_HAS_CALLBACK     OPT_OFF
+#define M68K_CMPILD_CALLBACK(v,r)    your_cmpild_handler_function(v,r)
+
+
+/* If ON, CPU will call the callback when it encounters a rte
+ * instruction.
+ */
+#define M68K_RTE_HAS_CALLBACK       OPT_OFF
+#define M68K_RTE_CALLBACK()         your_rte_handler_function()
+
+/* If ON, CPU will call the callback when it encounters a tas
+ * instruction.
+ */
+#define M68K_TAS_HAS_CALLBACK       OPT_OFF
+#define M68K_TAS_CALLBACK()         your_tas_handler_function()
+
+/* If ON, CPU will call the callback when it encounters an illegal instruction
+ * passing the opcode as argument. If the callback returns 1, then it's considered
+ * as a normal instruction, and the illegal exception in canceled. If it returns 0,
+ * the exception occurs normally.
+ * The callback looks like int callback(int opcode)
+ * You should put OPT_SPECIFY_HANDLER here if you cant to use it, otherwise it will
+ * use a dummy default handler and you'll have to call m68k_set_illg_instr_callback explicitely
+ */
+#define M68K_ILLG_HAS_CALLBACK	    OPT_OFF
+#define M68K_ILLG_CALLBACK(opcode)   op_illg(opcode)
 
 /* If ON, CPU will call the set fc callback on every memory access to
  * differentiate between user/supervisor, program/data access like a real
@@ -116,7 +145,6 @@
  */
 #define M68K_EMULATE_FC             OPT_OFF
 #define M68K_SET_FC_CALLBACK(A)     your_set_fc_handler_function(A)
-
 
 /* If ON, CPU will call the pc changed callback when it changes the PC by a
  * large value.  This allows host programs to be nicer when it comes to
@@ -181,17 +209,6 @@
 /* It seems MASK_OUT_ABOVE_32 is has to be called on every 32 bit operation when using this option,
  * possibly even making the speed worse than with just 32 bits.
  */
-
-
-/* Set to your compiler's static inline keyword to enable it, or
- * set it to blank to disable it.
- * If you define MUSASHI_INLINE in the makefile, it will override this value.
- * NOTE: not enabling inline functions will SEVERELY slow down emulation.
- */
-#ifndef MUSASHI_INLINE
-#define MUSASHI_INLINE static inline
-#endif /* MUSASHI_INLINE */
-
 
 /* ======================================================================== */
 /* ============================== END OF FILE ============================= */

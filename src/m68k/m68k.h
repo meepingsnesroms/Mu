@@ -86,7 +86,8 @@ enum
    M68K_CPU_TYPE_68EC020,
    M68K_CPU_TYPE_68020,
    M68K_CPU_TYPE_68030,	/* Supported by disassembler ONLY */
-   M68K_CPU_TYPE_68040		/* Supported by disassembler ONLY */
+   M68K_CPU_TYPE_68040, /* Supported by disassembler ONLY */
+   M68K_CPU_TYPE_DBVZ
 };
 
 /* Registers used by m68k_get_reg() and m68k_set_reg() */
@@ -217,7 +218,6 @@ void m68k_write_memory_32_pd(uint32_t address, uint32_t value);
  */
 void m68k_set_int_ack_callback(int32_t  (*callback)(int32_t int_level));
 
-
 /* Set the callback for a breakpoint acknowledge (68010+).
  * You must enable M68K_EMULATE_BKPT_ACK in m68kconf.h.
  * The CPU will call the callback with whatever was in the data field of the
@@ -226,14 +226,12 @@ void m68k_set_int_ack_callback(int32_t  (*callback)(int32_t int_level));
  */
 void m68k_set_bkpt_ack_callback(void (*callback)(uint32_t data));
 
-
 /* Set the callback for the RESET instruction.
  * You must enable M68K_EMULATE_RESET in m68kconf.h.
  * The CPU calls this callback every time it encounters a RESET instruction.
  * Default behavior: do nothing.
  */
 void m68k_set_reset_instr_callback(void  (*callback)(void));
-
 
 /* Set the callback for informing of a large PC change.
  * You must enable M68K_MONITOR_PC in m68kconf.h.
@@ -243,6 +241,20 @@ void m68k_set_reset_instr_callback(void  (*callback)(void));
  */
 void m68k_set_pc_changed_callback(void  (*callback)(uint32_t new_pc));
 
+/* Set the callback for the TAS instruction.
+ * You must enable M68K_TAS_HAS_CALLBACK in m68kconf.h.
+ * The CPU calls this callback every time it encounters a TAS instruction.
+ * Default behavior: return 1, allow writeback.
+ */
+void m68k_set_tas_instr_callback(int32_t  (*callback)(void));
+
+/* Set the callback for illegal instructions.
+ * You must enable M68K_ILLG_HAS_CALLBACK in m68kconf.h.
+ * The CPU calls this callback every time it encounters an illegal instruction
+ * which must return 1 if it handles the instruction normally or 0 if it's really an illegal instruction.
+ * Default behavior: return 0, exception will occur.
+ */
+void m68k_set_illg_instr_callback(int32_t  (*callback)(int32_t));
 
 /* Set the callback for CPU function code changes.
  * You must enable M68K_EMULATE_FC in m68kconf.h.
@@ -252,7 +264,6 @@ void m68k_set_pc_changed_callback(void  (*callback)(uint32_t new_pc));
  * Default behavior: do nothing.
  */
 void m68k_set_fc_callback(void  (*callback)(uint32_t new_fc));
-
 
 /* Set a callback for the instruction cycle of the CPU.
  * You must enable M68K_INSTRUCTION_HOOK in m68kconf.h.

@@ -3274,6 +3274,10 @@ uint32_t m68k_disassemble(char* str_buff, uint32_t pc, uint32_t cpu_type)
          g_cpu_type = TYPE_68040;
          g_address_mask = 0xffffffff;
          break;
+      case M68K_CPU_TYPE_DBVZ:
+         g_cpu_type = TYPE_68000;
+         g_address_mask = 0xffffffff;
+         break;
       default:
          return 0;
    }

@@ -84,9 +84,7 @@ void flx68000Reset(void){
 
    if(!inited){
       m68k_init();
-      m68k_set_cpu_type(M68K_CPU_TYPE_68000);
-
-      CPU_ADDRESS_MASK = 0xFFFFFFFF;
+      m68k_set_cpu_type(M68K_CPU_TYPE_DBVZ);
 
       inited = true;
    }

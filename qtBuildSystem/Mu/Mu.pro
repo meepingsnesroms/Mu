@@ -210,6 +210,7 @@ INCLUDEPATH += $$PWD/qt-common/include
 
 SOURCES += \
     ../../src/ads7846.c \
+    ../../src/armv5te/disasm.c \
     ../../src/audio/blip_buf.c \
     ../../src/dbvz.c \
     ../../src/debug/sandbox.c \
@@ -219,9 +220,6 @@ SOURCES += \
     ../../src/m515Bus.c \
     ../../src/m68k/m68kcpu.c \
     ../../src/m68k/m68kdasm.c \
-    ../../src/m68k/m68kopac.c \
-    ../../src/m68k/m68kopdm.c \
-    ../../src/m68k/m68kopnz.c \
     ../../src/m68k/m68kops.c \
     ../../src/pdiUsbD12.c \
     ../../src/sdCard.c \
@@ -237,6 +235,7 @@ SOURCES += \
 
 HEADERS += \
     ../../src/ads7846.h \
+    ../../src/armv5te/disasm.h \
     ../../src/audio/blip_buf.h \
     ../../src/dbvz.h \
     ../../src/dbvzRegisterAccessors.c.h \
