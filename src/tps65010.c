@@ -38,6 +38,25 @@ static uint8_t tps65010State;
 static bool    tps65010SelectedRegisterAlreadySet;
 
 
+static uint8_t tps65010ReadGpio(void){
+   uint8_t direction = tps65010Registers[DEFGPIO] >> 4;
+   uint8_t inputVoltage = /*!palmSdCard.flashChipData << 2 | */!palmInput.buttonPower;//TODO: card power might be output//TODO: is power button low or high when pressed//TODO: GPIO4 BCM *UNKNOWN*
+
+   debugLog("TPS65010 DEFGPIO read, PC:0x%08X\n", pxa260GetPc());
+
+   return tps65010Registers[DEFGPIO] & (0xF0 | direction) | inputVoltage & ~direction;
+}
+
+static void tps65010WriteGpio(uint8_t value){
+   uint8_t direction = value >> 4;
+   uint8_t voltage = value & 0x0F;
+
+   debugLog("TPS65010 DEFGPIO write: 0x%02X, PC:0x%08X\n", value, pxa260GetPc());
+
+   //ignore writes to input pins
+   tps65010Registers[DEFGPIO] = direction << 4 | voltage & direction | tps65010Registers[DEFGPIO] & 0x0F & ~direction;
+}
+
 static uint8_t tps65010ReadRegister(uint8_t address){
    switch(address){
       /*
@@ -46,11 +65,10 @@ static uint8_t tps65010ReadRegister(uint8_t address){
          //TODO: dont know proper behavior, datasheet says the CPU shouldnt need to access this
          //should probably clear the ints
          return 0x00;
+      */
 
       case DEFGPIO:
-         //TODO: read GPIO state
-         return tps65010Registers[DEFGPIO];
-      */
+         return tps65010ReadGpio();
 
       case CHGSTATUS:
       case REGSTATUS:

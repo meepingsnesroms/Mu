@@ -13,6 +13,12 @@ static char *strcpy2(char *dest, const char *src) {
     return dest;
 }
 
+static inline void *virt_mem_ptr(uint32_t addr, uint32_t size) {
+   //this is needed by the disasembler
+   // Note: this is not guaranteed to be correct when range crosses page boundary
+   return (void *)(intptr_t)phys_mem_ptr(mmu_translate(addr, false, NULL, NULL), size);
+}
+
 const char reg_name[16][4] = {
     "r0", "r1", "r2",  "r3",  "r4",  "r5", "r6", "r7",
     "r8", "r9", "r10", "r11", "r12", "sp", "lr", "pc"
@@ -206,7 +212,7 @@ static char *do_reglist(char *out, int regs) {
 }
 
 uint32_t disasm_arm_insn(uint32_t pc) {
-   uint32_t *pc_ptr = phys_mem_ptr(pc, 4);
+   uint32_t *pc_ptr = virt_mem_ptr(pc, 4);
    if(!pc_ptr)
        return 0;
 
@@ -298,7 +304,7 @@ uint32_t disasm_arm_insn(uint32_t pc) {
                     addr += pc + 8;
                     out -= 2;
                     out += sprintf(out, "%08X]", addr);
-                    uint32_t *ptr = phys_mem_ptr(addr, 4);
+                    uint32_t *ptr = virt_mem_ptr(addr, 4);
                     if (ptr)
                         out += sprintf(out, " = %08X", *ptr);
                 } else {
@@ -429,7 +435,7 @@ uint32_t disasm_arm_insn(uint32_t pc) {
 }
 
 uint32_t disasm_thumb_insn(uint32_t pc) {
-    uint16_t *pc_ptr = phys_mem_ptr(pc, 2);
+    uint16_t *pc_ptr = virt_mem_ptr(pc, 2);
     if (!pc_ptr)
         return 0;
 
@@ -469,7 +475,7 @@ uint32_t disasm_thumb_insn(uint32_t pc) {
     } else if (insn < 0x5000) {
         int addr = ((pc + 4) & -4) + ((insn & 0xFF) << 2);
         out += sprintf(out, "ldr\tr%d,[%08X]", insn >> 8 & 7, addr);
-        uint32_t *ptr = phys_mem_ptr(addr, 4);
+        uint32_t *ptr = virt_mem_ptr(addr, 4);
         if (ptr)
             sprintf(out, " = %08X", *ptr);
     } else if (insn < 0x6000) {
@@ -527,7 +533,7 @@ invalid:
     } else if (insn < 0xF800) {
         int32_t target = (int32_t)insn << 21 >> 9;
         /* Check next instruction to see if this is part of a BL or BLX pair */
-        pc_ptr = phys_mem_ptr(pc + 2, 2);
+        pc_ptr = virt_mem_ptr(pc + 2, 2);
         if (pc_ptr && ((insn = *pc_ptr) & 0xE800) == 0xE800) {
             /* It is; show both instructions combined as one */
             target += pc + 4 + ((insn & 0x7FF) << 1);

@@ -100,7 +100,7 @@ uint32_t emulatorInit(uint8_t* palmRomData, uint32_t palmRomSize, uint8_t* palmB
    palmGetRtcFromHost = NULL;
 
 #if defined(EMU_SUPPORT_PALM_OS5)
-   //0x00000004 is boot program counter on 68k, its just 0x00000000 on ARM
+   //0x00000004 is boot program counter on 68K, its just 0x00000000 on ARM
    palmEmulatingTungstenT3 = !(palmRomData[0x4] || palmRomData[0x5] || palmRomData[0x6] || palmRomData[0x7]);
 
    if(palmEmulatingTungstenT3){

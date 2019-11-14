@@ -254,6 +254,8 @@ uint32_t pxa260GetSpsr(void){
 uint64_t pxa260ReadArbitraryMemory(uint32_t address, uint8_t size){
    uint64_t data = UINT64_MAX;//invalid access
 
+   address = mmu_translate(address, false, NULL, NULL);
+
    switch(size){
       case 8:
          if(read_byte_map[address >> 26] != bad_read_byte){
