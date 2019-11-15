@@ -29,13 +29,17 @@ extern "C"{
 }
 
 
+#define MAX_LOG_ENTRYS 2000
 #define MAX_LOG_ENTRY_LENGTH 200
 
 
 static bool alreadyExists = false;//there can only be one of this class since it wrappers C code
 
 static QVector<QString>  debugStrings;
-static QVector<uint64_t> duplicateCallCount;
+static uint64_t          debugDeletedStrings;
+static QVector<uint64_t> debugDuplicateCallCount;
+static bool              debugAbort = false;
+static QString           debugAbortString = "Someone tried to set processor power mode (cp14 reg7) to 0x00000001, PC:0x200C2844\n";
 uint32_t                 frontendDebugStringSize;
 char*                    frontendDebugString;
 
@@ -43,19 +47,31 @@ char*                    frontendDebugString;
 void frontendHandleDebugPrint(){
    QString newDebugString = frontendDebugString;
 
+   //lock out logs to capture a specific section
+   if(debugAbort)
+      return;
+
+   if(newDebugString == debugAbortString)
+      debugAbort = true;
+
    //this debug handler doesnt need the \n
    if(newDebugString.back() == '\n')
       newDebugString.remove(newDebugString.length() - 1, 1);
    else
       newDebugString.append("MISSING \"\\n\"");
 
-
    if(!debugStrings.empty() && newDebugString == debugStrings.back()){
-      duplicateCallCount.back()++;
+      debugDuplicateCallCount.back()++;
    }
    else{
       debugStrings.push_back(newDebugString);
-      duplicateCallCount.push_back(1);
+      debugDuplicateCallCount.push_back(1);
+   }
+
+   while(debugStrings.size() > MAX_LOG_ENTRYS){
+      debugStrings.remove(0);
+      debugDuplicateCallCount.remove(0);
+      debugDeletedStrings++;
    }
 }
 
@@ -94,7 +110,7 @@ EmuWrapper::~EmuWrapper(){
    delete[] frontendDebugString;
    frontendDebugStringSize = 0;
    debugStrings.clear();
-   duplicateCallCount.clear();
+   debugDuplicateCallCount.clear();
 
    //allow creating a new emu class after the old one is closed
    alreadyExists = false;
@@ -492,12 +508,16 @@ void EmuWrapper::setKeyValue(uint8_t key, bool pressed){
    }
 }
 
-QVector<QString>& EmuWrapper::debugGetLogEntrys(){
+QVector<QString>& EmuWrapper::debugLogEntrys(){
    return debugStrings;
 }
 
-QVector<uint64_t>& EmuWrapper::debugGetDuplicateLogEntryCount(){
-   return duplicateCallCount;
+QVector<uint64_t>& EmuWrapper::debugDuplicateLogEntryCount(){
+   return debugDuplicateCallCount;
+}
+
+uint64_t& EmuWrapper::debugDeletedLogEntryCount(){
+   return debugDeletedStrings;
 }
 
 QString EmuWrapper::debugGetCpuRegisterString(){

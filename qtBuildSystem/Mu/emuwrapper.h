@@ -77,8 +77,9 @@ public:
    const int16_t* getAudioSamples() const{return palmAudio;}
    bool getPowerButtonLed() const{return palmMisc.greenLed;}
 
-   QVector<QString>& debugGetLogEntrys();
-   QVector<uint64_t>& debugGetDuplicateLogEntryCount();
+   QVector<QString>& debugLogEntrys();
+   QVector<uint64_t>& debugDuplicateLogEntryCount();
+   uint64_t& debugDeletedLogEntryCount();
    QString debugGetCpuRegisterString();
    uint64_t debugGetEmulatorMemory(uint32_t address, uint8_t size);
    QString debugDisassemble(uint32_t address, uint32_t opcodes);

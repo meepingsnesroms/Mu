@@ -240,7 +240,7 @@ void pxa260Execute(bool wantVideo){
 }
 
 uint32_t pxa260GetRegister(uint8_t reg){
-   return reg_pc(reg);
+   return reg_pc_mem(reg);
 }
 
 uint32_t pxa260GetCpsr(void){

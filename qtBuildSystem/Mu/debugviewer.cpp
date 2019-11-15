@@ -147,10 +147,14 @@ void DebugViewer::on_debugShowRegisters_clicked(){
 
 void DebugViewer::on_debugShowDebugLogs_clicked(){
    EmuWrapper& emu = ((MainWindow*)parentWidget())->emu;
-   QVector<QString>& debugStrings = emu.debugGetLogEntrys();
-   QVector<uint64_t>& duplicateCallCount = emu.debugGetDuplicateLogEntryCount();
+   QVector<QString>& debugStrings = emu.debugLogEntrys();
+   QVector<uint64_t>& duplicateCallCount = emu.debugDuplicateLogEntryCount();
+   uint64_t& deletedLogEntrys = emu.debugDeletedLogEntryCount();
    int64_t length = numberFromString(ui->debugLength->text(), true/*negative allowed*/);
    QString data = "";
+
+   if(deletedLogEntrys > 0)
+      data += QString::asprintf("(there are %llu deleted log entrys before these)\n", emu.debugDeletedLogEntryCount());
 
    if(length != INT64_MIN && qAbs(length) < debugStrings.size()){
       if(length < 0){
@@ -173,6 +177,7 @@ void DebugViewer::on_debugShowDebugLogs_clicked(){
 void DebugViewer::on_debugEraseDebugLogs_clicked(){
    EmuWrapper& emu = ((MainWindow*)parentWidget())->emu;
 
-   emu.debugGetLogEntrys().clear();
-   emu.debugGetDuplicateLogEntryCount().clear();
+   emu.debugLogEntrys().clear();
+   emu.debugDuplicateLogEntryCount().clear();
+   emu.debugDeletedLogEntryCount() = 0;
 }
