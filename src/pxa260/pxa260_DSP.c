@@ -1,6 +1,7 @@
 #include "pxa260_math64.h"
 #include "pxa260_CPU.h"
 #include "pxa260_DSP.h"
+#include "pxa260.h"
 
 
 Boolean pxa260dspAccess(void* userData, Boolean MRRC, UInt8 op, UInt8 RdLo, UInt8 RdHi, UInt8 acc){
@@ -11,18 +12,18 @@ Boolean pxa260dspAccess(void* userData, Boolean MRRC, UInt8 op, UInt8 RdLo, UInt
 	
 	if(MRRC){	//MRA: read acc0
 		
-		cpuSetReg(cpu, RdLo, u64_64_to_32(dsp->acc0));
-		cpuSetReg(cpu, RdHi, (UInt8)u64_get_hi(dsp->acc0));
+      cpuSetReg(&pxa260CpuState, RdLo, u64_64_to_32(dsp->acc0));
+      cpuSetReg(&pxa260CpuState, RdHi, (UInt8)u64_get_hi(dsp->acc0));
 	}
 	else{		//MAR: write acc0
 		
-		dsp->acc0 = u64_from_halves(cpuGetRegExternal(cpu, RdHi) & 0xFF, cpuGetRegExternal(cpu, RdLo));
+      dsp->acc0 = u64_from_halves(cpuGetRegExternal(&pxa260CpuState, RdHi) & 0xFF, cpuGetRegExternal(&pxa260CpuState, RdLo));
 	}
 	
 	return true;	
 }
 
-Boolean	pxa260dspOp(struct ArmCpu* cpu, void* userData, Boolean two/* MCR2/MRC2 ? */, Boolean MRC, UInt8 op1, UInt8 Rs, UInt8 opcode_3, UInt8 Rm, UInt8 acc){
+Boolean	pxa260dspOp(void* userData, Boolean two/* MCR2/MRC2 ? */, Boolean MRC, UInt8 op1, UInt8 Rs, UInt8 opcode_3, UInt8 Rm, UInt8 acc){
 	
    Pxa260dsp* dsp = userData;
 	UInt64 addend = u64_zero();
@@ -30,8 +31,8 @@ Boolean	pxa260dspOp(struct ArmCpu* cpu, void* userData, Boolean two/* MCR2/MRC2 
 	
 	if(op1 != 1 || two || MRC || acc != 0) return false;		//bad encoding
 	
-	Vs = cpuGetRegExternal(cpu, Rs);
-	Vm = cpuGetRegExternal(cpu, Rm);
+   Vs = cpuGetRegExternal(&pxa260CpuState, Rs);
+   Vm = cpuGetRegExternal(&pxa260CpuState, Rm);
 	
 	switch(opcode_3 >> 2){
 		

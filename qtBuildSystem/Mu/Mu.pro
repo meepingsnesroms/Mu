@@ -156,6 +156,9 @@ support_palm_os5{
         ../../src/pxa260/pxa260Ssp.c \
         ../../src/pxa260/pxa260Udc.c \
         ../../src/pxa260/pxa260.c \
+        ../../src/armv5te/uArm/CPU_2.c \
+        ../../src/armv5te/uArm/icache.c \
+        ../../src/armv5te/uArm/uArmGlue.cpp \
         ../../src/armv5te/arm_interpreter.cpp \
         ../../src/armv5te/cpu.cpp \
         ../../src/armv5te/coproc.cpp \
@@ -189,6 +192,9 @@ support_palm_os5{
         ../../src/pxa260/pxa260Accessors.c.h \
         ../../src/pxa260/pxa260.h \
         ../../src/armv5te/os/os.h \
+        ../../src/armv5te/uArm/CPU_2.h \
+        ../../src/armv5te/uArm/icache.h \
+        ../../src/armv5te/uArm/uArmGlue.h \
         ../../src/armv5te/asmcode.h \
         ../../src/armv5te/bitfield.h \
         ../../src/armv5te/cpu.h \

@@ -7,6 +7,12 @@
 #include "mem.h"
 #include "os/os.h"
 
+#if !defined(EMU_NO_SAFETY)
+#include "uArm/CPU_2.h"
+#include "uArm/icache.h"
+#include "../pxa260/pxa260.h"
+#endif
+
 /* Copy of translation table in memory (hack to approximate effect of having a TLB) */
 static uint32_t mmu_translation_table[0x1000];
 
@@ -262,6 +268,10 @@ void *addr_cache_miss(uint32_t virt, bool writing, fault_proc *fault) {
 }
 
 void addr_cache_flush(void) {
+#if !defined(EMU_NO_SAFETY)
+   icacheInval(&pxa260CpuState.ic);//icache needs to be flushed when MMU state changes
+#endif
+
     if (arm.control & 1) {
         void *table = phys_mem_ptr(arm.translation_table_base, 0x4000);
         if (!table)

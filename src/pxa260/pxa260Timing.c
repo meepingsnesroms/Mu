@@ -9,6 +9,9 @@
 #include "pxa260Udc.h"
 #include "pxa260Timing.h"
 #include "../tsc2101.h"
+#if !defined(EMU_NO_SAFETY)
+#include "../armv5te/uArm/CPU_2.h"
+#endif
 #include "../armv5te/os/os.h"
 #include "../armv5te/emu.h"
 #include "../armv5te/cpu.h"
@@ -83,25 +86,30 @@ void pxa260TimingRun(int32_t cycles){
    cycle_count_delta = -addCycles * palmClockMultiplier;
 
    while (!exiting && cycle_count_delta < 0) {
-         if (cpu_events & (EVENT_FIQ | EVENT_IRQ)) {
-             // Align PC in case the interrupt occurred immediately after a jump
-             if (arm.cpsr_low28 & 0x20)
-                 arm.reg[15] &= ~1;
-             else
-                 arm.reg[15] &= ~3;
+#if !defined(EMU_NO_SAFETY)
+      cpuCycle(&pxa260CpuState);
+      cycle_count_delta += 1;
+#else
+      if (cpu_events & (EVENT_FIQ | EVENT_IRQ)) {
+          // Align PC in case the interrupt occurred immediately after a jump
+          if (arm.cpsr_low28 & 0x20)
+              arm.reg[15] &= ~1;
+          else
+              arm.reg[15] &= ~3;
 
-             if (cpu_events & EVENT_WAITING)
-                 arm.reg[15] += 4; // Skip over wait instruction
+          if (cpu_events & EVENT_WAITING)
+              arm.reg[15] += 4; // Skip over wait instruction
 
-             arm.reg[15] += 4;
-             cpu_exception((cpu_events & EVENT_FIQ) ? EX_FIQ : EX_IRQ);
-         }
-         cpu_events &= ~EVENT_WAITING;//the wait opcode will be executed again if still waiting, that will clear the remaining cycle count and exit the function again
+          arm.reg[15] += 4;
+          cpu_exception((cpu_events & EVENT_FIQ) ? EX_FIQ : EX_IRQ);
+      }
+      cpu_events &= ~EVENT_WAITING;//the wait opcode will be executed again if still waiting, that will clear the remaining cycle count and exit the function again
 
-         if (arm.cpsr_low28 & 0x20)
-             cpu_thumb_loop();
-         else
-             cpu_arm_loop();
+      if (arm.cpsr_low28 & 0x20)
+          cpu_thumb_loop();
+      else
+          cpu_arm_loop();
+#endif
    }
 
    //if more then the requested cycles are executed count those too

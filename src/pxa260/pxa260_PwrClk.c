@@ -1,4 +1,5 @@
 #include "pxa260_PwrClk.h"
+#include "pxa260_CPU.h"
 #include "pxa260.h"
 
 
@@ -7,7 +8,7 @@ Boolean pxa260pwrClkPrvCoprocRegXferFunc(void* userData, Boolean two, Boolean re
 	Pxa260pwrClk* pc = userData;
 	UInt32 val = 0;
 	
-	if(!read) val = cpuGetRegExternal(cpu, Rx);
+   if(!read) val = cpuGetRegExternal(&pxa260CpuState, Rx);
 	
 	if(CRm == 0 && op2 == 0 && op1 == 0 && !two){
 		
@@ -46,7 +47,7 @@ Boolean pxa260pwrClkPrvCoprocRegXferFunc(void* userData, Boolean two, Boolean re
 
 success:
 	
-	if(read) cpuSetReg(cpu, Rx, val);
+   if(read) cpuSetReg(&pxa260CpuState, Rx, val);
 	return true;
 }
 

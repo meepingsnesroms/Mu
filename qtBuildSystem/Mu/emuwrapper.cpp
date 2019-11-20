@@ -39,7 +39,7 @@ static QVector<QString>  debugStrings;
 static uint64_t          debugDeletedStrings;
 static QVector<uint64_t> debugDuplicateCallCount;
 static bool              debugAbort = false;
-static QString           debugAbortString = "Someone tried to set processor power mode (cp14 reg7) to 0x00000001, PC:0x200C2844\n";
+static QString           debugAbortString = "PCMCIA";
 uint32_t                 frontendDebugStringSize;
 char*                    frontendDebugString;
 
@@ -51,7 +51,7 @@ void frontendHandleDebugPrint(){
    if(debugAbort)
       return;
 
-   if(newDebugString == debugAbortString)
+   if(!debugAbortString.isEmpty() && newDebugString.contains(debugAbortString))
       debugAbort = true;
 
    //this debug handler doesnt need the \n

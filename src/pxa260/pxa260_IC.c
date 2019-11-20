@@ -1,4 +1,6 @@
 #include "pxa260_IC.h"
+#include "pxa260_CPU.h"
+#include "pxa260.h"
 
 
 static void pxa260icPrvHandleChanges(Pxa260ic* ic){
@@ -9,8 +11,8 @@ static void pxa260icPrvHandleChanges(Pxa260ic* ic){
 	nowFiq = (unmasked & ic->ICLR) != 0;
 	nowIrq = (unmasked & ~ic->ICLR) != 0;
 	
-	if(nowFiq != ic->wasFiq) cpuIrq(ic->cpu, true, nowFiq);
-	if(nowIrq != ic->wasIrq) cpuIrq(ic->cpu, false, nowIrq);
+   if(nowFiq != ic->wasFiq) cpuIrq(&pxa260CpuState, true, nowFiq);
+   if(nowIrq != ic->wasIrq) cpuIrq(&pxa260CpuState, false, nowIrq);
 
 	ic->wasFiq = nowFiq;
 	ic->wasIrq = nowIrq;

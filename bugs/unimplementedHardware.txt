@@ -56,14 +56,15 @@ MakePalmBitmap:
 
 Other:
 Qt port dosent support Windows touchscreen input
-memory dumping dosent work for OS 5 yet
 T3 I2C currently has no ACK bits(should work without them its just inaccurate)(I2C works fine though)
 T3 emulation attempts to set GPIO1(reset button) as an output
 GPIO lines from misc chips to CPU are not implemented
 PXA260 idle mode is unimplemented
+0x0E071F16 MCR	P15, #0, R1, C7, C2, #5 is unimplemented along with several other unknown CP15 opcodes
 
 
 Fixed:
+memory dumping dosent work for OS 5 yet
 Endian compatibility is broken(the CPU state needs to be standardized)
 RetroArch port crashes on exit(needed to check if environ_cb returned true, switched to libretro-common filestreams too)
 make the headers belong to the main file of the target chip being emulated for specs

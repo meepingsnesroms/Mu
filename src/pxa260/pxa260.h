@@ -11,7 +11,13 @@
 #include "pxa260_PwrClk.h"
 #include "pxa260_GPIO.h"
 #include "pxa260_TIMR.h"
+#if !defined(EMU_NO_SAFETY)
+#include "../armv5te/uArm/CPU_2.h"
+#endif
 
+#if !defined(EMU_NO_SAFETY)
+extern ArmCpu       pxa260CpuState;
+#endif
 extern uint16_t*    pxa260Framebuffer;
 extern Pxa260pwrClk pxa260PwrClk;
 extern Pxa260ic     pxa260Ic;

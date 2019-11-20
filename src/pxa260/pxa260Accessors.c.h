@@ -120,57 +120,57 @@ static void pxa260_lcd_write_word(uint32_t addr, uint32_t value){
 }
 
 static uint8_t pxa260_pcmcia0_read_byte(uint32_t addr){
-   debugLog("PCMCIA0 8 bit read:0x%08X\n", addr);
+   debugLog("PCMCIA0 8 bit read:0x%08X, PC:0x%08X\n", addr, pxa260GetPc());
    return 0x00;
 }
 
 static uint16_t pxa260_pcmcia0_read_half(uint32_t addr){
-   debugLog("PCMCIA0 16 bit read:0x%08X\n", addr);
+   debugLog("PCMCIA0 16 bit read:0x%08X, PC:0x%08X\n", addr, pxa260GetPc());
    return 0x0000;
 }
 
 static uint32_t pxa260_pcmcia0_read_word(uint32_t addr){
-   debugLog("PCMCIA0 32 bit read:0x%08X\n", addr);
+   debugLog("PCMCIA0 32 bit read:0x%08X, PC:0x%08X\n", addr, pxa260GetPc());
    return 0x00000000;
 }
 
 static void pxa260_pcmcia0_write_byte(uint32_t addr, uint8_t value){
-   debugLog("PCMCIA0 8 bit write:0x%08X, value:0x%02X\n", addr, value);
+   debugLog("PCMCIA0 8 bit write:0x%08X, value:0x%02X, PC:0x%08X\n", addr, value, pxa260GetPc());
 }
 
 static void pxa260_pcmcia0_write_half(uint32_t addr, uint16_t value){
-   debugLog("PCMCIA0 16 bit write:0x%08X, value:0x%04X\n", addr, value);
+   debugLog("PCMCIA0 16 bit write:0x%08X, value:0x%04X, PC:0x%08X\n", addr, value, pxa260GetPc());
 }
 
 static void pxa260_pcmcia0_write_word(uint32_t addr, uint32_t value){
-   debugLog("PCMCIA0 32 bit write:0x%08X, value:0x%08X\n", addr, value);
+   debugLog("PCMCIA0 32 bit write:0x%08X, value:0x%08X, PC:0x%08X\n", addr, value, pxa260GetPc());
 }
 
 static uint8_t pxa260_pcmcia1_read_byte(uint32_t addr){
-   debugLog("PCMCIA1 8 bit read:0x%08X\n", addr);
+   debugLog("PCMCIA1 8 bit read:0x%08X, PC:0x%08X\n", addr, pxa260GetPc());
    return 0x00;
 }
 
 static uint16_t pxa260_pcmcia1_read_half(uint32_t addr){
-   debugLog("PCMCIA1 16 bit read:0x%08X\n", addr);
+   debugLog("PCMCIA1 16 bit read:0x%08X, PC:0x%08X\n", addr, pxa260GetPc());
    return 0x0000;
 }
 
 static uint32_t pxa260_pcmcia1_read_word(uint32_t addr){
-   debugLog("PCMCIA1 32 bit read:0x%08X\n", addr);
+   debugLog("PCMCIA1 32 bit read:0x%08X, PC:0x%08X\n", addr, pxa260GetPc());
    return 0x00000000;
 }
 
 static void pxa260_pcmcia1_write_byte(uint32_t addr, uint8_t value){
-   debugLog("PCMCIA1 8 bit write:0x%08X, value:0x%02X\n", addr, value);
+   debugLog("PCMCIA1 8 bit write:0x%08X, value:0x%02X, PC:0x%08X\n", addr, value, pxa260GetPc());
 }
 
 static void pxa260_pcmcia1_write_half(uint32_t addr, uint16_t value){
-   debugLog("PCMCIA1 16 bit write:0x%08X, value:0x%04X\n", addr, value);
+   debugLog("PCMCIA1 16 bit write:0x%08X, value:0x%04X, PC:0x%08X\n", addr, value, pxa260GetPc());
 }
 
 static void pxa260_pcmcia1_write_word(uint32_t addr, uint32_t value){
-   debugLog("PCMCIA1 32 bit write:0x%08X, value:0x%08X\n", addr, value);
+   debugLog("PCMCIA1 32 bit write:0x%08X, value:0x%08X, PC:0x%08X\n", addr, value, pxa260GetPc());
 }
 
 static uint16_t pxa260_static_chip_select_2_read_half(uint32_t addr){

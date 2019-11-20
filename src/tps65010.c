@@ -210,4 +210,5 @@ uint8_t tps65010I2cExchange(uint8_t i2cBus){
 
 void tps65010UpdateInterrupt(void){
    //TODO: implement this
+   debugLog("Unimplemented TPS65010 interrupt check\n");
 }

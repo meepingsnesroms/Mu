@@ -22,6 +22,11 @@ typedef uint8_t Boolean;//must use uint8_t, some functions store extra info in t
 #define _INLINE_ inline
 #define _UNUSED_
 
+#define TYPE_CHECK ((sizeof(UInt32) == 4) && (sizeof(UInt16) == 2) && (sizeof(UInt8) == 1))
+
+#define errNone		0x00
+#define errInternal	0x01
+
 /* runtime stuffs */
 #define err_str(str) debugLog(str)
 #define err_hex(num) debugLog("0x%X", num)

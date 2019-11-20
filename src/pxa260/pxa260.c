@@ -16,6 +16,10 @@
 #include "pxa260Ssp.h"
 #include "pxa260Udc.h"
 #include "pxa260Timing.h"
+#if !defined(EMU_NO_SAFETY)
+#include "../armv5te/uArm/CPU_2.h"
+#include "../armv5te/uArm/uArmGlue.h"
+#endif
 #include "../armv5te/cpu.h"
 #include "../armv5te/emu.h"
 #include "../armv5te/mem.h"
@@ -33,7 +37,9 @@
 
 #define PXA260_TIMER_TICKS_PER_FRAME (TUNGSTEN_T3_CPU_CRYSTAL_FREQUENCY / EMU_FPS)
 
-
+#if !defined(EMU_NO_SAFETY)
+ArmCpu       pxa260CpuState;
+#endif
 uint16_t*    pxa260Framebuffer;
 Pxa260pwrClk pxa260PwrClk;
 Pxa260ic     pxa260Ic;
@@ -194,12 +200,19 @@ void pxa260Reset(void){
    //set first timer event
    pxa260TimingTriggerEvent(PXA260_TIMING_CALLBACK_TICK_CPU_TIMER, TUNGSTEN_T3_CPU_PLL_FREQUENCY / TUNGSTEN_T3_CPU_CRYSTAL_FREQUENCY);
 
+#if !defined(EMU_NO_SAFETY)
+   debugLog("Using uARM CPU core!\n");
+   cpuInit(&pxa260CpuState, 0x00000000, uArmMemAccess, uArmEmulErr, uArmHypercall, uArmSetFaultAddr);
+   uArmInitCpXX(&pxa260CpuState);
+#else
    memset(&arm, 0, sizeof arm);
    arm.control = 0x00050078;
    arm.cpsr_low28 = MODE_SVC | 0xC0;
    cycle_count_delta = 0;
    cpu_events = 0;
    //cpu_events &= EVENT_DEBUG_STEP;
+#endif
+
    addr_cache_flush();//SIGSEGVs on reset without this because the MMU needs to be turned off
 
    //PC starts at 0x00000000, the first opcode for Palm OS 5 is a jump
@@ -226,8 +239,6 @@ void pxa260LoadState(uint8_t* data){
 }
 
 void pxa260Execute(bool wantVideo){
-   uint32_t index;
-
    tsc2101UpdateInterrupt();
    tps65010UpdateInterrupt();
    pxa260gpioUpdateKeyMatrix(&pxa260Gpio);
@@ -240,15 +251,27 @@ void pxa260Execute(bool wantVideo){
 }
 
 uint32_t pxa260GetRegister(uint8_t reg){
+#if !defined(EMU_NO_SAFETY)
+   return cpuGetRegExternal(&pxa260CpuState, reg);
+#else
    return reg_pc_mem(reg);
+#endif
 }
 
 uint32_t pxa260GetCpsr(void){
+#if !defined(EMU_NO_SAFETY)
+   return cpuGetRegExternal(&pxa260CpuState, ARM_REG_NUM_CPSR);
+#else
    return get_cpsr();
+#endif
 }
 
 uint32_t pxa260GetSpsr(void){
+#if !defined(EMU_NO_SAFETY)
+   return cpuGetRegExternal(&pxa260CpuState, ARM_REG_NUM_SPSR);
+#else
    return get_spsr();
+#endif
 }
 
 uint64_t pxa260ReadArbitraryMemory(uint32_t address, uint8_t size){

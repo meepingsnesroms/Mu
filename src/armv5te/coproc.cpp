@@ -109,6 +109,7 @@ void do_cp15_mcr(uint32_t insn)
             arm.fault_address = value;
             break;
         case 0x070080: /* MCR p15, 0, <Rd>, c7, c0, 4: Wait for interrupt */
+            emuprintf("Wait for interrupt, does not work with uARM core!\n");
             cycle_count_delta = 0;
             if (arm.interrupts == 0) {
                 arm.reg[15] -= 4;
@@ -141,7 +142,7 @@ void do_cp15_mcr(uint32_t insn)
             //TODO: Unknown(implmentation defined cp15 register)
             break;
         default:
-            warn("Unknown coprocessor instruction MCR %08X", insn);
+            warn("Unknown coprocessor instruction MCR %08X\n", insn);
             break;
     }
 }
@@ -163,8 +164,7 @@ void do_cp14_instruction(Instruction i)
 
     success = pxa260pwrClkPrvCoprocRegXferFunc(&pxa260PwrClk, specialInstr, (instr & 0x00100000) != 0, (instr >> 21) & 0x07, (instr >> 12) & 0x0F, (instr >> 16) & 0x0F, instr & 0x0F, (instr >> 5) & 0x07);
 
-    //fail if instr dosent actully exist
     if(!success)
-       undefined_instruction();
+       warn("Unknown coprocessor instruction MCR %08X\n", instr);
 }
 
