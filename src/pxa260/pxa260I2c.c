@@ -80,7 +80,7 @@ void pxa260I2cWriteWord(uint32_t address, uint32_t value){
          return;
 
       case ICR:
-         //TODO: this is incomplete
+         //TODO: this is incomplete, as of 11/20/2019 I dont know whats wrong here, may be fine
          //debugLog("PXA260 I2C ICR write 0x%04X, PC:0x%08X\n", value & 0xFFFF, pxa260GetPc());
 
          if(!(pxa260I2cIcr & 0x0008) && value & 0x0040){

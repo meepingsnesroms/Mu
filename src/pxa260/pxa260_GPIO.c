@@ -25,7 +25,7 @@ static void pxa260gpioOnOutputPinUpdated(Pxa260gpio* gpio, UInt8 gpioNum){
 
       case 40:
          //TSC2101 reset
-         if(pxa260gpioGetState(gpio, gpioNum) == PXA260_GPIO_LOW)
+         if(!pxa260gpioGetState(gpio, gpioNum))
             tsc2101Reset(false);
          break;
 
@@ -91,7 +91,7 @@ Boolean pxa260gpioPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boolean w
 	
 	pa = (pa - PXA260_GPIO_BASE) >> 2;
 
-   //debugLog("PXA260 GPIO access:0x%04X, write:%d, PC:0x%08X\n", pa, write, pxa260GetPc());
+   debugLog("PXA260 GPIO access:0x%04X, write:%d, PC:0x%08X\n", pa, write, pxa260GetPc());
 	
 	if(write){
 		val = *(UInt32*)buf;

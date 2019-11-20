@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "emulator.h"
+#include "pxa260/pxa260_GPIO.h"
 #include "pxa260/pxa260I2c.h"
 #include "pxa260/pxa260.h"
 
@@ -210,5 +211,14 @@ uint8_t tps65010I2cExchange(uint8_t i2cBus){
 
 void tps65010UpdateInterrupt(void){
    //TODO: implement this
-   debugLog("Unimplemented TPS65010 interrupt check\n");
+   //debugLog("Unimplemented TPS65010 interrupt check\n");
+
+   //if(???)
+   //   goto trigger;
+
+   pxa260gpioSetState(&pxa260Gpio, 14, true);
+   return;
+
+   trigger:
+   pxa260gpioSetState(&pxa260Gpio, 14, false);
 }

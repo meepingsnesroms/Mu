@@ -481,12 +481,12 @@ void tsc2101UpdateInterrupt(void){
          goto trigger;
 
    //TODO: using invaild pin reference, check against hardware
-   pxa260gpioSetState(&pxa260Gpio, 37, PXA260_GPIO_HIGH);
+   pxa260gpioSetState(&pxa260Gpio, 37, true);
    return;
 
    trigger:
    //TODO: using invaild pin reference, check against hardware
-   pxa260gpioSetState(&pxa260Gpio, 37, PXA260_GPIO_LOW);
+   pxa260gpioSetState(&pxa260Gpio, 37, false);
    return;
 }
 

@@ -39,7 +39,7 @@ static QVector<QString>  debugStrings;
 static uint64_t          debugDeletedStrings;
 static QVector<uint64_t> debugDuplicateCallCount;
 static bool              debugAbort = false;
-static QString           debugAbortString = "PCMCIA";
+static QString           debugAbortString = "";
 uint32_t                 frontendDebugStringSize;
 char*                    frontendDebugString;
 
