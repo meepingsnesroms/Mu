@@ -41,7 +41,7 @@ static bool    tps65010SelectedRegisterAlreadySet;
 
 static uint8_t tps65010ReadGpio(void){
    uint8_t direction = tps65010Registers[DEFGPIO] >> 4;
-   uint8_t inputVoltage = /*!palmSdCard.flashChipData << 2 | */!palmInput.buttonPower;//TODO: card power might be output//TODO: is power button low or high when pressed//TODO: GPIO4 BCM *UNKNOWN*
+   uint8_t inputVoltage = /*0xE | *//*!palmSdCard.flashChipData << 2 | */!palmInput.buttonPower;//TODO: card power might be output//TODO: is power button low or high when pressed//TODO: GPIO4 BCM *UNKNOWN*
 
    debugLog("TPS65010 DEFGPIO read, PC:0x%08X\n", pxa260GetPc());
 
