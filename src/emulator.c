@@ -182,6 +182,11 @@ uint32_t emulatorInit(uint8_t* palmRomData, uint32_t palmRomSize, uint8_t* palmB
       palmCycleCounter = 0.0;
       palmClockMultiplier = 1.00 - DBVZ_CPU_PERCENT_WAITING;
       sed1376Framebuffer = palmFramebuffer;
+      sed1376FramebufferWidth = 160;
+      sed1376FramebufferHeight = 160;
+      dbvzFramebuffer = palmFramebuffer;
+      dbvzFramebufferWidth = 160;
+      dbvzFramebufferHeight = 160;
 
       //initialize components
       blip_set_rates(palmAudioResampler, DBVZ_AUDIO_MAX_CLOCK_RATE, AUDIO_SAMPLE_RATE);
@@ -745,7 +750,10 @@ void emulatorRunFrame(void){
       dbvzExecute();
 
       //LCD controller
-      sed1376Render();
+      if(dbvzLcdEnabled())
+         dbvzLcdRender();
+      else
+         sed1376Render();
 
       //backlight level, 0% = 1/4 color intensity, 50% = 1/2 color intensity, 100% = full color intensity
       switch(palmMisc.backlightLevel){
@@ -792,7 +800,12 @@ void emulatorSkipFrame(void){
       dbvzExecute();
 
       //LCD controller, skip this
-      //sed1376Render();
+      /*
+      if(dbvzLcdEnabled())
+         dbvzLcdRender();
+      else
+         sed1376Render();
+      */
 #if defined(EMU_SUPPORT_PALM_OS5)
    }
 #endif

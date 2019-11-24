@@ -25,6 +25,8 @@
 
 
 uint16_t* sed1376Framebuffer;
+uint16_t  sed1376FramebufferWidth;
+uint16_t  sed1376FramebufferHeight;
 uint8_t   sed1376Ram[0x20000];
 
 static uint8_t  sed1376Registers[0xB4];
@@ -366,9 +368,9 @@ void sed1376Render(void){
          uint16_t pixelX;
          uint16_t pixelY;
 
-         MULTITHREAD_DOUBLE_LOOP(pixelX, pixelY) for(pixelY = 0; pixelY < 160; pixelY++)
-            for(pixelX = 0; pixelX < 160; pixelX++)
-               sed1376Framebuffer[pixelY * 160 + pixelX] = sed1376RenderPixel(pixelX, pixelY);
+         MULTITHREAD_DOUBLE_LOOP(pixelX, pixelY) for(pixelY = 0; pixelY < sed1376FramebufferHeight; pixelY++)
+            for(pixelX = 0; pixelX < sed1376FramebufferWidth; pixelX++)
+               sed1376Framebuffer[pixelY * sed1376FramebufferWidth + pixelX] = sed1376RenderPixel(pixelX, pixelY);
 
          //debugLog("Screen start address:0x%08X, buffer width:%d, swivel view:%d degrees\n", sed1376ScreenStartAddress, lineSize, rotation);
          //debugLog("Screen format, color:%s, BPP:%d\n", boolString(color), bitDepth);
@@ -389,14 +391,14 @@ void sed1376Render(void){
             }
             //debugLog("PIP state, start x:%d, end x:%d, start y:%d, end y:%d\n", pipStartX, pipEndX, pipStartY, pipEndY);
             //render PIP only if PIP window is onscreen
-            if(pipStartX < 160 && pipStartY < 160){
-               pipEndX = FAST_MIN(pipEndX, 160);
-               pipEndY = FAST_MIN(pipEndY, 160);
+            if(pipStartX < sed1376FramebufferWidth && pipStartY < sed1376FramebufferHeight){
+               pipEndX = FAST_MIN(pipEndX, sed1376FramebufferWidth);
+               pipEndY = FAST_MIN(pipEndY, sed1376FramebufferHeight);
                sed1376ScreenStartAddress = sed1376GetPipStartAddress();
                sed1376LineSize = (sed1376Registers[PIP_LINE_SZ_1] << 8 | sed1376Registers[PIP_LINE_SZ_0]) * 4;
                MULTITHREAD_DOUBLE_LOOP(pixelX, pixelY) for(pixelY = pipStartY; pixelY < pipEndY; pixelY++)
                   for(pixelX = pipStartX; pixelX < pipEndX; pixelX++)
-                     sed1376Framebuffer[pixelY * 160 + pixelX] = sed1376RenderPixel(pixelX, pixelY);
+                     sed1376Framebuffer[pixelY * sed1376FramebufferWidth + pixelX] = sed1376RenderPixel(pixelX, pixelY);
             }
          }
 
@@ -405,7 +407,7 @@ void sed1376Render(void){
 
          //display inversion
          if((sed1376Registers[DISP_MODE] & 0x30) == 0x10)
-            MULTITHREAD_LOOP(index) for(index = 0; index < 160 * 160; index++)
+            MULTITHREAD_LOOP(index) for(index = 0; index < sed1376FramebufferWidth * sed1376FramebufferHeight; index++)
                sed1376Framebuffer[index] = ~sed1376Framebuffer[index];
       }
       else{
@@ -414,7 +416,7 @@ void sed1376Render(void){
    }
    else{
       //black screen
-      memset(sed1376Framebuffer, 0x00, 160 * 160 * sizeof(uint16_t));
+      memset(sed1376Framebuffer, 0x00, sed1376FramebufferWidth * sed1376FramebufferHeight * sizeof(uint16_t));
       debugLog("Cant draw screen, LCD on:%s, PLL on:%s, power save on:%s, forced blank on:%s\n", palmMisc.lcdOn ? "true" : "false", dbvzIsPllOn() ? "true" : "false", sed1376PowerSaveEnabled() ? "true" : "false", !!(sed1376Registers[DISP_MODE] & 0x80) ? "true" : "false");
    }
 }

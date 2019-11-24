@@ -10,6 +10,7 @@
 #include "ads7846.h"
 #include "sdCard.h"
 #include "audio/blip_buf.h"
+#include "m68k/m68k.h"
 #include "debug/sandbox.h"
 
 
@@ -18,6 +19,9 @@
 
 dbvz_chip_t dbvzChipSelects[DBVZ_CHIP_END];
 uint8_t     dbvzReg[DBVZ_REG_SIZE];
+uint16_t*   dbvzFramebuffer;
+uint16_t    dbvzFramebufferWidth;
+uint16_t    dbvzFramebufferHeight;
 
 static bool     dbvzInterruptChanged;//reduces time wasted on checking interrupts that where updated to a new value identical to the old one, does not need to be in states
 static double   dbvzSysclksPerClk32;//how many SYSCLK cycles before toggling the 32.768 kHz crystal
@@ -53,6 +57,81 @@ static int32_t audioGetFramePercentage(void);
 
 #include "dbvzRegisterAccessors.c.h"
 #include "dbvzTiming.c.h"
+
+void dbvzLcdRender(void){
+   static const uint16_t masterColorLut[16] = {0xFFFF, 0xEEEE, 0xDDDD, 0xCCCC, 0xBBBB, 0xAAAA, 0x9999, 0x8888, 0x7777, 0x6666, 0x5555, 0x4444, 0x3333, 0x2222, 0x1111, 0x0000};//TODO: get a real LUT
+   static const uint8_t bppLut[4] = {1, 4, 16, 4/*invaild, assume most common value*/};
+   uint16_t colorLut2Bpp[4];//stores indexes to masterColorLut
+   uint32_t startAddress = registerArrayRead32(LSSA);
+   uint8_t bitsPerPixel = bppLut[registerArrayRead8(LPICF) & 0x03];
+   uint16_t pageWidth = registerArrayRead8(LVPW) * 2;//in bytes
+   bool invertColors = registerArrayRead8(LPOLCF) & 0x01;
+   uint8_t pixelShift = registerArrayRead8(LPOSR);
+   uint16_t width = FAST_MIN(registerArrayRead16(LXMAX), dbvzFramebufferWidth);
+   uint16_t height = FAST_MIN(registerArrayRead16(LYMAX), dbvzFramebufferHeight);
+   uint16_t y;
+   uint16_t x;
+
+   //TODO: cursor not implemented, not that anything will use a hardware terminal cursor on Palm OS
+
+   switch(bitsPerPixel){
+      case 1:
+         for(y = 0; y < height; y++){
+            for(x = 0; x < width / 16; x++){
+               uint16_t dataUnit = m68k_read_memory_16(startAddress + y * pageWidth + x * 2);
+               uint8_t index;
+
+               for(index = 0; index < 16; index++)
+                  if(x * 16 + index >= pixelShift)
+                     dbvzFramebuffer[y * dbvzFramebufferWidth + x * 16 + index - pixelShift] = !!(dataUnit & 1 << 16 - index) == invertColors ? masterColorLut[0] : masterColorLut[15];
+            }
+         }
+         break;
+
+      case 4:
+         colorLut2Bpp[0] = 0;
+         colorLut2Bpp[1] = registerArrayRead8(LGPMR) & 0x0F;
+         colorLut2Bpp[2] = registerArrayRead8(LGPMR) >> 4;
+         colorLut2Bpp[3] = 15;
+
+         for(y = 0; y < height; y++){
+            for(x = 0; x < width / 8; x++){
+               uint16_t dataUnit = m68k_read_memory_16(startAddress + y * pageWidth + x * 2);
+               uint8_t index;
+
+               for(index = 0; index < 8; index++)
+                  if(x * 8 + index >= pixelShift)
+                     dbvzFramebuffer[y * dbvzFramebufferWidth + x * 8 + index - pixelShift] = invertColors ? masterColorLut[15 - colorLut2Bpp[dataUnit >> 14 - index * 2 & 0x03]] : masterColorLut[colorLut2Bpp[dataUnit >> 14 - index * 2 & 0x03]];
+            }
+         }
+         break;
+
+      case 16:
+         for(y = 0; y < height; y++){
+            for(x = 0; x < width / 4; x++){
+               uint16_t dataUnit = m68k_read_memory_16(startAddress + y * pageWidth + x * 2);
+               uint8_t index;
+
+               for(index = 0; index < 4; index++)
+                  if(x * 4 + index >= pixelShift)
+                     dbvzFramebuffer[y * dbvzFramebufferWidth + x * 4 + index - pixelShift] = invertColors ? masterColorLut[15 - (dataUnit >> 12 - index * 4 & 0x0F)] : masterColorLut[dataUnit >> 12 - index * 4 & 0x0F];
+            }
+         }
+         break;
+
+      default:
+         debugLog("Invalid DBVZ LCD controller pixel depth!\n");
+         break;
+   }
+}
+
+bool dbvzLcdEnabled(void){
+   //if LSSA is set to something other than the Palm OS constant render from it instead of the SED1376
+   //the enable bit is perpously ignored because it is managed by the OS and apps may not set it
+   //return palmAllowInvalidBehavior && registerArrayRead32(LSSA) != 0xBADC0DE0;
+   //return palmAllowInvalidBehavior && registerArrayRead8(LCKCON) & 0x80;
+   return false;
+}
 
 bool dbvzIsPllOn(void){
    return !(dbvzSysclksPerClk32 < 1.0);
@@ -540,6 +619,7 @@ uint32_t dbvzGetRegister32(uint32_t address){
       case IMR:
       case RTCTIME:
       case IDR:
+      case LSSA:
          //simple read, no actions needed
          return registerArrayRead32(address);
 

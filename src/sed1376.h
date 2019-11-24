@@ -5,6 +5,8 @@
 #include <stdbool.h>
 
 extern uint16_t* sed1376Framebuffer;
+extern uint16_t  sed1376FramebufferWidth;
+extern uint16_t  sed1376FramebufferHeight;
 extern uint8_t   sed1376Ram[];
 
 void sed1376Reset(void);
