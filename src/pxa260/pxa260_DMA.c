@@ -109,11 +109,6 @@ static Boolean pxa260dmaPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boo
 
 
 void pxa260dmaInit(Pxa260dma* dma, Pxa260ic* ic){
-	
    __mem_zero(dma, sizeof(Pxa260dma));
 	dma->ic = ic;
-   //dma->mem = physMem;
-	
-   //return memRegionAdd(physMem, PXA260_DMA_BASE, PXA260_DMA_SIZE, pxa260dmaPrvMemAccessF, dma);
-   return true;
 }

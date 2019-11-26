@@ -26,6 +26,7 @@ SettingsManager::SettingsManager(QWidget* parent) :
 
    ui->fastBoot->setChecked(settings->value("fastBoot", false).toBool());
    ui->palmOsVersion->setCurrentIndex(settings->value("palmOsVersionIndex", 0).toInt());
+   ui->cpuSpeed->setValue(settings->value("cpuSpeed", 1.00).toDouble());
 
    ui->featureSyncedRtc->setChecked(settings->value("featureSyncedRtc", false).toBool());
    ui->featureDurable->setChecked(settings->value("featureDurable", false).toBool());
