@@ -772,7 +772,11 @@ void emulatorRunFrame(void){
       if(palmEmulatingM500){
          dbvzLcdRender();
 
-         //TODO: backlight level
+         if(palmMisc.backlightLevel == 100){
+            MULTITHREAD_LOOP(index) for(index = 0; index < 160 * 160; index++){
+               palmFramebuffer[index] = palmFramebuffer[index] & 0xF81F | palmFramebuffer[index] + 0x02E0 & 0x07E0;
+            }
+         }
       }
       else{
          sed1376Render();

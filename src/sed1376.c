@@ -4,6 +4,7 @@
 #include "emulator.h"
 #include "portability.h"
 #include "dbvz.h"
+#include "sed1376.h"
 #include "flx68000.h"//for flx68000GetPc()
 
 
@@ -283,7 +284,7 @@ void sed1376SetRegister(uint8_t address, uint8_t value){
       case GPIO_CONF_0:
       case GPIO_CONT_0:
          sed1376Registers[address] = value & 0x7F;
-         updateLcdStatus();
+         sed1376UpdateLcdStatus();
          return;
 
       case GPIO_CONF_1:
@@ -419,4 +420,9 @@ void sed1376Render(void){
       memset(sed1376Framebuffer, 0x00, sed1376FramebufferWidth * sed1376FramebufferHeight * sizeof(uint16_t));
       debugLog("Cant draw screen, LCD on:%s, PLL on:%s, power save on:%s, forced blank on:%s\n", palmMisc.lcdOn ? "true" : "false", dbvzIsPllOn() ? "true" : "false", sed1376PowerSaveEnabled() ? "true" : "false", !!(sed1376Registers[DISP_MODE] & 0x80) ? "true" : "false");
    }
+}
+
+void sed1376UpdateLcdStatus(void){
+   palmMisc.lcdOn = !!(sed1376Registers[GPIO_CONT_0] & sed1376Registers[GPIO_CONF_0] & 0x20);
+   palmMisc.backlightLevel = !!(sed1376Registers[GPIO_CONT_0] & sed1376Registers[GPIO_CONF_0] & 0x10) ? (50 + m515BacklightAmplifierState() * 50) : 0;
 }

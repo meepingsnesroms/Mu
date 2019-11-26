@@ -72,7 +72,6 @@ extern uint16_t    dbvzFramebufferHeight;
 
 //CPU
 void dbvzLcdRender(void);
-bool dbvzLcdEnabled(void);
 bool dbvzIsPllOn(void);
 bool m515BacklightAmplifierState(void);
 bool dbvzAreRegistersXXFFMapped(void);

@@ -989,10 +989,6 @@ static void updateSdCardChipSelectStatus(void){
    sdCardSetChipSelect(!!(getPortJValue() & 0x08));
 }
 
-static void updateBacklightAmplifierStatus(void){
-   palmMisc.backlightLevel = (palmMisc.backlightLevel > 0) ? (50 + m515BacklightAmplifierState() * 50) : 0;
-}
-
 static void updateTouchState(void){
    if(!(registerArrayRead8(PFSEL) & registerArrayRead8(PFDIR) & 0x02)){
       if((ads7846PenIrqEnabled ? !palmInput.touchscreenTouched : true) == !!(registerArrayRead16(ICR) & 0x0080))
