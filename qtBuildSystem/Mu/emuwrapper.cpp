@@ -165,28 +165,45 @@ void EmuWrapper::writeOutSaves(){
    }
 }
 
-uint32_t EmuWrapper::init(const QString& assetPath, uint8_t osVersion, bool syncRtc, bool allowInvalidBehavior, bool fastBoot){
+uint32_t EmuWrapper::init(const QString& assetPath, const QString& osVersion, bool syncRtc, bool allowInvalidBehavior, bool fastBoot){
    if(!emuRunning && !emuInited){
       //start emu
       uint32_t error;
-      QString osVersionId = osVersion == 4 ? "41" : osVersion == 5 ? "52" : QString::number((int)osVersion) + "0";
-      QString model = osVersion > 4 ? "en-t3" : "en-m515";
-      QFile romFile(assetPath + "/palmos" + osVersionId + "-" + model + ".rom");
-      QFile bootloaderFile(assetPath + "/bootloader-" + model + ".rom");
-      QFile ramFile(assetPath + "/userdata-" + model + ".ram");
-      QFile sdCardFile(assetPath + "/sd-" + model + ".img");
+      uint8_t deviceModel;
       bool hasBootloader = true;
 
-      //used to mark saves with there OS version and prevent corruption
-      emuOsName = "os" + QString::number((int)osVersion);
+      if(osVersion == "Palm m500/Palm OS 4.0")
+         emuOsName = "palmos40-en-m500";
+      else if(osVersion == "Palm m515/Palm OS 4.1")
+         emuOsName = "palmos41-en-m515";
+      else if(osVersion == "Tungsten T3/Palm OS 5.2.1")
+         emuOsName = "palmos52-en-t3";
+      else if(osVersion == "Tungsten T3/Palm OS 5.2.1")
+         emuOsName = "palmos60-en-t3";
+      else
+         return EMU_ERROR_INVALID_PARAMETER;
+
+      if(osVersion.contains("Palm m500"))
+         deviceModel = EMU_DEVICE_PALM_M500;
+      else if(osVersion.contains("Palm m515"))
+         deviceModel = EMU_DEVICE_PALM_M515;
+      else if(osVersion.contains("Tungsten T3"))
+         deviceModel = EMU_DEVICE_TUNGSTEN_T3;
+      else
+         return EMU_ERROR_INVALID_PARAMETER;
+
+      QFile romFile(assetPath + "/" + emuOsName + ".rom");
+      QFile bootloaderFile(assetPath + "/bootloader-dbvz.rom");
+      QFile ramFile(assetPath + "/userdata-" + emuOsName + ".ram");
+      QFile sdCardFile(assetPath + "/sd-" + emuOsName + ".img");
 
       if(!romFile.open(QFile::ReadOnly | QFile::ExistingOnly))
          return EMU_ERROR_INVALID_PARAMETER;
 
-      if(!bootloaderFile.open(QFile::ReadOnly | QFile::ExistingOnly))
+      if(deviceModel == EMU_DEVICE_TUNGSTEN_T3 || !bootloaderFile.open(QFile::ReadOnly | QFile::ExistingOnly))
          hasBootloader = false;
 
-      error = emulatorInit(osVersion == 4 ? EMU_DEVICE_PALM_M500 : EMU_DEVICE_TUNGSTEN_T3, (uint8_t*)romFile.readAll().data(), romFile.size(), hasBootloader ? (uint8_t*)bootloaderFile.readAll().data() : NULL, hasBootloader ? bootloaderFile.size() : 0, syncRtc, allowInvalidBehavior);
+      error = emulatorInit(deviceModel, (uint8_t*)romFile.readAll().data(), romFile.size(), hasBootloader ? (uint8_t*)bootloaderFile.readAll().data() : NULL, hasBootloader ? bootloaderFile.size() : 0, syncRtc, allowInvalidBehavior);
       if(error == EMU_ERROR_NONE){
          QTime now = QTime::currentTime();
 
@@ -204,9 +221,9 @@ uint32_t EmuWrapper::init(const QString& assetPath, uint8_t osVersion, bool sync
          }
 
          emuInput = palmInput;
-         emuRamFilePath = assetPath + "/userdata-" + model + ".ram";
-         emuSdCardFilePath = assetPath + "/sd-" + model + ".img";
-         emuSaveStatePath = assetPath + "/states-" + model + ".states";
+         emuRamFilePath = assetPath + "/userdata-" + emuOsName + ".ram";
+         emuSdCardFilePath = assetPath + "/sd-" + emuOsName + ".img";
+         emuSaveStatePath = assetPath + "/states-" + emuOsName + ".states";
 
          //make the place to store the saves
          QDir(emuSaveStatePath).mkdir(".");

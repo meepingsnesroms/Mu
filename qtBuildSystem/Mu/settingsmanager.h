@@ -49,7 +49,7 @@ private slots:
 
    void on_fastBoot_toggled(bool checked);
    void on_cpuSpeed_valueChanged(double arg1);
-   void on_palmOsVersion_valueChanged(int arg1);
+   void on_palmOsVersion_currentIndexChanged(int index);
 
 private:
    Ui::SettingsManager* ui;

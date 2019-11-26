@@ -329,7 +329,7 @@ void MainWindow::on_center_released(){
 void MainWindow::on_ctrlBtn_clicked(){
    if(!emu.isInited()){
       QString sysDir = settings->value("resourceDirectory", "").toString();
-      uint32_t error = emu.init(sysDir, settings->value("palmOsVersion", false).toInt(), settings->value("featureSyncedRtc", false).toBool(), settings->value("featureDurable", false).toBool(), settings->value("fastBoot", false).toBool());
+      uint32_t error = emu.init(sysDir, settings->value("palmOsVersionString", "Palm m515/Palm OS 4.1").toString(), settings->value("featureSyncedRtc", false).toBool(), settings->value("featureDurable", false).toBool(), settings->value("fastBoot", false).toBool());
 
       if(error == EMU_ERROR_NONE){
          emu.setCpuSpeed(settings->value("cpuSpeed", 1.00).toDouble());
@@ -337,7 +337,7 @@ void MainWindow::on_ctrlBtn_clicked(){
          ui->up->setEnabled(true);
          ui->down->setEnabled(true);
 
-         if(settings->value("palmOsVersion", false).toInt() > 4){
+         if(emu.isTungstenT3()){
             ui->left->setEnabled(true);
             ui->right->setEnabled(true);
             ui->center->setEnabled(true);
@@ -348,7 +348,7 @@ void MainWindow::on_ctrlBtn_clicked(){
          ui->todo->setEnabled(true);
          ui->notes->setEnabled(true);
 
-         if(settings->value("palmOsVersion", false).toInt() > 4)
+         if(emu.isTungstenT3())
             ui->voiceMemo->setEnabled(true);
 
          ui->power->setEnabled(true);

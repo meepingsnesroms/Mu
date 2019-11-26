@@ -25,7 +25,7 @@ SettingsManager::SettingsManager(QWidget* parent) :
    ui->showOnscreenKeys->setChecked(!settings->value("hideOnscreenKeys", false).toBool());
 
    ui->fastBoot->setChecked(settings->value("fastBoot", false).toBool());
-   ui->palmOsVersion->setValue(settings->value("palmOsVersion", false).toInt());
+   ui->palmOsVersion->setCurrentIndex(settings->value("palmOsVersionIndex", 0).toInt());
 
    ui->featureSyncedRtc->setChecked(settings->value("featureSyncedRtc", false).toBool());
    ui->featureDurable->setChecked(settings->value("featureDurable", false).toBool());
@@ -161,6 +161,7 @@ void SettingsManager::on_cpuSpeed_valueChanged(double arg1){
       emu.setCpuSpeed(arg1);
 }
 
-void SettingsManager::on_palmOsVersion_valueChanged(int arg1){
-   settings->setValue("palmOsVersion", arg1);
+void SettingsManager::on_palmOsVersion_currentIndexChanged(int index){
+   settings->setValue("palmOsVersionIndex", index);
+   settings->setValue("palmOsVersionString", ui->palmOsVersion->itemText(index));
 }

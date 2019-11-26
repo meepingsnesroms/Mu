@@ -338,13 +338,30 @@
         </widget>
        </item>
        <item>
-        <widget class="QSpinBox" name="palmOsVersion">
-         <property name="minimum">
-          <number>4</number>
+        <widget class="QComboBox" name="palmOsVersion">
+         <property name="currentIndex">
+          <number>1</number>
          </property>
-         <property name="maximum">
-          <number>6</number>
-         </property>
+         <item>
+          <property name="text">
+           <string>Palm m500/Palm OS 4.0</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Palm m515/Palm OS 4.1</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Tungsten T3/Palm OS 5.2.1</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Tungsten T3/Palm OS 6.0</string>
+          </property>
+         </item>
         </widget>
        </item>
        <item>

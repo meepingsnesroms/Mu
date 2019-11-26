@@ -38,7 +38,7 @@ windows{
         QMAKE_LFLAGS += -fopenmp
         DEFINES += EMU_MULTITHREADED EMU_MANAGE_HOST_CPU_PIPELINE
     }
-    CONFIG += cpu_x86_32 # this should be auto detected in the future
+    CONFIG += cpu_x86_32 # TODO:this should be auto detected in the future
 }
 
 macx{
@@ -54,7 +54,7 @@ linux-g++{
     QMAKE_CXXFLAGS += -fopenmp
     QMAKE_LFLAGS += -fopenmp
     DEFINES += EMU_MULTITHREADED EMU_MANAGE_HOST_CPU_PIPELINE
-    CONFIG += cpu_x86_64 # this should be auto detected in the future
+    CONFIG += cpu_x86_64 # TODO:this should be auto detected in the future
 }
 
 android{
@@ -62,17 +62,13 @@ android{
     QMAKE_CXXFLAGS += -fopenmp
     QMAKE_LFLAGS += -fopenmp
     DEFINES += EMU_MULTITHREADED EMU_MANAGE_HOST_CPU_PIPELINE
-    CONFIG += cpu_armv7 # this should be auto detected in the future
+    CONFIG += cpu_armv7 # TODO:this should be auto detected in the future
 }
 
 
 CONFIG(debug, debug|release){
     # debug build, be accurate, fail hard, and add logging
-    DEFINES += EMU_DEBUG EMU_CUSTOM_DEBUG_LOG_HANDLER EMU_SANDBOX
-    # DEFINES += EMU_SANDBOX_LOG_MEMORY_ACCESSES # checks all reads and writes to memory and logs certain events
-    # DEFINES += EMU_SANDBOX_OPCODE_LEVEL_DEBUG # for breakpoints
-    # DEFINES += EMU_SANDBOX_LOG_JUMPS # log large jumps
-    # DEFINES += EMU_SANDBOX_LOG_APIS # for printing sysTrap* calls, EMU_SANDBOX_OPCODE_LEVEL_DEBUG must be on too
+    DEFINES += EMU_DEBUG EMU_CUSTOM_DEBUG_LOG_HANDLER
     CONFIG += no_dynarec # easier to debug with
     macx|linux-g++{
         # also check for any buffer overflows and memory leaks

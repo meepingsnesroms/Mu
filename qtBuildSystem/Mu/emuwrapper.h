@@ -50,7 +50,7 @@ public:
    EmuWrapper();
    ~EmuWrapper();
 
-   uint32_t init(const QString& assetPath, uint8_t osVersion, bool syncRtc = false, bool allowInvalidBehavior = false, bool fastBoot = false);
+   uint32_t init(const QString& assetPath, const QString& osVersion, bool syncRtc = false, bool allowInvalidBehavior = false, bool fastBoot = false);
    void exit();
    void pause();
    void resume();
@@ -64,6 +64,7 @@ public:
    bool isInited() const{return emuInited;}
    bool isRunning() const{return emuRunning;}
    bool isPaused() const{return emuPaused;}
+   bool isTungstenT3() const{return palmEmulatingTungstenT3;}
    void setPenValue(float x, float y, bool touched);
    void setKeyValue(uint8_t key, bool pressed);
 
