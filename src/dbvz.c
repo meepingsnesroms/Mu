@@ -445,6 +445,9 @@ uint8_t dbvzGetRegister8(uint32_t address){
       case IVR:
       case PWMP1:
 
+      //LCD controller
+      case LPICF:
+
       //port d special functions
       case PDPOL:
       case PDIRQEN:
@@ -602,6 +605,10 @@ uint16_t dbvzGetRegister16(uint32_t address){
       case UMISC2:
       case NIPR2:
       case HMARK:
+      case LCXP:
+      case PWMR:
+      case LXMAX:
+      case LYMAX:
          //simple read, no actions needed
          return registerArrayRead16(address);
 
