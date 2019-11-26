@@ -345,7 +345,7 @@ static void updateCsdAddressLines(void){
          dbvzChipSelects[DBVZ_CHIP_DX_RAM].mask |= 0x00800000;
 
       //address line 22 is enabled
-      if((sdctrl & 0x0030) == 0x0010)
+      if(palmEmulatingM500 || (sdctrl & 0x0030) == 0x0010)
          dbvzChipSelects[DBVZ_CHIP_DX_RAM].mask |= 0x00400000;
    }
    else{

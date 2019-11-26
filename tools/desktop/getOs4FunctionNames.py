@@ -21,8 +21,7 @@ def makeString(location):
       
    return string
 
-#scan from ROM start to ROM end
-for func in idautils.Functions(0x10000000, 0x103D7C00):
+for func in idautils.Functions():
    str = makeString(idc.get_func_attr(func, FUNCATTR_END) + 1) + ('_%X' % idc.get_func_attr(func, FUNCATTR_START))
    idc.set_name(idc.get_func_attr(func, FUNCATTR_START), str, SN_NOCHECK)
    print str
