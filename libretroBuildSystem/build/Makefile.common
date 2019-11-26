@@ -10,7 +10,7 @@ INCFLAGS := -I$(LIBRETRO_COMM_DIR)/include
 ifeq ($(DEBUG), 1)
 	COREDEFINES += -DEMU_DEBUG
 else
-	EMU_NO_SAFETY = 1
+	EMU_NO_SAFETY := 1
 endif
 
 # "unix" or "win" is not specific enough, need to know the CPU arch too
