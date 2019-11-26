@@ -82,7 +82,7 @@ void dbvzLcdRender(void){
    height = FAST_MIN(height, dbvzFramebufferHeight);
 
    //TODO: cursor not implemented, not that anything will use a hardware terminal cursor on Palm OS
-   //m500 ROM I am using has the hadware feature bit for inverting color when backlight is on disabled, the backlight does not invert the colors even though HW supports it
+   //m500 ROM I am using has the hardware feature bit for inverting color when backlight is on disabled, the backlight does not invert the colors even though HW supports it
 
    switch(bitsPerPixel){
       case 1:

@@ -8,9 +8,9 @@ CHECK_ALL = $(strip $(foreach v,$(2),$(if $(findstring $(v),$(1)),$(v),)))
 INCFLAGS := -I$(LIBRETRO_COMM_DIR)/include
 
 ifeq ($(DEBUG), 1)
-	COREDEFINES += -DEMU_DEBUG -DEMU_SANDBOX
+	COREDEFINES += -DEMU_DEBUG
 else
-	COREDEFINES += -DEMU_NO_SAFETY
+	EMU_NO_SAFETY = 1
 endif
 
 # "unix" or "win" is not specific enough, need to know the CPU arch too

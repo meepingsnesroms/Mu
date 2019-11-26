@@ -1,6 +1,6 @@
 EMU_DEFINES :=
 EMU_SOURCES_C := $(EMU_PATH)/emulator.c \
-	$(EMU_PATH)/m515Bus.c \
+	$(EMU_PATH)/m5XXBus.c \
 	$(EMU_PATH)/dbvz.c \
 	$(EMU_PATH)/flx68000.c \
 	$(EMU_PATH)/sed1376.c \
@@ -14,11 +14,15 @@ EMU_SOURCES_C := $(EMU_PATH)/emulator.c \
 	$(EMU_PATH)/m68k/m68kopdm.c \
 	$(EMU_PATH)/m68k/m68kopac.c \
 	$(EMU_PATH)/m68k/m68kcpu.c
-EMU_SOURCES_CXX := 
-EMU_SOURCES_ASM := 
+EMU_SOURCES_CXX :=
+EMU_SOURCES_ASM :=
+
+ifeq ($(EMU_NO_SAFETY), 1)
+	EMU_DEFINES += -DEMU_NO_SAFETY
+endif
 
 ifeq ($(EMU_HAVE_FILE_LAUNCHER), 1)
-	EMU_SOURCES_C += $(EMU_PATH)/fileLauncher/launcher.c 
+	EMU_SOURCES_C += $(EMU_PATH)/fileLauncher/launcher.c
 endif
 
 ifeq ($(EMU_SUPPORT_PALM_OS5), 1)
@@ -40,26 +44,30 @@ ifeq ($(EMU_SUPPORT_PALM_OS5), 1)
 		$(EMU_PATH)/pxa260/pxa260Ssp.c \
 		$(EMU_PATH)/pxa260/pxa260Udc.c \
 		$(EMU_PATH)/pxa260/pxa260.c \
-		$(EMU_PATH)/armv5te/uArm/CPU_2.c \
-		$(EMU_PATH)/armv5te/uArm/icache.c \
 		$(EMU_PATH)/armv5te/emuVarPool.c \
 		$(EMU_PATH)/armv5te/mem.c \
 		$(EMU_PATH)/armv5te/mmu.c \
 		$(EMU_PATH)/tps65010.c \
 		$(EMU_PATH)/tsc2101.c \
 		$(EMU_PATH)/w86l488.c
-	EMU_SOURCES_CXX += $(EMU_PATH)/armv5te/uArm/uArmGlue.cpp \
-		$(EMU_PATH)/armv5te/arm_interpreter.cpp \
+	EMU_SOURCES_CXX += $(EMU_PATH)/armv5te/arm_interpreter.cpp \
 		$(EMU_PATH)/armv5te/thumb_interpreter.cpp \
 		$(EMU_PATH)/armv5te/cpu.cpp \
 		$(EMU_PATH)/armv5te/coproc.cpp
-      
+
+		ifneq ($(EMU_NO_SAFETY), 1)
+			EMU_SOURCES_C += 		$(EMU_PATH)/armv5te/uArm/CPU_2.c \
+				$(EMU_PATH)/armv5te/uArm/icache.c
+
+			EMU_SOURCES_CXX += $(EMU_PATH)/armv5te/uArm/uArmGlue.cpp
+		endif
+
 	ifeq ($(EMU_OS), windows)
 		EMU_SOURCES_C += $(EMU_PATH)/armv5te/os/os-win32.c
 	else ifeq ($(EMU_OS), linux)
 		EMU_SOURCES_C += $(EMU_PATH)/armv5te/os/os-linux.c
-   endif
-   
+	endif
+
 	ifeq ($(EMU_NO_DYNAREC), 1)
 		EMU_DEFINES += -DNO_TRANSLATION
 		EMU_SOURCES_C += $(EMU_PATH)/armv5te/asmcode.c
