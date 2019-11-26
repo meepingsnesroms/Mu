@@ -162,7 +162,6 @@ static void check_variables(bool booting){
    
    var.key = "palm_emu_os_version";
    if(environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value){
-      //Palm m515/Palm OS 4.1|Tungsten T3/Palm OS 5.2.1|Tungsten T3/Palm OS 6.0|Palm m500/Palm OS 4.0
       if(!strcmp(var.value, "Palm m500/Palm OS 4.0")){
          deviceModel = EMU_DEVICE_PALM_M500;
          osVersion = "palmos40-en-m500";
@@ -465,6 +464,7 @@ bool retro_load_game(const struct retro_game_info *info){
    
    //ROM
    strlcpy(romPath, systemDir, PATH_MAX_LENGTH);
+   strlcat(romPath, "/", PATH_MAX_LENGTH);
    strlcat(romPath, osVersion, PATH_MAX_LENGTH);
    strlcat(romPath, ".rom", PATH_MAX_LENGTH);
    romFile = filestream_open(romPath, RETRO_VFS_FILE_ACCESS_READ, RETRO_VFS_FILE_ACCESS_HINT_NONE);

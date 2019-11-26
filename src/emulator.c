@@ -774,7 +774,7 @@ void emulatorRunFrame(void){
 
          if(palmMisc.backlightLevel == 100){
             MULTITHREAD_LOOP(index) for(index = 0; index < 160 * 160; index++){
-               uint16_t greenChannel = (palmFramebuffer[index] & 0x07E0) + 0x00E0;
+               uint16_t greenChannel = (palmFramebuffer[index] & 0x07E0) + 0x00C0;
                palmFramebuffer[index] = palmFramebuffer[index] & 0xF81F | FAST_MIN(greenChannel, 0x07E0);
             }
          }

@@ -1,1 +1,2 @@
 T3 locks up endlessly checking TSC2101 interrupts
+Weird stuttering in RetroArch 1.8.1(possible audio desync, need to test other emus in RetroArch)
