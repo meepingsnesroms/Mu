@@ -58,32 +58,8 @@ static int32_t audioGetFramePercentage(void);
 #include "dbvzRegisterAccessors.c.h"
 #include "dbvzTiming.c.h"
 
-uint16_t rgb16From24(uint8_t r, uint8_t g, uint8_t b){
-   uint16_t color = r >> 3 << 11 & 0xF800;
-   color |= g >> 2 << 5 & 0x07E0;
-   color |= b >> 3 & 0x001F;
-   return color;
-}
-
-void rgb24From16(uint16_t color, uint8_t* r, uint8_t* g, uint8_t* b){
-   *r = (color >> 11 & 0x1F) << 3;
-   *g = (color >> 5 & 0x3F) << 2;
-   *b = (color & 0x1F) << 3;
-}
-
-uint16_t gradiantPoint(uint16_t start, uint16_t end, uint16_t range, uint16_t positon){
-   uint8_t rgbStart[3];
-   uint8_t rgbEnd[3];
-   float percent = positon / (float)range;
-
-   rgb24From16(start, &rgbStart[0], &rgbStart[1], &rgbStart[2]);
-   rgb24From16(end, &rgbEnd[0], &rgbEnd[1], &rgbEnd[2]);
-
-   return rgb16From24(rgbStart[0] * (1.0 - percent) + rgbEnd[0] * percent, rgbStart[1] * (1.0 - percent) + rgbEnd[1] * percent, rgbStart[2] * (1.0 - percent) + rgbEnd[2] * percent);
-}
-
 void dbvzLcdRender(void){
-   static /*const*/ uint16_t masterColorLut[16] = {0x746D, 0x6C0C, 0x63CB, 0x5B8A, 0x534A, 0x4AE9, 0x42A8, 0x3A67, 0x3A27, 0x31C6, 0x2985, 0x2144, 0x1904, 0x10A3, 0x0862, 0x0000};
+   static const uint16_t masterColorLut[16] = {0x746D, 0x6C0C, 0x63CB, 0x5B8A, 0x534A, 0x4AE9, 0x42A8, 0x3A67, 0x3A27, 0x31C6, 0x2985, 0x2144, 0x1904, 0x10A3, 0x0862, 0x0000};
    static const uint8_t bppLut[4] = {1, 2, 4, 0};
    uint16_t colorLut2Bpp[4];//stores indexes to masterColorLut
    uint32_t startAddress = registerArrayRead32(LSSA);
@@ -96,44 +72,6 @@ void dbvzLcdRender(void){
    uint16_t y;
    uint16_t x;
 
-   /*
-   Color out:0x746D(printed 1 times)
-   Color out:0x6C0C(printed 1 times)
-   Color out:0x63CB(printed 1 times)
-   Color out:0x5B8A(printed 1 times)
-   Color out:0x534A(printed 1 times)
-   Color out:0x4AE9(printed 1 times)
-   Color out:0x42A8(printed 1 times)
-   Color out:0x3A67(printed 1 times)
-   Color out:0x3A27(printed 1 times)
-   Color out:0x31C6(printed 1 times)
-   Color out:0x2985(printed 1 times)
-   Color out:0x2144(printed 1 times)
-   Color out:0x1904(printed 1 times)
-   Color out:0x10A3(printed 1 times)
-   Color out:0x0862(printed 1 times)
-   Color out:0x0021(printed 1 times)
-    */
-/*
-   //debugLog("Color out:0x%04X\n", gradiantPoint(0x2222, 0xFFFF, 100, 40));
-   //0x2222 <-> 0x0000
-   for(x = 0; x < 16; x++){
-      uint8_t rgb[3];
-      //masterColorLut[x] = gradiantPoint(gradiantPoint(0x2222, 0xFFFF, 100, 30), 0x0000, 15, x);//good!
-      //masterColorLut[x] = gradiantPoint(0x746D, 0x0000, 15, x);
-      rgb24From16(0x746D, &rgb[0], &rgb[1], &rgb[2]);
-      masterColorLut[x] = rgb16From24(rgb[0] - (rgb[0] / 15) * x, rgb[1] - (rgb[1] / 15) * x, rgb[2] - (rgb[2] / 15) * x);
-      debugLog("Color out:0x%04X\n", masterColorLut[x]);
-   }
-
-   for(y = 0; y < 160; y++){
-      for(x = 0; x < 160; x++){
-         dbvzFramebuffer[y * dbvzFramebufferWidth + x] = masterColorLut[y / 10];
-      }
-   }
-   return;
-   //*/
-
    //dont render if LCD controller is disabled
    if(!(registerArrayRead8(LCKCON) & 0x80)){
       memset(dbvzFramebuffer, 0x00, dbvzFramebufferWidth * dbvzFramebufferHeight * sizeof(uint16_t));
@@ -144,8 +82,6 @@ void dbvzLcdRender(void){
    height = FAST_MIN(height, dbvzFramebufferHeight);
 
    //TODO: cursor not implemented, not that anything will use a hardware terminal cursor on Palm OS
-   //TODO: contrast not implemented
-   //TODO: invalid palette
 
    switch(bitsPerPixel){
       case 1:
