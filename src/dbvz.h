@@ -77,8 +77,8 @@ bool m515BacklightAmplifierState(void);
 bool dbvzAreRegistersXXFFMapped(void);
 bool sed1376ClockConnected(void);
 void ads7846OverridePenState(bool value);
-void m515RefreshTouchState(void);//just refreshes the touchscreen
-void m515RefreshInputState(void);//refreshes touchscreen, buttons and docked status
+void m5XXRefreshTouchState(void);//just refreshes the touchscreen
+void m5XXRefreshInputState(void);//refreshes touchscreen, buttons and docked status
 //int32_t interruptAcknowledge(int32_t intLevel);//this is in m68kexternal.h
 
 //memory errors

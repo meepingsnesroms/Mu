@@ -170,13 +170,13 @@ void ads7846OverridePenState(bool value){
    }
 }
 
-void m515RefreshTouchState(void){
+void m5XXRefreshTouchState(void){
    //called when ads7846PenIrqEnabled is changed
    updateTouchState();
    checkInterrupts();
 }
 
-void m515RefreshInputState(void){
+void m5XXRefreshInputState(void){
    //update power button LED state incase palmMisc.batteryCharging changed
    updatePowerButtonLedStatus();
 
@@ -1662,7 +1662,7 @@ void dbvzExecute(void){
    uint32_t samples;
 
    //I/O
-   m515RefreshInputState();
+   m5XXRefreshInputState();
 
    //CPU
    dbvzFrameClk32s = 0;

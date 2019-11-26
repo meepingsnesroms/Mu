@@ -69,7 +69,6 @@ android{
 CONFIG(debug, debug|release){
     # debug build, be accurate, fail hard, and add logging
     DEFINES += EMU_DEBUG EMU_CUSTOM_DEBUG_LOG_HANDLER
-    CONFIG += no_dynarec # easier to debug with
     macx|linux-g++{
         # also check for any buffer overflows and memory leaks
         # -fsanitize=undefined,leak
@@ -79,6 +78,10 @@ CONFIG(debug, debug|release){
     }
 }else{
     # release build, go fast
+    CONFIG += EMU_NO_SAFETY
+}
+
+EMU_NO_SAFETY{
     DEFINES += EMU_NO_SAFETY
 }
 
@@ -86,7 +89,7 @@ support_palm_os5{
     DEFINES += EMU_SUPPORT_PALM_OS5 # the Qt build will not be supporting anything too slow to run OS 5
     DEFINES += SUPPORT_LINUX # forces the dynarec to use accurate mode and disable Nspire OS hacks
 
-    !no_dynarec{
+    EMU_NO_SAFETY{
         # Windows is only supported in 32 bit mode right now(this is a limitation of the dynarec)
         # iOS needs IS_IOS_BUILD set, but the Qt port does not support iOS currently
 
@@ -122,7 +125,10 @@ support_palm_os5{
     else{
         # use platform independant C with no dynarec
         SOURCES += \
-            ../../src/armv5te/asmcode.c
+            ../../src/armv5te/asmcode.c \
+            ../../src/armv5te/uArm/CPU_2.c \
+            ../../src/armv5te/uArm/icache.c \
+            ../../src/armv5te/uArm/uArmGlue.cpp
         DEFINES += NO_TRANSLATION
     }
 
@@ -152,9 +158,6 @@ support_palm_os5{
         ../../src/pxa260/pxa260Ssp.c \
         ../../src/pxa260/pxa260Udc.c \
         ../../src/pxa260/pxa260.c \
-        ../../src/armv5te/uArm/CPU_2.c \
-        ../../src/armv5te/uArm/icache.c \
-        ../../src/armv5te/uArm/uArmGlue.cpp \
         ../../src/armv5te/arm_interpreter.cpp \
         ../../src/armv5te/cpu.cpp \
         ../../src/armv5te/coproc.cpp \
