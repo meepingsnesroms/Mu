@@ -8,7 +8,6 @@ EMU_SOURCES_C := $(EMU_PATH)/emulator.c \
 	$(EMU_PATH)/pdiUsbD12.c \
 	$(EMU_PATH)/sdCard.c \
 	$(EMU_PATH)/silkscreen.c \
-	$(EMU_PATH)/debug/sandbox.c \
 	$(EMU_PATH)/audio/blip_buf.c \
 	$(EMU_PATH)/m68k/m68kops.c \
 	$(EMU_PATH)/m68k/m68kopnz.c \

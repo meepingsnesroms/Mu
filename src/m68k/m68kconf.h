@@ -133,12 +133,8 @@
 /* If ON, CPU will call the instruction hook callback before every
  * instruction.
  */
-#if defined(EMU_DEBUG) && defined(EMU_SANDBOX) && defined(EMU_SANDBOX_OPCODE_LEVEL_DEBUG)
-#define M68K_INSTRUCTION_HOOK       OPT_SPECIFY_HANDLER
-#else
 #define M68K_INSTRUCTION_HOOK       OPT_OFF
-#endif
-#define M68K_INSTRUCTION_CALLBACK() sandboxOnOpcodeRun()
+#define M68K_INSTRUCTION_CALLBACK() on_opcode_run()
 
 
 /* If ON, the CPU will emulate the 4-byte prefetch queue of a real 68000.

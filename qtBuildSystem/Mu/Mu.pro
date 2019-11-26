@@ -221,7 +221,6 @@ SOURCES += \
     ../../src/ads7846.c \
     ../../src/audio/blip_buf.c \
     ../../src/dbvz.c \
-    ../../src/debug/sandbox.c \
     ../../src/emulator.c \
     ../../src/fileLauncher/launcher.c \
     ../../src/flx68000.c \
@@ -251,9 +250,6 @@ HEADERS += \
     ../../src/dbvzRegisterAccessors.c.h \
     ../../src/dbvzRegisterNames.c.h \
     ../../src/dbvzTiming.c.h \
-    ../../src/debug/sandbox.h \
-    ../../src/debug/sandboxTrapNumToName.c.h \
-    ../../src/debug/trapNames.h \
     ../../src/emulator.h \
     ../../src/fileLauncher/launcher.h \
     ../../src/flx68000.h \
