@@ -1,7 +1,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "m515Bus.h"
+#include "m5XXBus.h"
 #include "emulator.h"
 #include "dbvz.h"
 #include "portability.h"
@@ -382,7 +382,7 @@ static uint8_t getProperBankType(uint32_t bank){
       return DBVZ_CHIP_A0_ROM;
    else if(dbvzChipSelects[DBVZ_CHIP_DX_RAM].enable && DBVZ_BANK_IN_RANGE(bank, dbvzChipSelects[DBVZ_CHIP_DX_RAM].start, dbvzChipSelects[DBVZ_CHIP_DX_RAM].lineSize * 2))
       return DBVZ_CHIP_DX_RAM;
-   else if(dbvzChipSelects[DBVZ_CHIP_B0_SED].enable && DBVZ_BANK_IN_RANGE(bank, dbvzChipSelects[DBVZ_CHIP_B0_SED].start, dbvzChipSelects[DBVZ_CHIP_B0_SED].lineSize) && sed1376ClockConnected())
+   else if(!palmEmulatingM500 && dbvzChipSelects[DBVZ_CHIP_B0_SED].enable && DBVZ_BANK_IN_RANGE(bank, dbvzChipSelects[DBVZ_CHIP_B0_SED].start, dbvzChipSelects[DBVZ_CHIP_B0_SED].lineSize) && sed1376ClockConnected())
       return DBVZ_CHIP_B0_SED;
    else if(dbvzChipSelects[DBVZ_CHIP_A1_USB].enable && DBVZ_BANK_IN_RANGE(bank, dbvzChipSelects[DBVZ_CHIP_A1_USB].start, dbvzChipSelects[DBVZ_CHIP_A1_USB].lineSize))
       return DBVZ_CHIP_A1_USB;
@@ -409,7 +409,7 @@ void dbvzSetRegisterFFFFAccessMode(void){
 }
 
 void m515SetSed1376Attached(bool attached){
-   if(dbvzChipSelects[DBVZ_CHIP_B0_SED].enable && dbvzBankType[DBVZ_START_BANK(dbvzChipSelects[DBVZ_CHIP_B0_SED].start)] != (attached ? DBVZ_CHIP_B0_SED : DBVZ_CHIP_NONE))
+   if(!palmEmulatingM500 && dbvzChipSelects[DBVZ_CHIP_B0_SED].enable && dbvzBankType[DBVZ_START_BANK(dbvzChipSelects[DBVZ_CHIP_B0_SED].start)] != (attached ? DBVZ_CHIP_B0_SED : DBVZ_CHIP_NONE))
       memset(&dbvzBankType[DBVZ_START_BANK(dbvzChipSelects[DBVZ_CHIP_B0_SED].start)], attached ? DBVZ_CHIP_B0_SED : DBVZ_CHIP_NONE, DBVZ_END_BANK(dbvzChipSelects[DBVZ_CHIP_B0_SED].start, dbvzChipSelects[DBVZ_CHIP_B0_SED].lineSize) - DBVZ_START_BANK(dbvzChipSelects[DBVZ_CHIP_B0_SED].start) + 1);
 }
 

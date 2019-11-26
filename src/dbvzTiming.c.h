@@ -169,35 +169,35 @@ static void rtiInterruptClk32(void){
    //this function is part of endClk32();
    uint16_t triggeredRtiInterrupts = 0x0000;
 
-   if(clk32Counter % (M515_CRYSTAL_FREQUENCY / 512) == 0){
+   if(clk32Counter % (M5XX_CRYSTAL_FREQUENCY / 512) == 0){
       //RIS7 - 512HZ
       triggeredRtiInterrupts |= 0x8000;
    }
-   if(clk32Counter % (M515_CRYSTAL_FREQUENCY / 256) == 0){
+   if(clk32Counter % (M5XX_CRYSTAL_FREQUENCY / 256) == 0){
       //RIS6 - 256HZ
       triggeredRtiInterrupts |= 0x4000;
    }
-   if(clk32Counter % (M515_CRYSTAL_FREQUENCY / 128) == 0){
+   if(clk32Counter % (M5XX_CRYSTAL_FREQUENCY / 128) == 0){
       //RIS5 - 128HZ
       triggeredRtiInterrupts |= 0x2000;
    }
-   if(clk32Counter % (M515_CRYSTAL_FREQUENCY / 64) == 0){
+   if(clk32Counter % (M5XX_CRYSTAL_FREQUENCY / 64) == 0){
       //RIS4 - 64HZ
       triggeredRtiInterrupts |= 0x1000;
    }
-   if(clk32Counter % (M515_CRYSTAL_FREQUENCY / 32) == 0){
+   if(clk32Counter % (M5XX_CRYSTAL_FREQUENCY / 32) == 0){
       //RIS3 - 32HZ
       triggeredRtiInterrupts |= 0x0800;
    }
-   if(clk32Counter % (M515_CRYSTAL_FREQUENCY / 16) == 0){
+   if(clk32Counter % (M5XX_CRYSTAL_FREQUENCY / 16) == 0){
       //RIS2 - 16HZ
       triggeredRtiInterrupts |= 0x0400;
    }
-   if(clk32Counter % (M515_CRYSTAL_FREQUENCY / 8) == 0){
+   if(clk32Counter % (M5XX_CRYSTAL_FREQUENCY / 8) == 0){
       //RIS1 - 8HZ
       triggeredRtiInterrupts |= 0x0200;
    }
-   if(clk32Counter % (M515_CRYSTAL_FREQUENCY / 4) == 0){
+   if(clk32Counter % (M5XX_CRYSTAL_FREQUENCY / 4) == 0){
       //RIS0 - 4HZ
       triggeredRtiInterrupts |= 0x0100;
    }
@@ -363,7 +363,7 @@ static void dbvzBeginClk32(void){
 
 static void dbvzEndClk32(void){
    //second position counter
-   if(clk32Counter >= M515_CRYSTAL_FREQUENCY - 1){
+   if(clk32Counter >= M5XX_CRYSTAL_FREQUENCY - 1){
       clk32Counter = 0;
       rtcAddSecondClk32();
    }
@@ -417,11 +417,11 @@ static void dbvzAddSysclks(double count){
 }
 
 static int32_t audioGetFramePercentIncrementFromClk32s(int32_t count){
-   return (double)count / ((double)M515_CRYSTAL_FREQUENCY / EMU_FPS) * DBVZ_AUDIO_END_OF_FRAME;
+   return (double)count / ((double)M5XX_CRYSTAL_FREQUENCY / EMU_FPS) * DBVZ_AUDIO_END_OF_FRAME;
 }
 
 static int32_t audioGetFramePercentIncrementFromSysclks(double count){
-   return count / (dbvzSysclksPerClk32 * ((double)M515_CRYSTAL_FREQUENCY / EMU_FPS)) * DBVZ_AUDIO_END_OF_FRAME;
+   return count / (dbvzSysclksPerClk32 * ((double)M5XX_CRYSTAL_FREQUENCY / EMU_FPS)) * DBVZ_AUDIO_END_OF_FRAME;
 }
 
 static int32_t audioGetFramePercentage(void){

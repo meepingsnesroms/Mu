@@ -4,7 +4,7 @@
 
 #include "dbvz.h"
 #include "emulator.h"
-#include "m515Bus.h"
+#include "m5XXBus.h"
 #include "portability.h"
 #include "flx68000.h"
 #include "ads7846.h"
@@ -60,19 +60,30 @@ static int32_t audioGetFramePercentage(void);
 
 void dbvzLcdRender(void){
    static const uint16_t masterColorLut[16] = {0xFFFF, 0xEEEE, 0xDDDD, 0xCCCC, 0xBBBB, 0xAAAA, 0x9999, 0x8888, 0x7777, 0x6666, 0x5555, 0x4444, 0x3333, 0x2222, 0x1111, 0x0000};//TODO: get a real LUT
-   static const uint8_t bppLut[4] = {1, 4, 16, 4/*invaild, assume most common value*/};
+   static const uint8_t bppLut[4] = {1, 2, 4, 0};
    uint16_t colorLut2Bpp[4];//stores indexes to masterColorLut
    uint32_t startAddress = registerArrayRead32(LSSA);
    uint8_t bitsPerPixel = bppLut[registerArrayRead8(LPICF) & 0x03];
    uint16_t pageWidth = registerArrayRead8(LVPW) * 2;//in bytes
    bool invertColors = registerArrayRead8(LPOLCF) & 0x01;
    uint8_t pixelShift = registerArrayRead8(LPOSR);
-   uint16_t width = FAST_MIN(registerArrayRead16(LXMAX), dbvzFramebufferWidth);
-   uint16_t height = FAST_MIN(registerArrayRead16(LYMAX), dbvzFramebufferHeight);
+   uint16_t width = registerArrayRead16(LXMAX);
+   uint16_t height = registerArrayRead16(LYMAX) + 1;
    uint16_t y;
    uint16_t x;
 
+   //dont render if LCD controller is disabled
+   if(!(registerArrayRead8(LCKCON) & 0x80)){
+      memset(dbvzFramebuffer, 0x00, dbvzFramebufferWidth * dbvzFramebufferHeight * sizeof(uint16_t));
+      return;
+   }
+
+   width = FAST_MIN(width, dbvzFramebufferWidth);
+   height = FAST_MIN(height, dbvzFramebufferHeight);
+
    //TODO: cursor not implemented, not that anything will use a hardware terminal cursor on Palm OS
+   //TODO: contrast not implemented
+   //TODO: invalid palette
 
    switch(bitsPerPixel){
       case 1:
@@ -83,12 +94,12 @@ void dbvzLcdRender(void){
 
                for(index = 0; index < 16; index++)
                   if(x * 16 + index >= pixelShift)
-                     dbvzFramebuffer[y * dbvzFramebufferWidth + x * 16 + index - pixelShift] = !!(dataUnit & 1 << 16 - index) == invertColors ? masterColorLut[0] : masterColorLut[15];
+                     dbvzFramebuffer[y * dbvzFramebufferWidth + x * 16 + index - pixelShift] = !!(dataUnit & 1 << 15 - index) == invertColors ? masterColorLut[0] : masterColorLut[15];
             }
          }
          break;
 
-      case 4:
+      case 2:
          colorLut2Bpp[0] = 0;
          colorLut2Bpp[1] = registerArrayRead8(LGPMR) & 0x0F;
          colorLut2Bpp[2] = registerArrayRead8(LGPMR) >> 4;
@@ -106,7 +117,7 @@ void dbvzLcdRender(void){
          }
          break;
 
-      case 16:
+      case 4:
          for(y = 0; y < height; y++){
             for(x = 0; x < width / 4; x++){
                uint16_t dataUnit = m68k_read_memory_16(startAddress + y * pageWidth + x * 2);
@@ -120,7 +131,7 @@ void dbvzLcdRender(void){
          break;
 
       default:
-         debugLog("Invalid DBVZ LCD controller pixel depth!\n");
+         debugLog("Invalid DBVZ LCD controller pixel depth %d!\n", bitsPerPixel);
          break;
    }
 }
@@ -130,7 +141,9 @@ bool dbvzLcdEnabled(void){
    //the enable bit is perpously ignored because it is managed by the OS and apps may not set it
    //return palmAllowInvalidBehavior && registerArrayRead32(LSSA) != 0xBADC0DE0;
    //return palmAllowInvalidBehavior && registerArrayRead8(LCKCON) & 0x80;
-   return false;
+   //return false;
+   //return true;
+   return registerArrayRead8(LCKCON) & 0x80;
 }
 
 bool dbvzIsPllOn(void){
@@ -689,6 +702,16 @@ void dbvzSetRegister8(uint32_t address, uint8_t value){
          registerArrayWrite8(address, value & 0xF8);
          return;
 
+      case LPICF:
+      case LPOLCF:
+      case LPOSR:
+         registerArrayWrite8(address, value & 0x0F);
+         return;
+
+      case LPXCD:
+         registerArrayWrite8(LPXCD, value & 0x3F);
+         return;
+
       case PBSEL:
       case PBDIR:
       case PBDATA:
@@ -799,8 +822,12 @@ void dbvzSetRegister8(uint32_t address, uint8_t value){
       case PEDATA:
       case PFDATA:
 
-      //dragonball LCD controller, not attached to anything in Palm m515
+      //dragonball LCD controller
+      case LVPW:
       case LCKCON:
+      case LBLKC:
+      case LACDRC:
+      case LGPMR:
          //simple write, no actions needed
          registerArrayWrite8(address, value);
          return;
@@ -1132,6 +1159,34 @@ void dbvzSetRegister16(uint32_t address, uint16_t value){
          registerArrayWrite16(NIPR1, value & 0x87FF);
          return;
 
+      case LXMAX:
+         registerArrayWrite16(LXMAX, value & 0x03F0);
+         return;
+
+      case LYMAX:
+         registerArrayWrite16(LYMAX, value & 0x01FF);
+         return;
+
+      case LCXP:
+         registerArrayWrite16(LCXP, value & 0xC3FF);
+         return;
+
+      case LCYP:
+         registerArrayWrite16(LCYP, value & 0x01FF);
+         return;
+
+      case LCWCH:
+         registerArrayWrite16(LCWCH, value & 0x1F1F);
+         return;
+
+      case LRRA:
+         registerArrayWrite16(LRRA, value & 0x03FF);
+         return;
+
+      case PWMR:
+         registerArrayWrite16(PWMR, value & 0x07FF);
+         return;
+
       case SPISPC:
       case TCMP1:
       case TCMP2:
@@ -1186,8 +1241,7 @@ void dbvzSetRegister32(uint32_t address, uint32_t value){
          return;
 
       case LSSA:
-         //simple write, no actions needed
-         registerArrayWrite32(address, value);
+         registerArrayWrite32(address, value & 0xFFFFFFFE);
          return;
 
       default:
@@ -1499,8 +1553,6 @@ void dbvzSaveState(uint8_t* data){
    offset += sizeof(uint8_t);
    writeStateValue8(data + offset, pwm1WritePosition);
    offset += sizeof(uint8_t);
-
-   //debugLog("save offset is:%d\n", offset);
 }
 
 void dbvzLoadState(uint8_t* data){
@@ -1601,8 +1653,6 @@ void dbvzLoadState(uint8_t* data){
 
    //UART2, cant load state while syncing
    uart2RxFifoFlush();
-
-   //debugLog("load offset is:%d\n", offset);
 }
 
 void dbvzLoadStateFinished(void){
@@ -1617,7 +1667,7 @@ void dbvzExecute(void){
 
    //CPU
    dbvzFrameClk32s = 0;
-   for(; palmCycleCounter < (double)M515_CRYSTAL_FREQUENCY / EMU_FPS; palmCycleCounter += 1.0){
+   for(; palmCycleCounter < (double)M5XX_CRYSTAL_FREQUENCY / EMU_FPS; palmCycleCounter += 1.0){
       uint8_t cpuTimeSegments;
 
       dbvzBeginClk32();
@@ -1643,7 +1693,7 @@ void dbvzExecute(void){
       dbvzEndClk32();
       dbvzFrameClk32s++;
    }
-   palmCycleCounter -= (double)M515_CRYSTAL_FREQUENCY / EMU_FPS;
+   palmCycleCounter -= (double)M5XX_CRYSTAL_FREQUENCY / EMU_FPS;
 
    //audio
    blip_end_frame(palmAudioResampler, blip_clocks_needed(palmAudioResampler, AUDIO_SAMPLES_PER_FRAME));

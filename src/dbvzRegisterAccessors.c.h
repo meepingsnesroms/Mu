@@ -341,7 +341,7 @@ static void updateCsdAddressLines(void){
       dbvzChipSelects[DBVZ_CHIP_DX_RAM].mask = 0x003FFFFF;
 
       //address line 23 is enabled
-      if((sdctrl & 0x000C) == 0x0008)
+      if(!palmEmulatingM500 && (sdctrl & 0x000C) == 0x0008)
          dbvzChipSelects[DBVZ_CHIP_DX_RAM].mask |= 0x00800000;
 
       //address line 22 is enabled
@@ -571,7 +571,7 @@ static void updateUart1PortState(void){
       properties.oddParity = !!(ustcnt1 & 0x0400);
       properties.stopBits = !!(ustcnt1 & 0x0200) ? 2 : 1;
       properties.use8BitMode = !!(ustcnt1 & 0x0100);
-      properties.baudRate = (baudSrc ? EMU_SERIAL_USE_EXTERNAL_CLOCK_SOURCE : sysclksPerClk32() * M515_CRYSTAL_FREQUENCY) / prescaler / divider;
+      properties.baudRate = (baudSrc ? EMU_SERIAL_USE_EXTERNAL_CLOCK_SOURCE : sysclksPerClk32() * M5XX_CRYSTAL_FREQUENCY) / prescaler / divider;
 
       palmIrSetPortProperties(&properties);
    }
@@ -649,7 +649,7 @@ static void updateUart2PortState(void){
       properties.oddParity = !!(ustcnt2 & 0x0400);
       properties.stopBits = !!(ustcnt2 & 0x0200) ? 2 : 1;
       properties.use8BitMode = !!(ustcnt2 & 0x0100);
-      properties.baudRate = (baudSrc ? EMU_SERIAL_USE_EXTERNAL_CLOCK_SOURCE : sysclksPerClk32() * M515_CRYSTAL_FREQUENCY) / prescaler / divider;
+      properties.baudRate = (baudSrc ? EMU_SERIAL_USE_EXTERNAL_CLOCK_SOURCE : sysclksPerClk32() * M5XX_CRYSTAL_FREQUENCY) / prescaler / divider;
 
       palmSerialSetPortProperties(&properties);
    }

@@ -187,7 +187,7 @@ uint32_t EmuWrapper::init(const QString& assetPath, uint8_t osVersion, bool sync
       if(!bootloaderFile.open(QFile::ReadOnly | QFile::ExistingOnly))
          hasBootloader = false;
 
-      error = emulatorInit((uint8_t*)romFile.readAll().data(), romFile.size(), hasBootloader ? (uint8_t*)bootloaderFile.readAll().data() : NULL, hasBootloader ? bootloaderFile.size() : 0, syncRtc, allowInvalidBehavior);
+      error = emulatorInit(osVersion == 4 ? EMU_DEVICE_PALM_M500 : EMU_DEVICE_TUNGSTEN_T3, (uint8_t*)romFile.readAll().data(), romFile.size(), hasBootloader ? (uint8_t*)bootloaderFile.readAll().data() : NULL, hasBootloader ? bootloaderFile.size() : 0, syncRtc, allowInvalidBehavior);
       if(error == EMU_ERROR_NONE){
          QTime now = QTime::currentTime();
 

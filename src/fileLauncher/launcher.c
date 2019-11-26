@@ -34,7 +34,7 @@ typedef struct{
 bool launcherSaveSdCardImage;
 
 
-static uint32_t launcherM515GetStackFrameSize(const char* prototype){
+static uint32_t launcherM5XXGetStackFrameSize(const char* prototype){
    const char* params = prototype + 2;
    uint32_t size = 0;
 
@@ -62,14 +62,14 @@ static uint32_t launcherM515GetStackFrameSize(const char* prototype){
    return size;
 }
 
-static uint32_t launcherM515CallGuestFunction(uint32_t address, uint16_t trap, const char* prototype, uint32_t* argData){
+static uint32_t launcherM5XXCallGuestFunction(uint32_t address, uint16_t trap, const char* prototype, uint32_t* argData){
    //prototype is a Java style function signature describing values passed and returned "v(wllp)"
    //is return void and pass a uint16_t(word), 2 uint32_t(long) and 1 pointer
    //valid types are b(yte), w(ord), l(ong), p(ointer) and v(oid)
    const char* params = prototype + 2;
    uint32_t argIndex = 0;
    uint32_t stackFrameStart = m68k_get_reg(NULL, M68K_REG_SP);
-   uint32_t newStackFrameSize = launcherM515GetStackFrameSize(prototype);
+   uint32_t newStackFrameSize = launcherM5XXGetStackFrameSize(prototype);
    uint32_t stackWriteAddr = stackFrameStart - newStackFrameSize;
    uint32_t oldStopped = m68ki_cpu.stopped;
    uint32_t functionReturn = 0x00000000;
@@ -154,7 +154,7 @@ static uint32_t launcherM515CallGuestFunction(uint32_t address, uint16_t trap, c
    return functionReturn;
 }
 
-static uint32_t launcherInstallAppM515(uint8_t* data, uint32_t size){
+static uint32_t launcherInstallAppM5XX(uint8_t* data, uint32_t size){
    /*
    #define memNewChunkFlagNonMovable    0x0200
    #define memNewChunkFlagAllowLarge    0x1000  // this is not in the sdk *g*
@@ -169,7 +169,7 @@ static uint32_t launcherInstallAppM515(uint8_t* data, uint32_t size){
    memChunkNewArgs[0] = 1/*heapID, storage RAM*/;
    memChunkNewArgs[1] = size;
    memChunkNewArgs[2] = 0x1200/*attr, seems to work without memOwnerID*/;
-   palmSideResourceData = launcherM515CallGuestFunction(0x00000000, MemChunkNew, "p(wlw)", memChunkNewArgs);
+   palmSideResourceData = launcherM5XXCallGuestFunction(0x00000000, MemChunkNew, "p(wlw)", memChunkNewArgs);
 
    //buffer not allocated
    if(!palmSideResourceData)
@@ -179,8 +179,8 @@ static uint32_t launcherInstallAppM515(uint8_t* data, uint32_t size){
    MULTITHREAD_LOOP(count) for(count = 0; count < size; count++)
       m68k_write_memory_8(palmSideResourceData + count, data[count]);
    dbvzChipSelects[DBVZ_CHIP_DX_RAM].readOnlyForProtectedMemory = storageRamReadOnly;//restore old protection state
-   error = launcherM515CallGuestFunction(0x00000000, DmCreateDatabaseFromImage, "w(p)", &palmSideResourceData);//Err DmCreateDatabaseFromImage(MemPtr bufferP);//this looks best
-   launcherM515CallGuestFunction(0x00000000, MemChunkFree, "w(p)", &palmSideResourceData);
+   error = launcherM5XXCallGuestFunction(0x00000000, DmCreateDatabaseFromImage, "w(p)", &palmSideResourceData);//Err DmCreateDatabaseFromImage(MemPtr bufferP);//this looks best
+   launcherM5XXCallGuestFunction(0x00000000, MemChunkFree, "w(p)", &palmSideResourceData);
 
    //didnt install
    if(error != 0)
@@ -196,7 +196,7 @@ static uint32_t launcherInstallAppTungstenT3(uint8_t* data, uint32_t size){
 }
 #endif
 
-static uint32_t launcherLaunchAppM515(uint32_t appCode){
+static uint32_t launcherLaunchAppM5XX(uint32_t appCode){
    //Err SysUIAppSwitch(UInt16 cardNo, LocalID dbID, UInt16 cmd, MemPtr cmdPBP);
    //Err DmGetNextDatabaseByTypeCreator(Boolean newSearch, DmSearchStatePtr stateInfoP, UInt32 type, UInt32 creator, Boolean onlyLatestVers, UInt16 *cardNoP, LocalID *dbIDP);
    uint32_t args[7];
@@ -204,7 +204,7 @@ static uint32_t launcherLaunchAppM515(uint32_t appCode){
    uint16_t error;
 
    args[0] = 8 * sizeof(uint32_t) + sizeof(uint16_t) + 4;
-   returnBuffer = launcherM515CallGuestFunction(0x00000000, MemPtrNew, "p(l)", args);
+   returnBuffer = launcherM5XXCallGuestFunction(0x00000000, MemPtrNew, "p(l)", args);
    if(!returnBuffer)
       return EMU_ERROR_OUT_OF_MEMORY;
 
@@ -215,7 +215,7 @@ static uint32_t launcherLaunchAppM515(uint32_t appCode){
    args[4] = false;
    args[5] = returnBuffer + 8 * sizeof(uint32_t);
    args[6] = returnBuffer + 8 * sizeof(uint32_t) + sizeof(uint16_t);
-   error = launcherM515CallGuestFunction(0x00000000, DmGetNextDatabaseByTypeCreator, "w(bpllbpp)", args);
+   error = launcherM5XXCallGuestFunction(0x00000000, DmGetNextDatabaseByTypeCreator, "w(bpllbpp)", args);
    if(error != 0)
       return EMU_ERROR_UNKNOWN;
 
@@ -223,11 +223,11 @@ static uint32_t launcherLaunchAppM515(uint32_t appCode){
    args[1] = m68k_read_memory_32(returnBuffer + 8 * sizeof(uint32_t) + sizeof(uint16_t));//the LocalID
    args[2] = 0;//sysAppLaunchCmdNormalLaunch
    args[3] = 0;//NULL
-   error = launcherM515CallGuestFunction(0x00000000, SysUIAppSwitch, "w(wlwp)", args);
+   error = launcherM5XXCallGuestFunction(0x00000000, SysUIAppSwitch, "w(wlwp)", args);
 
    //needs to be freed even if launch fails
    args[0] = returnBuffer;
-   launcherM515CallGuestFunction(0x00000000, MemChunkFree, "w(p)", args);
+   launcherM5XXCallGuestFunction(0x00000000, MemChunkFree, "w(p)", args);
 
    if(error != 0)
       return EMU_ERROR_UNKNOWN;
@@ -242,7 +242,7 @@ static uint32_t launcherLaunchAppTungstenT3(uint32_t appCode){
 }
 #endif
 
-static void launcherCalibrateTouchscreenM515(void){
+static void launcherCalibrateTouchscreenM5XX(void){
    uint32_t index;
 
    //touch center first time, to skip prompt
@@ -336,7 +336,7 @@ static void launcherCalibrateTouchscreenTungstenT3(void){
 }
 #endif
 
-static void launcherPushHomeButtonTouchscreenM515(void){
+static void launcherPushHomeButtonTouchscreenM5XX(void){
    uint32_t index;
 
    //press
@@ -371,7 +371,7 @@ void launcherBootInstantly(bool hasSram){
          launcherPushHomeButtonTouchscreenTungstenT3();
       else
 #endif
-         launcherPushHomeButtonTouchscreenM515();
+         launcherPushHomeButtonTouchscreenM5XX();
 
       //give it time to go home
       for(index = 0; index < EMU_FPS * 1.0; index++)
@@ -387,7 +387,7 @@ void launcherBootInstantly(bool hasSram){
          launcherCalibrateTouchscreenTungstenT3();
       else
 #endif
-         launcherCalibrateTouchscreenM515();
+         launcherCalibrateTouchscreenM5XX();
 
       //goes to home screen on its own after setup
 
@@ -403,7 +403,7 @@ uint32_t launcherInstallFile(uint8_t* data, uint32_t size){
          return launcherInstallAppTungstenT3(data, size);
       else
 #endif
-         return launcherInstallAppM515(data, size);
+         return launcherInstallAppM5XX(data, size);
 }
 
 bool launcherIsExecutable(uint8_t* data, uint32_t size){
@@ -443,7 +443,7 @@ uint32_t launcherExecute(uint32_t appId){
       return launcherLaunchAppTungstenT3(appId);
    else
 #endif
-      return launcherLaunchAppM515(appId);
+      return launcherLaunchAppM5XX(appId);
 }
 
 void launcherGetSdCardInfoFromInfoFile(uint8_t* data, uint32_t size, sd_card_info_t* returnValue){

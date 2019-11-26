@@ -6,7 +6,7 @@
 #include "emulator.h"
 #include "audio/blip_buf.h"
 #include "dbvz.h"
-#include "m515Bus.h"
+#include "m5XXBus.h"
 #include "sed1376.h"
 #include "ads7846.h"
 #include "pdiUsbD12.h"
@@ -50,6 +50,7 @@ static bool emulatorInitialized = false;
 #if defined(EMU_SUPPORT_PALM_OS5)
 bool      palmEmulatingTungstenT3;
 #endif
+bool      palmEmulatingM500;
 uint8_t*  palmRam;
 uint8_t*  palmRom;
 input_t   palmInput;
@@ -77,7 +78,7 @@ void      (*palmSerialDataFlush)(void);//called by the emulator to delete all da
 void      (*palmGetRtcFromHost)(uint8_t* writeBack);//[0] = hours, [1] = minutes, [2] = seconds
 
 
-uint32_t emulatorInit(uint8_t* palmRomData, uint32_t palmRomSize, uint8_t* palmBootloaderData, uint32_t palmBootloaderSize, bool syncRtc, bool allowInvalidBehavior){
+uint32_t emulatorInit(uint8_t emulatedDevice, uint8_t* palmRomData, uint32_t palmRomSize, uint8_t* palmBootloaderData, uint32_t palmBootloaderSize, bool syncRtc, bool allowInvalidBehavior){
    if(emulatorInitialized)
       return EMU_ERROR_RESOURCE_LOCKED;
 
@@ -100,8 +101,7 @@ uint32_t emulatorInit(uint8_t* palmRomData, uint32_t palmRomSize, uint8_t* palmB
    palmGetRtcFromHost = NULL;
 
 #if defined(EMU_SUPPORT_PALM_OS5)
-   //0x00000004 is boot program counter on 68K, its just 0x00000000 on ARM
-   palmEmulatingTungstenT3 = !(palmRomData[0x4] || palmRomData[0x5] || palmRomData[0x6] || palmRomData[0x7]);
+   palmEmulatingTungstenT3 = emulatedDevice == EMU_DEVICE_TUNGSTEN_T3;
 
    if(palmEmulatingTungstenT3){
       //emulating Tungsten T3
@@ -148,10 +148,12 @@ uint32_t emulatorInit(uint8_t* palmRomData, uint32_t palmRomSize, uint8_t* palmB
    }
    else{
 #endif
-      //emulating Palm m515
+      //emulating Palm m515 or m500
+      palmEmulatingM500 = emulatedDevice == EMU_DEVICE_PALM_M500;
+
       //allocate buffers, add 4 to memory regions to prevent SIGSEGV from accessing off the end
-      palmRom = malloc(M515_ROM_SIZE + 4);
-      palmRam = malloc(M515_RAM_SIZE + 4);
+      palmRom = malloc(M5XX_ROM_SIZE + 4);
+      palmRam = malloc((palmEmulatingM500 ? M500_RAM_SIZE : M515_RAM_SIZE) + 4);
       palmFramebuffer = malloc(160 * 220 * sizeof(uint16_t));
       palmAudio = malloc(AUDIO_SAMPLES_PER_FRAME * 2 * sizeof(int16_t));
       palmAudioResampler = blip_new(AUDIO_SAMPLE_RATE);//have 1 second of samples
@@ -165,11 +167,11 @@ uint32_t emulatorInit(uint8_t* palmRomData, uint32_t palmRomSize, uint8_t* palmB
       }
 
       //set default values
-      memcpy(palmRom, palmRomData, FAST_MIN(palmRomSize, M515_ROM_SIZE));
-      if(palmRomSize < M515_ROM_SIZE)
-         memset(palmRom + palmRomSize, 0x00, M515_ROM_SIZE - palmRomSize);
-      swap16BufferIfLittle(palmRom, M515_ROM_SIZE / sizeof(uint16_t));
-      memset(palmRam, 0x00, M515_RAM_SIZE);
+      memcpy(palmRom, palmRomData, FAST_MIN(palmRomSize, M5XX_ROM_SIZE));
+      if(palmRomSize < M5XX_ROM_SIZE)
+         memset(palmRom + palmRomSize, 0x00, M5XX_ROM_SIZE - palmRomSize);
+      swap16BufferIfLittle(palmRom, M5XX_ROM_SIZE / sizeof(uint16_t));
+      memset(palmRam, 0x00, palmEmulatingM500 ? M500_RAM_SIZE : M515_RAM_SIZE);
       dbvzLoadBootloader(palmBootloaderData, palmBootloaderSize);
       memcpy(palmFramebuffer + 160 * 160, silkscreen160x60, 160 * 60 * sizeof(uint16_t));
       memset(palmAudio, 0x00, AUDIO_SAMPLES_PER_FRAME * 2/*channels*/ * sizeof(int16_t));
@@ -181,12 +183,16 @@ uint32_t emulatorInit(uint8_t* palmRomData, uint32_t palmRomSize, uint8_t* palmB
       palmMisc.batteryLevel = 100;
       palmCycleCounter = 0.0;
       palmClockMultiplier = 1.00 - DBVZ_CPU_PERCENT_WAITING;
-      sed1376Framebuffer = palmFramebuffer;
-      sed1376FramebufferWidth = 160;
-      sed1376FramebufferHeight = 160;
-      dbvzFramebuffer = palmFramebuffer;
-      dbvzFramebufferWidth = 160;
-      dbvzFramebufferHeight = 160;
+      if(palmEmulatingM500){
+         dbvzFramebuffer = palmFramebuffer;
+         dbvzFramebufferWidth = 160;
+         dbvzFramebufferHeight = 160;
+      }
+      else{
+         sed1376Framebuffer = palmFramebuffer;
+         sed1376FramebufferWidth = 160;
+         sed1376FramebufferHeight = 160;
+      }
 
       //initialize components
       blip_set_rates(palmAudioResampler, DBVZ_AUDIO_MAX_CLOCK_RATE, AUDIO_SAMPLE_RATE);
@@ -238,7 +244,7 @@ void emulatorHardReset(void){
    }
    else{
 #endif
-      memset(palmRam, 0x00, M515_RAM_SIZE);
+      memset(palmRam, 0x00, palmEmulatingM500 ? M500_RAM_SIZE : M515_RAM_SIZE);
       emulatorSoftReset();
       sdCardReset();
       dbvzSetRtc(0, 0, 0, 0);
@@ -259,7 +265,8 @@ void emulatorSoftReset(void){
    }
    else{
 #endif
-      sed1376Reset();
+      if(!palmEmulatingM500)
+         sed1376Reset();
       ads7846Reset();
       pdiUsbD12Reset();
       dbvzReset();
@@ -303,10 +310,11 @@ uint32_t emulatorGetStateSize(void){
    else{
 #endif
       size += dbvzStateSize();
-      size += sed1376StateSize();
+      if(!palmEmulatingM500)
+         size += sed1376StateSize();
       size += ads7846StateSize();
       size += pdiUsbD12StateSize();
-      size += M515_RAM_SIZE;//system RAM buffer
+      size += palmEmulatingM500 ? M500_RAM_SIZE : M515_RAM_SIZE;//system RAM buffer
 #if defined(EMU_SUPPORT_PALM_OS5)
    }
 #endif
@@ -338,9 +346,9 @@ bool emulatorSaveState(uint8_t* data, uint32_t size){
 
    //state validation, wont load states that are not from the same state version
 #if defined(EMU_SUPPORT_PALM_OS5)
-   writeStateValue32(data + offset, SAVE_STATE_VERSION | (palmEmulatingTungstenT3 ? SAVE_STATE_FOR_TUNGSTEN_T3 : 0));
+   writeStateValue32(data + offset, SAVE_STATE_VERSION | palmEmulatingTungstenT3 * SAVE_STATE_FOR_TUNGSTEN_T3 | palmEmulatingM500 * SAVE_STATE_FOR_M500);
 #else
-   writeStateValue32(data + offset, SAVE_STATE_VERSION);
+   writeStateValue32(data + offset, SAVE_STATE_VERSION | palmEmulatingM500 * SAVE_STATE_FOR_M500);
 #endif
    offset += sizeof(uint32_t);
 
@@ -369,17 +377,19 @@ bool emulatorSaveState(uint8_t* data, uint32_t size){
       //chips
       dbvzSaveState(data + offset);
       offset += dbvzStateSize();
-      sed1376SaveState(data + offset);
-      offset += sed1376StateSize();
+      if(!palmEmulatingM500){
+         sed1376SaveState(data + offset);
+         offset += sed1376StateSize();
+      }
       ads7846SaveState(data + offset);
       offset += ads7846StateSize();
       pdiUsbD12SaveState(data + offset);
       offset += pdiUsbD12StateSize();
 
       //memory
-      memcpy(data + offset, palmRam, M515_RAM_SIZE);
-      swap16BufferIfLittle(data + offset, M515_RAM_SIZE / sizeof(uint16_t));
-      offset += M515_RAM_SIZE;
+      memcpy(data + offset, palmRam, palmEmulatingM500 ? M500_RAM_SIZE : M515_RAM_SIZE);
+      swap16BufferIfLittle(data + offset, (palmEmulatingM500 ? M500_RAM_SIZE : M515_RAM_SIZE) / sizeof(uint16_t));
+      offset += palmEmulatingM500 ? M500_RAM_SIZE : M515_RAM_SIZE;
 #if defined(EMU_SUPPORT_PALM_OS5)
    }
 #endif
@@ -459,10 +469,10 @@ bool emulatorLoadState(uint8_t* data, uint32_t size){
 
    //state validation, wont load states that are not from the same state version
 #if defined(EMU_SUPPORT_PALM_OS5)
-   if(readStateValue32(data + offset) != (SAVE_STATE_VERSION | (palmEmulatingTungstenT3 ? SAVE_STATE_FOR_TUNGSTEN_T3 : 0)))
+   if(readStateValue32(data + offset) != (SAVE_STATE_VERSION | palmEmulatingTungstenT3 * SAVE_STATE_FOR_TUNGSTEN_T3 | palmEmulatingM500 * SAVE_STATE_FOR_M500))
       return false;
 #else
-   if(readStateValue32(data + offset) != SAVE_STATE_VERSION)
+   if(readStateValue32(data + offset) != (SAVE_STATE_VERSION | palmEmulatingM500 * SAVE_STATE_FOR_M500))
       return false;
 #endif
    offset += sizeof(uint32_t);
@@ -495,17 +505,19 @@ bool emulatorLoadState(uint8_t* data, uint32_t size){
       //chips
       dbvzLoadState(data + offset);
       offset += dbvzStateSize();
-      sed1376LoadState(data + offset);
-      offset += sed1376StateSize();
+      if(!palmEmulatingM500){
+         sed1376LoadState(data + offset);
+         offset += sed1376StateSize();
+      }
       ads7846LoadState(data + offset);
       offset += ads7846StateSize();
       pdiUsbD12LoadState(data + offset);
       offset += pdiUsbD12StateSize();
 
       //memory
-      memcpy(palmRam, data + offset, M515_RAM_SIZE);
-      swap16BufferIfLittle(palmRam, M515_RAM_SIZE / sizeof(uint16_t));
-      offset += M515_RAM_SIZE;
+      memcpy(palmRam, data + offset, palmEmulatingM500 ? M500_RAM_SIZE : M515_RAM_SIZE);
+      swap16BufferIfLittle(palmRam, (palmEmulatingM500 ? M500_RAM_SIZE : M515_RAM_SIZE) / sizeof(uint16_t));
+      offset += palmEmulatingM500 ? M500_RAM_SIZE : M515_RAM_SIZE;
 #if defined(EMU_SUPPORT_PALM_OS5)
    }
 #endif
@@ -589,7 +601,7 @@ uint32_t emulatorGetRamSize(void){
    if(palmEmulatingTungstenT3)
       return TUNGSTEN_T3_RAM_SIZE;
 #endif
-   return M515_RAM_SIZE;
+   return palmEmulatingM500 ? M500_RAM_SIZE : M515_RAM_SIZE;
 }
 
 bool emulatorSaveRam(uint8_t* data, uint32_t size){
@@ -602,11 +614,11 @@ bool emulatorSaveRam(uint8_t* data, uint32_t size){
    }
    else{
 #endif
-      if(size < M515_RAM_SIZE)
+      if(size < palmEmulatingM500 ? M500_RAM_SIZE : M515_RAM_SIZE)
          return false;
 
-      memcpy(data, palmRam, M515_RAM_SIZE);
-      swap16BufferIfLittle(data, M515_RAM_SIZE / sizeof(uint16_t));
+      memcpy(data, palmRam, palmEmulatingM500 ? M500_RAM_SIZE : M515_RAM_SIZE);
+      swap16BufferIfLittle(data, (palmEmulatingM500 ? M500_RAM_SIZE : M515_RAM_SIZE) / sizeof(uint16_t));
 #if defined(EMU_SUPPORT_PALM_OS5)
    }
 #endif
@@ -624,11 +636,11 @@ bool emulatorLoadRam(uint8_t* data, uint32_t size){
    }
    else{
 #endif
-      if(size < M515_RAM_SIZE)
+      if(size < palmEmulatingM500 ? M500_RAM_SIZE : M515_RAM_SIZE)
          return false;
 
-      memcpy(palmRam, data, M515_RAM_SIZE);
-      swap16BufferIfLittle(palmRam, M515_RAM_SIZE / sizeof(uint16_t));
+      memcpy(palmRam, data, palmEmulatingM500 ? M500_RAM_SIZE : M515_RAM_SIZE);
+      swap16BufferIfLittle(palmRam, (palmEmulatingM500 ? M500_RAM_SIZE : M515_RAM_SIZE) / sizeof(uint16_t));
 #if defined(EMU_SUPPORT_PALM_OS5)
    }
 #endif
@@ -750,35 +762,40 @@ void emulatorRunFrame(void){
       dbvzExecute();
 
       //LCD controller
-      if(dbvzLcdEnabled())
+      if(palmEmulatingM500){
          dbvzLcdRender();
-      else
+
+         //TODO: backlight level
+      }
+      else{
          sed1376Render();
 
-      //backlight level, 0% = 1/4 color intensity, 50% = 1/2 color intensity, 100% = full color intensity
-      switch(palmMisc.backlightLevel){
-         case 0:
-            MULTITHREAD_LOOP(index) for(index = 0; index < 160 * 160; index++){
-               palmFramebuffer[index] >>= 2;
-               palmFramebuffer[index] &= 0x39E7;
-            }
-            break;
+         //backlight level, 0% = 1/4 color intensity, 50% = 1/2 color intensity, 100% = full color intensity
+         switch(palmMisc.backlightLevel){
+            case 0:
+               MULTITHREAD_LOOP(index) for(index = 0; index < 160 * 160; index++){
+                  palmFramebuffer[index] >>= 2;
+                  palmFramebuffer[index] &= 0x39E7;
+               }
+               break;
 
-         case 50:
-            MULTITHREAD_LOOP(index) for(index = 0; index < 160 * 160; index++){
-               palmFramebuffer[index] >>= 1;
-               palmFramebuffer[index] &= 0x7BEF;
-            }
-            break;
+            case 50:
+               MULTITHREAD_LOOP(index) for(index = 0; index < 160 * 160; index++){
+                  palmFramebuffer[index] >>= 1;
+                  palmFramebuffer[index] &= 0x7BEF;
+               }
+               break;
 
-         case 100:
-            //nothing
-            break;
+            case 100:
+               //nothing
+               break;
 
-         default:
-            debugLog("Invalid backlight value\n");
-            break;
+            default:
+               debugLog("Invalid backlight value\n");
+               break;
+         }
       }
+
 #if defined(EMU_SUPPORT_PALM_OS5)
    }
 #endif
@@ -800,12 +817,6 @@ void emulatorSkipFrame(void){
       dbvzExecute();
 
       //LCD controller, skip this
-      /*
-      if(dbvzLcdEnabled())
-         dbvzLcdRender();
-      else
-         sed1376Render();
-      */
 #if defined(EMU_SUPPORT_PALM_OS5)
    }
 #endif

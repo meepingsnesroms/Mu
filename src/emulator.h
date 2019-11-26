@@ -12,7 +12,7 @@ extern "C" {
 #include <stdio.h>
 
 #include "audio/blip_buf.h"
-#include "m515Bus.h"//for size macros
+#include "m5XXBus.h"//for size macros
 
 //DEFINE INFO!!!
 //define EMU_SUPPORT_PALM_OS5 to compile in Tungsten T3 support(not reccomended for low power devices)
@@ -61,7 +61,8 @@ static void debugLog(char* str, ...){};
 #define DBVZ_CPU_PERCENT_WAITING 0.30//account for wait states when reading memory, tested with SysInfo.prc
 #define DBVZ_AUDIO_MAX_CLOCK_RATE 235929600//smallest amount of time a second can be split into:(2.0 * (14.0 * (255 + 1.0) + 15 + 1.0)) * 32768 == 235929600, used to convert the variable timing of SYSCLK and CLK32 to a fixed location in the current frame 0<->AUDIO_END_OF_FRAME
 #define DBVZ_AUDIO_END_OF_FRAME (DBVZ_AUDIO_MAX_CLOCK_RATE / EMU_FPS)
-#define M515_CRYSTAL_FREQUENCY 32768
+#define M5XX_CRYSTAL_FREQUENCY 32768
+#define SAVE_STATE_FOR_M500 0x40000000
 #if defined(EMU_SUPPORT_PALM_OS5)
 #define TUNGSTEN_T3_CPU_PERCENT_WAITING 0.30//TODO: dont know ARM CPU speeds yet
 #define TUNGSTEN_T3_CPU_CRYSTAL_FREQUENCY 3686400
@@ -96,6 +97,16 @@ enum{
 #define EMU_SERIAL_PARITY_ERROR 0x100
 #define EMU_SERIAL_FRAME_ERROR 0x200
 #define EMU_SERIAL_BREAK (EMU_SERIAL_PARITY_ERROR | 0x00)
+
+//emulated devices
+enum{
+   EMU_DEVICE_PALM_M500 = 0,
+   EMU_DEVICE_PALM_M515
+#if defined(EMU_SUPPORT_PALM_OS5)
+   ,
+   EMU_DEVICE_TUNGSTEN_T3
+#endif
+};
 
 //types
 typedef struct{
@@ -176,6 +187,7 @@ typedef struct{
 #if defined(EMU_SUPPORT_PALM_OS5)
 extern bool      palmEmulatingTungstenT3;//read allowed, but not advised
 #endif
+extern bool      palmEmulatingM500;//dont touch
 extern uint8_t*  palmRom;//dont touch
 extern uint8_t*  palmRam;//access allowed to read save RAM without allocating a giant buffer, but endianness must be taken into account
 extern input_t   palmInput;//write allowed
@@ -203,7 +215,7 @@ extern void      (*palmSerialDataFlush)(void);//called by the emulator to delete
 extern void      (*palmGetRtcFromHost)(uint8_t* writeBack);//[0] = hours, [1] = minutes, [2] = seconds
 
 //functions
-uint32_t emulatorInit(uint8_t* palmRomData, uint32_t palmRomSize, uint8_t* palmBootloaderData, uint32_t palmBootloaderSize, bool syncRtc, bool allowInvalidBehavior);
+uint32_t emulatorInit(uint8_t emulatedDevice, uint8_t* palmRomData, uint32_t palmRomSize, uint8_t* palmBootloaderData, uint32_t palmBootloaderSize, bool syncRtc, bool allowInvalidBehavior);
 void emulatorDeinit(void);
 void emulatorHardReset(void);
 void emulatorSoftReset(void);

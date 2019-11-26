@@ -225,7 +225,7 @@ SOURCES += \
     ../../src/emulator.c \
     ../../src/fileLauncher/launcher.c \
     ../../src/flx68000.c \
-    ../../src/m515Bus.c \
+    ../../src/m5XXBus.c \
     ../../src/m68k/m68kcpu.c \
     ../../src/m68k/m68kdasm.c \
     ../../src/m68k/m68kopac.c \
@@ -257,7 +257,7 @@ HEADERS += \
     ../../src/emulator.h \
     ../../src/fileLauncher/launcher.h \
     ../../src/flx68000.h \
-    ../../src/m515Bus.h \
+    ../../src/m5XXBus.h \
     ../../src/m68k/m68k.h \
     ../../src/m68k/m68kconf.h \
     ../../src/m68k/m68kcpu.h \

@@ -151,6 +151,7 @@
 #define LBLKC     0xA1F/*Blink Control Register*/
 #define LPICF     0xA20/*Panel Interface Config Register*/
 #define LPOLCF    0xA21/*LCD Polarity Configuration Register*/
+#define LACDRC    0xA23/*LACD Rate Control Register*/
 #define LPXCD     0xA25/*Pixel Clock Divider Register*/
 #define LCKCON    0xA27/*Clocking Control Register*/
 #define LRRA      0xA28/*LCD Refresh Rate Adjustment Register*/
@@ -158,6 +159,7 @@
 #define LPOSR     0xA2D/*LCD Panning Offset Register*/
 #define LFRCM     0xA31/*Frame Rate Control Modulation Register*/
 #define LGPMR     0xA33/*Gray Palette Mapping Register*/
+#define PWMR      0xA36/*PWM Contrast Control Register*/
 #define DMACR     0xA39/*DMA Control Register*/
 
 /*RTC - Real Time Clock*/

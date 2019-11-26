@@ -4,7 +4,7 @@
 #include "emulator.h"
 #include "portability.h"
 #include "dbvz.h"
-#include "m515Bus.h"
+#include "m5XXBus.h"
 #include "m68k/m68kcpu.h"
 
 
