@@ -20,19 +20,15 @@ static void registerArrayWrite32(uint32_t address, uint32_t value){M68K_BUFFER_W
 
 //interrupt setters, used for setting an interrupt with masking by IMR and logging in IPR
 static void setIprIsrBit(uint32_t interruptBit){
-   uint32_t ipr = registerArrayRead32(IPR);
-   dbvzInterruptChanged |= !(ipr & interruptBit);
-   ipr |= interruptBit;
-   registerArrayWrite32(IPR, ipr);
-   registerArrayWrite32(ISR, ipr & ~registerArrayRead32(IMR));
+   uint32_t newIpr = registerArrayRead32(IPR) | interruptBit;
+   registerArrayWrite32(IPR, newIpr);
+   registerArrayWrite32(ISR, newIpr & ~registerArrayRead32(IMR));
 }
 
 static void clearIprIsrBit(uint32_t interruptBit){
-   uint32_t ipr = registerArrayRead32(IPR);
-   dbvzInterruptChanged |= !!(ipr & interruptBit);
-   ipr &= ~interruptBit;
-   registerArrayWrite32(IPR, ipr);
-   registerArrayWrite32(ISR, ipr & ~registerArrayRead32(IMR));
+   uint32_t newIpr = registerArrayRead32(IPR) & ~interruptBit;
+   registerArrayWrite32(IPR, newIpr);
+   registerArrayWrite32(ISR, newIpr & ~registerArrayRead32(IMR));
 }
 
 //SPI1 FIFO accessors
@@ -815,7 +811,6 @@ static void setIsr(uint32_t value, bool useTopWord, bool useBottomWord){
       registerArrayWrite16(ISR + 2, registerArrayRead16(ISR + 2) & ~(value & 0xFFFF & portDEdgeSelect << 8));
    }
 
-   dbvzInterruptChanged |= true;
    checkInterrupts();
 }
 

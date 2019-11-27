@@ -23,7 +23,6 @@ uint16_t*   dbvzFramebuffer;
 uint16_t    dbvzFramebufferWidth;
 uint16_t    dbvzFramebufferHeight;
 
-static bool     dbvzInterruptChanged;//reduces time wasted on checking interrupts that where updated to a new value identical to the old one, does not need to be in states
 static double   dbvzSysclksPerClk32;//how many SYSCLK cycles before toggling the 32.768 kHz crystal
 static uint32_t dbvzFrameClk32s;//how many CLK32s have happened in the current frame
 static double   dbvzClk32Sysclks;//how many SYSCLKs have happened in the current CLK32
@@ -237,6 +236,9 @@ static void pllWakeCpuIfOff(void){
 }
 
 static void checkInterrupts(void){
+   //reduces time wasted on checking interrupts that where updated to a new value identical to the old one, does not need to be in states
+   static uint32_t dbvzCachedInterrupts;
+
    uint32_t activeInterrupts = registerArrayRead32(ISR);
    uint16_t interruptLevelControlRegister = registerArrayRead16(ILCR);
    uint8_t spi1IrqLevel = interruptLevelControlRegister >> 12;
@@ -245,8 +247,14 @@ static void checkInterrupts(void){
    uint8_t timer2IrqLevel = interruptLevelControlRegister & 0x0007;
    uint8_t intLevel = 0;
 
+   //even masked interrupts turn off PCTLR, 4.5.4 Power Control Register MC68VZ328UM.pdf
+   if(registerArrayRead32(IPR) && registerArrayRead8(PCTLR) & 0x80){
+      registerArrayWrite8(PCTLR, registerArrayRead8(PCTLR) & 0x1F);
+      pctlrCpuClockDivider = 1.0;
+   }
+
    //dont waste time if nothing changed
-   if(!dbvzInterruptChanged)
+   if(activeInterrupts == dbvzCachedInterrupts)
       return;
 
    //static interrupts
@@ -284,17 +292,11 @@ static void checkInterrupts(void){
    if(intLevel < timer2IrqLevel && activeInterrupts & DBVZ_INT_TMR2)
       intLevel = timer2IrqLevel;
 
-   //even masked interrupts turn off PCTLR, 4.5.4 Power Control Register MC68VZ328UM.pdf
-   if(intLevel > 0 && registerArrayRead8(PCTLR) & 0x80){
-      registerArrayWrite8(PCTLR, registerArrayRead8(PCTLR) & 0x1F);
-      pctlrCpuClockDivider = 1.0;
-   }
-
    //should be called even if intLevel is 0, that is how the interrupt state gets cleared
    flx68000SetIrq(intLevel);
 
    //no interrupts have changed since the last call to this function, which is now
-   dbvzInterruptChanged = false;
+   dbvzCachedInterrupts = activeInterrupts;
 }
 
 static void checkPortDInterrupts(void){
@@ -426,6 +428,7 @@ uint8_t dbvzGetRegister8(uint32_t address){
       case LCKCON:
       case IVR:
       case PWMP1:
+      case LGPMR:
 
       //LCD controller
       case LPICF:
@@ -684,6 +687,7 @@ void dbvzSetRegister8(uint32_t address, uint8_t value){
          registerArrayWrite8(address, value & 0x9F);
          if(value & 0x80)
             pctlrCpuClockDivider = (value & 0x1F) / 31.0;
+         checkInterrupts();//may need to turn PCTLR off right after its turned on(could be in an interrupt)
          return;
 
       case IVR:
@@ -860,14 +864,12 @@ void dbvzSetRegister16(uint32_t address, uint16_t value){
          //this is a 32 bit register but Palm OS writes to it as 16 bit chunks
          registerArrayWrite16(IMR, value & 0x00FF);
          registerArrayWrite16(ISR, registerArrayRead16(IPR) & ~registerArrayRead16(IMR));
-         dbvzInterruptChanged |= true;
          checkInterrupts();
          return;
       case IMR + 2:
          //this is a 32 bit register but Palm OS writes to it as 16 bit chunks
          registerArrayWrite16(IMR + 2, value & 0xFFFF);//Palm OS writes to reserved bits 14 and 15
          registerArrayWrite16(ISR + 2, registerArrayRead16(IPR + 2) & ~registerArrayRead16(IMR + 2));
-         dbvzInterruptChanged |= true;
          checkInterrupts();
          return;
 
@@ -1228,7 +1230,6 @@ void dbvzSetRegister32(uint32_t address, uint32_t value){
       case IMR:
          registerArrayWrite32(IMR, value & 0x00FFFFFF);//Palm OS writes to reserved bits 14 and 15
          registerArrayWrite32(ISR, registerArrayRead32(IPR) & ~registerArrayRead32(IMR));
-         dbvzInterruptChanged |= true;
          checkInterrupts();
          return;
 
@@ -1252,7 +1253,6 @@ void dbvzReset(void){
    uint32_t oldRtc = registerArrayRead32(RTCTIME);//preserve RTCTIME
    uint16_t oldDayr = registerArrayRead16(DAYR);//preserve DAYR
 
-   dbvzInterruptChanged = false;//speed hack variable
    memset(dbvzReg, 0x00, DBVZ_REG_SIZE - DBVZ_BOOTLOADER_SIZE);
    dbvzSysclksPerClk32 = 0.0;
    clk32Counter = 0;
@@ -1402,6 +1402,7 @@ void dbvzReset(void){
    dbvzSysclksPerClk32 = sysclksPerClk32();
 
    dbvzResetAddressSpace();
+   checkInterrupts();
    flx68000Reset();
 }
 

@@ -1,3 +1,5 @@
 T3 locks up endlessly checking TSC2101 interrupts
-Randomly locks up  for 1-2 seconds(this seems to have t do with the audio bug in applications where pushing the app category selector then white space will make a shorter or longer beep than it should, also lock ups occur in galax when sound plays)(Started somewhere between June 9 2019 and June 20 2019, right after all the UART stuff)
 QT release build is broken
+
+Fixed:
+68K Palm OS randomly locks up for 1-2 seconds(caused by interrupt handling code not turning the CPU back on for masked interrupts when it should because of faulty interrupt cacheing, Caused by commit: 1567cbce674741bc13be92b0847f59a5cc68335a)
