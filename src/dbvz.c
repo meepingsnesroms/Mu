@@ -237,25 +237,17 @@ static void pllWakeCpuIfOff(void){
 }
 
 static void checkInterrupts(void){
-   uint32_t activeInterrupts;
-   uint16_t interruptLevelControlRegister;
-   uint8_t spi1IrqLevel;
-   uint8_t uart2IrqLevel;
-   uint8_t pwm2IrqLevel;
-   uint8_t timer2IrqLevel;
-   uint8_t intLevel;
+   uint32_t activeInterrupts = registerArrayRead32(ISR);
+   uint16_t interruptLevelControlRegister = registerArrayRead16(ILCR);
+   uint8_t spi1IrqLevel = interruptLevelControlRegister >> 12;
+   uint8_t uart2IrqLevel = interruptLevelControlRegister >> 8 & 0x0007;
+   uint8_t pwm2IrqLevel = interruptLevelControlRegister >> 4 & 0x0007;
+   uint8_t timer2IrqLevel = interruptLevelControlRegister & 0x0007;
+   uint8_t intLevel = 0;
 
    //dont waste time if nothing changed
    if(!dbvzInterruptChanged)
       return;
-
-   activeInterrupts = registerArrayRead32(ISR);
-   interruptLevelControlRegister = registerArrayRead16(ILCR);
-   spi1IrqLevel = interruptLevelControlRegister >> 12;
-   uart2IrqLevel = interruptLevelControlRegister >> 8 & 0x0007;
-   pwm2IrqLevel = interruptLevelControlRegister >> 4 & 0x0007;
-   timer2IrqLevel = interruptLevelControlRegister & 0x0007;
-   intLevel = 0;
 
    //static interrupts
    if(activeInterrupts & DBVZ_INT_EMIQ)
