@@ -1,6 +1,7 @@
 Lakka(needs makefile)
 xbox(don't know)
 xbox360(don't know)
+Android armv5/6, the NDK dropped support for them and they broke when the buildbot was updated
 
 Fixed:
 classics/new haxchi
