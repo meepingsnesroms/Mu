@@ -13,4 +13,7 @@
 #define FONT_SPACING 0
 #define SELECTED_FONT FONT_6X8
 
+#define ARM_RESOURCE_TYPE 'armc'
+#define ARM_RESOURCE_ID 0x0000
+
 #endif

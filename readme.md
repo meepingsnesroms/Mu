@@ -19,11 +19,11 @@ The Palm keyboard attachment will likely be emulated later on so the PC keyboard
 
 ## What about OS 5?
 
-I am planning on adding Tungsten C support eventually.
+I am planning on adding Tungsten T3 support as soon as possible.
 
 ## Credits
-[Firebird Emu](https://github.com/nspire-emus/firebird) (ARMv5TE Core)
-[uARM](https://dmitry.gr/?r=05.Projects&proj=07.%20Linux%20on%208bit) (PXA255 CPU Peripherals)
+[Firebird Emu](https://github.com/nspire-emus/firebird) (ARMv5TE Core)  
+[uARM](https://dmitry.gr/?r=05.Projects&proj=07.%20Linux%20on%208bit) (PXA260 CPU Peripherals and reference CPU core)  
 [Musashi v3.4](https://github.com/kstenerud/Musashi) (last version that builds outside of MAME)(68k Core)  
 [blip_buf 1.1.0](https://github.com/TASVideos/BizHawk/tree/master/blip_buf) (Audio Resampler)  
 https://www.iconarchive.com/show/crystal-clear-icons-by-everaldo/App-palm-icon.html (Desktop Icon)  
@@ -63,24 +63,23 @@ Install prc-tools from the below link(self compiled or prepackaged VM)
 
 ## Running
 #### Files
-palmos41-en-m515.rom(all euro languages, from Palm dev program): 412557a221933a8be12622de7a21320a (MD5)  
-palmos41-en-m515.rom(English only, verified authentic from device): 83cb1d1c76e568b916dc2e7c0bf669f6 (MD5)  
-bootloader-en-m515.rom(v1): 9da101cd2317830649a31f8fa46debec (MD5)  
-bootloader-en-m515.rom(v2): e64c755205bc3e79d1bc5b70128f688d (MD5)  
-
-If you can read English or intend to install your own language pack use the verified version:  
-I understand not everyone speaks English so I list both ROMs, I do all my testing on the English only build because I have verified it with an actual device, but will do my best to support the Palm dev version as well(it runs on the same hardware anyway).
+palmos40-en-m500.rom: f50e4d5e4d98dc831f2c34a9107651eb (MD5)  
+palmos41-en-m515.rom: 83cb1d1c76e568b916dc2e7c0bf669f6 (MD5)  
+palmos52-en-t3.rom: de46ec84d9aabf655eabdf9b00a3845d (MD5)   
+bootloader-dbvz.rom: 9da101cd2317830649a31f8fa46debec (MD5)  
 
 #### For Qt
  1. Run once to create the directory tree
- 2. Copy "palmos41-en-m515.rom" to "~/Mu"
- 3. Copy "bootloader-en-m515.rom" to "~/Mu"
+ 2. Copy "palmos41-en-m515.rom" and "palmos52-en-t3.rom" to "~/Mu"
+ 3. (Optional)Copy "bootloader-en-m515.rom" to "~/Mu"
  4. Run emu and press start button
 
  #### For RetroArch
  1. Download "Palm OS(Mu)" from "Online Updater->Core Updater"
  2. Go back, select "Load Core", select "Palm OS(Mu)"
- 3. Run "palmos41-en-m515.rom"
+ 3. Copy "palmos41-en-m515.rom" and "palmos52-en-t3.rom" to the RetroArch system directory
+ 4. (Optional)Copy "bootloader-en-m515.rom" to the RetroArch system directory
+ 5. Run a .prc or .img file
 
 ## Tools
 [Prc-tools, Palm OS SDKs, pilrc, pilot-link](https://github.com/meepingsnesroms/prc-tools-remix)

@@ -91,7 +91,7 @@ translation_enter: .global translation_enter
 
     mov     r0, r4
 
-    add     r1, r0, #65*1024*1024 // r1 = &(RAM_FLAGS(r0))
+    add     r1, r0, #80*1024*1024 // r1 = &(RAM_FLAGS(r0))
     ldr     r1, [r1]
 
     loadsym r10, arm // r10 is a pointer to the global arm_state
@@ -111,7 +111,7 @@ translation_next: .global translation_next
     beq     save_return
 
 translation_jmp_ptr: .global translation_jmp_ptr
-    add     r1, r0, #65*1024*1024 // r1 = &(RAM_FLAGS(r0))
+    add     r1, r0, #80*1024*1024 // r1 = &(RAM_FLAGS(r0))
     ldr     r1, [r1]
     tst     r1, #RF_CODE_TRANSLATED
     beq     save_return // not translated

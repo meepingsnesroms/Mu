@@ -85,6 +85,82 @@ static void spi1TxFifoFlush(void){
    spi1TxReadPosition = spi1TxWritePosition;
 }
 
+//UART1 FIFO accessors
+static uint8_t uart1RxFifoEntrys(void){
+   if(palmIrDataSize){
+      uint32_t fifoEntrys = palmIrDataSize();
+
+      return FAST_MIN(fifoEntrys, 12);
+   }
+   return 0x00;
+}
+
+static uint16_t uart1RxFifoRead(void){
+   if(palmIrDataReceive)
+      return palmIrDataReceive();
+   return 0x0000;
+}
+
+//no uart1RxFifoWrite, RX FIFO is written to externally
+
+static void uart1RxFifoFlush(void){
+   if(palmIrDataFlush)
+      palmIrDataFlush();
+}
+
+static uint8_t uart1TxFifoEntrys(void){
+   return 0;//all entrys are transmitted instantly so none are left inside the CPU
+}
+
+//no uart1TxFifoRead, TX FIFO is read externally
+
+static void uart1TxFifoWrite(uint16_t value){
+   if(palmIrDataSend)
+      palmIrDataSend(value);
+}
+
+static void uart1TxFifoFlush(void){
+   //do nothing, its always empty
+}
+
+//UART2 FIFO accessors
+static uint8_t uart2RxFifoEntrys(void){
+   if(palmSerialDataSize){
+      uint32_t fifoEntrys = palmSerialDataSize();
+
+      return FAST_MIN(fifoEntrys, 64);
+   }
+   return 0x00;
+}
+
+static uint16_t uart2RxFifoRead(void){
+   if(palmSerialDataReceive)
+      return palmSerialDataReceive();
+   return 0x0000;
+}
+
+//no uart2RxFifoWrite, RX FIFO is written to externally
+
+static void uart2RxFifoFlush(void){
+   if(palmSerialDataFlush)
+      palmSerialDataFlush();
+}
+
+static uint8_t uart2TxFifoEntrys(void){
+   return 0;//all entrys are transmitted instantly so none are left inside the CPU
+}
+
+//no uart2TxFifoRead, TX FIFO is read externally
+
+static void uart2TxFifoWrite(uint16_t value){
+   if(palmSerialDataSend)
+      palmSerialDataSend(value);
+}
+
+static void uart2TxFifoFlush(void){
+   //do nothing, its always empty
+}
+
 //PWM1 FIFO accessors
 static uint8_t pwm1FifoEntrys(void){
    //check for wraparound
@@ -111,7 +187,7 @@ int32_t pwm1FifoRunSample(int32_t now, int32_t clockOffset){
 
    for(index = 0; index < repeat; index++){
 #if !defined(EMU_NO_SAFETY)
-      if(audioNow + audioSampleDuration >= AUDIO_CLOCK_RATE)
+      if(audioNow + audioSampleDuration >= DBVZ_AUDIO_MAX_CLOCK_RATE)
          break;
 #endif
 
@@ -261,11 +337,11 @@ static void updateCsdAddressLines(void){
       dbvzChipSelects[DBVZ_CHIP_DX_RAM].mask = 0x003FFFFF;
 
       //address line 23 is enabled
-      if((sdctrl & 0x000C) == 0x0008)
+      if(!palmEmulatingM500 && (sdctrl & 0x000C) == 0x0008)
          dbvzChipSelects[DBVZ_CHIP_DX_RAM].mask |= 0x00800000;
 
       //address line 22 is enabled
-      if((sdctrl & 0x0030) == 0x0010)
+      if(palmEmulatingM500 || (sdctrl & 0x0030) == 0x0010)
          dbvzChipSelects[DBVZ_CHIP_DX_RAM].mask |= 0x00400000;
    }
    else{
@@ -348,7 +424,7 @@ static void setSpiIntCs(uint16_t value){
    newSpiIntCs |= (rxEntrys >= 4) << 4;//RH
    newSpiIntCs |= (rxEntrys > 0) << 3;//RR
    newSpiIntCs |= (txEntrys == 8) << 2;//TF
-   newSpiIntCs |= (txEntrys >= 4) << 1;//TH, the datasheet contradicts itself on whether its more than or equal to 4 empty or full slots
+   newSpiIntCs |= (txEntrys >= 4) << 1;//TH, TODO: the datasheet contradicts itself on whether its more than or equal to 4 empty or full slots
    newSpiIntCs |= txEntrys == 0;//TE
 
    //if interrupt state changed update interrupts too, top 8 bits are just the enable bits for the bottom 8
@@ -475,6 +551,165 @@ static void setSpiCont2(uint16_t value){
    checkInterrupts();
 
    registerArrayWrite16(SPICONT2, value & 0xE3FF);
+}
+
+static void updateUart1PortState(void){
+   if(palmIrSetPortProperties){
+      uint16_t ustcnt1 = registerArrayRead16(USTCNT1);
+      uint16_t ubaud1 = registerArrayRead16(UBAUD1);
+      uint8_t divider = 1 << (ubaud1 >> 8 & 0x07);
+      uint8_t prescaler = 65 - (ubaud1 & 0x001F);
+      bool baudSrc = !!(ubaud1 & 0x0800);
+      serial_port_properties_t properties;
+
+      properties.enable = !!(ustcnt1 & 0x8000);
+      properties.enableParity = !!(ustcnt1 & 0x0800);
+      properties.oddParity = !!(ustcnt1 & 0x0400);
+      properties.stopBits = !!(ustcnt1 & 0x0200) ? 2 : 1;
+      properties.use8BitMode = !!(ustcnt1 & 0x0100);
+      properties.baudRate = (baudSrc ? EMU_SERIAL_USE_EXTERNAL_CLOCK_SOURCE : sysclksPerClk32() * M5XX_CRYSTAL_FREQUENCY) / prescaler / divider;
+
+      palmIrSetPortProperties(&properties);
+   }
+}
+
+static void updateUart1Interrupt(void){
+   //the UART1 interrupt has a rather complex set of trigger methods so they all have to be checked after one changes to prevent clearing a valid interrupt thats on the same line
+   uint16_t ustcnt1 = registerArrayRead16(USTCNT1);
+   bool interruptState = false;
+
+   //is enabled
+   if(ustcnt1 & 0x8000){
+      //RX is enabled
+      if(ustcnt1 & 0x4000){
+         uint16_t urx1 = registerArrayRead16(URX1);
+         uint8_t entrys = uart1RxFifoEntrys();
+
+         //TODO: old data timer is unemualted
+         //if(ustcnt1 & 0x0080 && entrys > 0)
+         //   interruptState = true;
+
+         if(ustcnt1 & 0x0020 && entrys == 12)
+            interruptState = true;
+         if(ustcnt1 & 0x0010 && entrys > 6)
+            interruptState = true;
+         if(ustcnt1 & 0x0008 && entrys > 0)
+            interruptState = true;
+      }
+
+      //TX is enabled
+      if(ustcnt1 & 0x2000){
+         uint16_t utx1 = registerArrayRead16(UTX1);
+         uint8_t entrys = uart1TxFifoEntrys();
+
+         if(ustcnt1 & 0x0004 && entrys == 0)
+            interruptState = true;
+         if(ustcnt1 & 0x0002 && entrys < 4)
+            interruptState = true;
+         if(ustcnt1 & 0x0001 && entrys < 8)
+            interruptState = true;
+      }
+   }
+
+   if(interruptState)
+      setIprIsrBit(DBVZ_INT_UART1);
+   else
+      clearIprIsrBit(DBVZ_INT_UART1);
+   checkInterrupts();
+}
+
+static void setUstcnt1(uint16_t value){
+   //flush RX FIFO if disabled
+   if(!((value & 0xC000) == 0xC000))
+      uart1RxFifoFlush();
+
+   //flush TX FIFO if disabled
+   if(!((value & 0xA000) == 0xA000))
+      uart1TxFifoFlush();
+
+   registerArrayWrite16(USTCNT1, value);
+   updateUart1Interrupt();
+}
+
+static void updateUart2PortState(void){
+   if(palmSerialSetPortProperties){
+      uint16_t ustcnt2 = registerArrayRead16(USTCNT2);
+      uint16_t ubaud2 = registerArrayRead16(UBAUD2);
+      uint8_t divider = 1 << (ubaud2 >> 8 & 0x07);
+      uint8_t prescaler = 65 - (ubaud2 & 0x001F);
+      bool baudSrc = !!(ubaud2 & 0x0800);
+      serial_port_properties_t properties;
+
+      properties.enable = !!(ustcnt2 & 0x8000);
+      properties.enableParity = !!(ustcnt2 & 0x0800);
+      properties.oddParity = !!(ustcnt2 & 0x0400);
+      properties.stopBits = !!(ustcnt2 & 0x0200) ? 2 : 1;
+      properties.use8BitMode = !!(ustcnt2 & 0x0100);
+      properties.baudRate = (baudSrc ? EMU_SERIAL_USE_EXTERNAL_CLOCK_SOURCE : sysclksPerClk32() * M5XX_CRYSTAL_FREQUENCY) / prescaler / divider;
+
+      palmSerialSetPortProperties(&properties);
+   }
+}
+
+static void updateUart2Interrupt(void){
+   //the UART2 interrupt has a rather complex set of trigger methods so they all have to be checked after one changes to prevent clearing a valid interrupt thats on the same line
+   uint16_t ustcnt2 = registerArrayRead16(USTCNT2);
+   uint16_t hmark = registerArrayRead16(HMARK);
+   uint8_t hmarkRx = (hmark & 0x0F) * 4;
+   uint8_t hmarkTx = (hmark >> 8) * 4;
+   bool interruptState = false;
+
+   //is enabled
+   if(ustcnt2 & 0x8000){
+      //RX is enabled
+      if(ustcnt2 & 0x4000){
+         uint16_t urx2 = registerArrayRead16(URX2);
+         uint8_t entrys = uart2RxFifoEntrys();
+
+         //TODO: old data timer is unemualted
+         //if(ustcnt2 & 0x0080 && entrys > 0)
+         //   interruptState = true;
+
+         if(ustcnt2 & 0x0020 && entrys == 64)
+            interruptState = true;
+         if(ustcnt2 & 0x0010 && entrys > hmarkRx && hmarkRx != 0x00)
+            interruptState = true;
+         if(ustcnt2 & 0x0008 && entrys > 0)
+            interruptState = true;
+      }
+
+      //TX is enabled
+      if(ustcnt2 & 0x2000){
+         uint16_t utx2 = registerArrayRead16(UTX2);
+         uint8_t entrys = uart2TxFifoEntrys();
+
+         if(ustcnt2 & 0x0004 && entrys == 0)
+            interruptState = true;
+         if(ustcnt2 & 0x0002 && entrys < hmarkTx && hmarkTx != 0x00)
+            interruptState = true;
+         if(ustcnt2 & 0x0001 && entrys < 64)
+            interruptState = true;
+      }
+   }
+
+   if(interruptState)
+      setIprIsrBit(DBVZ_INT_UART2);
+   else
+      clearIprIsrBit(DBVZ_INT_UART2);
+   checkInterrupts();
+}
+
+static void setUstcnt2(uint16_t value){
+   //flush RX FIFO if disabled
+   if(!((value & 0xC000) == 0xC000))
+      uart2RxFifoFlush();
+
+   //flush TX FIFO if disabled
+   if(!((value & 0xA000) == 0xA000))
+      uart2TxFifoFlush();
+
+   registerArrayWrite16(USTCNT2, value);
+   updateUart2Interrupt();
 }
 
 static void setTstat1(uint16_t value){
@@ -676,7 +911,7 @@ static uint8_t getPortKValue(void){
    uint8_t portKDir = registerArrayRead8(PKDIR);
    uint8_t portKSel = registerArrayRead8(PKSEL);
 
-   portKValue |= !(palmMisc.dataPort == PORT_USB_CRADLE || palmMisc.dataPort == PORT_SERIAL_CRADLE) << 2;//true if charging
+   portKValue |= !palmMisc.batteryCharging << 2;//false if chargeing
    portKValue |= 0xFB;//floating pins are high
    portKValue &= ~portKDir & portKSel;
    portKValue |= portKData & portKDir & portKSel;
@@ -734,7 +969,7 @@ static uint16_t getPwmc1(void){
 
 //updaters
 static void updatePowerButtonLedStatus(void){
-   palmMisc.powerButtonLed = !!(getPortBValue() & 0x40) != palmMisc.batteryCharging;
+   palmMisc.greenLed = !!(getPortBValue() & 0x40) != palmMisc.batteryCharging;
 }
 
 static void updateVibratorStatus(void){
@@ -747,10 +982,6 @@ static void updateAds7846ChipSelectStatus(void){
 
 static void updateSdCardChipSelectStatus(void){
    sdCardSetChipSelect(!!(getPortJValue() & 0x08));
-}
-
-static void updateBacklightAmplifierStatus(void){
-   palmMisc.backlightLevel = (palmMisc.backlightLevel > 0) ? (1 + m515BacklightAmplifierState()) : 0;
 }
 
 static void updateTouchState(void){

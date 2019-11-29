@@ -5,13 +5,15 @@
 
 #include "testSuite.h"
 #include "testSuiteConfig.h"
-#include "specs/dragonballVzRegisterSpec.h"
-#include "specs/sed1376RegisterSpec.h"
+#include "dbvzRegisterNames.h"
+#include "sed1376RegisterNames.h"
 #include "debug.h"
 #include "tools.h"
 #include "cpu.h"
 #include "ugui.h"
-#include "undocumentedApis.h"
+#include "viewer.h"
+#include "armPrimitives.h"
+#include "armSideCode/armSideCode.h"
 
 
 var testButtonInput(void){
@@ -367,47 +369,6 @@ var ads7846Read(void){
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
 
-var ads7846ReadOsVersion(void){
-   static Boolean firstRun = true;
-   static uint16_t mode;
-   uint8_t ads7846Channel;
-   uint16_t channelData[8];
-   uint16_t y = 0;
-   
-   
-   if(firstRun){
-      firstRun = false;
-      mode = 0;
-      debugSafeScreenClear(C_WHITE);
-   }
-   
-   if(getButtonPressed(buttonSelect)){
-      mode++;/*modes 0-8 are valid, 9 is to test invalid args*/
-      if(mode > 9)
-         mode = 0;
-   }
-   
-   if(getButtonPressed(buttonBack)){
-      firstRun = true;
-      exitSubprogram();
-   }
-   
-   memset(channelData, 0x00, 8 * sizeof(uint16_t));
-   customCall_HwrADC(mode, channelData);
-   
-   StrPrintF(sharedDataBuffer, "Mode:%d", mode);
-   UG_PutString(0, y, sharedDataBuffer);
-   y += FONT_HEIGHT + 1;
-   
-   for(ads7846Channel = 0; ads7846Channel < 8; ads7846Channel++){
-      StrPrintF(sharedDataBuffer, "Ch:%d Value:0x%04X", ads7846Channel, channelData[ads7846Channel]);
-      UG_PutString(0, y, sharedDataBuffer);
-      y += FONT_HEIGHT + 1;
-   }
-   
-   return makeVar(LENGTH_0, TYPE_NULL, 0);
-}
-
 var getClk32Frequency(void){
    static Boolean firstRun = true;
    
@@ -464,12 +425,14 @@ var getCpuInfo(void){
       StrPrintF(sharedDataBuffer, "CPU Type:%s", getCpuString());
       UG_PutString(0, y, sharedDataBuffer);
       y += (FONT_HEIGHT + 1) * 5;
-      StrPrintF(sharedDataBuffer, "SCR:0x%02X", readArbitraryMemory8(HW_REG_ADDR(SCR)));
-      UG_PutString(0, y, sharedDataBuffer);
-      y += FONT_HEIGHT + 1;
-      StrPrintF(sharedDataBuffer, "CPU ID(IDR):0x%08lX", readArbitraryMemory32(HW_REG_ADDR(IDR)));
-      UG_PutString(0, y, sharedDataBuffer);
-      y += FONT_HEIGHT + 1;
+      if(getPhysicalCpuType() & CPU_M68K){
+         StrPrintF(sharedDataBuffer, "SCR:0x%02X", readArbitraryMemory8(HW_REG_ADDR(SCR)));
+         UG_PutString(0, y, sharedDataBuffer);
+         y += FONT_HEIGHT + 1;
+         StrPrintF(sharedDataBuffer, "CPU ID(IDR):0x%08lX", readArbitraryMemory32(HW_REG_ADDR(IDR)));
+         UG_PutString(0, y, sharedDataBuffer);
+         y += FONT_HEIGHT + 1;
+      }
    }
    
    if(getButtonPressed(buttonBack)){
@@ -944,7 +907,7 @@ var unaligned32bitAccess(void){
       uint8_t* align16Buffer = buffer;
       uint32_t* test;
       
-      //make sure its 16 bit aligned but not 32 bit aligned
+      /*make sure its 16 bit aligned but not 32 bit aligned*/
       while(((uint32_t)align16Buffer & 0x3) != 0x2)
          align16Buffer++;
       
@@ -1006,5 +969,84 @@ var isIrq2AttachedToSdCardChipSelect(void){
 var callSysUnimplemented(void){
    /*used to test the SysUnimplemented handler in MuExpDriver*/
    SysUnimplemented();
+   return makeVar(LENGTH_0, TYPE_NULL, 0);
+}
+
+var testArmDataExchange(void){
+   ALIGN(4) uint32_t* args[3];
+   static Boolean firstRun = true;
+   uint16_t y = 0;
+   
+   if(firstRun){
+      firstRun = false;
+      debugSafeScreenClear(C_WHITE);
+      
+   }
+   
+   if(getButtonPressed(buttonBack)){
+      firstRun = true;
+      exitSubprogram();
+   }
+   
+   args[0] = ARM_TEST_DATA_EXCHANGE;
+   args[1] = 0x13245768;
+   callArmTests(args, 1);
+   
+   StrPrintF(sharedDataBuffer, "0x12345678:0x%08lX", args[1]);
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   StrPrintF(sharedDataBuffer, "0x13245768:0x%08lX", args[2]);
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   
+   return makeVar(LENGTH_0, TYPE_NULL, 0);
+}
+
+var tsc2101ReadAllAnalogValues(void){
+   ALIGN(4) uint32_t args[12];
+   static Boolean firstRun = true;
+   uint16_t y = 0;
+   
+   if(firstRun){
+      firstRun = false;
+      debugSafeScreenClear(C_WHITE);
+   }
+   
+   if(getButtonPressed(buttonBack)){
+      firstRun = true;
+      exitSubprogram();
+   }
+   
+   args[0] = ARM_TEST_TSC2101_READ_ADC_VALUES;
+   callArmTests(args, 0);
+   
+   StrPrintF(sharedDataBuffer, "X:0x%04lX", args[1]);
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   StrPrintF(sharedDataBuffer, "Y:0x%04lX", args[2]);
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   StrPrintF(sharedDataBuffer, "Z1:0x%04lX", args[3]);
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   StrPrintF(sharedDataBuffer, "Z2:0x%04lX", args[4]);
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   StrPrintF(sharedDataBuffer, "BAT:0x%04lX", args[6]);
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   StrPrintF(sharedDataBuffer, "AUX1:0x%04lX", args[8]);
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   StrPrintF(sharedDataBuffer, "AUX2:0x%04lX", args[9]);
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   StrPrintF(sharedDataBuffer, "TEMP1:0x%04lX", args[10]);
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   StrPrintF(sharedDataBuffer, "TEMP2:0x%04lX", args[11]);
+   UG_PutString(0, y, sharedDataBuffer);
+   y += FONT_HEIGHT + 1;
+   
    return makeVar(LENGTH_0, TYPE_NULL, 0);
 }

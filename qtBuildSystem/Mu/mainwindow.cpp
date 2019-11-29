@@ -14,7 +14,6 @@
 #include <QKeyEvent>
 #include <QGraphicsScene>
 #include <QCoreApplication>
-#include <QPixmap>
 #include <QAudioOutput>
 #include <QAudioFormat>
 
@@ -29,7 +28,6 @@ MainWindow::MainWindow(QWidget* parent) :
    QMainWindow(parent),
    ui(new Ui::MainWindow){
    QAudioFormat format;
-   bool hideOnscreenKeys;
 
    //audio output
    format.setSampleRate(AUDIO_SAMPLE_RATE);
@@ -75,7 +73,7 @@ MainWindow::MainWindow(QWidget* parent) :
       //skip boot screen, most users dont want to wait 5 seconds on boot
       settings->setValue("fastBoot", true);
 
-      settings->setValue("useOs5", false);
+      settings->setValue("palmOsVersion", 4);
 
       //dont run this function again unless the config is deleted
       settings->setValue("firstBootCompleted", true);
@@ -87,8 +85,6 @@ MainWindow::MainWindow(QWidget* parent) :
 
    //GUI
    ui->setupUi(this);
-
-   hideOnscreenKeys = settings->value("hideOnscreenKeys", false).toBool();
 
    //this makes the display window and button icons resize properly
    ui->centralWidget->installEventFilter(this);
@@ -104,6 +100,7 @@ MainWindow::MainWindow(QWidget* parent) :
    ui->addressBook->installEventFilter(this);
    ui->todo->installEventFilter(this);
    ui->notes->installEventFilter(this);
+   ui->voiceMemo->installEventFilter(this);
 
    ui->power->installEventFilter(this);
 
@@ -116,19 +113,7 @@ MainWindow::MainWindow(QWidget* parent) :
    ui->debugger->installEventFilter(this);
    ui->bootApp->installEventFilter(this);
 
-   //hide onscreen keys if needed
-   ui->up->setHidden(hideOnscreenKeys);
-   ui->down->setHidden(hideOnscreenKeys);
-   ui->left->setHidden(hideOnscreenKeys);
-   ui->right->setHidden(hideOnscreenKeys);
-   ui->center->setHidden(hideOnscreenKeys);
-
-   ui->calendar->setHidden(hideOnscreenKeys);
-   ui->addressBook->setHidden(hideOnscreenKeys);
-   ui->todo->setHidden(hideOnscreenKeys);
-   ui->notes->setHidden(hideOnscreenKeys);
-
-   ui->power->setHidden(hideOnscreenKeys);
+   redraw();
 
 #if !defined(EMU_DEBUG) || defined(Q_OS_ANDROID) || defined(Q_OS_IOS)
    //doesnt support debug tools
@@ -173,17 +158,6 @@ void MainWindow::createHomeDirectoryTree(const QString& path){
    homeDir.mkpath("./debugDumps");
 }
 
-uint32_t MainWindow::getEmuFeatureList(){
-   uint32_t features = FEATURE_ACCURATE;
-
-   features |= settings->value("featureFastCpu", false).toBool() ? FEATURE_FAST_CPU : 0;
-   features |= settings->value("featureSyncedRtc", false).toBool() ? FEATURE_SYNCED_RTC : 0;
-   features |= settings->value("featureHleApis", false).toBool() ? FEATURE_HLE_APIS : 0;
-   features |= settings->value("featureDurable", false).toBool() ? FEATURE_DURABLE : 0;
-
-   return features;
-}
-
 void MainWindow::popupErrorDialog(const QString& error){
    QMessageBox::critical(this, "Mu", error, QMessageBox::Ok);
 }
@@ -207,6 +181,7 @@ void MainWindow::redraw(){
    ui->addressBook->setHidden(hideOnscreenKeys);
    ui->todo->setHidden(hideOnscreenKeys);
    ui->notes->setHidden(hideOnscreenKeys);
+   ui->voiceMemo->setHidden(hideOnscreenKeys);
 
    ui->power->setHidden(hideOnscreenKeys);
 
@@ -230,16 +205,14 @@ bool MainWindow::eventFilter(QObject* object, QEvent* event){
          ui->displayContainer->setFixedHeight(ui->centralWidget->height() * (hideOnscreenKeys ? 0.80 : 0.60));
 
          smallestRatio = qMin(ui->displayContainer->size().width() * 0.98 / 3.0 , ui->displayContainer->size().height() * 0.98 / 4.0);
-         //the 0.98 above allows the display to shrink, without it the displayContainer couldent shrink because of the fixed size of the display
+         //the 0.98 above allows the display to shrink, without it the displayContainer couldnt shrink because of the fixed size of the display
 
          //set new size
          ui->display->setFixedSize(smallestRatio * 3.0, smallestRatio * 4.0);
 
          //scale framebuffer to new size and refresh
-         if(emu.isInited()){
-            ui->display->setPixmap(emu.getFramebuffer().scaled(QSize(ui->display->size().width(), ui->display->size().height()), Qt::KeepAspectRatio, Qt::SmoothTransformation));
-            ui->display->update();
-         }
+         if(emu.isInited())
+            ui->display->repaint();
       }
    }
 
@@ -249,8 +222,8 @@ bool MainWindow::eventFilter(QObject* object, QEvent* event){
 //display
 void MainWindow::updateDisplay(){
    if(emu.newFrameReady()){
-      //video, this is doing bilinear filitering in software, this is why the Qt port is broken on Android, move this to a new thread if possible
-      ui->display->setPixmap(emu.getFramebuffer().scaled(ui->display->size().width(), ui->display->size().height(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
+      //video
+      ui->display->repaint();
 
       //audio
       audioOut->write((const char*)emu.getAudioSamples(), AUDIO_SAMPLES_PER_FRAME * 2/*channels*/ * sizeof(int16_t));
@@ -294,6 +267,14 @@ void MainWindow::on_todo_pressed(){
 
 void MainWindow::on_todo_released(){
    emu.setKeyValue(EmuWrapper::BUTTON_TODO, false);
+}
+
+void MainWindow::on_voiceMemo_pressed(){
+   emu.setKeyValue(EmuWrapper::BUTTON_VOICE_MEMO, false);
+}
+
+void MainWindow::on_voiceMemo_released(){
+   emu.setKeyValue(EmuWrapper::BUTTON_VOICE_MEMO, false);
 }
 
 void MainWindow::on_notes_pressed(){
@@ -347,15 +328,16 @@ void MainWindow::on_center_released(){
 //emu control
 void MainWindow::on_ctrlBtn_clicked(){
    if(!emu.isInited()){
-      uint32_t enabledFeatures = getEmuFeatureList();
       QString sysDir = settings->value("resourceDirectory", "").toString();
-      uint32_t error = emu.init(sysDir, settings->value("useOs5", false).toBool(), enabledFeatures, settings->value("fastBoot", false).toBool());
+      uint32_t error = emu.init(sysDir, settings->value("palmOsVersionString", "Palm m515/Palm OS 4.1").toString(), settings->value("featureSyncedRtc", false).toBool(), settings->value("featureDurable", false).toBool(), settings->value("fastBoot", false).toBool());
 
       if(error == EMU_ERROR_NONE){
+         emu.setCpuSpeed(settings->value("cpuSpeed", 1.00).toDouble());
+
          ui->up->setEnabled(true);
          ui->down->setEnabled(true);
 
-         if(settings->value("useOs5", false).toBool()){
+         if(emu.isTungstenT3()){
             ui->left->setEnabled(true);
             ui->right->setEnabled(true);
             ui->center->setEnabled(true);
@@ -365,6 +347,9 @@ void MainWindow::on_ctrlBtn_clicked(){
          ui->addressBook->setEnabled(true);
          ui->todo->setEnabled(true);
          ui->notes->setEnabled(true);
+
+         if(emu.isTungstenT3())
+            ui->voiceMemo->setEnabled(true);
 
          ui->power->setEnabled(true);
 
@@ -428,7 +413,7 @@ void MainWindow::on_screenshot_clicked(){
       qlonglong screenshotNumber = settings->value("screenshotNum", 0).toLongLong();
       QString screenshotPath = settings->value("resourceDirectory", "").toString() + "/screenshots/screenshot" + QString::number(screenshotNumber, 10) + ".png";
 
-      emu.getFramebuffer().save(screenshotPath, "PNG", 100);
+      emu.getFramebufferImage().save(screenshotPath, "PNG", 100);
       screenshotNumber++;
       settings->setValue("screenshotNum", screenshotNumber);
    }

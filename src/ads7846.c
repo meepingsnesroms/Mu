@@ -8,7 +8,7 @@
 
 bool ads7846PenIrqEnabled;
 
-static const uint16_t ads7846DockResistorValues[PORT_END] = {0xFFF/*none*/, 0x1EB/*USB cradle*/, 0x000/*serial cradle, unknown*/, 0x000/*USB peripheral, unknown*/, 0x000/*serial peripheral, unknown*/};
+static const uint16_t ads7846DockResistorValues[EMU_PORT_END] = {0xFFF/*none*/, 0x1EB/*USB cradle*/, 0x000/*serial cradle, unknown*/, 0x000/*USB peripheral, unknown*/, 0x000/*serial peripheral, unknown*/};
 
 static uint8_t  ads7846BitsToNextControl;
 static uint8_t  ads7846ControlByte;
@@ -33,7 +33,7 @@ void ads7846Reset(void){
    ads7846OutputValue = 0x0000;
    ads7846ChipSelect = true;
 #if !defined(EMU_NO_SAFETY)
-   m515RefreshTouchState();
+   m5XXRefreshTouchState();
 #endif
 }
 
@@ -84,7 +84,7 @@ void ads7846SetChipSelect(bool value){
       ads7846PenIrqEnabled = true;
       ads7846OutputValue = 0x0000;
 #if !defined(EMU_NO_SAFETY)
-      m515RefreshTouchState();
+      m5XXRefreshTouchState();
 #endif
    }
    ads7846ChipSelect = value;
@@ -116,7 +116,7 @@ bool ads7846ExchangeBit(bool bitIn){
       //control byte and busy cycle finished, get output value
       bool bitMode = !!(ads7846ControlByte & 0x08);
       bool differentialMode = !(ads7846ControlByte & 0x04);
-      uint8_t channel = (ads7846ControlByte & 0x70) >> 4;
+      uint8_t channel = ads7846ControlByte >> 4 & 0x07;
       uint8_t powerSave = ads7846ControlByte & 0x03;
 
       //debugLog("Accessed ADS7846 Ch:%d, %d bits, %s Mode, Power Save:%d, PC:0x%08X.\n", channel, bitMode ? 8 : 12, differentialMode ? "Diff" : "Normal", ads7846ControlByte & 0x03, flx68000GetPc());
@@ -202,15 +202,15 @@ bool ads7846ExchangeBit(bool bitIn){
                      break;
 
                   case 2:
-                     //battery, unknown hasent gotten low enough to test yet
+                     //battery
                      //ads7846OutputValue = 0x600;//5%
                      //ads7846OutputValue = 0x61C;//30%
                      //ads7846OutputValue = 0x63C;//40%
                      //ads7846OutputValue = 0x65C;//60%
                      //ads7846OutputValue = 0x67C;//80%
                      //ads7846OutputValue = 0x68C;//100%
-                     ads7846OutputValue = 0x69C;//100%
-                     //ads7846OutputValue = ads7846RangeMap(0, 100, palmMisc.batteryLevel, 0x000, 0x7F8);
+                     //ads7846OutputValue = 0x69C;//100%
+                     ads7846OutputValue = ads7846RangeMap(0, 100, palmMisc.batteryLevel, 0x5FD, 0x68C);
                      break;
 
                   case 3:
@@ -273,7 +273,7 @@ bool ads7846ExchangeBit(bool bitIn){
 
       ads7846PenIrqEnabled = !(powerSave & 0x01);
 #if !defined(EMU_NO_SAFETY)
-      m515RefreshTouchState();
+      m5XXRefreshTouchState();
 #endif
    }
 

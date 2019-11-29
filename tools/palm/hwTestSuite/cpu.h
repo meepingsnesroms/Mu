@@ -5,7 +5,7 @@
 
 #include "testSuite.h"
 
-#define CPU_NONE  0x00/*only if in emulator with special features enabled, returned for physical cpu in emulator*/
+#define CPU_NONE  0x00
 #define CPU_M68K  0x01
 #define CPU_ARM   0x02
 #define CPU_BOTH  (CPU_M68K | CPU_ARM)

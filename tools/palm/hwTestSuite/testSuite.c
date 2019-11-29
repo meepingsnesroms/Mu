@@ -63,7 +63,7 @@ char* floatToString(float data){
 uint16_t palmButtons;
 uint16_t palmButtonsLastFrame;
 Boolean  isM515;
-Boolean  haveKsyms;
+Boolean  isT3;
 Boolean  skipFrameDelay;
 uint8_t* sharedDataBuffer;
 
@@ -236,7 +236,7 @@ static Boolean testerInit(void){
    palmButtonsLastFrame = 0x0000;
    FtrGet(sysFtrCreator, sysFtrNumOEMDeviceID, &deviceId);
    isM515 = deviceId == (uint32_t)'lith';/*"lith" is the Palm m515 device code, likely because it is one of the first with a lithium ion battery*/
-   haveKsyms = initUndocumentedApiHandlers();
+   isT3 = deviceId == (uint32_t)'Arz1';
    skipFrameDelay = false;
    subprogramIndex = 0;
    subprogramArgsSet = false;

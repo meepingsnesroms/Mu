@@ -1,6 +1,6 @@
 EMU_DEFINES :=
 EMU_SOURCES_C := $(EMU_PATH)/emulator.c \
-	$(EMU_PATH)/m515Bus.c \
+	$(EMU_PATH)/m5XXBus.c \
 	$(EMU_PATH)/dbvz.c \
 	$(EMU_PATH)/flx68000.c \
 	$(EMU_PATH)/sed1376.c \
@@ -8,52 +8,66 @@ EMU_SOURCES_C := $(EMU_PATH)/emulator.c \
 	$(EMU_PATH)/pdiUsbD12.c \
 	$(EMU_PATH)/sdCard.c \
 	$(EMU_PATH)/silkscreen.c \
-	$(EMU_PATH)/expansionHardware.c \
-	$(EMU_PATH)/debug/sandbox.c \
 	$(EMU_PATH)/audio/blip_buf.c \
 	$(EMU_PATH)/m68k/m68kops.c \
 	$(EMU_PATH)/m68k/m68kopnz.c \
 	$(EMU_PATH)/m68k/m68kopdm.c \
 	$(EMU_PATH)/m68k/m68kopac.c \
-	$(EMU_PATH)/m68k/m68kdasm.c \
 	$(EMU_PATH)/m68k/m68kcpu.c
-EMU_SOURCES_CXX := 
-EMU_SOURCES_ASM := 
+EMU_SOURCES_CXX :=
+EMU_SOURCES_ASM :=
+
+ifeq ($(EMU_NO_SAFETY), 1)
+	EMU_DEFINES += -DEMU_NO_SAFETY
+endif
 
 ifeq ($(EMU_HAVE_FILE_LAUNCHER), 1)
-	EMU_SOURCES_C += $(EMU_PATH)/fileLauncher/launcher.c 
+	EMU_SOURCES_C += $(EMU_PATH)/fileLauncher/launcher.c
 endif
 
 ifeq ($(EMU_SUPPORT_PALM_OS5), 1)
 	# ARM emulator uses C++11 so it must be supported and enabled if Palm OS 5 support is enabled
 	EMU_DEFINES += -DEMU_SUPPORT_PALM_OS5
 	EMU_DEFINES += -DSUPPORT_LINUX # forces the dynarec to use accurate mode and disable Nspire OS hacks
-	EMU_SOURCES_C += $(EMU_PATH)/pxa255/pxa255_mem.c \
-		$(EMU_PATH)/pxa255/pxa255_DMA.c \
-		$(EMU_PATH)/pxa255/pxa255_DSP.c \
-		$(EMU_PATH)/pxa255/pxa255_GPIO.c \
-		$(EMU_PATH)/pxa255/pxa255_IC.c \
-		$(EMU_PATH)/pxa255/pxa255_LCD.c \
-		$(EMU_PATH)/pxa255/pxa255_PwrClk.c \
-		$(EMU_PATH)/pxa255/pxa255_RTC.c \
-		$(EMU_PATH)/pxa255/pxa255_TIMR.c \
-		$(EMU_PATH)/pxa255/pxa255_UART.c \
-		$(EMU_PATH)/pxa255/pxa255.c \
+	EMU_SOURCES_C += $(EMU_PATH)/pxa260/pxa260_DMA.c \
+		$(EMU_PATH)/pxa260/pxa260_DSP.c \
+		$(EMU_PATH)/pxa260/pxa260_GPIO.c \
+		$(EMU_PATH)/pxa260/pxa260_IC.c \
+		$(EMU_PATH)/pxa260/pxa260_LCD.c \
+		$(EMU_PATH)/pxa260/pxa260_PwrClk.c \
+		$(EMU_PATH)/pxa260/pxa260_RTC.c \
+		$(EMU_PATH)/pxa260/pxa260_TIMR.c \
+		$(EMU_PATH)/pxa260/pxa260_UART.c \
+		$(EMU_PATH)/pxa260/pxa260I2c.c \
+		$(EMU_PATH)/pxa260/pxa260Memctrl.c \
+		$(EMU_PATH)/pxa260/pxa260Timing.c \
+		$(EMU_PATH)/pxa260/pxa260Ssp.c \
+		$(EMU_PATH)/pxa260/pxa260Udc.c \
+		$(EMU_PATH)/pxa260/pxa260.c \
 		$(EMU_PATH)/armv5te/emuVarPool.c \
 		$(EMU_PATH)/armv5te/mem.c \
 		$(EMU_PATH)/armv5te/mmu.c \
-		$(EMU_PATH)/tungstenT3Bus.c
+		$(EMU_PATH)/tps65010.c \
+		$(EMU_PATH)/tsc2101.c \
+		$(EMU_PATH)/w86l488.c
 	EMU_SOURCES_CXX += $(EMU_PATH)/armv5te/arm_interpreter.cpp \
 		$(EMU_PATH)/armv5te/thumb_interpreter.cpp \
 		$(EMU_PATH)/armv5te/cpu.cpp \
 		$(EMU_PATH)/armv5te/coproc.cpp
-      
+
+		ifneq ($(EMU_NO_SAFETY), 1)
+			EMU_SOURCES_C += 		$(EMU_PATH)/armv5te/uArm/CPU_2.c \
+				$(EMU_PATH)/armv5te/uArm/icache.c
+
+			EMU_SOURCES_CXX += $(EMU_PATH)/armv5te/uArm/uArmGlue.cpp
+		endif
+
 	ifeq ($(EMU_OS), windows)
 		EMU_SOURCES_C += $(EMU_PATH)/armv5te/os/os-win32.c
 	else ifeq ($(EMU_OS), linux)
 		EMU_SOURCES_C += $(EMU_PATH)/armv5te/os/os-linux.c
-   endif
-   
+	endif
+
 	ifeq ($(EMU_NO_DYNAREC), 1)
 		EMU_DEFINES += -DNO_TRANSLATION
 		EMU_SOURCES_C += $(EMU_PATH)/armv5te/asmcode.c

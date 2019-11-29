@@ -181,11 +181,6 @@ var valueViewer(void){
    var value = getSubprogramArgs();
    uint64_t varData = getVarValue(value);
    
-   if(getButtonPressed(buttonBack)){
-      clearNeeded = true;
-      exitSubprogram();
-   }
-   
    if(clearNeeded){
       debugSafeScreenClear(C_WHITE);
       
@@ -224,6 +219,13 @@ var valueViewer(void){
       
       clearNeeded = false;
    }
+   
+   if(getButtonPressed(buttonBack)){
+      clearNeeded = true;
+      exitSubprogram();
+   }
+   
+   return makeVar(LENGTH_0, TYPE_NULL, 0);
 }
 
 var hexViewer(void){
@@ -283,10 +285,6 @@ void resetFunctionViewer(void){
    hwTests[totalHwTests].testFunction = getDeviceInfo;
    totalHwTests++;
    
-   StrNCopy(hwTests[totalHwTests].name, "Get Pen Position", TEST_NAME_LENGTH);
-   hwTests[totalHwTests].testFunction = getPenPosition;
-   totalHwTests++;
-   
    StrNCopy(hwTests[totalHwTests].name, "Unaligned 32 Bit Acs", TEST_NAME_LENGTH);
    hwTests[totalHwTests].testFunction = unaligned32bitAccess;
    totalHwTests++;
@@ -295,8 +293,8 @@ void resetFunctionViewer(void){
    hwTests[totalHwTests].testFunction = callSysUnimplemented;
    totalHwTests++;
    
-   if(cpuType & CPU_M68K || cpuType == CPU_NONE){
-      /*68k only functions*/
+   if(cpuType & CPU_M68K){
+      /*68K only functions*/
       if((cpuType & CPU_M68K_TYPES) != CPU_M68K_328){
          /*original dragonball doesnt have a bootloader*/
          StrNCopy(hwTests[totalHwTests].name, "Dump Bootloader", TEST_NAME_LENGTH);
@@ -330,6 +328,10 @@ void resetFunctionViewer(void){
       
       StrNCopy(hwTests[totalHwTests].name, "Button Test", TEST_NAME_LENGTH);
       hwTests[totalHwTests].testFunction = testButtonInput;
+      totalHwTests++;
+      
+      StrNCopy(hwTests[totalHwTests].name, "Get Pen Position", TEST_NAME_LENGTH);
+      hwTests[totalHwTests].testFunction = getPenPosition;
       totalHwTests++;
       
       StrNCopy(hwTests[totalHwTests].name, "Get CLK32 Freq", TEST_NAME_LENGTH);
@@ -378,16 +380,6 @@ void resetFunctionViewer(void){
          totalHwTests++;
       }
       
-      if(haveKsyms){
-         StrNCopy(hwTests[totalHwTests].name, "ADS7846 OS Read", TEST_NAME_LENGTH);
-         hwTests[totalHwTests].testFunction = ads7846ReadOsVersion;
-         totalHwTests++;
-      }
-      
-      StrNCopy(hwTests[totalHwTests].name, "Manual LSSA", TEST_NAME_LENGTH);
-      hwTests[totalHwTests].testFunction = manualLssa;
-      totalHwTests++;
-      
       StrNCopy(hwTests[totalHwTests].name, "TSTAT1 Semaphore Info", TEST_NAME_LENGTH);
       hwTests[totalHwTests].testFunction = tstat1GetSemaphoreLockOrder;
       totalHwTests++;
@@ -399,5 +391,18 @@ void resetFunctionViewer(void){
       StrNCopy(hwTests[totalHwTests].name, "Is IRQ2 = SD Card CS", TEST_NAME_LENGTH);
       hwTests[totalHwTests].testFunction = isIrq2AttachedToSdCardChipSelect;
       totalHwTests++;
+   }
+   
+   if(cpuType & CPU_ARM){
+      StrNCopy(hwTests[totalHwTests].name, "Test ARM Exchange", TEST_NAME_LENGTH);
+      hwTests[totalHwTests].testFunction = testArmDataExchange;
+      totalHwTests++;
+      
+      if(isT3){
+         StrNCopy(hwTests[totalHwTests].name, "TSC2101 ADC Read", TEST_NAME_LENGTH);
+         hwTests[totalHwTests].testFunction = tsc2101ReadAllAnalogValues;
+         totalHwTests++;
+      }
+      
    }
 }

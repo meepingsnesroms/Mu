@@ -1,7 +1,5 @@
 CPU:
 Test what bits of IMR are writable
-sandbox isnt notified about switches to Thumb mode
-function name finders for ARMv5 and Thumb are unimplemented
 hardware registers don't have there names printed in sandbox
 
 CPU I/O:
@@ -19,11 +17,13 @@ RxOverflow on SPI1, don't know if back or front of FIFO is overwritten on overfl
 ICR POL(1,2,3,6) may flip the pin value as well as the interrupt, POL5 does not flip the INT5 pin though, this was confirmed with a hardware test(it doesnt seem to but there is instability on the pin when the SD card is plugged in, this may have to do with card detect also being a data line on the SD pinout)
 PWM2 is not implemented
 while it is stated that the PLL is turned off "30 clocks" after the DISPLL bit is set, it doesnt state where the clocks come from, CLK32 or SYSCLK
-UART1 USTCNT1
 should also not transfer data to SD card when MOSI, MISO or SPICLK1 are disabled
 port d data register INT* bits seem to have there data bits cleared when an edge triggered interrupt is cleared(according to MC68VZ328UM.pdf Page 10-15)
 sound plays too long when the category's menu is selected on the home screen and the pen is pressed and held in the middle of the screen(only happens there, other views of the same type don't have this issue)(effected by CPU speed, turning it up reduces the duration of the excess squeal)(the home menu may be changing the clock speed when this menu is released since it refreshes a bunch of icons which is CPU intensive, if it is it would distort the audio since sysclks are only calculated at the begining of a frame the new value would not take effect until a new frame began, and since it works properly sometimes that is probably when the change occurs just at the end of the last frame and the sysclk duration refresh happens at the intended time due to the new frame starting)
-trying to beam anything will lock up the OS
+UART1 OLD DATA interrupt uses timing, may just have this be the same a DATA READY
+SPI1 rxOverflow is may not be emulated exactly as its supposed to be, the overflow data is written to the newest FIFO byte when it should probably be written to the oldest
+UART CTS pin is not emulated
+since actual UART hardware is not being used should be safe to ignore the parity bit and timing
 
 Memory:
 unknown if DRAM bit expanded address space is used for CSC when its not an extension of CSD
@@ -39,6 +39,9 @@ electrical noise on lines(conversions probably should have +-20 added to values)
 in the edge case that SPICLK2 is disabled while using ADS7846 and a 1 was the last bit shifted out 0s will still be shifted in
 need to to verify behavior of differential mode bit
 
+TSC2101:
+values of AUX1 and AUX2 are unknown an need to be tested, emulation has issues with the USB port shortly after and it would make sense that since the T3 has the same connector as the m515 AUX1 is the device type resistor in the bottom connector
+
 SD Card:
 block specific write protect bits don't work
 IRQ2 may actually be attached to the SD Card data out pin, triggering an interrupt when a 0 is received to process the return data
@@ -47,17 +50,30 @@ This thing: case SEND_STATUS://HACK, need to add real write protection, this com
 
 Debug tools:
 ADS7846 channels can't be read in single reference mode in hwTestSuite
+Mu sandbox dosent have memory and opcode hooks setup when in ARMv5 mode
 
 MakePalmBitmap:
 
 Other:
-Support for Silkyboard 2 silkscreen:https://archive.org/details/tucows_228076_SILKYBOARD_II
 Qt port dosent support Windows touchscreen input
-Qt GUI dosent resize properly with 320x320 framebuffer
-File Installer isnt working yet
-Qt dosent have a hybrid file/folder selector so apps will always have to be launched from folders for now
+T3 I2C currently has no ACK bits(should work without them its just inaccurate)(I2C works fine though)
+T3 emulation attempts to set GPIO1(reset button) as an output
+GPIO lines from misc chips to CPU are not implemented
+PXA260 idle mode is unimplemented
+0x0E071F16 MCR	P15, #0, R1, C7, C2, #5 is unimplemented along with several other unknown CP15 opcodes
+
 
 Fixed:
+memory dumping dosent work for OS 5 yet
+Endian compatibility is broken(the CPU state needs to be standardized)
+RetroArch port crashes on exit(needed to check if environ_cb returned true, switched to libretro-common filestreams too)
+make the headers belong to the main file of the target chip being emulated for specs
+remove specs folder
+UART1 USTCNT1
+trying to beam anything will lock up the OS
+Qt dosent have a hybrid file/folder selector so apps will always have to be launched from folders for now
+File Installer isnt working yet
+Qt GUI dosent resize properly with 320x320 framebuffer
 PLLFSR has a hack that makes busy wait loops finish faster by toggling the CLK32 bit on read, for power button issue(removed, power button works as expected if you wait at least 2 seconds before pushing it again(makes sence that it cnat read the new press while its turning off the CPU))
 (CPU)VFP(floating point) coprocessor for ARM(dont think the ARM Palms even used VFP)
 (Other)need to get rid of buffer_t, its not used much anyway

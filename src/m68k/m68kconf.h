@@ -133,12 +133,8 @@
 /* If ON, CPU will call the instruction hook callback before every
  * instruction.
  */
-#if defined(EMU_DEBUG) && defined(EMU_SANDBOX) && defined(EMU_SANDBOX_OPCODE_LEVEL_DEBUG)
-#define M68K_INSTRUCTION_HOOK       OPT_SPECIFY_HANDLER
-#else
 #define M68K_INSTRUCTION_HOOK       OPT_OFF
-#endif
-#define M68K_INSTRUCTION_CALLBACK() sandboxOnOpcodeRun()
+#define M68K_INSTRUCTION_CALLBACK() on_opcode_run()
 
 
 /* If ON, the CPU will emulate the 4-byte prefetch queue of a real 68000.
@@ -181,16 +177,6 @@
 /* It seems MASK_OUT_ABOVE_32 is has to be called on every 32 bit operation when using this option,
  * possibly even making the speed worse than with just 32 bits.
  */
-
-
-/* Set to your compiler's static inline keyword to enable it, or
- * set it to blank to disable it.
- * If you define MUSASHI_INLINE in the makefile, it will override this value.
- * NOTE: not enabling inline functions will SEVERELY slow down emulation.
- */
-#ifndef MUSASHI_INLINE
-#define MUSASHI_INLINE static inline
-#endif /* MUSASHI_INLINE */
 
 
 /* ======================================================================== */

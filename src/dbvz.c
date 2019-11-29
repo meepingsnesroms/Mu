@@ -2,40 +2,48 @@
 #include <stdbool.h>
 #include <string.h>
 
-#include "emulator.h"
-#include "specs/dragonballVzRegisterSpec.h"
 #include "dbvz.h"
-#include "m515Bus.h"
+#include "emulator.h"
+#include "m5XXBus.h"
 #include "portability.h"
 #include "flx68000.h"
 #include "ads7846.h"
 #include "sdCard.h"
+#include "sed1376.h"
 #include "audio/blip_buf.h"
-#include "debug/sandbox.h"
+#include "m68k/m68k.h"
 
-uint8_t     dbvzReg[DBVZ_REG_SIZE];
+
+#include "dbvzRegisterNames.c.h"
+
+
 dbvz_chip_t dbvzChipSelects[DBVZ_CHIP_END];
-double      dbvzSysclksPerClk32;//how many SYSCLK cycles before toggling the 32.768 kHz crystal
-uint32_t    dbvzFrameClk32s;//how many CLK32s have happened in the current frame
-double      dbvzClk32Sysclks;//how many SYSCLKs have happened in the current CLK32
-int8_t      pllSleepWait;
-int8_t      pllWakeWait;
-uint32_t    clk32Counter;
-double      pctlrCpuClockDivider;
-double      timerCycleCounter[2];
-uint16_t    timerStatusReadAcknowledge[2];
-uint8_t     portDInterruptLastValue;//used for edge triggered interrupt timing
-uint16_t    spi1RxFifo[9];
-uint16_t    spi1TxFifo[9];
-uint8_t     spi1RxReadPosition;
-uint8_t     spi1RxWritePosition;
-bool        spi1RxOverflowed;
-uint8_t     spi1TxReadPosition;
-uint8_t     spi1TxWritePosition;
-int32_t     pwm1ClocksToNextSample;
-uint8_t     pwm1Fifo[6];
-uint8_t     pwm1ReadPosition;
-uint8_t     pwm1WritePosition;
+uint8_t     dbvzReg[DBVZ_REG_SIZE];
+uint16_t*   dbvzFramebuffer;
+uint16_t    dbvzFramebufferWidth;
+uint16_t    dbvzFramebufferHeight;
+
+static double   dbvzSysclksPerClk32;//how many SYSCLK cycles before toggling the 32.768 kHz crystal
+static uint32_t dbvzFrameClk32s;//how many CLK32s have happened in the current frame
+static double   dbvzClk32Sysclks;//how many SYSCLKs have happened in the current CLK32
+static int8_t   pllSleepWait;
+static int8_t   pllWakeWait;
+static uint32_t clk32Counter;
+static double   pctlrCpuClockDivider;
+static double   timerCycleCounter[2];
+static uint16_t timerStatusReadAcknowledge[2];
+static uint8_t  portDInterruptLastValue;//used for edge triggered interrupt timing
+static uint16_t spi1RxFifo[9];
+static uint16_t spi1TxFifo[9];
+static uint8_t  spi1RxReadPosition;
+static uint8_t  spi1RxWritePosition;
+static bool     spi1RxOverflowed;
+static uint8_t  spi1TxReadPosition;
+static uint8_t  spi1TxWritePosition;
+static int32_t  pwm1ClocksToNextSample;
+static uint8_t  pwm1Fifo[6];
+static uint8_t  pwm1ReadPosition;
+static uint8_t  pwm1WritePosition;
 
 
 static void checkInterrupts(void);
@@ -48,6 +56,83 @@ static int32_t audioGetFramePercentage(void);
 
 #include "dbvzRegisterAccessors.c.h"
 #include "dbvzTiming.c.h"
+
+void dbvzLcdRender(void){
+   static const uint16_t masterColorLut[16] = {0x746D, 0x6C0C, 0x63CB, 0x5B8A, 0x534A, 0x4AE9, 0x42A8, 0x3A67, 0x3A27, 0x31C6, 0x2985, 0x2144, 0x1904, 0x10A3, 0x0862, 0x0000};
+   static const uint8_t bppLut[4] = {1, 2, 4, 0};
+   uint16_t colorLut2Bpp[4];//stores indexes to masterColorLut
+   uint32_t startAddress = registerArrayRead32(LSSA);
+   uint8_t bitsPerPixel = bppLut[registerArrayRead8(LPICF) & 0x03];
+   uint16_t pageWidth = registerArrayRead8(LVPW) * 2;//in bytes
+   bool invertColors = registerArrayRead8(LPOLCF) & 0x01;
+   uint8_t pixelShift = registerArrayRead8(LPOSR);
+   uint16_t width = registerArrayRead16(LXMAX);
+   uint16_t height = registerArrayRead16(LYMAX) + 1;
+   uint16_t y;
+   uint16_t x;
+
+   //dont render if LCD controller is disabled
+   if(!(registerArrayRead8(LCKCON) & 0x80)){
+      memset(dbvzFramebuffer, 0x00, dbvzFramebufferWidth * dbvzFramebufferHeight * sizeof(uint16_t));
+      return;
+   }
+
+   width = FAST_MIN(width, dbvzFramebufferWidth);
+   height = FAST_MIN(height, dbvzFramebufferHeight);
+
+   //TODO: cursor not implemented, not that anything will use a hardware terminal cursor on Palm OS
+   //m500 ROM I am using has the hardware feature bit for inverting color when backlight is on disabled, the backlight does not invert the colors even though HW supports it
+
+   switch(bitsPerPixel){
+      case 1:
+         for(y = 0; y < height; y++){
+            for(x = 0; x < width / 16; x++){
+               uint16_t dataUnit = m68k_read_memory_16(startAddress + y * pageWidth + x * 2);
+               uint8_t index;
+
+               for(index = 0; index < 16; index++)
+                  if(x * 16 + index >= pixelShift)
+                     dbvzFramebuffer[y * dbvzFramebufferWidth + x * 16 + index - pixelShift] = !!(dataUnit & 1 << 15 - index) == invertColors ? masterColorLut[0] : masterColorLut[15];
+            }
+         }
+         break;
+
+      case 2:
+         colorLut2Bpp[0] = 0;
+         colorLut2Bpp[1] = registerArrayRead8(LGPMR) & 0x0F;
+         colorLut2Bpp[2] = registerArrayRead8(LGPMR) >> 4;
+         colorLut2Bpp[3] = 15;
+
+         for(y = 0; y < height; y++){
+            for(x = 0; x < width / 8; x++){
+               uint16_t dataUnit = m68k_read_memory_16(startAddress + y * pageWidth + x * 2);
+               uint8_t index;
+
+               for(index = 0; index < 8; index++)
+                  if(x * 8 + index >= pixelShift)
+                     dbvzFramebuffer[y * dbvzFramebufferWidth + x * 8 + index - pixelShift] = invertColors ? masterColorLut[15 - colorLut2Bpp[dataUnit >> 14 - index * 2 & 0x03]] : masterColorLut[colorLut2Bpp[dataUnit >> 14 - index * 2 & 0x03]];
+            }
+         }
+         break;
+
+      case 4:
+         for(y = 0; y < height; y++){
+            for(x = 0; x < width / 4; x++){
+               uint16_t dataUnit = m68k_read_memory_16(startAddress + y * pageWidth + x * 2);
+               uint8_t index;
+
+               for(index = 0; index < 4; index++)
+                  if(x * 4 + index >= pixelShift)
+                     dbvzFramebuffer[y * dbvzFramebufferWidth + x * 4 + index - pixelShift] = invertColors ? masterColorLut[15 - (dataUnit >> 12 - index * 4 & 0x0F)] : masterColorLut[dataUnit >> 12 - index * 4 & 0x0F];
+            }
+         }
+         break;
+
+      default:
+         debugLog("Invalid DBVZ LCD controller pixel depth %d!\n", bitsPerPixel);
+         break;
+   }
+}
 
 bool dbvzIsPllOn(void){
    return !(dbvzSysclksPerClk32 < 1.0);
@@ -75,8 +160,8 @@ void ads7846OverridePenState(bool value){
             setIprIsrBit(DBVZ_INT_IRQ5);
          else
             clearIprIsrBit(DBVZ_INT_IRQ5);
+         checkInterrupts();
       }
-      checkInterrupts();
 
       //override over, put back real state
       updateTouchState();
@@ -84,14 +169,14 @@ void ads7846OverridePenState(bool value){
    }
 }
 
-void m515RefreshTouchState(void){
+void m5XXRefreshTouchState(void){
    //called when ads7846PenIrqEnabled is changed
    updateTouchState();
    checkInterrupts();
 }
 
-void m515RefreshInputState(void){
-   //update power button LED state if palmMisc.batteryCharging changed
+void m5XXRefreshInputState(void){
+   //update power button LED state incase palmMisc.batteryCharging changed
    updatePowerButtonLedStatus();
 
    //update touchscreen
@@ -143,7 +228,7 @@ void dbvzSetWriteProtectViolation(uint32_t address){
 }
 
 static void pllWakeCpuIfOff(void){
-   const int8_t pllWaitTable[4] = {32, 48, 64, 96};
+   static const int8_t pllWaitTable[4] = {32, 48, 64, 96};
 
    //PLL is off and not already in the process of waking up
    if(!dbvzIsPllOn() && pllWakeWait == -1)
@@ -151,6 +236,9 @@ static void pllWakeCpuIfOff(void){
 }
 
 static void checkInterrupts(void){
+   //reduces time wasted on checking interrupts that where updated to a new value identical to the old one, does not need to be in states
+   static uint32_t dbvzCachedInterrupts;
+
    uint32_t activeInterrupts = registerArrayRead32(ISR);
    uint16_t interruptLevelControlRegister = registerArrayRead16(ILCR);
    uint8_t spi1IrqLevel = interruptLevelControlRegister >> 12;
@@ -158,6 +246,16 @@ static void checkInterrupts(void){
    uint8_t pwm2IrqLevel = interruptLevelControlRegister >> 4 & 0x0007;
    uint8_t timer2IrqLevel = interruptLevelControlRegister & 0x0007;
    uint8_t intLevel = 0;
+
+   //even masked interrupts turn off PCTLR, 4.5.4 Power Control Register MC68VZ328UM.pdf
+   if(registerArrayRead32(IPR) && registerArrayRead8(PCTLR) & 0x80){
+      registerArrayWrite8(PCTLR, registerArrayRead8(PCTLR) & 0x1F);
+      pctlrCpuClockDivider = 1.0;
+   }
+
+   //dont waste time if nothing changed
+   if(activeInterrupts == dbvzCachedInterrupts)
+      return;
 
    //static interrupts
    if(activeInterrupts & DBVZ_INT_EMIQ)
@@ -194,14 +292,11 @@ static void checkInterrupts(void){
    if(intLevel < timer2IrqLevel && activeInterrupts & DBVZ_INT_TMR2)
       intLevel = timer2IrqLevel;
 
-   //even masked interrupts turn off PCTLR, 4.5.4 Power Control Register MC68VZ328UM.pdf
-   if(intLevel > 0 && registerArrayRead8(PCTLR) & 0x80){
-      registerArrayWrite8(PCTLR, registerArrayRead8(PCTLR) & 0x1F);
-      pctlrCpuClockDivider = 1.0;
-   }
-
    //should be called even if intLevel is 0, that is how the interrupt state gets cleared
    flx68000SetIrq(intLevel);
+
+   //no interrupts have changed since the last call to this function, which is now
+   dbvzCachedInterrupts = activeInterrupts;
 }
 
 static void checkPortDInterrupts(void){
@@ -333,6 +428,11 @@ uint8_t dbvzGetRegister8(uint32_t address){
       case LCKCON:
       case IVR:
       case PWMP1:
+      case LGPMR:
+
+      //LCD controller
+      case LPICF:
+      case LPOLCF:
 
       //port d special functions
       case PDPOL:
@@ -419,6 +519,28 @@ uint16_t dbvzGetRegister16(uint32_t address){
             return fifoVal;
          }
 
+      case UTX1:{
+            uint16_t uart1TxStatus = registerArrayRead16(UTX1);
+            uint8_t entrys = uart1TxFifoEntrys();
+
+            uart1TxStatus |= (entrys == 0) << 15;
+            uart1TxStatus |= (entrys < 4) << 14;
+            uart1TxStatus |= (entrys < 8) << 13;
+
+            return uart1TxStatus;
+         }
+
+      case UTX2:{
+            uint16_t uart2TxStatus = registerArrayRead16(UTX2);
+            uint8_t entrys = uart2TxFifoEntrys();
+
+            uart2TxStatus |= (entrys == 0) << 15;
+            uart2TxStatus |= (entrys < 4) << 14;
+            uart2TxStatus |= (entrys < 8) << 13;
+
+            return uart2TxStatus;
+         }
+
       case PLLFSR:
          return registerArrayRead16(PLLFSR);
 
@@ -460,6 +582,19 @@ uint16_t dbvzGetRegister16(uint32_t address){
       case SPISPC:
       case SPICONT2:
       case SPIDATA2:
+      case USTCNT1:
+      case UBAUD1:
+      case UMISC1:
+      case NIPR1:
+      case USTCNT2:
+      case UBAUD2:
+      case UMISC2:
+      case NIPR2:
+      case HMARK:
+      case LCXP:
+      case PWMR:
+      case LXMAX:
+      case LYMAX:
          //simple read, no actions needed
          return registerArrayRead16(address);
 
@@ -489,6 +624,7 @@ uint32_t dbvzGetRegister32(uint32_t address){
       case IMR:
       case RTCTIME:
       case IDR:
+      case LSSA:
          //simple read, no actions needed
          return registerArrayRead32(address);
 
@@ -517,6 +653,24 @@ void dbvzSetRegister8(uint32_t address, uint8_t value){
          setScr(value);
          return;
 
+      case UTX1 + 1:
+         //this is a 16 bit register but Palm OS writes to the 8 bit FIFO section alone
+         //send byte and update interrupts if enabled
+         if((registerArrayRead16(USTCNT1) & 0xA000) == 0xA000){
+            uart1TxFifoWrite(value);
+            updateUart1Interrupt();
+         }
+         return;
+
+      case UTX2 + 1:
+         //this is a 16 bit register but Palm OS writes to the 8 bit FIFO section alone
+         //send byte and update interrupts if enabled
+         if((registerArrayRead16(USTCNT2) & 0xA000) == 0xA000){
+            uart2TxFifoWrite(value);
+            updateUart2Interrupt();
+         }
+         return;
+
       case PWMS1 + 1:
          //write only if PWM1 enabled
          if(registerArrayRead16(PWMC1) & 0x0010)
@@ -533,11 +687,22 @@ void dbvzSetRegister8(uint32_t address, uint8_t value){
          registerArrayWrite8(address, value & 0x9F);
          if(value & 0x80)
             pctlrCpuClockDivider = (value & 0x1F) / 31.0;
+         checkInterrupts();//may need to turn PCTLR off right after its turned on(could be in an interrupt)
          return;
 
       case IVR:
          //write without the bottom 3 bits
          registerArrayWrite8(address, value & 0xF8);
+         return;
+
+      case LPICF:
+      case LPOLCF:
+      case LPOSR:
+         registerArrayWrite8(address, value & 0x0F);
+         return;
+
+      case LPXCD:
+         registerArrayWrite8(LPXCD, value & 0x3F);
          return;
 
       case PBSEL:
@@ -593,6 +758,8 @@ void dbvzSetRegister8(uint32_t address, uint8_t value){
          //write without the top 2 bits
          registerArrayWrite8(address, value & 0x3F);
          updateAds7846ChipSelectStatus();
+         if(palmEmulatingM500)
+            palmMisc.backlightLevel = !!(getPortGValue() & 0x02) * 100;
          return;
 
       case PJSEL:
@@ -608,7 +775,8 @@ void dbvzSetRegister8(uint32_t address, uint8_t value){
          registerArrayWrite8(address, value);
          checkPortDInterrupts();
          updateVibratorStatus();
-         updateBacklightAmplifierStatus();
+         if(!palmEmulatingM500)
+            sed1376UpdateLcdStatus();
          return;
 
       case PMSEL:
@@ -650,8 +818,12 @@ void dbvzSetRegister8(uint32_t address, uint8_t value){
       case PEDATA:
       case PFDATA:
 
-      //dragonball LCD controller, not attached to anything in Palm m515
+      //dragonball LCD controller
+      case LVPW:
       case LCKCON:
+      case LBLKC:
+      case LACDRC:
+      case LGPMR:
          //simple write, no actions needed
          registerArrayWrite8(address, value);
          return;
@@ -894,9 +1066,11 @@ void dbvzSetRegister16(uint32_t address, uint16_t value){
          return;
 
       case SPITXD:
-         spi1TxFifoWrite(value);
-         //check if SPI1 interrupts changed
-         setSpiIntCs(registerArrayRead16(SPIINTCS));
+         if(registerArrayRead16(SPICONT1) & 0x0200){
+            spi1TxFifoWrite(value);
+            //check if SPI1 interrupts changed
+            setSpiIntCs(registerArrayRead16(SPIINTCS));
+         }
          return;
 
       case SPICONT2:
@@ -907,6 +1081,59 @@ void dbvzSetRegister16(uint32_t address, uint16_t value){
          //ignore writes when SPICONT2 ENABLE is not set
          if(registerArrayRead16(SPICONT2) & 0x0200)
             registerArrayWrite16(SPIDATA2, value);
+         return;
+
+      case USTCNT1:
+         setUstcnt1(value);
+         return;
+
+      case UBAUD1:
+         //just does timing stuff, should be OK to ignore
+         registerArrayWrite16(UBAUD1, value & 0x2F3F);
+         return;
+
+      case UMISC1:
+         //TODO: most of the bits here are for factory testing and can be ignored but not all of them can be
+         registerArrayWrite16(UMISC1, value & 0xFCFC);
+         return;
+
+      case UTX1:
+         registerArrayWrite16(UTX1, value & 0x1F00);
+
+         //send byte and update interrupts if enabled
+         if((registerArrayRead16(USTCNT1) & 0xA000) == 0xA000){
+            uart1TxFifoWrite(value & 0x1000 ? value & 0xFF : EMU_SERIAL_BREAK);
+            updateUart1Interrupt();
+         }
+         return;
+
+      case USTCNT2:
+         setUstcnt2(value);
+         return;
+
+      case UBAUD2:
+         //just does timing stuff, should be OK to ignore
+         registerArrayWrite16(UBAUD2, value & 0x2F3F);
+         return;
+
+      case UMISC2:
+         //TODO: most of the bits here are for factory testing and can be ignored but not all of them can be
+         registerArrayWrite16(UMISC2, value & 0xFCFC);
+         return;
+
+      case UTX2:
+         registerArrayWrite16(UTX2, value & 0x1F00);
+
+         //send byte and update interrupts if enabled
+         if((registerArrayRead16(USTCNT2) & 0xA000) == 0xA000){
+            uart2TxFifoWrite(value & 0x1000 ? value & 0xFF : EMU_SERIAL_BREAK);
+            updateUart2Interrupt();
+         }
+         return;
+
+      case HMARK:
+         registerArrayWrite16(HMARK, value & 0x0F0F);
+         updateUart2Interrupt();
          return;
 
       case PWMC1:
@@ -921,19 +1148,37 @@ void dbvzSetRegister16(uint32_t address, uint16_t value){
          }
          return;
 
-      case USTCNT1:
-         registerArrayWrite16(UBAUD1, value);
-         //needs to recalculate interrupts here
-         return;
-
-      case UBAUD1:
-         //just does timing stuff, should be OK to ignore
-         registerArrayWrite16(UBAUD1, value & 0x2F3F);
-         return;
-
       case NIPR1:
          //just does timing stuff, should be OK to ignore
          registerArrayWrite16(NIPR1, value & 0x87FF);
+         return;
+
+      case LXMAX:
+         registerArrayWrite16(LXMAX, value & 0x03F0);
+         return;
+
+      case LYMAX:
+         registerArrayWrite16(LYMAX, value & 0x01FF);
+         return;
+
+      case LCXP:
+         registerArrayWrite16(LCXP, value & 0xC3FF);
+         return;
+
+      case LCYP:
+         registerArrayWrite16(LCYP, value & 0x01FF);
+         return;
+
+      case LCWCH:
+         registerArrayWrite16(LCWCH, value & 0x1F1F);
+         return;
+
+      case LRRA:
+         registerArrayWrite16(LRRA, value & 0x03FF);
+         return;
+
+      case PWMR:
+         registerArrayWrite16(PWMR, value & 0x07FF);
          return;
 
       case SPISPC:
@@ -989,8 +1234,7 @@ void dbvzSetRegister32(uint32_t address, uint32_t value){
          return;
 
       case LSSA:
-         //simple write, no actions needed
-         registerArrayWrite32(address, value);
+         registerArrayWrite32(address, value & 0xFFFFFFFE);
          return;
 
       default:
@@ -1152,11 +1396,13 @@ void dbvzReset(void){
    updateVibratorStatus();
    updateAds7846ChipSelectStatus();
    updateSdCardChipSelectStatus();
-   updateBacklightAmplifierStatus();
+   if(!palmEmulatingM500)
+      sed1376UpdateLcdStatus();
 
    dbvzSysclksPerClk32 = sysclksPerClk32();
 
    dbvzResetAddressSpace();
+   checkInterrupts();
    flx68000Reset();
 }
 
@@ -1203,8 +1449,6 @@ uint32_t dbvzStateSize(void){
    size += sizeof(int32_t);//pwm1ClocksToNextSample
    size += sizeof(uint8_t) * 6;//pwm1Fifo[6]
    size += sizeof(uint8_t) * 2;//pwm1(Read/Write)
-
-   //debugLog("size is:%d\n", size);
 
    return size;
 }
@@ -1301,8 +1545,6 @@ void dbvzSaveState(uint8_t* data){
    offset += sizeof(uint8_t);
    writeStateValue8(data + offset, pwm1WritePosition);
    offset += sizeof(uint8_t);
-
-   //debugLog("save offset is:%d\n", offset);
 }
 
 void dbvzLoadState(uint8_t* data){
@@ -1398,7 +1640,11 @@ void dbvzLoadState(uint8_t* data){
    pwm1WritePosition = readStateValue8(data + offset);
    offset += sizeof(uint8_t);
 
-   //debugLog("load offset is:%d\n", offset);
+   //UART1, cant load state while beaming
+   uart1RxFifoFlush();
+
+   //UART2, cant load state while syncing
+   uart2RxFifoFlush();
 }
 
 void dbvzLoadStateFinished(void){
@@ -1409,11 +1655,11 @@ void dbvzExecute(void){
    uint32_t samples;
 
    //I/O
-   m515RefreshInputState();
+   m5XXRefreshInputState();
 
    //CPU
    dbvzFrameClk32s = 0;
-   for(; palmCycleCounter < (double)M515_CRYSTAL_FREQUENCY / EMU_FPS; palmCycleCounter += 1.0){
+   for(; palmCycleCounter < (double)M5XX_CRYSTAL_FREQUENCY / EMU_FPS; palmCycleCounter += 1.0){
       uint8_t cpuTimeSegments;
 
       dbvzBeginClk32();
@@ -1439,7 +1685,7 @@ void dbvzExecute(void){
       dbvzEndClk32();
       dbvzFrameClk32s++;
    }
-   palmCycleCounter -= (double)M515_CRYSTAL_FREQUENCY / EMU_FPS;
+   palmCycleCounter -= (double)M5XX_CRYSTAL_FREQUENCY / EMU_FPS;
 
    //audio
    blip_end_frame(palmAudioResampler, blip_clocks_needed(palmAudioResampler, AUDIO_SAMPLES_PER_FRAME));

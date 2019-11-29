@@ -1,6 +1,6 @@
 /* Declarations for debug.c */
-#ifndef _H_DEBUG
-#define _H_DEBUG
+#ifndef H_DEBUG
+#define H_DEBUG
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -10,21 +10,16 @@
 #ifdef __cplusplus
 
 #include <string>
-//extern std::string ln_target_folder;
 
 extern "C" {
 #endif
 
-extern FILE *debugger_input;
-
 /*
-extern bool gdb_connected;
-extern bool in_debugger;
-extern int rdbg_port;
-*/
+extern FILE *debugger_input;
 #define gdb_connected false
 #define in_debugger false
 #define rdbg_port 0
+*/
 
 enum DBG_REASON {
     DBG_USER,
@@ -43,13 +38,7 @@ void rdebug_recv(void);
 bool rdebug_bind(unsigned int port);
 void rdebug_quit();
 */
-#define virt_mem_ptr(x, y) NULL
-#define backtrace(x)
-#define process_debug_cmd(x) 0
 #define debugger(x, y)
-#define rdebug_recv()
-#define rdebug_bind(x) false
-#define rdebug_quit()
 
 #ifdef __cplusplus
 }

@@ -157,7 +157,7 @@ void do_arm_instruction(Instruction i)
         {
             // BLX
             arm.reg[14] = arm.reg[15];
-            arm.reg[15] += 4 + ((int32_t) (i.raw << 8) >> 6) + (i.raw >> 23 & 2);
+            arm.reg[15] += 4 + ((int32_t) (i.raw << 8) >> 6) + (i.raw >> 23 & 2);//TODO: this signed int shift is undefined behavior by the C standard
             arm.cpsr_low28 |= 0x20; // Enter Thumb mode
             return;
         }
@@ -376,7 +376,7 @@ void do_arm_instruction(Instruction i)
                 value <<= 1;
             set_reg(insn >> 12 & 15, zeros);
         } else if ((insn & 0xFFF000F0) == 0xE1200070) {
-            gui_debug_printf("Software breakpoint at %08x (%04x)\n",
+            gui_debug_printf("Software breakpoint at %08X (%04X)\n",
                       arm.reg[15], (insn >> 4 & 0xFFF0) | (insn & 0xF));
             debugger(DBG_EXEC_BREAKPOINT, 0);
         } else
@@ -525,8 +525,10 @@ void do_arm_instruction(Instruction i)
         // B and BL
         if(i.branch.l)
             arm.reg[14] = arm.reg[15];
-		arm.reg[15] += (int32_t) (i.branch.immed << 8) >> 6;
+        arm.reg[15] += (int32_t) (i.branch.immed << 8) >> 6;//TODO: this signed int shift is undefined behavior by the C standard
         arm.reg[15] += 4;
+        if(arm.reg[15] >= 0x2009B130 && arm.reg[15] <= 0x200C7EEB && i.branch.l)
+            gui_debug_printf("ARM DAL function call, jump from 0x%08X to 0x%08X\n", arm.reg[14] - 4, arm.reg[15]);
     }
     else if((insn & 0xF000F10) == 0xE000F10)
         do_cp15_instruction(i);

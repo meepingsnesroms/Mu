@@ -1,7 +1,5 @@
 #include <QString>
 #include <QVector>
-#include <QPixmap>
-#include <QImage>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
@@ -24,18 +22,23 @@
 
 extern "C"{
 #include "../../src/flx68000.h"
-#include "../../src/pxa255/pxa255.h"
-#include "../../src/debug/sandbox.h"
+#include "../../src/m68k/m68k.h"
+#include "../../src/pxa260/pxa260.h"
+#include "../../src/armv5te/disasm.h"
 }
 
 
+#define MAX_LOG_ENTRYS 2000
 #define MAX_LOG_ENTRY_LENGTH 200
 
 
 static bool alreadyExists = false;//there can only be one of this class since it wrappers C code
 
 static QVector<QString>  debugStrings;
-static QVector<uint64_t> duplicateCallCount;
+static uint64_t          debugDeletedStrings;
+static QVector<uint64_t> debugDuplicateCallCount;
+static bool              debugAbort = false;
+static QString           debugAbortString = "";
 uint32_t                 frontendDebugStringSize;
 char*                    frontendDebugString;
 
@@ -43,19 +46,31 @@ char*                    frontendDebugString;
 void frontendHandleDebugPrint(){
    QString newDebugString = frontendDebugString;
 
+   //lock out logs to capture a specific section
+   if(debugAbort)
+      return;
+
+   if(!debugAbortString.isEmpty() && newDebugString.contains(debugAbortString))
+      debugAbort = true;
+
    //this debug handler doesnt need the \n
    if(newDebugString.back() == '\n')
       newDebugString.remove(newDebugString.length() - 1, 1);
    else
       newDebugString.append("MISSING \"\\n\"");
 
-
    if(!debugStrings.empty() && newDebugString == debugStrings.back()){
-      duplicateCallCount.back()++;
+      debugDuplicateCallCount.back()++;
    }
    else{
       debugStrings.push_back(newDebugString);
-      duplicateCallCount.push_back(1);
+      debugDuplicateCallCount.push_back(1);
+   }
+
+   while(debugStrings.size() > MAX_LOG_ENTRYS){
+      debugStrings.remove(0);
+      debugDuplicateCallCount.remove(0);
+      debugDeletedStrings++;
    }
 }
 
@@ -94,7 +109,7 @@ EmuWrapper::~EmuWrapper(){
    delete[] frontendDebugString;
    frontendDebugStringSize = 0;
    debugStrings.clear();
-   duplicateCallCount.clear();
+   debugDuplicateCallCount.clear();
 
    //allow creating a new emu class after the old one is closed
    alreadyExists = false;
@@ -114,7 +129,7 @@ void EmuWrapper::emuThreadRun(){
          emuPaused = true;
       }
 
-      std::this_thread::sleep_for(std::chrono::milliseconds(3));
+      std::this_thread::sleep_for(std::chrono::milliseconds(5));
    }
 }
 
@@ -150,28 +165,45 @@ void EmuWrapper::writeOutSaves(){
    }
 }
 
-uint32_t EmuWrapper::init(const QString& assetPath, bool useOs5, uint32_t features, bool fastBoot){
+uint32_t EmuWrapper::init(const QString& assetPath, const QString& osVersion, bool syncRtc, bool allowInvalidBehavior, bool fastBoot){
    if(!emuRunning && !emuInited){
       //start emu
       uint32_t error;
-      QString osVersion = useOs5 ? "52" : "41";
-      QString model = useOs5 ? "en-t3" : "en-m515";
-      QFile romFile(assetPath + "/palmos" + osVersion + "-" + model + ".rom");
-      QFile bootloaderFile(assetPath + "/bootloader-" + model + ".rom");
-      QFile ramFile(assetPath + "/userdata-" + model + ".ram");
-      QFile sdCardFile(assetPath + "/sd-" + model + ".img");
+      uint8_t deviceModel;
       bool hasBootloader = true;
 
-      //used to mark saves with there OS version and prevent corruption
-      emuOsName = useOs5 ? "os5" : "os4";
+      if(osVersion == "Palm m500/Palm OS 4.0")
+         emuOsName = "palmos40-en-m500";
+      else if(osVersion == "Palm m515/Palm OS 4.1")
+         emuOsName = "palmos41-en-m515";
+      else if(osVersion == "Tungsten T3/Palm OS 5.2.1")
+         emuOsName = "palmos52-en-t3";
+      else if(osVersion == "Tungsten T3/Palm OS 5.2.1")
+         emuOsName = "palmos60-en-t3";
+      else
+         return EMU_ERROR_INVALID_PARAMETER;
+
+      if(osVersion.contains("Palm m500"))
+         deviceModel = EMU_DEVICE_PALM_M500;
+      else if(osVersion.contains("Palm m515"))
+         deviceModel = EMU_DEVICE_PALM_M515;
+      else if(osVersion.contains("Tungsten T3"))
+         deviceModel = EMU_DEVICE_TUNGSTEN_T3;
+      else
+         return EMU_ERROR_INVALID_PARAMETER;
+
+      QFile romFile(assetPath + "/" + emuOsName + ".rom");
+      QFile bootloaderFile(assetPath + "/bootloader-dbvz.rom");
+      QFile ramFile(assetPath + "/userdata-" + emuOsName + ".ram");
+      QFile sdCardFile(assetPath + "/sd-" + emuOsName + ".img");
 
       if(!romFile.open(QFile::ReadOnly | QFile::ExistingOnly))
          return EMU_ERROR_INVALID_PARAMETER;
 
-      if(!bootloaderFile.open(QFile::ReadOnly | QFile::ExistingOnly))
+      if(deviceModel == EMU_DEVICE_TUNGSTEN_T3 || !bootloaderFile.open(QFile::ReadOnly | QFile::ExistingOnly))
          hasBootloader = false;
 
-      error = emulatorInit((uint8_t*)romFile.readAll().data(), romFile.size(), hasBootloader ? (uint8_t*)bootloaderFile.readAll().data() : NULL, hasBootloader ? bootloaderFile.size() : 0, features);
+      error = emulatorInit(deviceModel, (uint8_t*)romFile.readAll().data(), romFile.size(), hasBootloader ? (uint8_t*)bootloaderFile.readAll().data() : NULL, hasBootloader ? bootloaderFile.size() : 0, syncRtc, allowInvalidBehavior);
       if(error == EMU_ERROR_NONE){
          QTime now = QTime::currentTime();
 
@@ -189,9 +221,9 @@ uint32_t EmuWrapper::init(const QString& assetPath, bool useOs5, uint32_t featur
          }
 
          emuInput = palmInput;
-         emuRamFilePath = assetPath + "/userdata-" + model + ".ram";
-         emuSdCardFilePath = assetPath + "/sd-" + model + ".img";
-         emuSaveStatePath = assetPath + "/states-" + model + ".states";
+         emuRamFilePath = assetPath + "/userdata-" + emuOsName + ".ram";
+         emuSdCardFilePath = assetPath + "/sd-" + emuOsName + ".img";
+         emuSaveStatePath = assetPath + "/states-" + emuOsName + ".states";
 
          //make the place to store the saves
          QDir(emuSaveStatePath).mkdir(".");
@@ -257,6 +289,20 @@ void EmuWrapper::reset(bool hard){
          emulatorHardReset();
       else
          emulatorSoftReset();
+
+      if(!wasPaused)
+         resume();
+   }
+}
+
+void EmuWrapper::setCpuSpeed(double speed){
+   if(emuInited){
+      bool wasPaused = isPaused();
+
+      if(!wasPaused)
+         pause();
+
+      emulatorSetCpuSpeed(speed);
 
       if(!wasPaused)
          resume();
@@ -465,6 +511,10 @@ void EmuWrapper::setKeyValue(uint8_t key, bool pressed){
          emuInput.buttonNotes = pressed;
          break;
 
+      case BUTTON_VOICE_MEMO:
+         emuInput.buttonVoiceMemo = pressed;
+         break;
+
       case BUTTON_POWER:
          emuInput.buttonPower = pressed;
          break;
@@ -474,12 +524,16 @@ void EmuWrapper::setKeyValue(uint8_t key, bool pressed){
    }
 }
 
-QVector<QString>& EmuWrapper::debugGetLogEntrys(){
+QVector<QString>& EmuWrapper::debugLogEntrys(){
    return debugStrings;
 }
 
-QVector<uint64_t>& EmuWrapper::debugGetDuplicateLogEntryCount(){
-   return duplicateCallCount;
+QVector<uint64_t>& EmuWrapper::debugDuplicateLogEntryCount(){
+   return debugDuplicateCallCount;
+}
+
+uint64_t& EmuWrapper::debugDeletedLogEntryCount(){
+   return debugDeletedStrings;
 }
 
 QString EmuWrapper::debugGetCpuRegisterString(){
@@ -487,8 +541,12 @@ QString EmuWrapper::debugGetCpuRegisterString(){
 
    if(palmEmulatingTungstenT3){
       for(uint8_t regs = 0; regs < 16; regs++)
-         regString += QString::asprintf("R%d:0x%08X\n", regs, pxa255GetRegister(regs));
-      regString.resize(regString.size() - 1);//remove extra '\n'
+         regString += QString::asprintf("R%d:0x%08X\n", regs, pxa260GetRegister(regs));
+      regString += QString::asprintf("SP:0x%08X\n", pxa260GetRegister(13));
+      regString += QString::asprintf("LR:0x%08X\n", pxa260GetRegister(14));
+      regString += QString::asprintf("PC:0x%08X\n", pxa260GetPc());
+      regString += QString::asprintf("CPSR:0x%08X\n", pxa260GetCpsr());
+      regString += QString::asprintf("SPSR:0x%08X", pxa260GetSpsr());
    }
    else{
       for(uint8_t dRegs = 0; dRegs < 8; dRegs++)
@@ -496,13 +554,44 @@ QString EmuWrapper::debugGetCpuRegisterString(){
       for(uint8_t aRegs = 0; aRegs < 8; aRegs++)
          regString += QString::asprintf("A%d:0x%08X\n", aRegs, flx68000GetRegister(8 + aRegs));
       regString += QString::asprintf("SP:0x%08X\n", flx68000GetRegister(15));
-      regString += QString::asprintf("PC:0x%08X\n", flx68000GetRegister(16));
-      regString += QString::asprintf("SR:0x%04X", flx68000GetRegister(17));
+      regString += QString::asprintf("PC:0x%08X\n", flx68000GetPc());
+      regString += QString::asprintf("SR:0x%04X", flx68000GetStatusRegister());
    }
 
    return regString;
 }
 
 uint64_t EmuWrapper::debugGetEmulatorMemory(uint32_t address, uint8_t size){
+   if(palmEmulatingTungstenT3)
+      return pxa260ReadArbitraryMemory(address, size);
    return flx68000ReadArbitraryMemory(address, size);
+}
+
+QString EmuWrapper::debugDisassemble(uint32_t address, uint32_t opcodes){
+   QString output = "";
+
+   if(palmEmulatingTungstenT3){
+      for(uint32_t index = 0; index < opcodes; index++){
+         address += disasm_arm_insn(address);
+         output += disasmReturnBuf;
+         output += '\n';
+      }
+   }
+   else{
+      char temp[100];
+
+      for(uint32_t index = 0; index < opcodes; index++){
+         uint8_t opcodeSize = m68k_disassemble(temp, address, M68K_CPU_TYPE_DBVZ);
+         QString opcodeHex = "";
+
+         for(uint8_t opcodeByteIndex = 0; opcodeByteIndex < opcodeSize; opcodeByteIndex++)
+            opcodeHex += QString::asprintf("%02X", flx68000ReadArbitraryMemory(address + opcodeByteIndex, 8));
+
+         output += QString::asprintf("0x%08X: 0x%s\t%s \n", address, opcodeHex.toStdString().c_str(), temp);
+
+         address += opcodeSize;
+      }
+   }
+
+   return output;
 }

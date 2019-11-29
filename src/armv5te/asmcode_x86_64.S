@@ -10,7 +10,7 @@
 #define TRANS_END_PTR 0x18
 
 // RAM_FLAGS used to have "// = MEM_MAXSIZE" at the end but the clang assembler copys the "//" into the macro, commenting out the arguments of the opcodes that use it
-#define RAM_FLAGS (70*1024*1024)
+#define RAM_FLAGS (80*1024*1024)
 #define RF_READ_BREAKPOINT   1
 #define RF_WRITE_BREAKPOINT  2
 #define RF_EXEC_BREAKPOINT   4

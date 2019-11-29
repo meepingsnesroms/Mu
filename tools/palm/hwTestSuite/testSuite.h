@@ -9,6 +9,7 @@
 /*defines*/
 #define CODE_SECTION(codeSection) __attribute__((section(codeSection)))
 #define ALIGN(size) __attribute__((aligned(size)))
+#define HW_REG_ADDR(x) (0xFFFFF000 | (x))
 
 #define SHARED_DATA_BUFFER_SIZE 1000
 
@@ -55,14 +56,14 @@ typedef struct{
 extern uint16_t palmButtons;
 extern uint16_t palmButtonsLastFrame;
 extern Boolean  isM515;
-extern Boolean  haveKsyms;
+extern Boolean  isT3;
 extern Boolean  skipFrameDelay;
 extern uint8_t* sharedDataBuffer;
 
 /*
 functions
 no inline functions
-old gcc versions have broken handling of inline functions where variables with the same name
+old GCC versions have broken handling of inline functions where variables with the same name
 inside the function and outside can result in the outside variable being written
 c89 also doesnt support them
 */

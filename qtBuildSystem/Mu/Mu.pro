@@ -22,6 +22,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 # You can also select to disable deprecated APIs only up to a certain version of Qt.
 DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000 # disables all the APIs deprecated before Qt 6.0.0
 
+# OS 5 support is mandatory for the QT port
 CONFIG += support_palm_os5
 
 windows{
@@ -37,7 +38,7 @@ windows{
         QMAKE_LFLAGS += -fopenmp
         DEFINES += EMU_MULTITHREADED EMU_MANAGE_HOST_CPU_PIPELINE
     }
-    CONFIG += cpu_x86_32 # this should be auto detected in the future
+    CONFIG += cpu_x86_32 # TODO:this should be auto detected in the future
 }
 
 macx{
@@ -53,7 +54,7 @@ linux-g++{
     QMAKE_CXXFLAGS += -fopenmp
     QMAKE_LFLAGS += -fopenmp
     DEFINES += EMU_MULTITHREADED EMU_MANAGE_HOST_CPU_PIPELINE
-    CONFIG += cpu_x86_64 # this should be auto detected in the future
+    CONFIG += cpu_x86_64 # TODO:this should be auto detected in the future
 }
 
 android{
@@ -61,18 +62,13 @@ android{
     QMAKE_CXXFLAGS += -fopenmp
     QMAKE_LFLAGS += -fopenmp
     DEFINES += EMU_MULTITHREADED EMU_MANAGE_HOST_CPU_PIPELINE
-    CONFIG += cpu_armv7 # this should be auto detected in the future
+    CONFIG += cpu_armv7 # TODO:this should be auto detected in the future
 }
 
 
 CONFIG(debug, debug|release){
     # debug build, be accurate, fail hard, and add logging
-    DEFINES += EMU_DEBUG EMU_CUSTOM_DEBUG_LOG_HANDLER EMU_SANDBOX
-    # DEFINES += EMU_SANDBOX_LOG_MEMORY_ACCESSES # checks all reads and writes to memory and logs certain events
-    # DEFINES += EMU_SANDBOX_OPCODE_LEVEL_DEBUG # for breakpoints
-    # DEFINES += EMU_SANDBOX_LOG_JUMPS # log large jumps
-    # DEFINES += EMU_SANDBOX_LOG_APIS # for printing sysTrap* calls, EMU_SANDBOX_OPCODE_LEVEL_DEBUG must be on too
-    CONFIG += no_dynarec # easier to debug with
+    DEFINES += EMU_DEBUG EMU_CUSTOM_DEBUG_LOG_HANDLER
     macx|linux-g++{
         # also check for any buffer overflows and memory leaks
         # -fsanitize=undefined,leak
@@ -82,6 +78,10 @@ CONFIG(debug, debug|release){
     }
 }else{
     # release build, go fast
+    CONFIG += EMU_NO_SAFETY
+}
+
+EMU_NO_SAFETY{
     DEFINES += EMU_NO_SAFETY
 }
 
@@ -89,7 +89,7 @@ support_palm_os5{
     DEFINES += EMU_SUPPORT_PALM_OS5 # the Qt build will not be supporting anything too slow to run OS 5
     DEFINES += SUPPORT_LINUX # forces the dynarec to use accurate mode and disable Nspire OS hacks
 
-    !no_dynarec{
+    EMU_NO_SAFETY{
         # Windows is only supported in 32 bit mode right now(this is a limitation of the dynarec)
         # iOS needs IS_IOS_BUILD set, but the Qt port does not support iOS currently
 
@@ -125,7 +125,10 @@ support_palm_os5{
     else{
         # use platform independant C with no dynarec
         SOURCES += \
-            ../../src/armv5te/asmcode.c
+            ../../src/armv5te/asmcode.c \
+            ../../src/armv5te/uArm/CPU_2.c \
+            ../../src/armv5te/uArm/icache.c \
+            ../../src/armv5te/uArm/uArmGlue.cpp
         DEFINES += NO_TRANSLATION
     }
 
@@ -140,45 +143,61 @@ support_palm_os5{
     }
 
     SOURCES += \
-        ../../src/pxa255/pxa255_mem.c \
-        ../../src/pxa255/pxa255_DMA.c \
-        ../../src/pxa255/pxa255_DSP.c \
-        ../../src/pxa255/pxa255_GPIO.c \
-        ../../src/pxa255/pxa255_IC.c \
-        ../../src/pxa255/pxa255_LCD.c \
-        ../../src/pxa255/pxa255_PwrClk.c \
-        ../../src/pxa255/pxa255_RTC.c \
-        ../../src/pxa255/pxa255_TIMR.c \
-        ../../src/pxa255/pxa255_UART.c \
-        ../../src/pxa255/pxa255.c \
+        ../../src/pxa260/pxa260_DMA.c \
+        ../../src/pxa260/pxa260_DSP.c \
+        ../../src/pxa260/pxa260_GPIO.c \
+        ../../src/pxa260/pxa260_IC.c \
+        ../../src/pxa260/pxa260_LCD.c \
+        ../../src/pxa260/pxa260_PwrClk.c \
+        ../../src/pxa260/pxa260_RTC.c \
+        ../../src/pxa260/pxa260_TIMR.c \
+        ../../src/pxa260/pxa260_UART.c \
+        ../../src/pxa260/pxa260I2c.c \
+        ../../src/pxa260/pxa260Memctrl.c \
+        ../../src/pxa260/pxa260Timing.c \
+        ../../src/pxa260/pxa260Ssp.c \
+        ../../src/pxa260/pxa260Udc.c \
+        ../../src/pxa260/pxa260.c \
         ../../src/armv5te/arm_interpreter.cpp \
         ../../src/armv5te/cpu.cpp \
         ../../src/armv5te/coproc.cpp \
+        ../../src/armv5te/disasm.c \
         ../../src/armv5te/emuVarPool.c \
         ../../src/armv5te/thumb_interpreter.cpp \
         ../../src/armv5te/mem.c \
         ../../src/armv5te/mmu.c \
-        ../../src/tungstenT3Bus.c
+        ../../src/tps65010.c \
+        ../../src/tsc2101.c \
+        ../../src/w86l488.c
 
     HEADERS += \
-        ../../src/pxa255/pxa255_CPU.h \
-        ../../src/pxa255/pxa255_mem.h \
-        ../../src/pxa255/pxa255_DMA.h \
-        ../../src/pxa255/pxa255_DSP.h \
-        ../../src/pxa255/pxa255_GPIO.h \
-        ../../src/pxa255/pxa255_IC.h \
-        ../../src/pxa255/pxa255_LCD.h \
-        ../../src/pxa255/pxa255_PwrClk.h \
-        ../../src/pxa255/pxa255_RTC.h \
-        ../../src/pxa255/pxa255_TIMR.h \
-        ../../src/pxa255/pxa255_UART.h \
-        ../../src/pxa255/pxa255_types.h \
-        ../../src/pxa255/pxa255_math64.h \
-        ../../src/pxa255/pxa255.h \
+        ../../src/pxa260/pxa260_CPU.h \
+        ../../src/pxa260/pxa260_DMA.h \
+        ../../src/pxa260/pxa260_DSP.h \
+        ../../src/pxa260/pxa260_GPIO.h \
+        ../../src/pxa260/pxa260_IC.h \
+        ../../src/pxa260/pxa260_LCD.h \
+        ../../src/pxa260/pxa260_PwrClk.h \
+        ../../src/pxa260/pxa260_RTC.h \
+        ../../src/pxa260/pxa260_TIMR.h \
+        ../../src/pxa260/pxa260_UART.h \
+        ../../src/pxa260/pxa260I2c.h \
+        ../../src/pxa260/pxa260Memctrl.h \
+        ../../src/pxa260/pxa260Timing.h \
+        ../../src/pxa260/pxa260Ssp.h \
+        ../../src/pxa260/pxa260Udc.h \
+        ../../src/pxa260/pxa260_types.h \
+        ../../src/pxa260/pxa260_math64.h \
+        ../../src/pxa260/pxa260Accessors.c.h \
+        ../../src/pxa260/pxa260.h \
         ../../src/armv5te/os/os.h \
+        ../../src/armv5te/uArm/CPU_2.h \
+        ../../src/armv5te/uArm/icache.h \
+        ../../src/armv5te/uArm/uArmGlue.h \
         ../../src/armv5te/asmcode.h \
         ../../src/armv5te/bitfield.h \
         ../../src/armv5te/cpu.h \
+        ../../src/armv5te/disasm.h \
         ../../src/armv5te/emu.h \
         ../../src/armv5te/mem.h \
         ../../src/armv5te/translate.h \
@@ -187,7 +206,10 @@ support_palm_os5{
         ../../src/armv5te/mmu.h \
         ../../src/armv5te/armsnippets.h \
         ../../src/armv5te/literalpool.h \
-        ../../src/tungstenT3Bus.h
+        ../../src/tungstenT3Bus.h \
+        ../../src/tps65010.h \
+        ../../src/tsc2101.h \
+        ../../src/w86l488.h
 }
 
 CONFIG += c++11
@@ -195,72 +217,65 @@ CONFIG += c++11
 INCLUDEPATH += $$PWD/qt-common/include
 
 SOURCES += \
-    ../../src/dbvz.c \
-    ../../src/fileLauncher/launcher.c \
-    debugviewer.cpp \
-    emuwrapper.cpp \
-    main.cpp \
-    mainwindow.cpp \
-    statemanager.cpp \
-    touchscreen.cpp \
-    settingsmanager.cpp \
-    ../../src/audio/blip_buf.c \
-    ../../src/debug/sandbox.c \
     ../../src/ads7846.c \
+    ../../src/audio/blip_buf.c \
+    ../../src/dbvz.c \
     ../../src/emulator.c \
+    ../../src/fileLauncher/launcher.c \
     ../../src/flx68000.c \
-    ../../src/pdiUsbD12.c \
-    ../../src/sdCard.c \
-    ../../src/sed1376.c \
-    ../../src/silkscreen.c \
+    ../../src/m5XXBus.c \
     ../../src/m68k/m68kcpu.c \
     ../../src/m68k/m68kdasm.c \
     ../../src/m68k/m68kopac.c \
     ../../src/m68k/m68kopdm.c \
     ../../src/m68k/m68kopnz.c \
     ../../src/m68k/m68kops.c \
-    ../../src/expansionHardware.c \
-    ../../src/m515Bus.c
+    ../../src/pdiUsbD12.c \
+    ../../src/sdCard.c \
+    ../../src/sed1376.c \
+    ../../src/silkscreen.c \
+    debugviewer.cpp \
+    emuwrapper.cpp \
+    main.cpp \
+    mainwindow.cpp \
+    statemanager.cpp \
+    touchscreen.cpp \
+    settingsmanager.cpp
 
 HEADERS += \
-    ../../src/dbvz.h \
-    ../../src/fileLauncher/launcher.h \
-    ../../src/pxa255/pxa255Accessors.c.h \
-    debugviewer.h \
-    emuwrapper.h \
-    mainwindow.h \
-    statemanager.h \
-    touchscreen.h \
-    settingsmanager.h \
+    ../../src/ads7846.h \
     ../../src/audio/blip_buf.h \
-    ../../src/debug/sandbox.h \
-    ../../src/debug/sandboxTrapNumToName.c.h \
-    ../../src/debug/trapNames.h \
+    ../../src/dbvz.h \
+    ../../src/dbvzRegisterAccessors.c.h \
+    ../../src/dbvzRegisterNames.c.h \
+    ../../src/dbvzTiming.c.h \
+    ../../src/emulator.h \
+    ../../src/fileLauncher/launcher.h \
+    ../../src/flx68000.h \
+    ../../src/m5XXBus.h \
     ../../src/m68k/m68k.h \
     ../../src/m68k/m68kconf.h \
     ../../src/m68k/m68kcpu.h \
     ../../src/m68k/m68kexternal.h \
     ../../src/m68k/m68kops.h \
-    ../../src/specs/dragonballVzRegisterSpec.h \
-    ../../src/ads7846.h \
-    ../../src/emulator.h \
-    ../../src/flx68000.h \
     ../../src/pdiUsbD12.h \
+    ../../src/pdiUsbD12CommandNames.c.h \
     ../../src/portability.h \
     ../../src/sdCard.h \
+    ../../src/sdCardAccessors.c.h \
+    ../../src/sdCardCommandNames.c.h \
+    ../../src/sdCardCrcTables.c.h \
     ../../src/sed1376.h \
     ../../src/sed1376Accessors.c.h \
+    ../../src/sed1376RegisterNames.c.h \
     ../../src/silkscreen.h \
-    ../../src/specs/sed1376RegisterSpec.h \
-    ../../src/specs/pdiUsbD12CommandSpec.h \
-    ../../src/specs/emuFeatureRegisterSpec.h \
-    ../../src/specs/sdCardCommandSpec.h \
-    ../../src/expansionHardware.h \
-    ../../src/sdCardAccessors.c.h \
-    ../../src/sdCardCrcTables.c.h \
-    ../../src/m515Bus.h \
-    ../../src/dbvzRegisterAccessors.c.h \
-    ../../src/dbvzTiming.c.h \
+    debugviewer.h \
+    emuwrapper.h \
+    mainwindow.h \
+    statemanager.h \
+    touchscreen.h \
+    settingsmanager.h
+
 
 FORMS += \
     mainwindow.ui \
@@ -272,6 +287,7 @@ CONFIG += mobility
 MOBILITY = 
 
 DISTFILES += \
+    ../../src/fileLauncher/readme.md \
     android/AndroidManifest.xml \
     android/gradle/wrapper/gradle-wrapper.jar \
     android/gradlew \

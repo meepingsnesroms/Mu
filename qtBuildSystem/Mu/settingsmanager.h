@@ -40,16 +40,16 @@ private slots:
    void on_selectAddressBookKey_clicked();
    void on_selectTodoKey_clicked();
    void on_selectNotesKey_clicked();
+   void on_selectVoiceMemoKey_clicked();
    void on_selectPowerKey_clicked();
    void on_clearKeyBind_clicked();
 
-   void on_featureFastCpu_toggled(bool checked);
    void on_featureSyncedRtc_toggled(bool checked);
-   void on_featureHleApis_toggled(bool checked);
    void on_featureDurable_toggled(bool checked);
 
    void on_fastBoot_toggled(bool checked);
-   void on_useOs5_toggled(bool checked);
+   void on_cpuSpeed_valueChanged(double arg1);
+   void on_palmOsVersion_currentIndexChanged(int index);
 
 private:
    Ui::SettingsManager* ui;

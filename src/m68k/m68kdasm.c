@@ -615,18 +615,18 @@ static char* get_ea_mode_str(uint instruction, uint size)
 
 static void d68000_illegal(void)
 {
-   sprintf(g_dasm_str, "dc.w $%04x; ILLEGAL", g_cpu_ir);
+   sprintf(g_dasm_str, "dc.w $%04X; ILLEGAL", g_cpu_ir);
 }
 
 static void d68000_1010(void)
 {
-   sprintf(g_dasm_str, "dc.w    $%04x; opcode 1010", g_cpu_ir);
+   sprintf(g_dasm_str, "dc.w    $%04X; opcode 1010", g_cpu_ir);
 }
 
 
 static void d68000_1111(void)
 {
-   sprintf(g_dasm_str, "dc.w    $%04x; opcode 1111", g_cpu_ir);
+   sprintf(g_dasm_str, "dc.w    $%04X; opcode 1111", g_cpu_ir);
 }
 
 
@@ -3272,6 +3272,10 @@ uint32_t m68k_disassemble(char* str_buff, uint32_t pc, uint32_t cpu_type)
          break;
       case M68K_CPU_TYPE_68040:
          g_cpu_type = TYPE_68040;
+         g_address_mask = 0xffffffff;
+         break;
+      case M68K_CPU_TYPE_DBVZ:
+         g_cpu_type = TYPE_68000;
          g_address_mask = 0xffffffff;
          break;
       default:

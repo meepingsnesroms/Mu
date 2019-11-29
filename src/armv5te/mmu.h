@@ -1,5 +1,5 @@
-#ifndef _H_MMU
-#define _H_MMU
+#ifndef H_MMU
+#define H_MMU
 
 #include "cpu.h"
 #include "emu.h"
@@ -68,7 +68,7 @@ extern ac_entry *addr_cache __asm__("addr_cache");
 
 bool addr_cache_pagefault(void *addr);
 void *addr_cache_miss(uint32_t addr, bool writing, fault_proc *fault) __asm__("addr_cache_miss");
-void addr_cache_flush();
+void addr_cache_flush(void);
 void mmu_dump_tables(void);
 
 #ifdef __cplusplus

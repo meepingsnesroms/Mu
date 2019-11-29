@@ -1,5 +1,6 @@
 This is like unimplementedHardware.txt but only lists things that have functionality issues not accuracy issues.
 
+UGUI file picker for RetroArch
 State manager goes bezerk and crashes when saving on android, also can't close the window or it won't open again(also only on Android)
 If there is no userdata-en-m515.ram on Android the emu won't create it(this is likely because theres no graceful exit being done on Android only goto home menu and kill process)
 

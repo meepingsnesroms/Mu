@@ -7,6 +7,12 @@
 #include "mem.h"
 #include "os/os.h"
 
+#if !defined(EMU_NO_SAFETY)
+#include "uArm/CPU_2.h"
+#include "uArm/icache.h"
+#include "../pxa260/pxa260.h"
+#endif
+
 /* Copy of translation table in memory (hack to approximate effect of having a TLB) */
 static uint32_t mmu_translation_table[0x1000];
 
@@ -68,7 +74,7 @@ void mmu_dump_tables(void) {
                 page_type = "1kB";
             }
 section:;
-            gui_debug_printf("%08x -> %08x (%s) (0x%8x)\n", virt_addr + j * (1 << virt_shift), l1_entry & -page_size, page_type, l1_entry);
+            gui_debug_printf("%08X -> %08X (%s) (0x%8x)\n", virt_addr + j * (1 << virt_shift), l1_entry & -page_size, page_type, l1_entry);
         }
     }
 }
@@ -246,10 +252,10 @@ void *addr_cache_miss(uint32_t virt, bool writing, fault_proc *fault) {
     uint8_t *ptr = phys_mem_ptr(phys, 1);
     if (ptr && !(writing && (RAM_FLAGS((size_t)ptr & ~3) & RF_READ_ONLY))) {
         AC_SET_ENTRY_PTR(entry, virt, ptr)
-                //printf("addr_cache_miss VA=%08x ptr=%p entry=%p\n", virt, ptr, entry);
+                //printf("addr_cache_miss VA=%08X ptr=%p entry=%p\n", virt, ptr, entry);
     } else {
         AC_SET_ENTRY_PHYS(entry, virt, phys)
-                //printf("addr_cache_miss VA=%08x PA=%08x entry=%p\n", virt, phys, entry);
+                //printf("addr_cache_miss VA=%08X PA=%08X entry=%p\n", virt, phys, entry);
     }
     uint32_t oldoffset = ac_valid_list[ac_valid_index];
     uint32_t offset = (virt >> 10) * 2 + writing;
@@ -261,15 +267,10 @@ void *addr_cache_miss(uint32_t virt, bool writing, fault_proc *fault) {
     return ptr;
 }
 
-void addr_cache_flush() {
-    #ifndef SUPPORT_LINUX
-        /* The OS does something incredibly stupid: For every access to the flash,
-         * it disables the MMU and flushes all buffers and caches. Argh.
-         * This causes us to drop all translations, so work around this by ignoring
-         * flushes triggered by the flash access code, which is run in SRAM. */
-         if (arm.reg[15] >> 24 == 0xa4)
-             return;
-    #endif
+void addr_cache_flush(void) {
+#if !defined(EMU_NO_SAFETY)
+   icacheInval(&pxa260CpuState.ic);//icache needs to be flushed when MMU state changes
+#endif
 
     if (arm.control & 1) {
         void *table = phys_mem_ptr(arm.translation_table_base, 0x4000);

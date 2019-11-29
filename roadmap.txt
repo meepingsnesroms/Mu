@@ -2,37 +2,37 @@
 The end???
 
 ------------------------------------------
-v3.2.0 to v4.0.0(*** ** 2020 - *** ** 2020)
-
-Core:
-add Dragonball OG/EZ/VZ CPU builtin LCD controller support too muExpDriver, some Palm OS 1<->3 games write directly to these registers to display their video and they won't work(with the exception of LSSA since the OS monitors that one)
-
-------------------------------------------
 v1.1.0 to v3.2.0(*** ** 2020 - *** ** 2020)
 
-Core:
-add Palm Tungsten T3 support
-
-------------------------------------------
-v1.0.0 to v1.1.0(Feb 25 2019 - Easter 2019)
-
 RetroArch GUI:
-*allow mouse cursor to be rendered with multiple CPUs(removed for now)
-*now launches content like cartridge based systems
-*make default button layout match default controller layout better
 //TODO: allow adding more content after boot
-//TODO: switch to high contrast and top left corner aligned mouse cursors
 //TODO: get EMU_MANAGE_HOST_CPU_PIPELINE working on other platforms then the main 4
-//TODO: get OpenMP working with RetroArch
-//TODO: when compiling with "make platform=windows_x86_64" the dll wont load(theres a really good chance its because "libgomp-1.dll"(the OpenMP handler library) is missing from the RetroArch folder)
-*allow disabling the silkscreen area
-*booting without game works again
-*add multithreading and pipeline speedups
+//TODO: get OpenMP working with RetroArch(already works but breaks the no external libs rule)
+//TODO: switch to high contrast and top left corner aligned mouse cursors
+//FIXED: when compiling with "make platform=windows_x86_64" the dll wont load(theres a really good chance its because "libgomp-1.dll"(the OpenMP handler library) is missing from the RetroArch folder)(fixed by disableing OpenMP :( )
 
 Qt GUI:
 //TODO: get circleci builds for QT port on Win/Mac/Linux
 //TODO: allow reiniting the emu without closing the program
-//TODO: render with OpenGL widget(should be a major speed boost)
+//FAIL: render with OpenGL widget(should be a major speed boost)(switched to the method from firebird instead and it changed nothing)
+//TODO: allow using host serial ports in Palm OS
+//TODO: saving states isn't working on Mac OS, it won't create the directory, don't know why(its not the . in the path either already tested), QDir returns false so it is failing?
+
+Core:
+//TODO: thumb mode supposedly dosent work with ARM dynarec, test this and fix mode switches if it does
+add Palm Tungsten T3 support
+
+------------------------------------------
+v1.0.0 to v1.1.0(Feb 25 2019 - Christmas 2019)
+
+RetroArch GUI:
+*now launches content like cartridge based systems
+*make default button layout match default controller layout better
+*allow disabling the silkscreen area
+*booting without game works again
+*add multithreading and pipeline speedups(disabled for now because of compiling issues)
+
+Qt GUI:
 *fixed state manager not loading until a state is saved
 *boot button uses install button icon now, changed install button to icon a "+"
 *put back left/right/center keys
@@ -43,6 +43,8 @@ Qt GUI:
 *keyboard mapping support
 
 Core:
+*add Dragonball OG/EZ/VZ CPU builtin LCD controller / Palm m500 support, some Palm OS 1<->3 games write directly to these registers to display their video and they won't work with color OS versions
+*implement UART1/2 to fix crashing when beaming or hotsyncing
 *PLLFSR timing hack is gone, CLK32 bit now just toggles properly mid CLK32
 *SD card access routines are now 6<->7X faster
 *add a launcher to load prc/pdb/pqa files

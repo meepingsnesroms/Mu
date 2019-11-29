@@ -4004,7 +4004,7 @@ void m68k_op_rtm_32(void)
    if(CPU_TYPE_IS_020_VARIANT(CPU_TYPE))
    {
       m68ki_trace_t0();			   /* auto-disable (see m68kcpu.h) */
-      M68K_DO_LOG((M68K_LOG_FILEHANDLE "%s at %08x: called unimplemented instruction %04x (%s)\n",
+      M68K_DO_LOG((M68K_LOG_FILEHANDLE "%s at %08X: called unimplemented instruction %04X (%s)\n",
                 m68ki_cpu_names[CPU_TYPE], ADDRESS_68K(REG_PC - 2), REG_IR,
                 m68k_disassemble_quick(ADDRESS_68K(REG_PC - 2))));
       return;

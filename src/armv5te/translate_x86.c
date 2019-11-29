@@ -1026,7 +1026,7 @@ void translate_range(uint32_t range_start, uint32_t range_end, int dump) {
         for (index = 0; index < next_index; index++) {
             int start = translation_table[index].start_addr;
             int end = translation_table[index].end_addr;
-            fprintf(f, "%08x (%08x,%08x) %d\n",
+            fprintf(f, "%08X (%08X,%08X) %d\n",
                     (uint8_t *)translation_table[index].code - insn_buffer,
                     start, end, end - start);
         }

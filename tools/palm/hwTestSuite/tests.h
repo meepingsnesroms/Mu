@@ -10,7 +10,6 @@ var listRegisterDirections(void);
 var checkSpi2EnableBitDelay(void);
 var tstat1GetSemaphoreLockOrder(void);
 var ads7846Read(void);
-var ads7846ReadOsVersion(void);
 var getClk32Frequency(void);
 var getDeviceInfo(void);
 var getCpuInfo(void);
@@ -26,5 +25,7 @@ var playConstantTone(void);
 var unaligned32bitAccess(void);
 var isIrq2AttachedToSdCardChipSelect(void);
 var callSysUnimplemented(void);
+var testArmDataExchange(void);
+var tsc2101ReadAllAnalogValues(void);
 
 #endif

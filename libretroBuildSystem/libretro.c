@@ -33,19 +33,20 @@ static retro_environment_t        environ_cb = NULL;
 static retro_input_poll_t         input_poll_cb = NULL;
 static retro_input_state_t        input_state_cb = NULL;
 
-static uint32_t emuFeatures;
-#if defined(EMU_SUPPORT_PALM_OS5)
-static bool     useOs5;
-#endif
-static bool     firstRetroRunCall;
-static bool     dontRenderGraffiti;
-static bool     useJoystickAsMouse;
-static float    touchCursorX;
-static float    touchCursorY;
-static char     contentPath[PATH_MAX_LENGTH];
-static uint16_t mouseCursorOldArea[32 * 32];
-static bool     runningImgFile;
-static uint16_t screenYEnd;
+static double      cpuSpeed;
+static bool        syncRtc;
+static bool        allowInvalidBehavior;
+static const char* osVersion;
+static uint8_t     deviceModel;
+static bool        firstRetroRunCall;
+static bool        dontRenderGraffiti;
+static bool        useJoystickAsMouse;
+static float       touchCursorX;
+static float       touchCursorY;
+static char        contentPath[PATH_MAX_LENGTH];
+static uint16_t    mouseCursorOldArea[32 * 32];
+static bool        runningImgFile;
+static uint16_t    screenYEnd;
 
 
 static void frontendGetCurrentTime(uint8_t* writeBack){
@@ -138,27 +139,17 @@ static void check_variables(bool booting){
    struct retro_variable var = {0};
 
    if(booting){
-      emuFeatures = FEATURE_ACCURATE;
-      
-      var.key = "palm_emu_feature_fast_cpu";
+      var.key = "palm_emu_cpu_speed";
       if(environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
-         if(!strcmp(var.value, "enabled"))
-            emuFeatures |= FEATURE_FAST_CPU;
+         cpuSpeed = atoi(var.value);
       
       var.key = "palm_emu_feature_synced_rtc";
       if(environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
-         if(!strcmp(var.value, "enabled"))
-            emuFeatures |= FEATURE_SYNCED_RTC;
-      
-      var.key = "palm_emu_feature_hle_apis";
-      if(environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
-         if(!strcmp(var.value, "enabled"))
-            emuFeatures |= FEATURE_HLE_APIS;
+         syncRtc = !strcmp(var.value, "enabled");
       
       var.key = "palm_emu_feature_durable";
       if(environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
-         if(!strcmp(var.value, "enabled"))
-            emuFeatures |= FEATURE_DURABLE;
+         allowInvalidBehavior = !strcmp(var.value, "enabled");
    }
 
    var.key = "palm_emu_use_joystick_as_mouse";
@@ -169,11 +160,31 @@ static void check_variables(bool booting){
    if(environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
       dontRenderGraffiti = !strcmp(var.value, "enabled");
    
+   var.key = "palm_emu_os_version";
+   if(environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value){
+      if(!strcmp(var.value, "Palm m500/Palm OS 4.0")){
+         deviceModel = EMU_DEVICE_PALM_M500;
+         osVersion = "palmos40-en-m500";
+      }
+      else if(!strcmp(var.value, "Palm m515/Palm OS 4.1")){
+         deviceModel = EMU_DEVICE_PALM_M515;
+         osVersion = "palmos41-en-m515";
+      }
 #if defined(EMU_SUPPORT_PALM_OS5)
-   var.key = "palm_emu_use_os5";
-   if(environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
-      useOs5 = !strcmp(var.value, "enabled");
+      else if(!strcmp(var.value, "Tungsten T3/Palm OS 5.2.1")){
+         deviceModel = EMU_DEVICE_TUNGSTEN_T3;
+         osVersion = "palmos52-en-t3";
+      }
+      else if(!strcmp(var.value, "Tungsten T3/Palm OS 6.0")){
+         deviceModel = EMU_DEVICE_TUNGSTEN_T3;
+         osVersion = "palmos60-en-t3";
+      }
 #endif
+      else{
+         deviceModel = EMU_DEVICE_PALM_M515;
+         osVersion = "palmos41-en-m515";
+      }
+   }
 }
 
 void retro_init(void){
@@ -228,14 +239,15 @@ void retro_set_environment(retro_environment_t cb){
    struct retro_vfs_interface_info vfs_getter = { 1, NULL };
    struct retro_led_interface led_getter;
    struct retro_variable vars[] = {
-      { "palm_emu_feature_fast_cpu", "Custom CPU Speeds; disabled|enabled" },
+      { "palm_emu_cpu_speed", "CPU Speed; 1.0|1.5|2.0|2.5|3.0|0.5" },
       { "palm_emu_feature_synced_rtc", "Force Match System Clock; disabled|enabled" },
-      { "palm_emu_feature_hle_apis", "HLE API Implementations; disabled|enabled" },
       { "palm_emu_feature_durable", "Ignore Invalid Behavior; disabled|enabled" },
       { "palm_emu_use_joystick_as_mouse", "Use Left Joystick As Mouse; disabled|enabled" },
       { "palm_emu_disable_graffiti", "Disable Graffiti Area; disabled|enabled" },
 #if defined(EMU_SUPPORT_PALM_OS5)
-      { "palm_emu_use_os5", "Boot Apps In OS 5(DEV ONLY); disabled|enabled" },
+      { "palm_emu_os_version", "OS Version; Palm m515/Palm OS 4.1|Tungsten T3/Palm OS 5.2.1|Tungsten T3/Palm OS 6.0|Palm m500/Palm OS 4.0" },
+#else
+      { "palm_emu_os_version", "OS Version; Palm m515/Palm OS 4.1|Palm m500/Palm OS 4.0" },
 #endif
       { 0 }
    };
@@ -311,7 +323,7 @@ void retro_run(void){
    if(unlikely(firstRetroRunCall)){
       struct retro_game_geometry geometry;
 #if defined(EMU_SUPPORT_PALM_OS5)
-      if(useOs5){
+      if(deviceModel == EMU_DEVICE_TUNGSTEN_T3){
          if(dontRenderGraffiti){
             geometry.base_width   = 320;
             geometry.base_height  = 320;
@@ -377,7 +389,7 @@ void retro_run(void){
    palmInput.buttonUp = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP);
    palmInput.buttonDown = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN);
 #if defined(EMU_SUPPORT_PALM_OS5)
-   if(useOs5){
+   if(deviceModel == EMU_DEVICE_TUNGSTEN_T3){
       palmInput.buttonLeft = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT);
       palmInput.buttonRight = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_RIGHT);
       palmInput.buttonCenter = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_SELECT);
@@ -402,8 +414,12 @@ void retro_run(void){
    
    video_cb(palmFramebuffer, palmFramebufferWidth, screenYEnd, palmFramebufferWidth * sizeof(uint16_t));
    audio_cb(palmAudio, AUDIO_SAMPLES_PER_FRAME);
-   if(led_cb)
-      led_cb(0, palmMisc.powerButtonLed);
+   if(led_cb){
+      led_cb(0, palmMisc.greenLed);
+#if defined(EMU_SUPPORT_PALM_OS5)
+      led_cb(1, palmMisc.redLed);
+#endif
+   }
    
    //repair damage done to the framebuffer by the mouse cursor
    if(useJoystickAsMouse)
@@ -440,7 +456,7 @@ bool retro_load_game(const struct retro_game_info *info){
       runningImgFile = string_is_equal_case_insensitive(contentPath + strlen(contentPath) - 4, ".img");
    }
    else{
-      //boot standard device image, "os5" or "os4" gets appended below
+      //boot standard device image
       strlcpy(contentPath, systemDir, PATH_MAX_LENGTH);
       strlcat(contentPath, "/default", PATH_MAX_LENGTH);
       runningImgFile = false;
@@ -448,12 +464,9 @@ bool retro_load_game(const struct retro_game_info *info){
    
    //ROM
    strlcpy(romPath, systemDir, PATH_MAX_LENGTH);
-#if defined(EMU_SUPPORT_PALM_OS5)
-   if(useOs5)
-      strlcat(romPath, "/palmos52-en-t3.rom", PATH_MAX_LENGTH);
-   else
-#endif
-      strlcat(romPath, "/palmos41-en-m515.rom", PATH_MAX_LENGTH);
+   strlcat(romPath, "/", PATH_MAX_LENGTH);
+   strlcat(romPath, osVersion, PATH_MAX_LENGTH);
+   strlcat(romPath, ".rom", PATH_MAX_LENGTH);
    romFile = filestream_open(romPath, RETRO_VFS_FILE_ACCESS_READ, RETRO_VFS_FILE_ACCESS_HINT_NONE);
    if(romFile){
       romSize = filestream_get_size(romFile);
@@ -470,9 +483,9 @@ bool retro_load_game(const struct retro_game_info *info){
       return false;
    }
    
-   //bootloader, will simple be ignored for Tungsten T3
+   //bootloader, will simply be ignored for Tungsten T3
    strlcpy(bootloaderPath, systemDir, PATH_MAX_LENGTH);
-   strlcat(bootloaderPath, "/bootloader-en-m515.rom", PATH_MAX_LENGTH);
+   strlcat(bootloaderPath, "/bootloader-dbvz.rom", PATH_MAX_LENGTH);
    bootloaderFile = filestream_open(bootloaderPath, RETRO_VFS_FILE_ACCESS_READ, RETRO_VFS_FILE_ACCESS_HINT_NONE);
    if(bootloaderFile){
       bootloaderSize = filestream_get_size(bootloaderFile);
@@ -489,7 +502,7 @@ bool retro_load_game(const struct retro_game_info *info){
       bootloaderSize = 0;
    }
    
-   error = emulatorInit(romData, romSize, bootloaderData, bootloaderSize, emuFeatures);
+   error = emulatorInit(deviceModel, romData, romSize, bootloaderData, bootloaderSize, syncRtc, allowInvalidBehavior);
    free(romData);
    if(bootloaderData)
       free(bootloaderData);
@@ -499,12 +512,8 @@ bool retro_load_game(const struct retro_game_info *info){
    
    //save RAM
    strlcpy(saveRamPath, contentPath, PATH_MAX_LENGTH);
-#if defined(EMU_SUPPORT_PALM_OS5)
-   if(useOs5)
-      strlcat(saveRamPath, ".os5", PATH_MAX_LENGTH);
-   else
-#endif
-      strlcat(saveRamPath, ".os4", PATH_MAX_LENGTH);
+   strlcat(saveRamPath, "-", PATH_MAX_LENGTH);
+   strlcat(saveRamPath, osVersion, PATH_MAX_LENGTH);
    strlcat(saveRamPath, ".ram", PATH_MAX_LENGTH);
    saveRamFile = filestream_open(saveRamPath, RETRO_VFS_FILE_ACCESS_READ, RETRO_VFS_FILE_ACCESS_HINT_NONE);
    if(saveRamFile){
@@ -519,12 +528,8 @@ bool retro_load_game(const struct retro_game_info *info){
    if(!runningImgFile){
       //SD card
       strlcpy(sdImgPath, contentPath, PATH_MAX_LENGTH);
-#if defined(EMU_SUPPORT_PALM_OS5)
-      if(useOs5)
-         strlcat(sdImgPath, ".os5", PATH_MAX_LENGTH);
-      else
-#endif
-         strlcat(sdImgPath, ".os4", PATH_MAX_LENGTH);
+      strlcat(sdImgPath, "-", PATH_MAX_LENGTH);
+      strlcat(sdImgPath, osVersion, PATH_MAX_LENGTH);
       strlcat(sdImgPath, ".sd.img", PATH_MAX_LENGTH);
       sdImgFile = filestream_open(sdImgPath, RETRO_VFS_FILE_ACCESS_READ, RETRO_VFS_FILE_ACCESS_HINT_NONE);
       if(sdImgFile){
@@ -620,7 +625,7 @@ bool retro_load_game(const struct retro_game_info *info){
    //make touches land on the correct spot and screen render the correct size when the graffiti area is off
    if(dontRenderGraffiti){
 #if defined(EMU_SUPPORT_PALM_OS5)
-      if(useOs5)
+      if(deviceModel == EMU_DEVICE_TUNGSTEN_T3)
          screenYEnd = 320;
       else
 #endif
@@ -632,6 +637,9 @@ bool retro_load_game(const struct retro_game_info *info){
    
    //used to resize things properly
    firstRetroRunCall = true;
+   
+   //set default CPU speed
+   emulatorSetCpuSpeed(cpuSpeed);
 
    return true;
 }
@@ -644,12 +652,8 @@ void retro_unload_game(void){
    
    //save RAM
    strlcpy(saveRamPath, contentPath, PATH_MAX_LENGTH);
-#if defined(EMU_SUPPORT_PALM_OS5)
-   if(useOs5)
-      strlcat(saveRamPath, ".os5", PATH_MAX_LENGTH);
-   else
-#endif
-      strlcat(saveRamPath, ".os4", PATH_MAX_LENGTH);
+   strlcat(saveRamPath, "-", PATH_MAX_LENGTH);
+   strlcat(saveRamPath, osVersion, PATH_MAX_LENGTH);
    strlcat(saveRamPath, ".ram", PATH_MAX_LENGTH);
    saveRamFile = filestream_open(saveRamPath, RETRO_VFS_FILE_ACCESS_WRITE, RETRO_VFS_FILE_ACCESS_HINT_NONE);
    if(saveRamFile){
@@ -662,12 +666,8 @@ void retro_unload_game(void){
       //SD card
       if(palmSdCard.flashChipData){
          strlcpy(sdImgPath, contentPath, PATH_MAX_LENGTH);
-#if defined(EMU_SUPPORT_PALM_OS5)
-         if(useOs5)
-            strlcat(sdImgPath, ".os5", PATH_MAX_LENGTH);
-         else
-#endif
-            strlcat(sdImgPath, ".os4", PATH_MAX_LENGTH);
+         strlcat(sdImgPath, "-", PATH_MAX_LENGTH);
+         strlcat(sdImgPath, osVersion, PATH_MAX_LENGTH);
          strlcat(sdImgPath, ".sd.img", PATH_MAX_LENGTH);
          sdImgFile = filestream_open(sdImgPath, RETRO_VFS_FILE_ACCESS_WRITE, RETRO_VFS_FILE_ACCESS_HINT_NONE);
          if(sdImgFile){

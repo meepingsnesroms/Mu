@@ -1,6 +1,6 @@
 //both timer functions can call eachother define them here
-static void timer1(uint8_t reason, double sysclk);
-static void timer2(uint8_t reason, double sysclk);
+static void timer1(uint8_t reason, double sysclks);
+static void timer2(uint8_t reason, double sysclks);
 
 static void timer1(uint8_t reason, double sysclks){
    uint16_t timer1Control = registerArrayRead16(TCTL1);
@@ -169,35 +169,35 @@ static void rtiInterruptClk32(void){
    //this function is part of endClk32();
    uint16_t triggeredRtiInterrupts = 0x0000;
 
-   if(clk32Counter % (M515_CRYSTAL_FREQUENCY / 512) == 0){
+   if(clk32Counter % (M5XX_CRYSTAL_FREQUENCY / 512) == 0){
       //RIS7 - 512HZ
       triggeredRtiInterrupts |= 0x8000;
    }
-   if(clk32Counter % (M515_CRYSTAL_FREQUENCY / 256) == 0){
+   if(clk32Counter % (M5XX_CRYSTAL_FREQUENCY / 256) == 0){
       //RIS6 - 256HZ
       triggeredRtiInterrupts |= 0x4000;
    }
-   if(clk32Counter % (M515_CRYSTAL_FREQUENCY / 128) == 0){
+   if(clk32Counter % (M5XX_CRYSTAL_FREQUENCY / 128) == 0){
       //RIS5 - 128HZ
       triggeredRtiInterrupts |= 0x2000;
    }
-   if(clk32Counter % (M515_CRYSTAL_FREQUENCY / 64) == 0){
+   if(clk32Counter % (M5XX_CRYSTAL_FREQUENCY / 64) == 0){
       //RIS4 - 64HZ
       triggeredRtiInterrupts |= 0x1000;
    }
-   if(clk32Counter % (M515_CRYSTAL_FREQUENCY / 32) == 0){
+   if(clk32Counter % (M5XX_CRYSTAL_FREQUENCY / 32) == 0){
       //RIS3 - 32HZ
       triggeredRtiInterrupts |= 0x0800;
    }
-   if(clk32Counter % (M515_CRYSTAL_FREQUENCY / 16) == 0){
+   if(clk32Counter % (M5XX_CRYSTAL_FREQUENCY / 16) == 0){
       //RIS2 - 16HZ
       triggeredRtiInterrupts |= 0x0400;
    }
-   if(clk32Counter % (M515_CRYSTAL_FREQUENCY / 8) == 0){
+   if(clk32Counter % (M5XX_CRYSTAL_FREQUENCY / 8) == 0){
       //RIS1 - 8HZ
       triggeredRtiInterrupts |= 0x0200;
    }
-   if(clk32Counter % (M515_CRYSTAL_FREQUENCY / 4) == 0){
+   if(clk32Counter % (M5XX_CRYSTAL_FREQUENCY / 4) == 0){
       //RIS0 - 4HZ
       triggeredRtiInterrupts |= 0x0100;
    }
@@ -249,7 +249,7 @@ static void rtcAddSecondClk32(void){
       uint8_t minutes = oldRtcTime >> 16 & 0x0000003F;
       uint8_t seconds = oldRtcTime & 0x0000003F;
 
-      if(palmEmuFeatures.info & FEATURE_SYNCED_RTC && palmGetRtcFromHost){
+      if(palmSyncRtc && palmGetRtcFromHost){
          //get new RTC value from system
          uint16_t stopwatch = registerArrayRead16(STPWCH);
          uint8_t alarmHours = rtcAlrm >> 24;
@@ -300,7 +300,6 @@ static void rtcAddSecondClk32(void){
                }
             }
          }
-
       }
       else{
          //standard frame based time increment
@@ -358,13 +357,13 @@ static void rtcAddSecondClk32(void){
    watchdogSecondTickClk32();
 }
 
-void dbvzBeginClk32(void){
+static void dbvzBeginClk32(void){
    dbvzClk32Sysclks = 0.0;
 }
 
-void dbvzEndClk32(void){
+static void dbvzEndClk32(void){
    //second position counter
-   if(clk32Counter >= M515_CRYSTAL_FREQUENCY - 1){
+   if(clk32Counter >= M5XX_CRYSTAL_FREQUENCY - 1){
       clk32Counter = 0;
       rtcAddSecondClk32();
    }
@@ -401,10 +400,14 @@ void dbvzEndClk32(void){
       pllWakeWait--;
    }
 
+   //UART1/2, these are polled to remain thread safe
+   updateUart1Interrupt();
+   updateUart2Interrupt();
+
    checkInterrupts();
 }
 
-void dbvzAddSysclks(double count){
+static void dbvzAddSysclks(double count){
    timer1(DBVZ_TIMER_REASON_SYSCLK, count);
    timer2(DBVZ_TIMER_REASON_SYSCLK, count);
    samplePwm1(false/*forClk32*/, count);
@@ -414,15 +417,15 @@ void dbvzAddSysclks(double count){
 }
 
 static int32_t audioGetFramePercentIncrementFromClk32s(int32_t count){
-   return (double)count / ((double)M515_CRYSTAL_FREQUENCY / EMU_FPS) * AUDIO_END_OF_FRAME;
+   return (double)count / ((double)M5XX_CRYSTAL_FREQUENCY / EMU_FPS) * DBVZ_AUDIO_END_OF_FRAME;
 }
 
 static int32_t audioGetFramePercentIncrementFromSysclks(double count){
-   return count / (dbvzSysclksPerClk32 * ((double)M515_CRYSTAL_FREQUENCY / EMU_FPS)) * AUDIO_END_OF_FRAME;
+   return count / (dbvzSysclksPerClk32 * ((double)M5XX_CRYSTAL_FREQUENCY / EMU_FPS)) * DBVZ_AUDIO_END_OF_FRAME;
 }
 
 static int32_t audioGetFramePercentage(void){
    //returns how much of the frame has executed
-   //0% = 0, 100% = AUDIO_END_OF_FRAME
+   //0% = 0, 100% = DBVZ_AUDIO_END_OF_FRAME
    return audioGetFramePercentIncrementFromClk32s(dbvzFrameClk32s) + (dbvzIsPllOn() ? audioGetFramePercentIncrementFromSysclks(dbvzClk32Sysclks) : 0);
 }

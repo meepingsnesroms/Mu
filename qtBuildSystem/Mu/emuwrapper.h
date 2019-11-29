@@ -1,6 +1,6 @@
 #pragma once
 
-#include <QPixmap>
+#include <QImage>
 #include <QVector>
 #include <QString>
 #include <QByteArray>
@@ -42,6 +42,7 @@ public:
       BUTTON_ADDRESS,
       BUTTON_TODO,
       BUTTON_NOTES,
+      BUTTON_VOICE_MEMO,
       BUTTON_POWER,
       BUTTON_TOTAL_COUNT
    };
@@ -49,11 +50,12 @@ public:
    EmuWrapper();
    ~EmuWrapper();
 
-   uint32_t init(const QString& assetPath, bool useOs5, uint32_t features = FEATURE_ACCURATE, bool fastBoot = false);
+   uint32_t init(const QString& assetPath, const QString& osVersion, bool syncRtc = false, bool allowInvalidBehavior = false, bool fastBoot = false);
    void exit();
    void pause();
    void resume();
    void reset(bool hard);
+   void setCpuSpeed(double speed);
    uint32_t bootFromFile(const QString& mainPath);
    uint32_t installApplication(const QString& path);
    const QString& getStatePath() const{return emuSaveStatePath;}//needed for looking up state pictures in the GUI
@@ -62,6 +64,7 @@ public:
    bool isInited() const{return emuInited;}
    bool isRunning() const{return emuRunning;}
    bool isPaused() const{return emuPaused;}
+   bool isTungstenT3() const{return palmEmulatingTungstenT3;}
    void setPenValue(float x, float y, bool touched);
    void setKeyValue(uint8_t key, bool pressed);
 
@@ -71,12 +74,14 @@ public:
    void frameHandled(){emuNewFrameReady = false;}
 
    //calling these while newFrameReady() == false is undefined behavior, the other thread may be writing to them
-   const QPixmap getFramebuffer(){return QPixmap::fromImage(QImage((uchar*)palmFramebuffer, palmFramebufferWidth, palmFramebufferHeight, palmFramebufferWidth * sizeof(uint16_t), QImage::Format_RGB16));}
+   const QImage getFramebufferImage(){return QImage((uchar*)palmFramebuffer, palmFramebufferWidth, palmFramebufferHeight, palmFramebufferWidth * sizeof(uint16_t), QImage::Format_RGB16);}
    const int16_t* getAudioSamples() const{return palmAudio;}
-   bool getPowerButtonLed() const{return palmMisc.powerButtonLed;}
+   bool getPowerButtonLed() const{return palmMisc.greenLed;}
 
-   QVector<QString>& debugGetLogEntrys();
-   QVector<uint64_t>& debugGetDuplicateLogEntryCount();
+   QVector<QString>& debugLogEntrys();
+   QVector<uint64_t>& debugDuplicateLogEntryCount();
+   uint64_t& debugDeletedLogEntryCount();
    QString debugGetCpuRegisterString();
    uint64_t debugGetEmulatorMemory(uint32_t address, uint8_t size);
+   QString debugDisassemble(uint32_t address, uint32_t opcodes);
 };

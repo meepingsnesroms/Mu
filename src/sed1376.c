@@ -4,8 +4,8 @@
 #include "emulator.h"
 #include "portability.h"
 #include "dbvz.h"
+#include "sed1376.h"
 #include "flx68000.h"//for flx68000GetPc()
-#include "specs/sed1376RegisterSpec.h"
 
 
 //the SED1376 has only 16 address lines(17 if you count the line that switches between registers and framebuffer) and 16 data lines, the most you can read at once is 16 bits, registers are 8 bits
@@ -22,59 +22,59 @@
 //The LCD power-off sequence is activated by programming the Power Save Mode Enable bit (REG[A0h] bit 0) to 1.
 
 
-#define SED1376_REG_SIZE 0xB4
-#define SED1376_LUT_SIZE 0x100
-#define SED1376_RAM_SIZE  0x20000//actual size is 0x14000, but that cant be masked off by address lines so size is increased to prevent buffer overflow
+#include "sed1376RegisterNames.c.h"
 
 
 uint16_t* sed1376Framebuffer;
-uint8_t   sed1376Ram[SED1376_RAM_SIZE];
+uint16_t  sed1376FramebufferWidth;
+uint16_t  sed1376FramebufferHeight;
+uint8_t   sed1376Ram[0x20000];
 
-static uint8_t  sed1376Registers[SED1376_REG_SIZE];
-static uint8_t  sed1376RLut[SED1376_LUT_SIZE];
-static uint8_t  sed1376GLut[SED1376_LUT_SIZE];
-static uint8_t  sed1376BLut[SED1376_LUT_SIZE];
-static uint16_t sed1376OutputLut[SED1376_LUT_SIZE];//used to speed up pixel conversion
-static uint32_t screenStartAddress;
-static uint16_t lineSize;
-static uint16_t (*renderPixel)(uint16_t x, uint16_t y);
+static uint8_t  sed1376Registers[0xB4];
+static uint8_t  sed1376RLut[0x100];
+static uint8_t  sed1376GLut[0x100];
+static uint8_t  sed1376BLut[0x100];
+static uint16_t sed1376OutputLut[0x100];//used to speed up pixel conversion
+static uint32_t sed1376ScreenStartAddress;
+static uint16_t sed1376LineSize;
+static uint16_t (*sed1376RenderPixel)(uint16_t x, uint16_t y);
 
 
 #include "sed1376Accessors.c.h"
 
-static uint32_t getBufferStartAddress(void){
-   uint32_t screenStartAddress = sed1376Registers[DISP_ADDR_2] << 16 | sed1376Registers[DISP_ADDR_1] << 8 | sed1376Registers[DISP_ADDR_0];
+static uint32_t sed1376GetBufferStartAddress(void){
+   uint32_t sed1376ScreenStartAddress = sed1376Registers[DISP_ADDR_2] << 16 | sed1376Registers[DISP_ADDR_1] << 8 | sed1376Registers[DISP_ADDR_0];
    switch((sed1376Registers[SPECIAL_EFFECT] & 0x03) * 90){
       case 0:
          //desired byte address / 4.
-         screenStartAddress *= 4;
+         sed1376ScreenStartAddress *= 4;
          break;
 
       case 90:
          //((desired byte address + (panel height * bpp / 8)) / 4) - 1.
-         screenStartAddress += 1;
-         screenStartAddress *= 4;
-         //screenStartAddress - (panelHeight * bpp / 8);
+         sed1376ScreenStartAddress += 1;
+         sed1376ScreenStartAddress *= 4;
+         //sed1376ScreenStartAddress - (panelHeight * bpp / 8);
          break;
 
       case 180:
          //((desired byte address + (panel width * panel height * bpp / 8)) / 4) - 1.
-         screenStartAddress += 1;
-         screenStartAddress *= 4;
-         //screenStartAddress - (panelWidth * panelHeight * bpp / 8);
+         sed1376ScreenStartAddress += 1;
+         sed1376ScreenStartAddress *= 4;
+         //sed1376ScreenStartAddress - (panelWidth * panelHeight * bpp / 8);
          break;
 
       case 270:
          //(desired byte address + ((panel width - 1) * panel height * bpp / 8)) / 4.
-         screenStartAddress *= 4;
-         //screenStartAddress -= ((panelWidth - 1) * panelHeight * bpp / 8);
+         sed1376ScreenStartAddress *= 4;
+         //sed1376ScreenStartAddress -= ((panelWidth - 1) * panelHeight * bpp / 8);
          break;
    }
 
-   return screenStartAddress;
+   return sed1376ScreenStartAddress;
 }
 
-static uint32_t getPipStartAddress(void){
+static uint32_t sed1376GetPipStartAddress(void){
    uint32_t pipStartAddress = sed1376Registers[PIP_ADDR_2] << 16 | sed1376Registers[PIP_ADDR_1] << 8 | sed1376Registers[PIP_ADDR_0];
    switch((sed1376Registers[SPECIAL_EFFECT] & 0x03) * 90){
       case 0:
@@ -107,17 +107,17 @@ static uint32_t getPipStartAddress(void){
 }
 
 void sed1376Reset(void){
-   memset(sed1376Registers, 0x00, SED1376_REG_SIZE);
-   memset(sed1376OutputLut, 0x00, SED1376_LUT_SIZE * sizeof(uint16_t));
-   memset(sed1376RLut, 0x00, SED1376_LUT_SIZE);
-   memset(sed1376GLut, 0x00, SED1376_LUT_SIZE);
-   memset(sed1376BLut, 0x00, SED1376_LUT_SIZE);
-   memset(sed1376Ram, 0x00, SED1376_RAM_SIZE);
+   memset(sed1376Registers, 0x00, sizeof(sed1376Registers));
+   memset(sed1376OutputLut, 0x00, sizeof(sed1376OutputLut));
+   memset(sed1376RLut, 0x00, sizeof(sed1376RLut));
+   memset(sed1376GLut, 0x00, sizeof(sed1376GLut));
+   memset(sed1376BLut, 0x00, sizeof(sed1376BLut));
+   memset(sed1376Ram, 0x00, sizeof(sed1376Ram));
 
    palmMisc.backlightLevel = 0;
    palmMisc.lcdOn = false;
 
-   renderPixel = NULL;
+   sed1376RenderPixel = NULL;
 
    sed1376Registers[REV_CODE] = 0x28;
    sed1376Registers[DISP_BUFF_SIZE] = 0x14;
@@ -129,9 +129,11 @@ void sed1376Reset(void){
 uint32_t sed1376StateSize(void){
    uint32_t size = 0;
 
-   size += SED1376_REG_SIZE;
-   size += SED1376_LUT_SIZE * 3;
-   size += SED1376_RAM_SIZE;
+   size += sizeof(sed1376Registers);
+   size += sizeof(sed1376RLut);
+   size += sizeof(sed1376GLut);
+   size += sizeof(sed1376BLut);
+   size += sizeof(sed1376Ram);
 
    return size;
 }
@@ -139,35 +141,35 @@ uint32_t sed1376StateSize(void){
 void sed1376SaveState(uint8_t* data){
    uint32_t offset = 0;
 
-   memcpy(data + offset, sed1376Registers, SED1376_REG_SIZE);
-   offset += SED1376_REG_SIZE;
-   memcpy(data + offset, sed1376RLut, SED1376_LUT_SIZE);
-   offset += SED1376_LUT_SIZE;
-   memcpy(data + offset, sed1376GLut, SED1376_LUT_SIZE);
-   offset += SED1376_LUT_SIZE;
-   memcpy(data + offset, sed1376BLut, SED1376_LUT_SIZE);
-   offset += SED1376_LUT_SIZE;
-   memcpy(data + offset, sed1376Ram, SED1376_RAM_SIZE);
-   offset += SED1376_RAM_SIZE;
+   memcpy(data + offset, sed1376Registers, sizeof(sed1376Registers));
+   offset += sizeof(sed1376Registers);
+   memcpy(data + offset, sed1376RLut, sizeof(sed1376RLut));
+   offset += sizeof(sed1376RLut);
+   memcpy(data + offset, sed1376GLut, sizeof(sed1376GLut));
+   offset += sizeof(sed1376GLut);
+   memcpy(data + offset, sed1376BLut, sizeof(sed1376BLut));
+   offset += sizeof(sed1376BLut);
+   memcpy(data + offset, sed1376Ram, sizeof(sed1376Ram));
+   offset += sizeof(sed1376Ram);
 }
 
 void sed1376LoadState(uint8_t* data){
    uint32_t offset = 0;
    uint16_t index;
 
-   memcpy(sed1376Registers, data + offset, SED1376_REG_SIZE);
-   offset += SED1376_REG_SIZE;
-   memcpy(sed1376RLut, data + offset, SED1376_LUT_SIZE);
-   offset += SED1376_LUT_SIZE;
-   memcpy(sed1376GLut, data + offset, SED1376_LUT_SIZE);
-   offset += SED1376_LUT_SIZE;
-   memcpy(sed1376BLut, data + offset, SED1376_LUT_SIZE);
-   offset += SED1376_LUT_SIZE;
-   memcpy(sed1376Ram, data + offset, SED1376_RAM_SIZE);
-   offset += SED1376_RAM_SIZE;
+   memcpy(sed1376Registers, data + offset, sizeof(sed1376Registers));
+   offset += sizeof(sed1376Registers);
+   memcpy(sed1376RLut, data + offset, sizeof(sed1376RLut));
+   offset += sizeof(sed1376RLut);
+   memcpy(sed1376GLut, data + offset, sizeof(sed1376GLut));
+   offset += sizeof(sed1376GLut);
+   memcpy(sed1376BLut, data + offset, sizeof(sed1376BLut));
+   offset += sizeof(sed1376BLut);
+   memcpy(sed1376Ram, data + offset, sizeof(sed1376Ram));
+   offset += sizeof(sed1376Ram);
 
    //refresh LUT
-   MULTITHREAD_LOOP(index) for(index = 0; index < SED1376_LUT_SIZE; index++)
+   MULTITHREAD_LOOP(index) for(index = 0; index < 0x100; index++)
       sed1376OutputLut[index] = makeRgb16FromSed666(sed1376RLut[index], sed1376GLut[index], sed1376BLut[index]);
 }
 
@@ -282,7 +284,7 @@ void sed1376SetRegister(uint8_t address, uint8_t value){
       case GPIO_CONF_0:
       case GPIO_CONT_0:
          sed1376Registers[address] = value & 0x7F;
-         updateLcdStatus();
+         sed1376UpdateLcdStatus();
          return;
 
       case GPIO_CONF_1:
@@ -359,19 +361,19 @@ void sed1376Render(void){
       uint16_t rotation = 90 * (sed1376Registers[SPECIAL_EFFECT] & 0x03);
       uint32_t index;
 
-      screenStartAddress = getBufferStartAddress();
-      lineSize = (sed1376Registers[LINE_SIZE_1] << 8 | sed1376Registers[LINE_SIZE_0]) * 4;
+      sed1376ScreenStartAddress = sed1376GetBufferStartAddress();
+      sed1376LineSize = (sed1376Registers[LINE_SIZE_1] << 8 | sed1376Registers[LINE_SIZE_0]) * 4;
       selectRenderer(color, bitDepth);
 
-      if(renderPixel){
+      if(sed1376RenderPixel){
          uint16_t pixelX;
          uint16_t pixelY;
 
-         MULTITHREAD_DOUBLE_LOOP(pixelX, pixelY) for(pixelY = 0; pixelY < 160; pixelY++)
-            for(pixelX = 0; pixelX < 160; pixelX++)
-               sed1376Framebuffer[pixelY * 160 + pixelX] = renderPixel(pixelX, pixelY);
+         MULTITHREAD_DOUBLE_LOOP(pixelX, pixelY) for(pixelY = 0; pixelY < sed1376FramebufferHeight; pixelY++)
+            for(pixelX = 0; pixelX < sed1376FramebufferWidth; pixelX++)
+               sed1376Framebuffer[pixelY * sed1376FramebufferWidth + pixelX] = sed1376RenderPixel(pixelX, pixelY);
 
-         //debugLog("Screen start address:0x%08X, buffer width:%d, swivel view:%d degrees\n", screenStartAddress, lineSize, rotation);
+         //debugLog("Screen start address:0x%08X, buffer width:%d, swivel view:%d degrees\n", sed1376ScreenStartAddress, lineSize, rotation);
          //debugLog("Screen format, color:%s, BPP:%d\n", boolString(color), bitDepth);
 
          if(pictureInPictureEnabled){
@@ -390,14 +392,14 @@ void sed1376Render(void){
             }
             //debugLog("PIP state, start x:%d, end x:%d, start y:%d, end y:%d\n", pipStartX, pipEndX, pipStartY, pipEndY);
             //render PIP only if PIP window is onscreen
-            if(pipStartX < 160 && pipStartY < 160){
-               pipEndX = FAST_MIN(pipEndX, 160);
-               pipEndY = FAST_MIN(pipEndY, 160);
-               screenStartAddress = getPipStartAddress();
-               lineSize = (sed1376Registers[PIP_LINE_SZ_1] << 8 | sed1376Registers[PIP_LINE_SZ_0]) * 4;
+            if(pipStartX < sed1376FramebufferWidth && pipStartY < sed1376FramebufferHeight){
+               pipEndX = FAST_MIN(pipEndX, sed1376FramebufferWidth);
+               pipEndY = FAST_MIN(pipEndY, sed1376FramebufferHeight);
+               sed1376ScreenStartAddress = sed1376GetPipStartAddress();
+               sed1376LineSize = (sed1376Registers[PIP_LINE_SZ_1] << 8 | sed1376Registers[PIP_LINE_SZ_0]) * 4;
                MULTITHREAD_DOUBLE_LOOP(pixelX, pixelY) for(pixelY = pipStartY; pixelY < pipEndY; pixelY++)
                   for(pixelX = pipStartX; pixelX < pipEndX; pixelX++)
-                     sed1376Framebuffer[pixelY * 160 + pixelX] = renderPixel(pixelX, pixelY);
+                     sed1376Framebuffer[pixelY * sed1376FramebufferWidth + pixelX] = sed1376RenderPixel(pixelX, pixelY);
             }
          }
 
@@ -406,28 +408,8 @@ void sed1376Render(void){
 
          //display inversion
          if((sed1376Registers[DISP_MODE] & 0x30) == 0x10)
-            MULTITHREAD_LOOP(index) for(index = 0; index < 160 * 160; index++)
+            MULTITHREAD_LOOP(index) for(index = 0; index < sed1376FramebufferWidth * sed1376FramebufferHeight; index++)
                sed1376Framebuffer[index] = ~sed1376Framebuffer[index];
-
-
-         //backlight level, 0 = 1/4 color intensity, 1 = 1/2 color intensity, 2 = full color intensity
-         switch(palmMisc.backlightLevel){
-            case 0:
-               MULTITHREAD_LOOP(index) for(index = 0; index < 160 * 160; index++){
-                  sed1376Framebuffer[index] >>= 2;
-                  sed1376Framebuffer[index] &= 0x39E7;
-               }
-               break;
-            case 1:
-               MULTITHREAD_LOOP(index) for(index = 0; index < 160 * 160; index++){
-                  sed1376Framebuffer[index] >>= 1;
-                  sed1376Framebuffer[index] &= 0x7BEF;
-               }
-               break;
-            case 2:
-               //nothing
-               break;
-         }
       }
       else{
          debugLog("Invalid screen format, color:%s, BPP:%d, rotation:%d\n", color ? "true" : "false", bitDepth, rotation);
@@ -435,7 +417,12 @@ void sed1376Render(void){
    }
    else{
       //black screen
-      memset(sed1376Framebuffer, 0x00, 160 * 160 * sizeof(uint16_t));
+      memset(sed1376Framebuffer, 0x00, sed1376FramebufferWidth * sed1376FramebufferHeight * sizeof(uint16_t));
       debugLog("Cant draw screen, LCD on:%s, PLL on:%s, power save on:%s, forced blank on:%s\n", palmMisc.lcdOn ? "true" : "false", dbvzIsPllOn() ? "true" : "false", sed1376PowerSaveEnabled() ? "true" : "false", !!(sed1376Registers[DISP_MODE] & 0x80) ? "true" : "false");
    }
+}
+
+void sed1376UpdateLcdStatus(void){
+   palmMisc.lcdOn = !!(sed1376Registers[GPIO_CONT_0] & sed1376Registers[GPIO_CONF_0] & 0x20);
+   palmMisc.backlightLevel = !!(sed1376Registers[GPIO_CONT_0] & sed1376Registers[GPIO_CONF_0] & 0x10) ? (50 + m515BacklightAmplifierState() * 50) : 0;
 }

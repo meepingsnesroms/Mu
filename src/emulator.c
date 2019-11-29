@@ -3,23 +3,22 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "audio/blip_buf.h"
 #include "emulator.h"
+#include "audio/blip_buf.h"
 #include "dbvz.h"
-#include "expansionHardware.h"
-#include "m515Bus.h"
+#include "m5XXBus.h"
 #include "sed1376.h"
 #include "ads7846.h"
 #include "pdiUsbD12.h"
 #include "sdCard.h"
 #include "silkscreen.h"
 #include "portability.h"
-#include "debug/sandbox.h"
-#include "specs/emuFeatureRegisterSpec.h"
-
 #if defined(EMU_SUPPORT_PALM_OS5)
 #include "tungstenT3Bus.h"
-#include "pxa255/pxa255.h"
+#include "pxa260/pxa260.h"
+#include "tps65010.h"
+#include "tsc2101.h"
+#include "w86l488.h"
 #endif
 
 
@@ -34,10 +33,13 @@
 //0xFFFFFE00<->0xFFFFFFFF Bootloader, only reads from UART into RAM and jumps to it, never executed in consumer Palms
 
 //Memory map of Tungsten T3
-//This is a map of the boot address ranges, it can be(and is) changed with the MMU
+//Boot address ranges, these are changed with the MMU after boot
 //0x00000000<->0x003FFFFF ROM
 //0xA0000000<->0xA3FFFFFF RAM
-//TODO: get the default address ranges Palm OS sets up after boot
+//Post boot address ranges:
+//0x00000000<->0x003FFFFF RAM
+//0x20000000<->0x20FFFFFF ROM
+//TODO: add other chips
 
 //VGhpcyBlbXVsYXRvciBpcyBkZWRpY2F0ZWQgdG8gdGhlIGJvdmluZSBtb28gY293cyB0aGF0IG1vby4=
 
@@ -47,12 +49,12 @@ static bool emulatorInitialized = false;
 #if defined(EMU_SUPPORT_PALM_OS5)
 bool      palmEmulatingTungstenT3;
 #endif
+bool      palmEmulatingM500;
 uint8_t*  palmRam;
 uint8_t*  palmRom;
 input_t   palmInput;
 sd_card_t palmSdCard;
 misc_hw_t palmMisc;
-emu_reg_t palmEmuFeatures;
 uint16_t* palmFramebuffer;
 uint16_t  palmFramebufferWidth;
 uint16_t  palmFramebufferHeight;
@@ -60,35 +62,74 @@ int16_t*  palmAudio;
 blip_t*   palmAudioResampler;
 double    palmCycleCounter;//can be greater then 0 if too many cycles where run
 double    palmClockMultiplier;//used by the emulator to overclock the emulated Palm
+bool      palmSyncRtc;//doesnt go in save states, its a property of the session not the device
+bool      palmAllowInvalidBehavior;//doesnt go in save states, its a property of the session not the device
+void      (*palmIrSetPortProperties)(serial_port_properties_t* properties);//configure port I/O behavior, used for proxyed native I/R connections
+uint32_t  (*palmIrDataSize)(void);//returns the current number of bytes in the hosts IR receive FIFO
+uint16_t  (*palmIrDataReceive)(void);//called by the emulator to read the hosts IR receive FIFO
+void      (*palmIrDataSend)(uint16_t data);//called by the emulator to send IR data
+void      (*palmIrDataFlush)(void);//called by the emulator to delete all data in the hosts IR receive FIFO
+void      (*palmSerialSetPortProperties)(serial_port_properties_t* properties);//configure port I/O behavior, used for proxyed native serial connections
+uint32_t  (*palmSerialDataSize)(void);//returns the current number of bytes in the hosts serial receive FIFO
+uint16_t  (*palmSerialDataReceive)(void);//called by the emulator to read the hosts serial receive FIFO
+void      (*palmSerialDataSend)(uint16_t data);//called by the emulator to send serial data
+void      (*palmSerialDataFlush)(void);//called by the emulator to delete all data in the hosts serial receive FIFO
 void      (*palmGetRtcFromHost)(uint8_t* writeBack);//[0] = hours, [1] = minutes, [2] = seconds
 
 
-uint32_t emulatorInit(uint8_t* palmRomData, uint32_t palmRomSize, uint8_t* palmBootloaderData, uint32_t palmBootloaderSize, uint32_t enabledEmuFeatures){
-   //only accept valid non debug features from the user
-   enabledEmuFeatures &= FEATURE_FAST_CPU | FEATURE_SYNCED_RTC | FEATURE_HLE_APIS | FEATURE_DURABLE;
+static void patchOsRom(uint32_t address, char* patch){
+   uint32_t offset;
+   uint32_t patchBytes = strlen(patch) / 2;//1 char per nibble
+   uint32_t swapBegin = address & 0xFFFFFFFE;
+   uint32_t swapSize = patchBytes / sizeof(uint16_t) + 1;
+   char conv[5] = "0xXX";
 
-#if defined(EMU_DEBUG)
-   //enable debug features if compiled in debug mode
-   enabledEmuFeatures |= FEATURE_DEBUG;
+#if defined(EMU_SUPPORT_PALM_OS5)
+   if(!palmEmulatingTungstenT3)
 #endif
+      swap16BufferIfLittle(&palmRom[swapBegin], swapSize);
+   for(offset = 0; offset < patchBytes; offset++){
+      conv[2] = patch[offset * 2];
+      conv[3] = patch[offset * 2 + 1];
+      palmRom[address + offset] = strtol(conv, NULL, 0);
+   }
+#if defined(EMU_SUPPORT_PALM_OS5)
+   if(!palmEmulatingTungstenT3)
+#endif
+      swap16BufferIfLittle(&palmRom[swapBegin], swapSize);
+}
 
+
+uint32_t emulatorInit(uint8_t emulatedDevice, uint8_t* palmRomData, uint32_t palmRomSize, uint8_t* palmBootloaderData, uint32_t palmBootloaderSize, bool syncRtc, bool allowInvalidBehavior){
    if(emulatorInitialized)
       return EMU_ERROR_RESOURCE_LOCKED;
+
+   palmSyncRtc = syncRtc;
+   palmAllowInvalidBehavior = allowInvalidBehavior;
 
    if(!palmRomData || palmRomSize < 0x8)
       return EMU_ERROR_INVALID_PARAMETER;
 
+   palmIrSetPortProperties = NULL;
+   palmIrDataSize = NULL;
+   palmIrDataReceive = NULL;
+   palmIrDataSend = NULL;
+   palmIrDataFlush = NULL;
+   palmSerialSetPortProperties = NULL;
+   palmSerialDataSize = NULL;
+   palmSerialDataReceive = NULL;
+   palmSerialDataSend = NULL;
+   palmSerialDataFlush = NULL;
    palmGetRtcFromHost = NULL;
 
 #if defined(EMU_SUPPORT_PALM_OS5)
-   //0x00000004 is boot program counter on 68k, its just 0x00000000 on ARM
-   palmEmulatingTungstenT3 = !(palmRomData[0x4] || palmRomData[0x5] || palmRomData[0x6] || palmRomData[0x7]);
+   palmEmulatingTungstenT3 = emulatedDevice == EMU_DEVICE_TUNGSTEN_T3;
 
    if(palmEmulatingTungstenT3){
       //emulating Tungsten T3
       bool dynarecInited = false;
 
-      dynarecInited = pxa255Init(&palmRom, &palmRam);
+      dynarecInited = pxa260Init(&palmRom, &palmRam);
       palmFramebuffer = malloc(320 * 480 * sizeof(uint16_t));
       palmAudio = malloc(AUDIO_SAMPLES_PER_FRAME * 2 * sizeof(int16_t));
       palmAudioResampler = blip_new(AUDIO_SAMPLE_RATE);//have 1 second of samples
@@ -96,40 +137,43 @@ uint32_t emulatorInit(uint8_t* palmRomData, uint32_t palmRomSize, uint8_t* palmB
          free(palmFramebuffer);
          free(palmAudio);
          blip_delete(palmAudioResampler);
-         pxa255Deinit();
+         pxa260Deinit();
          return EMU_ERROR_OUT_OF_MEMORY;
       }
       memcpy(palmRom, palmRomData, FAST_MIN(palmRomSize, TUNGSTEN_T3_ROM_SIZE));
       if(palmRomSize < TUNGSTEN_T3_ROM_SIZE)
          memset(palmRom + palmRomSize, 0x00, TUNGSTEN_T3_ROM_SIZE - palmRomSize);
       memset(palmRam, 0x00, TUNGSTEN_T3_RAM_SIZE);
-      memset(palmFramebuffer, 0x00, 320 * 480 * sizeof(uint16_t));//TODO:PXA255 code doesnt always output a picture like my SED1376 code, so clear the buffer to prevent garbage from being displayed before the first render
+      memset(palmFramebuffer, 0x00, 320 * 480 * sizeof(uint16_t));//TODO:PXA260 code doesnt always output a picture like my SED1376 code, so clear the buffer to prevent garbage from being displayed before the first render
       memset(palmAudio, 0x00, AUDIO_SAMPLES_PER_FRAME * 2/*channels*/ * sizeof(int16_t));
       memset(&palmInput, 0x00, sizeof(palmInput));
       memset(&palmMisc, 0x00, sizeof(palmMisc));
       memset(&palmSdCard, 0x00, sizeof(palmSdCard));
-      memset(&palmEmuFeatures, 0x00, sizeof(palmEmuFeatures));
       palmFramebufferWidth = 320;
       palmFramebufferHeight = 480;
       palmMisc.batteryLevel = 100;
       palmCycleCounter = 0.0;
-      palmEmuFeatures.info = enabledEmuFeatures;
+      palmClockMultiplier = 1.00 - TUNGSTEN_T3_CPU_PERCENT_WAITING;
 
       //initialize components, I dont think theres much in a Tungsten T3
-      pxa255Framebuffer = palmFramebuffer;
-      blip_set_rates(palmAudioResampler, AUDIO_CLOCK_RATE, AUDIO_SAMPLE_RATE);
-      sandboxInit();
+      pxa260Framebuffer = palmFramebuffer;
+      blip_set_rates(palmAudioResampler, DBVZ_AUDIO_MAX_CLOCK_RATE, AUDIO_SAMPLE_RATE);
+
+      patchOsRom(0x333EC6, "0000");//blocks out the slot driver
+      patchOsRom(0x205C, "0000A0E1");//blocks idle loop jump with NOP
 
       //reset everything
       emulatorSoftReset();
-      pxa255SetRtc(0, 0, 0, 0);
+      pxa260SetRtc(0, 0, 0, 0);
    }
    else{
 #endif
-      //emulating Palm m515
+      //emulating Palm m515 or m500
+      palmEmulatingM500 = emulatedDevice == EMU_DEVICE_PALM_M500;
+
       //allocate buffers, add 4 to memory regions to prevent SIGSEGV from accessing off the end
-      palmRom = malloc(M515_ROM_SIZE + 4);
-      palmRam = malloc(M515_RAM_SIZE + 4);
+      palmRom = malloc(M5XX_ROM_SIZE + 4);
+      palmRam = malloc((palmEmulatingM500 ? M500_RAM_SIZE : M515_RAM_SIZE) + 4);
       palmFramebuffer = malloc(160 * 220 * sizeof(uint16_t));
       palmAudio = malloc(AUDIO_SAMPLES_PER_FRAME * 2 * sizeof(int16_t));
       palmAudioResampler = blip_new(AUDIO_SAMPLE_RATE);//have 1 second of samples
@@ -143,28 +187,35 @@ uint32_t emulatorInit(uint8_t* palmRomData, uint32_t palmRomSize, uint8_t* palmB
       }
 
       //set default values
-      memcpy(palmRom, palmRomData, FAST_MIN(palmRomSize, M515_ROM_SIZE));
-      if(palmRomSize < M515_ROM_SIZE)
-         memset(palmRom + palmRomSize, 0x00, M515_ROM_SIZE - palmRomSize);
-      swap16BufferIfLittle(palmRom, M515_ROM_SIZE / sizeof(uint16_t));
-      memset(palmRam, 0x00, M515_RAM_SIZE);
+      memcpy(palmRom, palmRomData, FAST_MIN(palmRomSize, M5XX_ROM_SIZE));
+      if(palmRomSize < M5XX_ROM_SIZE)
+         memset(palmRom + palmRomSize, 0x00, M5XX_ROM_SIZE - palmRomSize);
+      swap16BufferIfLittle(palmRom, M5XX_ROM_SIZE / sizeof(uint16_t));
+      memset(palmRam, 0x00, palmEmulatingM500 ? M500_RAM_SIZE : M515_RAM_SIZE);
       dbvzLoadBootloader(palmBootloaderData, palmBootloaderSize);
       memcpy(palmFramebuffer + 160 * 160, silkscreen160x60, 160 * 60 * sizeof(uint16_t));
       memset(palmAudio, 0x00, AUDIO_SAMPLES_PER_FRAME * 2/*channels*/ * sizeof(int16_t));
       memset(&palmInput, 0x00, sizeof(palmInput));
       memset(&palmMisc, 0x00, sizeof(palmMisc));
       memset(&palmSdCard, 0x00, sizeof(palmSdCard));
-      memset(&palmEmuFeatures, 0x00, sizeof(palmEmuFeatures));
       palmFramebufferWidth = 160;
       palmFramebufferHeight = 220;
       palmMisc.batteryLevel = 100;
       palmCycleCounter = 0.0;
-      palmEmuFeatures.info = enabledEmuFeatures;
-      sed1376Framebuffer = palmFramebuffer;
+      palmClockMultiplier = 1.00 - DBVZ_CPU_PERCENT_WAITING;
+      if(palmEmulatingM500){
+         dbvzFramebuffer = palmFramebuffer;
+         dbvzFramebufferWidth = 160;
+         dbvzFramebufferHeight = 160;
+      }
+      else{
+         sed1376Framebuffer = palmFramebuffer;
+         sed1376FramebufferWidth = 160;
+         sed1376FramebufferHeight = 160;
+      }
 
       //initialize components
-      blip_set_rates(palmAudioResampler, AUDIO_CLOCK_RATE, AUDIO_SAMPLE_RATE);
-      sandboxInit();
+      blip_set_rates(palmAudioResampler, DBVZ_AUDIO_MAX_CLOCK_RATE, AUDIO_SAMPLE_RATE);
 
       //reset everything
       emulatorSoftReset();
@@ -193,7 +244,7 @@ void emulatorDeinit(void){
       blip_delete(palmAudioResampler);
 #if defined(EMU_SUPPORT_PALM_OS5)
       if(palmEmulatingTungstenT3)
-         pxa255Deinit();
+         pxa260Deinit();
 #endif
       free(palmSdCard.flashChipData);
       emulatorInitialized = false;
@@ -207,11 +258,11 @@ void emulatorHardReset(void){
       memset(palmRam, 0x00, TUNGSTEN_T3_RAM_SIZE);
       emulatorSoftReset();
       sdCardReset();
-      pxa255SetRtc(0, 0, 0, 0);
+      pxa260SetRtc(0, 0, 0, 0);
    }
    else{
 #endif
-      memset(palmRam, 0x00, M515_RAM_SIZE);
+      memset(palmRam, 0x00, palmEmulatingM500 ? M500_RAM_SIZE : M515_RAM_SIZE);
       emulatorSoftReset();
       sdCardReset();
       dbvzSetRtc(0, 0, 0, 0);
@@ -224,21 +275,18 @@ void emulatorSoftReset(void){
    //equivalent to pushing the reset button on the back of the device
 #if defined(EMU_SUPPORT_PALM_OS5)
    if(palmEmulatingTungstenT3){
-      palmEmuFeatures.value = 0x00000000;
-      palmClockMultiplier = 1.00;
-      pxa255Reset();
-      sandboxReset();
+      pxa260Reset();
+      tps65010Reset();
+      tsc2101Reset(true);
+      w86l488Reset();
    }
    else{
 #endif
-      palmEmuFeatures.value = 0x00000000;
-      palmClockMultiplier = 1.00 - DBVZ_CPU_PERCENT_WAITING;
-      sed1376Reset();
+      if(!palmEmulatingM500)
+         sed1376Reset();
       ads7846Reset();
       pdiUsbD12Reset();
-      expansionHardwareReset();
       dbvzReset();
-      sandboxReset();
       //sdCardReset() should not be called here, the SD card does not have a reset line and should only be reset by a power cycle
 #if defined(EMU_SUPPORT_PALM_OS5)
    }
@@ -248,10 +296,19 @@ void emulatorSoftReset(void){
 void emulatorSetRtc(uint16_t days, uint8_t hours, uint8_t minutes, uint8_t seconds){
 #if defined(EMU_SUPPORT_PALM_OS5)
    if(palmEmulatingTungstenT3)
-      pxa255SetRtc(days, hours, minutes, seconds);
+      pxa260SetRtc(days, hours, minutes, seconds);
    else
 #endif
       dbvzSetRtc(days, hours, minutes, seconds);
+}
+
+void emulatorSetCpuSpeed(double speed){
+#if defined(EMU_SUPPORT_PALM_OS5)
+   if(palmEmulatingTungstenT3)
+      palmClockMultiplier = speed * (1.00 - TUNGSTEN_T3_CPU_PERCENT_WAITING);
+   else
+#endif
+      palmClockMultiplier = speed * (1.00 - DBVZ_CPU_PERCENT_WAITING);
 }
 
 uint32_t emulatorGetStateSize(void){
@@ -263,22 +320,20 @@ uint32_t emulatorGetStateSize(void){
    size += sizeof(uint16_t) * 2;//palmFramebuffer(Width/Height)
 #if defined(EMU_SUPPORT_PALM_OS5)
    if(palmEmulatingTungstenT3){
-      size += pxa255StateSize();
-      size += expansionHardwareStateSize();
+      size += pxa260StateSize();
       size += TUNGSTEN_T3_RAM_SIZE;//system RAM buffer
    }
    else{
 #endif
       size += dbvzStateSize();
-      size += sed1376StateSize();
+      if(!palmEmulatingM500)
+         size += sed1376StateSize();
       size += ads7846StateSize();
       size += pdiUsbD12StateSize();
-      size += expansionHardwareStateSize();
-      size += M515_RAM_SIZE;//system RAM buffer
+      size += palmEmulatingM500 ? M500_RAM_SIZE : M515_RAM_SIZE;//system RAM buffer
 #if defined(EMU_SUPPORT_PALM_OS5)
    }
 #endif
-   size += sandboxStateSize();
    size += sizeof(uint8_t) * 7;//palmMisc
    size += sizeof(uint32_t) * 4;//palmEmuFeatures.(src/dst/size/value)
    size += sizeof(uint64_t);//palmSdCard.command
@@ -306,14 +361,10 @@ bool emulatorSaveState(uint8_t* data, uint32_t size){
 
    //state validation, wont load states that are not from the same state version
 #if defined(EMU_SUPPORT_PALM_OS5)
-   writeStateValue32(data + offset, SAVE_STATE_VERSION | (palmEmulatingTungstenT3 ? SAVE_STATE_FOR_TUNGSTEN_T3 : 0));
+   writeStateValue32(data + offset, SAVE_STATE_VERSION | palmEmulatingTungstenT3 * SAVE_STATE_FOR_TUNGSTEN_T3 | palmEmulatingM500 * SAVE_STATE_FOR_M500);
 #else
-   writeStateValue32(data + offset, SAVE_STATE_VERSION);
+   writeStateValue32(data + offset, SAVE_STATE_VERSION | palmEmulatingM500 * SAVE_STATE_FOR_M500);
 #endif
-   offset += sizeof(uint32_t);
-
-   //features, hotpluging emulated hardware is not supported
-   writeStateValue32(data + offset, palmEmuFeatures.info);
    offset += sizeof(uint32_t);
 
    //SD card size
@@ -329,10 +380,8 @@ bool emulatorSaveState(uint8_t* data, uint32_t size){
 #if defined(EMU_SUPPORT_PALM_OS5)
    if(palmEmulatingTungstenT3){
       //chips
-      pxa255SaveState(data + offset);
-      offset += pxa255StateSize();
-      expansionHardwareSaveState(data + offset);
-      offset += expansionHardwareStateSize();
+      pxa260SaveState(data + offset);
+      offset += pxa260StateSize();
 
       //memory
       memcpy(data + offset, palmRam, TUNGSTEN_T3_RAM_SIZE);
@@ -343,29 +392,25 @@ bool emulatorSaveState(uint8_t* data, uint32_t size){
       //chips
       dbvzSaveState(data + offset);
       offset += dbvzStateSize();
-      sed1376SaveState(data + offset);
-      offset += sed1376StateSize();
+      if(!palmEmulatingM500){
+         sed1376SaveState(data + offset);
+         offset += sed1376StateSize();
+      }
       ads7846SaveState(data + offset);
       offset += ads7846StateSize();
       pdiUsbD12SaveState(data + offset);
       offset += pdiUsbD12StateSize();
-      expansionHardwareSaveState(data + offset);
-      offset += expansionHardwareStateSize();
 
       //memory
-      memcpy(data + offset, palmRam, M515_RAM_SIZE);
-      swap16BufferIfLittle(data + offset, M515_RAM_SIZE / sizeof(uint16_t));
-      offset += M515_RAM_SIZE;
+      memcpy(data + offset, palmRam, palmEmulatingM500 ? M500_RAM_SIZE : M515_RAM_SIZE);
+      swap16BufferIfLittle(data + offset, (palmEmulatingM500 ? M500_RAM_SIZE : M515_RAM_SIZE) / sizeof(uint16_t));
+      offset += palmEmulatingM500 ? M500_RAM_SIZE : M515_RAM_SIZE;
 #if defined(EMU_SUPPORT_PALM_OS5)
    }
 #endif
 
-   //sandbox, does nothing when disabled
-   sandboxSaveState(data + offset);
-   offset += sandboxStateSize();
-
    //misc
-   writeStateValue8(data + offset, palmMisc.powerButtonLed);
+   writeStateValue8(data + offset, palmMisc.greenLed);
    offset += sizeof(uint8_t);
    writeStateValue8(data + offset, palmMisc.lcdOn);
    offset += sizeof(uint8_t);
@@ -379,16 +424,6 @@ bool emulatorSaveState(uint8_t* data, uint32_t size){
    offset += sizeof(uint8_t);
    writeStateValue8(data + offset, palmMisc.dataPort);
    offset += sizeof(uint8_t);
-
-   //emu features
-   writeStateValue32(data + offset, palmEmuFeatures.src);
-   offset += sizeof(uint32_t);
-   writeStateValue32(data + offset, palmEmuFeatures.dst);
-   offset += sizeof(uint32_t);
-   writeStateValue32(data + offset, palmEmuFeatures.size);
-   offset += sizeof(uint32_t);
-   writeStateValue32(data + offset, palmEmuFeatures.value);
-   offset += sizeof(uint32_t);
 
    //SD card
    writeStateValue64(data + offset, palmSdCard.command);
@@ -445,17 +480,12 @@ bool emulatorLoadState(uint8_t* data, uint32_t size){
 
    //state validation, wont load states that are not from the same state version
 #if defined(EMU_SUPPORT_PALM_OS5)
-   if(readStateValue32(data + offset) != (SAVE_STATE_VERSION | (palmEmulatingTungstenT3 ? SAVE_STATE_FOR_TUNGSTEN_T3 : 0)))
+   if(readStateValue32(data + offset) != (SAVE_STATE_VERSION | palmEmulatingTungstenT3 * SAVE_STATE_FOR_TUNGSTEN_T3 | palmEmulatingM500 * SAVE_STATE_FOR_M500))
       return false;
 #else
-   if(readStateValue32(data + offset) != SAVE_STATE_VERSION)
+   if(readStateValue32(data + offset) != (SAVE_STATE_VERSION | palmEmulatingM500 * SAVE_STATE_FOR_M500))
       return false;
 #endif
-   offset += sizeof(uint32_t);
-
-   //features, hotpluging emulated hardware is not supported
-   if(readStateValue32(data + offset) != palmEmuFeatures.info)
-      return false;
    offset += sizeof(uint32_t);
 
    //SD card size, the malloc when loading can make it fail, make sure if it fails the emulator state doesnt change
@@ -474,10 +504,8 @@ bool emulatorLoadState(uint8_t* data, uint32_t size){
 #if defined(EMU_SUPPORT_PALM_OS5)
    if(palmEmulatingTungstenT3){
       //chips
-      pxa255LoadState(data + offset);
-      offset += pxa255StateSize();
-      expansionHardwareLoadState(data + offset);
-      offset += expansionHardwareStateSize();
+      pxa260LoadState(data + offset);
+      offset += pxa260StateSize();
 
       //memory
       memcpy(palmRam, data + offset, TUNGSTEN_T3_RAM_SIZE);
@@ -488,29 +516,25 @@ bool emulatorLoadState(uint8_t* data, uint32_t size){
       //chips
       dbvzLoadState(data + offset);
       offset += dbvzStateSize();
-      sed1376LoadState(data + offset);
-      offset += sed1376StateSize();
+      if(!palmEmulatingM500){
+         sed1376LoadState(data + offset);
+         offset += sed1376StateSize();
+      }
       ads7846LoadState(data + offset);
       offset += ads7846StateSize();
       pdiUsbD12LoadState(data + offset);
       offset += pdiUsbD12StateSize();
-      expansionHardwareLoadState(data + offset);
-      offset += expansionHardwareStateSize();
 
       //memory
-      memcpy(palmRam, data + offset, M515_RAM_SIZE);
-      swap16BufferIfLittle(palmRam, M515_RAM_SIZE / sizeof(uint16_t));
-      offset += M515_RAM_SIZE;
+      memcpy(palmRam, data + offset, palmEmulatingM500 ? M500_RAM_SIZE : M515_RAM_SIZE);
+      swap16BufferIfLittle(palmRam, (palmEmulatingM500 ? M500_RAM_SIZE : M515_RAM_SIZE) / sizeof(uint16_t));
+      offset += palmEmulatingM500 ? M500_RAM_SIZE : M515_RAM_SIZE;
 #if defined(EMU_SUPPORT_PALM_OS5)
    }
 #endif
 
-   //sandbox, does nothing when disabled
-   sandboxLoadState(data + offset);
-   offset += sandboxStateSize();
-
    //misc
-   palmMisc.powerButtonLed = readStateValue8(data + offset);
+   palmMisc.greenLed = readStateValue8(data + offset);
    offset += sizeof(uint8_t);
    palmMisc.lcdOn = readStateValue8(data + offset);
    offset += sizeof(uint8_t);
@@ -524,16 +548,6 @@ bool emulatorLoadState(uint8_t* data, uint32_t size){
    offset += sizeof(uint8_t);
    palmMisc.dataPort = readStateValue8(data + offset);
    offset += sizeof(uint8_t);
-
-   //emu features
-   palmEmuFeatures.src = readStateValue32(data + offset);
-   offset += sizeof(uint32_t);
-   palmEmuFeatures.dst = readStateValue32(data + offset);
-   offset += sizeof(uint32_t);
-   palmEmuFeatures.size = readStateValue32(data + offset);
-   offset += sizeof(uint32_t);
-   palmEmuFeatures.value = readStateValue32(data + offset);
-   offset += sizeof(uint32_t);
 
    //SD card
    palmSdCard.command = readStateValue64(data + offset);
@@ -594,7 +608,7 @@ uint32_t emulatorGetRamSize(void){
    if(palmEmulatingTungstenT3)
       return TUNGSTEN_T3_RAM_SIZE;
 #endif
-   return M515_RAM_SIZE;
+   return palmEmulatingM500 ? M500_RAM_SIZE : M515_RAM_SIZE;
 }
 
 bool emulatorSaveRam(uint8_t* data, uint32_t size){
@@ -607,11 +621,11 @@ bool emulatorSaveRam(uint8_t* data, uint32_t size){
    }
    else{
 #endif
-      if(size < M515_RAM_SIZE)
+      if(size < (palmEmulatingM500 ? M500_RAM_SIZE : M515_RAM_SIZE))
          return false;
 
-      memcpy(data, palmRam, M515_RAM_SIZE);
-      swap16BufferIfLittle(data, M515_RAM_SIZE / sizeof(uint16_t));
+      memcpy(data, palmRam, palmEmulatingM500 ? M500_RAM_SIZE : M515_RAM_SIZE);
+      swap16BufferIfLittle(data, (palmEmulatingM500 ? M500_RAM_SIZE : M515_RAM_SIZE) / sizeof(uint16_t));
 #if defined(EMU_SUPPORT_PALM_OS5)
    }
 #endif
@@ -629,11 +643,11 @@ bool emulatorLoadRam(uint8_t* data, uint32_t size){
    }
    else{
 #endif
-      if(size < M515_RAM_SIZE)
+      if(size < (palmEmulatingM500 ? M500_RAM_SIZE : M515_RAM_SIZE))
          return false;
 
-      memcpy(palmRam, data, M515_RAM_SIZE);
-      swap16BufferIfLittle(palmRam, M515_RAM_SIZE / sizeof(uint16_t));
+      memcpy(palmRam, data, palmEmulatingM500 ? M500_RAM_SIZE : M515_RAM_SIZE);
+      swap16BufferIfLittle(palmRam, (palmEmulatingM500 ? M500_RAM_SIZE : M515_RAM_SIZE) / sizeof(uint16_t));
 #if defined(EMU_SUPPORT_PALM_OS5)
    }
 #endif
@@ -715,9 +729,39 @@ void emulatorEjectSdCard(void){
 }
 
 void emulatorRunFrame(void){
+   uint16_t index;
+
 #if defined(EMU_SUPPORT_PALM_OS5)
    if(palmEmulatingTungstenT3){
-      pxa255Execute(true);
+      pxa260Execute(true);
+
+      /*
+      //backlight level, 0% = 1/4 color intensity, 50% = 1/2 color intensity, 100% = full color intensity
+      switch(palmMisc.backlightLevel){
+         case 0:
+            MULTITHREAD_LOOP(index) for(index = 0; index < 320 * 480; index++){
+               palmFramebuffer[index] >>= 2;
+               palmFramebuffer[index] &= 0x39E7;
+            }
+            break;
+
+         case 50:
+            MULTITHREAD_LOOP(index) for(index = 0; index < 320 * 480; index++){
+               palmFramebuffer[index] >>= 1;
+               palmFramebuffer[index] &= 0x7BEF;
+            }
+            break;
+
+         case 100:
+            //nothing
+            break;
+
+         default:
+            //TODO: the T3 supports full range backlight intensity, need to calculate the value here
+            debugLog("Unsupported backlight value\n");
+            break;
+      }
+      */
    }
    else{
 #endif
@@ -725,13 +769,47 @@ void emulatorRunFrame(void){
       dbvzExecute();
 
       //LCD controller
-      sed1376Render();
+      if(palmEmulatingM500){
+         dbvzLcdRender();
+
+         if(palmMisc.backlightLevel == 100){
+            MULTITHREAD_LOOP(index) for(index = 0; index < 160 * 160; index++){
+               uint16_t greenChannel = (palmFramebuffer[index] & 0x07E0) + 0x00C0;
+               palmFramebuffer[index] = palmFramebuffer[index] & 0xF81F | FAST_MIN(greenChannel, 0x07E0);
+            }
+         }
+      }
+      else{
+         sed1376Render();
+
+         //backlight level, 0% = 1/4 color intensity, 50% = 1/2 color intensity, 100% = full color intensity
+         switch(palmMisc.backlightLevel){
+            case 0:
+               MULTITHREAD_LOOP(index) for(index = 0; index < 160 * 160; index++){
+                  palmFramebuffer[index] >>= 2;
+                  palmFramebuffer[index] &= 0x39E7;
+               }
+               break;
+
+            case 50:
+               MULTITHREAD_LOOP(index) for(index = 0; index < 160 * 160; index++){
+                  palmFramebuffer[index] >>= 1;
+                  palmFramebuffer[index] &= 0x7BEF;
+               }
+               break;
+
+            case 100:
+               //nothing
+               break;
+
+            default:
+               debugLog("Invalid backlight value\n");
+               break;
+         }
+      }
+
 #if defined(EMU_SUPPORT_PALM_OS5)
    }
-#endif
-
-#if defined(EMU_SANDBOX)
-   sandboxOnFrameRun();
 #endif
 }
 
@@ -739,7 +817,7 @@ void emulatorSkipFrame(void){
    //runs frame without rendering the screen
 #if defined(EMU_SUPPORT_PALM_OS5)
    if(palmEmulatingTungstenT3){
-      pxa255Execute(false);
+      pxa260Execute(false);
    }
    else{
 #endif
@@ -747,12 +825,7 @@ void emulatorSkipFrame(void){
       dbvzExecute();
 
       //LCD controller, skip this
-      //sed1376Render();
 #if defined(EMU_SUPPORT_PALM_OS5)
    }
-#endif
-
-#if defined(EMU_SANDBOX)
-   sandboxOnFrameRun();
 #endif
 }

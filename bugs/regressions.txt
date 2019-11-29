@@ -1,3 +1,0 @@
-Fixed:
-Endian compatibility is broken(the CPU state needs to be standardized)
-RetroArch port crashes on exit(needed to check if environ_cb returned true, switched to libretro-common filestreams too)

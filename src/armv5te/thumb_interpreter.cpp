@@ -92,7 +92,7 @@ void cpu_thumb_loop() {
 
         if (flags & (RF_EXEC_BREAKPOINT | RF_EXEC_DEBUG_NEXT)) {
             if (flags & RF_EXEC_BREAKPOINT)
-                gui_debug_printf("Breakpoint at 0x%08x\n", arm.reg[15]);
+                gui_debug_printf("Breakpoint at 0x%08X\n", arm.reg[15]);
             enter_debugger:
             uint32_t pc = arm.reg[15];
             debugger(DBG_EXEC_BREAKPOINT, 0);
@@ -233,7 +233,7 @@ void cpu_thumb_loop() {
                     break;
                 }
             case 0xBE:
-                printf("Software breakpoint at %08x (%02x)\n", arm.reg[15], insn & 0xFF);
+                printf("Software breakpoint at %08X (%02X)\n", arm.reg[15], insn & 0xFF);
                 debugger(DBG_EXEC_BREAKPOINT, 0);
                 break;
 

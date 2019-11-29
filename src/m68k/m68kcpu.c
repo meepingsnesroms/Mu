@@ -471,7 +471,7 @@ uint32_t m68k_get_reg(void* context, m68k_register_t regnum)
       case M68K_REG_CPU_TYPE:
          switch(cpu->cpu_type)
          {
-            case CPU_TYPE_000:		return (uint32_t)M68K_CPU_TYPE_68000;
+            case CPU_TYPE_000:		return CPU_ADDRESS_MASK == 0xffffffff ? (uint32_t)M68K_CPU_TYPE_DBVZ : (uint32_t)M68K_CPU_TYPE_68000;
             case CPU_TYPE_010:		return (uint32_t)M68K_CPU_TYPE_68010;
             case CPU_TYPE_EC020:	return (uint32_t)M68K_CPU_TYPE_68EC020;
             case CPU_TYPE_020:		return (uint32_t)M68K_CPU_TYPE_68020;
@@ -631,6 +631,22 @@ void m68k_set_cpu_type(uint32_t cpu_type)
          CYC_MOVEM_L      = 2;
          CYC_SHIFT        = 0;
          CYC_RESET        = 518;
+         return;
+      case M68K_CPU_TYPE_DBVZ:
+         CPU_TYPE         = CPU_TYPE_000;
+         CPU_ADDRESS_MASK = 0xffffffff;
+         CPU_SR_MASK      = 0xa71f; /* T1 -- S  -- -- I2 I1 I0 -- -- -- X  N  Z  V  C  */
+         CYC_INSTRUCTION  = m68ki_cycles[0];
+         CYC_EXCEPTION    = m68ki_exception_cycle_table[0];
+         CYC_BCC_NOTAKE_B = -2;
+         CYC_BCC_NOTAKE_W = 2;
+         CYC_DBCC_F_NOEXP = -2;
+         CYC_DBCC_F_EXP   = 2;
+         CYC_SCC_R_TRUE   = 2;
+         CYC_MOVEM_W      = 2;
+         CYC_MOVEM_L      = 3;
+         CYC_SHIFT        = 1;
+         CYC_RESET        = 132;
          return;
    }
 }

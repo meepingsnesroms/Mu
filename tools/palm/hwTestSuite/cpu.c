@@ -2,8 +2,7 @@
 #include <stdint.h>
 
 #include "testSuite.h"
-#include "emuFunctions.h"
-#include "specs/dragonballVzRegisterSpec.h"
+#include "dbvzRegisterNames.h"
 #include "viewer.h"
 #include "cpu.h"
 
@@ -37,9 +36,6 @@ uint8_t getPhysicalCpuType(void){
    uint32_t osVer;
    uint32_t dragonballType;
    
-   if(isEmulator())
-      return CPU_NONE;
-   
    FtrGet(sysFtrCreator, sysFtrNumROMVersion, &osVer);
    if(osVer >= PalmOS50)
       return CPU_ARM;
@@ -53,19 +49,18 @@ uint8_t getPhysicalCpuType(void){
 }
 
 uint8_t getSupportedInstructionSets(void){
-   /*emulated m68k on physical ARM or running both CPUs from emulator*/
-   if((getPhysicalCpuType() & CPU_ARM) || isEmulator())
+   if((getPhysicalCpuType() & CPU_ARM))
       return CPU_BOTH;
    return CPU_M68K;
 }
 
 const char* getCpuString(void){
-   const char* cpuTypeNames[3] = {"Emulator", "Dragonball ", "ARM(Type Unknown)"};
+   const char* cpuTypeNames[3] = {"None", "Dragonball ", "ARM(Type Unknown)"};
    const char* dragonballTypeNames[5] = {"", "328", "EZ", "VZ", "SZ"};
    uint8_t cpuModel = getPhysicalCpuType();
    uint8_t cpuType = cpuModel & CPU_TYPES;
    uint8_t dragonballType = (cpuModel & CPU_M68K_TYPES) >> 4;
    
-   StrPrintF(cpuStringBuffer, "CPU:%s%s, InstructionSets:%s", cpuTypeNames[cpuType], dragonballTypeNames[dragonballType], (cpuType == CPU_ARM || isEmulatorFeatureEnabled(FEATURE_HYBRID_CPU)) ? "68k|arm" : "68k");
+   StrPrintF(cpuStringBuffer, "CPU:%s%s, InstructionSets:%s", cpuTypeNames[cpuType], dragonballTypeNames[dragonballType], cpuType == CPU_ARM ? "68K|ARM" : "68K");
    return cpuStringBuffer;
 }

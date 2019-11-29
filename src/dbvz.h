@@ -42,7 +42,7 @@ enum{
    DBVZ_CHIP_B1_NIL,
    //DBVZ_CHIP_CX_RAM, //CSC* is owned by CSD during normal operation
    DBVZ_CHIP_DX_RAM,
-   DBVZ_CHIP_00_EMU, //used for EMUCS on hardware, used by the emu registers here
+   DBVZ_CHIP_00_EMU,
    DBVZ_CHIP_REGISTERS,
    DBVZ_CHIP_NONE,
    DBVZ_CHIP_END
@@ -64,43 +64,21 @@ typedef struct{
 }dbvz_chip_t;
 
 //variables
-extern uint8_t     dbvzReg[];
 extern dbvz_chip_t dbvzChipSelects[];
-extern double      dbvzSysclksPerClk32;
-extern uint32_t    dbvzFrameClk32s;
-extern double      dbvzClk32Sysclks;
-extern int8_t      pllSleepWait;
-extern int8_t      pllWakeWait;
-extern uint32_t    clk32Counter;
-extern double      pctlrCpuClockDivider;
-extern double      timerCycleCounter[];
-extern uint16_t    timerStatusReadAcknowledge[];
-extern uint8_t     portDInterruptLastValue;
-extern uint16_t    spi1RxFifo[];
-extern uint16_t    spi1TxFifo[];
-extern uint8_t     spi1RxReadPosition;
-extern uint8_t     spi1RxWritePosition;
-extern bool        spi1RxOverflowed;
-extern uint8_t     spi1TxReadPosition;
-extern uint8_t     spi1TxWritePosition;
-extern int32_t     pwm1ClocksToNextSample;
-extern uint8_t     pwm1Fifo[];
-extern uint8_t     pwm1ReadPosition;
-extern uint8_t     pwm1WritePosition;
-
-//timing
-void dbvzBeginClk32(void);
-void dbvzEndClk32(void);
-void dbvzAddSysclks(double value);//only call between begin/endClk32
+extern uint8_t     dbvzReg[];//needed for direct execution of the DBVZ regs without a RAM access function
+extern uint16_t*   dbvzFramebuffer;
+extern uint16_t    dbvzFramebufferWidth;
+extern uint16_t    dbvzFramebufferHeight;
 
 //CPU
+void dbvzLcdRender(void);
 bool dbvzIsPllOn(void);
 bool m515BacklightAmplifierState(void);
 bool dbvzAreRegistersXXFFMapped(void);
 bool sed1376ClockConnected(void);
 void ads7846OverridePenState(bool value);
-void m515RefreshTouchState(void);//just refreshes the touchscreen
-void m515RefreshInputState(void);//refreshes touchscreen, buttons and docked status
+void m5XXRefreshTouchState(void);//just refreshes the touchscreen
+void m5XXRefreshInputState(void);//refreshes touchscreen, buttons and docked status
 //int32_t interruptAcknowledge(int32_t intLevel);//this is in m68kexternal.h
 
 //memory errors

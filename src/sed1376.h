@@ -5,6 +5,8 @@
 #include <stdbool.h>
 
 extern uint16_t* sed1376Framebuffer;
+extern uint16_t  sed1376FramebufferWidth;
+extern uint16_t  sed1376FramebufferHeight;
 extern uint8_t   sed1376Ram[];
 
 void sed1376Reset(void);
@@ -17,5 +19,6 @@ uint8_t sed1376GetRegister(uint8_t address);
 void sed1376SetRegister(uint8_t address, uint8_t value);
 
 void sed1376Render(void);
+void sed1376UpdateLcdStatus(void);
 
 #endif

@@ -65,7 +65,7 @@ void cpu_arm_loop()
             else
             {
                 if(*flags_ptr & RF_EXEC_BREAKPOINT)
-                    gui_debug_printf("Breakpoint at 0x%08x\n", arm.reg[15]);
+                    gui_debug_printf("Breakpoint at 0x%08X\n", arm.reg[15]);
                 enter_debugger:
                 uint32_t pc = arm.reg[15];
                 debugger(DBG_EXEC_BREAKPOINT, 0);
@@ -91,6 +91,12 @@ void cpu_arm_loop()
 	*flags_ptr |= RF_CODE_EXECUTED;
 #endif
 
+        /*
+        //TODO: remove this, causes slowdown
+        if(arm.reg[15] == 0x200AC088)
+           emuprintf("HAL state set:%d\n", arm.reg[0]);
+        */
+
         arm.reg[15] += 4; // Increment now to account for the pipeline
         ++cycle_count_delta;
         do_arm_instruction(*p);
@@ -109,7 +115,7 @@ void fix_pc_for_fault()
 
 void prefetch_abort(uint32_t mva, uint8_t status)
 {
-    warn("Prefetch abort: address=%08x status=%02x\n", mva, status);
+    warn("Prefetch abort: address=%08X status=%02X\n", mva, status);
     arm.reg[15] += 4;
     // Fault address register not changed
     arm.instruction_fault_status = status;
@@ -122,7 +128,7 @@ void prefetch_abort(uint32_t mva, uint8_t status)
 void data_abort(uint32_t mva, uint8_t status)
 {
     fix_pc_for_fault();
-    warn("Data abort: address=%08x status=%02x instruction at %08x\n", mva, status, arm.reg[15]);
+    warn("Data abort: address=%08X status=%02X instruction at %08X\n", mva, status, arm.reg[15]);
     arm.reg[15] += 8;
     arm.fault_address = mva;
     arm.data_fault_status = status;
@@ -189,7 +195,7 @@ void * FASTCALL read_instruction(uint32_t addr)
     {
         ptr = addr_cache_miss(addr, false, prefetch_abort);
         if (!ptr)
-            error("Bad PC: %08x\n", addr);
+            error("Bad PC: %08X\n", addr);
     }
     return ptr;
 #endif

@@ -43,7 +43,7 @@
         <number>0</number>
        </property>
        <item>
-        <widget class="TouchScreen" name="display">
+        <widget class="TouchScreen" name="display" native="true">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
            <horstretch>0</horstretch>
@@ -55,12 +55,6 @@
            <width>160</width>
            <height>220</height>
           </size>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-         <property name="indent">
-          <number>0</number>
          </property>
         </widget>
        </item>
@@ -515,6 +509,23 @@
          </property>
         </widget>
        </item>
+       <item row="2" column="1">
+        <widget class="QPushButton" name="voiceMemo">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="icon">
+          <iconset resource="mainwindow.qrc">
+           <normaloff>:/buttons/images/voiceMemo.svg</normaloff>:/buttons/images/voiceMemo.svg</iconset>
+         </property>
+        </widget>
+       </item>
       </layout>
      </widget>
     </item>
@@ -525,8 +536,9 @@
  <customwidgets>
   <customwidget>
    <class>TouchScreen</class>
-   <extends>QLabel</extends>
+   <extends>QWidget</extends>
    <header>touchscreen.h</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <resources>

@@ -4,7 +4,7 @@
 #include <string.h>
 #include <Extensions/ExpansionMgr/VFSMgr.h>
 
-#include "specs/dragonballVzRegisterSpec.h"
+#include "dbvzRegisterNames.h"
 #include "testSuite.h"
 #include "viewer.h"
 #include "debug.h"
@@ -188,57 +188,6 @@ var getTrapAddress(void){
    }
    
    StrPrintF(sharedDataBuffer, "Trap Num:\n0x%04X", trapNum);
-   UG_PutString(0, 0, sharedDataBuffer);
-   
-   return makeVar(LENGTH_0, TYPE_NULL, 0);
-}
-
-var manualLssa(void){
-   static Boolean firstRun = true;
-   static uint32_t nibble;
-   static uint32_t hexValue;
-   static uint32_t originalLssa;
-   static Boolean customEnabled;
-   
-   if(firstRun){
-      nibble = 0x10000000;
-      hexValue = 0x77777777;
-      originalLssa = readArbitraryMemory32(HW_REG_ADDR(LSSA));
-      customEnabled = false;
-      debugSafeScreenClear(C_WHITE);
-      firstRun = false;
-   }
-   
-   if(getButtonPressed(buttonUp))
-      hexValue += nibble;
-   
-   if(getButtonPressed(buttonDown))
-      hexValue -= nibble;
-   
-   if(getButtonPressed(buttonRight))
-      if(nibble > 0x00000001)
-         nibble >>= 4;
-   
-   if(getButtonPressed(buttonLeft))
-      if(nibble < 0x10000000)
-         nibble <<= 4;
-   
-   if(getButtonPressed(buttonSelect))
-      if(customEnabled){
-         writeArbitraryMemory32(HW_REG_ADDR(LSSA), originalLssa);
-         customEnabled = false;
-      }
-      else{
-         writeArbitraryMemory32(HW_REG_ADDR(LSSA), hexValue);
-         customEnabled = true;
-      }
-   
-   if(getButtonPressed(buttonBack)){
-      firstRun = true;
-      exitSubprogram();
-   }
-   
-   StrPrintF(sharedDataBuffer, "Enter switchs between this address and the custom LSSA.\nNew LSSA:\n0x%08lX", hexValue);
    UG_PutString(0, 0, sharedDataBuffer);
    
    return makeVar(LENGTH_0, TYPE_NULL, 0);

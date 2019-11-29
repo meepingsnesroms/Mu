@@ -1,7 +1,7 @@
 /* Declarations for asmcode.S */
 
-#ifndef _H_ASMCODE
-#define _H_ASMCODE
+#ifndef H_ASMCODE
+#define H_ASMCODE
 
 #include "emu.h"
 

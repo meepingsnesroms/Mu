@@ -4,7 +4,7 @@
 #include "emulator.h"
 #include "portability.h"
 #include "dbvz.h"
-#include "m515Bus.h"
+#include "m5XXBus.h"
 #include "m68k/m68kcpu.h"
 
 
@@ -32,7 +32,7 @@ void flx68000PcLongJump(uint32_t newPc){
          break;
 
       case DBVZ_CHIP_REGISTERS:
-         //needed for when EMU_NO_SAFETY is set and a function is run in the sandbox
+         //needed for when EMU_NO_SAFETY is set and a function is run in the launcher
          dataBufferHost = (uintptr_t)dbvzReg;
          dataBufferGuest = DBVZ_BANK_ADDRESS(DBVZ_START_BANK(newPc));
          windowSize = DBVZ_REG_SIZE;
@@ -42,7 +42,7 @@ void flx68000PcLongJump(uint32_t newPc){
    memBase = dataBufferHost - dataBufferGuest - windowSize * ((newPc - dataBufferGuest) / windowSize);
 }
 
-//everything must be 16 bit aligned(except 8 bit accesses) due to 68k unaligned access rules,
+//everything must be 16 bit aligned(except 8 bit accesses) due to 68K unaligned access rules,
 //32 bit reads are 2 16 bit reads because on some platforms 32 bit reads that arnt on 32 bit boundrys will crash the program
 #if defined(EMU_BIG_ENDIAN)
 uint16_t m68k_read_immediate_16(uint32_t address){
@@ -84,9 +84,7 @@ void flx68000Reset(void){
 
    if(!inited){
       m68k_init();
-      m68k_set_cpu_type(M68K_CPU_TYPE_68000);
-
-      CPU_ADDRESS_MASK = 0xFFFFFFFF;
+      m68k_set_cpu_type(M68K_CPU_TYPE_DBVZ);
 
       inited = true;
    }
@@ -259,8 +257,8 @@ bool flx68000IsSupervisor(void){
 
 void flx68000BusError(uint32_t address, bool isWrite){
 #if !defined(EMU_NO_SAFETY)
-   if(!(palmEmuFeatures.info & FEATURE_DURABLE)){
-      //never call outsize of a 68k opcode, behavior is undefined due to longjmp
+   if(!palmAllowInvalidBehavior){
+      //never call outsize of a 68K opcode, behavior is undefined due to longjmp
       m68ki_trigger_bus_error(address, isWrite ? MODE_WRITE : MODE_READ, FLAG_S | m68ki_get_address_space());
    }
 #endif
@@ -268,6 +266,14 @@ void flx68000BusError(uint32_t address, bool isWrite){
 
 uint32_t flx68000GetRegister(uint8_t reg){
    return m68k_get_reg(NULL, reg);
+}
+
+uint32_t flx68000GetPc(void){
+   return m68k_get_reg(NULL, 16);
+}
+
+uint32_t flx68000GetStatusRegister(void){
+   return m68k_get_reg(NULL, 17);
 }
 
 uint64_t flx68000ReadArbitraryMemory(uint32_t address, uint8_t size){

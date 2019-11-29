@@ -86,7 +86,8 @@ enum
    M68K_CPU_TYPE_68EC020,
    M68K_CPU_TYPE_68020,
    M68K_CPU_TYPE_68030,	/* Supported by disassembler ONLY */
-   M68K_CPU_TYPE_68040		/* Supported by disassembler ONLY */
+   M68K_CPU_TYPE_68040, /* Supported by disassembler ONLY */
+   M68K_CPU_TYPE_DBVZ
 };
 
 /* Registers used by m68k_get_reg() and m68k_set_reg() */
@@ -338,7 +339,7 @@ void m68k_set_reg(m68k_register_t reg, uint32_t value);
 /* Check if an instruction is valid for the specified CPU type */
 uint32_t m68k_is_valid_instruction(uint32_t instruction, uint32_t cpu_type);
 
-/* Disassemble 1 instruction using the epecified CPU type at pc.  Stores
+/* Disassemble 1 instruction using the specified CPU type at pc.  Stores
  * disassembly in str_buff and returns the size of the instruction in bytes.
  */
 uint32_t m68k_disassemble(char* str_buff, uint32_t pc, uint32_t cpu_type);

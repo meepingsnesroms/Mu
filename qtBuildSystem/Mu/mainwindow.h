@@ -38,7 +38,6 @@ public:
    void createHomeDirectoryTree(const QString& path);
 
 private:
-   uint32_t getEmuFeatureList();
    void popupErrorDialog(const QString& error);
    void popupInformationDialog(const QString& info);
    void redraw();
@@ -60,6 +59,8 @@ private slots:
    void on_todo_released();
    void on_notes_pressed();
    void on_notes_released();
+   void on_voiceMemo_pressed();
+   void on_voiceMemo_released();
    void on_up_pressed();
    void on_up_released();
    void on_down_pressed();

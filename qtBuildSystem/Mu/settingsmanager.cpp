@@ -9,6 +9,7 @@
 #include <QKeyEvent>
 
 #include "mainwindow.h"
+#include "emuwrapper.h"
 
 
 SettingsManager::SettingsManager(QWidget* parent) :
@@ -24,11 +25,10 @@ SettingsManager::SettingsManager(QWidget* parent) :
    ui->showOnscreenKeys->setChecked(!settings->value("hideOnscreenKeys", false).toBool());
 
    ui->fastBoot->setChecked(settings->value("fastBoot", false).toBool());
-   ui->useOs5->setChecked(settings->value("useOs5", false).toBool());
+   ui->palmOsVersion->setCurrentIndex(settings->value("palmOsVersionIndex", 0).toInt());
+   ui->cpuSpeed->setValue(settings->value("cpuSpeed", 1.00).toDouble());
 
-   ui->featureFastCpu->setChecked(settings->value("featureFastCpu", false).toBool());
    ui->featureSyncedRtc->setChecked(settings->value("featureSyncedRtc", false).toBool());
-   ui->featureHleApis->setChecked(settings->value("featureHleApis", false).toBool());
    ui->featureDurable->setChecked(settings->value("featureDurable", false).toBool());
 
    setKeySelectorState(-1);
@@ -70,6 +70,7 @@ void SettingsManager::updateButtonKeys(){
    ui->selectAddressBookKey->setText(QKeySequence(settings->value("palmButton" + QString::number(EmuWrapper::BUTTON_ADDRESS) + "Key", '\0').toInt()).toString());
    ui->selectTodoKey->setText(QKeySequence(settings->value("palmButton" + QString::number(EmuWrapper::BUTTON_TODO) + "Key", '\0').toInt()).toString());
    ui->selectNotesKey->setText(QKeySequence(settings->value("palmButton" + QString::number(EmuWrapper::BUTTON_NOTES) + "Key", '\0').toInt()).toString());
+   ui->selectVoiceMemoKey->setText(QKeySequence(settings->value("palmButton" + QString::number(EmuWrapper::BUTTON_VOICE_MEMO) + "Key", '\0').toInt()).toString());
    ui->selectPowerKey->setText(QKeySequence(settings->value("palmButton" + QString::number(EmuWrapper::BUTTON_POWER) + "Key", '\0').toInt()).toString());
 }
 
@@ -124,6 +125,10 @@ void SettingsManager::on_selectNotesKey_clicked(){
    setKeySelectorState(EmuWrapper::BUTTON_NOTES);
 }
 
+void SettingsManager::on_selectVoiceMemoKey_clicked(){
+   setKeySelectorState(EmuWrapper::BUTTON_VOICE_MEMO);
+}
+
 void SettingsManager::on_selectPowerKey_clicked(){
    setKeySelectorState(EmuWrapper::BUTTON_POWER);
 }
@@ -137,16 +142,8 @@ void SettingsManager::on_clearKeyBind_clicked(){
    }
 }
 
-void SettingsManager::on_featureFastCpu_toggled(bool checked){
-   settings->setValue("featureFastCpu", checked);
-}
-
 void SettingsManager::on_featureSyncedRtc_toggled(bool checked){
    settings->setValue("featureSyncedRtc", checked);
-}
-
-void SettingsManager::on_featureHleApis_toggled(bool checked){
-   settings->setValue("featureHleApis", checked);
 }
 
 void SettingsManager::on_featureDurable_toggled(bool checked){
@@ -157,6 +154,15 @@ void SettingsManager::on_fastBoot_toggled(bool checked){
    settings->setValue("fastBoot", checked);
 }
 
-void SettingsManager::on_useOs5_toggled(bool checked){
-   settings->setValue("useOs5", checked);
+void SettingsManager::on_cpuSpeed_valueChanged(double arg1){
+   EmuWrapper& emu = ((MainWindow*)parentWidget())->emu;
+
+   settings->setValue("cpuSpeed", arg1);
+   if(emu.isInited())
+      emu.setCpuSpeed(arg1);
+}
+
+void SettingsManager::on_palmOsVersion_currentIndexChanged(int index){
+   settings->setValue("palmOsVersionIndex", index);
+   settings->setValue("palmOsVersionString", ui->palmOsVersion->itemText(index));
 }
