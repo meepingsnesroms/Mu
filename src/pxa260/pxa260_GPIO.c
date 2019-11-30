@@ -167,7 +167,7 @@ trigger_intrs:
 			case 1:
 			case 2:
 				val = gpio->levels[pa - 0];
-            debugLog("PXA260 GPIO register read:%d, PC:0x%08X\n", pa, pxa260GetPc());
+            //debugLog("PXA260 GPIO register read:%d, PC:0x%08X\n", pa, pxa260GetPc());
 				break;
 			
 			case 3:

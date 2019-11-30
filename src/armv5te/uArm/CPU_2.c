@@ -89,6 +89,35 @@
 
 
 
+#if 1
+//ARM debugging sandbox, no separate file this time
+#include "../../emulator.h"
+
+#define DAL_START_IN_ROM 0x0009B130
+#define DAL_END_IN_ROM 0x000C7EEB
+
+#define DAL_ADDR_FROM_PC(pc) ((pc) - 0x20000000 - DAL_START_IN_ROM)
+#define PC_FROM_DAL_ADDR(dalAddr) ((dalAddr) + 0x20000000 + DAL_START_IN_ROM)
+
+static void cpuPcChanged(ArmCpu* cpu, uint32_t newPc){
+   //debug tool for extracting data from ARM function calls
+   switch(newPc){
+
+      case PC_FROM_DAL_ADDR(0x00016C94):
+         //ReadGPIOPin
+         debugLog("Called \"ReadGPIOPin\", pin:%d\n", cpuGetRegExternal(cpu, 0));
+         break;
+
+      default:
+         break;
+   }
+}
+#else
+#define cpuPcChanged(x, y)
+#endif
+
+
+
 static _INLINE_ UInt32 cpuPrvROR(UInt32 val, UInt8 ror){
 
 	if(ror) val = (val >> (UInt32)ror) | (val << (UInt32)(32 - ror));
@@ -101,6 +130,8 @@ static _INLINE_ void cpuPrvSetPC(ArmCpu* cpu, UInt32 pc){
 	cpu->CPSR &=~ ARM_SR_T;
 	if(pc & 1) cpu->CPSR |= ARM_SR_T;
 	else if(pc & 2) cpu->emulErrF(cpu, "Attempt to branch to non-word-aligned ARM address");
+
+   cpuPcChanged(cpu, cpu->regs[15]);
 }
 
 static _INLINE_ UInt32 cpuPrvGetReg(ArmCpu* cpu, UInt8 reg, Boolean wasT, Boolean specialPC){
