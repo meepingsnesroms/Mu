@@ -17,6 +17,7 @@ DebugViewer::DebugViewer(QWidget* parent) :
    QDialog(parent),
    ui(new Ui::DebugViewer){
    ui->setupUi(this);
+   setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
 
    bitsPerEntry = 8;
    debugRadioButtonHandler();

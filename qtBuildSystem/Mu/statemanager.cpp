@@ -21,6 +21,7 @@ StateManager::StateManager(QWidget* parent) :
 
    //init GUI
    ui->setupUi(this);
+   setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
 
    //this allows resizing the screenshot of the savestate
    this->installEventFilter(this);

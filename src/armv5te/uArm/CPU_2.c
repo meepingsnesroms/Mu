@@ -91,7 +91,10 @@
 
 #if 1
 //ARM debugging sandbox, no separate file this time
+#include <stdlib.h>
+
 #include "../../emulator.h"
+
 
 #define DAL_START_IN_ROM 0x0009B130
 #define DAL_END_IN_ROM 0x000C7EEB
@@ -99,18 +102,75 @@
 #define DAL_ADDR_FROM_PC(pc) ((pc) - 0x20000000 - DAL_START_IN_ROM)
 #define PC_FROM_DAL_ADDR(dalAddr) ((dalAddr) + 0x20000000 + DAL_START_IN_ROM)
 
+
+static char* getArmString(ArmCpu* cpu, uint32_t address, uint32_t maxSize){
+   char* str = malloc(maxSize);
+   uint8_t fsr;
+   uint32_t index = 0;
+
+   if(!str)
+      abort();
+
+   for(index = 0; index < maxSize; index++){
+      cpu->memF(cpu, str + index, address + index, 1, false, true, fsr);
+      if(str[index] == '\0')
+         break;
+   }
+
+   return str;
+}
+
 static void cpuPcChanged(ArmCpu* cpu, uint32_t newPc){
    //debug tool for extracting data from ARM function calls
-   switch(newPc){
+   bool logSource = true;
 
+   switch(newPc){
       case PC_FROM_DAL_ADDR(0x00016C94):
          //ReadGPIOPin
          debugLog("Called \"ReadGPIOPin\", pin:%d\n", cpuGetRegExternal(cpu, 0));
          break;
 
+      case PC_FROM_DAL_ADDR(0x00016D34):
+         //WriteGPIOPinInvertedValue
+         debugLog("Called \"WriteGPIOPinInvertedValue\", pin:%d, value:%d\n", cpuGetRegExternal(cpu, 0), cpuGetRegExternal(cpu, 1));
+         break;
+
+      case PC_FROM_DAL_ADDR(0x00024644):{
+            //PrintLineError
+            char* strings[2];
+
+            strings[0] = getArmString(cpu, cpuGetRegExternal(cpu, 0), 200);
+            strings[1] = getArmString(cpu, cpuGetRegExternal(cpu, 2), 200);
+
+            debugLog("Called \"PrintLineError\", file:%s, line:%d, error:%s\n", strings[0], cpuGetRegExternal(cpu, 1), strings[1]);
+
+            free(strings[0]);
+            free(strings[1]);
+         }
+         break;
+
+      case PC_FROM_DAL_ADDR(0x0000B6B4):{
+            //HALDbgMessage
+            char* string = getArmString(cpu, cpuGetRegExternal(cpu, 0), 200);
+
+            debugLog("Called \"HALDbgMessage\", msg:%s\n", string);
+
+            free(string);
+         }
+         break;
+
+      case PC_FROM_DAL_ADDR(0x00010F58):
+         //HALSetInitStage
+         debugLog("Called \"HALSetInitStage\", stage:%d\n", cpuGetRegExternal(cpu, 0));
+         break;
+
       default:
+         logSource = false;
          break;
    }
+
+   if(logSource)
+      debugLog("Called from address:0x%08X\n", cpuGetRegExternal(cpu, 15) - 8);
 }
 #else
 #define cpuPcChanged(x, y)
@@ -126,12 +186,13 @@ static _INLINE_ UInt32 cpuPrvROR(UInt32 val, UInt8 ror){
 }
 
 static _INLINE_ void cpuPrvSetPC(ArmCpu* cpu, UInt32 pc){
+   //call first to allow debug function to access parent callers PC
+   cpuPcChanged(cpu, pc &~ 1UL);
+
 	cpu->regs[15] = pc &~ 1UL;
 	cpu->CPSR &=~ ARM_SR_T;
 	if(pc & 1) cpu->CPSR |= ARM_SR_T;
 	else if(pc & 2) cpu->emulErrF(cpu, "Attempt to branch to non-word-aligned ARM address");
-
-   cpuPcChanged(cpu, cpu->regs[15]);
 }
 
 static _INLINE_ UInt32 cpuPrvGetReg(ArmCpu* cpu, UInt8 reg, Boolean wasT, Boolean specialPC){

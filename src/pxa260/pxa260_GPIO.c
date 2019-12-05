@@ -290,6 +290,7 @@ void pxa260gpioUpdateKeyMatrix(Pxa260gpio* gpio){
    pxa260gpioSetState(gpio, 11, inRail2);
 
    //TODO: move these to the init routine
+   pxa260gpioSetState(gpio, 1, true);//set the reset button to not be pressed
    pxa260gpioSetState(gpio, 3, true);//set the slider postion
    pxa260gpioSetState(gpio, 12, false);//prevent HotSync button from being pressed
 }

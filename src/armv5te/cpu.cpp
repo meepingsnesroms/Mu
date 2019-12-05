@@ -91,12 +91,6 @@ void cpu_arm_loop()
 	*flags_ptr |= RF_CODE_EXECUTED;
 #endif
 
-        /*
-        //TODO: remove this, causes slowdown
-        if(arm.reg[15] == 0x200AC088)
-           emuprintf("HAL state set:%d\n", arm.reg[0]);
-        */
-
         arm.reg[15] += 4; // Increment now to account for the pipeline
         ++cycle_count_delta;
         do_arm_instruction(*p);

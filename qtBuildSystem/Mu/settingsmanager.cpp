@@ -19,6 +19,7 @@ SettingsManager::SettingsManager(QWidget* parent) :
 
    //init GUI
    ui->setupUi(this);
+   setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
 
    //set all GUI items to current config values
    ui->homeDirectory->setText(settings->value("resourceDirectory", "").toString());
