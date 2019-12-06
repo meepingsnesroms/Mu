@@ -120,9 +120,19 @@ static char* getArmString(ArmCpu* cpu, uint32_t address, uint32_t maxSize){
    return str;
 }
 
-static void cpuPcChanged(ArmCpu* cpu, uint32_t newPc){
+static void cpuOnPcUpdate(ArmCpu* cpu, uint32_t newPc){
    //debug tool for extracting data from ARM function calls
    bool logSource = true;
+   static uint32_t callCount;
+
+   callCount++;
+
+   //reset when the system resets
+   if(newPc == 0x00000000)
+      callCount = 0;
+
+   if(callCount > 395281/*jumps to reach EnterIdleMode*/ - 80)
+      debugLog("Jumped to:0x%08X\n", newPc);
 
    switch(newPc){
       case PC_FROM_DAL_ADDR(0x00016C94):
@@ -164,13 +174,18 @@ static void cpuPcChanged(ArmCpu* cpu, uint32_t newPc){
          debugLog("Called \"HALSetInitStage\", stage:%d\n", cpuGetRegExternal(cpu, 0));
          break;
 
+      case PC_FROM_DAL_ADDR(0x000276F0):
+         //EnterIdleMode
+         debugLog("Called \"EnterIdleMode\", took %d jumps to reach this function\n", callCount);
+         break;
+
       default:
          logSource = false;
          break;
    }
 
    if(logSource)
-      debugLog("Called from address:0x%08X\n", cpuGetRegExternal(cpu, 15) - 8);
+      debugLog("Called from address:0x%08X\n", cpuGetRegExternal(cpu, 15) - 4);
 }
 #else
 #define cpuPcChanged(x, y)
@@ -186,9 +201,7 @@ static _INLINE_ UInt32 cpuPrvROR(UInt32 val, UInt8 ror){
 }
 
 static _INLINE_ void cpuPrvSetPC(ArmCpu* cpu, UInt32 pc){
-   //call first to allow debug function to access parent callers PC
-   cpuPcChanged(cpu, pc &~ 1UL);
-
+   cpuOnPcUpdate(cpu, pc &~ 1UL);
 	cpu->regs[15] = pc &~ 1UL;
 	cpu->CPSR &=~ ARM_SR_T;
 	if(pc & 1) cpu->CPSR |= ARM_SR_T;
@@ -302,13 +315,13 @@ static void cpuPrvSwitchToMode(ArmCpu* cpu, UInt8 newMode){
 }
 
 static void cpuPrvException(ArmCpu* cpu, UInt32 vector_pc, UInt32 lr, UInt32 newCPSR){
-
 	UInt32 cpsr = cpu->CPSR;
 	
 	cpuPrvSwitchToMode(cpu, newCPSR & ARM_SR_M);
 	cpu->CPSR = newCPSR;
 	cpu->SPSR = cpsr;
 	cpu->regs[14] = lr;
+   cpuOnPcUpdate(cpu, vector_pc);
 	cpu->regs[15] = vector_pc;
 }
 
@@ -2040,12 +2053,12 @@ data_processing:							//data processing
 					if(S){	//update flags or restore CPSR
 						
 						if(!usesUsrRegs && vb8 == 15 && store){
-							
 							UInt32 sr;
-							
+
 							sr = cpu->SPSR;
 							cpuPrvSwitchToMode(cpu, sr & ARM_SR_M);
 							cpu->CPSR = sr;
+                     cpuOnPcUpdate(cpu, tmp);
 							cpu->regs[15] = tmp;	//do it right here - if we let it use cpuPrvSetReg, it will check lower bit...
 							store = false;
 						}
@@ -2673,6 +2686,7 @@ static Err cpuPrvCycleThumb(ArmCpu* cpu){
 				
 				case 1:		//BLX(1)_suffix
 					instr = cpu->regs[15];
+               cpuOnPcUpdate(cpu, (cpu->regs[14] + 2 + (((UInt32)v16) << 1)) &~ 3UL);
 					cpu->regs[15] = (cpu->regs[14] + 2 + (((UInt32)v16) << 1)) &~ 3UL;
 					cpu->regs[14] = instr | 1UL;
 					cpu->CPSR &=~ ARM_SR_T;
@@ -2686,6 +2700,7 @@ static Err cpuPrvCycleThumb(ArmCpu* cpu){
 				
 				case 3:		//BL_suffix
 					instr = cpu->regs[15];
+               cpuOnPcUpdate(cpu, cpu->regs[14] + 2 + (((UInt32)v16) << 1));
 					cpu->regs[15] = cpu->regs[14] + 2 + (((UInt32)v16) << 1);
 					cpu->regs[14] = instr | 1UL;
 					goto instr_done;
