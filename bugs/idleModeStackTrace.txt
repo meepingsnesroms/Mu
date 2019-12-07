@@ -336,17 +336,17 @@ Jumped to:0x200C0FF8(printed 1 times)//|
 Jumped to:0x200C102C(printed 1 times)//|SWIVector handler
 Jumped to:0x200C1118(printed 1 times)//|
 Jumped to:0x200C2444(printed 1 times)///
-Jumped to:0x200BA66A(printed 1 times)//\
-Jumped to:0x200BA67A(printed 1 times)//|
-Jumped to:0x200BA610(printed 1 times)//|
+Jumped to:0x200BA66A(printed 1 times)//KALMutexCreate real function
+Jumped to:0x200BA67A(printed 1 times)//KALMutexCreate internal delay loop
+Jumped to:0x200BA610(printed 1 times)//\
 Jumped to:0x200BA622(printed 1 times)//|
 Jumped to:0x200BA62C(printed 1 times)//|
-Jumped to:0x200BA636(printed 1 times)//|
-Jumped to:0x200BA658(printed 1 times)//|???
-Jumped to:0x200BA61E(printed 1 times)//|
-Jumped to:0x200BA6A4(printed 1 times)//|
-Jumped to:0x200C1130(printed 1 times)//|
-Jumped to:0x2009F638(printed 1 times)//|
+Jumped to:0x200BA636(printed 1 times)//|sub_1F4E0, purpose unknown
+Jumped to:0x200BA658(printed 1 times)//|
+Jumped to:0x200BA61E(printed 1 times)///
+Jumped to:0x200BA6A4(printed 1 times)//return to KALMutexCreate
+Jumped to:0x200C1130(printed 1 times)//return to SWIVector handler
+Jumped to:0x2009F638(printed 1 times)//\CallsEnterIdleModeLayer0, purpose unknown
 Jumped to:0x2009F6A8(printed 1 times)//|
 Jumped to:0x2009F678(printed 1 times)///
 Jumped to:0x200C2820(printed 1 times)//EnterIdleMode
