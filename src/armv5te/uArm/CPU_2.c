@@ -131,7 +131,8 @@ static void cpuOnPcUpdate(ArmCpu* cpu, uint32_t newPc){
    if(newPc == 0x00000000)
       callCount = 0;
 
-   if(callCount > 395281/*jumps to reach EnterIdleMode*/ - 80)
+   //jumps to reach EnterIdleMode - amount before to log
+   if(callCount > 395281 - 200)
       debugLog("Jumped to:0x%08X\n", newPc);
 
    switch(newPc){
@@ -179,6 +180,36 @@ static void cpuOnPcUpdate(ArmCpu* cpu, uint32_t newPc){
          debugLog("Called \"EnterIdleMode\", took %d jumps to reach this function\n", callCount);
          break;
 
+      case 0x00000000:
+         //reset vector
+         debugLog("Jumped to reset vector\n");
+         break;
+
+      case 0x00000004:
+         //undefined instruction vector
+         debugLog("Jumped to undefined instruction vector\n");
+         break;
+
+      case 0x00000008:
+         //SWI vector
+         debugLog("Jumped to SWI vector\n");
+         break;
+
+      case 0x0000000C:
+         //prefetch abort vector
+         debugLog("Jumped to prefetch abort vector\n");
+         break;
+
+      case 0x00000010:
+         //data abort vector
+         debugLog("Jumped to data abort vector\n");
+         break;
+
+      case 0x0000001C:
+         //FIQ vector
+         debugLog("Jumped to FIQ vector\n");
+         break;
+
       default:
          logSource = false;
          break;
@@ -188,7 +219,7 @@ static void cpuOnPcUpdate(ArmCpu* cpu, uint32_t newPc){
       debugLog("Called from address:0x%08X\n", cpuGetRegExternal(cpu, 15) - 4);
 }
 #else
-#define cpuPcChanged(x, y)
+#define cpuOnPcUpdate(x, y)
 #endif
 
 

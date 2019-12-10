@@ -7,7 +7,8 @@
 #include "mem.h"
 #include "emu.h"
 
-
+int waitingFiqs;
+int waitingIrqs;
 /* cycle_count_delta is a (usually negative) number telling what the time is relative
  * to the next scheduled event. See sched.c */
 int cycle_count_delta;

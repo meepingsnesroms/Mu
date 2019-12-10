@@ -288,6 +288,7 @@ static void tsc2101RegisterWrite(uint8_t page, uint8_t address, uint16_t value){
       case TOUCH_CONTROL_CONFIGURATION:
          //TODO: TOUCH_CONTROL_CONFIGURATION SWPDTD bit
          debugLog("TSC2101 config register writes not fully implemented\n");
+         debugLog("TSC2101 SWPDTD bit:%d\n", !!(value & 0x0040));
          tsc2101Registers[TOUCH_CONTROL_CONFIGURATION] = value & 0x007F;
          tsc2101UpdateInterrupt();
          return;
@@ -440,7 +441,7 @@ bool tsc2101ExchangeBit(bool bit){
 }
 
 void tsc2101UpdateInterrupt(void){
-   debugLog("TSC2101 PINTDAV not fully implemented\n");
+   //debugLog("TSC2101 PINTDAV not fully implemented\n");
 
    //check if PINTDAV is data or pen and data interrupt
    if(tsc2101Registers[TOUCH_CONTROL_STATUS] >> 14 & 0x0003){

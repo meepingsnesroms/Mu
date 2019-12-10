@@ -20,6 +20,8 @@ extern "C" {
 static inline uint16_t BSWAP16(uint16_t x) { return x << 8 | x >> 8; }
 #define BSWAP32(x) __builtin_bswap32(x)
 
+extern int waitingFiqs;
+extern int waitingIrqs;
 extern int cycle_count_delta __asm__("cycle_count_delta");
 extern uint32_t cpu_events __asm__("cpu_events");
 #define EVENT_IRQ 1

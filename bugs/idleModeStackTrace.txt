@@ -304,7 +304,7 @@ Jumped to:0x200BA174(printed 1 times)
 Jumped to:0x200BA170(printed 1 times)
 Jumped to:0x200BA16A(printed 1 times)
 Jumped to:0x200BA192(printed 1 times)
-Jumped to:0x2009F5E0(printed 1 times)
+Jumped to:0x2009F5E0(printed 1 times)//WriteBootVectorTable
 Jumped to:0x200BA196(printed 1 times)
 Jumped to:0x200BBF3A(printed 1 times)
 Jumped to:0x2009B524(printed 1 times)
@@ -320,8 +320,8 @@ Jumped to:0x200C2114(printed 1 times)
 Jumped to:0x200BA2A4(printed 1 times)
 Jumped to:0x2009F850(printed 1 times)
 Jumped to:0x200C1130(printed 1 times)
-Jumped to:0x2009F638(printed 1 times)
-Jumped to:0x2009F6E8(printed 1 times)
+Jumped to:0x2009F638(printed 1 times)//\CallsEnterIdleModeLayer0, purpose unknown, dosent lock up
+Jumped to:0x2009F6E8(printed 1 times)///
 Jumped to:0x2009F6EC(printed 1 times)
 Jumped to:0x200BBF26(printed 1 times)
 Jumped to:0x200A67DC(printed 1 times)
@@ -337,11 +337,11 @@ Jumped to:0x200C102C(printed 1 times)//|SWIVector handler
 Jumped to:0x200C1118(printed 1 times)//|
 Jumped to:0x200C2444(printed 1 times)///
 Jumped to:0x200BA66A(printed 1 times)//KALMutexCreate real function
-Jumped to:0x200BA67A(printed 1 times)//KALMutexCreate internal delay loop
+Jumped to:0x200BA67A(printed 1 times)//KALMutexCreate availability checking loop
 Jumped to:0x200BA610(printed 1 times)//\
 Jumped to:0x200BA622(printed 1 times)//|
 Jumped to:0x200BA62C(printed 1 times)//|
-Jumped to:0x200BA636(printed 1 times)//|sub_1F4E0, purpose unknown
+Jumped to:0x200BA636(printed 1 times)//|InitMutex
 Jumped to:0x200BA658(printed 1 times)//|
 Jumped to:0x200BA61E(printed 1 times)///
 Jumped to:0x200BA6A4(printed 1 times)//return to KALMutexCreate

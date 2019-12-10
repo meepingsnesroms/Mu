@@ -208,6 +208,8 @@ void pxa260Reset(void){
    memset(&arm, 0, sizeof arm);
    arm.control = 0x00050078;
    arm.cpsr_low28 = MODE_SVC | 0xC0;
+   waitingFiqs = 0;
+   waitingIrqs = 0;
    cycle_count_delta = 0;
    cpu_events = 0;
    //cpu_events &= EVENT_DEBUG_STEP;
