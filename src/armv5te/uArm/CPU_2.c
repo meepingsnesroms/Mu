@@ -132,7 +132,7 @@ static void cpuOnPcUpdate(ArmCpu* cpu, uint32_t newPc){
       callCount = 0;
 
    //jumps to reach EnterIdleMode - amount before to log
-   if(callCount > 395281 - 200)
+   if(callCount > 395281 - 500)
       debugLog("Jumped to:0x%08X\n", newPc);
 
    switch(newPc){
@@ -178,6 +178,11 @@ static void cpuOnPcUpdate(ArmCpu* cpu, uint32_t newPc){
       case PC_FROM_DAL_ADDR(0x000276F0):
          //EnterIdleMode
          debugLog("Called \"EnterIdleMode\", took %d jumps to reach this function\n", callCount);
+         break;
+
+      case PC_FROM_DAL_ADDR(0x00000000):
+         //BootBigRom
+         debugLog("Called \"BootBigRom\"\n");
          break;
 
       case 0x00000000:
