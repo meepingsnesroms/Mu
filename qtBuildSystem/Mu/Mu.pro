@@ -127,6 +127,8 @@ support_palm_os5{
         SOURCES += \
             ../../src/armv5te/asmcode.c \
             ../../src/armv5te/uArm/CPU_2.c \
+            ../../src/armv5te/uArm/MMU_2.c \
+            ../../src/armv5te/uArm/cp15.c \
             ../../src/armv5te/uArm/icache.c \
             ../../src/armv5te/uArm/uArmGlue.cpp
         DEFINES += NO_TRANSLATION
@@ -192,6 +194,8 @@ support_palm_os5{
         ../../src/pxa260/pxa260.h \
         ../../src/armv5te/os/os.h \
         ../../src/armv5te/uArm/CPU_2.h \
+        ../../src/armv5te/uArm/MMU_2.h \
+        ../../src/armv5te/uArm/cp15.h \
         ../../src/armv5te/uArm/icache.h \
         ../../src/armv5te/uArm/uArmGlue.h \
         ../../src/armv5te/asmcode.h \

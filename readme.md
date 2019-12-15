@@ -55,12 +55,6 @@ Install prc-tools from the below link(self compiled or prepackaged VM)
     cd ./tools/palm/hwTestSuite
     ./make.sh
 
-#### MuExpDriver for Palm OS
-Install prc-tools from the below link(self compiled or prepackaged VM)  
-
-    cd ./tools/palm/muExpansionDriver
-    ./make.sh
-
 ## Running
 #### Files
 palmos40-en-m500.rom: f50e4d5e4d98dc831f2c34a9107651eb (MD5)  

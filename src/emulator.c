@@ -77,29 +77,6 @@ void      (*palmSerialDataFlush)(void);//called by the emulator to delete all da
 void      (*palmGetRtcFromHost)(uint8_t* writeBack);//[0] = hours, [1] = minutes, [2] = seconds
 
 
-static void patchOsRom(uint32_t address, char* patch){
-   uint32_t offset;
-   uint32_t patchBytes = strlen(patch) / 2;//1 char per nibble
-   uint32_t swapBegin = address & 0xFFFFFFFE;
-   uint32_t swapSize = patchBytes / sizeof(uint16_t) + 1;
-   char conv[5] = "0xXX";
-
-#if defined(EMU_SUPPORT_PALM_OS5)
-   if(!palmEmulatingTungstenT3)
-#endif
-      swap16BufferIfLittle(&palmRom[swapBegin], swapSize);
-   for(offset = 0; offset < patchBytes; offset++){
-      conv[2] = patch[offset * 2];
-      conv[3] = patch[offset * 2 + 1];
-      palmRom[address + offset] = strtol(conv, NULL, 0);
-   }
-#if defined(EMU_SUPPORT_PALM_OS5)
-   if(!palmEmulatingTungstenT3)
-#endif
-      swap16BufferIfLittle(&palmRom[swapBegin], swapSize);
-}
-
-
 uint32_t emulatorInit(uint8_t emulatedDevice, uint8_t* palmRomData, uint32_t palmRomSize, uint8_t* palmBootloaderData, uint32_t palmBootloaderSize, bool syncRtc, bool allowInvalidBehavior){
    if(emulatorInitialized)
       return EMU_ERROR_RESOURCE_LOCKED;
@@ -158,9 +135,6 @@ uint32_t emulatorInit(uint8_t emulatedDevice, uint8_t* palmRomData, uint32_t pal
       //initialize components, I dont think theres much in a Tungsten T3
       pxa260Framebuffer = palmFramebuffer;
       blip_set_rates(palmAudioResampler, DBVZ_AUDIO_MAX_CLOCK_RATE, AUDIO_SAMPLE_RATE);
-
-      patchOsRom(0x333EC6, "0000");//blocks out the slot driver
-      patchOsRom(0x205C, "0000A0E1");//blocks idle loop jump with NOP
 
       //reset everything
       emulatorSoftReset();

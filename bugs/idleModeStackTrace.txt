@@ -312,9 +312,9 @@ Jumped to:0x2009B540(printed 1 times)
 Jumped to:0x200A678C(printed 1 times)
 Jumped to:0x200BBF12(printed 1 times)
 Jumped to:0x00000008(printed 1 times)
-Jumped to:0x200C0FC4(printed 1 times)
-Jumped to:0x200C0FF8(printed 1 times)
-Jumped to:0x200C102C(printed 1 times)
+Jumped to:0x200C0FC4(printed 1 times)//\
+Jumped to:0x200C0FF8(printed 1 times)//|SWIVector handler
+Jumped to:0x200C102C(printed 1 times)///
 Jumped to:0x200C1048(printed 1 times)
 Jumped to:0x200C2114(printed 1 times)
 Jumped to:0x200BA2A4(printed 1 times)

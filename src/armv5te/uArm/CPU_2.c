@@ -89,7 +89,7 @@
 
 
 
-#if 1
+#if 0
 //ARM debugging sandbox, no separate file this time
 #include <stdlib.h>
 
@@ -132,8 +132,20 @@ static void cpuOnPcUpdate(ArmCpu* cpu, uint32_t newPc){
       callCount = 0;
 
    //jumps to reach EnterIdleMode - amount before to log
-   if(callCount > 395281 - 500)
-      debugLog("Jumped to:0x%08X\n", newPc);
+   if(callCount > 395281 - 500){
+      switch(newPc){
+         case 0x200BA16A:
+         case 0x200BA170:
+         case 0x200BA174:
+         case 0x200ACAF4://HALDelay loop
+            //repetitive calls to ignore
+            break;
+
+         default:
+            debugLog("Jumped to:0x%08X\n", newPc);
+            break;
+      }
+   }
 
    switch(newPc){
       case PC_FROM_DAL_ADDR(0x00016C94):
@@ -173,6 +185,11 @@ static void cpuOnPcUpdate(ArmCpu* cpu, uint32_t newPc){
       case PC_FROM_DAL_ADDR(0x00010F58):
          //HALSetInitStage
          debugLog("Called \"HALSetInitStage\", stage:%d\n", cpuGetRegExternal(cpu, 0));
+         break;
+
+      case 0x2009F638:
+         //CallsEnterIdleModeLayer0
+         debugLog("Called \"CallsEnterIdleModeLayer0\", R9:0x%08X\n", cpuGetRegExternal(cpu, 9));
          break;
 
       case PC_FROM_DAL_ADDR(0x000276F0):
