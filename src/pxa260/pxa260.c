@@ -16,30 +16,18 @@
 #include "pxa260Ssp.h"
 #include "pxa260Udc.h"
 #include "pxa260Timing.h"
-#if !defined(EMU_NO_SAFETY)
-#include "../armv5te/uArm/CPU_2.h"
-#include "../armv5te/uArm/uArmGlue.h"
-#endif
-#include "../armv5te/cpu.h"
-#include "../armv5te/emu.h"
-#include "../armv5te/mem.h"
-#include "../armv5te/mmu.h"
-#include "../armv5te/os/os.h"
-#include "../armv5te/translate.h"
+#include "uArmGlue.h"
 #include "../tungstenT3Bus.h"
 #include "../tsc2101.h"
 #include "../tps65010.h"
 #include "../emulator.h"
+#include "../portability.h"
 
-
-#define PXA260_IO_BASE 0x40000000
-#define PXA260_MEMCTRL_BASE 0x48000000
 
 #define PXA260_TIMER_TICKS_PER_FRAME (TUNGSTEN_T3_CPU_CRYSTAL_FREQUENCY / EMU_FPS)
 
-#if !defined(EMU_NO_SAFETY)
+
 ArmCpu       pxa260CpuState;
-#endif
 uint16_t*    pxa260Framebuffer;
 Pxa260pwrClk pxa260PwrClk;
 Pxa260ic     pxa260Ic;
@@ -51,146 +39,89 @@ static Pxa260lcd  pxa260Lcd;
 
 #include "pxa260Accessors.c.h"
 
-bool pxa260Init(uint8_t** returnRom, uint8_t** returnRam){
-   uint32_t mem_offset = 0;
-   uint8_t i;
+uint8_t read_byte(uint32_t address){
+   if(address >= PXA260_ROM_START_ADDRESS && address < PXA260_ROM_START_ADDRESS + TUNGSTEN_T3_ROM_SIZE)
+      return palmRom[address - PXA260_ROM_START_ADDRESS];
+   else if(address >= PXA260_RAM_START_ADDRESS && address < PXA260_RAM_START_ADDRESS + TUNGSTEN_T3_RAM_SIZE)
+      return palmRam[address - PXA260_RAM_START_ADDRESS];
+   else if(address >= PXA260_IO_BASE && address < PXA260_IO_BASE + PXA260_BANK_SIZE)
+      return pxa260_io_read_byte(address);
 
-   //set timing callback pointers
-   pxa260TimingInit();
-
-   //enable dynarec if available
-   do_translate = true;
-
-   mem_and_flags = os_reserve(MEM_MAXSIZE * 2);
-   if(!mem_and_flags)
-      return false;
-
-   addr_cache_init();
-   memset(mem_areas, 0x00, sizeof(mem_areas));
-
-   //regions
-   //ROM
-   mem_areas[0].base = PXA260_ROM_START_ADDRESS;
-   mem_areas[0].size = TUNGSTEN_T3_ROM_SIZE;
-   mem_areas[0].ptr = mem_and_flags + mem_offset;
-   mem_offset += TUNGSTEN_T3_ROM_SIZE;
-
-   //RAM
-   mem_areas[1].base = PXA260_RAM_START_ADDRESS;
-   mem_areas[1].size = TUNGSTEN_T3_RAM_SIZE;
-   mem_areas[1].ptr = mem_and_flags + mem_offset;
-   mem_offset += TUNGSTEN_T3_RAM_SIZE;
-
-   //memory regions that are not directly mapped to a buffer are not added to mem_areas
-   //adding them causes SIGSEGVs
-
-   //accessors
-   //default
-   for(i = 0; i < PXA260_TOTAL_MEMORY_BANKS; i++){
-       // will fallback to bad_* on non-memory addresses
-       read_byte_map[i] = memory_read_byte;
-       read_half_map[i] = memory_read_half;
-       read_word_map[i] = memory_read_word;
-       write_byte_map[i] = memory_write_byte;
-       write_half_map[i] = memory_write_half;
-       write_word_map[i] = memory_write_word;
-   }
-
-   //PCMCIA0
-   for(i = PXA260_START_BANK(PXA260_PCMCIA0_START_ADDRESS); i <= PXA260_END_BANK(PXA260_PCMCIA0_START_ADDRESS, PXA260_PCMCIA0_SIZE); i++){
-       read_byte_map[i] = pxa260_pcmcia0_read_byte;
-       read_half_map[i] = pxa260_pcmcia0_read_half;
-       read_word_map[i] = pxa260_pcmcia0_read_word;
-       write_byte_map[i] = pxa260_pcmcia0_write_byte;
-       write_half_map[i] = pxa260_pcmcia0_write_half;
-       write_word_map[i] = pxa260_pcmcia0_write_word;
-   }
-
-   //PCMCIA1
-   for(i = PXA260_START_BANK(PXA260_PCMCIA1_START_ADDRESS); i <= PXA260_END_BANK(PXA260_PCMCIA1_START_ADDRESS, PXA260_PCMCIA1_SIZE); i++){
-       read_byte_map[i] = pxa260_pcmcia1_read_byte;
-       read_half_map[i] = pxa260_pcmcia1_read_half;
-       read_word_map[i] = pxa260_pcmcia1_read_word;
-       write_byte_map[i] = pxa260_pcmcia1_write_byte;
-       write_half_map[i] = pxa260_pcmcia1_write_half;
-       write_word_map[i] = pxa260_pcmcia1_write_word;
-   }
-
-   //IO
-   read_byte_map[PXA260_START_BANK(PXA260_IO_BASE)] = pxa260_io_read_byte;
-   read_half_map[PXA260_START_BANK(PXA260_IO_BASE)] = pxa260_io_read_half;
-   read_word_map[PXA260_START_BANK(PXA260_IO_BASE)] = pxa260_io_read_word;
-   write_byte_map[PXA260_START_BANK(PXA260_IO_BASE)] = pxa260_io_write_byte;
-   write_half_map[PXA260_START_BANK(PXA260_IO_BASE)] = pxa260_io_write_half;
-   write_word_map[PXA260_START_BANK(PXA260_IO_BASE)] = pxa260_io_write_word;
-
-   //LCD
-   read_byte_map[PXA260_START_BANK(PXA260_LCD_BASE)] = bad_read_byte;
-   read_half_map[PXA260_START_BANK(PXA260_LCD_BASE)] = bad_read_half;
-   read_word_map[PXA260_START_BANK(PXA260_LCD_BASE)] = pxa260_lcd_read_word;
-   write_byte_map[PXA260_START_BANK(PXA260_LCD_BASE)] = bad_write_byte;
-   write_half_map[PXA260_START_BANK(PXA260_LCD_BASE)] = bad_write_half;
-   write_word_map[PXA260_START_BANK(PXA260_LCD_BASE)] = pxa260_lcd_write_word;
-
-   //MEMCTRL
-   read_byte_map[PXA260_START_BANK(PXA260_MEMCTRL_BASE)] = bad_read_byte;
-   read_half_map[PXA260_START_BANK(PXA260_MEMCTRL_BASE)] = bad_read_half;
-   read_word_map[PXA260_START_BANK(PXA260_MEMCTRL_BASE)] = pxa260MemctrlReadWord;
-   write_byte_map[PXA260_START_BANK(PXA260_MEMCTRL_BASE)] = bad_write_byte;
-   write_half_map[PXA260_START_BANK(PXA260_MEMCTRL_BASE)] = bad_write_half;
-   write_word_map[PXA260_START_BANK(PXA260_MEMCTRL_BASE)] = pxa260MemctrlWriteWord;
-
-   //W86L488
-   read_byte_map[PXA260_START_BANK(TUNGSTEN_T3_W86L488_START_ADDRESS)] = bad_read_byte;
-   read_half_map[PXA260_START_BANK(TUNGSTEN_T3_W86L488_START_ADDRESS)] = pxa260_static_chip_select_2_read_half;
-   read_word_map[PXA260_START_BANK(TUNGSTEN_T3_W86L488_START_ADDRESS)] = bad_read_word;
-   write_byte_map[PXA260_START_BANK(TUNGSTEN_T3_W86L488_START_ADDRESS)] = bad_write_byte;
-   write_half_map[PXA260_START_BANK(TUNGSTEN_T3_W86L488_START_ADDRESS)] = pxa260_static_chip_select_2_write_half;
-   write_word_map[PXA260_START_BANK(TUNGSTEN_T3_W86L488_START_ADDRESS)] = bad_write_word;
-
-   *returnRom = mem_areas[0].ptr;
-   *returnRam = mem_areas[1].ptr;
-
-   return true;
+   debugLog("Invalid byte read at address: 0x%08X\n", address);
+   return 0x00;
 }
 
-void pxa260Deinit(void){
-   if(mem_and_flags){
-       // translation_table uses absolute addresses
-       flush_translations();
-       memset(mem_areas, 0, sizeof(mem_areas));
-       os_free(mem_and_flags, MEM_MAXSIZE * 2);
-       mem_and_flags = NULL;
-   }
+uint16_t read_half(uint32_t address){
+   if(address >= PXA260_ROM_START_ADDRESS && address < PXA260_ROM_START_ADDRESS + TUNGSTEN_T3_ROM_SIZE)
+      return *(uint16_t*)(&palmRom[address - PXA260_ROM_START_ADDRESS]);
+   else if(address >= PXA260_RAM_START_ADDRESS && address < PXA260_RAM_START_ADDRESS + TUNGSTEN_T3_RAM_SIZE)
+      return *(uint16_t*)(&palmRam[address - PXA260_RAM_START_ADDRESS]);
+   else if(address >= TUNGSTEN_T3_W86L488_START_ADDRESS && address < TUNGSTEN_T3_W86L488_START_ADDRESS + TUNGSTEN_T3_W86L488_SIZE)
+      return w86l488Read16(address);
+   else if(address >= PXA260_IO_BASE && address < PXA260_IO_BASE + PXA260_BANK_SIZE)
+      return pxa260_io_read_half(address);
 
-   addr_cache_deinit();
+   debugLog("Invalid half read at address: 0x%08X\n", address);
+   return 0x0000;
+}
+
+uint32_t read_word(uint32_t address){
+   if(address >= PXA260_ROM_START_ADDRESS && address < PXA260_ROM_START_ADDRESS + TUNGSTEN_T3_ROM_SIZE)
+      return *(uint32_t*)(&palmRom[address - PXA260_ROM_START_ADDRESS]);
+   else if(address >= PXA260_RAM_START_ADDRESS && address < PXA260_RAM_START_ADDRESS + TUNGSTEN_T3_RAM_SIZE)
+      return *(uint32_t*)(&palmRam[address - PXA260_RAM_START_ADDRESS]);
+   else if(address >= PXA260_MEMCTRL_BASE && address < PXA260_MEMCTRL_BASE + PXA260_BANK_SIZE)
+      return pxa260MemctrlReadWord(address);
+   else if(address >= PXA260_LCD_BASE && address < PXA260_LCD_BASE + PXA260_BANK_SIZE)
+      return pxa260_lcd_read_word(address);
+   else if(address >= PXA260_IO_BASE && address < PXA260_IO_BASE + PXA260_BANK_SIZE)
+      return pxa260_io_read_word(address);
+
+   debugLog("Invalid word read at address: 0x%08X\n", address);
+   return 0x00000000;
+}
+
+void write_byte(uint32_t address, uint8_t byte){
+   if(address >= PXA260_RAM_START_ADDRESS && address < PXA260_RAM_START_ADDRESS + TUNGSTEN_T3_RAM_SIZE)
+      palmRam[address - PXA260_RAM_START_ADDRESS] = byte;
+   else if(address >= PXA260_IO_BASE && address < PXA260_IO_BASE + PXA260_BANK_SIZE)
+      pxa260_io_write_byte(address, byte);
+   else
+      debugLog("Invalid byte write at address: 0x%08X, value:0x%02X\n", address, byte);
+}
+
+void write_half(uint32_t address, uint16_t half){
+   if(address >= PXA260_RAM_START_ADDRESS && address < PXA260_RAM_START_ADDRESS + TUNGSTEN_T3_RAM_SIZE)
+      *(uint16_t*)(&palmRam[address - PXA260_RAM_START_ADDRESS]) = half;
+   else if(address >= TUNGSTEN_T3_W86L488_START_ADDRESS && address < TUNGSTEN_T3_W86L488_START_ADDRESS + TUNGSTEN_T3_W86L488_SIZE)
+      w86l488Write16(address, half);
+   else if(address >= PXA260_IO_BASE && address < PXA260_IO_BASE + PXA260_BANK_SIZE)
+      pxa260_io_write_half(address, half);
+   else
+      debugLog("Invalid half write at address: 0x%08X, value:0x%04X\n", address, half);
+}
+
+void write_word(uint32_t address, uint32_t word){
+   if(address >= PXA260_RAM_START_ADDRESS && address < PXA260_RAM_START_ADDRESS + TUNGSTEN_T3_RAM_SIZE)
+      *(uint32_t*)(&palmRam[address - PXA260_RAM_START_ADDRESS]) = word;
+   else if(address >= PXA260_MEMCTRL_BASE && address < PXA260_MEMCTRL_BASE + PXA260_BANK_SIZE)
+      pxa260MemctrlWriteWord(address, word);
+   else if(address >= PXA260_LCD_BASE && address < PXA260_LCD_BASE + PXA260_BANK_SIZE)
+      pxa260_lcd_write_word(address, word);
+   else if(address >= PXA260_IO_BASE && address < PXA260_IO_BASE + PXA260_BANK_SIZE)
+      pxa260_io_write_word(address, word);
+   else
+      debugLog("Invalid word write at address: 0x%08X, value:0x%08X\n", address, word);
 }
 
 void pxa260Reset(void){
-   /*
-   static void emu_reset()
-   {
-       memset(mem_areas[1].ptr, 0, mem_areas[1].size);
-
-       memset(&arm, 0, sizeof arm);
-       arm.control = 0x00050078;
-       arm.cpsr_low28 = MODE_SVC | 0xC0;
-       cpu_events &= EVENT_DEBUG_STEP;
-
-       sched_reset();
-       sched.items[SCHED_THROTTLE].clock = CLOCK_27M;
-       sched.items[SCHED_THROTTLE].proc = throttle_interval_event;
-
-       memory_reset();
-   }
-   */
-
    //set up extra CPU hardware
    pxa260icInit(&pxa260Ic);
    pxa260pwrClkInit(&pxa260PwrClk);
    pxa260lcdInit(&pxa260Lcd, &pxa260Ic);
    pxa260timrInit(&pxa260Timer, &pxa260Ic);
    pxa260gpioInit(&pxa260Gpio, &pxa260Ic);
+   pxa260TimingInit();
    pxa260I2cReset();
    pxa260MemctrlReset();
    pxa260SspReset();
@@ -200,23 +131,8 @@ void pxa260Reset(void){
    //set first timer event
    pxa260TimingTriggerEvent(PXA260_TIMING_CALLBACK_TICK_CPU_TIMER, TUNGSTEN_T3_CPU_PLL_FREQUENCY / TUNGSTEN_T3_CPU_CRYSTAL_FREQUENCY);
 
-#if !defined(EMU_NO_SAFETY)
-   debugLog("Using uARM CPU core!\n");
    cpuInit(&pxa260CpuState, 0x00000000, uArmMemAccess, uArmEmulErr, uArmHypercall, uArmSetFaultAddr);
    uArmInitCpXX(&pxa260CpuState);
-#else
-   memset(&arm, 0, sizeof arm);
-   arm.control = 0x00050078;
-   arm.cpsr_low28 = MODE_SVC | 0xC0;
-   waitingFiqs = 0;
-   waitingIrqs = 0;
-   cycle_count_delta = 0;
-   cpu_events = 0;
-   //cpu_events &= EVENT_DEBUG_STEP;
-#endif
-
-   addr_cache_flush();//SIGSEGVs on reset without this because the MMU needs to be turned off
-
    //PC starts at 0x00000000, the first opcode for Palm OS 5 is a jump
 }
 
@@ -253,52 +169,36 @@ void pxa260Execute(bool wantVideo){
 }
 
 uint32_t pxa260GetRegister(uint8_t reg){
-#if !defined(EMU_NO_SAFETY)
    return cpuGetRegExternal(&pxa260CpuState, reg);
-#else
-   return reg_pc_mem(reg);
-#endif
 }
 
 uint32_t pxa260GetCpsr(void){
-#if !defined(EMU_NO_SAFETY)
    return cpuGetRegExternal(&pxa260CpuState, ARM_REG_NUM_CPSR);
-#else
-   return get_cpsr();
-#endif
 }
 
 uint32_t pxa260GetSpsr(void){
-#if !defined(EMU_NO_SAFETY)
    return cpuGetRegExternal(&pxa260CpuState, ARM_REG_NUM_SPSR);
-#else
-   return get_spsr();
-#endif
 }
 
 uint64_t pxa260ReadArbitraryMemory(uint32_t address, uint8_t size){
    uint64_t data = UINT64_MAX;//invalid access
+   uint32_t value;
+   uint8_t unused;
 
-   address = mmu_translate(address, false, NULL, NULL);
+   if(uArmMemAccess(&pxa260CpuState, &value, address, size / 8, false, true, &unused)){
+      switch(size){
+         case 8:
+            data = *(uint8_t*)&value;
+            break;
 
-   switch(size){
-      case 8:
-         if(read_byte_map[address >> 26] != bad_read_byte){
-            data = read_byte_map[address >> 26](address);
-         }
-         break;
+         case 16:
+            data = *(uint16_t*)&value;
+            break;
 
-      case 16:
-         if(read_half_map[address >> 26] != bad_read_half){
-            data = read_half_map[address >> 26](address);
-         }
-         break;
-
-      case 32:
-         if(read_word_map[address >> 26] != bad_read_word){
-            data = read_word_map[address >> 26](address);
-         }
-         break;
+         case 32:
+            data = *(uint32_t*)&value;
+            break;
+      }
    }
 
    return data;

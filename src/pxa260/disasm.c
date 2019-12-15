@@ -1,11 +1,12 @@
 #include <stdio.h>
 
-#include "debug.h"
 #include "disasm.h"
-#include "emu.h"
+#include "pxa260.h"
 
 
 char disasmReturnBuf[80];
+
+static uint32_t returnData;
 
 
 static char *strcpy2(char *dest, const char *src) {
@@ -14,9 +15,21 @@ static char *strcpy2(char *dest, const char *src) {
 }
 
 static inline void *virt_mem_ptr(uint32_t addr, uint32_t size) {
-   //this is needed by the disasembler
-   // Note: this is not guaranteed to be correct when range crosses page boundary
-   return (void *)(intptr_t)phys_mem_ptr(mmu_translate(addr, false, NULL, NULL), size);
+   switch(size){
+      case 1:
+         *((uint8_t*)&returnData) = pxa260ReadArbitraryMemory(addr, size * 8);
+         break;
+
+      case 2:
+         *((uint16_t*)&returnData) = pxa260ReadArbitraryMemory(addr, size * 8);
+         break;
+
+      case 4:
+         *((uint32_t*)&returnData) = pxa260ReadArbitraryMemory(addr, size * 8);
+         break;
+   }
+
+   return &returnData;
 }
 
 const char reg_name[16][4] = {
@@ -540,7 +553,6 @@ invalid:
             if (!(insn & 0x1000)) target &= ~3;
             sprintf(out - 5, "%04X\t%s\t%08X", insn,
                     (insn & 0x1000) ? "bl" : "blx", target);
-            gui_debug_printf("%s\n", disasmReturnBuf);
             return 4;
         }
         sprintf(out, "(add\tlr,pc,%08X)", target);

@@ -6,7 +6,7 @@
 extern "C" {
 #endif
 
-#include "../../pxa260/pxa260_types.h"
+#include "pxa260_types.h"
 
 
 #define MMU_TLB_BUCKET_SIZE	8

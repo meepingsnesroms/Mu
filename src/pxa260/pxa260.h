@@ -11,21 +11,24 @@
 #include "pxa260_PwrClk.h"
 #include "pxa260_GPIO.h"
 #include "pxa260_TIMR.h"
-#if !defined(EMU_NO_SAFETY)
-#include "../armv5te/uArm/CPU_2.h"
-#endif
+#include "pxa260_CPU.h"
+#include "uArmGlue.h"
 
-#if !defined(EMU_NO_SAFETY)
 extern ArmCpu       pxa260CpuState;
-#endif
 extern uint16_t*    pxa260Framebuffer;
 extern Pxa260pwrClk pxa260PwrClk;
 extern Pxa260ic     pxa260Ic;
 extern Pxa260gpio   pxa260Gpio;
 extern Pxa260timr   pxa260Timer;
 
-bool pxa260Init(uint8_t** returnRom, uint8_t** returnRam);
-void pxa260Deinit(void);
+uint8_t read_byte(uint32_t address);
+uint16_t read_half(uint32_t address);
+uint32_t read_word(uint32_t address);
+
+void write_byte(uint32_t address, uint8_t byte);
+void write_half(uint32_t address, uint16_t half);
+void write_word(uint32_t address, uint32_t word);
+
 void pxa260Reset(void);
 void pxa260SetRtc(uint16_t days, uint8_t hours, uint8_t minutes, uint8_t seconds);
 uint32_t pxa260StateSize(void);

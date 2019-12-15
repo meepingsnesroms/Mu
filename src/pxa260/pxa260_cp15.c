@@ -1,4 +1,4 @@
-#include "cp15.h"
+#include "pxa260_cp15.h"
 
 
 #define CPUID_PXA255		0x69052D06UL	//spepping A0

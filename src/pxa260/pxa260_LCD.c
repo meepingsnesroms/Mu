@@ -1,6 +1,5 @@
 #include "pxa260_LCD.h"
 #include "pxa260.h"
-#include "../armv5te/mem.h"
 
 #define UNMASKABLE_INTS		0x7C8E
 
@@ -194,7 +193,7 @@ Boolean pxa260lcdPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boolean wr
 	return true;
 }
 
-#define pxa260PrvGetWord(x, addr) mmio_read_word(addr)
+#define pxa260PrvGetWord(x, addr) read_word(addr)
 
 static void pxa260LcdPrvDma(Pxa260lcd* lcd, void* dest, UInt32 addr, UInt32 len){
 
@@ -205,7 +204,7 @@ static void pxa260LcdPrvDma(Pxa260lcd* lcd, void* dest, UInt32 addr, UInt32 len)
 
 	while(len){
 		
-		t = pxa260PrvGetWord(lcd, addr);
+      t = pxa260PrvGetWord(lcd, addr);
 		if(len--) *d++ = t;
 		if(len--) *d++ = t >> 8;
 		if(len--) *d++ = t >> 16;
@@ -311,9 +310,9 @@ void pxa260lcdFrame(Pxa260lcd* lcd){
 					if(lcd->fbr0 & 2) lcd->lcsr |= 0x0200;
 					descrAddr = lcd->fbr0 &~ 0xFUL;
 				} else descrAddr = lcd->fdadr0;
-				lcd->fdadr0 = pxa260PrvGetWord(lcd, descrAddr + 0);
-				lcd->fsadr0 = pxa260PrvGetWord(lcd, descrAddr + 4);
-				lcd->fidr0  = pxa260PrvGetWord(lcd, descrAddr + 8);
+            lcd->fdadr0 = pxa260PrvGetWord(lcd, descrAddr + 0);
+            lcd->fsadr0 = pxa260PrvGetWord(lcd, descrAddr + 4);
+            lcd->fidr0  = pxa260PrvGetWord(lcd, descrAddr + 8);
 				lcd->ldcmd0 = pxa260PrvGetWord(lcd, descrAddr + 12);
 			
 				lcd->state = LCD_STATE_DMA_0_START;

@@ -10,8 +10,8 @@
 */
 
 
-#include "CPU_2.h"
-#include "../../pxa260/pxa260_math64.h"
+#include "pxa260_CPU.h"
+#include "pxa260_math64.h"
 
 
 

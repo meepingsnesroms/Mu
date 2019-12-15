@@ -104,17 +104,17 @@ uint32_t emulatorInit(uint8_t emulatedDevice, uint8_t* palmRomData, uint32_t pal
 
    if(palmEmulatingTungstenT3){
       //emulating Tungsten T3
-      bool dynarecInited = false;
-
-      dynarecInited = pxa260Init(&palmRom, &palmRam);
+      palmRom = malloc(TUNGSTEN_T3_ROM_SIZE);
+      palmRam = malloc(TUNGSTEN_T3_RAM_SIZE);
       palmFramebuffer = malloc(320 * 480 * sizeof(uint16_t));
       palmAudio = malloc(AUDIO_SAMPLES_PER_FRAME * 2 * sizeof(int16_t));
       palmAudioResampler = blip_new(AUDIO_SAMPLE_RATE);//have 1 second of samples
-      if(!palmFramebuffer || !palmAudio || !palmAudioResampler || !dynarecInited){
+      if(!palmRom || !palmRam || !palmFramebuffer || !palmAudio || !palmAudioResampler){
+         free(palmRom);
+         free(palmRam);
          free(palmFramebuffer);
          free(palmAudio);
          blip_delete(palmAudioResampler);
-         pxa260Deinit();
          return EMU_ERROR_OUT_OF_MEMORY;
       }
       memcpy(palmRom, palmRomData, FAST_MIN(palmRomSize, TUNGSTEN_T3_ROM_SIZE));
@@ -205,21 +205,11 @@ uint32_t emulatorInit(uint8_t emulatedDevice, uint8_t* palmRomData, uint32_t pal
 
 void emulatorDeinit(void){
    if(emulatorInitialized){
-#if defined(EMU_SUPPORT_PALM_OS5)
-      if(!palmEmulatingTungstenT3){
-#endif
-         free(palmRom);
-         free(palmRam);
-#if defined(EMU_SUPPORT_PALM_OS5)
-      }
-#endif
+      free(palmRom);
+      free(palmRam);
       free(palmFramebuffer);
       free(palmAudio);
       blip_delete(palmAudioResampler);
-#if defined(EMU_SUPPORT_PALM_OS5)
-      if(palmEmulatingTungstenT3)
-         pxa260Deinit();
-#endif
       free(palmSdCard.flashChipData);
       emulatorInitialized = false;
    }

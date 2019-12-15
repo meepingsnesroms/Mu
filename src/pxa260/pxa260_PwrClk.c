@@ -3,7 +3,7 @@
 #include "pxa260.h"
 
 
-Boolean pxa260pwrClkPrvCoprocRegXferFunc(void* userData, Boolean two, Boolean read, UInt8 op1, UInt8 Rx, UInt8 CRn, UInt8 CRm, UInt8 op2){
+Boolean pxa260pwrClkPrvCoprocRegXferFunc(struct ArmCpu* unused, void* userData, Boolean two, Boolean read, UInt8 op1, UInt8 Rx, UInt8 CRn, UInt8 CRm, UInt8 op2){
 	
 	Pxa260pwrClk* pc = userData;
 	UInt32 val = 0;

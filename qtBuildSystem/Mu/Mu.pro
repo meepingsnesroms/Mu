@@ -38,7 +38,6 @@ windows{
         QMAKE_LFLAGS += -fopenmp
         DEFINES += EMU_MULTITHREADED EMU_MANAGE_HOST_CPU_PIPELINE
     }
-    CONFIG += cpu_x86_32 # TODO:this should be auto detected in the future
 }
 
 macx{
@@ -46,7 +45,6 @@ macx{
     ICON = macos/Mu.icns
     QMAKE_INFO_PLIST = macos/Info.plist
     DEFINES += EMU_MULTITHREADED EMU_MANAGE_HOST_CPU_PIPELINE
-    CONFIG += cpu_x86_64 # Mac OS is only x86_64
 }
 
 linux-g++{
@@ -54,7 +52,6 @@ linux-g++{
     QMAKE_CXXFLAGS += -fopenmp
     QMAKE_LFLAGS += -fopenmp
     DEFINES += EMU_MULTITHREADED EMU_MANAGE_HOST_CPU_PIPELINE
-    CONFIG += cpu_x86_64 # TODO:this should be auto detected in the future
 }
 
 android{
@@ -62,7 +59,6 @@ android{
     QMAKE_CXXFLAGS += -fopenmp
     QMAKE_LFLAGS += -fopenmp
     DEFINES += EMU_MULTITHREADED EMU_MANAGE_HOST_CPU_PIPELINE
-    CONFIG += cpu_armv7 # TODO:this should be auto detected in the future
 }
 
 
@@ -85,137 +81,7 @@ EMU_NO_SAFETY{
     DEFINES += EMU_NO_SAFETY
 }
 
-support_palm_os5{
-    DEFINES += EMU_SUPPORT_PALM_OS5 # the Qt build will not be supporting anything too slow to run OS 5
-    DEFINES += SUPPORT_LINUX # forces the dynarec to use accurate mode and disable Nspire OS hacks
-
-    EMU_NO_SAFETY{
-        # Windows is only supported in 32 bit mode right now(this is a limitation of the dynarec)
-        # iOS needs IS_IOS_BUILD set, but the Qt port does not support iOS currently
-
-        cpu_x86_32{
-            SOURCES += \
-                ../../src/armv5te/translate_x86.c \
-                ../../src/armv5te/asmcode_x86.S
-        }
-        else{
-            # x86 has this implemented in asmcode_x86.S
-            SOURCES += \
-                ../../src/armv5te/asmcode.c
-        }
-
-        cpu_x86_64{
-            SOURCES += \
-                ../../src/armv5te/translate_x86_64.c \
-                ../../src/armv5te/asmcode_x86_64.S
-        }
-
-        cpu_armv7{
-            SOURCES += \
-                ../../src/armv5te/translate_arm.cpp \
-                ../../src/armv5te/asmcode_arm.S
-        }
-
-        cpu_armv8{
-            SOURCES += \
-                ../../src/armv5te/translate_aarch64.cpp \
-                ../../src/armv5te/asmcode_aarch64.S
-        }
-    }
-    else{
-        # use platform independant C with no dynarec
-        SOURCES += \
-            ../../src/armv5te/asmcode.c \
-            ../../src/armv5te/uArm/CPU_2.c \
-            ../../src/armv5te/uArm/MMU_2.c \
-            ../../src/armv5te/uArm/cp15.c \
-            ../../src/armv5te/uArm/icache.c \
-            ../../src/armv5te/uArm/uArmGlue.cpp
-        DEFINES += NO_TRANSLATION
-    }
-
-    windows{
-        SOURCES += \
-            ../../src/armv5te/os/os-win32.c
-    }
-
-    macx|linux-g++|android{
-        SOURCES += \
-            ../../src/armv5te/os/os-linux.c
-    }
-
-    SOURCES += \
-        ../../src/pxa260/pxa260_DMA.c \
-        ../../src/pxa260/pxa260_DSP.c \
-        ../../src/pxa260/pxa260_GPIO.c \
-        ../../src/pxa260/pxa260_IC.c \
-        ../../src/pxa260/pxa260_LCD.c \
-        ../../src/pxa260/pxa260_PwrClk.c \
-        ../../src/pxa260/pxa260_RTC.c \
-        ../../src/pxa260/pxa260_TIMR.c \
-        ../../src/pxa260/pxa260_UART.c \
-        ../../src/pxa260/pxa260I2c.c \
-        ../../src/pxa260/pxa260Memctrl.c \
-        ../../src/pxa260/pxa260Timing.c \
-        ../../src/pxa260/pxa260Ssp.c \
-        ../../src/pxa260/pxa260Udc.c \
-        ../../src/pxa260/pxa260.c \
-        ../../src/armv5te/arm_interpreter.cpp \
-        ../../src/armv5te/cpu.cpp \
-        ../../src/armv5te/coproc.cpp \
-        ../../src/armv5te/disasm.c \
-        ../../src/armv5te/emuVarPool.c \
-        ../../src/armv5te/thumb_interpreter.cpp \
-        ../../src/armv5te/mem.c \
-        ../../src/armv5te/mmu.c \
-        ../../src/tps65010.c \
-        ../../src/tsc2101.c \
-        ../../src/w86l488.c
-
-    HEADERS += \
-        ../../src/pxa260/pxa260_CPU.h \
-        ../../src/pxa260/pxa260_DMA.h \
-        ../../src/pxa260/pxa260_DSP.h \
-        ../../src/pxa260/pxa260_GPIO.h \
-        ../../src/pxa260/pxa260_IC.h \
-        ../../src/pxa260/pxa260_LCD.h \
-        ../../src/pxa260/pxa260_PwrClk.h \
-        ../../src/pxa260/pxa260_RTC.h \
-        ../../src/pxa260/pxa260_TIMR.h \
-        ../../src/pxa260/pxa260_UART.h \
-        ../../src/pxa260/pxa260I2c.h \
-        ../../src/pxa260/pxa260Memctrl.h \
-        ../../src/pxa260/pxa260Timing.h \
-        ../../src/pxa260/pxa260Ssp.h \
-        ../../src/pxa260/pxa260Udc.h \
-        ../../src/pxa260/pxa260_types.h \
-        ../../src/pxa260/pxa260_math64.h \
-        ../../src/pxa260/pxa260Accessors.c.h \
-        ../../src/pxa260/pxa260.h \
-        ../../src/armv5te/os/os.h \
-        ../../src/armv5te/uArm/CPU_2.h \
-        ../../src/armv5te/uArm/MMU_2.h \
-        ../../src/armv5te/uArm/cp15.h \
-        ../../src/armv5te/uArm/icache.h \
-        ../../src/armv5te/uArm/uArmGlue.h \
-        ../../src/armv5te/asmcode.h \
-        ../../src/armv5te/bitfield.h \
-        ../../src/armv5te/cpu.h \
-        ../../src/armv5te/disasm.h \
-        ../../src/armv5te/emu.h \
-        ../../src/armv5te/mem.h \
-        ../../src/armv5te/translate.h \
-        ../../src/armv5te/cpudefs.h \
-        ../../src/armv5te/debug.h \
-        ../../src/armv5te/mmu.h \
-        ../../src/armv5te/armsnippets.h \
-        ../../src/armv5te/literalpool.h \
-        ../../src/tungstenT3Bus.h \
-        ../../src/tps65010.h \
-        ../../src/tsc2101.h \
-        ../../src/w86l488.h
-}
-
+DEFINES += EMU_SUPPORT_PALM_OS5 # the Qt build will not be supporting anything too slow to run OS 5
 CONFIG += c++11
 
 INCLUDEPATH += $$PWD/qt-common/include
@@ -235,9 +101,33 @@ SOURCES += \
     ../../src/m68k/m68kopnz.c \
     ../../src/m68k/m68kops.c \
     ../../src/pdiUsbD12.c \
+    ../../src/pxa260/disasm.c \
+    ../../src/pxa260/pxa260.c \
+    ../../src/pxa260/pxa260I2c.c \
+    ../../src/pxa260/pxa260Memctrl.c \
+    ../../src/pxa260/pxa260Ssp.c \
+    ../../src/pxa260/pxa260Timing.c \
+    ../../src/pxa260/pxa260Udc.c \
+    ../../src/pxa260/pxa260_CPU.c \
+    ../../src/pxa260/pxa260_DMA.c \
+    ../../src/pxa260/pxa260_DSP.c \
+    ../../src/pxa260/pxa260_GPIO.c \
+    ../../src/pxa260/pxa260_IC.c \
+    ../../src/pxa260/pxa260_LCD.c \
+    ../../src/pxa260/pxa260_MMU.c \
+    ../../src/pxa260/pxa260_PwrClk.c \
+    ../../src/pxa260/pxa260_RTC.c \
+    ../../src/pxa260/pxa260_TIMR.c \
+    ../../src/pxa260/pxa260_UART.c \
+    ../../src/pxa260/pxa260_cp15.c \
+    ../../src/pxa260/pxa260_icache.c \
+    ../../src/pxa260/uArmGlue.c \
     ../../src/sdCard.c \
     ../../src/sed1376.c \
     ../../src/silkscreen.c \
+    ../../src/tps65010.c \
+    ../../src/tsc2101.c \
+    ../../src/w86l488.c \
     debugviewer.cpp \
     emuwrapper.cpp \
     main.cpp \
@@ -265,6 +155,30 @@ HEADERS += \
     ../../src/pdiUsbD12.h \
     ../../src/pdiUsbD12CommandNames.c.h \
     ../../src/portability.h \
+    ../../src/pxa260/disasm.h \
+    ../../src/pxa260/pxa260.h \
+    ../../src/pxa260/pxa260Accessors.c.h \
+    ../../src/pxa260/pxa260I2c.h \
+    ../../src/pxa260/pxa260Memctrl.h \
+    ../../src/pxa260/pxa260Ssp.h \
+    ../../src/pxa260/pxa260Timing.h \
+    ../../src/pxa260/pxa260Udc.h \
+    ../../src/pxa260/pxa260_CPU.h \
+    ../../src/pxa260/pxa260_DMA.h \
+    ../../src/pxa260/pxa260_DSP.h \
+    ../../src/pxa260/pxa260_GPIO.h \
+    ../../src/pxa260/pxa260_IC.h \
+    ../../src/pxa260/pxa260_LCD.h \
+    ../../src/pxa260/pxa260_MMU.h \
+    ../../src/pxa260/pxa260_PwrClk.h \
+    ../../src/pxa260/pxa260_RTC.h \
+    ../../src/pxa260/pxa260_TIMR.h \
+    ../../src/pxa260/pxa260_UART.h \
+    ../../src/pxa260/pxa260_cp15.h \
+    ../../src/pxa260/pxa260_icache.h \
+    ../../src/pxa260/pxa260_math64.h \
+    ../../src/pxa260/pxa260_types.h \
+    ../../src/pxa260/uArmGlue.h \
     ../../src/sdCard.h \
     ../../src/sdCardAccessors.c.h \
     ../../src/sdCardCommandNames.c.h \
@@ -273,6 +187,10 @@ HEADERS += \
     ../../src/sed1376Accessors.c.h \
     ../../src/sed1376RegisterNames.c.h \
     ../../src/silkscreen.h \
+    ../../src/tps65010.h \
+    ../../src/tsc2101.h \
+    ../../src/tungstenT3Bus.h \
+    ../../src/w86l488.h \
     debugviewer.h \
     emuwrapper.h \
     mainwindow.h \

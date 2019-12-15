@@ -1,6 +1,5 @@
 #include <stdint.h>
 #include <string.h>
-#include <setjmp.h>
 
 #include "pxa260.h"
 #include "pxa260_TIMR.h"
@@ -8,13 +7,8 @@
 #include "pxa260Ssp.h"
 #include "pxa260Udc.h"
 #include "pxa260Timing.h"
+#include "pxa260_CPU.h"
 #include "../tsc2101.h"
-#if !defined(EMU_NO_SAFETY)
-#include "../armv5te/uArm/CPU_2.h"
-#endif
-#include "../armv5te/os/os.h"
-#include "../armv5te/emu.h"
-#include "../armv5te/cpu.h"
 #include "../emulator.h"
 
 
@@ -22,6 +16,7 @@
 
 
 static int32_t pxa260TimingLeftoverCycles;//doesnt need to go in save states
+static int32_t pxa260CycleCountDelta;//doesnt need to go in save states
 
 void    (*pxa260TimingCallbacks[PXA260_TIMING_TOTAL_CALLBACKS])(void);
 int32_t pxa260TimingQueuedEvents[PXA260_TIMING_TOTAL_CALLBACKS];
@@ -56,9 +51,9 @@ void pxa260TimingReset(void){
 void pxa260TimingTriggerEvent(uint8_t callbackId, int32_t wait){
    pxa260TimingQueuedEvents[callbackId] = wait;
    //dont need to check if in handler since cycle_count_delta is 0 or positive when in handlers are called
-   if(wait < -cycle_count_delta){
-      pxa260TimingLeftoverCycles = -cycle_count_delta - wait;
-      cycle_count_delta = -wait;
+   if(wait < -pxa260CycleCountDelta){
+      pxa260TimingLeftoverCycles = -pxa260CycleCountDelta - wait;
+      pxa260CycleCountDelta = -wait;
    }
 }
 
@@ -67,53 +62,22 @@ void pxa260TimingCancelEvent(uint8_t callbackId){
 }
 
 void pxa260TimingRun(int32_t cycles){
-#if OS_HAS_PAGEFAULT_HANDLER
-   os_exception_frame_t seh_frame = {NULL, NULL};
-#endif
    uint8_t index;
    int32_t addCycles;
 
-#if OS_HAS_PAGEFAULT_HANDLER
-   os_faulthandler_arm(&seh_frame);
-#endif
-
-   while(setjmp(restart_after_exception)){};
-   exiting = false;
    pxa260TimingLeftoverCycles = 0;//used when an event is added while the CPU is running
 
    keepRunning:
    addCycles = pxa260TimingGetDurationUntilNextEvent(cycles);
-   cycle_count_delta = -addCycles * palmClockMultiplier;
+   pxa260CycleCountDelta = -addCycles * palmClockMultiplier;
 
-   while (!exiting && cycle_count_delta < 0) {
-#if !defined(EMU_NO_SAFETY)
+   while(pxa260CycleCountDelta < 0){
       cpuCycle(&pxa260CpuState);
-      cycle_count_delta += 1;
-#else
-      if (cpu_events & (EVENT_FIQ | EVENT_IRQ)) {
-          // Align PC in case the interrupt occurred immediately after a jump
-          if (arm.cpsr_low28 & 0x20)
-              arm.reg[15] &= ~1;
-          else
-              arm.reg[15] &= ~3;
-
-          if (cpu_events & EVENT_WAITING)
-              arm.reg[15] += 4; // Skip over wait instruction
-
-          arm.reg[15] += 4;
-          cpu_exception((cpu_events & EVENT_FIQ) ? EX_FIQ : EX_IRQ);
-      }
-      cpu_events &= ~EVENT_WAITING;//the wait opcode will be executed again if still waiting, that will clear the remaining cycle count and exit the function again
-
-      if (arm.cpsr_low28 & 0x20)
-          cpu_thumb_loop();
-      else
-          cpu_arm_loop();
-#endif
+      pxa260CycleCountDelta += 1;
    }
 
    //if more then the requested cycles are executed count those too
-   addCycles += cycle_count_delta / palmClockMultiplier;
+   addCycles += pxa260CycleCountDelta / palmClockMultiplier;
 
    //remove the unused cycles
    addCycles -= pxa260TimingLeftoverCycles;
@@ -133,10 +97,6 @@ void pxa260TimingRun(int32_t cycles){
    cycles -= addCycles;
    if(cycles > 0)
       goto keepRunning;
-
-#if OS_HAS_PAGEFAULT_HANDLER
-   os_faulthandler_unarm(&seh_frame);
-#endif
 }
 
 void pxa260TimingTickCpuTimer(void){

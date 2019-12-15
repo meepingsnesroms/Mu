@@ -23,8 +23,8 @@
 extern "C"{
 #include "../../src/flx68000.h"
 #include "../../src/m68k/m68k.h"
+#include "../../src/pxa260/disasm.h"
 #include "../../src/pxa260/pxa260.h"
-#include "../../src/armv5te/disasm.h"
 }
 
 

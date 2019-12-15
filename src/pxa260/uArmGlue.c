@@ -1,13 +1,14 @@
 #include "uArmGlue.h"
-#include "CPU_2.h"
-#include "MMU_2.h"
-#include "cp15.h"
+#include "pxa260.h"
+#include "pxa260_CPU.h"
+#include "pxa260_MMU.h"
+#include "pxa260_cp15.h"
+#include "pxa260_PwrClk.h"
+#include "pxa260_LCD.h"
 
-#include "../../emulator.h"
-#include "../../armv5te/cpu.h"
-#include "../../armv5te/asmcode.h"
-#include "../../armv5te/cpudefs.h"
-#include "../../pxa260/pxa260.h"
+#include "../emulator.h"
+#include "../tungstenT3Bus.h"
+#include "../w86l488.h"
 
 
 static ArmMmu uArmMmu;
@@ -18,34 +19,6 @@ static ArmCP15 uArmCp15;
 static Err mmuReadF(void* userData, UInt32* buf, UInt32 pa){
    *(uint32_t*)buf = read_word(pa);
    return 1;
-}
-
-Boolean	uArmCp14RegXferF	(struct ArmCpu* cpu, void* userData, Boolean two/* MCR2/MRC2 ? */, Boolean MRC, UInt8 op1, UInt8 Rx, UInt8 CRn, UInt8 CRm, UInt8 op2){
-   //if(!cpu->coproc[vb8].regXfer(cpu, cpu->coproc[vb8].userData, specialInstr, (instr & 0x00100000UL) != 0, (instr >> 21) & 0x07, (instr >> 12) & 0x0F, (instr >> 16) & 0x0F, instr & 0x0F, (instr >> 5) & 0x07)) goto invalid_instr;
-   Instruction inst;
-
-   inst.raw = 0xE000E10 | op1 << 21 | Rx << 12 | CRn << 16 | CRm | op2 << 5;
-
-   if(MRC)
-      inst.raw |= 0x00100000;
-
-   do_cp14_instruction(inst);
-   return true;
-}
-
-Boolean	uArmCp14DatProcF	(struct ArmCpu* cpu, void* userData, Boolean two/* CDP2 ? */, UInt8 op1, UInt8 CRd, UInt8 CRn, UInt8 CRm, UInt8 op2){
-   debugLog("uARM CP14 dat proc unimplemented\n");
-   return false;
-}
-
-Boolean	uArmCp14MemAccsF	(struct ArmCpu* cpu, void* userData, Boolean two /* LDC2/STC2 ? */, Boolean N, Boolean store, UInt8 CRd, UInt32 addr, UInt8* option /* NULL if none */){
-   debugLog("uARM CP14 mem access unimplemented\n");
-   return false;
-}
-
-Boolean uArmCp14TwoRegF	(struct ArmCpu* cpu, void* userData, Boolean MRRC, UInt8 op, UInt8 Rd, UInt8 Rn, UInt8 CRm){
-   debugLog("uARM CP14 2 reg access unimplemented\n");
-   return false;
 }
 
 Boolean	uArmMemAccess(struct ArmCpu* cpu, void* buf, UInt32 vaddr, UInt8 size, Boolean write, Boolean priviledged, UInt8* fsr){
@@ -117,11 +90,13 @@ void	uArmSetFaultAddr(struct ArmCpu* cpu, UInt32 adr, UInt8 faultStatus){
 }
 
 void uArmInitCpXX(ArmCpu* cpu){
-   uArmCp14.regXfer = uArmCp14RegXferF;
-   uArmCp14.dataProcessing = uArmCp14DatProcF;
-   uArmCp14.memAccess = uArmCp14MemAccsF;
-   uArmCp14.twoRegF = uArmCp14TwoRegF;
+   uArmCp14.regXfer = pxa260pwrClkPrvCoprocRegXferFunc;
+   uArmCp14.dataProcessing = NULL;
+   uArmCp14.memAccess = NULL;
+   uArmCp14.twoRegF = NULL;
+   uArmCp14.userData = &pxa260PwrClk;
 
+   //pwrclk already inited in pxa260Reset
    cpuCoprocessorRegister(cpu, 14, &uArmCp14);
 
    mmuInit(&uArmMmu, mmuReadF, NULL);

@@ -1,6 +1,6 @@
-#include "../../pxa260/pxa260_types.h"
-#include "CPU_2.h"
-#include "icache.h"
+#include "pxa260_types.h"
+#include "pxa260_CPU.h"
+#include "pxa260_icache.h"
 
 //#define ICACHE_DEBUGGING
 

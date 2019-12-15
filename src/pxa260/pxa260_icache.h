@@ -2,8 +2,8 @@
 #define ICACHE_H
 
 
-#include "../../pxa260/pxa260_types.h"
-#include "CPU_2.h"
+#include "pxa260_types.h"
+#include "pxa260_CPU.h"
 
 
 #define ICACHE_L		5UL	//line size is 2^L bytes
