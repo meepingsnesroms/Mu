@@ -31,7 +31,7 @@ void pxa260rtcPrvUpdate(Pxa260rtc* rtc){
 	pxa260icInt(rtc->ic, PXA260_I_RTC_HZ, (rtc->RTSR & 2) != 0);
 }
 
-static Boolean pxa260rtcPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boolean write, void* buf){
+Boolean pxa260rtcPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boolean write, void* buf){
 
 	Pxa260rtc* rtc = userData;
 	UInt32 val = 0;

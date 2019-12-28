@@ -15,4 +15,15 @@
 #define PXA260_IO_BASE 0x40000000
 #define PXA260_MEMCTRL_BASE 0x48000000
 
+#if defined(EMU_BIG_ENDIAN)
+//can take advantage of forced 32 bit alignment to allow almost free endian swaps
+#define PXA260_ADDR_FIX_ENDIAN_8(address) (address ^ 3)
+#define PXA260_ADDR_FIX_ENDIAN_16(address) (address ^ 1)
+#define PXA260_ADDR_FIX_ENDIAN_32(address) (address)
+#else
+#define PXA260_ADDR_FIX_ENDIAN_8(address) (address)
+#define PXA260_ADDR_FIX_ENDIAN_16(address) (address)
+#define PXA260_ADDR_FIX_ENDIAN_32(address) (address)
+#endif
+
 #endif

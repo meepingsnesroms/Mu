@@ -216,7 +216,7 @@ static void pxa260LcdPrvDma(Pxa260lcd* lcd, void* dest, UInt32 addr, UInt32 len)
 static _INLINE_ void pxa260LcdScreenDataPixel(Pxa260lcd* lcd, UInt8* buf){
    static UInt32 pos = 0;
 
-   pxa260Framebuffer[pos] = buf[0] || (buf[1] << 8);
+   pxa260Framebuffer[pos] = buf[0] | (buf[1] << 8);
    pos++;
    if(pos == 320 * 480)
       pos = 0;
@@ -331,9 +331,7 @@ void pxa260lcdFrame(Pxa260lcd* lcd){
                pxa260LcdPrvDma(lcd, lcd->palette, lcd->fsadr0, len);
 				}
 				else{
-					
-					lcd->frameNum++;
-					if(!(lcd->frameNum & 63)) pxa260LcdScreenDataDma(lcd, lcd->fsadr0, len);
+               pxa260LcdScreenDataDma(lcd, lcd->fsadr0, len);
 				}
 				
 				lcd->state = LCD_STATE_DMA_0_END;

@@ -28,9 +28,9 @@ typedef struct{
 	
 }Pxa260rtc;
 
+Boolean pxa260rtcPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boolean write, void* buf);
 void pxa260rtcInit(Pxa260rtc* rtc, Pxa260ic* ic);
 void pxa260rtcUpdate(Pxa260rtc* rtc);
-
 
 #endif
 

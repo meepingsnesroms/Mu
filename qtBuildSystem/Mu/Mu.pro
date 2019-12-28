@@ -121,7 +121,6 @@ SOURCES += \
     ../../src/pxa260/pxa260_UART.c \
     ../../src/pxa260/pxa260_cp15.c \
     ../../src/pxa260/pxa260_icache.c \
-    ../../src/pxa260/uArmGlue.c \
     ../../src/sdCard.c \
     ../../src/sed1376.c \
     ../../src/silkscreen.c \
@@ -178,7 +177,6 @@ HEADERS += \
     ../../src/pxa260/pxa260_icache.h \
     ../../src/pxa260/pxa260_math64.h \
     ../../src/pxa260/pxa260_types.h \
-    ../../src/pxa260/uArmGlue.h \
     ../../src/sdCard.h \
     ../../src/sdCardAccessors.c.h \
     ../../src/sdCardCommandNames.c.h \

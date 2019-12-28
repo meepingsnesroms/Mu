@@ -41,9 +41,6 @@ typedef struct{
 	UInt8 enbChanged	: 1;
 	
 	UInt8 palette[512];
-
-	UInt32 frameNum;
-	
 }Pxa260lcd;
 
 Boolean pxa260lcdPrvMemAccessF(void* userData, UInt32 pa, UInt8 size, Boolean write, void* buf);

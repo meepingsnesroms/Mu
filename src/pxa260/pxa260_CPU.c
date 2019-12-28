@@ -89,11 +89,11 @@
 
 
 
-#if 0
+#if 1
 //ARM debugging sandbox, no separate file this time
 #include <stdlib.h>
 
-#include "../../emulator.h"
+#include "../emulator.h"
 
 
 #define DAL_START_IN_ROM 0x0009B130
@@ -112,7 +112,7 @@ static char* getArmString(ArmCpu* cpu, uint32_t address, uint32_t maxSize){
       abort();
 
    for(index = 0; index < maxSize; index++){
-      cpu->memF(cpu, str + index, address + index, 1, false, true, fsr);
+      cpu->memF(cpu, str + index, address + index, 1, false, true, &fsr);
       if(str[index] == '\0')
          break;
    }
@@ -132,7 +132,7 @@ static void cpuOnPcUpdate(ArmCpu* cpu, uint32_t newPc){
       callCount = 0;
 
    //jumps to reach EnterIdleMode - amount before to log
-   if(callCount > 395281 - 500){
+   if(callCount > 71313793 - 500){
       switch(newPc){
          case 0x200BA16A:
          case 0x200BA170:
@@ -148,6 +148,7 @@ static void cpuOnPcUpdate(ArmCpu* cpu, uint32_t newPc){
    }
 
    switch(newPc){
+      /*
       case PC_FROM_DAL_ADDR(0x00016C94):
          //ReadGPIOPin
          debugLog("Called \"ReadGPIOPin\", pin:%d\n", cpuGetRegExternal(cpu, 0));
@@ -157,6 +158,7 @@ static void cpuOnPcUpdate(ArmCpu* cpu, uint32_t newPc){
          //WriteGPIOPinInvertedValue
          debugLog("Called \"WriteGPIOPinInvertedValue\", pin:%d, value:%d\n", cpuGetRegExternal(cpu, 0), cpuGetRegExternal(cpu, 1));
          break;
+         */
 
       case PC_FROM_DAL_ADDR(0x00024644):{
             //PrintLineError
@@ -182,11 +184,17 @@ static void cpuOnPcUpdate(ArmCpu* cpu, uint32_t newPc){
          }
          break;
 
+      case 0x200A6754:
+         //HALDbgBreak
+         debugLog("Called \"HALDbgBreak\", callCount:%d\n", callCount);
+         break;
+
       case PC_FROM_DAL_ADDR(0x00010F58):
          //HALSetInitStage
          debugLog("Called \"HALSetInitStage\", stage:%d\n", cpuGetRegExternal(cpu, 0));
          break;
 
+         /*
       case 0x2009F638:
          //CallsEnterIdleModeLayer0
          debugLog("Called \"CallsEnterIdleModeLayer0\", R9:0x%08X\n", cpuGetRegExternal(cpu, 9));
@@ -195,6 +203,12 @@ static void cpuOnPcUpdate(ArmCpu* cpu, uint32_t newPc){
       case PC_FROM_DAL_ADDR(0x000276F0):
          //EnterIdleMode
          debugLog("Called \"EnterIdleMode\", took %d jumps to reach this function\n", callCount);
+         break;
+         */
+
+      case 0x200B1C2C:
+         //HALDisplayDrawBootScreen
+         debugLog("Called \"HALDisplayDrawBootScreen\"\n");
          break;
 
       case PC_FROM_DAL_ADDR(0x00000000):
@@ -212,10 +226,12 @@ static void cpuOnPcUpdate(ArmCpu* cpu, uint32_t newPc){
          debugLog("Jumped to undefined instruction vector\n");
          break;
 
+         /*
       case 0x00000008:
          //SWI vector
          debugLog("Jumped to SWI vector\n");
          break;
+         */
 
       case 0x0000000C:
          //prefetch abort vector

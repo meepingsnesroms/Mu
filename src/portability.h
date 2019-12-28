@@ -42,17 +42,35 @@ static inline void swap16(uint8_t* buffer, uint32_t count){
    }
 }
 
-static inline void swap16BufferIfLittle(uint8_t* buffer, uint32_t count){
-#if !defined(EMU_BIG_ENDIAN)
-   swap16(buffer, count);
-#endif
+static inline void swap32(uint8_t* buffer, uint32_t count){
+   uint32_t index;
+
+   //count specifys the number of uint16_t's that need to be swapped, the uint8_t* is because of alignment restrictions that crash on some platforms
+   count *= sizeof(uint32_t);
+   MULTITHREAD_LOOP(index) for(index = 0; index < count; index += 4){
+      uint8_t temp = buffer[index];
+      buffer[index] = buffer[index + 3];
+      buffer[index + 3] = temp;
+      temp = buffer[index + 1];
+      buffer[index + 1] = buffer[index + 2];
+      buffer[index + 2] = temp;
+   }
 }
 
-static inline void swap16BufferIfBig(uint8_t* buffer, uint32_t count){
-#if defined(EMU_BIG_ENDIAN)
-   swap16(buffer, count);
+#if !defined(EMU_BIG_ENDIAN)
+#define swap16BufferIfLittle(buffer, count) swap16((buffer), (count))
+#define swap32BufferIfLittle(buffer, count) swap32((buffer), (count))
+
+#define swap16BufferIfBig(buffer, count)
+#define swap32BufferIfBig(buffer, count)
+#else
+#define swap16BufferIfLittle(buffer, count)
+#define swap32BufferIfLittle(buffer, count)
+
+#define swap16BufferIfBig(buffer, count) swap16((buffer), (count))
+#define swap32BufferIfBig(buffer, count) swap32((buffer), (count))
 #endif
-}
+
 
 //custom operators
 #define SIZEOF_BITS(value) (sizeof(value) * 8)

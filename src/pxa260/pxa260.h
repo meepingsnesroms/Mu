@@ -10,14 +10,15 @@
 #include "pxa260_IC.h"
 #include "pxa260_PwrClk.h"
 #include "pxa260_GPIO.h"
+#include "pxa260_RTC.h"
 #include "pxa260_TIMR.h"
 #include "pxa260_CPU.h"
-#include "uArmGlue.h"
 
 extern ArmCpu       pxa260CpuState;
 extern uint16_t*    pxa260Framebuffer;
 extern Pxa260pwrClk pxa260PwrClk;
 extern Pxa260ic     pxa260Ic;
+extern Pxa260rtc    pxa260rtc;
 extern Pxa260gpio   pxa260Gpio;
 extern Pxa260timr   pxa260Timer;
 

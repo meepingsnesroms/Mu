@@ -120,6 +120,7 @@ uint32_t emulatorInit(uint8_t emulatedDevice, uint8_t* palmRomData, uint32_t pal
       memcpy(palmRom, palmRomData, FAST_MIN(palmRomSize, TUNGSTEN_T3_ROM_SIZE));
       if(palmRomSize < TUNGSTEN_T3_ROM_SIZE)
          memset(palmRom + palmRomSize, 0x00, TUNGSTEN_T3_ROM_SIZE - palmRomSize);
+      swap32BufferIfBig(palmRom, TUNGSTEN_T3_ROM_SIZE / sizeof(uint32_t));
       memset(palmRam, 0x00, TUNGSTEN_T3_RAM_SIZE);
       memset(palmFramebuffer, 0x00, 320 * 480 * sizeof(uint16_t));//TODO:PXA260 code doesnt always output a picture like my SED1376 code, so clear the buffer to prevent garbage from being displayed before the first render
       memset(palmAudio, 0x00, AUDIO_SAMPLES_PER_FRAME * 2/*channels*/ * sizeof(int16_t));
@@ -349,6 +350,7 @@ bool emulatorSaveState(uint8_t* data, uint32_t size){
 
       //memory
       memcpy(data + offset, palmRam, TUNGSTEN_T3_RAM_SIZE);
+      swap32BufferIfBig(data + offset, TUNGSTEN_T3_ROM_SIZE / sizeof(uint32_t));
       offset += TUNGSTEN_T3_RAM_SIZE;
    }
    else{
@@ -473,6 +475,7 @@ bool emulatorLoadState(uint8_t* data, uint32_t size){
 
       //memory
       memcpy(palmRam, data + offset, TUNGSTEN_T3_RAM_SIZE);
+      swap32BufferIfBig(palmRam, TUNGSTEN_T3_ROM_SIZE / sizeof(uint32_t));
       offset += TUNGSTEN_T3_RAM_SIZE;
    }
    else{
@@ -582,6 +585,7 @@ bool emulatorSaveRam(uint8_t* data, uint32_t size){
          return false;
 
       memcpy(data, palmRam, TUNGSTEN_T3_RAM_SIZE);
+      swap32BufferIfBig(data, TUNGSTEN_T3_ROM_SIZE / sizeof(uint32_t));
    }
    else{
 #endif
@@ -604,6 +608,7 @@ bool emulatorLoadRam(uint8_t* data, uint32_t size){
          return false;
 
       memcpy(palmRam, data, TUNGSTEN_T3_RAM_SIZE);
+      swap32BufferIfBig(palmRam, TUNGSTEN_T3_ROM_SIZE / sizeof(uint32_t));
    }
    else{
 #endif
