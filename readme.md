@@ -1,29 +1,27 @@
 # Palm OS emulator(Mu)
 
-This is a complete restart of my Palm OS emulator, with the last one the code got too messy and the goal too ambitious(to emulate every palm API in software and for compatibility with all Palm OS versions and devices).
-
+This is a complete restart of my Palm OS emulator, with the last one the code got too messy and the goal too ambitious(to emulate every Palm API in software and for compatibility with all Palm OS versions and devices).
 
 # The goal of this project
 
-To emulate every part of the Palm m515 that is used by the OS perfectly.
-This means no hacks like POSE where API calls are intercepted and replaced with those that dont use the actual hardware.
+To emulate every part of the Palm m515 and Tungsten T3 that is used by the OS perfectly.
+This means no hacks like POSE where API calls are intercepted and replaced with those that don't use the actual hardware.
 It is also written in C for RetroArch so it will run on everything at the start, not just Win95 like POSE and Copilot and is being developed with modern emulator features in mind, save/load state and overclocking are available from the start.
 
 ## Why the m515?
 
-It is the best Palm brand OS 4 device that has no special hardware builtin(cellphone, barcode scanner, keyboard attachment), it has a color screen, and available ROM dumps.
+It is the best Palm brand OS 4 device that has no special hardware built-in(cellphone, barcode scanner, keyboard attachment), it has a color screen, and available ROM dumps.
+
+## Why the Tungsten T3
+
+It has the best resolution and a well documented CPU.
 
 ## What about accessories?
 
 The Palm keyboard attachment will likely be emulated later on so the PC keyboard can be used on text fields.
 
-## What about OS 5?
-
-I am planning on adding Tungsten T3 support as soon as possible.
-
 ## Credits
-[Firebird Emu](https://github.com/nspire-emus/firebird) (ARMv5TE Core)  
-[uARM](https://dmitry.gr/?r=05.Projects&proj=07.%20Linux%20on%208bit) (PXA260 CPU Peripherals and reference CPU core)  
+[uARM](https://dmitry.gr/?r=05.Projects&proj=07.%20Linux%20on%208bit) (Most of the PXA260 CPU)  
 [Musashi v3.4](https://github.com/kstenerud/Musashi) (last version that builds outside of MAME)(68k Core)  
 [blip_buf 1.1.0](https://github.com/TASVideos/BizHawk/tree/master/blip_buf) (Audio Resampler)  
 https://www.iconarchive.com/show/crystal-clear-icons-by-everaldo/App-palm-icon.html (Desktop Icon)  
