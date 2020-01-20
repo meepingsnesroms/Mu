@@ -124,6 +124,10 @@ static void cpuOnPcUpdate(ArmCpu* cpu, uint32_t newPc){
    //debug tool for extracting data from ARM function calls
    bool logSource = true;
    static uint32_t callCount;
+   static int32_t captureReturn = -1;
+   static uint32_t captureReturnAddress;
+   static int64_t divisor;
+   static int64_t value;
 
    callCount++;
 
@@ -132,6 +136,7 @@ static void cpuOnPcUpdate(ArmCpu* cpu, uint32_t newPc){
       callCount = 0;
 
    //jumps to reach EnterIdleMode - amount before to log
+   /*
    if(callCount > 71313793 - 500){
       switch(newPc){
          case 0x200BA16A:
@@ -146,14 +151,15 @@ static void cpuOnPcUpdate(ArmCpu* cpu, uint32_t newPc){
             break;
       }
    }
+   */
 
    switch(newPc){
-      /*
       case PC_FROM_DAL_ADDR(0x00016C94):
          //ReadGPIOPin
          debugLog("Called \"ReadGPIOPin\", pin:%d\n", cpuGetRegExternal(cpu, 0));
          break;
 
+         /*
       case PC_FROM_DAL_ADDR(0x00016D34):
          //WriteGPIOPinInvertedValue
          debugLog("Called \"WriteGPIOPinInvertedValue\", pin:%d, value:%d\n", cpuGetRegExternal(cpu, 0), cpuGetRegExternal(cpu, 1));
@@ -179,6 +185,16 @@ static void cpuOnPcUpdate(ArmCpu* cpu, uint32_t newPc){
             char* string = getArmString(cpu, cpuGetRegExternal(cpu, 0), 200);
 
             debugLog("Called \"HALDbgMessage\", msg:%s\n", string);
+
+            free(string);
+         }
+         break;
+
+      case 0x200A0580:{
+            //HALErrDisplay
+            char* string = getArmString(cpu, cpuGetRegExternal(cpu, 0), 200);
+
+            debugLog("Called \"HALErrDisplay\", arg0:%s, arg1:%d, arg2:%d\n", string, cpuGetRegExternal(cpu, 1), cpuGetRegExternal(cpu, 2));
 
             free(string);
          }
@@ -216,6 +232,24 @@ static void cpuOnPcUpdate(ArmCpu* cpu, uint32_t newPc){
          debugLog("Called \"BootBigRom\"\n");
          break;
 
+      case 0x200BDB58:
+         //sdivmod start
+         debugLog("sdivmod start R0:%d, R1:%d\n", cpuGetRegExternal(cpu, 0), cpuGetRegExternal(cpu, 1));
+         divisor = (int32_t)cpuGetRegExternal(cpu, 0);
+         value = (int32_t)cpuGetRegExternal(cpu, 1);
+         captureReturn = 0;
+         captureReturnAddress = cpuGetRegExternal(cpu, 14) & ~1;//prevent thumb change bit from blocking return readback
+         break;
+
+      case 0x200BDC30:
+         //udivmod start
+         debugLog("udivmod start R0:%d, R1:%d\n", cpuGetRegExternal(cpu, 0), cpuGetRegExternal(cpu, 1));
+         divisor = cpuGetRegExternal(cpu, 0);
+         value = cpuGetRegExternal(cpu, 1);
+         captureReturn = 1;
+         captureReturnAddress = cpuGetRegExternal(cpu, 14) & ~1;//prevent thumb change bit from blocking return readback
+         break;
+
       case 0x00000000:
          //reset vector
          debugLog("Jumped to reset vector\n");
@@ -250,6 +284,27 @@ static void cpuOnPcUpdate(ArmCpu* cpu, uint32_t newPc){
 
       default:
          logSource = false;
+         if(captureReturn != -1 && newPc == captureReturnAddress){
+            switch(captureReturn){
+               case 0:
+                  debugLog("sdivmod end R0:%d, R1:%d\n", cpuGetRegExternal(cpu, 0), cpuGetRegExternal(cpu, 1));
+                  if((int32_t)cpuGetRegExternal(cpu, 0) != value / divisor || (int32_t)cpuGetRegExternal(cpu, 1) != value % divisor){
+                     bool breakpoint = true;
+                  }
+                  break;
+
+               case 1:
+                  debugLog("udivmod end R0:%d, R1:%d\n", cpuGetRegExternal(cpu, 0), cpuGetRegExternal(cpu, 1));
+                  if(cpuGetRegExternal(cpu, 0) != value / divisor || cpuGetRegExternal(cpu, 1) != value % divisor){
+                     bool breakpoint = true;
+                  }
+                  break;
+
+               default:
+                  break;
+            }
+            captureReturn = -1;
+         }
          break;
    }
 
