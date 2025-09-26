@@ -1,25 +1,14 @@
-# Palm OS emulator(Mu)
-
-This is a complete restart of my Palm OS emulator, with the last one the code got too messy and the goal too ambitious(to emulate every palm API in software and for compatibility with all Palm OS versions and devices).
+# A newer Palm OS emulator(newer-Mu)
 
 
-# The goal of this project
+## Why?
+Because the og Mu code is a bit werid and buggy when compiling as a standalone app, in other word, the Mu emulator is a huge pile of Sh1t (No offense)
 
-To emulate every part of the Palm m515 that is used by the OS perfectly.
-This means no hacks like POSE where API calls are intercepted and replaced with those that dont use the actual hardware.
-It is also written in C for RetroArch so it will run on everything at the start, not just Win95 like POSE and Copilot and is being developed with modern emulator features in mind, save/load state and overclocking are available from the start.
-
-## Why the m515?
-
-It is the best Palm brand OS 4 device that has no special hardware builtin(cellphone, barcode scanner, keyboard attachment), it has a color screen, and available ROM dumps.
-
-## What about accessories?
-
-The Palm keyboard attachment will likely be emulated later on so the PC keyboard can be used on text fields.
-
-## What about OS 5?
-
-I am planning on adding Tungsten T3 support as soon as possible.
+## What's new?
+*   **Modernized C++ Standard:** The project now uses C++17, enabling modern language features.
+*   **Code Formatting:** Integrated `.clang-format` for consistent code style.
+*   **CMake Build System:** A new, unified CMake-based build system has been introduced for easier cross-platform compilation.
+*   **Microsoft Fluent Icons:** Updated icons to a more modern, Fluent icons.
 
 ## Credits
 [Firebird Emu](https://github.com/nspire-emus/firebird) (ARMv5TE Core)  
@@ -39,11 +28,30 @@ Make sure you have done all the steps here https://docs.libretro.com/ under "For
     cd ./libretroBuildSystem
     make
 
-#### For Qt
+#### For Qt (Recommended)
+This project now uses CMake for a unified build system.
+
+**Dependencies:**
+*   A C++17 compliant compiler (e.g., GCC, Clang, MSVC)
+*   CMake (version 3.10 or later)
+*   Qt (version 5.11 or later)
+
+**Build Steps:**
+```bash
+mkdir build
+cd build
+cmake ..
+make
+```
+This will create the `Mu` executable inside the `build` directory.
+
+#### For Qt (Legacy qmake)
+You can still use the original qmake build system if you prefer.
+
 Install Qt 5.11.1 and Qt Creator(optional) if not installed  
 Open the .pro file in Qt Creator and click "Run" or build from command line
 
-##### To build without Qt Creator(untested)
+##### To build without Qt Creator(tested)
 
     cd ./qtBuildSystem/Mu
     qmake
@@ -87,9 +95,3 @@ bootloader-dbvz.rom: 9da101cd2317830649a31f8fa46debec (MD5)
 ## License
 <a rel="license" href="http://creativecommons.org/licenses/by-nc/3.0/us/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc/3.0/us/88x31.png" /></a><br />This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc/3.0/us/">Creative Commons Attribution-NonCommercial 3.0 United States License</a>.
 
-## Links
-[Website](https://meepingsnesroms.github.io/)  
-[Discord](https://discord.gg/hWSz8VN)
-
-## Also see Mu's sister project
-[🐿SquirrelJME](https://multiphasicapps.net)
