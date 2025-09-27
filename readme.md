@@ -6,6 +6,11 @@ Because the og Mu code is a bit werid and buggy when compiling as a standalone a
 
 ## What's new?
 *   **Microsoft Fluent Icons:** Updated icons to a more modern, Fluent icons.
+*   **SD Card Support:** Implemented SD card support for reading and writing data.
+*   **Audio Support:** Added audio output for a more immersive experience.
+*   **File Launcher:** Added a launcher to load .prc, .pdb, and .pqa files.
+*   **Improved Performance:** Various performance improvements and bug fixes.
+*   **Cross-Platform Build System:** A new universal Makefile to build for both Qt and libretro.
 
 ## Credits
 [Firebird Emu](https://github.com/nspire-emus/firebird) (ARMv5TE Core)  
@@ -19,40 +24,18 @@ https://www.flaticon.com/free-icon/cow_235371#term=cow&page=1&position=13 (muExp
 https://findicons.com/icon/164302/cursor (Libretro Port Joystick Cursor)
 
 ## Building
-#### For RetroArch
-Make sure you have done all the steps here https://docs.libretro.com/ under "For Developers/Compilation" so you build environment works.  
-
-    cd ./libretroBuildSystem
-    make
+This project uses a universal Makefile to build the different versions of the emulator.
 
 #### For Qt (Recommended)
-This project now uses CMake for a unified build system.
-
-**Dependencies:**
-*   A C++17 compliant compiler (e.g., GCC, Clang, MSVC)
-*   CMake (version 3.10 or later)
-*   Qt (version 5.11 or later)
-
-**Build Steps:**
 ```bash
-mkdir build
-cd build
-cmake ..
-make
+make qt
 ```
-This will create the `Mu` executable inside the `build` directory.
 
-#### For Qt (Legacy qmake)
-You can still use the original qmake build system if you prefer.
-
-Install Qt 5.11.1 and Qt Creator(optional) if not installed  
-Open the .pro file in Qt Creator and click "Run" or build from command line
-
-##### To build without Qt Creator(tested)
-
-    cd ./qtBuildSystem/Mu
-    qmake
-    make
+#### For RetroArch
+```bash
+make libretro PLATFORM=<platform_name>
+```
+Replace `<platform_name>` with the desired platform (e.g., `linux_x86_64`, `windows_x86_64`, `osx_x86_64`).
 
 #### TestSuite for Palm OS
 Install prc-tools from the below link(self compiled or prepackaged VM)  
@@ -91,4 +74,3 @@ bootloader-dbvz.rom: 9da101cd2317830649a31f8fa46debec (MD5)
 
 ## License
 <a rel="license" href="http://creativecommons.org/licenses/by-nc/3.0/us/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc/3.0/us/88x31.png" /></a><br />This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc/3.0/us/">Creative Commons Attribution-NonCommercial 3.0 United States License</a>.
-
