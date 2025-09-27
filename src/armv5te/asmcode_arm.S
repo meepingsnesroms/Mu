@@ -36,7 +36,7 @@ translation_sp: .global translation_sp
     ldr \reg, =\name
 .endm
 #else
-
+#error "This code requires clang to compile."
 /* What you can see here is a really bad way of avoiding
    relocations in the .text section.
    For each use of an external symbol, you need to insert
