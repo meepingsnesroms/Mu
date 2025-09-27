@@ -64,6 +64,11 @@ linux-g++{
     } else:contains(QMAKE_HOST.arch, arm) {
         CONFIG += cpu_armv7
     }
+
+    armv7 {
+        QMAKE_AS = $${QMAKE_CXX}
+        QMAKE_ASFLAGS = $${QMAKE_CXXFLAGS}
+    }
 }
 
 armv7{
