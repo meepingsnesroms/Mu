@@ -131,9 +131,13 @@ support_palm_os5{
         }
 
         cpu_armv7{
-            SOURCES += \
-                ../../src/armv5te/translate_arm.cpp \
-                ../../src/armv5te/asmcode_arm.S
+            SOURCES += ../../src/armv5te/translate_arm.cpp
+
+            arm_asm.input = ../../src/armv5te/asmcode_arm.S
+            arm_asm.output = asmcode_arm.o
+            arm_asm.commands = $${QMAKE_CXX} $${QMAKE_CXXFLAGS} -c ${QMAKE_FILE_IN} -o ${QMAKE_FILE_OUT}
+            arm_asm.variable_out = OBJECTS
+            QMAKE_EXTRA_COMPILERS += arm_asm
         }
 
         cpu_armv8{
