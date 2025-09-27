@@ -120,3 +120,6 @@ bootloader-dbvz.rom: 9da101cd2317830649a31f8fa46debec (MD5)
 
 ## License
 <a rel="license" href="http://creativecommons.org/licenses/by-nc/3.0/us/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc/3.0/us/88x31.png" /></a><br />This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc/3.0/us/">Creative Commons Attribution-NonCommercial 3.0 United States License</a>.
+
+## BTWs
+Btw this fork is done COMPLETELY on chromium in linux running on my chromebook. Damn, codespace is sooo powerful.
