@@ -241,7 +241,10 @@ QPushButton:pressed {
           <enum>Qt::NoFocus</enum>
          </property>
          <property name="toolTip">
-          <string>Boot App</string>
+          <string>Boot an App</string>
+         </property>
+         <property name="whatsThis">
+          <string/>
          </property>
          <property name="icon">
           <iconset resource="mainwindow.qrc">
@@ -301,7 +304,7 @@ QPushButton:pressed {
           <enum>Qt::NoFocus</enum>
          </property>
          <property name="toolTip">
-          <string>This is an LED not a button.😜</string>
+          <string>An LED</string>
          </property>
          <property name="frameShape">
           <enum>QFrame::Box</enum>

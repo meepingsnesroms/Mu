@@ -30,8 +30,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>613</width>
-        <height>444</height>
+        <width>616</width>
+        <height>505</height>
        </rect>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -394,6 +394,9 @@
          </property>
          <property name="text">
           <string>Fast Boot(Fastforwards Through The Boot Screen)</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
          </property>
         </widget>
        </item>
