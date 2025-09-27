@@ -64,6 +64,22 @@ Install prc-tools from the below link(self compiled or prepackaged VM)
     cd ./tools/palm/muExpansionDriver
     ./make.sh
 
+### Installing
+
+To install the application on a Linux system, you can use the `install` target:
+
+```bash
+sudo make install
+```
+
+This will install the `Mu` executable, an application icon, and a `.desktop` file to the appropriate system directories. This will allow you to launch the application from your desktop environment's application menu.
+
+To uninstall the application, you can use the `uninstall` target:
+
+```bash
+sudo make uninstall
+```
+
 ## Contributing
 
 Contributions are welcome! Here are some ways you can help:

@@ -204,6 +204,7 @@ DIST          = ../../src/fileLauncher/readme.md \
 		images/stop.svg \
 		images/todo.svg \
 		images/up.svg \
+		images/Mu.svg \
 		/usr/lib/x86_64-linux-gnu/qt6/mkspecs/features/spec_pre.prf \
 		/usr/lib/x86_64-linux-gnu/qt6/mkspecs/common/unix.conf \
 		/usr/lib/x86_64-linux-gnu/qt6/mkspecs/common/linux.conf \

@@ -343,6 +343,9 @@ DISTFILES += \
     images/todo.svg \
     images/up.svg
 
+DISTFILES += \
+    images/Mu.svg
+
 RESOURCES += \
     mainwindow.qrc
 

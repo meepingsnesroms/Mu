@@ -26,6 +26,20 @@ clean:
 	@(cd qtBuildSystem/Mu && $(MAKE) clean)
 	@(cd libretroBuildSystem && $(MAKE) -f Makefile.libretro clean)
 
+install:
+	@echo "Installing Mu..."
+	@sudo cp qtBuildSystem/Mu/Mu /usr/local/bin/
+	@sudo cp images/Mu.svg /usr/share/icons/hicolor/scalable/apps/
+	@echo "[Desktop Entry]\nName=Mu\nComment=A newer Palm OS emulator\nExec=/usr/local/bin/Mu\nIcon=Mu\nTerminal=false\nType=Application\nCategories=Game;Emulator;" | sudo tee /usr/share/applications/Mu.desktop > /dev/null
+	@sudo gtk-update-icon-cache /usr/share/icons/hicolor/
+
+uninstall:
+	@echo "Uninstalling Mu..."
+	@sudo rm -f /usr/local/bin/Mu
+	@sudo rm -f /usr/share/icons/hicolor/scalable/apps/Mu.svg
+	@sudo rm -f /usr/share/applications/Mu.desktop
+	@sudo gtk-update-icon-cache /usr/share/icons/hicolor/
+
 # Target to display help
 .PHONY: help
 help:
