@@ -7,7 +7,8 @@
 #include <QObject>
 #include <QEvent>
 #include <QSettings>
-#include <QAudioOutput>
+#include <QAudioDevice>
+#include <QAudioSink>
 #include <QIODevice>
 #include <QKeyEvent>
 
@@ -87,8 +88,8 @@ private:
    StateManager*    stateManager;
    DebugViewer*     emuDebugger;
    QTimer*          refreshDisplay;
-   QAudioOutput*    audioDevice;
-   QIODevice*       audioOut;
+   QAudioSink*      audioSink;
+   QIODevice*       audioDevice;
    Ui::MainWindow*  ui;
    int              keyForButton[EmuWrapper::BUTTON_TOTAL_COUNT];
 };

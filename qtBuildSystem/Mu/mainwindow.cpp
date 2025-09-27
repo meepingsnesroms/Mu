@@ -14,8 +14,8 @@
 #include <QKeyEvent>
 #include <QGraphicsScene>
 #include <QCoreApplication>
-#include <QAudioOutput>
 #include <QAudioFormat>
+#include <QMediaDevices>
 
 #include <stdint.h>
 
@@ -32,14 +32,7 @@ MainWindow::MainWindow(QWidget* parent) :
    //audio output
    format.setSampleRate(AUDIO_SAMPLE_RATE);
    format.setChannelCount(2);
-   format.setSampleSize(16);
-   format.setCodec("audio/pcm");
-#if Q_BYTE_ORDER == Q_BIG_ENDIAN
-   format.setByteOrder(QAudioFormat::BigEndian);
-#else
-   format.setByteOrder(QAudioFormat::LittleEndian);
-#endif
-   format.setSampleType(QAudioFormat::SignedInt);
+   format.setSampleFormat(QAudioFormat::Int16);
 
    //submodules
    settings = new QSettings(QDir::homePath() + "/MuCfg.txt", QSettings::IniFormat);//settings is public, create it first
@@ -47,8 +40,8 @@ MainWindow::MainWindow(QWidget* parent) :
    stateManager = new StateManager(this);
    emuDebugger = new DebugViewer(this);
    refreshDisplay = new QTimer(this);
-   audioDevice = new QAudioOutput(format, this);
-   audioOut = audioDevice->start();
+   audioSink = new QAudioSink(QMediaDevices::defaultAudioOutput(), format);
+   audioDevice = audioSink->start();
 
    //set variables to there default if its the first boot
    if(settings->value("firstBootCompleted", "").toString() == ""){
@@ -125,10 +118,11 @@ MainWindow::MainWindow(QWidget* parent) :
 
 MainWindow::~MainWindow(){
    refreshDisplay->stop();
+   audioSink->stop();
    delete stateManager;
    delete emuDebugger;
    delete refreshDisplay;
-   delete audioDevice;
+   delete audioSink;
    delete settings;//settings is public, destroy it last
    delete ui;
 }
@@ -226,7 +220,7 @@ void MainWindow::updateDisplay(){
       ui->display->repaint();
 
       //audio
-      audioOut->write((const char*)emu.getAudioSamples(), AUDIO_SAMPLES_PER_FRAME * 2/*channels*/ * sizeof(int16_t));
+      audioDevice->write((const char*)emu.getAudioSamples(), AUDIO_SAMPLES_PER_FRAME * 2/*channels*/ * sizeof(int16_t));
 
       //power LED
       ui->powerButtonLed->setStyleSheet(emu.getPowerButtonLed() ? "background: lime" : "");

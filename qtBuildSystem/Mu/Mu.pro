@@ -54,7 +54,16 @@ linux-g++{
     QMAKE_CXXFLAGS += -fopenmp
     QMAKE_LFLAGS += -fopenmp
     DEFINES += EMU_MULTITHREADED EMU_MANAGE_HOST_CPU_PIPELINE
-    CONFIG += cpu_x86_64 # TODO:this should be auto detected in the future
+    # Auto-detect CPU architecture
+    contains(QMAKE_HOST.arch, x86_64) {
+        CONFIG += cpu_x86_64
+    } else:contains(QMAKE_HOST.arch, x86)|contains(QMAKE_HOST.arch, i386)|contains(QMAKE_HOST.arch, i486)|contains(QMAKE_HOST.arch, i586)|contains(QMAKE_HOST.arch, i686) {
+        CONFIG += cpu_x86_32
+    } else:contains(QMAKE_HOST.arch, arm64)|contains(QMAKE_HOST.arch, aarch64) {
+        CONFIG += cpu_armv8
+    } else:contains(QMAKE_HOST.arch, arm) {
+        CONFIG += cpu_armv7
+    }
 }
 
 android{

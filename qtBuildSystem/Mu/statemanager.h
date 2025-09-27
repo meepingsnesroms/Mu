@@ -5,7 +5,7 @@
 #include <QEvent>
 #include <QListWidgetItem>
 #include <QString>
-#include <QRegExpValidator>
+#include <QRegularExpressionValidator>
 
 #include "emuwrapper.h"
 
@@ -36,5 +36,5 @@ private slots:
 private:
    Ui::StateManager* ui;
    EmuWrapper*       emu;
-   QRegExpValidator* noBadPaths;
+   QRegularExpressionValidator* noBadPaths;
 };

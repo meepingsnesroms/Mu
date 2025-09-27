@@ -35,18 +35,18 @@ void TouchScreen::paintEvent(QPaintEvent* ev){
 }
 
 void TouchScreen::mousePressEvent(QMouseEvent* ev){
-   if(ev->x() >= 0 && ev->x() < this->width() && ev->y() >= 0 && ev->y() < this->height()){
+   if(ev->position().x() >= 0 && ev->position().x() < this->width() && ev->position().y() >= 0 && ev->position().y() < this->height()){
       EmuWrapper& emu = ((MainWindow*)(parentWidget()->parentWidget()->parentWidget()))->emu;
 
-      emu.setPenValue((float)ev->x() / (this->width() - 1), (float)ev->y() / (this->height() - 1), true);
+      emu.setPenValue((float)ev->position().x() / (this->width() - 1), (float)ev->position().y() / (this->height() - 1), true);
    }
 }
 
 void TouchScreen::mouseMoveEvent(QMouseEvent* ev){
-   if(ev->x() >= 0 && ev->x() < this->width() && ev->y() >= 0 && ev->y() < this->height()){
+   if(ev->position().x() >= 0 && ev->position().x() < this->width() && ev->position().y() >= 0 && ev->position().y() < this->height()){
       EmuWrapper& emu = ((MainWindow*)(parentWidget()->parentWidget()->parentWidget()))->emu;
 
-      emu.setPenValue((float)ev->x() / (this->width() - 1), (float)ev->y() / (this->height() - 1), true);
+      emu.setPenValue((float)ev->position().x() / (this->width() - 1), (float)ev->position().y() / (this->height() - 1), true);
    }
 }
 

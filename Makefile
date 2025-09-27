@@ -9,7 +9,7 @@ all: help
 .PHONY: qt
 qt:
 	@echo "Building Qt application..."
-	@(cd qtBuildSystem/Mu && qmake && $(MAKE))
+	@(cd qtBuildSystem/Mu && qmake6 && $(MAKE))
 
 # Target to build the libretro core
 # Usage: make libretro [PLATFORM=platform_name]

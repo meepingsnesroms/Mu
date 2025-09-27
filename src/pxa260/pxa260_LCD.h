@@ -4,7 +4,7 @@
 #include "pxa260_CPU.h"
 #include "pxa260_IC.h"
 
-uint16_t* pxa260Framebuffer;
+
 
 /*
 	PXA260 OS LCD controller

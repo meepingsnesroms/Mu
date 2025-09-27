@@ -8,8 +8,7 @@
 #include <QFile>
 #include <QDir>
 #include <QListWidgetItem>
-#include <QRegExp>
-#include <QRegExpValidator>
+
 
 #include "mainwindow.h"
 
@@ -27,7 +26,7 @@ StateManager::StateManager(QWidget* parent) :
    ui->statePreview->installEventFilter(this);
    ui->statePreview->setObjectName("statePreview");
 
-   noBadPaths = new QRegExpValidator(QRegExp("[a-z0-9_()-\\s]*"));
+   noBadPaths = new QRegularExpressionValidator(QRegularExpression("[a-z0-9_()-\\s]*"));
    ui->newStateName->setValidator(noBadPaths);
 }
 

@@ -30,7 +30,7 @@ int64_t DebugViewer::numberFromString(QString str, bool negativeAllowed){
    int64_t value;
    bool validNumber;
 
-   if(str.length() > 2 && (str[0] == "0") && (str[1].toLower() == "x")){
+   if(str.length() > 2 && (str[0] == '0') && (str[1].toLower() == 'x')){
       //hex number
       str.remove(0, 2);
       value = str.toLongLong(&validNumber, 16);
