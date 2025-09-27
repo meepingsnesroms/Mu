@@ -5,9 +5,6 @@
 Because the og Mu code is a bit werid and buggy when compiling as a standalone app, in other word, the Mu emulator is a huge pile of Sh1t (No offense)
 
 ## What's new?
-*   **Modernized C++ Standard:** The project now uses C++17, enabling modern language features.
-*   **Code Formatting:** Integrated `.clang-format` for consistent code style.
-*   **CMake Build System:** A new, unified CMake-based build system has been introduced for easier cross-platform compilation.
 *   **Microsoft Fluent Icons:** Updated icons to a more modern, Fluent icons.
 
 ## Credits

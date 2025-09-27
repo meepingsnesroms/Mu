@@ -73,7 +73,16 @@
        </sizepolicy>
       </property>
       <property name="styleSheet">
-       <string notr="true">QPushButton { padding: 0px; }</string>
+       <string notr="true">QPushButton {
+    padding: 0px;
+    border-radius: 8px;
+    border: 1px solid #8f8f91;
+}
+
+QPushButton:pressed {
+    background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                      stop: 0 #dadbde, stop: 1 #f6f7fa);
+}</string>
       </property>
       <layout class="QGridLayout" name="gridLayout">
        <property name="leftMargin">
