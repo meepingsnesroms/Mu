@@ -66,6 +66,12 @@ linux-g++{
     }
 }
 
+armv7{
+    QMAKE_CFLAGS += -mfloat-abi=hard -mfpu=neon
+    QMAKE_CXXFLAGS += -mfloat-abi=hard -mfpu=neon
+    QMAKE_LFLAGS += -mfloat-abi=hard -mfpu=neon
+}
+
 android{
     QMAKE_CFLAGS += -fopenmp
     QMAKE_CXXFLAGS += -fopenmp
